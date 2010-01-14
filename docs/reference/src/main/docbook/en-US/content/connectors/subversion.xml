@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -116,7 +116,7 @@
 JcrConfiguration config = ...
 config.repositorySource("SVN Store")
       .usingClass(SVNRepositorySource.class)
-      .setDescription("The DNA SVN repository (anonymous access)")
+      .setDescription("The ModeShape SVN repository (anonymous access)")
       .setProperty("repositoryRootUrl", "http://anonsvn.jboss.org/repos/dna");
       .setProperty("defaultWorkspaceName", "trunk");
       .setProperty("predefinedWorkspaceNames", new String[] {"trunk });
@@ -129,10 +129,10 @@ config.repositorySource("SVN Store")
 	
   <programlisting role="XML"><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<configuration xmlns:dna="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
     Define the sources for the content.  These sources are directly accessible using the 
-    DNA-specific Graph API.  In fact, this is how the DNA JCR implementation works.  You 
+    ModeShape-specific Graph API.  In fact, this is how the ModeShape JCR implementation works.  You 
     can think of these as being similar to JDBC DataSource objects, except that they expose 
     graph content via the Graph API instead of records via SQL or JDBC. 
     -->
@@ -142,8 +142,8 @@ config.repositorySource("SVN Store")
         be defined).
         -->
         <dna:source jcr:name="SVN Store" 
-                    dna:classname="org.jboss.dna.graph.connector.svn.SVNRepositorySource" 
-                    dna:description="The DNA SVN repository (anonymous access)"
+                    dna:classname="org.modeshape.graph.connector.svn.SVNRepositorySource" 
+                    dna:description="The ModeShape SVN repository (anonymous access)"
                     dna:repositoryRootUrl="http://anonsvn.jboss.org/repos/dna"
                     dna:defaultWorkspaceName="trunk"
                     dna:predefinedWorkspaceNames="trunk"

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -40,10 +40,10 @@
 		would break or have to change.  And copying the information means that we'd have to continually synchronize the changes.
 		This not only is a lot of work, but it often makes it difficult to know whether information is accurate and "the master" data.
 	</para>
-  <para>JBoss DNA lets us leave information where it is, yet access it through the JCR API as if it were in one big repository.
+  <para>ModeShape lets us leave information where it is, yet access it through the JCR API as if it were in one big repository.
 		One major benefit is that existing applications that use the information in the original locations don't break, since they
-		can keep using the information. But now our JCR clients can also access all the information, too.  And if our federating JBoss DNA repository is
-    configured to allow updates, JCR client applications can change the information in the repository and JBoss DNA will propagate
+		can keep using the information. But now our JCR clients can also access all the information, too.  And if our federating ModeShape repository is
+    configured to allow updates, JCR client applications can change the information in the repository and ModeShape will propagate
     those changes down to the original source, making those changes visible to all the other applications.
 	</para>
 	<para>
@@ -53,15 +53,15 @@
   <sect1 id="connectors">
     <title>Connectors</title>
 		<para>
-			With JBoss DNA, your applications use the <ulink url="&JSR170;">JCR API</ulink> to work with the repository,
-			but the DNA repository transparently fetches the information from different kinds of repositories and storage systems,
-			not just a single purpose-built store.  This is fundamentally what makes JBoss DNA different.
+			With ModeShape, your applications use the <ulink url="&JSR170;">JCR API</ulink> to work with the repository,
+			but the ModeShape repository transparently fetches the information from different kinds of repositories and storage systems,
+			not just a single purpose-built store.  This is fundamentally what makes ModeShape different.
 		</para>
-		<para>How does JBoss DNA do this?  At the heart of JBoss DNA and it's JCR implementation is a simple graph-based 
-			<emphasis>connector</emphasis> system.  Essentially, JBoss DNA's JCR implementation uses a single 
+		<para>How does ModeShape do this?  At the heart of ModeShape and it's JCR implementation is a simple graph-based 
+			<emphasis>connector</emphasis> system.  Essentially, ModeShape's JCR implementation uses a single 
 			connector to access all content:
 			<figure id="dnajcr-and-connector">
-				<title>JBoss DNA's JCR implementation delegates to a connector</title>
+				<title>ModeShape's JCR implementation delegates to a connector</title>
 				<graphic align="center" scale="100" fileref="dnajcr-and-connector.png"/>
 			</figure>
 				That single repository connector could access:
@@ -93,12 +93,12 @@
 			</listitem>
 		</itemizedlist>
 		<figure id="dna-connectors">
-			<title>JBoss DNA can put JCR on top of multiple kinds of systems</title>
+			<title>ModeShape can put JCR on top of multiple kinds of systems</title>
 			<graphic align="center" scale="100" fileref="dna-connectors.png"/>
 		</figure>
 		<para>
 			Really, the federated connector gives us all kinds of	possibilities, since we can use that connector on top of lots of connectors 
-			to other individual sources.  This simple connector architecture is fundamentally what makes JBoss DNA so powerful and flexible.
+			to other individual sources.  This simple connector architecture is fundamentally what makes ModeShape so powerful and flexible.
 			Along with a good library of connectors, which is what we're planning to create.
 		</para>
 		<para>
@@ -108,7 +108,7 @@
 			<ulink url="&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">roadmap</ulink>.
 			Of course, if we don't have a connector to suit your needs, you can <link linkend="custom-connectors">write your own</link>.
 			<figure id="dna-connectors-future">
-				<title>Future JBoss DNA connectors</title>
+				<title>Future ModeShape connectors</title>
 				<graphic align="center" scale="100" fileref="dna-connectors-future.png"/>
 			</figure>
 		</para>
@@ -117,11 +117,11 @@
 		<para>
 	  	It's even possible to put a different API layer on top of the connectors.  For example, the new <ulink url="&JSR203;">New I/O (JSR-203)</ulink>
 			API offers the opportunity to build new file system providers.  This would be very straightforward to put on top of a JCR implementation,
-			but it could be made even simpler by putting it on top of a DNA connector.  In both cases, it'd be a trivial mapping from nodes that represent
+			but it could be made even simpler by putting it on top of a ModeShape connector.  In both cases, it'd be a trivial mapping from nodes that represent
 			files and folders into JSR-203 files and directories, and events on those nodes could easily be translated into JSR-203 watch events.
-			Then, simply choose a DNA connector and configure it to use the source you want to use.
+			Then, simply choose a ModeShape connector and configure it to use the source you want to use.
 			<figure id="dna-connectors-vfs">
-				<title>Virtual File System with JBoss DNA</title>
+				<title>Virtual File System with ModeShape</title>
 				<graphic align="center" scale="100" fileref="vfs-and-connector.png"/>
 			</figure>
 		</para>
@@ -133,18 +133,18 @@
 					contains implementations of several interfaces (described below).  A Java developer <emphasis>writes</emphasis>
 					a connector to a type of source, such as a particular database management system, LDAP directory, source code
 					management system, etc.  It is then packaged into one or more JAR files (including dependent JARs) and deployed
-					for use in applications that use JBoss DNA repositories.
+					for use in applications that use ModeShape repositories.
 				</para>
 			</listitem>
 			<listitem>
 				<para>
 					The description of a particular source system (e.g., the "Customer" database, or the company LDAP system) 
-					is called a <emphasis role="strong">repository source</emphasis>.  JBoss DNA defines a &RepositorySource; interface
+					is called a <emphasis role="strong">repository source</emphasis>.  ModeShape defines a &RepositorySource; interface
 					that defines methods describing the behavior and supported features and a method for establishing connections.
 					A connector will have a class that implements this interface and that has JavaBean properties for
 					all of the connector-specific properties required to fully describe an instance of the system.  Use of JavaBean
 					properties is not required, but it is highly recommended, as it enables reflective configuration and administration.
-					Applications that use JBoss DNA create an instance of the connector's &RepositorySource; implementation and set 
+					Applications that use ModeShape create an instance of the connector's &RepositorySource; implementation and set 
 					the properties for the external source that the application wants to access with that connector.
 				</para>
 			</listitem>
@@ -163,7 +163,7 @@
 				</para>
 			</listitem>
 		</itemizedlist>
-		<para>As an example, consider if we wanted JBoss DNA to give us access through JCR to the information contained in a
+		<para>As an example, consider if we wanted ModeShape to give us access through JCR to the information contained in a
 			relational database.  We first have to develop a connector that allows us to interact with relational databases using JDBC.
 			That connector would contain a <code>JdbcAccessSource</code> Java class that implements &RepositorySource;,
 			and that has all of the various JavaBean properties for setting the name of the driver class, URL, username, password,
@@ -173,9 +173,9 @@
 		<note>
 			<para>
 				Of course, before you develop a connector, you should probably check the
-				<ulink url="http://docs.jboss.org/jbossdna/latest/manuals/reference/html/provied-connectors-part.html">list of connectors</ulink> JBoss DNA already provides out of the box.
-				With this latest release, JBoss DNA already includes this JDBC metadata connector!  And we're always interested in new
-				connectors and new contributors, so please consider developing your custom connector as part of JBoss DNA.
+				<ulink url="http://docs.jboss.org/jbossdna/latest/manuals/reference/html/provied-connectors-part.html">list of connectors</ulink> ModeShape already provides out of the box.
+				With this latest release, ModeShape already includes this JDBC metadata connector!  And we're always interested in new
+				connectors and new contributors, so please consider developing your custom connector as part of ModeShape.
 			</para>
 		</note>
 		<para>
@@ -187,11 +187,11 @@
 			temporary table), and with child nodes that represent rows in the table.
 		</para>
 		<para>
-			To use our connector in an application that uses JBoss DNA, we would need to create an instance of the 
+			To use our connector in an application that uses ModeShape, we would need to create an instance of the 
 			<code>JdbcAccessSource</code> for each database instance that we want to access.  If we have 3 MySQL databases, 
 			9 Oracle databases, and 4 PostgreSQL databases, then we'd need to create a total of 16 <code>JdbcAccessSource</code> 
 			instances, each with the properties describing a single database instance.  Those sources are then available for use by 
-			JBoss DNA components, including the <link linkend="jcr">JCR</link> implementation.
+			ModeShape components, including the <link linkend="jcr">JCR</link> implementation.
 		</para>
 		<para>
 			So, we've so far learned what a connector is and how they're used to establish connections to the underlying sources 
@@ -202,7 +202,7 @@
   <sect1 id="connector-library">
     <title>Out-of-the-box connectors</title>
     <para>
-    	A number of connectors are already available in JBoss DNA, and are outlined in detail
+    	A number of connectors are already available in ModeShape, and are outlined in detail
       <link linkend="provied-connectors-part">later in the document</link>.
 			Note that we do want to build <ulink url="https://jira.jboss.org/jira/secure/IssueNavigator.jspa?reset=true&amp;mode=hide&amp;pid=12310520&amp;sorter/order=DESC&amp;sorter/field=priority&amp;resolution=-1&amp;component=12311441">more connectors</ulink>
 			in the upcoming releases.
@@ -213,7 +213,7 @@
     <para>
 		  There may come a time when you want to tackle creating your own connector.  Maybe the connectors we provide out-of-the-box
 			don't work with your source.  Maybe you want to use a different cache system.  
-			Maybe you have a system that you want to make available through a JBoss DNA repository.  Or, maybe you're
+			Maybe you have a system that you want to make available through a ModeShape repository.  Or, maybe you're
 			a contributor and want to help us round out our library with a new connector.  No matter what the reason, creating a new connector
 			is pretty straightforward, as we'll see in this section.
     </para>
@@ -247,20 +247,20 @@
 					</para>
 					<para>
 						Don't forget unit tests that verify that the connector is doing what it's expected to do.  (If you'll be committing the connector
-						code to the JBoss DNA project, please ensure that the unit tests can be run by others that may not have access to the
+						code to the ModeShape project, please ensure that the unit tests can be run by others that may not have access to the
 						source system.  In this case, consider writing integration tests that can be easily configured to use different sources
 						in different environments, and try to make the failure messages clear when the tests can't connect to the underlying source.)
 					</para>
 		    </listitem>
 		    <listitem>
 		      <para>
-						Configure JBoss DNA to use your connector.  This may involve just registering the source with the &RepositoryService;,
+						Configure ModeShape to use your connector.  This may involve just registering the source with the &RepositoryService;,
 			   		or it may involve adding a source to a configuration repository used by the <link linkend="dna-connector-federation">federated repository</link>.
 					</para>
 		    </listitem>
 		    <listitem>
 		      <para>
-						Deploy the JAR file with your connector (as well as any dependencies), and make them available to JBoss DNA
+						Deploy the JAR file with your connector (as well as any dependencies), and make them available to ModeShape
 		      	in your application.
 					</para>
 		    </listitem>
@@ -275,7 +275,7 @@
 	    	using Maven for your project will save you a lot of time and effort.  Of course, you don't have to use Maven 2, but then you'll
 	    	have to get the required libraries and manage the compiling and building process yourself.</para>
 	    <note>
-	      <para>JBoss DNA may provide in the future a Maven archetype for creating connector projects.  If you'd find this useful
+	      <para>ModeShape may provide in the future a Maven archetype for creating connector projects.  If you'd find this useful
 	        and would like to help create it, please <link linkend="preface">join the community</link>.
 				</para>
 		    <para>In lieu of a Maven archetype, you may find it easier to start with a small existing connector project.
@@ -290,7 +290,7 @@
 			</para>
 	  	<programlisting role="XML"><![CDATA[
 <dependency>
-  <groupId>org.jboss.dna</groupId>
+  <groupId>org.modeshape</groupId>
   <artifactId>dna-graph</artifactId>
   <version>0.7</version>
 </dependency>
@@ -304,16 +304,16 @@
 				As for testing, you probably will want to add more dependencies, such as those listed here:
 			</para>
 			<programlisting role="XML"><![CDATA[
-<!-- DNA-related unit testing utilities and classes -->
+<!-- ModeShape-related unit testing utilities and classes -->
 <dependency>
-  <groupId>org.jboss.dna</groupId>
+  <groupId>org.modeshape</groupId>
   <artifactId>dna-graph</artifactId>
   <version>0.7</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
 <dependency>
-  <groupId>org.jboss.dna</groupId>
+  <groupId>org.modeshape</groupId>
   <artifactId>dna-common</artifactId>
   <version>0.7</version>
   <type>test-jar</type>
@@ -347,9 +347,9 @@
 </dependency>
 	 ]]></programlisting>
 	  	<para>
-				Testing JBoss DNA connectors does not require a JCR repository or the JBoss DNA services.  (For more detail,
+				Testing ModeShape connectors does not require a JCR repository or the ModeShape services.  (For more detail,
 	  		see the <link linkend="testing_custom_connectors">testing section</link>.) However, if you want to do
-	  		integration testing with a JCR repository and the JBoss DNA services, you'll need additional dependencies
+	  		integration testing with a JCR repository and the ModeShape services, you'll need additional dependencies
 				(e.g., <code>dna-repository</code> and any other extensions).
 			</para>
 	    <para>
@@ -381,8 +381,8 @@
 			</para>
 		  <sect3 id="repository-workspaces">
 		    <title>Workspaces</title>
-				<para>The <link linkend="graph-api-workspaces">previous chapter</link> talked about how connector expose their information through the graph language of JBoss DNA.
-					This is true, except that we didn't dive into too much of the detail.  JBoss DNA graphs have the notion of <emphasis>workspaces</emphasis>
+				<para>The <link linkend="graph-api-workspaces">previous chapter</link> talked about how connector expose their information through the graph language of ModeShape.
+					This is true, except that we didn't dive into too much of the detail.  ModeShape graphs have the notion of <emphasis>workspaces</emphasis>
 					in which the content appears, and its very easy for clients using the graph to switch between workspaces.  In fact,
 					workspaces differ from each other in that they provide different views of the same information.
 				</para>
@@ -400,7 +400,7 @@
 			<sect3 id="connector_events">
 				<title>Broadcasting events</title>
 				<para>
-					When your &RepositorySource; instance is put into the library within a running JBoss DNA system, 
+					When your &RepositorySource; instance is put into the library within a running ModeShape system, 
 					the <code>initialize(&RepositoryContext;)</code> method will be called on the instance.
 					The supplied &RepositoryContext; object represents the context in which the &RepositorySource;
 					is running, and provides access to an &ExecutionContext;, a &RepositoryConnectionFactory; that can be used
@@ -413,13 +413,13 @@
 			<sect3 id="connector_cache_policy">
 				<title>Cache policy</title>
 				<para>
-					Each connector is responsible for determining whether and how long DNA is to cache the
+					Each connector is responsible for determining whether and how long ModeShape is to cache the
 					content made available by the connector.  This is referred to as the <emphasis>caching policy</emphasis>,
 					and consists of a <emphasis>time to live</emphasis> value representing the number of milliseconds that
 					a piece of data may be cached.  After the TTL has passed, the information is no longer used.
 				</para>
 				<para>
-					DNA allows a connector to use a flexible and powerful caching policy.  First, each connection returns the
+					ModeShape allows a connector to use a flexible and powerful caching policy.  First, each connection returns the
 					<emphasis>default</emphasis> caching policy for all information returned by that connection.
 					Often this policy can be configured via properties on the &RepositorySource; implementation.
 					This is optional, meaning the connector can return <code>null</code> if it does not wish to
@@ -433,7 +433,7 @@
 				</para>
 				<para>
 					Third, if the connector has no default caching policy and none is set on the individual requests,
-					DNA uses whatever caching policy is set up for that component using the connector.  For example, the federating
+					ModeShape uses whatever caching policy is set up for that component using the connector.  For example, the federating
 					connector allows a default caching policy to be specified, and this policy is used should the sources
 					being federated not define their own caching policy.
 				</para>
@@ -443,7 +443,7 @@
 				</para>
 				<note>
 					<para>
-						At this time, JBoss DNA does not yet take advantage of the connector's cache policies. 
+						At this time, ModeShape does not yet take advantage of the connector's cache policies. 
 						However, it is anticipated that this will change.
 					</para>
 				</note>
@@ -578,7 +578,7 @@ public interface &RepositoryConnection; {
 }</programlisting>
 			<para>
 				While most of these methods are straightforward, a few warrant additional information.
-				The <code>ping(...)</code> method allows DNA to check the connection to see if it is
+				The <code>ping(...)</code> method allows ModeShape to check the connection to see if it is
 				alive.  This method can be used in a variety of situations, ranging from verifying that a &RepositorySource;'s
 				JavaBean properties are correct to ensuring that a connection is still alive before returning the connection from
 				a connection pool.
@@ -598,7 +598,7 @@ public interface &RepositoryConnection; {
 			</para>
 	    <para>
 				A connector is technically free to implement the <code>execute(...)</code> method in any way, as long as the semantics
-				are maintained.  But as discussed in the <link linkend="graph-request-processors">previous chapter</link>, JBoss DNA provides 
+				are maintained.  But as discussed in the <link linkend="graph-request-processors">previous chapter</link>, ModeShape provides 
 				a &RequestProcessor; class that can simplify writing your own connector and at the
 				same time help insulate your connector from new kinds of requests that may be added in the future.  The &RequestProcessor;
 				is an abstract class that defines a <code>process(...)</code> method for each concrete &Request; subclass.
@@ -672,12 +672,12 @@ public void execute( final &ExecutionContext; context,
 	<sect1>
 		<title>Summary</title>
 		<para>
-			In this chapter, we covered all the aspects of JBoss DNA connectors, including the connector API,
-			how DNA's JCR implementation works with connectors, what connectors are available (and how to use them),
-			and how to write your own connector.  So now that you know how to set up and use JBoss DNA repositories,
+			In this chapter, we covered all the aspects of ModeShape connectors, including the connector API,
+			how ModeShape's JCR implementation works with connectors, what connectors are available (and how to use them),
+			and how to write your own connector.  So now that you know how to set up and use ModeShape repositories,
 			the <link linkend="sequencing_framework">next chapter</link> describes the sequencing framework and how
 			to build your own custom sequencers.  After that, we'll get into <link linkend="jcr-part">how to configure
-			JBoss DNA and use JCR</link>.
+			ModeShape and use JCR</link>.
 		</para>
 	</sect1>
 </chapter>

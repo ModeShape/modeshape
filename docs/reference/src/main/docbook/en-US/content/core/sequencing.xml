@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -34,8 +34,8 @@
 		Many repositories are used (at least in part) to manage files and other artifacts, including 
 		service definitions, policy files, images, media, documents, presentations, application components, 
 		reusable libraries, configuration files, application installations, databases schemas, management scripts, and so on.
-		Unlocking the information buried within	all of those files is what JBoss DNA sequencing is all about.  
-		As files are loaded into the repository, you JBoss DNA instance can automatically sequence these files to extract 
+		Unlocking the information buried within	all of those files is what ModeShape sequencing is all about.  
+		As files are loaded into the repository, you ModeShape instance can automatically sequence these files to extract 
 		from their content meaningful information that can be stored in the repository, where it can then be 
 		searched, accessed, and analyzed using the JCR API.
 	</para>
@@ -43,9 +43,9 @@
     <title>Sequencers</title>
 		<para>
 			Sequencers are just POJOs that implement a specific interface, and their job is to process a stream of
-			data (supplied by JBoss DNA) to extract meaningful content that usually takes the form of a structured graph.  
+			data (supplied by ModeShape) to extract meaningful content that usually takes the form of a structured graph.  
 			Exactly what content is up to each sequencer
-			implementation.  For example, JBoss DNA comes with an <link linkend="image-sequencer">image sequencer</link>
+			implementation.  For example, ModeShape comes with an <link linkend="image-sequencer">image sequencer</link>
 			that extracts the simple metadata from different kinds of image files (e.g., JPEG, GIF, PNG, etc.).
 			Another example is the <link linkend="cnd-sequencer">Compact Node Definition (CND) sequencer</link> 
 			that processes the CND files to extract and produce a structured representation of the node type definitions,
@@ -53,14 +53,14 @@
 		</para>
 		<para>
 			Sequencers are configured to identify the kinds of nodes that the sequencers can work against.
-			When content in the repository changes, JBoss DNA looks to see which (if any) sequencers might be able
+			When content in the repository changes, ModeShape looks to see which (if any) sequencers might be able
 			to run on the changed content.  If any sequencer configurations do match, those sequencers are run
 			against the content, and the structured graph output of the sequencers is then written back into the repository
 			(at a location dictated by the sequencer configuration).  And once that information is in the repository,
 			it can be easily found and accessed via the standard JCR API.
 		</para>
 		<para>
-			In other words, JBoss DNA uses sequencers to help you extract more meaning from the artifacts you already
+			In other words, ModeShape uses sequencers to help you extract more meaning from the artifacts you already
 			are managing, and makes it much easier for applications to find and use all that valuable information.
 			All without your applications doing anything extra.
 		</para> 
@@ -98,7 +98,7 @@ public interface &StreamSequencer; {
 			for implementations to call.
 	    Two methods set the property values on a node, while the other sets references to other nodes in the repository.
 			Use these methods to describe the properties of the nodes you want to create, using relative paths for the nodes and
-	    valid JCR property names for properties and references.  JBoss DNA will ensure that nodes are created or updated
+	    valid JCR property names for properties and references.  ModeShape will ensure that nodes are created or updated
 	    whenever they're needed.
 		</para>
 	  <programlisting>
@@ -138,7 +138,7 @@ public interface &SequencerOutput; {
 		</programlisting>
 		<note>
     	<para>
-				JBoss DNA will create nodes of type <code>nt:unstructured</code> unless you specify the value for the
+				ModeShape will create nodes of type <code>nt:unstructured</code> unless you specify the value for the
       	<code>jcr:primaryType</code> property.  You can also specify the values for the <code>jcr:mixinTypes</code> property
       	if you want to add mixins to any node.
 			</para>
@@ -260,7 +260,7 @@ public interface &SequencerOutput; {
   <sect1 id="sequencer-library">
     <title>Out-of-the-box Sequencers</title>
     <para>
-    	A number of sequencers are already available in JBoss DNA, and are outlined in detail
+    	A number of sequencers are already available in ModeShape, and are outlined in detail
       <link linkend="provied-sequencers-part">later in the document</link>.
 			Note that we do want to build <ulink url="https://jira.jboss.org/jira/secure/IssueNavigator.jspa?reset=true&amp;mode=hide&amp;pid=12310520&amp;sorter/order=DESC&amp;sorter/field=priority&amp;resolution=-1&amp;component=12311441">more sequencers</ulink>
 			in the upcoming releases.
@@ -268,8 +268,8 @@ public interface &SequencerOutput; {
   </sect1>
   <sect1 id="custom-sequencers">
 	  <title>Creating Custom Sequencers</title>
-	  <para>The current release of JBoss DNA comes with eleven sequencers.  However, it's very easy to create your own
-	  sequencers and to then configure JBoss DNA to use them in your own application.
+	  <para>The current release of ModeShape comes with eleven sequencers.  However, it's very easy to create your own
+	  sequencers and to then configure ModeShape to use them in your own application.
 	  </para>
 	  <para>
 	  Creating a custom sequencer involves the following steps:
@@ -282,11 +282,11 @@ public interface &SequencerOutput; {
 	      the functionality and expected behavior;</para>
 	    </listitem>
 	    <listitem>
-	      <para>Add the sequencer configuration to the JBoss DNA &SequencingService; in your application
+	      <para>Add the sequencer configuration to the ModeShape &SequencingService; in your application
 	      as described in the <link linkend="using_dna">previous chapter</link>; and</para>
 	    </listitem>
 	    <listitem>
-	      <para>Deploy the JAR file with your implementation (as well as any dependencies), and make them available to JBoss DNA
+	      <para>Deploy the JAR file with your implementation (as well as any dependencies), and make them available to ModeShape
 	      in your application.</para>
 	    </listitem>
 	  </orderedlist>
@@ -299,7 +299,7 @@ public interface &SequencerOutput; {
 	    using Maven for your project will save you a lot of time and effort.  Of course, you don't have to use Maven 2, but then you'll
 	    have to get the required libraries and manage the compiling and building process yourself.</para>
 	    <note>
-	      <para>JBoss DNA may provide in the future a Maven archetype for creating sequencer projects.  If you'd find this useful
+	      <para>ModeShape may provide in the future a Maven archetype for creating sequencer projects.  If you'd find this useful
 	        and would like to help create it, please <link linkend="preface">join the community</link>.
 				</para>
 		    <para>In lieu of a Maven archetype, you may find it easier to start with a small existing sequencer project.
@@ -312,7 +312,7 @@ public interface &SequencerOutput; {
 	    Once you've done that, just add the dependencies in your project's <code>pom.xml</code> dependencies section:</para>
 	  	<programlisting role="XML"><![CDATA[
 <dependency>
-  <groupId>org.jboss.dna</groupId>
+  <groupId>org.modeshape</groupId>
   <artifactId>dna-graph</artifactId>
   <version>0.7</version>
 </dependency>
@@ -321,16 +321,16 @@ public interface &SequencerOutput; {
 	  		other dependencies that your sequencer needs.</para>
 	  	<para>As for testing, you probably will want to add more dependencies, such as those listed here:</para>
 			<programlisting role="XML"><![CDATA[
-<!-- DNA-related unit testing utilities and classes -->
+<!-- ModeShape-related unit testing utilities and classes -->
 <dependency>
-  <groupId>org.jboss.dna</groupId>
+  <groupId>org.modeshape</groupId>
   <artifactId>dna-graph</artifactId>
   <version>0.7</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
 <dependency>
-  <groupId>org.jboss.dna</groupId>
+  <groupId>org.modeshape</groupId>
   <artifactId>dna-common</artifactId>
   <version>0.7</version>
   <type>test-jar</type>
@@ -362,13 +362,13 @@ public interface &SequencerOutput; {
   <version>1.2.14</version>
   <scope>test</scope>
 </dependency>	 ]]></programlisting>
-	  	<para>Testing JBoss DNA sequencers does not require a JCR repository or the JBoss DNA services.  (For more detail,
+	  	<para>Testing ModeShape sequencers does not require a JCR repository or the ModeShape services.  (For more detail,
 	  		see the <link linkend="testing_custom_sequencers">testing section</link>.)  However, if you want to do
-	  		integration testing with a JCR repository and the JBoss DNA services, you'll need additional dependencies for these libraries.</para>
+	  		integration testing with a JCR repository and the ModeShape services, you'll need additional dependencies for these libraries.</para>
 			<programlisting role="XML"><![CDATA[
-<!-- JBoss DNA JCR Repository -->
+<!-- ModeShape JCR Repository -->
 <dependency>
-  <groupId>org.jboss.dna</groupId>
+  <groupId>org.modeshape</groupId>
   <artifactId>dna-jcr</artifactId>
   <version>0.7</version>
   <scope>test</scope>
@@ -461,15 +461,15 @@ public class &ImageMetadataSequencer; implements &StreamSequencer; {
 	    <title>Testing custom sequencers</title>
 	    <para>The sequencing framework was designed to make testing sequencers much easier.  In particular, the
 	    &StreamSequencer; interface does not make use of the JCR API.  So instead of requiring a fully-configured
-	    JCR repository and JBoss DNA system, unit tests for a sequencer can focus on testing that the content is
+	    JCR repository and ModeShape system, unit tests for a sequencer can focus on testing that the content is
 	    processed correctly and the desired output graph is generated.</para>
 	    <note>
 	      <para>For a complete example of a sequencer unit test, see the <code>ImageMetadataSequencerTest</code> unit test
-	      in the <code>org.jboss.dna.sequencer.images</code> package of the <code>dna-sequencers-image</code> project.
+	      in the <code>org.modeshape.sequencer.images</code> package of the <code>dna-sequencers-image</code> project.
 	      </para>
 	    </note>
 	    <para>The following code fragment shows one way of testing a sequencer, using JUnit 4.4 assertions and 
-	      some of the classes made available by JBoss DNA.  Of course,
+	      some of the classes made available by ModeShape.  Of course,
 	      this example code does not do any error handling and does not make all the assertions a real test would.</para>
 	    <programlisting>
 &StreamSequencer; sequencer = new &ImageMetadataSequencer;();
@@ -508,8 +508,8 @@ try {
 	    especially if a lot of output data is produced.  
 	    </para>
 	    <para>It may also be useful to create some integration tests
-	    that <link linkend="using_dna">configure JBoss DNA</link> to use a custom sequencer, and to then upload
-	    content using the JCR API, verifying that the custom sequencer did run.  However, remember that JBoss DNA
+	    that <link linkend="using_dna">configure ModeShape</link> to use a custom sequencer, and to then upload
+	    content using the JCR API, verifying that the custom sequencer did run.  However, remember that ModeShape
 	    runs sequencers asynchronously in the background, and you must synchronize your tests to ensure that the
 	    sequencers have a chance to run before checking the results.
 	    </para>  
@@ -518,11 +518,11 @@ try {
 	<sect1>
 		<title>Summary</title>
 		<para>
-			In this chapter, we described how JBoss DNA sequences files as they're uploaded into a repository.  We've also learned 
-			in previous chapters about the JBoss DNA <link linkend="execution-context">execution contexts</link>, 
+			In this chapter, we described how ModeShape sequences files as they're uploaded into a repository.  We've also learned 
+			in previous chapters about the ModeShape <link linkend="execution-context">execution contexts</link>, 
 			<link linkend="graph-model">graph model</link>, and <link linkend="connector-framework">connectors</link>.
 			In the <link linkend="jcr-part">next part</link> we'll put all these pieces together to learn how
-			to set up a JBoss DNA repository and access it using the JCR API.
+			to set up a ModeShape repository and access it using the JCR API.
 		</para>
 	</sect1>
 </chapter>

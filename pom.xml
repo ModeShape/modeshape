@@ -1,22 +1,22 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.jboss.dna</groupId>
-	<artifactId>dna</artifactId>
-	<version>1.0.0.Beta1-SNAPSHOT</version>
+	<groupId>org.modeshape</groupId>
+	<artifactId>modeshape</artifactId>
+	<version>0.9-SNAPSHOT</version>
 	<packaging>pom</packaging>
-	<name>JBoss DNA</name>
-	<url>http://www.jboss.org/dna</url>
+	<name>ModeShape</name>
+	<url>http://www.modeshape.org</url>
 	<inceptionYear>2008</inceptionYear>
 	<description>
-		JBoss DNA is a JCR repository implementation with support for federation and sequencing.
+		ModeShape is a JCR repository implementation with support for federation and sequencing.
 	</description>
 	<scm>
-		<connection>scm:svn:https://anonsvn.jboss.org/repos/dna/trunk</connection>
-    <developerConnection>scm:svn:https://svn.jboss.org/repos/dna/trunk</developerConnection>   
+		<connection>scm:svn:https://anonsvn.jboss.org/repos/modeshape/trunk</connection>
+    <developerConnection>scm:svn:https://svn.jboss.org/repos/modeshape/trunk</developerConnection>   
 	</scm>
   <issueManagement>
     <system>jira</system>
-    <url>http://jira.jboss.org/jira/browse/DNA</url>
+    <url>http://jira.jboss.org/jira/browse/MODE</url>
   </issueManagement>
 	<licenses>
 		<license>
@@ -117,36 +117,36 @@
 		</contributor>
 	</contributors>
 	<modules>
-		<module>dna-common</module>
-		<module>dna-graph</module>
-		<module>dna-repository</module>
-		<module>dna-cnd</module>
-		<module>extensions/dna-search-lucene</module>
-		<module>dna-jcr</module>
-		<module>extensions/dna-classloader-maven</module>
-		<module>extensions/dna-sequencer-images</module>
-		<module>extensions/dna-sequencer-mp3</module>
-		<module>extensions/dna-sequencer-jbpm-jpdl</module>
-		<!--module>extensions/dna-sequencer-esbMessage</module-->
-		<module>extensions/dna-sequencer-cnd</module>
-		<module>extensions/dna-sequencer-java</module>
-		<module>extensions/dna-sequencer-classfile</module>
-		<module>extensions/dna-sequencer-msoffice</module>
-		<module>extensions/dna-sequencer-text</module>
-		<module>extensions/dna-sequencer-xml</module>
-		<module>extensions/dna-sequencer-zip</module>
-		<module>extensions/dna-sequencer-ddl</module>
-		<module>extensions/dna-connector-filesystem</module>
-		<module>extensions/dna-connector-infinispan</module>
-		<module>extensions/dna-connector-jbosscache</module>
-		<module>extensions/dna-connector-svn</module>
-		<module>extensions/dna-connector-store-jpa</module>
-		<module>extensions/dna-connector-jdbc-metadata</module> 
-		<module>extensions/dna-mimetype-detector-aperture</module>
-		<module>web/dna-web-jcr-rest</module> 
-		<module>web/dna-web-jcr-rest-client</module> 
-		<module>web/dna-web-jcr-rest-war</module> 
-		<module>utils/dna-jpa-ddl-gen</module> 
+		<module>modeshape-common</module>
+		<module>modeshape-graph</module>
+		<module>modeshape-repository</module>
+		<module>modeshape-cnd</module>
+		<module>extensions/modeshape-search-lucene</module>
+		<module>modeshape-jcr</module>
+		<module>extensions/modeshape-classloader-maven</module>
+		<module>extensions/modeshape-sequencer-images</module>
+		<module>extensions/modeshape-sequencer-mp3</module>
+		<module>extensions/modeshape-sequencer-jbpm-jpdl</module>
+		<!--module>sandbox/modeshape-sequencer-esb-message</module-->
+		<module>extensions/modeshape-sequencer-cnd</module>
+		<module>extensions/modeshape-sequencer-java</module>
+		<module>extensions/modeshape-sequencer-classfile</module>
+		<module>extensions/modeshape-sequencer-msoffice</module>
+		<module>extensions/modeshape-sequencer-text</module>
+		<module>extensions/modeshape-sequencer-xml</module>
+		<module>extensions/modeshape-sequencer-zip</module>
+		<module>extensions/modeshape-sequencer-ddl</module>
+		<module>extensions/modeshape-connector-filesystem</module>
+		<module>extensions/modeshape-connector-infinispan</module>
+		<module>extensions/modeshape-connector-jbosscache</module>
+		<module>extensions/modeshape-connector-svn</module>
+		<module>extensions/modeshape-connector-store-jpa</module>
+		<module>extensions/modeshape-connector-jdbc-metadata</module> 
+		<module>extensions/modeshape-mimetype-detector-aperture</module>
+		<module>web/modeshape-web-jcr-rest</module> 
+		<module>web/modeshape-web-jcr-rest-client</module> 
+		<module>web/modeshape-web-jcr-rest-war</module> 
+		<module>utils/modeshape-jpa-ddl-gen</module> 
 	</modules>
 	<properties>
 		<!-- Instruct the build to use only UTF-8 encoding for source code -->
@@ -154,7 +154,7 @@
 		<!-- These are properties used in the database profiles. Must initialize them to be empty so that Maven applies
 		     them via filtering to the resources. If a project needs files filtered, however, make sure to include
 		     a 'testResources' fragment in the 'build' section of the child project POM to say which files need to be filtered.
-		     See the "dna-integration" or "extensions/dna-connector-store-jpa" project POMs for examples. -->
+		     See the "modeshape-integration" or "extensions/modeshape-connector-store-jpa" project POMs for examples. -->
 		<jpaSource.dialect />
 		<jpaSource.driverClassName />
 		<jpaSource.url />
@@ -179,14 +179,14 @@
 		<jpaSource.retryLimit>3</jpaSource.retryLimit>
 		<jpaSource.rootNodeUuid />
 		<jpaSource.showSql>false</jpaSource.showSql>
-    <metadata.collectorClassName>org.jboss.dna.connector.meta.jdbc.JdbcMetadataCollector</metadata.collectorClassName>
+    <metadata.collectorClassName>org.modeshape.connector.meta.jdbc.JdbcMetadataCollector</metadata.collectorClassName>
 	</properties>
 
 	<profiles>
 		<profile>
 			<id>release</id>
 			<modules>
-				<module>dna-integration-tests</module>
+				<module>modeshape-integration-tests</module>
 				<module>docs</module>
         <module>docs/examples/gettingstarted</module>
 			</modules>
@@ -194,14 +194,14 @@
 		<profile>
 			<id>integration</id>
 			<modules>
-				<module>dna-integration-tests</module>
+				<module>modeshape-integration-tests</module>
         <module>docs/examples/gettingstarted</module>
 			</modules>
 		</profile>
 		<profile>
 			<id>jcr-tck</id>
 			<modules>
-				<module>dna-jcr-tck</module>
+				<module>modeshape-jcr-tck</module>
 			</modules>
 		</profile>
 		<profile>
@@ -227,7 +227,7 @@
 		        <configuration>
 		          <aggregate>true</aggregate>
 				  <show>public</show>
-				  <title>JBoss DNA ${project.version}</title>
+				  <title>ModeShape ${project.version}</title>
 		        </configuration>
 		      </plugin>
 		    </plugins>
@@ -254,7 +254,7 @@
 	            </executions>
 	            <configuration>
 								<finalName>
-									jboss-dna-${project.version}
+									modeshape-${project.version}
 								</finalName>
 			          <descriptors>
 									<descriptor>
@@ -330,13 +330,13 @@
 			          </additionalparam>
 			          <encoding>UTF-8</encoding>
 			          <locale>en_US</locale>
-			          <excludePackageNames>${project.groupId}.test*:org.jboss.example.dna*</excludePackageNames>
+			          <excludePackageNames>${project.groupId}.test*:org.modeshape.example*</excludePackageNames>
 			        </configuration>
 			      </plugin>
 	        </plugins>
 	      </build>
 	      <modules>
-					<module>dna-integration-tests</module>
+					<module>modeshape-integration-tests</module>
 	        <module>docs</module>
 	        <module>docs/examples/gettingstarted</module>
 	      </modules>
@@ -348,7 +348,7 @@
 			        <configuration>
 			          <aggregate>true</aggregate>
 							  <show>public</show>
-							  <title>JBoss DNA ${project.version}</title>
+							  <title>ModeShape ${project.version}</title>
 			        </configuration>
 			      </plugin>
 			    </plugins>
@@ -382,7 +382,7 @@
 		        <database>hsqldb</database>
             <jpaSource.dialect>org.hibernate.dialect.HSQLDialect</jpaSource.dialect>
             <jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:hsqldb:mem:dna</jpaSource.url>
+            <jpaSource.url>jdbc:hsqldb:mem:modeshape</jpaSource.url>
             <jpaSource.username>sa</jpaSource.username>
             <jpaSource.password />
           </properties>
@@ -409,7 +409,7 @@
 		        <database>hsqldb</database>
             <jpaSource.dialect>org.hibernate.dialect.HSQLDialect</jpaSource.dialect>
             <jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:hsqldb:mem:dna</jpaSource.url>
+            <jpaSource.url>jdbc:hsqldb:mem:modeshape</jpaSource.url>
             <jpaSource.username>sa</jpaSource.username>
             <jpaSource.password />
           </properties>
@@ -437,7 +437,7 @@
 		        <database>h2</database>
             <jpaSource.dialect>org.hibernate.dialect.H2Dialect</jpaSource.dialect>
             <jpaSource.driverClassName>org.h2.Driver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:h2:mem:target/test/db/h2/dna</jpaSource.url>
+            <jpaSource.url>jdbc:h2:mem:target/test/db/h2/modeshape</jpaSource.url>
             <jpaSource.username>sa</jpaSource.username>
             <jpaSource.password />
           </properties>
@@ -497,9 +497,9 @@
 		        <database>mysql5</database>
             <jpaSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</jpaSource.dialect>
             <jpaSource.driverClassName>com.mysql.jdbc.Driver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:mysql://vmg02.mw.lab.eng.bos.redhat.com/jbossdna</jpaSource.url>
-            <jpaSource.username>jbossdna</jpaSource.username>
-            <jpaSource.password>jbossdna</jpaSource.password>
+            <jpaSource.url>jdbc:mysql://vmg02.mw.lab.eng.bos.redhat.com/modeshape</jpaSource.url>
+            <jpaSource.username>modeshape</jpaSource.username>
+            <jpaSource.password>modeshape</jpaSource.password>
           </properties>
       </profile>
 
@@ -524,9 +524,9 @@
 		        <database>postgresql8</database>
             <jpaSource.dialect>org.hibernate.dialect.PostgreSQLDialect</jpaSource.dialect>
             <jpaSource.driverClassName>org.postgresql.Driver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:postgresql://vmg03.mw.lab.eng.bos.redhat.com:5432:jbossdna</jpaSource.url>
-            <jpaSource.username>jbossdna</jpaSource.username>
-            <jpaSource.password>jbossdna</jpaSource.password>
+            <jpaSource.url>jdbc:postgresql://vmg03.mw.lab.eng.bos.redhat.com:5432:modeshape</jpaSource.url>
+            <jpaSource.username>modeshape</jpaSource.username>
+            <jpaSource.password>modeshape</jpaSource.password>
           </properties>
       </profile>
 
@@ -563,8 +563,8 @@
             <jpaSource.dialect>org.hibernate.dialect.DB2Dialect</jpaSource.dialect>
             <jpaSource.driverClassName>com.ibm.db2.jcc.DB2Driver</jpaSource.driverClassName>
             <jpaSource.url>jdbc:db2://vmg06.mw.lab.eng.bos.redhat.com:50000/jbossqa</jpaSource.url>
-            <jpaSource.username>jbossdna</jpaSource.username>
-            <jpaSource.password>jbossdna</jpaSource.password>
+            <jpaSource.username>modeshape</jpaSource.username>
+            <jpaSource.password>modeshape</jpaSource.password>
           </properties>
       </profile>
 
@@ -591,8 +591,8 @@
             <jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
             <jpaSource.driverClassName>oracle.jdbc.driver.OracleDriver</jpaSource.driverClassName>
             <jpaSource.url>jdbc:oracle:thin:@vmg05.mw.lab.eng.bos.redhat.com:1521:QAORA10</jpaSource.url>
-            <jpaSource.username>jbossdna</jpaSource.username>
-            <jpaSource.password>jbossdna</jpaSource.password>
+            <jpaSource.username>modeshape</jpaSource.username>
+            <jpaSource.password>modeshape</jpaSource.password>
           </properties>
       </profile>
 
@@ -618,8 +618,8 @@
             <jpaSource.dialect>org.hibernate.dialect.Oracle10gDialect</jpaSource.dialect>
             <jpaSource.driverClassName>oracle.jdbc.driver.OracleDriver</jpaSource.driverClassName>
             <jpaSource.url>jdbc:oracle:thin:@dev04.qa.atl2.redhat.com:1521:qaora11</jpaSource.url>
-            <jpaSource.username>jbossdna</jpaSource.username>
-            <jpaSource.password>jbossdna</jpaSource.password>
+            <jpaSource.username>modeshape</jpaSource.username>
+            <jpaSource.password>modeshape</jpaSource.password>
           </properties>
       </profile>
 
@@ -644,9 +644,9 @@
 		        <database>sybase15</database>
             <jpaSource.dialect>org.hibernate.dialect.SybaseDialect</jpaSource.dialect>
             <jpaSource.driverClassName>com.sybase.jdbc3.jdbc.SybDriver</jpaSource.driverClassName>
-            <jpaSource.url>jdbc:sybase:Tds:vmg07.mw.lab.eng.bos.redhat.com:5000/jbossdna</jpaSource.url>
-            <jpaSource.username>jbossdna</jpaSource.username>
-            <jpaSource.password>jbossdna</jpaSource.password>
+            <jpaSource.url>jdbc:sybase:Tds:vmg07.mw.lab.eng.bos.redhat.com:5000/modeshape</jpaSource.url>
+            <jpaSource.username>modeshape</jpaSource.username>
+            <jpaSource.password>modeshape</jpaSource.password>
           </properties>
       </profile>
 
@@ -670,12 +670,12 @@
           </dependencies>
           <properties>
 		        <database>mssql2008</database>
-		        <metadata.collectorClassName>org.jboss.dna.connector.meta.jdbc.SqlServerMetadataCollector</metadata.collectorClassName>
+		        <metadata.collectorClassName>org.modeshape.connector.meta.jdbc.SqlServerMetadataCollector</metadata.collectorClassName>
             <jpaSource.dialect>org.hibernate.dialect.SQLServerDialect</jpaSource.dialect>
             <jpaSource.driverClassName>com.microsoft.sqlserver.jdbc.SQLServerDriver</jpaSource.driverClassName>
             <jpaSource.url>jdbc:sqlserver://vmg04.mw.lab.eng.bos.redhat.com</jpaSource.url>
-            <jpaSource.username>jbossdna</jpaSource.username>
-            <jpaSource.password>jbossdna</jpaSource.password>
+            <jpaSource.username>modeshape</jpaSource.username>
+            <jpaSource.password>modeshape</jpaSource.password>
           </properties>
       </profile>
 
@@ -746,7 +746,7 @@
 				</configuration>
 			</plugin>
 			
-			<!-- DNA-600 Bug - version 2.7 has a bug -->
+			<!-- ModeShape-600 Bug - version 2.7 has a bug -->
 			<plugin>
 		      <groupId>org.apache.maven.plugins</groupId>
 		      <artifactId>maven-eclipse-plugin</artifactId>
@@ -792,122 +792,131 @@
 	-->
 	<dependencyManagement>
 		<dependencies>
-			<!-- DNA subprojects -->
+			<!-- ModeShape subprojects -->
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-common</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-common</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-classloader-maven</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-classloader-maven</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-graph</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-graph</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-cnd</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-cnd</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-search-lucene</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-search-lucene</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-repository</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-repository</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-jcr</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-jcr</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-jcr-tck</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-jcr-tck</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-connector-jbosscache</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-connector-jbosscache</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-connector-store-jpa</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-connector-store-jpa</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-connector-filesystem</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-connector-filesystem</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-connector-svn</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-connector-svn</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-mimetype-detector-aperture</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-mimetype-detector-aperture</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-sequencer-cnd</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-sequencer-cnd</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-sequencer-images</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-sequencer-images</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-sequencer-java</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-sequencer-java</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-sequencer-mp3</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-sequencer-mp3</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-sequencer-msoffice</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-sequencer-msoffice</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-sequencer-xml</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-sequencer-xml</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-sequencer-zip</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-sequencer-zip</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-web-jcr-rest</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-web-jcr-rest</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-web-jcr-rest-client</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-web-jcr-rest-client</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jboss.dna</groupId>
-				<artifactId>dna-web-jcr-rest-war</artifactId>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-web-jcr-rest-war</artifactId>
 				<version>${project.version}</version>
 			</dependency>
+			<!--
+			   Collections
+			-->
+	    <dependency>
+         <groupId>com.google.collections</groupId>
+         <artifactId>google-collections</artifactId>
+	      <version>1.0-rc3</version>
+				<scope>compile</scope>
+	    </dependency>
 			<!-- 
 		    Time and Date
 		    -->
@@ -915,6 +924,7 @@
 				<groupId>joda-time</groupId>
 				<artifactId>joda-time</artifactId>
 				<version>1.4</version>
+				<scope>compile</scope>
 			</dependency>
 			<!-- Testing (note the scope) -->
 			<dependency>
@@ -971,11 +981,6 @@
 		    <!-- 
 		      Apache JCR API unit tests (for any JCR implementation), which is a subset of the official TCK
 		    -->
-	    <dependency>
-         <groupId>com.google.collections</groupId>
-         <artifactId>google-collections</artifactId>
-	      <version>1.0-rc3</version>
-	    </dependency>
 	    <dependency>
 				<groupId>org.apache.jackrabbit</groupId>
 				<artifactId>jackrabbit-jcr-tests</artifactId>

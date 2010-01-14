@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -172,7 +172,7 @@
 						An advanced property that dictates the type of storage schema that is used.  Currently, the only supported values are "Basic" and "Simple".  
 						The Basic model supports a read-only mode (q.v., the "updatesAllowed" property) and database-level
 						enforcement of referential integrity (q.v., the "referentialIntegrityEnforced" property above), but does not fully support all JCR functions.
-						As a result, the Simple model is now the default model, but DNA repositories that were created under the Basic model will continue to use
+						As a result, the Simple model is now the default model, but ModeShape repositories that were created under the Basic model will continue to use
 						the "Basic" model regardless of the value of this property.  Repositories can be converted from the Basic model to the Simple model by exporting
 						them to an XML file as a system view through the JCR interface and then importing them into a new repository created with the model property set
 						to "Simple".
@@ -277,10 +277,10 @@ config.repositorySource("JPA Store")
 	
   <programlisting role="XML"><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<configuration xmlns:dna="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
     Define the sources for the content.  These sources are directly accessible using the 
-    DNA-specific Graph API.  In fact, this is how the DNA JCR implementation works.  You 
+    ModeShape-specific Graph API.  In fact, this is how the ModeShape JCR implementation works.  You 
     can think of these as being similar to JDBC DataSource objects, except that they expose 
     graph content via the Graph API instead of records via SQL or JDBC. 
     -->
@@ -290,7 +290,7 @@ config.repositorySource("JPA Store")
         others could be created, too).
         -->
         <dna:source jcr:name="JPA Store" 
-                    dna:classname="org.jboss.dna.graph.connector.store.jpa.JpaSource"
+                    dna:classname="org.modeshape.graph.connector.store.jpa.JpaSource"
                     dna:description="The database store for our content"
                     dna:dialect="org.hibernate.dialect.MySQLDialect"
                     dna:dataSourceJndiName="java:/MyDataSource"
@@ -309,7 +309,7 @@ config.repositorySource("JPA Store")
 JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml");
  ]]></programlisting>
 	<para>
-	DNA users who prefer not to give DDL privileges to the DNA database user for this connector can use the DNA JPA DDL generation 
+	ModeShape users who prefer not to give DDL privileges to the ModeShape database user for this connector can use the ModeShape JPA DDL generation 
 	tool to create the proper DDL files for their database dialect.  This tool is packaged as an executable jar in the 
 	utils/dna-jpa-ddl-gen subproject and can be executed with the following syntax:
 	</para>
@@ -434,7 +434,7 @@ java -jar &lt;jar_name> -dialect &lt;dialect name&gt; -model &lt;model_name&gt; 
 					<para>
 						Nodes - the nodes in the repository, where each node and its properties are represented by a single record. This approach makes it
 		 				possible to efficiently work with nodes containing large numbers of children, where adding and removing child nodes is largely
-		 				independent of the number of children. Since the primary consumer of DNA graph information is the JCR layer, and the JCR layer always
+		 				independent of the number of children. Since the primary consumer of ModeShape graph information is the JCR layer, and the JCR layer always
 		 				retrieves the nodes' properties for retrieved nodes, the properties have been moved in-row with the nodes.  Properties are still store
 		 				in an opaque, serialized (and optionally compressed) form. 
 					</para>

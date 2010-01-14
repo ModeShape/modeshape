@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -30,25 +30,25 @@
 ]>
 <preface id="preface" revision="1">
   <title>What this book covers</title>
-  <para>The goal of this book is to help you learn about JBoss DNA and how you can use it in your own applications to get the
+  <para>The goal of this book is to help you learn about ModeShape and how you can use it in your own applications to get the
     most out of your JCR repositories.</para>
   <para>The first part of the book starts out with an introduction to content repositories and an overview of the JCR API,
-    both of which are important aspects of JBoss DNA. This is followed by an overview of the JBoss DNA project, its
+    both of which are important aspects of ModeShape. This is followed by an overview of the ModeShape project, its
     architecture, and a basic roadmap for what's coming next.</para>
-  <para>The next part of the book covers how to download and build the examples, how to use JBoss DNA with existing
+  <para>The next part of the book covers how to download and build the examples, how to use ModeShape with existing
     repositories, and how to build and use custom sequencers.</para>
   <para>
-    If you have any questions or comments, please feel free to contact JBoss DNA's
+    If you have any questions or comments, please feel free to contact ModeShape's
     <ulink url="mailto:dna-users@jboss.org">user mailing list</ulink>,
     use the
     <ulink url="http://community.jboss.org/community/dna">user forums</ulink>,
-    or chat with the developers in the <ulink url="http://www.jboss.org/dna/chat.html">IRC chat room</ulink>
+    or chat with the developers in the <ulink url="http://www.modeshape.org/chat.html">IRC chat room</ulink>
     . If you'd like to get involved on the project, join the
-    <ulink url="http://www.jboss.org/dna/mailinglists.html">mailing lists</ulink>
+    <ulink url="http://www.modeshape.org/mailinglists.html">mailing lists</ulink>
     ,
-    <ulink url="http://www.jboss.org/dna/sourcecode.html">download the code</ulink>
+    <ulink url="http://www.modeshape.org/sourcecode.html">download the code</ulink>
     and get it building, and visit our
-    <ulink url="http://jira.jboss.org/jira/browse/DNA">JIRA issue management system</ulink>
+    <ulink url="http://jira.jboss.org/jira/browse/ModeShape">JIRA issue management system</ulink>
     . If there's something in particular you're interested in, talk with the community - there may be others interested in the
     same thing.
   </para>

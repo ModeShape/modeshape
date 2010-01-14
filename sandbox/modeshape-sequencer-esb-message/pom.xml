@@ -1,0 +1,35 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>modeshape</artifactId>
+    <groupId>org.modeshape</groupId>
+    <version>0.5-SNAPSHOT</version>
+    <relativePath>../..</relativePath>
+  </parent>
+  <!-- The groupId and version values are inherited from parent -->
+  <artifactId>modeshape-sequencer-esbMessage</artifactId>
+  <packaging>jar</packaging>
+  <name>ModeShape ESB Message Sequencer</name>
+  <description>ModeShape Sequencer that processes ESB Message</description>
+  <url>http://www.modeshape.org</url>
+  <dependencies>
+    <dependency>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-graph</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit-dep</artifactId>
+      <version>4.4</version>
+    </dependency>
+    <dependency>
+      <groupId>jbossesb-rosetta.jar</groupId>
+      <artifactId>jbossesb-rosetta-dep</artifactId>
+      <version>4.3</version>
+    </dependency>
+  </dependencies>
+</project>

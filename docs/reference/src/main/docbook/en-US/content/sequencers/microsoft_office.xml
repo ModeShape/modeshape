@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -31,7 +31,7 @@
 <chapter id="msoffice-sequencer">
   <title><trademark class='registered'>Microsoft Office</trademark> Document Sequencer</title>
    <para>
-   	This sequencer is included in JBoss DNA and processes Microsoft Office documents, including Word documents, Excel spreadsheets,
+   	This sequencer is included in ModeShape and processes Microsoft Office documents, including Word documents, Excel spreadsheets,
 	and PowerPoint presentations.  With documents, the sequencer attempts to infer the internal structure from the heading styles.
 	With presentations, the sequencer extracts the slides, titles, text and slide thumbnails.
 	With spreadsheets, the sequencer extracts the names of the sheets.  And, the sequencer extracts for all the files the
@@ -46,7 +46,7 @@
 JcrConfiguration config = ...
 
 config.sequencer("Microsoft Office Document Sequencer")
-      .usingClass("org.jboss.dna.sequencer.msoffice.MSOfficeMetadataSequencer")
+      .usingClass("org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer")
       .loadedFromClasspath()
       .setDescription("Sequences MS Office documents, including spreadsheets and presentations")
       .sequencingFrom("//(*.(*.(doc|docx|ppt|pps|xls)[*])/jcr:content[@jcr:data]")

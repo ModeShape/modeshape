@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -31,7 +31,7 @@
 <chapter id="testing">
   <title>Testing</title>
   <para>
-  	The JBoss DNA project uses automated testing to verify that the software is doing what it's supposed to
+  	The ModeShape project uses automated testing to verify that the software is doing what it's supposed to
 		and not doing what it shouldn't do.  These automated tests are run continuously and also act as regression tests,
 		ensuring that we know if any problems we find and fix reappear later.  All of our tests are executed as part of
 		our <link linkend="maven">Maven</link> build process, and the entire build process (including the tests)
@@ -54,7 +54,7 @@
 			This means that they are executed against the raw .class files created during compilation.
 		</para>
 		<para>
-			Developers are expected to run all of the JBoss DNA unit tests in their local environment before committing changes to SVN.
+			Developers are expected to run all of the ModeShape unit tests in their local environment before committing changes to SVN.
 			So, if you're a developer and you've made changes to your local copy of the source, you can run those tests that are
 			related to your changes using your IDE or with Maven (or any other mechanism).  But before you commit your changes, 
 			you are expected to run a full Maven build using <code>mvn clean install</code> (in the "trunk/" directory).
@@ -90,7 +90,7 @@
   <sect1 id="writing-tests">
     <title>Writing tests</title>
 		<para>
-			As mentioned in <link linkend="methodology">the introduction</link>, the JBoss DNA project doesn't follow any one methodology
+			As mentioned in <link linkend="methodology">the introduction</link>, the ModeShape project doesn't follow any one methodology
 			or process.  Instead, we simply have a goal that as much code as possible is tested to ensure it behaves as expected.
 			Do we expect 100% of the code is covered by automated tests?  No, but we do want to test as much as we can.
 			Maybe a simple JavaBean class doesn't need many tests, but any class with non-trivial logic should be tested.
@@ -111,7 +111,7 @@
 			all the requirements you can think of, go back and start implementing the test methods.
 		</para>
 		<para>
-			If you look at the existing test cases, you'll find that the names of the unit and integration tests in JBoss DNA 
+			If you look at the existing test cases, you'll find that the names of the unit and integration tests in ModeShape 
 			follow a naming style, where the test method names are readable sentences.  Actually, we try to name the test methods
 			<emphasis>and</emphasis> the test classes such that they form a concisely-worded requirement.  For example,
 		</para>
@@ -138,18 +138,18 @@
 			behavior.
 	  </para>
 	  <para>
-		  JBoss DNA has implemented almost all of the JCR Level 1 and Level 2 features, along with the optional locking and observation
+		  ModeShape has implemented almost all of the JCR Level 1 and Level 2 features, along with the optional locking and observation
 		  features. The only optional feature not implemented is versioning, and that will be coming soon.
 		</para>
 		<para>
-			The JBoss DNA project also frequently runs the JCR TCK unit tests from the reference implementation.  (Those these tests are not
+			The ModeShape project also frequently runs the JCR TCK unit tests from the reference implementation.  (Those these tests are not
 			the official TCK, they apparently are used within the official TCK.)  These unit tests are set up in the
 			<code>dna-jcr-tck</code> project.
 		</para>
 		<para>
 		  The 0.7 release passes 96% of the JCR TCK tests, and all of the failures are because of a handful of known issues.
 		  Fortunately, most of these are either less-frequently-used features of JCR or issues that can be worked around.
-		  The JBoss DNA project plans to focus on resolving all the remaining JCR TCK failures, and will publish the results.
+		  The ModeShape project plans to focus on resolving all the remaining JCR TCK failures, and will publish the results.
 		</para>
   </sect1>
 </chapter>

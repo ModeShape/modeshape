@@ -3,29 +3,29 @@
 /.metadata
 /target
 
-/dna-common/.settings
-/dna-common/target
+/modeshape-common/.settings
+/modeshape-common/target
 
-/dna-graph/.settings
-/dna-graph/target
+/modeshape-graph/.settings
+/modeshape-graph/target
 
-/dna-cnd/.settings
-/dna-cnd/target
+/modeshape-cnd/.settings
+/modeshape-cnd/target
 
-/dna-integration-tests/.settings
-/dna-integration-tests/target
+/modeshape-integration-tests/.settings
+/modeshape-integration-tests/target
 
-/dna-search/.settings
-/dna-search/target
+/modeshape-search/.settings
+/modeshape-search/target
 
-/dna-jcr/.settings
-/dna-jcr/target
+/modeshape-jcr/.settings
+/modeshape-jcr/target
 
-/dna-jcr-tck/.settings
-/dna-jcr-tck/target
+/modeshape-jcr-tck/.settings
+/modeshape-jcr-tck/target
 
-/dna-repository/.settings
-/dna-repository/target
+/modeshape-repository/.settings
+/modeshape-repository/target
 
 /docs/target
 /docs/examples/gettingstarted/repositories/target
@@ -34,39 +34,39 @@
 /docs/presentations/*.key
 /docs/reference/target
 
-/extensions/dna-web-jcr-rest/target/
-/extensions/dna-web-jcr-rest-war/target/
+/extensions/modeshape-web-jcr-rest/target/
+/extensions/modeshape-web-jcr-rest-war/target/
 
-/web/dna-web-jcr-rest/target/
-/web/dna-web-jcr-rest-war/target/
-/web/dna-web-jcr-rest-client/target/
+/web/modeshape-web-jcr-rest/target/
+/web/modeshape-web-jcr-rest-war/target/
+/web/modeshape-web-jcr-rest-client/target/
 
-/utils/dna-jpa-ddl-gen/target/
+/utils/modeshape-jpa-ddl-gen/target/
 
-/extensions/dna-search-lucene/target
-/extensions/dna-classloader-maven/target
-/extensions/dna-common-jdbc/target
-/extensions/dna-connector-federation/target
-/extensions/dna-connector-filesystem/target
-/extensions/dna-connector-inmemory/target
-/extensions/dna-connector-jbosscache/target
-/extensions/dna-connector-infinispan/target
-/extensions/dna-connector-jdbc-metadata/target
-/extensions/dna-connector-store-jpa/target
-/extensions/dna-connector-svn/target
-/extensions/dna-mimetype-detector-aperture/.settings
-/extensions/dna-mimetype-detector-aperture/target
-/extensions/dna-sequencer-classfile/target
-/extensions/dna-sequencer-cnd/target
-/extensions/dna-sequencer-ddl/target
-/extensions/dna-sequencer-esbMessage/target
-/extensions/dna-sequencer-images/target
-/extensions/dna-sequencer-java/target
-/extensions/dna-sequencer-jbpm-jpdl/target
-/extensions/dna-sequencer-mp3/target
-/extensions/dna-sequencer-msoffice/target
-/extensions/dna-sequencer-text/target
-/extensions/dna-sequencer-xml/target
-/extensions/dna-sequencer-zip/target
+/extensions/modeshape-search-lucene/target
+/extensions/modeshape-classloader-maven/target
+/extensions/modeshape-common-jdbc/target
+/extensions/modeshape-connector-federation/target
+/extensions/modeshape-connector-filesystem/target
+/extensions/modeshape-connector-inmemory/target
+/extensions/modeshape-connector-jbosscache/target
+/extensions/modeshape-connector-infinispan/target
+/extensions/modeshape-connector-jdbc-metadata/target
+/extensions/modeshape-connector-store-jpa/target
+/extensions/modeshape-connector-svn/target
+/extensions/modeshape-mimetype-detector-aperture/.settings
+/extensions/modeshape-mimetype-detector-aperture/target
+/extensions/modeshape-sequencer-classfile/target
+/extensions/modeshape-sequencer-cnd/target
+/extensions/modeshape-sequencer-ddl/target
+/extensions/modeshape-sequencer-esbMessage/target
+/extensions/modeshape-sequencer-images/target
+/extensions/modeshape-sequencer-java/target
+/extensions/modeshape-sequencer-jbpm-jpdl/target
+/extensions/modeshape-sequencer-mp3/target
+/extensions/modeshape-sequencer-msoffice/target
+/extensions/modeshape-sequencer-text/target
+/extensions/modeshape-sequencer-xml/target
+/extensions/modeshape-sequencer-zip/target
 
-/tools/org.jboss.dna.eclipse.jcr.rest.client/bin
+/tools/org.modeshape.eclipse.jcr.rest.client/bin

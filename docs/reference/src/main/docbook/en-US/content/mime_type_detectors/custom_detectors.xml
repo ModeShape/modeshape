@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -45,7 +45,7 @@
 	      as described <link linkend="detectors">earlier</link>; and</para>
 	    </listitem>
 	    <listitem>
-	      <para>Deploy the JAR file with your implementation (as well as any dependencies), and make them available to JBoss DNA
+	      <para>Deploy the JAR file with your implementation (as well as any dependencies), and make them available to ModeShape
 	      in your application.</para>
 	    </listitem>
 	  </itemizedlist>
@@ -56,7 +56,7 @@
 	    using Maven for your project will save you a lot of time and effort.  Of course, you don't have to use Maven 2, but then you'll
 	    have to get the required libraries and manage the compiling and building process yourself.</para>
 	    <note>
-	      <para>JBoss DNA may provide in the future a Maven archetype for creating detector projects.  If you'd find this useful
+	      <para>ModeShape may provide in the future a Maven archetype for creating detector projects.  If you'd find this useful
 	        and would like to help create it, please <link linkend="preface">join the community</link>.</para>
 	    </note>
 			<note>
@@ -71,12 +71,12 @@
 	    <para>You can create your Maven project any way you'd like.  For examples, see the <ulink url="http://maven.apache.org/guides/getting-started/index.html#How_do_I_make_my_first_Maven_project">Maven 2 documentation</ulink>.  
 	    Once you've done that, just add the dependencies in your project's <code>pom.xml</code> dependencies section:</para>
 	  	<programlisting role="XML"><![CDATA[<dependency>
-  <groupId>org.jboss.dna</groupId>
+  <groupId>org.modeshape</groupId>
   <artifactId>dna-common</artifactId>
   <version>0.1</version>
 </dependency>
 <dependency>
-  <groupId>org.jboss.dna</groupId>
+  <groupId>org.modeshape</groupId>
   <artifactId>dna-graph</artifactId>
   <version>0.1</version>
 </dependency>

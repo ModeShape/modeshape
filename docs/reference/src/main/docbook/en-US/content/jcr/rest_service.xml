@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -29,10 +29,10 @@
 %CustomDTD;
 ]>
 <chapter id="rest_service">
-  <title>The JBoss DNA RESTful Web Service</title>
+  <title>The ModeShape RESTful Web Service</title>
   <para>
-		JBoss DNA now provides a RESTful interface to its JCR implementation that allows HTTP-based 
-		access and updating of content.  Although the initial version of this REST server only supports the JBoss DNA
+		ModeShape now provides a RESTful interface to its JCR implementation that allows HTTP-based 
+		access and updating of content.  Although the initial version of this REST server only supports the ModeShape
 		JCR implementation, it has been designed to make integration with other JCR implementors easy.  This
 		chapter describes how to configure and deploy the REST server. 
   </para>
@@ -45,7 +45,7 @@
 			change accordingly.  Currently, only JSON-encoded responses are provided.
 		</para>
 				<table frame='all'>
-			<title>Supported URIs for the JBoss DNA REST Server</title>
+			<title>Supported URIs for the ModeShape REST Server</title>
 			<tgroup cols='3' align='left' colsep='1' rowsep='1'>
 	      <colspec colname='URI' colwidth="3*"/>
 	      <colspec colname='methods' colwidth="1*"/>
@@ -102,7 +102,7 @@ GET http://www.example.com/resources
 		The actual response wouldn't be pretty-printed like the example, but the format would be the same.  The name
 		of the repository ("dna:repository" URL-encoded) is mapped to a repository object that contains a name
 		(the redundant "dna:repository") and a list of available resources within the repository and their respective
-		URIs.  Note that JBoss DNA supports deploying multiple JCR repositories side-by-side on the same server,
+		URIs.  Note that ModeShape supports deploying multiple JCR repositories side-by-side on the same server,
 		so this response could easily contain multiple repositories in a real deployment.  
 	</para>
 	<para>		
@@ -227,7 +227,7 @@ PUT http://www.example.com/resources/dna%3arepository/default/items/newNode
 		<note>
 			<para>
 			The PUT method doesn't currently support adding or removing mixin types.  This will be corrected in the future.
-			A <ulink url="https://jira.jboss.org/jira/browse/DNA-447">JIRA issue</ulink> has been created to help 
+			A <ulink url="https://jira.jboss.org/jira/browse/ModeShape-447">JIRA issue</ulink> has been created to help 
 			track this issue.
 			</para>
 		</note>
@@ -266,10 +266,10 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		</sect2>
 	</sect1>
 	<sect1 id="dna_rest_server_configuration">
-		<title>Configuring the DNA REST Server</title>
+		<title>Configuring the ModeShape REST Server</title>
 		<para>
-			The DNA REST server is deployed as a WAR and configured mostly through its web configuration file (web.xml).  
-			Here is an example web configuration that is used for integration testing of the DNA REST server along with
+			The ModeShape REST server is deployed as a WAR and configured mostly through its web configuration file (web.xml).  
+			Here is an example web configuration that is used for integration testing of the ModeShape REST server along with
 			an explanation of its parts.
 		</para>
 <programlisting role="XML"><![CDATA[
@@ -277,7 +277,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 <!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
                          "http://java.sun.com/dtd/web-app_2_3.dtd">
 <web-app>
-  <display-name>JBoss DNA JCR RESTful Interface</display-name>
+  <display-name>ModeShape JCR RESTful Interface</display-name>
 ]]></programlisting>			 
 		<para>
 		This first section is largely boilerplate and should look familiar to anyone who has deployed a servlet-based
@@ -290,21 +290,21 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
   <!--
     This parameter provides the fully-qualified name of a class that implements
     the o.j.d.web.jcr.rest.spi.RepositoryProvider interface.  It is required
-    by the DnaJcrDeployer that controls the lifecycle for the DNA REST server.
+    by the DnaJcrDeployer that controls the lifecycle for the ModeShape REST server.
   -->
   <context-param>
-    <param-name>org.jboss.dna.web.jcr.rest.REPOSITORY_PROVIDER</param-name>
-    <param-value>org.jboss.dna.web.jcr.rest.spi.DnaJcrRepositoryProvider</param-value>
+    <param-name>org.modeshape.web.jcr.rest.REPOSITORY_PROVIDER</param-name>
+    <param-value>org.modeshape.web.jcr.rest.spi.DnaJcrRepositoryProvider</param-value>
   </context-param>
 ]]></programlisting>			 
 		<para>
 		As noted above, this parameter informs the &DnaJcrDeployer; of the specific repository provider in use.
-		Unless you are using the JBoss DNA REST server to connect to a different JCR implementation, this should
+		Unless you are using the ModeShape REST server to connect to a different JCR implementation, this should
 		never change.
 		</para>
 
 		<para>
-			Next we configure the DNA &JcrEngine; itself.
+			Next we configure the ModeShape &JcrEngine; itself.
 		</para>
 <programlisting role="XML"><![CDATA[
   <!--
@@ -314,7 +314,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
     directory.
   -->
   <context-param>
-    <param-name>org.jboss.dna.web.jcr.rest.CONFIG_FILE</param-name>
+    <param-name>org.modeshape.web.jcr.rest.CONFIG_FILE</param-name>
     <param-value>/configRepository.xml</param-value>
   </context-param>
 ]]></programlisting>			 
@@ -337,7 +337,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
   -->
   <context-param>
     <param-name>javax.ws.rs.Application</param-name>
-    <param-value>org.jboss.dna.web.jcr.rest.JcrApplication</param-value>
+    <param-value>org.modeshape.web.jcr.rest.JcrApplication</param-value>
   </context-param>
 
   <!-- Required parameter for RESTEasy - should not be modified -->
@@ -345,9 +345,9 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
     <listener-class>org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap</listener-class>
   </listener>
 
-  <!-- Required parameter for JBoss DNA REST - should not be modified -->
+  <!-- Required parameter for ModeShape REST - should not be modified -->
   <listener>
-    <listener-class>org.jboss.dna.web.jcr.rest.DnaJcrDeployer</listener-class>
+    <listener-class>org.modeshape.web.jcr.rest.DnaJcrDeployer</listener-class>
   </listener>
 
   <!-- Required parameter for RESTEasy - should not be modified -->
@@ -356,7 +356,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
     <servlet-class>org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher</servlet-class>
   </servlet>
 
-  <!-- Required parameter for JBoss DNA REST - should not be modified -->
+  <!-- Required parameter for ModeShape REST - should not be modified -->
   <servlet-mapping>
     <servlet-name>Resteasy</servlet-name>
     <url-pattern>/*</url-pattern>
@@ -372,14 +372,14 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		</para>
 <programlisting role="XML"><![CDATA[
   <!-- 
-    The JBoss DNA REST implementation leverages the HTTP credentials to for authentication and authorization
+    The ModeShape REST implementation leverages the HTTP credentials to for authentication and authorization
     within the JCR repository.  It makes no sense to try to log into the JCR repository without credentials,
     so this constraint helps lock down the repository.
 		
     This should generally not be modified. 
   -->
   <security-constraint>
-    <display-name>DNA REST</display-name>
+    <display-name>ModeShape REST</display-name>
     <web-resource-collection>
       <web-resource-name>RestEasy</web-resource-name>
       <url-pattern>/*</url-pattern>
@@ -395,7 +395,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
   </security-constraint>
 
   <!--  
-    Any auth-method will work for JBoss DNA.  BASIC is used this example for simplicity.
+    Any auth-method will work for ModeShape.  BASIC is used this example for simplicity.
   -->
   <login-config>
     <auth-method>BASIC</auth-method>
@@ -412,22 +412,22 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 ]]></programlisting>			 
 		<para>
 		As noted above, the REST server will not function properly unless security is configured.  All authorization
-		methods supported by the Servlet specification are supported by JBoss DNA and can be used interchangeable, as
+		methods supported by the Servlet specification are supported by ModeShape and can be used interchangeable, as
 		long as authenticated users have the connect role listed above. 
 		</para>	
 		
 	</sect1>
 	<sect1 id="dna_rest_server_deployment">
-		<title>Deploying the DNA REST Server</title>
+		<title>Deploying the ModeShape REST Server</title>
 		<para>
-			Deploying the DNA REST server only requires three steps: <link linkend="dna_rest_server_configuration">
+			Deploying the ModeShape REST server only requires three steps: <link linkend="dna_rest_server_configuration">
 			preparing the web configuration</link>, configuring the users and their roles in your web container 
 			(outside the scope of this document), and assembling the WAR.  This section describes the requirements 
 			for assembling the WAR.
 	  </para>
 	  <para>
 	  		If you are using Maven to build your projects, the WAR can be built from a POM.  Here is a portion of the 
-	  		POM used to build the JBoss DNA REST Server integration subproject.
+	  		POM used to build the ModeShape REST Server integration subproject.
 		</para>
 <programlisting role='XML'><![CDATA[
 <project xmlns="http://maven.apache.org/POM/4.0.0" 
@@ -436,18 +436,18 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<artifactId>dna</artifactId>
-		<groupId>org.jboss.dna</groupId>
+		<groupId>org.modeshape</groupId>
 		<version>0.7</version>
 		<relativePath>../..</relativePath>
 	</parent>
 	<artifactId>dna-web-jcr-rest-war</artifactId>
 	<packaging>war</packaging>
-	<name>JBoss DNA JCR REST Servlet</name>
-	<description>JBoss DNA servlet that provides RESTful access to JCR items</description>
-	<url>http://labs.jboss.org/dna</url>
+	<name>ModeShape JCR REST Servlet</name>
+	<description>ModeShape servlet that provides RESTful access to JCR items</description>
+	<url>http://www.modeshape.org</url>
 	<dependencies>
 		<dependency>
-			<groupId>org.jboss.dna</groupId>
+			<groupId>org.modeshape</groupId>
 			<artifactId>dna-web-jcr-rest</artifactId>
 			<version>0.7</version>
 		</dependency>
@@ -526,7 +526,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 </programlisting>	  	
 	  	If you are using sequencers or any connectors other than the in-memory or federated connector, you will also have
 	  	to add the JARs for those dependencies into the <code>WEB-INF/lib</code> directory as well.  You will also have to 
-	  	change the version numbers on the JARs to reflect the current version of JBoss DNA. 
+	  	change the version numbers on the JARs to reflect the current version of ModeShape. 
 	  </para>
 	  <para>
 	  	This WAR can be deployed into your servlet container.
@@ -535,7 +535,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	<sect1 id="jcr_rest_spi">
 		<title>Repository Providers</title>
 		<para>
-			The JBoss DNA REST server can also be used as an interface to to other JCR repositories by creating
+			The ModeShape REST server can also be used as an interface to to other JCR repositories by creating
 			an implementation of the &RepositoryProvider; interface that connects to the other repository.			
 		</para>
 		<para>
@@ -545,7 +545,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 			required configuration parameters from the web configuration (web.xml) and initialize the repository.
 		</para>
 		<para> 
-			As an example, here's the DNA JCR provider implementation of this method with exception handling omitted for brevity.
+			As an example, here's the ModeShape JCR provider implementation of this method with exception handling omitted for brevity.
 <programlisting><![CDATA[
 public void startup( ServletContext context ) {
     String configFile = context.getInitParameter(CONFIG_FILE);
@@ -567,7 +567,7 @@ public Set<String> getJcrRepositoryNames() {
     return new HashSet<String>(jcrEngine.getRepositoryNames());
 }
 ]]></programlisting> 
-			The JBoss DNA JCR repository does support multiple repositories on the same server.  Other JCR implementations
+			The ModeShape JCR repository does support multiple repositories on the same server.  Other JCR implementations
 			that don't support multiple repositories are free to return a singleton set containing any string from this method.
 		</para>
 		<para>
@@ -595,33 +595,33 @@ public Session getSession( HttpServletRequest request,
 	</sect1>
 
     <sect1 id="dna_rest_client_api">
-        <title>DNA REST Client API</title>
+        <title>ModeShape REST Client API</title>
         <para>
-            The DNA REST Client API provides a POJO way of using the DNA REST web service to publish (upload) and 
-            unpublish (delete) files from DNA repositories. Java objects open the HTTP connection, create the HTTP request URLs, 
+            The ModeShape REST Client API provides a POJO way of using the ModeShape REST web service to publish (upload) and 
+            unpublish (delete) files from ModeShape repositories. Java objects open the HTTP connection, create the HTTP request URLs, 
             attach the payload associated with <code>PUT</code> and <code>POST</code> requests, parse the HTTP JSON response back 
             into Java objects, and close the HTTP connection.
         </para>
         <para>
-            Here are the Java business objects you will need (all found in the <code>org.jboss.dna.web.jcr.rest.client.domain</code> 
+            Here are the Java business objects you will need (all found in the <code>org.modeshape.web.jcr.rest.client.domain</code> 
             package):
 
             <itemizedlist>
                 <listitem>
-                    <para><code>Server</code> - hosts one or more DNA JCR repositories,</para>
+                    <para><code>Server</code> - hosts one or more ModeShape JCR repositories,</para>
                 </listitem>
                 <listitem>
-                    <para><code>Repository</code> - a DNA JCR repository containing one or more workspaces, and</para>
+                    <para><code>Repository</code> - a ModeShape JCR repository containing one or more workspaces, and</para>
                 </listitem>
                 <listitem>
-                    <para><code>Workspace</code> - a DNA JCR repository workspace.</para>
+                    <para><code>Workspace</code> - a ModeShape JCR repository workspace.</para>
                 </listitem>
             </itemizedlist>
         </para>
         <para>
-            Along with the POJOs above, an <code>org.jboss.dna.web.jcr.rest.client.IRestClient</code> is needed. The 
+            Along with the POJOs above, an <code>org.modeshape.web.jcr.rest.client.IRestClient</code> is needed. The 
             <code>IRestClient</code> is responsible for executing the publishing and unpublishing operations. You can also use the
-            <code>IRestClient</code> to find out what repositories and workspaces are available on a DNA server.
+            <code>IRestClient</code> to find out what repositories and workspaces are available on a ModeShape server.
 
             <note>
                 <para>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -37,9 +37,9 @@
 	  also defines a SQL-like query language, but supporting it is optional.
   </para>
 	<para>
-		JBoss DNA now supports this query feature, including the required XPath language and two other languages not
+		ModeShape now supports this query feature, including the required XPath language and two other languages not
 		defined in the <ulink url="&JSR170;">JCR 1.0</ulink> specification. This chapter describes how your applications can use queries to search
-		your repositories, and defines the three query languages that are available with JBoss DNA.
+		your repositories, and defines the three query languages that are available with ModeShape.
 	</para>
   <sect1 id="jcr-query-api">	
     <title>JCR Query API</title>
@@ -109,7 +109,7 @@ session.logout();
 		</para>
 		<note>
 			<para>
-				As an aside, JBoss DNA actually implements XPath queries by transforming them into the equivalent JCR-SQL2 representation.
+				As an aside, ModeShape actually implements XPath queries by transforming them into the equivalent JCR-SQL2 representation.
 				And the JCR-SQL2 language, although often more verbose, is much more capable of representing complex queries with multiple combinations
 				of type, property, and path constraints.
 			</para>
@@ -119,13 +119,13 @@ session.logout();
 			<para>
 				JCR 1.0 specifies that support is required only for returning column values based upon single-valued, non-residual
 				properties that are declared on or inherited by the node types specified in the type constraint.
-				JBoss DNA follows this requirement, and does not specifying residual properties. However, JBoss DNA does allow
+				ModeShape follows this requirement, and does not specifying residual properties. However, ModeShape does allow
 				multi-valued properties to be specified as result columns.
-				And as per the specification, JBoss DNA always returns the "<code>jcr:path</code>" and "<code>jcr:score</code>"
+				And as per the specification, ModeShape always returns the "<code>jcr:path</code>" and "<code>jcr:score</code>"
 				pseudo-columns.
 			</para>
 			<para>
-				JBoss DNA uses the last location step with an attribute axis to specify the properties that are to be returned
+				ModeShape uses the last location step with an attribute axis to specify the properties that are to be returned
 				as result columns. Multiple properties are specified with a union. 
 				For example, the following table shows several XPath queries and how they map to JCR-SQL2 queries.
 			</para>
@@ -176,8 +176,8 @@ session.logout();
 				'X' will be satisfied by nodes explicitly declared to be of type 'X' or of subtypes of 'X'.
 			</para>
 			<para>
-				JBoss DNA does support using the <code>element</code> test to test against primary or mixin type.
-				JBoss DNA also only supports using an <code>element</code> test on the last location step.
+				ModeShape does support using the <code>element</code> test to test against primary or mixin type.
+				ModeShape also only supports using an <code>element</code> test on the last location step.
 				For example, the following table shows several XPath queries and how they map to JCR-SQL2 queries.
 			</para>
 			<table frame='all'>
@@ -221,7 +221,7 @@ WHERE PATH([my:type]) LIKE '/nodes/%'
 				</tgroup>
 			</table>
 			<para>
-				Note that the JCR-SQL2 language supported by JBoss DNA is far more capable of joining
+				Note that the JCR-SQL2 language supported by ModeShape is far more capable of joining
 				multiple sets of nodes with different type, property and path constraints.
 			</para>
 		</sect2>
@@ -232,7 +232,7 @@ WHERE PATH([my:type]) LIKE '/nodes/%'
 				predicate tests on any other location steps are optional.
 			</para>
 			<para>
-				JBoss DNA does support using attribute tests on the last location step to specify
+				ModeShape does support using attribute tests on the last location step to specify
 				property constraints, as well as supporting axis and filter predicates on other location steps.
 				For example, the following table shows several XPath queries and how they map to JCR-SQL2 queries.
 			</para>
@@ -310,7 +310,7 @@ WHERE nodeSet2.id IS NOT NULLL</programlisting></entry>
 				on the location steps in an XPath query.
 			</para>
 			<para>
-				JBoss DNA does support the four kinds of path constraints.
+				ModeShape does support the four kinds of path constraints.
 				For example, the following table shows several XPath queries and how they map to JCR-SQL2 queries.
 			</para>
 			<table frame='all'>
@@ -368,7 +368,7 @@ WHERE PATH([my:type]) = '/a/b/%'</programlisting></entry>
 				</tgroup>
 			</table>
 			<para>
-				Note that the JCR-SQL2 language supported by JBoss DNA is capable of representing a wider
+				Note that the JCR-SQL2 language supported by ModeShape is capable of representing a wider
 				combination of path constraints.
 			</para>
 		</sect2>
@@ -379,7 +379,7 @@ WHERE PATH([my:type]) = '/a/b/%'</programlisting></entry>
 				natural ordering of the values of one or more properties on the nodes.
 			</para>
 			<para>
-				JBoss DNA does support zero or more ordering specifiers, including whether each specifier
+				ModeShape does support zero or more ordering specifiers, including whether each specifier
 				is ascending or descending. If no ordering specifiers are defined, the ordering of the results
 				is not predefined and may vary (though ordering by score is often the approach).
 				For example, the following table shows several XPath queries and how they map to JCR-SQL2 queries.
@@ -413,7 +413,7 @@ ORDER BY nodeSet1.title,
 				</tgroup>
 			</table>
 			<para>
-				Note that the JCR-SQL2 language supported by JBoss DNA has a far richer <code>ORDER BY</code> clause,
+				Note that the JCR-SQL2 language supported by ModeShape has a far richer <code>ORDER BY</code> clause,
 				allowing the use of any kind of dynamic operand, including ordering upon arithmetic operations
 				of multiple dynamic operands.
 			</para>
@@ -477,7 +477,7 @@ ORDER BY nodeSet1.title,
 		  queries using strings that are similar to SQL. Support for the language is optional, and in fact this language
 		  was deprecated in the <ulink url="&JSR283;">JCR 2.0 specification</ulink> in favor of the improved and more powerful 
 		  (and more SQL-like) <link linkend="jcr-sql2-query-language">JCR-SQL2</link> language, which is covered in the next section.
-		  As such, <emphasis role="strong">JBoss DNA does not support the original JCR-SQL language</emphasis>.
+		  As such, <emphasis role="strong">ModeShape does not support the original JCR-SQL language</emphasis>.
 		</para>
 	</sect1>
   <sect1 id="jcr-sql2-query-language">	
@@ -488,8 +488,8 @@ ORDER BY nodeSet1.title,
 		  which has been deprecated in JCR 2.0 (see previous section).
 		</para>
 		<para>
-		  JBoss DNA includes full support for the complete JCR-SQL2 query language. 
-		  However, JBoss DNA adds several extensions to make it even more powerful:
+		  ModeShape includes full support for the complete JCR-SQL2 query language. 
+		  However, ModeShape adds several extensions to make it even more powerful:
       <itemizedlist>
         <listitem>
 	        <para>
@@ -763,7 +763,7 @@ fullTextSearchExpression ::= FulltextSearch
 
 ]]></programlisting>
 			<para> where <code>FulltextSearch</code> is defined by the following, and is the same as the
-			  <link linkend='fulltext-search-expressions'>full-text search language</link> supported by JBoss DNA:
+			  <link linkend='fulltext-search-expressions'>full-text search language</link> supported by ModeShape:
 			</para>
 <programlisting><![CDATA[
 
@@ -951,7 +951,7 @@ offset ::= /* Non-negative integer value */
 	  <para>
 		  There are times when a formal structured query language is overkill, and the easiest way to find the right content
 		  is to perform a search, like you would with a search engine such as Google or Yahoo! 
-		  This is where JBoss DNA's <emphasis role="strong">full-text search language</emphasis> comes in, because it allows
+		  This is where ModeShape's <emphasis role="strong">full-text search language</emphasis> comes in, because it allows
 		  you to use the JCR query API but with a far simpler, Google-style search grammar.
 		</para>
 		<para>
@@ -963,7 +963,7 @@ offset ::= /* Non-negative integer value */
 		<para>
 			This language allows a JCR client to construct a query to find nodes with property values that match
 			the supplied terms. Nodes that "best" match the terms are returned before nodes that have a lesser match.
-			Of course, JBoss DNA uses a complex system to analyze the node content and the query terms, and may perform
+			Of course, ModeShape uses a complex system to analyze the node content and the query terms, and may perform
 			a number of optimizations, such as (but not limited to) eliminating stop words (e.g., "the", "a", "and", etc.), treating terms
 			independent of case, and converting words to base forms using a process called <emphasis>stemming</emphasis> (e.g., "running"
 			into "run", "customers" into "customer").

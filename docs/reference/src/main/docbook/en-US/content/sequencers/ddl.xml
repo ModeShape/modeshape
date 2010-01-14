@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -31,7 +31,7 @@
 <chapter id="ddl-file-sequencer">
   <title>DDL File Sequencer</title>
     <para>
-        The DDL file sequencer included in JBoss DNA is capable of parsing the more important DDL statements from SQL-92,
+        The DDL file sequencer included in ModeShape is capable of parsing the more important DDL statements from SQL-92,
 				Oracle, Derby, and PostgreSQL, and constructing a graph structure containing a structured representation of these statements.
 				The resulting graph structure is largely the same for all dialects, though some dialects have non-standard additions
 				to their grammar, and thus require dialect-specific additions to the graph structure.
@@ -141,7 +141,7 @@ CREATE SCHEMA hollywood
 JcrConfiguration config = ...
 
 config.sequencer("DDL Sequencer")
-      .usingClass("org.jboss.dna.sequencer.ddl.DdlSequencer")
+      .usingClass("org.modeshape.sequencer.ddl.DdlSequencer")
       .loadedFromClasspath()
       .setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values")
       .sequencingFrom("//(*.(ddl)[*])/jcr:content[@jcr:data]")

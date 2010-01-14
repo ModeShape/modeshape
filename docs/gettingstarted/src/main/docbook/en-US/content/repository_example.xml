@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -38,7 +38,7 @@
 	</para>
 	<sect1 id="running_repository_example">
 		<title>Running the repository example</title>
-		<para>The repository example consists of a client application that sets up three DNA repositories (named "Cars", "Airplanes", and "UFOs") and 
+		<para>The repository example consists of a client application that sets up three ModeShape repositories (named "Cars", "Airplanes", and "UFOs") and 
 			a federated repository ("Vehicles") that dynamically federates the information from the other three repositories.
 			The client application allows you to interactively navigate each of these repositories just as you would navigate the
 			directory structure on a file system.</para>
@@ -89,7 +89,7 @@
 			</table>
 			<note>
 				<para>
-					The first time you access any repository, the application is automatically logging you in to DNA's JAAS-based security
+					The first time you access any repository, the application is automatically logging you in to ModeShape's JAAS-based security
 					system.  To make the application easier to use, it always logs in with the "jsmith" as the username and "secret" as the
 					password.  This matches what is configured in the "jaas.conf.xml" and "users.properties" files.  If you want to confirm
 					that the security feature is working, change the password in target/dna-example-repositories-basic.dir/users.properties to
@@ -109,19 +109,19 @@
 				and the "Configuration" content under <code>/dna:system</code>.
 			</para>
 			<para>Try using the client to walk the different repositories.  And while this is a contrived application, it does demonstrate
-				the use of JBoss DNA to federate repositories and provide access through JCR.</para>
+				the use of ModeShape to federate repositories and provide access through JCR.</para>
   </sect1>
 	<sect1 id="connectors">
-		<title>JBoss DNA connectors</title>
-		<para>As mentioned in the <link linkend="introduction">Introduction</link>, one of the capabilities of JBoss DNA is to provide access through 
+		<title>ModeShape connectors</title>
+		<para>As mentioned in the <link linkend="introduction">Introduction</link>, one of the capabilities of ModeShape is to provide access through 
 			<ulink url="http://www.jcp.org/en/jsr/detail?id=170">JCR</ulink> to different kinds of repositories and storage systems.
-			Your applications work with the JCR API, but through JBoss DNA you're able to accesses the content from where the information
-			exists - not just a single purpose-built repository.  This is fundamentally what makes JBoss DNA different.</para>
-		<para>How does JBoss DNA do this?  At the heart of JBoss DNA and it's JCR implementation is a simple connector
-			system that is designed around creating and accessing graphs.  The JBoss DNA JCR implementation actually just sits on
+			Your applications work with the JCR API, but through ModeShape you're able to accesses the content from where the information
+			exists - not just a single purpose-built repository.  This is fundamentally what makes ModeShape different.</para>
+		<para>How does ModeShape do this?  At the heart of ModeShape and it's JCR implementation is a simple connector
+			system that is designed around creating and accessing graphs.  The ModeShape JCR implementation actually just sits on
 			top of a single repository source, which it uses to access of the repositories content.
 			<figure id="dnajcr-and-connector">
-				<title>JBoss DNA's JCR implementation delegates to a repository connector</title>
+				<title>ModeShape's JCR implementation delegates to a repository connector</title>
 				<graphic align="center" scale="100" fileref="dnajcr-and-connector.png"/>
 			</figure>
 			That single repository connector could access:
@@ -154,14 +154,14 @@
 		</itemizedlist>
 		<para>
 			<figure id="dna-connectors">
-				<title>JBoss DNA can put JCR on top of multiple kinds of systems</title>
+				<title>ModeShape can put JCR on top of multiple kinds of systems</title>
 				<graphic align="center" scale="100" fileref="dna-connectors.png"/>
 			</figure>
-	  	And the JBoss DNA project has plans to create other connectors, too.  For instance, we're going to build a connector 
+	  	And the ModeShape project has plans to create other connectors, too.  For instance, we're going to build a connector 
 	    to other JCR repositories.  And another to access existing databases so that some or all of the existing data (in whatever structure)
 	    can be accessed through JCR.  Of course, if we don't have a connector to suit your needs, you can write your own.
 			<figure id="dna-connectors-future">
-				<title>Future JBoss DNA connectors</title>
+				<title>Future ModeShape connectors</title>
 				<graphic align="center" scale="100" fileref="dna-connectors-future.png"/>
 			</figure>
 		</para>
@@ -171,9 +171,9 @@
 			  are already mechanisms to do that?</para>
 		  <para>Maybe putting JCR on top of a single system (like a JDBC database) isn't that interesting. What
 			  <emphasis>is</emphasis> interesting, though, is accessing the information in multiple systems <emphasis>as if all that information were
-			  in a single JCR repository</emphasis>.  That's what the federated repository source is all about.  The JBoss DNA connector
+			  in a single JCR repository</emphasis>.  That's what the federated repository source is all about.  The ModeShape connector
 				system just makes it possible to interact with all these systems in the same way.</para>
-			<para>Think of it this way: with JBoss DNA, you can use JCR to get to the schemas of multiple relational databases <emphasis>and</emphasis> the schemas
+			<para>Think of it this way: with ModeShape, you can use JCR to get to the schemas of multiple relational databases <emphasis>and</emphasis> the schemas
 			  defined by DDL files in your SVN repository <emphasis>and</emphasis> the schemas defined by logical models stored on your file system.
 			</para>
 		</note>
@@ -185,18 +185,18 @@
 					contains implementations of several interfaces (described below).  A Java developer <emphasis>writes</emphasis>
 					a connector to a type of source, such as a particular database management system, LDAP directory, source code
 					management system, etc.  It is then packaged into one or more JAR files (including dependent JARs) and deployed
-					for use in applications that use JBoss DNA repositories.
+					for use in applications that use ModeShape repositories.
 				</para>
 			</listitem>
 			<listitem>
 				<para>
 					The description of a particular source system (e.g., the "Customer" database, or the company LDAP system) 
-					is called a <emphasis role="strong">repository source</emphasis>.  JBoss DNA defines a &RepositorySource; interface
+					is called a <emphasis role="strong">repository source</emphasis>.  ModeShape defines a &RepositorySource; interface
 					that defines methods describing the behavior and supported features and a method for establishing connections.
 					A connector will have a class that implements this interface and that has JavaBean properties for
 					all of the connector-specific properties required to fully describe an instance of the system.  Use of JavaBean
 					properties is not required, but it is highly recommended, as it enables reflective configuration and administration.
-					Applications that use JBoss DNA create an instance of the connector's &RepositorySource; implementation and set 
+					Applications that use ModeShape create an instance of the connector's &RepositorySource; implementation and set 
 					the properties for the external source that the application wants to access with that connector.
 				</para>
 			</listitem>
@@ -215,7 +215,7 @@
 				</para>
 			</listitem>
 		</itemizedlist>
-		<para>As an example, consider that we want JBoss DNA to give us access through JCR to the schema information contained in a
+		<para>As an example, consider that we want ModeShape to give us access through JCR to the schema information contained in a
 			relational database.  We first have to develop a connector that allows us to interact with relational databases using JDBC.
 			That connector would contain a &JdbcMetadataSource; Java class that implements &RepositorySource;,
 			and that has all of the various JavaBean properties for setting the name of the driver class, URL, username, password,
@@ -225,9 +225,9 @@
 		<note>
 			<para>
 				Of course, before you develop a connector, you should probably check the
-				<ulink url="http://docs.jboss.org/jbossdna/latest/manuals/reference/html/provied-connectors-part.html">list of connectors</ulink> JBoss DNA already provides out of the box.
-				With this latest release, JBoss DNA already includes this JDBC metadata connector!  And we're always interested in new
-				connectors and new contributors, so please consider developing your custom connector as part of JBoss DNA.
+				<ulink url="http://docs.jboss.org/jbossdna/latest/manuals/reference/html/provied-connectors-part.html">list of connectors</ulink> ModeShape already provides out of the box.
+				With this latest release, ModeShape already includes this JDBC metadata connector!  And we're always interested in new
+				connectors and new contributors, so please consider developing your custom connector as part of ModeShape.
 			</para>
 		</note>
 		<para>So with this very high-level summary, let's dive a little deeper and look at the repository example.</para>
@@ -241,7 +241,7 @@
 		<para>
       The example is comprised of 2 classes and 1 interface, located in the <code>src/main/java</code> directory:</para>
     <programlisting><![CDATA[
-  org/jboss/example/dna/repositories/ConsoleInput.java
+  org/modeshape/example/repositories/ConsoleInput.java
                                     /RepositoryClient.java
                                     /UserInterface.java
   ]]></programlisting>
@@ -254,7 +254,7 @@
 			implementation for testing purposes that simulates a user entering data. This allows us to check the behavior of the client 
 			automatically using conventional JUnit test cases, as demonstrated by the code in the <code>src/test/java</code> directory:</para>
     <programlisting><![CDATA[
-  org/jboss/example/dna/sequencers/RepositoryClientTest.java
+  org/modeshape/example/sequencers/RepositoryClientTest.java
                                   /RepositoryClientUsingJcrTest.java
   ]]></programlisting>
 	<para>If we look at the <code>RepositoryClient</code> code, there are a handful of methods that encapsulate the various activities.</para>
@@ -263,7 +263,7 @@
 			the code is more readable and concise.</para>
 	</note>
 	<para>The <code>main(String[] argv)</code> method is of course the method that is executed when the application is run.  This code
-	  creates the JBoss DNA configuration by loading it from a file.
+	  creates the ModeShape configuration by loading it from a file.
 	</para>
 	<programlisting role="JAVA"><![CDATA[
 // Set up the JAAS provider (IDTrust) and a policy file (which defines the "dna-jcr" login config name)
@@ -279,7 +279,7 @@ RepositoryClient client = new RepositoryClient();
 for (String arg : args) {
     arg = arg.trim();
     if (arg.equals("--api=jcr")) client.setApi(Api.JCR);
-    if (arg.equals("--api=dna")) client.setApi(Api.DNA);
+    if (arg.equals("--api=dna")) client.setApi(Api.ModeShape);
     if (arg.equals("--jaas")) client.setJaasContextName(JAAS_LOGIN_CONTEXT_NAME);
     if (arg.startsWith("--jaas=") && arg.length() > 7) client.setJaasContextName(arg.substring(7).trim());
 }
@@ -336,7 +336,7 @@ public void startRepositories() throws IOException, SAXException {
  ]]></programlisting>
 		<para>
 			This method does a number of different things.  First, it checks to make sure the repositories are not already running; if so
-			the method just returns.  Then, it creates a JBoss DNA <code>JcrConfiguration</code> instance and loads the configuration
+			the method just returns.  Then, it creates a ModeShape <code>JcrConfiguration</code> instance and loads the configuration
 			from a file provided by the user interface.  The method then loads the node types for each of the repositories; this could
 			have been done in the configuration, but it would have made the configuration file larger and more difficult to understand.
 			It then creates the <code>JcrEngine</code> from the configuration and starts it.  Finally, it obtains the location of the
@@ -366,15 +366,15 @@ public void shutdown() throws InterruptedException, LoginException {
 			When needed, the client will authenticate the user (by asking the user interface for a callback handler that will be called
 			when the authentication information is needed).  The resulting authenticated <code>LoginContext</code> is wrapped
 			by a custom <code>javax.jcr.Credentials</code> implementation.  As long as the <code>Credentials</code> implementation
-			has a <code>getLoginContext()</code> method that returns a <code>LoginContext</code> object, JBoss DNA's repository
+			has a <code>getLoginContext()</code> method that returns a <code>LoginContext</code> object, ModeShape's repository
 			implementation will use that context to create the <code>javax.jcr.Session</code>.  (Of course, the <code>javax.jcr.SimpleCredentials</code>
-			can also be used to create a Session, and JBoss DNA will then attempt to use JAAS to authenticate the user given by the credentials.)
+			can also be used to create a Session, and ModeShape will then attempt to use JAAS to authenticate the user given by the credentials.)
 		</para>
 		<para>
 			The <code>getNodeInfo(...)</code> method of the example is what is called when the properties and children of a particular node
 			are requested by the user interface.  (In the console user interface, this happens when the user navigates the graph structure.)
 			There are really two different behaviors to this method, depending upon whether the JCR API is to be used or whether
-			the JBoss DNA Graph API is to be used.  The portion that uses JCR is shown below:
+			the ModeShape Graph API is to be used.  The portion that uses JCR is shown below:
 	   </para>
 		<programlisting role="JAVA"><![CDATA[
 JcrRepository jcrRepository = engine.getRepository(sourceName);
@@ -444,7 +444,7 @@ try {
 			finally logs out of the session.
 		</para>
 		<para>
-			The JBoss DNA Graph API is actually an internal API used within the different components of JBoss DNA
+			The ModeShape Graph API is actually an internal API used within the different components of ModeShape
 			(including the connector and sequencer frameworks),	and provides low-level access to the exact same content.
 			Though we do not recommend using this API in your client applications, if you need to write a connector
 			or sequencer, you may need to know how to use the Graph API.  
@@ -452,11 +452,11 @@ try {
 			shown above:
 		</para>
 		<programlisting role="JAVA"><![CDATA[
-// Use the DNA Graph API to read the properties and children of the node ...
+// Use the ModeShape Graph API to read the properties and children of the node ...
 ExecutionContext context = loginContext != null ? this.context.create(loginContext) : this.context;
 Graph graph = engine.getGraph(context, sourceName);
 graph.useWorkspace("default");
-org.jboss.dna.graph.Node node = graph.getNodeAt(pathToNode);
+org.modeshape.graph.Node node = graph.getNodeAt(pathToNode);
 
 if (properties != null) {
     // Now copy the properties into the map provided as a method parameter ...
@@ -478,7 +478,7 @@ if (children != null) {
 			This is in part because the Graph API doesn't have the notion of a stateful session.  But some of it also is simply
 			because the Graph API design requires less code to do the same kinds of operations.
 		</para>
-		<para>None of the other methods in the <code>RepositoryClient</code> really do anything with JBoss DNA or JCR 
+		<para>None of the other methods in the <code>RepositoryClient</code> really do anything with ModeShape or JCR 
 		  <emphasis>per se</emphasis>. Instead, they really facilitate interaction with the user interface.
 		</para>
 		<para>If we look at the <code>ConsoleInput</code> constructor, it starts the repository and a thread 
@@ -516,7 +516,7 @@ public ConsoleInput( SequencerClient client ) {
   }
 }
   ]]></programlisting>
-		<para>At this point, we've reviewed all of the interesting code in the example application related to JBoss DNA.  However, feel free
+		<para>At this point, we've reviewed all of the interesting code in the example application related to ModeShape.  However, feel free
     to play with the application, trying different things.
     </para>
 	</sect1>
@@ -528,8 +528,8 @@ public ConsoleInput( SequencerClient client ) {
 			This was a very simplistic example that only took a few minutes to run.
 		</para>
 		<para>
-			In the <link linkend="conclusion">next chapter</link> we'll wrap up by summarizing what we've learned about JBoss DNA
-			and provide information about where you can find out more about JBoss DNA.
+			In the <link linkend="conclusion">next chapter</link> we'll wrap up by summarizing what we've learned about ModeShape
+			and provide information about where you can find out more about ModeShape.
 		</para>
 	</sect1>
 </chapter>

@@ -1,0 +1,102 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+ 
+ //------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<ddl='http://www.modeshape.org/ddl/1.0'>
+<derbyddl='http://www.modeshape.org/ddl/derby/1.0'>
+
+// =============================================================================
+// OPERANDS
+// =============================================================================
+[derbyddl:functionOperand]  > ddl:operand abstract
+[derbyddl:indexOperand]     > ddl:operand abstract
+[derbyddl:procedureOperand] > ddl:operand abstract
+[derbyddl:roleOperand]      > ddl:operand abstract
+[derbyddl:synonymOperand]   > ddl:operand abstract
+[derbyddl:triggerOperand]   > ddl:operand abstract
+
+[derbyddl:roleName]         > derbyddl:roleOperand mixin
+
+// =============================================================================
+// COLUMN
+// =============================================================================
+[derbyddl:columnDefinition] > ddl:columnDefinition mixin
+  - derbyddl:dropDefault (boolean)
+  
+[derbyddl:functionParameter] > ddl:columnDefinition mixin
+
+[derbyddl:indexColumnReference] > ddl:columnReference mixin
+  - derbyddl:order (STRING)
+  
+// =============================================================================
+// CREATE STATEMENTS
+// =============================================================================
+[derbyddl:createFunctionStatement]     > ddl:creatable, ddl:statement, derbyddl:functionOperand mixin
+  - ddl:datatypeName (STRING) mandatory
+  - ddl:datatypeLength (LONG)
+  - ddl:datatypePrecision (LONG)
+  - ddl:datatypeScale (LONG)
+  - ddl:isTableType (boolean)
+  + * (derbyddl:functionParameter) = derbyddl:functionParameter multiple
+  + * (ddl:statementOption) = ddl:statementOption multiple
+[derbyddl:createIndexStatement]        > ddl:statement, ddl:creatable, derbyddl:indexOperand mixin
+  - derbyddl:tableName (string) mandatory
+  - derbyddl:unique (boolean)
+  + * (derbyddl:indexColumnReference) = derbyddl:indexColumnReference multiple
+[derbyddl:createProcedureStatement]    > ddl:creatable, ddl:statement, derbyddl:procedureOperand mixin
+[derbyddl:createRoleStatement]         > ddl:creatable, ddl:statement, derbyddl:roleOperand mixin
+[derbyddl:createSynonymStatement]      > ddl:creatable, ddl:statement, derbyddl:synonymOperand mixin
+  - derbyddl:tableName (string) mandatory
+[derbyddl:createTriggerStatement]      > ddl:creatable, ddl:statement, derbyddl:triggerOperand mixin
+  - derbyddl:tableName (string) mandatory
+  - ddl:sql (string) mandatory
+  + * (ddl:columnReference) = ddl:columnreference multiple
+[derbyddl:declareGlobalTemporaryTableStatement] > ddl:createTableStatement mixin
+
+// =============================================================================
+// DROP STATEMENTS
+// =============================================================================
+[derbyddl:dropFunctionStatement]    > ddl:droppable, derbyddl:functionOperand mixin
+[derbyddl:dropIndexStatement]       > ddl:droppable, derbyddl:indexOperand mixin
+[derbyddl:dropProcedureStatement]   > ddl:droppable, derbyddl:procedureOperand mixin
+[derbyddl:dropRoleStatement]        > ddl:droppable, derbyddl:roleOperand mixin
+[derbyddl:dropSynonymStatement]     > ddl:droppable, derbyddl:synonymOperand mixin
+[derbyddl:dropTriggerStatement]     > ddl:droppable, derbyddl:triggerOperand mixin
+
+// =============================================================================
+// MISC STATEMENTS
+// =============================================================================
+[derbyddl:lockTableStatement]       > ddl:statement, ddl:tableOperand mixin
+[derbyddl:renameTableStatement]     > ddl:statement, ddl:renamable, ddl:tableOperand mixin
+
+[derbyddl:grantOnFunctionStatement]     > ddl:grantStatement, derbyddl:functionOperand mixin
+[derbyddl:grantOnProcedureStatement]    > ddl:grantStatement, derbyddl:procedureOperand mixin
+
+[derbyddl:grantRolesStatement]          > ddl:grantStatement mixin
+  + ddl:name (derbyddl:roleName) = derbyddl:roleName multiple

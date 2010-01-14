@@ -1,47 +1,47 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <parent>
-    <groupId>org.jboss.dna.examples</groupId>
+    <groupId>org.modeshape.examples</groupId>
     <artifactId>getting_started</artifactId>
-    <version>1.0.0.Beta1-SNAPSHOT</version>
+    <version>0.9-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.jboss.dna.examples</groupId>
-  <artifactId>dna-example-repositories</artifactId>
-  <version>1.0.0.Beta1-SNAPSHOT</version>
+  <groupId>org.modeshape.examples</groupId>
+  <artifactId>modeshape-example-repositories</artifactId>
+  <version>0.9-SNAPSHOT</version>
   <packaging>jar</packaging>
-  <name>JBoss DNA Repositories Examples</name>
-  <description>Examples that showcase how to use DNA repositories.</description>
+  <name>ModeShape Repositories Examples</name>
+  <description>Examples that showcase how to use ModeShape repositories.</description>
 
   <dependencies>
     <dependency>
-      <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-graph</artifactId>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-graph</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-repository</artifactId>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-repository</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-jcr</artifactId>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-jcr</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-connector-jbosscache</artifactId>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-connector-jbosscache</artifactId>
       <version>${project.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
-      <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-connector-filesystem</artifactId>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-connector-filesystem</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.jboss.dna</groupId>
-      <artifactId>dna-connector-store-jpa</artifactId>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-connector-store-jpa</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

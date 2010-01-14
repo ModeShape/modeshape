@@ -1,16 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
-    <groupId>org.jboss.dna</groupId>
-    <artifactId>dna</artifactId>
-    <version>1.0.0.Beta1-SNAPSHOT</version>
+    <groupId>org.modeshape</groupId>
+    <artifactId>modeshape</artifactId>
+    <version>0.9-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.jboss.dna.docs</groupId>
-  <artifactId>dna-docs</artifactId>
+  <groupId>org.modeshape.docs</groupId>
+  <artifactId>modeshape-docs</artifactId>
   <packaging>pom</packaging>
-  <name>JBoss DNA Documents</name>
-  <url>http://www.jboss.org/dna</url>
-  <description>JBoss DNA Documentation</description>
+  <name>ModeShape Documents</name>
+  <url>http://www.modeshape.org</url>
+  <description>ModeShape Documentation</description>
   <modules>
     <module>gettingstarted</module>
     <module>reference</module>

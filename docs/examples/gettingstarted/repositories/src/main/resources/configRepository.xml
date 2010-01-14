@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- 
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -24,17 +24,17 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<configuration xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<configuration xmlns:dna="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
-    Define the sources for the content.  These sources are directly accessible using the DNA-specific Graph API.
-    In fact, this is how the DNA JCR implementation works.  You can think of these as being similar to
+    Define the sources for the content.  These sources are directly accessible using the ModeShape-specific Graph API.
+    In fact, this is how the ModeShape JCR implementation works.  You can think of these as being similar to
     JDBC DataSource objects, except that they expose graph content via the Graph API instead of records via SQL or JDBC. 
     -->
     <dna:sources jcr:primaryType="nt:unstructured">
         <!-- 
         The 'Cars' repository is an in-memory source with a single default workspace (though others could be created, too).
         -->
-        <dna:source jcr:name="Cars" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" dna:defaultWorkspaceName="workspace1"/>
+        <dna:source jcr:name="Cars" dna:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" dna:defaultWorkspaceName="workspace1"/>
         <!-- 
         The 'Aircraft' repository is also a JPA source (pointing to an in-memory HSQL database with a single default workspace.
         By defining a default workspace, the clients using the Graph API will by default use that workspace,
@@ -49,7 +49,7 @@
         With this:
         	dna:dataSourceJndiName="your JNDI name"
         -->
-        <dna:source jcr:name="Aircraft" dna:classname="org.jboss.dna.connector.store.jpa.JpaSource"
+        <dna:source jcr:name="Aircraft" dna:classname="org.modeshape.connector.store.jpa.JpaSource"
         	dna:model="Simple"
         	dna:dialect="org.hibernate.dialect.HSQLDialect"
         	dna:driverClassName="org.hsqldb.jdbcDriver"
@@ -71,7 +71,7 @@
         The 'UFO' repository is a file system source with a single default workspace.  The file system connector exposes
         files and folders as JCR nodes.  It can save JCR nodes too, but only if they have certain primary types.
         -->
-        <dna:source jcr:name="UFOs" dna:classname="org.jboss.dna.connector.filesystem.FileSystemSource"
+        <dna:source jcr:name="UFOs" dna:classname="org.modeshape.connector.filesystem.FileSystemSource"
         	dna:workspaceRootPath="./ufoSource"
         	dna:defaultWorkspaceName="workspace1"
         	dna:creatingWorkspacesAllowed="false"
@@ -82,7 +82,7 @@
         under '/Vehicles/Cars', while all the 'Aircraft' content appears under '/Vehicles/Aircraft'.
         -->
         <dna:source jcr:name="Vehicles">
-            <dna:classname>org.jboss.dna.graph.connector.federation.FederatedRepositorySource</dna:classname>
+            <dna:classname>org.modeshape.graph.connector.federation.FederatedRepositorySource</dna:classname>
             <dna:workspaces>
                 <!-- 
                 Unlike some other repository sources, federated sources have to define all of their workspaces,
@@ -115,13 +115,13 @@
         <!-- 
         A 'System' source needed for the '/jcr:system' branch of the Vehicles source when it is access through JCR.
         -->
-        <!-- dna:source jcr:name="System" dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" dna:defaultWorkspaceName="default"/-->
+        <!-- dna:source jcr:name="System" dna:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" dna:defaultWorkspaceName="default"/-->
     </dna:sources>
     <!-- 
     Define the sequencers. This is an optional section. For this example, we're not using any sequencers. 
     -->
     <dna:sequencers>
-        <!--dna:sequencer jcr:name="Image Sequencer" dna:classname="org.jboss.dna.sequencer.image.ImageMetadataSequencer">
+        <!--dna:sequencer jcr:name="Image Sequencer" dna:classname="org.modeshape.sequencer.image.ImageMetadataSequencer">
             <dna:description>Image metadata sequencer</dna:description>        
             <dna:pathExpression>/foo/source => /foo/target</dna:pathExpression>
             <dna:pathExpression>/bar/source => /bar/target</dna:pathExpression>
@@ -138,7 +138,7 @@
             <!-- 
             Specify the implementation class (required), as a child element or attribute on parent element.
             -->
-            <dna:classname>org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector</dna:classname>
+            <dna:classname>org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector</dna:classname>
             <!-- 
             Specify the classpath (optional) as an ordered list of 'names', where each name is significant to 
             the classpath factory.  For example, a name could be an OSGI identifier or a Maven coordinate,
@@ -167,7 +167,7 @@
             </dna:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
             <dna:nodeTypes jcr:primaryType="dna:nodeTypes"/>
-            <!-- Define any namespaces for this repository, other than those already defined by JCR or DNA -->
+            <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape -->
             <namespaces jcr:primaryType="dna:namespaces">
                 <car jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/cars/1.0"/>
             </namespaces>
@@ -197,7 +197,7 @@
             </dna:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
             <dna:nodeTypes jcr:primaryType="dna:nodeTypes"/>
-            <!-- Define any namespaces for this repository, other than those already defined by JCR or DNA -->
+            <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape -->
             <namespaces jcr:primaryType="dna:namespaces" />
         </dna:repository>
         <!-- 
@@ -215,7 +215,7 @@
             </dna:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
             <dna:nodeTypes jcr:primaryType="dna:nodeTypes"/>
-            <!-- Define any namespaces for this repository, other than those already defined by JCR, DNA or by imported content. -->
+            <!-- Define any namespaces for this repository, other than those already defined by JCR, ModeShape or by imported content. -->
             <dna:namespaces jcr:primaryType="dna:namespaces">
                 <car jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/cars/1.0"/>
                 <air jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/aircraft/1.0"/>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -31,17 +31,17 @@
 <chapter id="downloading_and_running">
 	<title>Running the example applications</title>
 	<para>
-    This chapter provides instructions for downloading and running a sample application that demonstrates how JBoss DNA works
+    This chapter provides instructions for downloading and running a sample application that demonstrates how ModeShape works
     with a JCR repository to automatically sequence changing content to extract useful information. So read on to get the simple
     application running.
   </para>
-	<para>JBoss DNA uses Maven 2 for its build system, as does this example. Using Maven 2 has several advantages, including
+	<para>ModeShape uses Maven 2 for its build system, as does this example. Using Maven 2 has several advantages, including
     the ability to manage dependencies. If a library is needed, Maven automatically finds and downloads that library, plus
     everything that library needs. This means that it's very easy to build the examples - or even create a maven project that
-    depends on the JBoss DNA JARs.</para>
+    depends on the ModeShape JARs.</para>
 	<note>
 		<para>
-      To use Maven with JBoss DNA, you'll need to have <ulink url="http://java.sun.com/javase/downloads/index_jdk5.jsp">JDK 5 or 6</ulink>
+      To use Maven with ModeShape, you'll need to have <ulink url="http://java.sun.com/javase/downloads/index_jdk5.jsp">JDK 5 or 6</ulink>
       and Maven 2.0.9 (or higher).</para>
 		<para>
       Maven can be downloaded from <ulink url="http://maven.apache.org/">http://maven.apache.org/</ulink>, and is installed by unzipping the
@@ -93,7 +93,7 @@
 </settings>
 ]]></programlisting>
 		<para>This profile informs Maven of the two JBoss repositories (snapshots and releases) that contain 
-        all of the JARs for JBoss DNA and all dependent libraries.</para>
+        all of the JARs for ModeShape and all dependent libraries.</para>
 	</note>
 	<sect1 id="downloading">
 		<title>Downloading and compiling</title>
@@ -123,7 +123,7 @@ examples/pom.xml
 		  while all of the source for the repository example is located in the <code>repository</code> subdirectory.
 		</para>
 		<para>
-			And you may have noticed that none of the JBoss DNA libraries are there.  This is where Maven comes in.  
+			And you may have noticed that none of the ModeShape libraries are there.  This is where Maven comes in.  
 			The two <code>pom.xml</code> files tell Maven everything it needs to know about what libraries are required and 
 			how to build the example.
 		</para>
@@ -132,7 +132,7 @@ examples/pom.xml
 		</para>
 		<programlisting>$ mvn install</programlisting>
 		<para>  
-      This command downloads all of the JARs necessary to compile and build the example, including the JBoss DNA libraries,
+      This command downloads all of the JARs necessary to compile and build the example, including the ModeShape libraries,
       the libraries they depend on, and any missing Maven components.  (These are downloaded from the JBoss repositories
       only once and saved on your machine.  This means that the next time you run Maven, all the libraries will
       already be available locally, and the build will run much faster.)  The command then continues by compiling the example's source
@@ -196,8 +196,8 @@ $ ]]></programlisting>
 				  </para>
 				</listitem>
 				<listitem>
-					<para><emphasis role="strong"><code>lib</code></emphasis> subdirectory contains the JARs for all of the JBoss DNA artifacts 
-					  as well as those for other libraries required by JBoss DNA and the sequencer example.
+					<para><emphasis role="strong"><code>lib</code></emphasis> subdirectory contains the JARs for all of the ModeShape artifacts 
+					  as well as those for other libraries required by ModeShape and the sequencer example.
 			      </para>
 				</listitem>
 			</itemizedlist>
@@ -217,7 +217,7 @@ $ ]]></programlisting>
 				<listitem>
 					<para><emphasis role="strong"><code>configRepository.xml</code></emphasis> is an XML file containing the information that the
 					  example application loads as its configuration and which defines the sources, repositories, sequencers (if used), and other
-					  components that make up the DNA JCR engine.
+					  components that make up the ModeShape JCR engine.
 					</para>
 				</listitem>
 				<listitem>
@@ -249,8 +249,8 @@ $ ]]></programlisting>
 				  </para>
 				</listitem>
 				<listitem>
-					<para><emphasis role="strong"><code>lib</code></emphasis> subdirectory contains the JARs for all of the JBoss DNA artifacts
-					  as well as those for other libraries required by JBoss DNA and the repository example. There are a lot of libraries here,
+					<para><emphasis role="strong"><code>lib</code></emphasis> subdirectory contains the JARs for all of the ModeShape artifacts
+					  as well as those for other libraries required by ModeShape and the repository example. There are a lot of libraries here,
 					  but almost all of them are from the JPA connector (which depends upon Hibernate), HSQLDB, Lucene, and the JAAS implementation.
 			      </para>
 				</listitem>

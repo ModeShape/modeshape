@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -41,7 +41,7 @@
 			The file nodes returned by this connector will have a primary type of <code>nt:file</code> and a child node named <code>jcr:content</code>.
 			The <code>jcr:content</code> node will have a primary type of <code>dna:resource</code>.  The <code>dna:resource</code> node type is equivalent
 			to the built-in <code>nt:resource</code> node type in all ways except one: it does not extend <code>mix:referenceable</code>.  This is because
-			DNA cannot assign a persistent UUID to the files in the file system or guarantee that no other process will move or delete the files outside of DNA.
+			ModeShape cannot assign a persistent UUID to the files in the file system or guarantee that no other process will move or delete the files outside of ModeShape.
 			The <code>mix:referenceable</code> node type cannot be implemented if either of these conditions cannot be met.   
 
 			Additional properties (including mixin types) can be added by setting the <code>customPropertiesFactory</code> property to point to an implementation of 
@@ -154,10 +154,10 @@ config.repositorySource("FS Store")
 	
   <programlisting role="XML"><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration xmlns:dna="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<configuration xmlns:dna="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
     Define the sources for the content.  These sources are directly accessible using the 
-    DNA-specific Graph API. In fact, this is how the DNA JCR implementation works.  You can 
+    ModeShape-specific Graph API. In fact, this is how the ModeShape JCR implementation works.  You can 
     think of these as being similar to JDBC DataSource objects, except that they expose graph 
     content via the Graph API instead of records via SQL or JDBC. 
     -->
@@ -167,7 +167,7 @@ config.repositorySource("FS Store")
         ("prod", "staging", and "dev").
         -->
         <dna:source jcr:name="FS Store" 
-        	dna:classname="org.jboss.dna.connector.filesystem.FileSystemSource"
+        	dna:classname="org.modeshape.connector.filesystem.FileSystemSource"
         	dna:description="The repository for our content"
         	dna:workspaceRootPath="/home/content/someApp"
         	dna:defaultWorkspaceName="prod"

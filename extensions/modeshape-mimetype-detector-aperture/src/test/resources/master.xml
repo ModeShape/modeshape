@@ -1,0 +1,678 @@
+<!--
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd" [
+<!ENTITY % RH-ENTITIES SYSTEM "Common_Config/rh-entities.ent">
+<!ENTITY versionNumber "0.1">
+<!ENTITY copyrightYear "2008">
+<!ENTITY copyrightHolder "Red Hat Middleware, LLC.">]>
+<book>
+  <bookinfo>
+    <title>ModeShape</title>
+    <subtitle>Getting Started Guide</subtitle>
+    <releaseinfo>&versionNumber;
+    </releaseinfo>
+    <productnumber>&versionNumber;
+    </productnumber>
+    <issuenum>1</issuenum>
+    <mediaobject>
+      <imageobject role="fo">
+        <imagedata fileref="images/dna-logo.png" align="center" />
+      </imageobject>
+      <imageobject role="pdf">
+        <imagedata fileref="images/dna-logo.png" scale="75" align="center" />
+      </imageobject>
+      <imageobject role="html">
+        <imagedata fileref="images/dna-logo.png" depth="3cm" />
+      </imageobject>
+      <imageobject role="xhtml">
+        <imagedata fileref="images/dna-logo.png" depth="3cm" />
+      </imageobject>
+      <imageobject role="xhtml_single">
+        <imagedata fileref="images/dna-logo.png" depth="3cm" />
+      </imageobject>
+    </mediaobject>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Author_Group.xml" />
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Legal_Notice.xml" />
+  </bookinfo>
+  <preface id="preface" revision="1">
+    <title>What this book covers</title>
+    <para>The goal of this book is to help you learn about ModeShape and how you can use it in your own applications to get the
+      most out of your JCR repositories.</para>
+    <para>The first part of the book starts out with an introduction to content repositories and an overview of the JCR API,
+      both of which are important aspects of ModeShape. This is followed by an overview of the ModeShape project, its
+      architecture, and a basic roadmap for what's coming next.</para>
+    <para>The next part of the book covers how to download and build the examples, how to use ModeShape with existing
+      repositories, and how to build and use custom sequencers.</para>
+    <para>
+      If you have any questions or comments, please feel free to contact ModeShape's
+      <ulink url="mailto:dna-users@jboss.org">user mailing list</ulink>
+      or use the
+      <ulink url="http://www.jboss.com/index.html?module=bb&amp;op=viewforum&amp;f=272">user forums</ulink>
+      . If you'd like to get involved on the project, join the
+      <ulink url="http://www.modeshape.org/lists.html">mailing lists</ulink>
+      ,
+      <ulink url="http://www.modeshape.org/subversion.html">download the code</ulink>
+      and get it building, and visit our
+      <ulink url="http://jira.jboss.org/jira/browse/ModeShape">JIRA issue management system</ulink>
+      . If there's something in particular you're interested in, talk with the community - there may be others interested in the
+      same thing.
+    </para>
+  </preface>
+  <chapter id="introduction">
+    <title>Introduction</title>
+    <para>There are a lot of choices for how applications can store information persistently so that it can be accessed at a
+      later time and by other processes. The challenge developers face is how to use an approach that most closely matches the
+      needs of their application. This choice becomes more important as developers choose to focus their efforts on
+      application-specific logic, delegating much of the responsibilities for persistence to libraries and frameworks.</para>
+    <para>
+      Perhaps one of the easiest techniques is to simply store information in
+      <emphasis>files</emphasis>
+      . The Java language makes working with files relatively easy, but Java really doesn't provide many bells and whistles. So
+      using files is an easy choice when the information is either not complicated (for example property files), or when users may
+      need to read or change the information outside of the application (for example log files or configuration files). But using
+      files to persist information becomes more difficult as the information becomes more complex, as the volume of it increases,
+      or if it needs to be accessed by multiple processes. For these situations, other techniques often offer better choices.
+    </para>
+    <para>
+      Another technique built into the Java language is
+      <emphasis>Java serialization</emphasis>
+      , which is capable of persisting the state of an object graph so that it can be read back in at a later time. However, Java
+      serialization can quickly become tricky if the classes are changed, and so it's beneficial usually when the information is
+      persisted for a very short period of time. For example, serialization is sometimes used to send an object graph from one
+      process to another.
+    </para>
+    <para>
+      One of the more popular persistence technologies is the
+      <emphasis>relational database</emphasis>
+      . Relational database management systems have been around for decades and are very capable. The Java Database Connectivity
+      (JDBC) API provides a standard interface for connecting to and interacting with relational databases. However, it is a
+      low-level API that requires a lot of code to use correctly, and it still doesn't abstract away the DBMS-specific SQL
+      grammar. Also, working with relational data in an object-oriented language can feel somewhat unnatural, so many developers
+      map this data to classes that fit much more cleanly into their application. The problem is that manually creating this
+      mapping layer requires a lot of repetitive and non-trivial JDBC code.
+    </para>
+    <para>
+      <emphasis>Object-relational mapping</emphasis>
+      libraries automate the creation of this mapping layer and result in far less code that is much more maintainable with
+      performance that is often as good as (if not better than) handwritten JDBC code. The new
+      <ulink url="http://java.sun.com/developer/technicalArticles/J2EE/jpa/">Java Persistence API (JPA)</ulink>
+      provide a standard mechanism for defining the mappings (through annotations) and working with these entity objects. Several
+      commercial and open-source libraries implement JPA, and some even offer additional capabilities and features that go beyond
+      JPA. For example,
+      <ulink url="http://www.hibernate.org">Hibernate</ulink>
+      is one of the most feature-rich JPA implementations and offers object caching, statement caching, extra association
+      mappings, and other features that help to improve performance and usefulness.
+    </para>
+    <para>
+      While relational databases and JPA are solutions that work for many applications, they become more limited in cases when the
+      information structure is highly flexible, is not known
+      <emphasis>a priori</emphasis>
+      , or is subject to frequent change and customization. In these situations,
+      <emphasis>content repositories</emphasis>
+      may offer a better choice for persistence. Content repositories are almost a hybrid between relational databases and file
+      systems, and typically provide other capabilities as well, including versioning, indexing, search, access control,
+      transactions, and observation. Because of this, content repositories are used by content management systems (CMS), document
+      management systems (DMS), and other applications that manage electronic files (e.g., documents, images, multi-media, web
+      content, etc.) and metadata associated with them (e.g., author, date, status, security information, etc.). The
+      <ulink url="http://www.jcp.org/en/jsr/detail?id=170">Content Repository for Java technology API</ulink>
+      provides a standard Java API for working with content repositories. Abbreviated "JCR", this API was developed as part of the
+      Java Community Process under
+      <ulink url="http://www.jcp.org/en/jsr/detail?id=170">JSR-170</ulink>
+      and is being revised under
+      <ulink url="http://www.jcp.org/en/jsr/detail?id=283">JSR-283</ulink>
+      .
+    </para>
+    <para>
+      The
+      <emphasis>ModeShape project</emphasis>
+      is building the tools and services that surround content repositories. Nearly all of these capabilities are to be hidden
+      below the JCR API and involve automated processing of the information in the repository. Thus, ModeShape can add value to
+      existing repository implementations. For example, JCR repositories offer the ability to upload files into the repository and
+      have the file content indexed for search purposes. ModeShape also defines a library for "sequencing" content - to extract
+      meaningful information from that content and store it in the repository, where it can then be searched, accessed, and
+      analyzed using the JCR API.
+    </para>
+    <para> ModeShape is building other features as well. One goal of ModeShape is to create federated repositories that
+      dynamically merge the information from multiple databases, services, applications, and other JCR repositories. Another is to
+      create customized views based upon the type of data and the role of the user that is accessing the data. And yet another is
+      to create a REST-ful API to allow the JCR content to be accessed easily by other applications written in other languages.
+    </para>
+    <para>
+      The
+      <link linkend="jboss_dna">next chapter</link>
+      in this book goes into more detail about ModeShape and its architecture, the different components, what's available now, and
+      what's coming in future releases.
+      <link linkend="downloading_and_running">Chapter 3</link>
+      then provides instructions for downloading and running the sequencer examples for the current release.
+      <link linkend="using_dna">Chapter 4</link>
+      walks through how to use ModeShape in your applications, while
+      <link linkend="custom_sequencers">Chapter 5</link>
+      goes over how to create custom sequencers. Finally,
+      <link linkend="future_directions">Chapter 6</link>
+      wraps things up with a discussion about the future of ModeShape.
+    </para>
+  </chapter>
+  <chapter id="jboss_dna">
+    <title>Understanding ModeShape</title>
+    <sect1 id="jboss_dna_overview">
+      <title>Overview</title>
+      <para>ModeShape is a repository and set of tools that make it easy to capture, version, analyze, and understand the
+        fundamental building blocks of information. As models, service and process definitions, schemas, source code, and other
+        artifacts are added to the repository, ModeShape "sequences" the makeup of these components and extracts their structure
+        and interdependencies. The ModeShape web application allows end users to access, visualize, and edit this information in
+        the terminology and structure they are familiar with. Such domain-specific solutions can be easily created with little or
+        no programming.</para>
+      <para> ModeShape supports the Java Content Repository (JCR) standard and is able to provide a single integrated view of
+        multiple repositories, external databases, services, and applications, ensuring that ModeShape has access to the latest
+        and most reliable master data. For instance, ModeShape could provide in a single view valuable insight into the business
+        processes and process-level services impacted by a change to in an intermediary web server operation defined via WSDL.
+        Similarly, a user could quickly view and navigate the dependencies between the data source models and transformation
+        information stored within a content repository, the code base stored within a version control system, and the database
+        schemas used by an application.</para>
+    </sect1>
+    <sect1 id="architecture">
+      <title>Architecture</title>
+      <para>The architecture for ModeShape consists of several major components that will be built on top of standard APIs,
+        including JCR, JDBC, JNDI and HTTP. The goal is to allow these components to be assembled as needed and add value on top
+        of other ModeShape components or third-party systems that support these standard APIs.</para>
+      <mediaobject>
+        <imageobject role="fo">
+          <imagedata align="center" fileref="images/dna-architecture.png" />
+        </imageobject>
+        <imageobject role="html">
+          <imagedata align="center" fileref="images/dna-architecture.png" />
+        </imageobject>
+      </mediaobject>
+      <para>
+        As shown in the diagram above, the major components are (starting at the top):
+        <itemizedlist>
+          <listitem>
+            <para>
+              <emphasis role="strong">ModeShape Eclipse Plugins</emphasis>
+              enable Eclipse users to access the contents of a ModeShape repository.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">ModeShape JDBC Driver</emphasis>
+              provides a driver implementation, allowing JDBC-aware applications to connect to and use a ModeShape repository.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">ModeShape Remote JCR</emphasis>
+              is a client-side component for accessing remote JCR repositories.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">ModeShape Web Application</emphasis>
+              is used by end users and domain experts to visualize, search, edit, change and tag the repository content. The web
+              application uses views to define how different types of information are to be presented and edited in
+              domain-specific ways. The goal is that this web application is easily customized and branded for inclusion into
+              other solutions and application systems. The ModeShape Web Application operates upon any JCR-compliant repository,
+              although it does rely upon the ModeShape analysis and templating services.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">ModeShape Publishing Server</emphasis>
+              allows content to be downloaded, uploaded, and edited using the Atom Publishing Protocol. With the ModeShape Publishing
+              Server, the content of the repository can easily be created, read, edited, and deleted using the standard HTTP
+              operations of POST, GET, PUT, and DELETE (respectively). More and more tools are being created that support working
+              with Atom Publishing servers. The ModeShape Publishing Server operates upon any JCR-compliant repository.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">ModeShape WebDAV Server</emphasis>
+              allows clients such as Microsoft Windows and Apple OS X to connect to, read, and edit the content in the repository
+              using the WebDAV standard. Since WebDAV is an extension of HTTP, web browsers are able to read (but not modify) the
+              content served by a WebDAV compliant server. The ModeShape WebDAV Server operates upon any JCR-compliant repository.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">ModeShape Sequencers</emphasis>
+              are pluggable components that make it possible for content to be uploaded to the repository and automatically
+              processed to extract meaningful structure and place that structure in the repository. Once this information is in
+              the repository, it can be viewed, edited, analyzed, searched, and related to other content. ModeShape defines a Java
+              interface that sequencers must implement. ModeShape sequencers operate upon any JCR-compliant repository.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">ModeShape Analyses</emphasis>
+              are pluggable components that analyze content and the relationships between content to generate reports or to answer
+              queries. ModeShape will include some standard analyzers, like dependency analysis and similarity analysis, that are
+              commonly needed by many different solutions. ModeShape analyzers operate upon any JCR-compliant repository.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">ModeShape Views</emphasis>
+              are definitions of how types of information are to be presented in a user interface to allow for creation, reading,
+              editing, and deletion of information. ModeShape view definitions consist of data stored in a JCR repository, and as such
+              views can be easily added, changed or removed entirely by using the ModeShape Web Application, requiring no programming.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">ModeShape Federation</emphasis>
+              is an implementation of the JCR API that builds the content within the repository by accessing and integrating
+              information from multiple sources. ModeShape Federation allows the integration of external systems, like other JCR
+              repositories, databases, applications, and services.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">ModeShape Connectors</emphasis>
+              are used to communicate with these external sources of information. In the federation engine, each source is able to
+              contribute node structure and node properties to any part of the federated graph, although typically many connectors
+              will contribute most of their information to isolated subgraphs. The result is that integration from a wide range of
+              systems can be integrated and accessed through the ModeShape Web Application, ModeShape Publishing Server, and ModeShape WebDAV
+              Server. Connectors also may optionally participate in distributed transactions by exposing an XAResource.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">ModeShape Maven</emphasis>
+              is a classloader library compatible with Maven 2 project dependencies. This allows the creation of Java ClassLoader
+              instances using Maven 2 style paths, and all dependencies are transitively managed and included.
+            </para>
+          </listitem>
+        </itemizedlist>
+      </para>
+      <para>
+        Continue reading the rest of this chapter for more detail about the
+        <link linkend="sequencers">sequencing framework</link>
+        available in this release, or the
+        <link linkend="federation">federation engine</link>
+        and
+        <link linkend="federation_connectors">connectors</link>
+        that will be the focus of the next release. Or, skip to the
+        <link linkend="downloading_and_running">examples</link>
+        to see how to start using ModeShape &versionNumber;
+        today. 
+      </para>
+    </sect1>
+    <sect1 id="sequencers">
+      <title>Sequencing content</title>
+      <para> The current ModeShape release contains a sequencing framework that is designed to sequence data (typically files)
+        stored in a JCR repository to automatically extract meaningful and useful information. This additional information is then
+        saved back into the repository, where it can be accessed and used.</para>
+      <para> In other words, you can just upload various kinds of files into a JCR repository, and ModeShape automatically processes
+        those files to extract meaningful structured information. For example, load DDL files into the repository, and let
+        sequencers extract the structure and metadata for the database schema. Load Hibernate configuration files into the
+        repository, and let sequencers extract the schema and mapping information. Load Java source into the repository, and let
+        sequencers extract the class structure, JavaDoc, and annotations. Load a PNG, JPEG, or other image into the repository,
+        and let sequencers extract the metadata from the image and save it in the repository. The same with XSDs, WSDL, WS
+        policies, UML, MetaMatrix models, etc.</para>
+      <para>
+        ModeShape sequencers sit on top of existing JCR repositories (including federated repositories) - they basically extract
+        more useful information from what's already stored in the repository. And they use the existing JCR versioning system. Each
+        sequencer typically processes a single kind of file format or a single kind of content. </para>
+      <para>The following sequencers are included in ModeShape:
+        <itemizedlist>
+          <listitem>
+            <para>
+              <emphasis role="strong">Image sequencer</emphasis>
+              - A sequencer that processes the binary content of an image file, extracts the metadata for the image, and then
+              writes that image metadata to the repository. It gets the file format, image resolution, number of bits per pixel
+              (and optionally number of images), comments and physical resolution from JPEG, GIF, BMP, PCX, PNG, IFF, RAS, PBM,
+              PGM, PPM, and PSD files. (This sequencer may be improved in the future to also extract EXIF metadata from JPEG
+              files; see
+              <ulink url="http://jira.jboss.org/jira/browse/ModeShape-26">ModeShape-26</ulink>
+              .)
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">MP3 sequencer</emphasis>
+              - A sequencer that processes the contents of an MP3 audio file, extracts the metadata for the file, and then
+              writes that image metadata to the repository. It gets the title, author, album, year, and comment.  
+              (This sequencer may be improved in the future to also extract other ID3 metadata from other audio file formats; see
+              <ulink url="http://jira.jboss.org/jira/browse/ModeShape-66">ModeShape-26</ulink>
+              .)
+            </para>
+          </listitem>
+        </itemizedlist>
+      </para>
+      <para>
+        As the community develops additional sequencers, they will also be included in ModeShape. Some of those that have been
+        identified as being useful include:
+        <itemizedlist>
+          <listitem>
+            <para>
+              <emphasis role="strong">XML Schema Document (XSD) Sequencer</emphasis>
+              - Process XSD files and extract the various elements, attributes, complex types, simple types, groups, and other
+              information. (See
+              <ulink url="http://jira.jboss.org/jira/browse/ModeShape-32">ModeShape-32</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">Web Service Definition Language (WSDL) Sequencer</emphasis>
+              - Process WSDL files and extract the services, bindings, ports, operations, parameters, and other information. (See
+              <ulink url="http://jira.jboss.org/jira/browse/ModeShape-33">ModeShape-33</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">Hibernate File Sequencer</emphasis>
+              - Process Hibernate configuration (cfg.xml) and mapping (hbm.xml) files to extract the configuration and mapping
+              information. (See
+              <ulink url="http://jira.jboss.org/jira/browse/ModeShape-61">ModeShape-61</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">XML Metadata Interchange (XMI) Sequencer</emphasis>
+              - Process XMI documents that contain UML models or models using another metamodel, extracting the model structure
+              into the repository. (See
+              <ulink url="http://jira.jboss.org/jira/browse/ModeShape-31">ModeShape-31</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">ZIP Archive Sequencer</emphasis>
+              - Process ZIP archive files to extract (explode) the contents into the repository. (See
+              <ulink url="http://jira.jboss.org/jira/browse/ModeShape-63">ModeShape-63</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">Java Archive (JAR) Sequencer</emphasis>
+              - Process JAR files to extract (explode) the contents into the classes and file resources. (See
+              <ulink url="http://jira.jboss.org/jira/browse/ModeShape-64">ModeShape-64</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">Java Class File Sequencer</emphasis>
+              - Process Java class files (bytecode) to extract the class structure (including annotations) into the repository.
+              (See
+              <ulink url="http://jira.jboss.org/jira/browse/ModeShape-62">ModeShape-62</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">Java Source File Sequencer</emphasis>
+              - Process Java source files to extract the class structure (including annotations) into the repository. (See
+              <ulink url="http://jira.jboss.org/jira/browse/ModeShape-51">ModeShape-51</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">PDF Sequencer</emphasis>
+              - Process PDF files to extract the document metadata, including table of contents. (See
+              <ulink url="http://jira.jboss.org/jira/browse/ModeShape-50">ModeShape-50</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">Maven 2 POM Sequencer</emphasis>
+              - Process Maven 2 Project Object Model (POM) files to extract the project information, dependencies, plugins, and
+              other content. (See
+              <ulink url="http://jira.jboss.org/jira/browse/ModeShape-24">ModeShape-24</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">Data Definition Language (DDL) Sequencer</emphasis>
+              - Process various dialects of DDL, including that from Oracle, SQL Server, MySQL, PostgreSQL, and others. May need
+              to be split up into a different sequencer for each dialect. (See
+              <ulink url="http://jira.jboss.org/jira/browse/ModeShape-26">ModeShape-26</ulink>
+              )
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <emphasis role="strong">MP3 and MP4 Sequencer</emphasis>
+              - Process MP3 and MP4 audio files to extract the name of the song, artist, album, track number, and other metadata.
+              (See
+              <ulink url="http://jira.jboss.org/jira/browse/ModeShape-30">ModeShape-30</ulink>
+              )
+            </para>
+          </listitem>
+        </itemizedlist>
+      </para>
+      <para>
+        The
+        <link linkend="using_dna">examples</link>
+        in this book go into more detail about how sequencers are managed and used, and
+        <link linkend="custom_sequencers">Chapter 5</link>
+        goes into detail about how to write custom sequencers.
+      </para>
+    </sect1>
+    <sect1 id="federation">
+      <title>Federating content</title>
+      <para>There is a lot of information stored in many of different places: databases, repositories, SCM systems,
+        registries, file systems, services, etc. The purpose of the federation engine is to allow applications to use the JCR API
+        to access that information as if it were all stored in a single JCR repository, but to really leave the information where
+        it is.</para>
+      <para>Why not just move the information into a JCR repository? Most likely there are existing applications that rely upon
+        that information being where it is. If we were to move it, then all those applications would break. Or they'd have to be
+        changed to use JCR. If the information is being used, the most practical thing is to leave it where it is.</para>
+      <para>
+        Then why not just copy the information into a JCR repository? Actually, there are times when it's perfectly reasonable to
+        make a copy of the data. Perhaps the system managing the existing information cannot handle the additional load of more
+        clients. Or, perhaps the information doesn't change, or it does change and we want snapshots that don't change. But more
+        likely, the data
+        <emphasis>does</emphasis>
+        change. So if applications are to use the most current information and we make copies of the data, we have to keep the
+        copies synchronized with the master. That's generally a lot of work.
+      </para>
+      <para>The ModeShape federation engine lets us leave the information where it is, yet lets client applications use the JCR
+        API to access all the information without caring where the information really exists. If the underlying information
+        changes, client applications using JCR observation will be notified of the changes. If a ModeShape federated repository is
+        configured to allow updates, client applications can change the information in the repository and ModeShape will propagate
+        those changes down to the original source.</para>
+      <sect2 id="federation_connectors">
+        <title>Connecting to information sources</title>
+        <para>
+          The ModeShape federation engine will use connectors to interact with different information sources to get at the content
+          in those systems. Some ideas for connectors include:
+          <itemizedlist>
+            <listitem>
+              <para>
+                <emphasis role="strong">JCR Repository Connector</emphasis>
+                - Connect to and interact with other JCR repositories.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                <emphasis role="strong">File System Connector</emphasis>
+                - Expose the files and directories on a file system through JCR.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                <emphasis role="strong">Maven 2 Repository Connector</emphasis>
+                - Access and expose the contents of a Maven 2 repository (either on the local file system or via HTTP) through
+                JCR.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                <emphasis role="strong">JDBC Metadata Connector</emphasis>
+                - Connect to relational databases via JDBC and expose their schema as content in a repository.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                <emphasis role="strong">UDDI Connector</emphasis>
+                - Interact with UDDI registries to integrate their content into a repository.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                <emphasis role="strong">SVN Connector</emphasis>
+                - Interact with Subversion software configuration management (SCM) repositories to expose the managed resources
+                through JCR. Consider using the
+                <ulink url="http://svnkit.com/">SVNkit</ulink>
+                (dual license) library for an API into Subversion.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                <emphasis role="strong">CVS Connector</emphasis>
+                - Interact with CVS software configuration management (SCM) repositories to expose the managed resources through
+                JCR.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                <emphasis role="strong">JDBC Storage Connector</emphasis>
+                - Store and access information in a relational database. Also useful for persisting information in the federated
+                repository not stored elsewhere.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                <emphasis role="strong">Distributed Database Connector</emphasis>
+                - Store and access information in a
+                <ulink url="http://www.hypertable.org/">Hypertable</ulink>
+                or
+                <ulink url="http://hadoop.apache.org/hbase/">HBase</ulink>
+                distributed databases. Also useful for persisting information in the federated repository not stored elsewhere.
+              </para>
+            </listitem>
+          </itemizedlist>
+        </para>
+        <para>
+          If the connectors allow the information they contribute to be updated, they must provide an
+          <code>XAResource</code>
+          implementation that can be used with a Java Transaction Service. Connectors that provide read-only access need not
+          provide an implementation.
+        </para>
+        <para>
+          Also, connectors talk to
+          <emphasis>sources</emphasis>
+          of information, and it's quite likely that the same connector is used to talk to different sources. Each source contains
+          the configuration details (e.g., connection information, location, properties, options, etc.) for working with that
+          particular source, as well as a reference to the connector that should be used to establish connections to the source.
+          And of course, sources can be added or removed without having to stop and restart the federated repository.
+        </para>
+      </sect2>
+      <sect2 id="federation_graph">
+        <title>Building the unified graph</title>
+        <para> The federation engine works by effectively building up a single graph by querying each source and merging or
+          unifying the responses. This information is cached, which improves performance, reduces the number of (potentially
+          expensive) remote calls, reduces the load on the sources, and helps mitigate problems with source availability. As
+          clients interact with the repository, this cache is consulted first. When the requested portion of the graph (or
+          "subgraph") is contained completely in the cache, it is retuned immediately. However, if any part of the requested
+          subgraph is not in the cache, each source is consulted for their contributions to that subgraph, and any results are
+          cached.</para>
+        <para> This basic flow makes it possible for the federated repository to build up a local cache of the integrated graph
+          (or at least the portions that are used by clients). In fact, the federated repository caches information in a manner
+          that is similar to that of the Domain Name System (DNS). As sources are consulted for their contributions, the source
+          also specifies whether it is the authoritative source for this information (some sources that are themselves federated
+          may not be the information's authority), whether the information may be modified, the time-to-live (TTL) value (the time
+          after which the cached information should be refreshed), and the expiration time (the time after which the cached
+          information is no longer valid). In effect, the source has complete control over how the information it contributes is
+          cached and used.</para>
+        <para>
+          The federated repository also needs to incorporate
+          <emphasis>negative caching</emphasis>
+          , which is storage of the knowledge that something does not exist. Sources can be configured to contribute information
+          only below certain paths (e.g.,
+          <code>/A/B/C</code>
+          ), and the federation engine can take advantage of this by never consulting that source for contributions to information
+          on other paths. However, below that path, any negative responses must also be cached (with appropriate TTL and expiry
+          parameters) to prevent the exclusion of that source (in case the source has information to contribute at a later time)
+          or the frequent checking with the source.
+        </para>
+      </sect2>
+      <sect2 id="federation_queries">
+        <title>Searching and querying</title>
+        <para> The ModeShape federated repository will also support queries against the integrated and unified graph. In some
+          situations the query can be determined to apply to a single source, but in most situations the query must be planned
+          (and possibly rewritten) such that it can be pushed down to all the appropriate sources. Also, the cached results must
+          be consulted prior to returning the query results, as the results from one source might have contributions from another
+          source.</para>
+        <note>
+          <para> It is hoped that the MetaMatrix query engine can be used for this purpose after it is open-sourced. This engine
+            implements sophisticated query planning and optimization techniques for working efficiently with multiple sources.
+          </para>
+        </note>
+        <para>Searching the whole federated repository is also important. This allows users to simply supply a handful of
+          search terms, and to get results that are ranked based upon how close each result is to the search terms. (Searching is
+          very different from querying, which involves specifying the exact semantics of what is to be searched and how the
+          information is to be compared.) ModeShape will incorporate a search engine (e.g., likely to be Lucene) and will populate
+          the engine's indexes using the federated content and the cached information. Notifications of changing information will
+          be reflected in the indexes, but some sources may want to explicitly allow or disallow periodic crawling of their
+          content.</para>
+      </sect2>
+      <sect2 id="federation_updates">
+        <title>Updating content</title>
+        <para>
+          The ModeShape federated repositories also make it possible for client applications to make changes to the unified graph
+          within the context of distributed transactions. According to the JCR API, client applications use the Java Transaction
+          API (JTA) to control the boundaries of their transactions. Meanwhile, the federated repository uses a
+          <ulink url="http://www.jboss.org/jbosstm/">distributed transaction service</ulink>
+          to coordinate the XA resources provided by the connectors.
+        </para>
+        <para> It is quite possible that clients add properties to nodes in the unified graph, and that this information cannot be
+          handled by the same underlying source that contributed to the node. In this case, the federated repository can be
+          configured with a fallback source that will be used used to store this "extra" information.</para>
+        <para>
+          It is a goal that non-XA sources (i.e., sources that use connectors without XA resources) can participate in distributed
+          transactions through the use of
+          <emphasis>compensating transactions</emphasis>
+          . Because the ModeShape federation engine implements the JCR observation system, it is capable of recording all of the
+          changes made to the distributed graph (and those changes sent to each updatable source). Therefore, if a non-XA source
+          is involved in a distributed transaction that must be rolled back, any changes made to non-XA sources can be undone. (Of
+          course, this does not make the underlying source transactional: non-transactional sources still may expose the interim
+          changes to other clients.)
+        </para>
+      </sect2>
+      <sect2 id="federation_events">
+        <title>Observing changes</title>
+        <para> The JCR API supports observing a repository to receive notifications of additions, changes and deletions of nodes
+          and properties. The ModeShape federated repository will support this API through two primary means.</para>
+        <para> When the changes are made through the federated repository, the ModeShape federation engine is well aware of the
+          set of changes that have been (or are being) made to the unified graph. These events are directly propagated to
+          listeners.</para>
+        <para> Sources have the ability to publish events, making it possible for the ModeShape federation engine and clients that
+          have registered listeners to be notified of changes in the information managed by that source. These events are first
+          processed by the federation engine and possibly altered based upon contributions from other sources. (The federation
+          engine also uses these events to update or purge information in the cache, which may add to the event set.) The
+          resulting (and possibly altered) event set is then sent to all client listeners.</para>
+      </sect2>
+    </sect1>
+  </chapter>
+</book>

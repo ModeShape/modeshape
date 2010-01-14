@@ -1,0 +1,257 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
+/**
+ * @author Serge Pagop (serge.pagop@innoq.com)
+ */
+
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<java='http://www.modeshape.org/java/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+
+//------------------------------------------------------------------------------
+// B A S E  T Y P E S
+//------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------
+// V E R S I O N I N G
+//------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+/**
+ * Element-value
+ */
+[java:elementValue] > nt:unstructured
+ + java:kindOfvalues (java:conditionalExpression, java:annotationDeclaration, java:elementValueArrayInitializer) mandatory
+ 
+/**
+ * Modifiers
+ */
+[java:modifierDeclaration] > nt:unstructured
+ - java:modifierName (string) mandatory
+
+/**
+ * Expression element-value type
+ */
+[java:conditionalExpression] > nt:unstructured
+ - java:expression (string)
+
+/**
+ * Array initializer element-value type
+ */
+[java:elementValueArrayInitializer] > nt:unstructured
+ + java:elementValue (java:elementValue) = java:elementValue multiple
+
+/**
+ * Identifier
+ */
+[java:identifier] > nt:unstructured
+ - java:identifierName (String) mandatory
+ + java:value (java:elementValue) = java:elementValue mandatory
+ 
+/**
+ * Element-value pair
+ */
+[java:elementValuePair] > nt:unstructured
+ + java:identifier (java:identifier) mandatory
+
+/**
+ * Annotation type
+ */
+[java:annotationDeclaration] > nt:unstructured
+ + java:annotationType (java:normalAnnotation, java:markerAnnotation,  java:singleElementAnnotation) mandatory
+  
+/**
+ * Normal annotation e.g. @Entity(name="Customer")
+ */
+[java:normalAnnotation] > nt:unstructured
+ - java:normalAnnotationName (string) mandatory
+ + java:elementValuePair (java:elementValuePair)
+
+/**
+ * Marker annotation e.g. @GET
+ */
+[java:markerAnnotation] > nt:unstructured
+ - java:markerAnnotationName (string) mandatory
+
+/**
+ * Single element annotation  e.g. @Path("/book")
+ */
+[java:singleElementAnnotation] > nt:unstructured
+ - java:singleElementAnnotationNam
+ + java:value (java:elementValue) = java:elementValue mandatory
+
+/** 
+ * Formal parameter
+ */
+[java:formalParameter] > nt:unstructured
+ + java:type (java:primitiveType, java:arrayType, java:simpleType, java:qualifiedType, java:wildcardType, java:parameterizedType)
+
+/**
+ * Primitive type:
+ * - Integral type ('byte', 'short', 'int', 'long', 'char')
+ * - Floating point type ('float', 'double')
+ * - Boolean type ('boolean')
+ * - No return type ('void')
+ */
+[java:primitiveType] > nt:unstructured
+ - java:primitiveTypeDescription (string)
+ + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:primitiveTypeName (string) mandatory
+ + java:primitiveVariable (java:variable) = java:variable
+ 
+ [java:variable] > nt:unstructured
+ - java:variableName (string) mandatory
+ 
+/** 
+ * java:arrayType 
+ */ 
+[java:arrayType] > nt:unstructured
+ - java:arrayTypeDescription (string)
+ + java:arrayTypeModifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:arrayTypeName (string) mandatory
+ + java:arrayTypeVariable (java:variable) = java:variable
+ 
+[java:simpleType] > nt:unstructured
+ - java:simpleTypeDescription (string)
+ + java:simpleTypeModifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:simpleTypeName (string) mandatory
+ + java:simpleTypeVariable (java:variable) = java:variable
+
+[java:qualifiedType] > nt:unstructured
+ - java:qualifiedTypeDescription (string)
+ + java:qualifiedTypeModifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:qualifiedTypeName (string) mandatory
+ + java:qualifiedTypeVariable (java:variable) = java:variable
+    
+[java:wildcardType] > nt:unstructured
+ - java:wildcardTypeDescription (string)
+ + java:wildcardTypeModifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:wildcardTypeName (string) mandatory
+ + java:wildcardTypeVariable (java:variable) = java:variable
+
+[java:parameterizedType] > nt:unstructured
+ - java:parameterizedTypeDescription (string)
+ + java:parameterizedTypeModifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:parameterizedTypeName (string) mandatory
+ + java:parameterizedTypeVariable (java:variable) = java:variable
+
+/** 
+ * Field type 
+ */
+[java:fieldType] > nt:unstructured
+ + java:type (java:primitiveType, java:arrayType, java:simpleType, java:qualifiedType, java:wildcardType, java:parameterizedType) mandatory multiple 
+ 
+ /** 
+  * Method declaration 
+  */
+[java:methodDeclaration] > nt:unstructured
+ - java:methodDescription (string)
+ + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
+ + java:resultType (java:primitiveType, java:arrayType, java:simpleType, java:qualifiedType, java:wildcardType, java:parameterizedType) mandatory
+ - java:methodName (string) mandatory
+ + java:parameter (java:formalParameter) multiple
+
+/** 
+ * Constructor declarations 
+ */
+[java:constructorDeclaration] > nt:unstructured
+ - java:constructorDescription (string)
+ + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:constructorName (string) mandatory
+ + java:parameter (java:formalParameter)
+
+
+/**
+ * Package declarations
+ */
+[java:packageDeclaration] > nt:unstructured
+ + java:annotation (java:annotationDeclaration) = java:annotationDeclaration
+ - java:packageKeyword (string)
+   < 'package' 
+ - java:packageName (string) mandatory 
+
+/**
+ * Import declarations
+ */
+[java:singleTypeImportDeclaration] > nt:unstructured
+ - java:singleTypeImportkeyword (string) mandatory
+  < 'import'
+ - java:singleImportName (string) mandatory
+ 
+[java:typeImportOnDemandDeclaration] > nt:unstructured
+ - java:onDemandImportKeyword (string) mandatory
+  < 'import'
+ - java:onDemandImportName (string) mandatory
+
+ [java:importDeclaration] > nt:unstructured
+ + java:singleImport (java:singleTypeImportDeclaration) = java:singleTypeImportDeclaration
+ + java:importOnDemand (java:typeImportOnDemandDeclaration) = java:typeImportOnDemandDeclaration
+ 
+
+/**
+ * Class declaration
+ *
+ * The body of class declares members (fields and methods and nested classes and interfaces), 
+ * instance and static initializers, and constructors
+ */
+[java:normalClassDeclaration] > nt:unstructured
+ - java:description (string)
+ + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
+ - java:normalClassName (string) mandatory
+ + java:field (java:fieldType)  = java:fieldType multiple
+ + java:method (java:methodDeclaration) = java:methodDeclaration multiple
+ + java:constructor (java:constructorDeclaration) = java:constructorDeclaration multiple
+ 
+[java:enumDeclaration] > nt:unstructured
+ 
+[java:classDeclaration] > nt:unstructured
+ + java:normalClass (java:normalClassDeclaration) = java:normalClassDeclaration
+ + java:enum (java:enumDeclaration) = java:enumDeclaration
+
+/**
+ * Interface declaration 
+ *
+ * The body of class declares members (fields and methods and nested classes and interfaces), 
+ * instance and static initializers, and constructors
+ */
+ //TODO
+[java:interfaceDeclaration] > nt:unstructured
+ 
+ 
+/**
+ * Compilation unit
+ */
+[java:compilationUnit] > nt:unstructured
+ + java:package (java:packageDeclaration) = java:packageDeclaration
+ + java:import (java:importDeclaration) = java:importDeclaration
+ + java:unitType (java:classDeclaration, java:interfaceDeclaration) 

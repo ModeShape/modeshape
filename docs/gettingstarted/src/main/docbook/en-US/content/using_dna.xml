@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -29,16 +29,16 @@
 %CustomDTD;
 ]>
 <chapter id="using_dna">
-	<title>Using JBoss DNA</title>
-	<para>Using JBoss DNA within your application is actually quite straightforward.  As you'll see in this chapter,
-		the first step is setting up JBoss DNA and starting the <code>JcrEngine</code>.  After that, you obtain the
+	<title>Using ModeShape</title>
+	<para>Using ModeShape within your application is actually quite straightforward.  As you'll see in this chapter,
+		the first step is setting up ModeShape and starting the <code>JcrEngine</code>.  After that, you obtain the
 		<code>javax.jcr.Repository</code> instance for a named repository and just use the standard JCR API throughout your
 		application.
 	</para>
 	<sect1 id="jcr_engine">
-		<title>JBoss DNA's JcrEngine</title>
+		<title>ModeShape's JcrEngine</title>
 		<para>
-			JBoss DNA encapsulates everything necessary to run one or more JCR repositories into a single &JcrEngine; instance.
+			ModeShape encapsulates everything necessary to run one or more JCR repositories into a single &JcrEngine; instance.
 			This includes all underlying repository sources, the pools of connections to the sources, the sequencers,
 			the MIME type detector(s), and the &Repository; implementations.
 		</para>
@@ -83,8 +83,8 @@ engine.awaitTermination(3,TimeUnit.SECONDS);	// optional]]></programlisting>
 			<itemizedlist>
 				<listitem>
 					<para><emphasis role="strong"><code>Repository sources</code></emphasis> are the POJO objects that each describe a particular
-					location where content is stored.  Each repository source object is an instance of a JBoss DNA connector, and is configured
-					with the properties that particular source.  JBoss DNA's &RepositorySource; classes are analogous to JDBC's &DataSource; classes -
+					location where content is stored.  Each repository source object is an instance of a ModeShape connector, and is configured
+					with the properties that particular source.  ModeShape's &RepositorySource; classes are analogous to JDBC's &DataSource; classes -
 					they are implemented by specific connectors (aka, "drivers") for specific kinds of repository sources (aka, "databases").
 					Similarly, a &RepositorySource; instance is analogous to a &DataSource; instance, with bean properties for each configurable
 					parameter.  Therefore, each repository source definition must supply the name of the &RepositorySource; class, any
@@ -94,7 +94,7 @@ engine.awaitTermination(3,TimeUnit.SECONDS);	// optional]]></programlisting>
 					<para><emphasis role="strong"><code>Repositories</code></emphasis> define the JCR repositories that are available.  Each
 					repository has a unique name that is used to obtain the &Repository; instance from the &JcrEngine;'s <code>getRepository(String)</code>
 					method, but each repository definition also can include the predefined namespaces (other than those automatically defined by
-					JBoss DNA), various options, and the node types that are to be available in the repository without explicit registration
+					ModeShape), various options, and the node types that are to be available in the repository without explicit registration
 					through the JCR API.</para>
 				</listitem>
 				<listitem>
@@ -106,7 +106,7 @@ engine.awaitTermination(3,TimeUnit.SECONDS);	// optional]]></programlisting>
 				<listitem>
 					<para><emphasis role="strong"><code>MIME type detectors</code></emphasis> define the particular MIME type detector(s) that should
 					be made available.  A MIME type detector does exactly what the name implies: it attempts to determine the MIME type given a
-					"filename" and contents.  JBoss DNA automatically uses a detector that uses the file extension to identify the MIME type,
+					"filename" and contents.  ModeShape automatically uses a detector that uses the file extension to identify the MIME type,
 					but also provides an implementation that uses an external library to identify the MIME type based upon the contents.
 					The definition must state the name of the detector class, any bean properties and, optionally, the classpath that should 
 					be used to load the class.</para>
@@ -139,7 +139,7 @@ engine.awaitTermination(3,TimeUnit.SECONDS);	// optional]]></programlisting>
 		<sect2 id="loading_from_file">
 			<title>Loading from a configuration file</title>
 			<para>
-				Loading the JBoss DNA configuration from a file is actually very simple:
+				Loading the ModeShape configuration from a file is actually very simple:
 			</para>
     	<programlisting role="JAVA"><![CDATA[JcrConfiguration config = new JcrConfiguration();
 configuration.loadFrom(file);]]></programlisting>
@@ -163,7 +163,7 @@ configuration.loadFrom(file);]]></programlisting>
 				have been removed for clarity):
 			</para>
     	<programlisting role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
-<configuration xmlns="http://www.jboss.org/dna/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<configuration xmlns="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
 	  <!-- 
 	  Define the JCR repositories 
 	  -->
@@ -175,7 +175,7 @@ configuration.loadFrom(file);]]></programlisting>
 	          <dna:options jcr:primaryType="dna:options">
 	              <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
 	              <!--
-	              As a convenience, DNA defaults to granting guest users full access.  
+	              As a convenience, ModeShape defaults to granting guest users full access.  
 	              In a production system, you would want to limit this access by uncommenting one of the 
 	              options below:
 	              
@@ -189,15 +189,15 @@ configuration.loadFrom(file);]]></programlisting>
 	      </dna:repository>
 	  </dna:repositories>
     <!-- 
-    Define the sources for the content.  These sources are directly accessible using the DNA-specific 
+    Define the sources for the content.  These sources are directly accessible using the ModeShape-specific 
     Graph API.
     -->
     <dna:sources jcr:primaryType="nt:unstructured">
         <dna:source jcr:name="Cars" 
-                    dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource" 
+                    dna:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" 
                     dna:retryLimit="3" dna:defaultWorkspaceName="workspace1"/>
         <dna:source jcr:name="Aircraft" 
-                    dna:classname="org.jboss.dna.graph.connector.inmemory.InMemoryRepositorySource">
+                    dna:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource">
             <!-- Define the name of the workspace used by default.  Optional, but convenient. -->
             <defaultWorkspaceName>workspace2</defaultWorkspaceName>
         </dna:source>
@@ -207,14 +207,14 @@ configuration.loadFrom(file);]]></programlisting>
     -->
     <dna:sequencers>
         <dna:sequencer jcr:name="Image Sequencer" 
-                       dna:classname="org.jboss.dna.sequencer.image.ImageMetadataSequencer">
+                       dna:classname="org.modeshape.sequencer.image.ImageMetadataSequencer">
             <dna:description>Image metadata sequencer</dna:description>        
             <dna:pathExpression>/foo/source => /foo/target</dna:pathExpression>
             <dna:pathExpression>/bar/source => /bar/target</dna:pathExpression>
         </dna:sequencer>
     </dna:sequencers>
     <!--
-	  Define how JBoss DNA will determine the MIME type of files. This is an optional section 
+	  Define how ModeShape will determine the MIME type of files. This is an optional section 
 	  (and the default works pretty well).
     -->
     <dna:mimeTypeDetectors>
@@ -226,7 +226,7 @@ configuration.loadFrom(file);]]></programlisting>
 		<sect2 id="loading_from_repository">
 			<title>Loading from a configuration repository</title>
 			<para>
-				Loading the JBoss DNA configuration from an existing repository is also pretty straightforward.  Simply create and configure the
+				Loading the ModeShape configuration from an existing repository is also pretty straightforward.  Simply create and configure the
 				&RepositorySource; instance to point to the desired repository, and then call the <code>loadFrom(&RepositorySource; source)</code>
 				method:
 			</para>
@@ -292,7 +292,7 @@ config.repository("repository A")
       .setOption(JcrRepository.Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
       
       /*
-       * As a convenience, DNA allows guest users full access by default.  In a production system,
+       * As a convenience, ModeShape allows guest users full access by default.  In a production system,
        * you would want to limit this access by adding one of the lines below to modify this option:
        * .setOption(JcrRepository.Option.ANONYMOUS_USER_ROLES, ""); // No access
        * .setOption(JcrRepository.Option.ANONYMOUS_USER_ROLES, "readonly"); // Read-only access
@@ -302,7 +302,7 @@ config.repository("repository A")
 					a database store, or any other source).  Additionally, this example adds the node types in the "myCustomNodeTypes.cnd" file as those
 					that will be made available when the repository is accessed.  It also defines the "http://www.example.com/acme" namespace,
 					and finally sets the "JAAS_LOGIN_CONFIG_NAME" option to define the name	of the JAAS login configuration that should be used by 
-					the JBoss DNA repository.
+					the ModeShape repository.
 				</para>
 				<note>
 					<para>Each time <code>repository(String)</code> is called, it will either load the existing definition with the supplied
@@ -319,7 +319,7 @@ config.repository("repository A")
 					of the input path expression).</para> 
     		<programlisting role="JAVA"><![CDATA[JcrConfiguration config = ...
 config.sequencer("Image Sequencer")
-      .usingClass("org.jboss.dna.sequencer.image.ImageMetadataSequencer")
+      .usingClass("org.modeshape.sequencer.image.ImageMetadataSequencer")
       .loadedFromClasspath()
       .setDescription("Sequences image files to extract the characteristics of the image")
       .sequencingFrom("//(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd)[*])/jcr:content[@jcr:data]")
@@ -348,7 +348,7 @@ config.sequencer("Image Sequencer")
 					other bean properties required by the implementation.</para> 
     		<programlisting role="JAVA"><![CDATA[JcrConfiguration config = ...
 config.mimeTypeDetector("Extension Detector")
-      .usingClass(org.jboss.dna.graph.mimetype.ExtensionBasedMimeTypeDetector.class);]]></programlisting>
+      .usingClass(org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector.class);]]></programlisting>
 				<para>
 					Of course, the class can be specified as Class reference or a string (followed by whether the class should be loaded from
 					the classpath or from a specific classpath).
@@ -364,14 +364,14 @@ config.mimeTypeDetector("Extension Detector")
 		</sect2>
 	</sect1>
 	<sect1 id="dna_and_jndi">
-		<title>Deploying JBoss DNA via JNDI</title>
+		<title>Deploying ModeShape via JNDI</title>
 		<para>
 			Sometimes your applications can simply define a &JcrConfiguration; and instantiate the &JcrEngine; instance directly.
-			This is very straightforward, and this is what the <link linkend="downloading_and_running">JBoss DNA examples</link> do.
+			This is very straightforward, and this is what the <link linkend="downloading_and_running">ModeShape examples</link> do.
 		</para>
 		<para>
 			Web applications are a different story. Often, you may not want your web application to contain the code that initializes
-			a JBoss DNA engine.  Or, you may want the same &JcrEngine; instance to be reused in multiple web applications deployed 
+			a ModeShape engine.  Or, you may want the same &JcrEngine; instance to be reused in multiple web applications deployed 
 			to the same web/application server. In these cases, it is possible to configure the web/app server's JNDI instance to
 			instantiate the &JcrEngine;, meaning the web applications need only use the standard JNDI and JCR APIs.
 		</para>
@@ -413,7 +413,7 @@ try {
 			<title>Configuring JCR and JNDI</title>
 			<para>
 				Each kind of web server or application server is different, but all servlet containers do provide a way of configuring
-				objects and placing them into JNDI.  JBoss DNA provides a &JndiRepositoryFactory; class that implements &ObjectFactory;
+				objects and placing them into JNDI.  ModeShape provides a &JndiRepositoryFactory; class that implements &ObjectFactory;
 				and that can be used in the server's configuration. The &JndiRepositoryFactory; requires two properties:
 				<itemizedlist>
 					<listitem>
@@ -436,7 +436,7 @@ try {
 <programlisting role="XML"><![CDATA[<Resource name="jcr/local" 
           auth="Container"
           type="javax.jcr.Repository"
-          factory="org.jboss.dna.jcr.JndiRepositoryFactory"
+          factory="org.modeshape.jcr.JndiRepositoryFactory"
           configFile="/resource/path/to/configuration.xml"
           repositoryName="Test Repository Source" />]]></programlisting>
 			<para>
@@ -444,13 +444,13 @@ try {
 				that only one &JcrEngine; is instantiated, but that a &Repository; instance is registered for each entry.
 			</para>
 			<para>
-				Before the server can start, however, all of the JBoss DNA jars need to be placed on the classpath for the server.
+				Before the server can start, however, all of the ModeShape jars need to be placed on the classpath for the server.
 				JAAS also needs to be configured, and this can be done using the application server's configuration or in your
 				web application if you're using a simple servlet container. For more details, see the &ReferenceGuide;.
 			</para>
 			<note>
 				<para>
-					The JBoss DNA community has solicited input on how we can make it easier to consume and use JBoss DNA in applications
+					The ModeShape community has solicited input on how we can make it easier to consume and use ModeShape in applications
 					that do not use Maven. Check out the <ulink url="http://community.jboss.org/thread/146589">discussion thread</ulink>,
 					and please add any suggestions or opinions!
 				</para>
@@ -518,15 +518,15 @@ try {
 		</sect2>
 	</sect1>
 	<sect1 id="using_dna_via_maven">
-		<title>Using JBoss DNA via Maven</title>
+		<title>Using ModeShape via Maven</title>
 		<para>
-			JBoss DNA is a Maven-based project. If your application is using Maven, it is very easy to add a dependency on 
-			JBoss DNA's JCR library (plus any extensions), and Maven will ensure your application has access to all 
-			of the JBoss DNA artifacts and all 3rd-party libraries upon which DNA depends. 
+			ModeShape is a Maven-based project. If your application is using Maven, it is very easy to add a dependency on 
+			ModeShape's JCR library (plus any extensions), and Maven will ensure your application has access to all 
+			of the ModeShape artifacts and all 3rd-party libraries upon which ModeShape depends. 
 			Simply add a dependency in your application's POM:
 		</para>
 <programlisting role="XML"><![CDATA[<dependency>
-  <groupId>org.jboss.dna</groupId>
+  <groupId>org.modeshape</groupId>
   <artifactId>dna-jcr</artifactId>
   <version>0.7</version>
 </dependency>
@@ -535,24 +535,24 @@ try {
 				plus dependencies for each optional extension (sequencers, connectors, MIME type detectors, etc.):
 			</para>
 <programlisting role="XML"><![CDATA[<dependency>
-  <groupId>org.jboss.dna</groupId>
+  <groupId>org.modeshape</groupId>
   <artifactId>dna-connector-store-jpa</artifactId>
   <version>0.7</version>
 </dependency>
 ...
 <dependency>
-  <groupId>org.jboss.dna</groupId>
+  <groupId>org.modeshape</groupId>
   <artifactId>dna-sequencer-java</artifactId>
   <version>0.7</version>
 </dependency>
 ]]></programlisting>
 		<para>
 			Then, continue by defining a &JcrConfiguration; and building the engine, as discussed <link linkend="jcr-engine">earlier</link>.
-			This is very straightforward, and this is exactly what the <link linkend="downloading_and_running">JBoss DNA examples</link> do.
+			This is very straightforward, and this is exactly what the <link linkend="downloading_and_running">ModeShape examples</link> do.
 		</para>
 		<note>
 			<para>
-				The JBoss DNA community has solicited input on how we can make it easier to consume and use JBoss DNA in applications
+				The ModeShape community has solicited input on how we can make it easier to consume and use ModeShape in applications
 				that do not use Maven. Check out the <ulink url="http://community.jboss.org/thread/146589">discussion thread</ulink>,
 				and please add any suggestions or opinions!
 			</para>
@@ -561,10 +561,10 @@ try {
 	<sect1 id="using_dna_whats_next">
 		<title>What's next</title>
 		<para>
-			This chapter outline how you configure JBoss DNA, how you then access a <code>javax.jcr.Repository</code> instance,
+			This chapter outline how you configure ModeShape, how you then access a <code>javax.jcr.Repository</code> instance,
 			and use the standard JCR API to interact with the repository. The
 			<link linkend="downloading_and_running">next chapter </link> walks you through downloading
-			and running the JBoss DNA examples. 
+			and running the ModeShape examples. 
 		</para>
 	</sect1>
 </chapter>

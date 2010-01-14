@@ -1,0 +1,12 @@
+/*
+ * Redefinition of existing type
+ */
+ 
+ 
+<jcr = "http://www.jcp.org/jcr/1.0">
+<nt  = "http://www.jcp.org/jcr/nt/1.0">
+<mix = "http://www.jcp.org/jcr/nt/mix/1.0">
+<dna = "http://www.modeshape.org/1.0">
+
+[nt:folder] > nt:base
+- jcr:resource (string) primary protected version

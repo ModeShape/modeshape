@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -31,7 +31,7 @@
 <chapter id="zip-file-sequencer">
   <title>ZIP File Sequencer</title>
     <para>
-    	The ZIP file sequencer is included in JBoss DNA and extracts the files and folders contained in the ZIP archive file,
+    	The ZIP file sequencer is included in ModeShape and extracts the files and folders contained in the ZIP archive file,
 		extracting the files and folders into the repository using JCR's <code>nt:file</code> and <code>nt:folder</code> 
 		built-in node types.  The structure of the output thus matches the logical structure of the contents of the ZIP file.
     </para>
@@ -43,7 +43,7 @@
 JcrConfiguration config = ...
 
 config.sequencer("ZIP Sequencer")
-      .usingClass("org.jboss.dna.sequencer.zip.ZipSequencer")
+      .usingClass("org.modeshape.sequencer.zip.ZipSequencer")
       .loadedFromClasspath()
       .setDescription("Sequences compressed files to extract the internal file and folder structure")
       .sequencingFrom("//(*.(zip|gz|jar|war|ear)[*])/jcr:content[@jcr:data]")

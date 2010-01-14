@@ -1,0 +1,92 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+ 
+<class='http://www.modeshape.org/sequencer/javaclass/1.0'>
+
+[class:annotationMember]
+- class:name (string) mandatory
+- class:value (string) 
+
+[class:annotation]
+- class:name (string) mandatory
++ * (class:annotationMember) = class:annotationMember
+
+[class:annotations]
++ * (class:annotation) = class:annotation
+
+[class:field]
+- class:name (string) mandatory 
+- class:typeClassName (string) mandatory 
+- class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
+- class:static (boolean) mandatory
+- class:final (boolean) mandatory
+- class:transient (boolean) mandatory
+- class:volatile (boolean) mandatory
++ class:annotations (class:annotations) = class:annotations
+
+[class:fields]
++ * (class:field) = class:field
+
+[class:interfaces]
+- * (string)
+
+[class:parameters]
+- * (string)
+
+[class:method]
+- class:name (string) mandatory 
+- class:returnTypeClassName (string) mandatory 
+- class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
+- class:static (boolean) mandatory
+- class:final (boolean) mandatory
+- class:abstract (boolean) mandatory
+- class:strictFp (boolean) mandatory
+- class:native (boolean) mandatory
+- class:synchronized (boolean) mandatory
+- class:parameters (string) multiple
++ class:annotations (class:annotations) = class:annotations
+
+[class:methods]
++ * (class:method) = class:method
+
+[class:constructors]
++ * (class:method) = class:method
+
+[class:class]
+- class:name (string) mandatory
+- class:sequencedDate (date) 
+- class:superClassName (string) 
+- class:visibility (string) mandatory < 'public', 'protected', 'package', 'private'
+- class:abstract (boolean) mandatory
+- class:interface (boolean) mandatory
+- class:final (boolean) mandatory
+- class:strictFp (boolean) mandatory
+- class:interfaces (string) multiple
++ class:annotations (class:annotations) = class:annotations
++ class:constructors (class:constructors) = class:constructors
++ class:methods (class:methods) = class:methods
++ class:fields (class:fields) = class:fields
+
+[class:enum] > class:class
+- class:enumValues (string) mandatory multiple

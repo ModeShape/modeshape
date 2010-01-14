@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -31,7 +31,7 @@
 <chapter id="development-tools">
   <title>Developer tools</title>
   <para>
-		The JBoss DNA project uses <link linkend="maven">Maven</link> as its primary build tool, <link linkend="svn">Subversion</link>
+		The ModeShape project uses <link linkend="maven">Maven</link> as its primary build tool, <link linkend="svn">Subversion</link>
 		for its source code repository, <link linkend="jira">JIRA</link> for the issue management and bug tracking system,
 		and <link linkend="hudson">Hudson</link> for the continuous integration system.  We do not stipulate a specific integrated
 		development environment (IDE), although most of us use <link linkend="eclipse">Eclipse</link> and rely upon the code formatting
@@ -44,7 +44,7 @@
   <sect1 id="methodology">
     <title>Development methodology</title>
     <para>
-			Rather than use a single formal development methodology, the JBoss DNA project incorporates those techniques, activities, and 
+			Rather than use a single formal development methodology, the ModeShape project incorporates those techniques, activities, and 
 			processes that are practical and work for the project. In fact, the committers are given a lot of freedom for how they develop 
 			the components and features they work on.
 		</para>
@@ -55,8 +55,8 @@
 					<para>
 						<emphasis role="strong"><ulink url="&Wikipedia;Agile_software_development">Agile software development</ulink></emphasis>
 					  includes those software methodologies (e.g., Scrum) that promote development iterations and open collaboration.  While the
-						JBoss DNA project doesn't follow these closely, we do emphasize the importance of always having running software
-						and using running software as a measure of progress.  The JBoss DNA project also wants to move to more frequent
+						ModeShape project doesn't follow these closely, we do emphasize the importance of always having running software
+						and using running software as a measure of progress.  The ModeShape project also wants to move to more frequent
 						releases (on the order of 4-6 weeks)
 					</para>
 				</listitem>
@@ -100,19 +100,19 @@
 	<sect1 id="jdk">
 		<title>JDK</title>
 		<para>
-			Currently, JBoss DNA is developed and built using <ulink url="http://java.sun.com/javase/downloads/index_jdk5.jsp">JDK 5</ulink>.
-			So if you're trying to get JBoss DNA to compile locally, you should make sure you have the JDK 5 installed and are using it.
+			Currently, ModeShape is developed and built using <ulink url="http://java.sun.com/javase/downloads/index_jdk5.jsp">JDK 5</ulink>.
+			So if you're trying to get ModeShape to compile locally, you should make sure you have the JDK 5 installed and are using it.
 			If you're a contributor, you should make sure that you're using JDK 5 before committing any changes.  
 		</para>
 		<note>
 			<para>
 				You should be able to use the <ulink url="http://java.sun.com/javase/downloads/index.jsp">latest JDK</ulink>,
-				which is currently JDK 6.  It is possible to build JBoss DNA using JDK 6 without any code changes, but it's 
+				which is currently JDK 6.  It is possible to build ModeShape using JDK 6 without any code changes, but it's 
 				not our official JDK (yet).
 			</para>
 			<para>
-				Why do we build using JDK 5 and not 6? The main reason is that if we were to use JDK 6, then JBoss DNA couldn't really be used in any
-				applications or projects that still used JDK 5.  Plus, anybody using JDK 6 can still use JBoss DNA.
+				Why do we build using JDK 5 and not 6? The main reason is that if we were to use JDK 6, then ModeShape couldn't really be used in any
+				applications or projects that still used JDK 5.  Plus, anybody using JDK 6 can still use ModeShape.
 				However, considering that the end-of-life for Java 5 is 
 				<ulink url="http://java.sun.com/products/archive/eol.policy.html">October 2009</ulink>, we will likely be switching to 
 				Java 6 sometime in 2010.
@@ -132,14 +132,14 @@
 	<sect1 id="jira">
 		<title>JIRA</title>
 		<para>
-			JBoss DNA uses <ulink url="&JIRA;">JIRA</ulink> as its bug tracking, issue tracking, and project management tool.
+			ModeShape uses <ulink url="&JIRA;">JIRA</ulink> as its bug tracking, issue tracking, and project management tool.
 			This is a browser-based tool, with very good functionality for managing the different tasks.  It also serves as
 			the community's roadmap, since we can define new features and manage them along side the bugs and other issues.
 			Although most of the issues have been created by community members, we encourage any users to suggest new features,
-			log defects, or identify shortcomings in JBoss DNA.
+			log defects, or identify shortcomings in ModeShape.
 		</para>
 		<para>
-			The JBoss DNA community also encourages its members to work only issues that are managed in JIRA, and preferably those
+			The ModeShape community also encourages its members to work only issues that are managed in JIRA, and preferably those
 			that are targeted to the current release effort.  If something isn't in JIRA but needs to get done, then create an 
 			issue before you start working on the code changes.  Once you have code changes, you can upload a patch to the JIRA issue
 			if the change is complex, if you want someone to review it, or if you don't have commit privileges and have fixed
@@ -148,7 +148,7 @@
 	</sect1>
 	<sect1 id="svn">
 		<title>Subversion</title>
-		<para>JBoss DNA uses Subversion as its source code management system, and specifically the instance at 
+		<para>ModeShape uses Subversion as its source code management system, and specifically the instance at 
 			<ulink url="http://www.jboss.org">JBoss.org</ulink>.  Although you can view the
 			<ulink url="&Subversion;trunk/">trunk</ulink> of the Subversion repository directly
 			(or using <ulink url="&Fisheye;trunk">FishEye</ulink>) through your browser,
@@ -159,10 +159,10 @@
 			particular platform.
 		</para>
 		<para>
-			Here are some useful URLs for the JBoss DNA Subversion:
+			Here are some useful URLs for the ModeShape Subversion:
 		</para>
 		<table frame='all'>
-			<title>SVN URLs for JBoss DNA</title>
+			<title>SVN URLs for ModeShape</title>
 			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
 	      <colspec colname='c1' colwidth="1*"/>
 	      <colspec colname='c2' colwidth="1*"/>
@@ -191,7 +191,7 @@
 		<para>
 			When committing to SVN, be sure to include in a commit comment that includes the JIRA issue that the commit applies to and a very
 			good and thorough description of what was done.  It only takes a minute or two to be very clear about the change.  And including
-			the JIRA issue (e.g., "DNA-123") in the comment allows the JIRA system to track the changes that have been made for each issue.
+			the JIRA issue (e.g., "ModeShape-123") in the comment allows the JIRA system to track the changes that have been made for each issue.
 		</para>
 		<para>
 			Also, any single SVN commit should apply to one and only one JIRA issue.  Doing this helps ensure that each commit is atomic
@@ -203,9 +203,9 @@
 			applied, please use SVN to create the patch.  To do this, simply do the following in the top of the codebase (e.g., the 
 			<code>trunk</code> directory):
 		</para>
-		<programlisting>$ svn diff . > ~/DNA-000.patch</programlisting> 
+		<programlisting>$ svn diff . > ~/ModeShape-000.patch</programlisting> 
 		<para>
-			where <code>DNA-000</code> represents the DNA issue number.  Note that the above command places the patch file in your home directory,
+			where <code>ModeShape-000</code> represents the ModeShape issue number.  Note that the above command places the patch file in your home directory,
 			but you can place the patch file anywhere.  Then, simply use JIRA to attach the patch file to the particular issue, also adding
 			a comment that describes the version number against which the patch was created.
 		</para>
@@ -213,7 +213,7 @@
 			To apply a patch, you usually want to start with a workspace that has no changes.  Download the patch file, then issue the
 			following command (again, from the top-level of the workspace):
 		</para>
-		<programlisting>$ patch -E -p0 &lt; ~/DNA-000.patch</programlisting> 
+		<programlisting>$ patch -E -p0 &lt; ~/ModeShape-000.patch</programlisting> 
 		<para>
 			The "-E" option specifies to delete any files that were made empty by the application of the patch, and the "-p0" option instructs
 			the patch tool to not change any of the paths.  After you run this command, your working area should have the changes defined
@@ -225,19 +225,19 @@
 		<para>
 			Several contributors are using <ulink url="&Git;">Git</ulink> on their local development machines.  This allows
 			the developer to use Git branches, commits, merges, and other Git tools, but still using 
-			the JBoss DNA <link linkend="svn">Subversion</link> repository.  For more information, see our 
+			the ModeShape <link linkend="svn">Subversion</link> repository.  For more information, see our 
 			<ulink url="http://jbossdna.blogspot.com/2009/05/git-and-svn-beginning.html">blog</ulink>
 			<ulink url="http://jbossdna.blogspot.com/2009/05/git-it-together-with-subversion.html">posts</ulink> on the topic.
 		</para>
 	</sect1>
 	<sect1 id="maven">
 		<title>Maven</title>
-		<para>JBoss DNA uses Maven 2 for its build system, as is this example. Using Maven 2 has several advantages, including
+		<para>ModeShape uses Maven 2 for its build system, as is this example. Using Maven 2 has several advantages, including
 	    the ability to manage dependencies. If a library is needed, Maven automatically finds and downloads that library, plus
 	    everything that library needs. This means that it's very easy to build the examples - or even create a maven project that
-	    depends on the JBoss DNA JARs.</para>
+	    depends on the ModeShape JARs.</para>
 		<para>
-      To use Maven with JBoss DNA, you'll need to have <link linkend="jdk">JDK 5 or 6</link> and Maven 2.0.9 (or higher).</para>
+      To use Maven with ModeShape, you'll need to have <link linkend="jdk">JDK 5 or 6</link> and Maven 2.0.9 (or higher).</para>
 		<para>
       Maven can be downloaded from <ulink url="http://maven.apache.org/">http://maven.apache.org/</ulink>, and is installed by unzipping the
       <code>maven-2.0.9-bin.zip</code> file to a convenient location on your local disk. Simply add <code>$MAVEN_HOME/bin</code>
@@ -290,7 +290,7 @@
 </settings>
 ]]></programlisting>
 		<para>This profile informs Maven of the two JBoss repositories (<ulink url="http://repository.jboss.org/maven2">snapshots</ulink> 
-		  and <ulink url="http://snapshots.jboss.org/maven2">releases</ulink>) that contain all of the JARs for JBoss DNA and all dependent libraries.
+		  and <ulink url="http://snapshots.jboss.org/maven2">releases</ulink>) that contain all of the JARs for ModeShape and all dependent libraries.
 		</para>
 		<para>While you're adding <code>$MAVEN_HOME/bin</code> to your path, you should also set the <code>$MAVEN_OPTS</code> environment variable
 		  to "<code>-Xmx256m</code>".  If you don't do this, you'll likely see an <code>java.lang.OutOfMemoryError</code> sometime during a full
@@ -299,7 +299,7 @@
 		<note>
 			<para>
 				The JBoss Maven repository provides a central location for not only the artifacts produced by the JBoss.org projects (well, at least those
-				that use Maven), but also is where those projects can place the artifacts that they depend on.  JBoss DNA has a policy that
+				that use Maven), but also is where those projects can place the artifacts that they depend on.  ModeShape has a policy that
 				the <emphasis>source code and JARs</emphasis> for <emphasis>all</emphasis> dependencies <emphasis>must</emphasis> be loaded into the 
 				JBoss Maven repository.  It may be a little bit more work for the developers, but it does help ensure that developers have easy
 				access to the source and that the project (and dependencies) can always be rebuilt when needed.
@@ -312,7 +312,7 @@
 		<sect2 id="build_commands">
 			<title>Building</title>
 			<para>
-				There are just a few commands that are useful for building JBoss DNA (and it's <link linkend="modules">subprojects</link>).
+				There are just a few commands that are useful for building ModeShape (and it's <link linkend="modules">subprojects</link>).
 				Usually, these are issued while at the top level of the code (usually just below <code>trunk/</code>), although issuing
 				them inside a subproject just applies to that subproject.
 			</para>
@@ -387,7 +387,7 @@
 	</sect1>
 	<sect1 id="hudson">
 		<title>Continuous integration with Hudson</title>
-		<para>JBoss DNA's continuous integration is done with several Hudson jobs on <ulink url="http://www.jboss.org">JBoss.org</ulink>.
+		<para>ModeShape's continuous integration is done with several Hudson jobs on <ulink url="http://www.jboss.org">JBoss.org</ulink>.
 		  These jobs run periodically and basically run the Maven build process.  Any build failures or test failures are reported,
 		  as are basic statistics and history for each job.
 		</para>
@@ -404,11 +404,11 @@
 				</thead>
 				<tbody>
 					<row>
-						<entry><ulink url="http://hudson.jboss.org/hudson/job/DNA%20continuous%20on%20JDK1.5/">Continuous on JDK 5</ulink></entry>
+						<entry><ulink url="http://hudson.jboss.org/hudson/job/ModeShape%20continuous%20on%20JDK1.5/">Continuous on JDK 5</ulink></entry>
 						<entry>Continuous build that runs an integration build after changes are committed to SVN.  SVN is polled every 15 minutes.</entry>
 					</row>
 					<row>
-						<entry><ulink url="http://hudson.jboss.org/hudson/job/DNA%20nightly%20integration%20on%20JDK1.5/">Nightly on JDK 5</ulink></entry>
+						<entry><ulink url="http://hudson.jboss.org/hudson/job/ModeShape%20nightly%20integration%20on%20JDK1.5/">Nightly on JDK 5</ulink></entry>
 						<entry>Integration build that runs every night (usually around 2 a.m. EDT), regardless of whether changes have been committed to SVN
 							since the previous night.</entry>
 					</row>
@@ -418,19 +418,19 @@
 	</sect1>
 	<sect1 id="eclipse">
 		<title>Eclipse IDE</title>
-		<para>Many of the JBoss DNA committers use the Eclipse IDE, and all project files required by Eclipse are committed in SVN, making
-			it pretty easy to get an Eclipse workspace running with all of the JBoss DNA projects.
+		<para>Many of the ModeShape committers use the Eclipse IDE, and all project files required by Eclipse are committed in SVN, making
+			it pretty easy to get an Eclipse workspace running with all of the ModeShape projects.
 		</para>
 		<para>We're using the latest released version of Eclipse, 
 			available from <ulink url="http://www.eclipse.org/">Eclipse.org</ulink>.  Simply follow the instructions for your platform.
 		</para>
 		<para>
-			After Eclipse is installed, create a new workspace.  Before importing the JBoss DNA projects, import (via 
+			After Eclipse is installed, create a new workspace.  Before importing the ModeShape projects, import (via 
 			<emphasis role="strong">File->Import->Preferences</emphasis>) the subset of the Eclipse preferences by importing the 
 			<code>eclipse-preferences.epf</code> file (located under <code>trunk</code>). Then, open the Eclipse preferences and 
 			open the <emphasis role="strong">Java->Code Style-> Formatter</emphasis> preference page, and press the "Import" button and
 			choose the <code>eclipse-code-formatter-profile.xml</code> file (also located under <code>trunk</code>).  This will load the code
-			formatting preferences for the JBoss DNA project.
+			formatting preferences for the ModeShape project.
 		</para>
 		<para>
 			Then install Eclipse plugins for SVN and Maven.  (Remember, you will have to restart Eclipse after installing them.)
@@ -463,7 +463,7 @@
 			</tgroup>
 		</table>
 		<para>
-			After you check out the JBoss DNA codebase, you can import the JBoss DNA Maven projects into Eclipse as Eclipse projects.
+			After you check out the ModeShape codebase, you can import the ModeShape Maven projects into Eclipse as Eclipse projects.
 			To do this, go to "File->Import->Existing Projects", navigate to the <code>trunk/</code> folder in the import wizard,
 			and then check each of the <link linkend="modules">subprojects</link> that you want to have in your workspace.
 			Don't forget about the projects under <code>extensions/</code> or <code>docs/</code>.
@@ -472,7 +472,7 @@
 	<sect1 id="releasing">
 		<title>Releasing</title>
 		<para>
-			This section outlines the basic process of releasing JBoss DNA.  This <emphasis role="strong">must</emphasis> be done
+			This section outlines the basic process of releasing ModeShape.  This <emphasis role="strong">must</emphasis> be done
 			either by the project lead or only after communicating with the project lead.
 		</para>
 		<para>
@@ -496,7 +496,7 @@
 			<title>Building all artifacts and assemblies</title>
 			<para>
 				By default, the project's Maven build process does <emphasis>not</emphasis> build the documentation, JavaDocs, or assemblies.
-				These take extra time, and most of our builds don't require them.  So the first step of releasing JBoss DNA
+				These take extra time, and most of our builds don't require them.  So the first step of releasing ModeShape
 				is to use Maven to build all of regular artifacts (e.g., JARs) and these extra documents and assemblies.
 			</para>
 			<note>
@@ -599,13 +599,13 @@
 			</para>
 			<para>
 				At this point, the software has been released and tagged, and it's been deployed to a local checked-out copy of the 
-				JBoss DNA Maven 2 repository (via the "&lt;distribution&gt;" section of the pom.xml files).  Those need to be committed
+				ModeShape Maven 2 repository (via the "&lt;distribution&gt;" section of the pom.xml files).  Those need to be committed
 				into the Maven 2 repository using SVN.  And finally, the last thing is to publish the release onto
 				the project's <ulink url="&Downloads;">downloads</ulink> and <ulink url="&Home;/docs">documentation</ulink> pages.
 			</para>
 			<para>
 				The assemblies of the source, binaries, etc. also need to be published onto the &Downloads; area of the
-				<ulink url="http://www.jboss.org/dna">the project page</ulink>.  This process is expected to change, as <ulink url="http://www.jboss.org">JBoss.org</ulink>
+				<ulink url="http://www.modeshape.org">the project page</ulink>.  This process is expected to change, as <ulink url="http://www.jboss.org">JBoss.org</ulink>
 				improves its infrastructure.
 			</para>
 		</sect2>
@@ -613,8 +613,8 @@
 	<sect1>
 		<title>Summary</title>
 		<para>
-			In this chapter, we described the various aspects of developing code for the JBoss DNA project.  
-			Next, we must discuss the testing practices for JBoss DNA project.
+			In this chapter, we described the various aspects of developing code for the ModeShape project.  
+			Next, we must discuss the testing practices for ModeShape project.
 		  This is the topic of the <link linkend="testing">next chapter</link>.
 		</para>
 	</sect1>

@@ -1,0 +1,36 @@
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<ddl='http://www.modeshape.org/ddl/1.0'>
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+  
+// =============================================================================
+// STATEMENT
+// =============================================================================
+[ddl:statement] mixin abstract
+  - ddl:expression (string) mandatory
+  + * (ddl:ddlProblem) = ddl:ddlProblem multiple
+  
+[ddl:other_statement] mixin abstract
+  - ddl:expression (string) mandatory
+  + * (ddl:ddlProblem) = ddl:ddlProblem multiple
+  
+// =============================================================================
+// CREATE SCHEMA
+// =============================================================================
+[ddl:schemaDefinition] > ddl:statement  mixin
+  - ddl:defaultCharacterSetName (STRING)
+  + * (ddl:other_statement) = ddl:other_statement multiple
+  
+// =============================================================================
+// DDL PROBLEM
+// =============================================================================
+[ddl:ddlProblem] mixin
+  - ddl:problemLevel (LONG) mandatory
+  - ddl:message (STRING) mandatory

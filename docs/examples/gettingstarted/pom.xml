@@ -1,11 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.jboss.dna.examples</groupId>
+  <groupId>org.modeshape.examples</groupId>
   <artifactId>getting_started</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.0.Beta1-SNAPSHOT</version>
-  <name>JBoss DNA Getting Started examples</name>
+  <version>0.9-SNAPSHOT</version>
+  <name>ModeShape Getting Started examples</name>
   <description />
 
   <modules>
@@ -16,48 +16,48 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>org.jboss.dna</groupId>
-        <artifactId>dna-common</artifactId>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-common</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.jboss.dna</groupId>
-        <artifactId>dna-graph</artifactId>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-graph</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.jboss.dna</groupId>
-        <artifactId>dna-repository</artifactId>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-repository</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.jboss.dna</groupId>
-        <artifactId>dna-jcr</artifactId>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-jcr</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.jboss.dna</groupId>
-        <artifactId>dna-maven-classloader</artifactId>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-maven-classloader</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.jboss.dna</groupId>
-        <artifactId>dna-sequencer-images</artifactId>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-sequencer-images</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.jboss.dna</groupId>
-        <artifactId>dna-sequencer-java</artifactId>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-sequencer-java</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.jboss.dna</groupId>
-        <artifactId>dna-connector-jbosscache</artifactId>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-connector-jbosscache</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.jboss.dna</groupId>
-        <artifactId>dna-connector-federation</artifactId>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-connector-federation</artifactId>
         <version>${project.version}</version>
         <scope>runtime</scope>
       </dependency>

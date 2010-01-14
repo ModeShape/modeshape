@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -99,28 +99,28 @@
 		<graphic align="center" scale="100" fileref="jcr-features.png"/>
 	</figure>
 	<sect1 id="what_is_jboss_dna">
-		<title>JBoss DNA</title>
+		<title>ModeShape</title>
 		<para>
 			What makes JCR interesting, however, is that a JCR implementation provides all these features and capabilities regardless
-			of where or how that information is persisted or stored.  <emphasis>This is in fact the main purpose of JBoss DNA:
+			of where or how that information is persisted or stored.  <emphasis>This is in fact the main purpose of ModeShape:
 			provide a JCR implementation that provides access to content stored in many different kinds of systems.</emphasis>
-			A JBoss DNA repository isn't yet another silo of information, but rather it's a JCR view of the information you already have
-			in your environment: files systems, databases, other repositories, services, applications, etc. <emphasis role="strong">JBoss DNA can 
+			A ModeShape repository isn't yet another silo of information, but rather it's a JCR view of the information you already have
+			in your environment: files systems, databases, other repositories, services, applications, etc. <emphasis role="strong">ModeShape can 
 			help you understand the systems and information you already have.</emphasis>
 		</para>
 		<para>
 			Of course when you start providing a unified view of all this information, you start recognizing the need to store more
-			information, including metadata about and relationships between the existing content.  JBoss DNA lets you do this, too.
-			And JBoss DNA even tries to help you discover more about the information you already have, especially the
+			information, including metadata about and relationships between the existing content.  ModeShape lets you do this, too.
+			And ModeShape even tries to help you discover more about the information you already have, especially the
 			information wrapped up in the kinds of files often found in enterprise systems: service definitions, policy files,
 			images, media, documents, presentations, application components, reusable libraries, configuration files,
 			application installations, databases schemas, management scripts, and so on.  As files are loaded into the repository,
-			JBoss DNA can <emphasis>sequence</emphasis> these files to extract from their content meaningful information that
+			ModeShape can <emphasis>sequence</emphasis> these files to extract from their content meaningful information that
 			can be stored in the repository, where your applications can find it by using the standard JCR API to search,
 			access, and use the information.
 		</para>
 		<para>
-			So, JBoss DNA <emphasis>is</emphasis> a JCR implementation that can automatically sequence files loaded into the repository,
+			So, ModeShape <emphasis>is</emphasis> a JCR implementation that can automatically sequence files loaded into the repository,
 			and it can be used as a traditional JCR silo repository.
 			But it <emphasis>can</emphasis> also let your applications use the JCR API to access the content in other systems, and
 			can unify the content from multiple external systems and multiple storage systems to provide a single, federated repository.
@@ -129,18 +129,18 @@
 	<sect1 id="introduction_whats_next">
 		<title>What's next</title>
 		<para>
-			As we'll see in the <link linkend="use_cases">next chapter</link>, the ability of JBoss DNA to 
-			federate, integrate, and sequence information make JBoss DNA a powerful asset and tool.  
-			Then <link linkend="using_dna">Chapter 3</link> will show that once a JBoss DNA repository is set up, applications see
-			JBoss DNA just as another JCR <code>javax.jcr.Repository</code> instance and use the standard JCR API to obtain a <code>javax.jcr.Session</code>
+			As we'll see in the <link linkend="use_cases">next chapter</link>, the ability of ModeShape to 
+			federate, integrate, and sequence information make ModeShape a powerful asset and tool.  
+			Then <link linkend="using_dna">Chapter 3</link> will show that once a ModeShape repository is set up, applications see
+			ModeShape just as another JCR <code>javax.jcr.Repository</code> instance and use the standard JCR API to obtain a <code>javax.jcr.Session</code>
 			and work with the content.
 		</para>
 		<para>
 			<link linkend="downloading_and_running">Chapter 4</link> walks you through downloading
-			and building the JBoss DNA examples, while <link linkend="sequencer_example">Chapter 5</link>
+			and building the ModeShape examples, while <link linkend="sequencer_example">Chapter 5</link>
 			and <link linkend="repository_example">Chapter 6</link> will run these very simple examples and walk through their code.  
-			<link linkend="conclusion">Chapter 7</link> wraps things up with a discussion about the future of JBoss DNA
-			and what you can do next to start using JBoss DNA in your own applications.
+			<link linkend="conclusion">Chapter 7</link> wraps things up with a discussion about the future of ModeShape
+			and what you can do next to start using ModeShape in your own applications.
 	  </para>
 	</sect1>
 </chapter>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -31,11 +31,11 @@
 <preface id="preface">
   <title>Target audience</title>
   <para>
-    This reference guide is for the developers of JBoss DNA and those users that want to have a better understanding of how JBoss DNA
-    works or how to extend the functionality. For a higher-level introduction to JBoss DNA, see the &GettingStarted; document.
+    This reference guide is for the developers of ModeShape and those users that want to have a better understanding of how ModeShape
+    works or how to extend the functionality. For a higher-level introduction to ModeShape, see the &GettingStarted; document.
   </para>
   <para>
-    If you have any questions or comments, please feel free to contact JBoss DNA's
+    If you have any questions or comments, please feel free to contact ModeShape's
     <ulink url="&MailTo;">user mailing list</ulink> or use the
     <ulink url="&Forums;">user forums</ulink>. 
     If you'd like to get involved on the project, join the <ulink url="&Home;lists.html">mailing lists</ulink>,

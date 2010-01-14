@@ -1,0 +1,205 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+ 
+ //------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<ddl='http://www.modeshape.org/ddl/1.0'>
+<postgresddl='http://www.modeshape.org/ddl/postgres/1.0'>
+
+// =============================================================================
+// OPERANDS
+// =============================================================================
+[postgresddl:aggregateOperand]      > ddl:operand abstract
+[postgresddl:castOperand]           > ddl:operand abstract
+[postgresddl:commentOperand]      > ddl:operand abstract
+[postgresddl:constraintTriggerOperand] > ddl:operand abstract
+[postgresddl:conversionOperand]     > ddl:operand abstract
+[postgresddl:databaseOperand]       > ddl:operand abstract
+[postgresddl:foreignDataOperand]    > ddl:operand abstract
+[postgresddl:groupOperand]          > ddl:operand abstract
+[postgresddl:functionOperand]       > ddl:operand abstract
+[postgresddl:indexOperand]          > ddl:operand abstract
+[postgresddl:languageOperand]       > ddl:operand abstract
+[postgresddl:operatorOperand]       > ddl:operand abstract
+[postgresddl:ownedByOperand]        > ddl:operand abstract
+[postgresddl:roleOperand]           > ddl:operand abstract
+[postgresddl:ruleOperand]           > ddl:operand abstract
+[postgresddl:sequenceOperand]       > ddl:operand abstract
+[postgresddl:serverOperand]         > ddl:operand abstract
+[postgresddl:tablespaceOperand]     > ddl:operand abstract
+[postgresddl:textSearchOperand]     > ddl:operand abstract
+[postgresddl:triggerOperand]        > ddl:operand abstract
+[postgresddl:typeOperand]           > ddl:operand abstract
+[postgresddl:userOperand]           > ddl:operand abstract
+[postgresddl:userMappingOperand]    > ddl:operand abstract
+[postgresddl:parameterOperand]      > ddl:operand abstract
+
+[postgresddl:functionParameter]     > postgresddl:parameterOperand mixin
+  - ddl:datatypeName (STRING) mandatory
+  - ddl:datatypeLength (LONG)
+  - ddl:datatypePrecision (LONG)
+  - ddl:datatypeScale (LONG)
+  - ddl:nullable (STRING)
+  - ddl:defaultOption (STRING)
+  - postgresddl:mode (STRING)
+
+[postgresddl:role]                  > postgresddl:roleOperand mixin
+
+[postgresddl:renamedColumn]         > ddl:renamable mixin
+
+// =============================================================================
+// ALTER STATEMENTS
+// =============================================================================
+[postgresddl:alterAggregateStatement]           > ddl:alterable, ddl:statement, postgresddl:aggregateOperand mixin
+[postgresddl:alterConversionStatement]          > ddl:alterable, ddl:statement, postgresddl:conversionOperand mixin
+[postgresddl:alterDatabaseStatement]            > ddl:alterable, ddl:statement, postgresddl:databaseOperand mixin
+[postgresddl:alterForeignDataWrapperStatement]  > ddl:alterable, ddl:statement, postgresddl:foreignDataOperand mixin
+[postgresddl:alterFunctionStatement]            > ddl:alterable, ddl:statement, postgresddl:functionOperand mixin
+[postgresddl:alterGroupStatement]               > ddl:alterable, ddl:statement, postgresddl:groupOperand mixin
+[postgresddl:alterIndexStatement]               > ddl:alterable, ddl:statement, postgresddl:indexOperand mixin
+[postgresddl:alterLanguageStatement]            > ddl:alterable, ddl:statement, postgresddl:languageOperand mixin
+[postgresddl:alterOperatorStatement]            > ddl:alterable, ddl:statement, postgresddl:operatorOperand mixin
+[postgresddl:alterRoleStatement]                > ddl:alterable, ddl:statement, postgresddl:roleOperand mixin
+[postgresddl:alterSchemaStatement]              > ddl:alterable, ddl:statement,         ddl:schemaOperand mixin
+[postgresddl:alterSequenceStatement]            > ddl:alterable, ddl:statement, postgresddl:sequenceOperand mixin
+[postgresddl:alterServerStatement]              > ddl:alterable, ddl:statement, postgresddl:serverOperand mixin
+[postgresddl:alterTablespaceStatement]          > ddl:alterable, ddl:statement, postgresddl:tablespaceOperand mixin
+[postgresddl:alterTextSearchStatement]          > ddl:alterable, ddl:statement, postgresddl:textSearchOperand mixin
+[postgresddl:alterTriggerStatement]             > ddl:alterable, ddl:statement, postgresddl:triggerOperand mixin
+[postgresddl:alterTypeStatement]                > ddl:alterable, ddl:statement, postgresddl:typeOperand mixin
+[postgresddl:alterUserStatement]                > ddl:alterable, ddl:statement, postgresddl:userOperand mixin
+[postgresddl:alterUserMappingStatement]         > ddl:alterable, ddl:statement, postgresddl:userMappingOperand mixin
+[postgresddl:alterViewStatement]                > ddl:alterable, ddl:statement,         ddl:viewOperand mixin
+
+[postgresddl:alterTableStatement] > ddl:alterTableStatement mixin
+  - postgresddl:newTableName (STRING)
+  - postgresddl:schemaName (STRING)
+  + postgresddl:renameColumn (postgresddl:renamedColumn) = postgresddl:renamedColumn multiple
+
+  
+// =============================================================================
+// CREATE STATEMENTS
+// =============================================================================
+
+[postgresddl:createAggregateStatement]          > ddl:creatable, ddl:statement, postgresddl:aggregateOperand mixin
+[postgresddl:createCastStatement]               > ddl:creatable, ddl:statement, postgresddl:castOperand mixin
+[postgresddl:createConstraintTriggerStatement]  > ddl:creatable, ddl:statement, postgresddl:constraintTriggerOperand mixin
+[postgresddl:createConversionStatement]         > ddl:creatable, ddl:statement, postgresddl:conversionOperand mixin
+[postgresddl:createDatabaseStatement]           > ddl:creatable, ddl:statement, postgresddl:databaseOperand mixin
+[postgresddl:createForeignDataWrapperStatement] > ddl:creatable, ddl:statement, postgresddl:foreignDataOperand mixin
+[postgresddl:createFunctionStatement]           > ddl:creatable, ddl:statement, postgresddl:functionOperand mixin
+[postgresddl:createGroupStatement]              > ddl:creatable, ddl:statement, postgresddl:groupOperand mixin
+[postgresddl:createIndexStatement]              > ddl:creatable, ddl:statement, postgresddl:indexOperand mixin
+[postgresddl:createLanguageStatement]           > ddl:creatable, ddl:statement, postgresddl:languageOperand mixin
+[postgresddl:createOperatorStatement]           > ddl:creatable, ddl:statement, postgresddl:operatorOperand mixin
+[postgresddl:createRoleStatement]               > ddl:creatable, ddl:statement, postgresddl:roleOperand mixin
+[postgresddl:createRuleStatement]               > ddl:creatable, ddl:statement, postgresddl:ruleOperand mixin
+[postgresddl:createSequenceStatement]           > ddl:creatable, ddl:statement, postgresddl:sequenceOperand mixin
+[postgresddl:createServerStatement]             > ddl:creatable, ddl:statement, postgresddl:serverOperand mixin
+[postgresddl:createTablespaceStatement]         > ddl:creatable, ddl:statement, postgresddl:tablespaceOperand mixin
+[postgresddl:createTextSearchStatement]         > ddl:creatable, ddl:statement, postgresddl:textSearchOperand mixin
+[postgresddl:createTriggerStatement]            > ddl:creatable, ddl:statement, postgresddl:triggerOperand mixin
+[postgresddl:createTypeStatement]               > ddl:creatable, ddl:statement, postgresddl:typeOperand mixin
+[postgresddl:createUserStatement]               > ddl:creatable, ddl:statement, postgresddl:userOperand mixin
+[postgresddl:createUserMappingStatement]        > ddl:creatable, ddl:statement, postgresddl:userMappingOperand mixin
+
+// =============================================================================
+// DROP STATEMENTS
+// =============================================================================
+
+[postgresddl:dropAggregateStatement]            > ddl:droppable, ddl:statement, postgresddl:aggregateOperand mixin
+[postgresddl:dropCastStatement]                 > ddl:droppable, ddl:statement, postgresddl:castOperand mixin
+[postgresddl:dropConstraintTriggerStatement]    > ddl:droppable, ddl:statement, postgresddl:constraintTriggerOperand mixin
+[postgresddl:dropConversionStatement]           > ddl:droppable, ddl:statement, postgresddl:conversionOperand mixin
+[postgresddl:dropDatabaseStatement]             > ddl:droppable, ddl:statement, postgresddl:databaseOperand mixin
+[postgresddl:dropForeignDataWrapperStatement]   > ddl:droppable, ddl:statement, postgresddl:foreignDataOperand mixin
+[postgresddl:dropFunctionStatement]             > ddl:droppable, ddl:statement, postgresddl:functionOperand mixin
+[postgresddl:dropGroupStatement]                > ddl:droppable, ddl:statement, postgresddl:groupOperand mixin
+[postgresddl:dropIndexStatement]                > ddl:droppable, ddl:statement, postgresddl:indexOperand mixin
+[postgresddl:dropLanguageStatement]             > ddl:droppable, ddl:statement, postgresddl:languageOperand mixin
+[postgresddl:dropOperatorStatement]             > ddl:droppable, ddl:statement, postgresddl:operatorOperand mixin
+[postgresddl:dropOwnedByStatement]              > ddl:droppable, ddl:statement, postgresddl:ownedByOperand mixin
+[postgresddl:dropRoleStatement]                 > ddl:droppable, ddl:statement, postgresddl:roleOperand mixin
+[postgresddl:dropRuleStatement]                 > ddl:droppable, ddl:statement, postgresddl:ruleOperand mixin
+[postgresddl:dropSequenceStatement]             > ddl:droppable, ddl:statement, postgresddl:sequenceOperand mixin
+[postgresddl:dropServerStatement]               > ddl:droppable, ddl:statement, postgresddl:serverOperand mixin
+[postgresddl:dropTablespaceStatement]           > ddl:droppable, ddl:statement, postgresddl:tablespaceOperand mixin
+[postgresddl:dropTextSearchStatement]           > ddl:droppable, ddl:statement, postgresddl:textSearchOperand mixin
+[postgresddl:dropTriggerStatement]              > ddl:droppable, ddl:statement, postgresddl:triggerOperand mixin
+[postgresddl:dropTypeStatement]                 > ddl:droppable, ddl:statement, postgresddl:typeOperand mixin
+[postgresddl:dropUserStatement]                 > ddl:droppable, ddl:statement, postgresddl:userOperand mixin
+[postgresddl:dropUserMappingStatement]          > ddl:droppable, ddl:statement, postgresddl:userMappingOperand mixin
+
+// =============================================================================
+// MISC STATEMENTS
+// =============================================================================
+
+[postgresddl:abortStatement]            > ddl:statement mixin
+[postgresddl:analyzeStatement]          > ddl:statement mixin
+[postgresddl:clusterStatement]          > ddl:statement mixin
+[postgresddl:commentOnStatement]        > ddl:statement, postgresddl:commentOperand mixin
+  - postgresddl:targetObjectType (STRING) mandatory
+  - postgresddl:targetObjectName (STRING)
+  - postgresddl:comment (STRING) mandatory
+[postgresddl:copyStatement]             > ddl:statement mixin
+[postgresddl:deallocateStatement]       > ddl:statement mixin
+[postgresddl:declareStatement]          > ddl:statement mixin
+[postgresddl:discardStatement]          > ddl:statement mixin
+[postgresddl:explainStatement]          > ddl:statement mixin
+[postgresddl:fetchStatement]            > ddl:statement mixin
+[postgresddl:listenStatement]           > ddl:statement mixin
+[postgresddl:loadStatement]             > ddl:statement mixin
+[postgresddl:lockTableStatement]        > ddl:statement mixin
+[postgresddl:moveStatement]             > ddl:statement mixin
+[postgresddl:notifyStatement]           > ddl:statement mixin
+[postgresddl:prepareStatement]          > ddl:statement mixin
+[postgresddl:reassignOwnedStatement]    > ddl:statement mixin
+[postgresddl:reindexStatement]          > ddl:statement mixin
+[postgresddl:releaseSavepointStatement] > ddl:statement mixin
+[postgresddl:rollbackStatement]         > ddl:statement mixin
+[postgresddl:selectIntoStatement]       > ddl:statement mixin
+[postgresddl:showStatement]             > ddl:statement mixin
+[postgresddl:truncateStatement]         > ddl:statement mixin
+[postgresddl:unlistenStatement]         > ddl:statement mixin
+[postgresddl:vacuumStatement]           > ddl:statement mixin
+
+// =============================================================================
+// GRANT STATEMENTS
+// =============================================================================
+[postgresddl:grantOnTableStatement]            > ddl:grantStatement, ddl:tableOperand mixin
+[postgresddl:grantOnSequenceStatement]         > ddl:grantStatement, postgresddl:sequenceOperand mixin
+[postgresddl:grantOnDatabaseStatement]         > ddl:grantStatement, postgresddl:databaseOperand mixin
+[postgresddl:grantOnForeignDataWrapperStatement] > ddl:grantStatement, postgresddl:foreignDataOperand mixin
+[postgresddl:grantOnForeignServerStatement]    > ddl:grantStatement, postgresddl:serverOperand mixin
+[postgresddl:grantOnFunctionStatement]         > ddl:grantStatement, postgresddl:functionOperand mixin
+  + postgresddl:parameter (postgresddl:functionParameter) = postgresddl:functionParameter multiple
+[postgresddl:grantOnLanguageStatement]         > ddl:grantStatement, postgresddl:languageOperand mixin
+[postgresddl:grantOnSchemaStatement]           > ddl:grantStatement, ddl:schemaOperand mixin
+[postgresddl:grantOnTablespaceStatement]       > ddl:grantStatement, postgresddl:tablespaceOperand mixin
+[postgresddl:grantRolesStatement]              > ddl:grantStatement mixin
+  + postgresddl:grantRole (postgresddl:role) = postgresddl:role multiple

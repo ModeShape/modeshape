@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -30,7 +30,7 @@
 ]>
 <book lang="en">
 	<bookinfo>
-		<title>JBoss DNA</title>
+		<title>ModeShape</title>
 		<subtitle>Reference Guide</subtitle>
 		<releaseinfo>&versionNumber;</releaseinfo>
 		<productnumber>&versionNumber;</productnumber>
@@ -54,7 +54,7 @@
 		<title>Developers and Contributors</title>
 		<partintro>
 			<para>
-			  The JBoss DNA project uses a number of process, tools, and procedures to assist in the development of
+			  The ModeShape project uses a number of process, tools, and procedures to assist in the development of
 			  the software.  This portion of the document focuses on these aspects and will help developers and contributors
 			  obtain the source code, build locally, and contribute to the project.
 			</para>
@@ -67,15 +67,15 @@
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/developers/testing.xml"/>
 	</part>
 	<part id="core-part">
-		<title>JBoss DNA Core</title>
+		<title>ModeShape Core</title>
 		<partintro>
 			<para>
-			  The JBoss DNA project organizes the codebase into a number of subprojects.  The most fundamental are those 
+			  The ModeShape project organizes the codebase into a number of subprojects.  The most fundamental are those 
 			  <emphasis>core libraries</emphasis>, including the graph API, connector framework, sequencing framework,
 			  as well as the configuration and engine in which all the components run.  These are all topics covered
 			  in this part of the document.
 			</para>
-			<para>The JBoss DNA implementation of the <ulink url="&JSR170;">JCR API</ulink> as well as some other
+			<para>The ModeShape implementation of the <ulink url="&JSR170;">JCR API</ulink> as well as some other
 			  JCR-related components are covered in the <link linkend="jcr-part">next part</link>.
 			</para>
 		</partintro>
@@ -85,14 +85,14 @@
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/core/sequencing.xml"/>
 	</part>
 	<part id="jcr-part">
-		<title>JBoss DNA JCR</title>
+		<title>ModeShape JCR</title>
 		<partintro>
 			<para>
-			  The JBoss DNA project provides an implementation of the <ulink url="&JSR170;">JCR API</ulink>, which is
+			  The ModeShape project provides an implementation of the <ulink url="&JSR170;">JCR API</ulink>, which is
 			  built on top of the <link linkend="core-part">core libraries</link> discussed earlier.  This implementation
 			  as well as a number of JCR-related components are described in this part of the document.
-				But before talking about how to use the JCR API with a JBoss DNA repository, first we need to
-				show how to set up a JBoss DNA engine.
+				But before talking about how to use the JCR API with a ModeShape repository, first we need to
+				show how to set up a ModeShape engine.
 			</para>
 		</partintro>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/configuration.xml"/>
@@ -105,7 +105,7 @@
 		<title>Connector Library</title>
 		<partintro>
 			<para>
-			  The JBoss DNA project provides a number of <link linkend="connector_framework">connectors</link> out-of-the-box.
+			  The ModeShape project provides a number of <link linkend="connector_framework">connectors</link> out-of-the-box.
 			  These are ready to be used by simply including them in the classpath and <link linkend="configuration">configuring</link>
 			  them as a repository source.
 			</para>
@@ -123,7 +123,7 @@
 		<title>Sequencer Library</title>
 		<partintro>
 			<para>
-			  The JBoss DNA project provides a number of <link linkend="sequencing_framework">sequencers</link> out-of-the-box.
+			  The ModeShape project provides a number of <link linkend="sequencing_framework">sequencers</link> out-of-the-box.
 			  These are ready to be used by simply including them in the classpath and <link linkend="configuration">configuring</link>
 			  them appropriately.
 			</para>
@@ -143,7 +143,7 @@
 		<title>MIME Type Detector Library</title>
 		<partintro>
 			<para>
-			  The JBoss DNA project provides a number of <link linkend="mime-type-detectors">MIME type detectors</link> out-of-the-box.
+			  The ModeShape project provides a number of <link linkend="mime-type-detectors">MIME type detectors</link> out-of-the-box.
 			  These are ready to be used by simply including them in the classpath and 
 			  <link linkend="mime-type-detectors">setting up the &ExecutionContext;</link> appropriately.
 			</para>

@@ -1,0 +1,220 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+ 
+ //------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<ddl='http://www.modeshape.org/ddl/1.0'>
+<oracleddl='http://www.modeshape.org/ddl/oracle/1.0'>
+
+// =============================================================================
+// OPERANDS
+// =============================================================================
+[oracleddl:clusterOperand]      > ddl:operand abstract
+[oracleddl:commentOperand]      > ddl:operand abstract
+[oracleddl:contextOperand]      > ddl:operand abstract
+[oracleddl:controlfileOperand]  > ddl:operand abstract
+[oracleddl:databaseOperand]     > ddl:operand abstract
+[oracleddl:dimensionOperand]    > ddl:operand abstract
+[oracleddl:directoryOperand]    > ddl:operand abstract
+[oracleddl:diskgroupOperand]    > ddl:operand abstract
+[oracleddl:functionOperand]     > ddl:operand abstract
+[oracleddl:indexOperand]        > ddl:operand abstract
+[oracleddl:indextypeOperand]    > ddl:operand abstract
+[oracleddl:javaOperand]         > ddl:operand abstract
+[oracleddl:libraryOperand]      > ddl:operand abstract
+[oracleddl:materializedOperand] > ddl:operand abstract
+[oracleddl:operatorOperand]     > ddl:operand abstract
+[oracleddl:outlineOperand]      > ddl:operand abstract
+[oracleddl:packageOperand]      > ddl:operand abstract
+[oracleddl:parameterOperand]    > ddl:operand abstract
+[oracleddl:pfileOperand]        > ddl:operand abstract
+[oracleddl:procedureOperand]    > ddl:operand abstract
+[oracleddl:profileOperand]      > ddl:operand abstract
+[oracleddl:resourceOperand]     > ddl:operand abstract
+[oracleddl:roleOperand]         > ddl:operand abstract
+[oracleddl:rollbackOperand]     > ddl:operand abstract
+[oracleddl:sequenceOperand]     > ddl:operand abstract
+[oracleddl:sessionOperand]      > ddl:operand abstract
+[oracleddl:spfileOperand]       > ddl:operand abstract
+[oracleddl:systemOperand]       > ddl:operand abstract
+[oracleddl:synonymOperand]      > ddl:operand abstract
+[oracleddl:tablespaceOperand]   > ddl:operand abstract
+[oracleddl:triggerOperand]      > ddl:operand abstract
+[oracleddl:typeOperand]         > ddl:operand abstract
+[oracleddl:userOperand]         > ddl:operand abstract
+
+// =============================================================================
+// COLUMN
+// =============================================================================
+[oracleddl:columnDefinition] > ddl:columnDefinition
+  - oracleddl:dropDefault (boolean)
+
+//
+
+[oracleddl:functionParameter]     > oracleddl:parameterOperand mixin
+  - ddl:datatypeName (STRING) mandatory
+  - ddl:datatypeLength (LONG)
+  - ddl:datatypePrecision (LONG)
+  - ddl:datatypeScale (LONG)
+  - oracleddl:default (STRING)
+  - oracleddl:defaultExpresssion (STRING)
+  - oracleddl:inOutNoCopy (STRING)
+
+// =============================================================================
+// ALTER STATEMENTS
+// =============================================================================
+[oracleddl:alterClusterStatement]       > ddl:alterable, ddl:statement, oracleddl:clusterOperand mixin
+[oracleddl:alterDatabaseStatement]      > ddl:alterable, ddl:statement, oracleddl:databaseOperand mixin
+[oracleddl:alterDimensionStatement]     > ddl:alterable, ddl:statement, oracleddl:dimensionOperand mixin
+[oracleddl:alterDiskgroupStatement]     > ddl:alterable, ddl:statement, oracleddl:diskgroupOperand mixin
+[oracleddl:alterFunctionStatement]      > ddl:alterable, ddl:statement, oracleddl:functionOperand mixin
+[oracleddl:alterIndexStatement]         > ddl:alterable, ddl:statement, oracleddl:indexOperand mixin
+[oracleddl:alterIndextypeStatement]     > ddl:alterable, ddl:statement, oracleddl:indextypeOperand mixin
+[oracleddl:alterJavaStatement]          > ddl:alterable, ddl:statement, oracleddl:javaOperand mixin
+[oracleddl:alterMaterializedStatement]  > ddl:alterable, ddl:statement, oracleddl:materializedOperand mixin
+[oracleddl:alterOperatorStatement]      > ddl:alterable, ddl:statement, oracleddl:operatorOperand mixin
+[oracleddl:alterOutlineStatement]       > ddl:alterable, ddl:statement, oracleddl:outlineOperand mixin
+[oracleddl:alterPackageStatement]       > ddl:alterable, ddl:statement, oracleddl:packageOperand mixin
+[oracleddl:alterProcedureStatement]     > ddl:alterable, ddl:statement, oracleddl:procedureOperand mixin
+[oracleddl:alterProfileStatement]       > ddl:alterable, ddl:statement, oracleddl:profileOperand mixin
+[oracleddl:alterResourceStatement]      > ddl:alterable, ddl:statement, oracleddl:resourceOperand mixin
+[oracleddl:alterRoleStatement]          > ddl:alterable, ddl:statement, oracleddl:roleOperand mixin
+[oracleddl:alterRollbackStatement]      > ddl:alterable, ddl:statement, oracleddl:rollbackOperand mixin
+[oracleddl:alterSequenceStatement]      > ddl:alterable, ddl:statement, oracleddl:sequenceOperand mixin
+[oracleddl:alterSessionStatement]       > ddl:alterable, ddl:statement, oracleddl:sessionOperand mixin
+[oracleddl:alterSystemStatement]        > ddl:alterable, ddl:statement, oracleddl:systemOperand mixin
+[oracleddl:alterTablespaceStatement]    > ddl:alterable, ddl:statement, oracleddl:tablespaceOperand mixin
+[oracleddl:alterTriggerStatement]       > ddl:alterable, ddl:statement, oracleddl:triggerOperand mixin
+[oracleddl:alterTypeStatement]          > ddl:alterable, ddl:statement, oracleddl:typeOperand mixin
+[oracleddl:alterUserStatement]          > ddl:alterable, ddl:statement, oracleddl:userOperand mixin
+[oracleddl:alterViewStatement]          > ddl:alterable, ddl:statement,       ddl:viewOperand mixin
+
+[oracleddl:alterTableStatement] > ddl:alterTableStatement mixin
+  - oracleddl:newTableName (STRING)
+  + oracleddl:renameColumn (ddl:renamable) = ddl:renamable multiple
+  + oracleddl:renameConstraint (ddl:renamable) = ddl:renamable multiple
+
+// =============================================================================
+// CREATE STATEMENTS
+// =============================================================================
+
+[oracleddl:createClusterStatement]      > ddl:creatable, ddl:statement, oracleddl:clusterOperand mixin
+[oracleddl:createContextStatement]      > ddl:creatable, ddl:statement, oracleddl:contextOperand mixin
+[oracleddl:createControlfileStatement]  > ddl:creatable, ddl:statement, oracleddl:controlfileOperand mixin
+[oracleddl:createDatabaseStatement]     > ddl:creatable, ddl:statement, oracleddl:databaseOperand mixin
+[oracleddl:createDimensionStatement]    > ddl:creatable, ddl:statement, oracleddl:dimensionOperand mixin
+[oracleddl:createDirectoryStatement]    > ddl:creatable, ddl:statement, oracleddl:directoryOperand mixin
+[oracleddl:createDiskgroupStatement]    > ddl:creatable, ddl:statement, oracleddl:diskgroupOperand mixin
+[oracleddl:createFunctionStatement]     > ddl:creatable, ddl:statement, oracleddl:functionOperand mixin
+  - ddl:datatypeName (STRING) mandatory
+  - ddl:datatypeLength (LONG)
+  - ddl:datatypePrecision (LONG)
+  - ddl:datatypeScale (LONG)
+  + oracleddl:parameter (oracleddl:functionParameter) = oracleddl:functionParameter multiple
+[oracleddl:createIndexStatement]        > ddl:creatable, ddl:statement, oracleddl:indexOperand mixin
+  - oracleddl:tableName (string) mandatory
+  - oracleddl:unique (boolean)
+  - oracleddl:bitmap (boolean)
+  + * (ddl:columnReference) = ddl:columnReference multiple
+[oracleddl:createIndexTypeStatement]    > ddl:creatable, ddl:statement, oracleddl:indextypeOperand mixin
+[oracleddl:createJavaStatement]         > ddl:creatable, ddl:statement, oracleddl:javaOperand mixin
+[oracleddl:createLibraryStatement]      > ddl:creatable, ddl:statement, oracleddl:libraryOperand mixin
+[oracleddl:createMaterializedStatement] > ddl:creatable, ddl:statement, oracleddl:materializedOperand mixin
+[oracleddl:createOperatorStatement]     > ddl:creatable, ddl:statement, oracleddl:operatorOperand mixin
+[oracleddl:createOutlineStatement]      > ddl:creatable, ddl:statement, oracleddl:outlineOperand mixin
+[oracleddl:createPackageStatement]      > ddl:creatable, ddl:statement, oracleddl:packageOperand mixin
+[oracleddl:createPfileStatement]        > ddl:creatable, ddl:statement, oracleddl:pfileOperand mixin
+[oracleddl:createProcedureStatement]    > ddl:creatable, ddl:statement, oracleddl:procedureOperand mixin
+  + oracleddl:parameter (oracleddl:functionParameter) = oracleddl:functionParameter multiple
+[oracleddl:createRoleStatement]         > ddl:creatable, ddl:statement, oracleddl:roleOperand mixin
+[oracleddl:createRollbackStatement]     > ddl:creatable, ddl:statement, oracleddl:rollbackOperand mixin
+[oracleddl:createSequenceStatement]     > ddl:creatable, ddl:statement, oracleddl:sequenceOperand mixin
+[oracleddl:createSpfileStatement]       > ddl:creatable, ddl:statement, oracleddl:spfileOperand mixin
+[oracleddl:createSynonymStatement]      > ddl:creatable, ddl:statement, oracleddl:synonymOperand mixin
+[oracleddl:createTablespaceStatement]   > ddl:creatable, ddl:statement, oracleddl:tablespaceOperand mixin
+[oracleddl:createTriggerStatement]      > ddl:creatable, ddl:statement, oracleddl:triggerOperand mixin
+[oracleddl:createTypeStatement]         > ddl:creatable, ddl:statement, oracleddl:typeOperand mixin
+[oracleddl:createUserStatement]         > ddl:creatable, ddl:statement, oracleddl:userOperand mixin
+
+// =============================================================================
+// DROP STATEMENTS
+// =============================================================================
+
+[oracleddl:dropClusterStatement]        > ddl:droppable, ddl:statement, oracleddl:clusterOperand mixin
+[oracleddl:dropContextStatement]        > ddl:droppable, ddl:statement, oracleddl:contextOperand mixin
+[oracleddl:dropDatabaseStatement]       > ddl:droppable, ddl:statement, oracleddl:databaseOperand mixin
+[oracleddl:dropDimensionStatement]      > ddl:droppable, ddl:statement, oracleddl:dimensionOperand mixin
+[oracleddl:dropDirectoryStatement]      > ddl:droppable, ddl:statement, oracleddl:directoryOperand mixin
+[oracleddl:dropDiskgroupStatement]      > ddl:droppable, ddl:statement, oracleddl:diskgroupOperand mixin
+[oracleddl:dropFunctionStatement]       > ddl:droppable, ddl:statement, oracleddl:functionOperand mixin
+[oracleddl:dropIndexStatement]          > ddl:droppable, ddl:statement, oracleddl:indexOperand mixin
+[oracleddl:dropIndextypeStatement]      > ddl:droppable, ddl:statement, oracleddl:indextypeOperand mixin
+[oracleddl:dropJavaStatement]           > ddl:droppable, ddl:statement, oracleddl:javaOperand mixin
+[oracleddl:dropLibraryStatement]        > ddl:droppable, ddl:statement, oracleddl:libraryOperand mixin
+[oracleddl:dropMaterializedStatement]   > ddl:droppable, ddl:statement, oracleddl:materializedOperand mixin
+[oracleddl:dropOperatorStatement]       > ddl:droppable, ddl:statement, oracleddl:operatorOperand mixin
+[oracleddl:dropOutlineStatement]        > ddl:droppable, ddl:statement, oracleddl:outlineOperand mixin
+[oracleddl:dropPackageStatement]        > ddl:droppable, ddl:statement, oracleddl:packageOperand mixin
+[oracleddl:dropProcedureStatement]      > ddl:droppable, ddl:statement, oracleddl:procedureOperand mixin
+[oracleddl:dropProfileStatement]        > ddl:droppable, ddl:statement, oracleddl:profileOperand mixin
+[oracleddl:dropRoleStatement]           > ddl:droppable, ddl:statement, oracleddl:roleOperand mixin
+[oracleddl:dropRollbackStatement]       > ddl:droppable, ddl:statement, oracleddl:rollbackOperand mixin
+[oracleddl:dropSequenceStatement]       > ddl:droppable, ddl:statement, oracleddl:sequenceOperand mixin
+[oracleddl:dropSynonymStatement]        > ddl:droppable, ddl:statement, oracleddl:synonymOperand mixin
+[oracleddl:dropTablespaceStatement]     > ddl:droppable, ddl:statement, oracleddl:tablespaceOperand mixin
+[oracleddl:dropTriggerStatement]        > ddl:droppable, ddl:statement, oracleddl:triggerOperand mixin
+[oracleddl:dropTypeStatement]           > ddl:droppable, ddl:statement, oracleddl:typeOperand mixin
+[oracleddl:dropUserStatement]           > ddl:droppable, ddl:statement, oracleddl:userOperand mixin
+
+// =============================================================================
+// MISC STATEMENTS
+// =============================================================================
+
+[oracleddl:analyzeStatement]         > ddl:statement mixin
+[oracleddl:associateStatisticsStatement]     > ddl:statement mixin
+[oracleddl:auditStatement]           > ddl:statement mixin
+[oracleddl:commitStatement]          > ddl:statement mixin
+[oracleddl:commentOnStatement]       > ddl:statement, oracleddl:commentOperand mixin
+  - oracleddl:targetObjectType (STRING) mandatory
+  - oracleddl:targetObjectName (STRING)
+  - oracleddl:comment (STRING) mandatory
+[oracleddl:disassociateStatisticsStatement]     > ddl:statement mixin
+[oracleddl:explainPlanStatement]     > ddl:statement mixin
+[oracleddl:flashbackStatement]       > ddl:statement mixin
+[oracleddl:lockTableStatement]       > ddl:statement mixin
+[oracleddl:mergeStatement]           > ddl:statement mixin
+[oracleddl:nestedTableStatement]     > ddl:statement mixin
+[oracleddl:noauditStatement]         > ddl:statement mixin
+[oracleddl:purgeStatement]           > ddl:statement mixin
+[oracleddl:renameStatement]          > ddl:statement mixin
+[oracleddl:revokeStatement]          > ddl:statement mixin
+[oracleddl:rollbackStatement]        > ddl:statement mixin
+[oracleddl:setConstraintsStatement]  > ddl:statement, ddl:settable mixin
+[oracleddl:setRoleStatement]         > ddl:statement, ddl:settable mixin
+[oracleddl:setTransactionStatement]  > ddl:statement, ddl:settable mixin
+[oracleddl:truncateStatement]        > ddl:statement mixin

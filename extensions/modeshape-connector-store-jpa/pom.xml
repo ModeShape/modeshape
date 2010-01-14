@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.modeshape</groupId>
+    <artifactId>modeshape</artifactId>
+    <version>0.9-SNAPSHOT</version>
+    <relativePath>../..</relativePath>
+  </parent>
+  <!-- The groupId and version values are inherited from parent -->
+  <artifactId>modeshape-connector-store-jpa</artifactId>
+  <packaging>jar</packaging>
+  <name>ModeShape Connector to JPA Persistence Store</name>
+  <description>ModeShape Connector that persists graph content using JPA.</description>
+  <url>http://www.modeshape.org</url>
+  <!--
+    Define the dependencies. Note that all version and scopes default to those defined in the dependencyManagement section of the
+    parent pom.
+  -->
+  <dependencies>
+    <!-- 
+    ModeShape
+    -->
+    <dependency>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-graph</artifactId>
+    </dependency>
+    <!-- 
+    JPA via Hibernate Entity Manager
+    -->
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-entitymanager</artifactId>
+      <version>3.4.0.GA</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-c3p0</artifactId>
+      <version>3.3.2.GA</version>
+    </dependency>
+    <!-- 
+    HSQLDB
+    -->
+    <dependency>
+      <groupId>hsqldb</groupId>
+      <artifactId>hsqldb</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+         <groupId>com.google.collections</groupId>
+         <artifactId>google-collections</artifactId>
+    </dependency>
+    <!-- 
+    Testing (note the scope)
+    -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-common</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-graph</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <!-- 
+    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
+    -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+    </dependency>
+    <!-- 
+    Java Concurrency in Practice annotations
+    -->
+    <dependency>
+      <groupId>net.jcip</groupId>
+      <artifactId>jcip-annotations</artifactId>
+    </dependency>
+  </dependencies>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </reporting>
+  <build>
+    <testResources>
+      <testResource>
+           <filtering>false</filtering>
+           <directory>src/test/resources</directory>
+           <includes>
+             <include>*</include>
+             <include>**/*</include>
+           </includes>
+       </testResource>
+	    <!-- Apply the properties set in the POM to the resource files -->
+      <testResource>
+        <filtering>true</filtering>
+        <directory>src/test/resources</directory>
+        <includes>
+          <include>database.properties</include>
+        </includes>
+      </testResource>
+    </testResources>
+  </build>
+</project>

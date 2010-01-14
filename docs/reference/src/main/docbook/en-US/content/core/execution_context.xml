@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -31,17 +31,17 @@
 <chapter id="execution_context">
   <title>Execution Context</title>
   <para>
-		The various components of JBoss DNA are designed as plain old Java objects, or POJOs.  And rather than making assumptions
+		The various components of ModeShape are designed as plain old Java objects, or POJOs.  And rather than making assumptions
 		about their environment, each component instead requires that any external dependencies necessary for it to operate
 		must be supplied to it.  This pattern is known as Dependency Injection, and it allows the components to be simpler
 		and allows for a great deal of flexibility and customization in how the components are configured.  
   </para>
 	<para>
-		The approach that JBoss DNA takes is simple: a simple POJO that represents everything about the environment
+		The approach that ModeShape takes is simple: a simple POJO that represents everything about the environment
 		in which components operate.  Called &ExecutionContext;, it contains references to most of the essential
 		facilities, including: security (authentication and authorization); namespace registry; name factories; factories 
 		for properties and property values; logging; and access to class loaders (given a classpath).  
-		Most of the JBoss DNA components require an &ExecutionContext; and thus have access to all these facilities.
+		Most of the ModeShape components require an &ExecutionContext; and thus have access to all these facilities.
 	</para>
 	<para>
 		The &ExecutionContext; is a concrete class that is instantiated with the no-argument constructor:
@@ -102,7 +102,7 @@ public class &ExecutionContext; implements &ClassLoaderFactory; {
 }
 </programlisting>
   <para>
-		The fact that so many of the JBoss DNA components take &ExecutionContext; instances gives us some interesting possibilities.  
+		The fact that so many of the ModeShape components take &ExecutionContext; instances gives us some interesting possibilities.  
 		For example, one execution context instance can be used as the highest-level (or "application-level") context for all of the services 
 		(e.g., &RepositoryService;, &SequencingService;, etc.).
 		Then, an execution context could be created for each user that will be performing operations, and that user's context can
@@ -124,7 +124,7 @@ public class &ExecutionContext; implements &ClassLoaderFactory; {
 	<sect1 id="security">
 		<title>Security</title>
 	  <para>
-	    JBoss DNA uses a simple abstraction layer to isolate it from the security infrastructure used within an application.
+	    ModeShape uses a simple abstraction layer to isolate it from the security infrastructure used within an application.
 	    A &SecurityContext; represents the context of an authenticated user, and is defined as an interface:
 		</para>
 	  <programlisting>
@@ -187,7 +187,7 @@ String jaasRealm = ...
 		<sect2 id="jaas_security">
 			<title>JAAS</title>
 			<para>
-				One of the &SecurityContext; implementations provided by JBoss DNA is the &JaasSecurityContext;, which delegates any authentication 
+				One of the &SecurityContext; implementations provided by ModeShape is the &JaasSecurityContext;, which delegates any authentication 
 				or authorization requests to a <ulink url="http://java.sun.com/javase/technologies/security/">Java Authentication and Authorization Service (JAAS)</ulink>
 		    provider.  This is the standard approach for authenticating and authorizing in Java.  
 		  </para>
@@ -242,7 +242,7 @@ String jaasRealm = ...
 		<sect2 id="web_security">
 			<title>Web application security</title>
 			<para>
-				If JBoss DNA is being used within a web application, then it is probably desirable to reuse the security infrastructure
+				If ModeShape is being used within a web application, then it is probably desirable to reuse the security infrastructure
 				of the application server.  This can be accomplished by implementing the &SecurityContext; interface with an implementation
 				that delegates to the <interface>HttpServletRequest</interface>.  Then, for each request, create a &SecurityContextCredentials;
 				instance around your &SecurityContext;, and use that credentials to obtain a JCR &Session;.
@@ -410,7 +410,7 @@ interface &Namespace; extends Comparable&lt;&Namespace;> {
 }
 </programlisting>
 			<para>
-				JBoss DNA actually uses several implementations of &NamespaceRegistry;, but you can even implement your own
+				ModeShape actually uses several implementations of &NamespaceRegistry;, but you can even implement your own
 				and create &ExecutionContext;s that use it:
 			</para>
 <programlisting>
@@ -421,18 +421,18 @@ interface &Namespace; extends Comparable&lt;&Namespace;> {
 	<sect1 id="class_loader_factory">
 		<title>Class Loaders</title>
 	  <para>
-	  	JBoss DNA is designed around extensions: sequencers, connectors, MIME type detectors, and class loader factories.
-			The core part of JBoss DNA is relatively small and has few dependencies, while many of the "interesting" components
+	  	ModeShape is designed around extensions: sequencers, connectors, MIME type detectors, and class loader factories.
+			The core part of ModeShape is relatively small and has few dependencies, while many of the "interesting" components
 			are extensions that plug into and are used by different parts of the core or by layers above (such as the
 			<link linkend="jcr">JCR implementation</link>).  The core doesn't really care what
 			the extensions do or what external libraries they require, as long as the extension fulfills its end of the
 			extension contract.
 		</para>
 		<para>
-			This means that you only need the core modules of JBoss DNA on the application classpath, while the extensions
-			do not have to be on the application classpath.  And because the core modules of JBoss DNA have few dependencies,
-			the risk of JBoss DNA libraries conflicting with the application's are lower.  Extensions, on the other hand,
-			will likely have a lot of unique dependencies. By separating the core of JBoss DNA from the class loaders used
+			This means that you only need the core modules of ModeShape on the application classpath, while the extensions
+			do not have to be on the application classpath.  And because the core modules of ModeShape have few dependencies,
+			the risk of ModeShape libraries conflicting with the application's are lower.  Extensions, on the other hand,
+			will likely have a lot of unique dependencies. By separating the core of ModeShape from the class loaders used
 			to load the extensions, your application is isolated from the extensions and their dependencies. 
 		</para>
 		<note>
@@ -441,7 +441,7 @@ interface &Namespace; extends Comparable&lt;&Namespace;> {
 			</para>
 		</note>
 		<para>
-			But in this case, how does JBoss DNA load all the extension classes?  You may have noticed earlier that 
+			But in this case, how does ModeShape load all the extension classes?  You may have noticed earlier that 
 			&ExecutionContext; implements	the &ClassLoaderFactory; interface with a single method:
 		</para>
 		<programlisting>
@@ -461,7 +461,7 @@ public interface &ClassLoaderFactory; {
 			defined with a class and optional class path.  This is where that class path comes in.
 		</para>
 		<para>
-			The actual meaning of the class path, however, is a function of the implementation.  JBoss DNA uses
+			The actual meaning of the class path, however, is a function of the implementation.  ModeShape uses
 			a &StandardClassLoaderFactory; that just loads the classes using the Thread's current context
 			class loader (or, if there is none, delegates to the class loader that loaded the &StandardClassLoaderFactory; class).
 			Of course, it's possible to implement other &ClassLoaderFactory; with other implementations.
@@ -487,13 +487,13 @@ public interface &ClassLoaderFactory; {
 	<sect1 id="mime-type-detectors">
 		<title>MIME Type Detectors</title>
 	  <para>
-	  	JBoss DNA often needs the ability to determine the MIME type for some binary content.  When uploading content into
+	  	ModeShape often needs the ability to determine the MIME type for some binary content.  When uploading content into
 			a repository, we may want to add the MIME type as metadata.  Or, we may want to make some processing decisions
-			based upon the MIME type.  So, JBoss DNA created a small pluggable framework for determining the MIME type by using
+			based upon the MIME type.  So, ModeShape created a small pluggable framework for determining the MIME type by using
 			the name of the file (e.g., extensions) and/or by reading the actual content.
 	  </para>
     <para>
-	 		JBoss DNA defines a &MimeTypeDetector; interface that abstracts the implementation that actually determines
+	 		ModeShape defines a &MimeTypeDetector; interface that abstracts the implementation that actually determines
 			the MIME type given the name and content.
 			If the detector is able to determine the MIME type, it simply returns
 			it as a string.  If not, it merely returns null.  Note, however, that a detector must be thread-safe.
@@ -525,9 +525,9 @@ public interface &MimeTypeDetector; {
 			null, making this a very versatile utility.
 		</para>
 		<para>
-			Once again, you can obtain a &MimeTypeDetector; from the &ExecutionContext;.  JBoss DNA provides and uses by
+			Once again, you can obtain a &MimeTypeDetector; from the &ExecutionContext;.  ModeShape provides and uses by
 			default an implementation that uses only the name (the content is ignored), looking at the name's extension
-			and looking for a match in a small listing (loaded from the <code>org/jboss/dna/graph/mime.types</code> loaded from the classpath).
+			and looking for a match in a small listing (loaded from the <code>org/modeshape/graph/mime.types</code> loaded from the classpath).
 			You can add extensions by copying this file, adding or correcting the entries, and then placing your updated file in the
 			expected location on the classpath.
 		</para>
@@ -566,12 +566,12 @@ public interface &MimeTypeDetector; {
 		<title>Summary</title>
 		<para>
 			In this chapter, we introduced the &ExecutionContext; as a representation of the environment in which many of the
-			JBoss DNA components operate.  &ExecutionContext; provides a very simple but powerful way to inject commonly-needed
+			ModeShape components operate.  &ExecutionContext; provides a very simple but powerful way to inject commonly-needed
 			facilities throughout the system.
 		</para>
 		<para>
 			In the <link linkend="graph-model">next chapter</link>, we'll dive into Graph API and will introduce the notion of
-			nodes, paths, names, and properties, that are so essential and used throughout JBoss DNA.
+			nodes, paths, names, and properties, that are so essential and used throughout ModeShape.
 		</para>
 	</sect1>
 </chapter>

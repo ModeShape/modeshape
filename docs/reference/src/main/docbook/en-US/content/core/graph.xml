@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -31,7 +31,7 @@
 <chapter id="graph-model">
   <title>Graph Model</title>
   <para>
-		One of the central concepts within JBoss DNA is that of its <emphasis>graph model</emphasis>.
+		One of the central concepts within ModeShape is that of its <emphasis>graph model</emphasis>.
 		Information is structured into a hierarchy of nodes with properties, where nodes in the hierarchy
 		are identified by their path (and/or identifier properties).  Properties are identified by
 		a name that incorporates a namespace and local name, and contain one or more property values
@@ -39,7 +39,7 @@
 		dates, UUIDs, references to other nodes, or any other serializable object.
 	</para>
 	<para>
-		This graph model is used throughout JBoss DNA: it forms the basis for the 
+		This graph model is used throughout ModeShape: it forms the basis for the 
 		<link linkend="connector_framework">connector framework</link>, it is used by the 
 		<link linkend="sequencing_framework">sequencing framework</link> for the generated output,
 		and it is what the <link linkend="jcr">JCR implementation</link> uses internally to access and operate
@@ -47,17 +47,17 @@
 	</para>
 	<para>
 		Therefore, this chapter provides essential information that will be essential to really understanding
-		how the connectors, sequencers, and other JBoss DNA features work.
+		how the connectors, sequencers, and other ModeShape features work.
 	</para>
 	<sect1 id="graph-names">
 		<title>Names</title>
 		<para>
-			JBoss DNA uses names to identify quite a few different types of objects.  As we'll soon see, each property
+			ModeShape uses names to identify quite a few different types of objects.  As we'll soon see, each property
 			of a node is given by a name, and each segment in a path is comprised of a name.  Therefore,
 			names are a very important concept.
 		</para>
 		<para>
-			JBoss DNA names consist of a local part that is qualified with a namespace.  The local part can consist of
+			ModeShape names consist of a local part that is qualified with a namespace.  The local part can consist of
 			any character, and the namespace is identified by a URI.  Namespaces were introduced in the
 			<link linkend="execution-context">previous chapter</link> and are managed by the &ExecutionContext;'s
 			<link linkend="namespace-registry">namespace registry</link>.  Namespaces help reduce the risk of
@@ -114,8 +114,8 @@ public interface &Name; extends Comparable&lt;&Name;>, &Serializable;, &Readable
 	<sect1 id="graph-paths">
 		<title>Paths</title>
 		<para>
-			Another important concept in JBoss DNA's graph model is that of a <emphasis>path</emphasis>, which provides a way
-			of locating a node within a hierarchy.  JBoss DNA's &Path; object is an immutable ordered sequence
+			Another important concept in ModeShape's graph model is that of a <emphasis>path</emphasis>, which provides a way
+			of locating a node within a hierarchy.  ModeShape's &Path; object is an immutable ordered sequence
 			of &PathSegment; objects.  A small portion of the interface is shown here:
 		</para>
 		<programlisting>
@@ -250,13 +250,13 @@ public static interface &PathSegment; extends Cloneable, Comparable&lt;&PathSegm
 	<sect1 id="graph-properties">
 		<title>Properties</title>
 		<para>
-			The JBoss DNA graph model allows nodes to hold multiple properties, where each property is identified
+			The ModeShape graph model allows nodes to hold multiple properties, where each property is identified
 			by a unique &Name; and may have one or more values.  Like many of the other classes used in the graph model,
 			&Property; is an immutable object that, once constructed, can never be changed and therefore provides
 			a consistent snapshot of the state of a property as it existed at the time it was read.
 		</para>
 		<para>
-		  JBoss DNA properties can hold a wide range of value objects, including normal Java strings, names, paths, 
+		  ModeShape properties can hold a wide range of value objects, including normal Java strings, names, paths, 
 		  URIs, booleans, longs, doubles, decimals, binary content,	dates, UUIDs, references to other nodes, 
 		  or any other serializable object.  All but three of these are the standard Java classes: dates are
 		  represented by an immutable &DateTime; class; binary content is represented by an immutable &Binary;
@@ -335,7 +335,7 @@ public interface &Property; extends Iterable&lt;Object>, Comparable&lt;&Property
 			including variable-length arguments, arrays, &Iterator;, and &Iterable;.
 		</para>
 		<para>
-			When it comes to using the property values, JBoss DNA takes a non-traditional approach.
+			When it comes to using the property values, ModeShape takes a non-traditional approach.
 			Many other graph models (including JCR) mark each property with a data type and then require 
 			all property values adhere to this data type. When the property values are obtained, they
 			are guaranteed to be of the correct type. However, many times the property's data type may
@@ -343,9 +343,9 @@ public interface &Property; extends Iterable&lt;Object>, Comparable&lt;&Property
 			and thus has to be coded.
 		</para>
 		<para>
-			The JBoss DNA graph model uses a different tact.  Because callers almost always have to convert the
-			values to the types they can handle, JBoss DNA skips the steps of associating the  &Property; with a data type
-			and ensuring the values match.  Instead, JBoss DNA simply provides a very easy mechanism to convert
+			The ModeShape graph model uses a different tact.  Because callers almost always have to convert the
+			values to the types they can handle, ModeShape skips the steps of associating the  &Property; with a data type
+			and ensuring the values match.  Instead, ModeShape simply provides a very easy mechanism to convert
 			the property values to the type desired by the caller.  In fact, the conversion mechanism
 			is exactly the same as the factories that create the values in the first place.
 		</para>
@@ -353,10 +353,10 @@ public interface &Property; extends Iterable&lt;Object>, Comparable&lt;&Property
 	<sect1 id="graph-value-factories">
 		<title>Values and Value Factories</title>
 		<para>
-			JBoss DNA properties can hold a variety of value object types: strings, names, paths, 
+			ModeShape properties can hold a variety of value object types: strings, names, paths, 
 		  URIs, booleans, longs, doubles, decimals, binary content,	dates, UUIDs, references to other nodes, 
 		  or any other serializable object.  To assist in the creation of these values and conversion
-		  into other types, JBoss DNA defines a &ValueFactory; interface.  This interface is parameterized
+		  into other types, ModeShape defines a &ValueFactory; interface.  This interface is parameterized
 		  with the type of value that is being created, but defines methods for creating those values
 		  from all of the other known value types:
 		</para>
@@ -596,7 +596,7 @@ public interface &BinaryFactory; extends &ValueFactory;&lt;&Binary;> {
 }
 		</programlisting>
 		<para>
-			JBoss DNA provides efficient implementations of all of these interfaces: the &ValueFactory; interfaces and subinterfaces;
+			ModeShape provides efficient implementations of all of these interfaces: the &ValueFactory; interfaces and subinterfaces;
 			the &Path;, &PathSegment;, &Name;, &Binary;, &DateTime;, and &Reference; interfaces; and the &ValueFactories; interface
 			returned by the &ExecutionContext;.  In fact, some of these interfaces have multiple implementations that are optimized for 
 			specific but frequently-occurring conditions.
@@ -673,7 +673,7 @@ public interface Readable {
 			We've seen the &NamespaceRegistry; in the <link linkend="execution-context">previous chapter</link>,
 			but we've haven't yet talked about the &TextEncoder; interface.  A &TextEncoder; merely does what
 			you'd expect: it encodes the characters in a string using some implementation-specific algorithm.  
-			JBoss DNA provides a number of &TextEncoder; implementations, including:
+			ModeShape provides a number of &TextEncoder; implementations, including:
 			<itemizedlist>
 				<listitem>
 					<para>The &Jsr283Encoder; escapes characters that are not allowed in JCR names, 
@@ -727,7 +727,7 @@ public interface Readable {
 			In addition to &Path; objects, nodes can be identified by one or more <emphasis>identification properties</emphasis>.
 			These really are just &Property; instances with names that have a special meaning 
 			(usually to <link linkend="connector-framework">connectors</link>).
-			JBoss DNA also defines a &Location; class that encapsulates:
+			ModeShape also defines a &Location; class that encapsulates:
 		  <itemizedlist>
 		    <listitem>
 		      <para>the &Path; to the node; or</para>
@@ -786,7 +786,7 @@ public abstract class &Location; implements &Iterable;&lt;&Property;>, Comparabl
 	<sect1 id="graph-api">
 		<title>Graph API</title>
 		<para>
-			JBoss DNA's <emphasis>Graph API</emphasis> was designed as a lightweight public API for working with graph information.
+			ModeShape's <emphasis>Graph API</emphasis> was designed as a lightweight public API for working with graph information.
 			The &Graph; class is the primary class in API, and each instance represents a single, independent
 			view of a single graph.  &Graph; instances don't maintain state, so every request (or batch of requests) operates against
 			the underlying graph and then returns <emphasis>immutable snapshots</emphasis> of the requested state at the time
@@ -811,7 +811,7 @@ public abstract class &Location; implements &Iterable;&lt;&Property;>, Comparabl
 		<sect2 id="graph-api-workspaces">
 			<title>Using Workspaces</title>
 		<para>
-			JBoss DNA graphs have the notion of <emphasis>workspaces</emphasis> that provide different views of the content.  Some graphs may have
+			ModeShape graphs have the notion of <emphasis>workspaces</emphasis> that provide different views of the content.  Some graphs may have
 			one workspace, while others may have multiple workspaces.  Some graphs will allow a client to create new workspaces or destroy
 			existing workspaces, while other graphs will not allow adding or removing workspaces.  Some graphs may have workspaces that may show the same (or very
 			similar) content, while other graphs may have workspaces that contain completely independent content.
@@ -971,7 +971,7 @@ for ( &Location; child : results.getNode(path2) ) {
 	<sect1 id="graph-requests">
 		<title>Requests</title>
 		<para>
-			JBoss DNA &Graph; objects operate upon the underlying graph content, but we haven't really talked about how that works.
+			ModeShape &Graph; objects operate upon the underlying graph content, but we haven't really talked about how that works.
 			Recall that the &Graph; objects don't maintain any stateful representation of the content, but instead submit requests
 			to the underlying graph and return representations of the requested portions of the content.
 			This section focuses on what those requests look like, since they'll actually become very important when
@@ -1285,7 +1285,7 @@ for ( &Location; child : results.getNode(path2) ) {
 		</table>
     <para>
 			Although there are over a dozen different kinds of requests, we do anticipate adding more in future releases.
-			For example, DNA has recently added support for searching repository content in sources through an additional subclass of &Request;.
+			For example, ModeShape has recently added support for searching repository content in sources through an additional subclass of &Request;.
 			Getting the version history for a node will likely be another kind of request added in an upcoming release.
 		</para>
 		<para>
@@ -1297,7 +1297,7 @@ for ( &Location; child : results.getNode(path2) ) {
 	<sect1 id="graph-request-processors">
 		<title>Request processors</title>
 		<para>
-			JBoss DNA connectors are typically the components that receive these &Request; objects.  We'll dive deep into connectors
+			ModeShape connectors are typically the components that receive these &Request; objects.  We'll dive deep into connectors
 			in the <link linkend="connector-framework">next chapter</link>, but before we do there is one more component related to
 			&Request;s that should be discussed.
 		</para>
@@ -1320,13 +1320,13 @@ for ( &Location; child : results.getNode(path2) ) {
 	<sect1 id="graph-observation">
 		<title>Observation</title>
 		<para>
-			The JBoss DNA graph model also incorporates an observation framework that allows components to register and
+			The ModeShape graph model also incorporates an observation framework that allows components to register and
 			be notified when changes occur within the content owned by a graph.
 		</para>
 		<para>
 			Many event frameworks define the listeners and sources as interfaces.  While this is often useful, it requires
 			that the implementations properly address the thread-safe semantics of managing and calling the listeners.
-			The JBoss DNA observation framework uses abstract or concrete classes to minimize the effort required for implementing
+			The ModeShape observation framework uses abstract or concrete classes to minimize the effort required for implementing
 			&ChangeObserver; or &Observable;. These abstract classes provide implementations for a number of
 			utility methods (such as the <code>unregister()</code> method on &ChangeObserver;) that
 			also save effort and code.
@@ -1406,7 +1406,7 @@ for ( &Location; child : results.getNode(path2) ) {
 	<sect1>
 		<title>Summary</title>
 		<para>
-			In this chapter, we introduced JBoss DNA's <emphasis>graph model</emphasis> and showed the different
+			In this chapter, we introduced ModeShape's <emphasis>graph model</emphasis> and showed the different
 			kinds of objects used to represent nodes, paths, names, and properties.  We saw how all of these objects
 			are actually immutable, and how the low-level Graph API uses this characteristic to provide a stateless
 			and thread-safe interface for working with repository content using the <emphasis>request model</emphasis>
@@ -1414,7 +1414,7 @@ for ( &Location; child : results.getNode(path2) ) {
 		</para>
 		<para>
 			Next, we'll dive into the <link linkend="connector_framework">connector framework</link>, which builds
-			on top of the graph model and request model, allowing JBoss DNA to access the graph content stored
+			on top of the graph model and request model, allowing ModeShape to access the graph content stored
 			in many different kinds of systems.
 		</para>
 	</sect1>

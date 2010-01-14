@@ -1,0 +1,675 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ * 
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+package org.modeshape.jcr;
+
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.stub;
+import javax.jcr.Item;
+import javax.jcr.ItemNotFoundException;
+import javax.jcr.ItemVisitor;
+import javax.jcr.NodeIterator;
+import javax.jcr.PathNotFoundException;
+import javax.jcr.Repository;
+import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.Workspace;
+import javax.jcr.lock.LockException;
+import javax.jcr.nodetype.NodeType;
+import javax.jcr.version.Version;
+import org.modeshape.graph.Graph;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+/**
+ * 
+ */
+public class AbstractJcrNodeTest extends AbstractJcrTest {
+
+    private AbstractJcrNode rootNode;
+    private AbstractJcrNode cars;
+    private AbstractJcrNode hybrid;
+    private AbstractJcrNode prius;
+    private AbstractJcrNode highlander;
+    private AbstractJcrNode altima;
+
+    @Override
+    @Before
+    public void beforeEach() throws Exception {
+        super.beforeEach();
+        rootNode = cache.findJcrRootNode();
+        cars = cache.findJcrNode(null, path("/Cars"));
+        hybrid = cache.findJcrNode(null, path("/Cars/Hybrid"));
+        prius = cache.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));
+        highlander = cache.findJcrNode(null, path("/Cars/Hybrid/Toyota Highlander"));
+        altima = cache.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
+    }
+
+    /*
+     * Visitors
+     */
+
+    @Test
+    public void shouldAllowVisitation() throws Exception {
+        ItemVisitor visitor = Mockito.mock(ItemVisitor.class);
+        hybrid.accept(visitor);
+        Mockito.verify(visitor).visit(hybrid);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowVisitationIfNoVisitor() throws Exception {
+        hybrid.accept(null);
+    }
+
+    /*
+     * Ancestors
+     */
+
+    @Test( expected = ItemNotFoundException.class )
+    public void shouldNotAllowNegativeAncestorDepth() throws Exception {
+        hybrid.getAncestor(-1);
+    }
+
+    @Test
+    public void shouldReturnRootForAncestorOfDepthZero() throws Exception {
+        assertThat(hybrid.getAncestor(0), is((Item)rootNode));
+    }
+
+    @Test
+    public void shouldReturnAncestorAtLevelOneForAncestorOfDepthOne() throws Exception {
+        assertThat(hybrid.getAncestor(1), is((Item)cars));
+    }
+
+    @Test
+    public void shouldReturnSelfForAncestorOfDepthEqualToDepthOfNode() throws Exception {
+        assertThat(hybrid.getAncestor(hybrid.getDepth()), is((Item)hybrid));
+    }
+
+    @Test( expected = ItemNotFoundException.class )
+    public void shouldFailToReturnAncestorWhenDepthIsGreaterThanNodeDepth() throws Exception {
+        hybrid.getAncestor(hybrid.getDepth() + 1);
+    }
+
+    @Test
+    public void shouldIndicateIsNode() {
+        assertThat(prius.isNode(), is(true));
+    }
+
+    /*
+     * Property-related methods
+     */
+
+    @Test
+    public void shouldReturnPropertyFromGetPropertyWithValidName() throws Exception {
+        javax.jcr.Property property = prius.getProperty("vehix:model");
+        assertThat(property, is(notNullValue()));
+        assertThat(property.getName(), is("vehix:model"));
+        assertThat(property.getString(), is("Prius"));
+    }
+
+    @Test
+    public void shouldReturnPropertyFromGetPropertyWithValidRelativePath() throws Exception {
+        javax.jcr.Property property = prius.getProperty("./vehix:model");
+        assertThat(property, is(notNullValue()));
+        assertThat(property.getName(), is("vehix:model"));
+        assertThat(property.getString(), is("Prius"));
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldFailToReturnPropertyFromGetPropertyWithNameOfPropertyThatDoesNotExist() throws Exception {
+        prius.getProperty("nonExistantProperty");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToReturnPropertyFromGetPropertyWithAbsolutePath() throws Exception {
+        prius.getProperty("/test");
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldFailToReturnPropertyFromGetPropertyWithRelativePathToNonExistantItem() throws Exception {
+        prius.getProperty("../bogus/path");
+    }
+
+    @Test
+    public void shouldReturnPropertyFromGetPropertyWithRelativePathToPropertyOnOtherNode() throws Exception {
+        javax.jcr.Property property = prius.getProperty("../Nissan Altima/vehix:model");
+        assertThat(property, is(notNullValue()));
+        assertThat(property.getName(), is("vehix:model"));
+        assertThat(property.getString(), is("Altima"));
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldReturnPropertyFromGetPropertyWithRelativePathToOtherNode() throws Exception {
+        prius.getProperty("../Nissan Altima");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowGetPropertyWithNullPath() throws Exception {
+        prius.getProperty((String)null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowGetPropertyWithEmptyPath() throws Exception {
+        prius.getProperty("");
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasPropertyWithValidName() throws Exception {
+        assertThat(prius.hasProperty("vehix:model"), is(true));
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasPropertyWithValidRelativePath() throws Exception {
+        assertThat(prius.hasProperty("./vehix:model"), is(true));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasPropertyWithNameOfPropertyThatDoesNotExist() throws Exception {
+        assertThat(prius.hasProperty("non-existant"), is(false));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasPropertyWithRelativePathToNonExistantItem() throws Exception {
+        assertThat(prius.hasProperty("../Nissan Altima/non-existant"), is(false));
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasPropertyWithRelativePathToPropertyOnOtherNode() throws Exception {
+        assertThat(prius.hasProperty("../Nissan Altima/vehix:model"), is(true));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasPropertyWithRelativePathToOtherNode() throws Exception {
+        assertThat(prius.hasProperty("../Nissan Altima"), is(false));
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowHasPropertyWithAbsolutePath() throws Exception {
+        prius.hasProperty("/Cars/Hybrid/Toyota Prius/vehix:model");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowHasPropertyWithNullPath() throws Exception {
+        prius.hasProperty((String)null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowHasPropertyWithEmptyPath() throws Exception {
+        prius.hasProperty("");
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasPropertyIfPathIsParentPath() throws Exception {
+        assertThat(prius.hasProperty(".."), is(false));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasPropertyIfPathIsSelfPath() throws Exception {
+        assertThat(prius.hasProperty("."), is(false));
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasPropertiesIfNodeHasAtLeastOneProperty() throws Exception {
+        assertThat(prius.hasProperties(), is(true));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasPropertiesIfNodeHasNoProperties() throws Exception {
+        // can't really test this, since all nodes have at least one property ...
+        // assertThat(child.hasProperties(), is(false));
+    }
+
+    /*
+     *  getNode() and related methods
+     */
+
+    @Test
+    public void shouldReturnChildNodeFromGetNodeWithValidName() throws Exception {
+        assertThat(hybrid.getNode("Toyota Prius"), is((javax.jcr.Node)prius));
+        assertThat(hybrid.getNode("Toyota Prius"), is(sameInstance((javax.jcr.Node)prius)));
+    }
+
+    @Test
+    public void shouldReturnNonChildNodeFromGetNodeWithValidRelativePath() throws Exception {
+        assertThat(altima.getNode("../Toyota Prius"), is((javax.jcr.Node)prius));
+        assertThat(altima.getNode("../Toyota Prius"), is(sameInstance((javax.jcr.Node)prius)));
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldFailToReturnNodeFromGetNodeWithValidRelativePathToProperty() throws Exception {
+        altima.getNode("../Toyota Prius/vehix:model");
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldFailToReturnNodeFromGetNodeWithValidRelativePathToNoNodeOrProperty() throws Exception {
+        altima.getNode("../../nonExistant");
+    }
+
+    @Test
+    public void shouldReturnSelfFromGetNodeWithRelativePathContainingOnlySelfReference() throws Exception {
+        assertThat(hybrid.getNode("."), is((javax.jcr.Node)hybrid));
+        assertThat(hybrid.getNode("."), is(sameInstance((javax.jcr.Node)hybrid)));
+    }
+
+    @Test
+    public void shouldReturnSelfFromGetNodeWithRelativePathResolvingToSelf() throws Exception {
+        assertThat(hybrid.getNode("Toyota Prius/.."), is((javax.jcr.Node)hybrid));
+        assertThat(hybrid.getNode("Toyota Prius/.."), is(sameInstance((javax.jcr.Node)hybrid)));
+    }
+
+    @Test
+    public void shouldReturnParentFromGetNodeWithRelativePathContainingOnlyParentReference() throws Exception {
+        assertThat(prius.getNode("../.."), is((javax.jcr.Node)cars));
+        assertThat(prius.getNode("../.."), is(sameInstance((javax.jcr.Node)cars)));
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldFailToReturnChildNodeFromGetNodeWithNameOfChildThatDoesNotExist() throws Exception {
+        altima.getNode("nonExistant");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowGetNodeWithNoPath() throws Exception {
+        prius.getNode(null);
+    }
+
+    @Test
+    public void shouldProvideNodeIterator() throws Exception {
+        NodeIterator iter = hybrid.getNodes();
+        assertThat(iter, notNullValue());
+        assertThat(iter.getSize(), is(3L));
+        assertThat(iter.next(), is((Object)prius));
+        assertThat(iter.next(), is((Object)highlander));
+        assertThat(iter.next(), is((Object)altima));
+        assertThat(iter.hasNext(), is(false));
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasNodeWithValidName() throws Exception {
+        assertThat(hybrid.hasNode("Toyota Prius"), is(true));
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasNodeWithValidRelativePath() throws Exception {
+        assertThat(altima.hasNode("../Toyota Prius"), is(true));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasNodeWithValidRelativePathToProperty() throws Exception {
+        assertThat(altima.hasNode("../Toyota Prius/vehix:model"), is(false));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasNodeWithWithValidRelativePathToNoNodeOrProperty() throws Exception {
+        assertThat(altima.hasNode("../../nonExistant"), is(false));
+        assertThat(altima.hasNode("../nonExistant"), is(false));
+        assertThat(altima.hasNode("nonExistant"), is(false));
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasNodeWithRelativePathContainingOnlySelfReference() throws Exception {
+        assertThat(hybrid.hasNode("."), is(true));
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasNodeWithRelativePathResolvingToSelf() throws Exception {
+        assertThat(hybrid.hasNode("Toyota Prius/.."), is(true));
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasNodeWithRelativePathContainingOnlyParentReference() throws Exception {
+        assertThat(prius.hasNode("../.."), is(true));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasNodeWithNameOfChildThatDoesNotExist() throws Exception {
+        assertThat(altima.hasNode("nonExistant"), is(false));
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowHasNodeWithNoPath() throws Exception {
+        prius.hasNode(null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAbsolutePathInHasNode() throws Exception {
+        cars.hasNode("/a/b/c");
+    }
+
+    @Test
+    public void shouldReturnTrueFromHasNodesIfThereIsAtLeastOneChild() throws Exception {
+        assertThat(hybrid.hasNodes(), is(true));
+    }
+
+    @Test
+    public void shouldReturnFalseFromHasNodesIfThereAreNoChildren() throws Exception {
+        assertThat(prius.hasNodes(), is(false));
+    }
+
+    /*
+     * More comprehensive tests of addMixin, removeMixin, and canAddMixin require additional setup 
+     * and are in MixinTest
+     */
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowCancelMerge() throws Exception {
+        hybrid.cancelMerge(null);
+    }
+
+    @Test( expected = UnsupportedRepositoryOperationException.class )
+    public void shouldNotAllowCheckin() throws Exception {
+        hybrid.checkin();
+    }
+
+    @Test( expected = UnsupportedRepositoryOperationException.class )
+    public void shouldNotAllowCheckout() throws Exception {
+        hybrid.checkout();
+    }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowDoneMerge() throws Exception {
+        hybrid.doneMerge(null);
+    }
+
+    @Test( expected = UnsupportedRepositoryOperationException.class )
+    public void shouldNotAllowGetBaseVersion() throws Exception {
+        hybrid.getBaseVersion();
+    }
+
+    @Test( expected = LockException.class )
+    public void shouldNotAllowGetLockIfNoLock() throws Exception {
+        hybrid.getLock();
+    }
+
+    @Test
+    public void shouldNotAllowIsCheckedOut() throws Exception {
+        assertThat(hybrid.isCheckedOut(), is(false));
+    }
+
+    @Test
+    public void shouldNotAllowIsLocked() throws Exception {
+        assertThat(hybrid.isLocked(), is(false));
+    }
+
+    // Now tested in TCK
+    // @Test( expected = UnsupportedRepositoryOperationException.class )
+    // public void shouldAllowLock() throws Exception {
+    // hybrid.lock(false, false);
+    // }
+
+    @Test( expected = UnsupportedOperationException.class )
+    public void shouldNotAllowMerge() throws Exception {
+        hybrid.merge(null, false);
+    }
+
+    @Test( expected = NullPointerException.class )
+    public void shouldNotAllowOrderBeforeWithNullArgs() throws Exception {
+        hybrid.orderBefore(null, null);
+    }
+
+    @Test( expected = UnsupportedRepositoryOperationException.class )
+    public void shouldNotAllowRestoreVersionName() throws Exception {
+        hybrid.restore((String)null, false);
+    }
+
+    @Test( expected = UnsupportedRepositoryOperationException.class )
+    public void shouldNotAllowRestoreVersion() throws Exception {
+        hybrid.restore((Version)null, false);
+    }
+
+    @Test( expected = UnsupportedRepositoryOperationException.class )
+    public void shouldNotAllowRestoreVersionAtPath() throws Exception {
+        hybrid.restore(null, null, false);
+    }
+
+    @Test( expected = UnsupportedRepositoryOperationException.class )
+    public void shouldNotAllowRestoreByLabel() throws Exception {
+        hybrid.restoreByLabel(null, false);
+    }
+
+    // Now tested in TCK
+    // @Test( expected = UnsupportedRepositoryOperationException.class )
+    // public void shouldNotAllowUnlock() throws Exception {
+    // hybrid.unlock();
+    // }
+
+    /*
+     * Primary-type and -item methods
+     */
+
+    @Test
+    public void shouldReturnItemFromGetPrimaryNodeType() throws Exception {
+        NodeType carType = nodeTypes.getNodeType("vehix:car");
+        assertThat(carType, is(notNullValue()));
+        assertThat(prius.getPrimaryNodeType(), is(carType));
+    }
+
+    @Test
+    public void shouldReturnItemFromGetPrimaryItemIfItExists() throws Exception {
+        NodeType carType = nodeTypes.getNodeType("vehix:car");
+        assertThat(carType, is(notNullValue()));
+        assertThat(carType.getPrimaryItemName(), is("vehix:model"));
+        assertThat(prius.getPrimaryItem(), is(sameInstance((Item)prius.getProperty("vehix:model"))));
+    }
+
+    @Test( expected = ItemNotFoundException.class )
+    public void shouldFailToReturnItemFromGetPrimaryItemIfPrimaryTypeDoesNotHavePrimaryItemName() throws Exception {
+        // Get nt:unstructured and verify it has no primary item name ...
+        NodeType ntUnstructured = nodeTypes.getNodeType("nt:unstructured");
+        assertThat(ntUnstructured, is(notNullValue()));
+        assertThat(ntUnstructured.getPrimaryItemName(), is(nullValue()));
+
+        // Now check using a node that has the "nt:unstructured" primary type ...
+        cars.getPrimaryItem();
+    }
+
+    @Test( expected = ItemNotFoundException.class )
+    public void shouldFailToReturnItemFromGetPrimaryItemIfTheNodeHasNoItemMatchingThatSpecifiedByThePrimaryType()
+        throws Exception {
+        // Find the "vehix:car" type ...
+        NodeType carType = nodeTypes.getNodeType("vehix:car");
+        assertThat(carType, is(notNullValue()));
+        assertThat(carType.getPrimaryItemName(), is("vehix:model"));
+        assertThat(prius.getPrimaryItem(), is(sameInstance((Item)prius.getProperty("vehix:model"))));
+
+        // Now remove the "vehix:model" property so there is no such item ...
+        prius.getProperty("vehix:model").remove();
+        prius.getPrimaryItem();
+    }
+
+    /*
+     * Miscellaneous methods
+     */
+
+    @Test
+    public void shouldProvideSession() throws Exception {
+        assertThat((JcrSession)prius.getSession(), is(jcrSession));
+    }
+
+    @Test( expected = UnsupportedRepositoryOperationException.class )
+    public void shouldNotAllowGetVersionHistory() throws Exception {
+        cars.getVersionHistory();
+    }
+
+    /*
+     * Same-ness
+     */
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowIsSameWithNoItem() throws Exception {
+        hybrid.isSame(null);
+    }
+
+    @Test
+    public void shouldReturnFalseFromIsSameIfTheRepositoryInstanceIsDifferent() throws Exception {
+        // Set up the store ...
+        InMemoryRepositorySource source2 = new InMemoryRepositorySource();
+        source2.setName("store");
+        Graph store2 = Graph.create(source2, context);
+        store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
+        JcrSession jcrSession2 = mock(JcrSession.class);
+        stub(jcrSession2.nodeTypeManager()).toReturn(nodeTypes);
+        SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
+
+        Workspace workspace2 = mock(Workspace.class);
+        Repository repository2 = mock(Repository.class);
+        stub(jcrSession2.getWorkspace()).toReturn(workspace2);
+        stub(jcrSession2.getRepository()).toReturn(repository2);
+        stub(workspace2.getName()).toReturn("workspace1");
+
+        // Use the same id and location ...
+        javax.jcr.Node prius2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));
+        assertThat(prius2.isSame(prius), is(false));
+    }
+
+    @Test
+    public void shouldReturnFalseFromIsSameIfTheWorkspaceNameIsDifferent() throws Exception {
+        // Set up the store ...
+        InMemoryRepositorySource source2 = new InMemoryRepositorySource();
+        source2.setName("store");
+        Graph store2 = Graph.create(source2, context);
+        store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
+        JcrSession jcrSession2 = mock(JcrSession.class);
+        stub(jcrSession2.nodeTypeManager()).toReturn(nodeTypes);
+        SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
+
+        Workspace workspace2 = mock(Workspace.class);
+        Repository repository2 = mock(Repository.class);
+        stub(jcrSession2.getWorkspace()).toReturn(workspace2);
+        stub(jcrSession2.getRepository()).toReturn(repository2);
+        stub(workspace2.getName()).toReturn("workspace2");
+
+        // Use the same id and location; use 'Toyota Prius'
+        // since the UUID is defined in 'cars.xml' and therefore will be the same
+        javax.jcr.Node prius2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));
+        prius2.addMixin("mix:referenceable");
+        prius.addMixin("mix:referenceable");
+        String priusUuid2 = prius2.getUUID();
+        String priusUuid = prius.getUUID();
+        assertThat(priusUuid, is(priusUuid2));
+        assertThat(prius2.isSame(prius), is(false));
+    }
+
+    @Test
+    public void shouldReturnFalseFromIsSameIfTheNodeUuidIsDifferent() throws Exception {
+        // Set up the store ...
+        InMemoryRepositorySource source2 = new InMemoryRepositorySource();
+        source2.setName("store");
+        Graph store2 = Graph.create(source2, context);
+        store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
+        JcrSession jcrSession2 = mock(JcrSession.class);
+        stub(jcrSession2.nodeTypeManager()).toReturn(nodeTypes);
+        SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
+
+        Workspace workspace2 = mock(Workspace.class);
+        Repository repository2 = mock(Repository.class);
+        stub(jcrSession2.getWorkspace()).toReturn(workspace2);
+        stub(jcrSession2.getRepository()).toReturn(repository2);
+        stub(workspace2.getName()).toReturn("workspace1");
+
+        // Use the same id and location; use 'Nissan Altima'
+        // since the UUIDs will be different (cars.xml doesn't define on this node) ...
+        javax.jcr.Node altima2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
+        altima2.addMixin("mix:referenceable");
+        altima.addMixin("mix:referenceable");
+        String altimaUuid = altima.getUUID();
+        String altimaUuid2 = altima2.getUUID();
+        assertThat(altimaUuid, is(not(altimaUuid2)));
+        assertThat(altima2.isSame(altima), is(false));
+    }
+
+    @Test
+    public void shouldReturnTrueFromIsSameIfTheNodeUuidAndWorkspaceNameAndRepositoryInstanceAreSame() throws Exception {
+        // Set up the store ...
+        InMemoryRepositorySource source2 = new InMemoryRepositorySource();
+        source2.setName("store");
+        Graph store2 = Graph.create(source2, context);
+        store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
+        JcrSession jcrSession2 = mock(JcrSession.class);
+        stub(jcrSession2.nodeTypeManager()).toReturn(nodeTypes);
+        SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
+
+        Workspace workspace2 = mock(Workspace.class);
+        stub(jcrSession2.getWorkspace()).toReturn(workspace2);
+        stub(jcrSession2.getRepository()).toReturn(repository);
+        stub(workspace2.getName()).toReturn("workspace1");
+
+        // Use the same id and location ...
+        javax.jcr.Node prius2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));
+        prius2.addMixin("mix:referenceable");
+        prius.addMixin("mix:referenceable");
+        String priusUuid = prius.getUUID();
+        String priusUuid2 = prius2.getUUID();
+        assertThat(priusUuid, is(priusUuid2));
+        assertThat(prius2.isSame(prius), is(true));
+    }
+
+    @Test
+    public void shouldAlwaysHaveCorrespondenceIdForRootNodeThatContainsSelfPath() throws Exception {
+        CorrespondenceId id = rootNode.getCorrespondenceId();
+        assertThat(id.getReferenceableId(), is(rootNode.getUUID()));
+        assertThat(id.getRelativePath().size(), is(1));
+        assertThat(id.getRelativePath().getLastSegment().isSelfReference(), is(true));
+    }
+
+    @Test
+    public void shouldAlwaysHaveCorrespondenceId() throws Exception {
+        assertThat(cars.isReferenceable(), is(false));
+        CorrespondenceId id = cars.getCorrespondenceId();
+        assertThat(id.getReferenceableId(), is(rootNode.getUUID()));
+        assertThat(id.getRelativePath().size(), is(1));
+        assertThat(id.getRelativePath(), is(path("Cars")));
+
+        assertThat(hybrid.isReferenceable(), is(false));
+        id = hybrid.getCorrespondenceId();
+        assertThat(id.getReferenceableId(), is(rootNode.getUUID()));
+        assertThat(id.getRelativePath().size(), is(2));
+        assertThat(id.getRelativePath(), is(path("Cars/Hybrid")));
+
+        altima.addMixin("mix:referenceable");
+        assertThat(altima.isReferenceable(), is(true));
+        id = altima.getCorrespondenceId();
+        assertThat(id.getReferenceableId(), is(altima.getUUID()));
+        assertThat(id.getRelativePath().size(), is(1));
+        assertThat(id.getRelativePath(), is(path(".")));
+    }
+
+    @Test
+    public void shouldAddNodeWhenIntermediateNodesDoExist() throws Exception {
+        javax.jcr.Node newNode = rootNode.addNode("Cars/Hybrid/CreateThis", "nt:unstructured");
+        assertThat(newNode.getName(), is("CreateThis"));
+        assertThat(newNode.getParent(), is(sameInstance((javax.jcr.Node)hybrid)));
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldFailToAddNodeWhenIntermediateNodesDoNotExist() throws Exception {
+        rootNode.addNode("Cars/nonExistant/CreateThis", "nt:unstructured");
+    }
+}

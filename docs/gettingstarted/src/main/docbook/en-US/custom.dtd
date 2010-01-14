@@ -4,15 +4,15 @@
 
 <!-- Frequently used URLs -->
 
-<!ENTITY Home       					"http://www.jboss.org/dna/">
+<!ENTITY Home       					"http://www.modeshape.org/">
 <!ENTITY Downloads  					"&Home;downloads.html">
 <!ENTITY Community  					"&Home;community.html">
 <!ENTITY DocHome    					"http://docs.jboss.org/jbossdna">
-<!ENTITY API        					"&DocHome;/&versionNumber;/api/org/jboss/dna/">
-<!ENTITY JIRA       					"http://jira.jboss.org/jira/browse/DNA">
+<!ENTITY API        					"&DocHome;/&versionNumber;/api/org/modeshape/">
+<!ENTITY JIRA       					"http://jira.jboss.org/jira/browse/ModeShape">
 <!ENTITY Roadmap       				"&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">
 <!ENTITY Subversion  					"http://anonsvn.jboss.org/repos/dna/">
-<!ENTITY Fisheye							"http://fisheye.jboss.org/browse/DNA/">
+<!ENTITY Fisheye							"http://fisheye.jboss.org/browse/ModeShape/">
 <!ENTITY SecureSubversion  		"https://svn.jboss.org/repos/dna/">
 <!ENTITY Forums     					"http://community.jboss.org/en/dna">
 <!ENTITY JSR170  							"http://www.jcp.org/en/jsr/detail?id=170">

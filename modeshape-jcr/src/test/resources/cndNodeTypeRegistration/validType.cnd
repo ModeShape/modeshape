@@ -1,0 +1,13 @@
+/*
+ * Valid test type
+ */
+ 
+ 
+<mix = "http://www.jcp.org/jcr/mix/1.0">
+<dna = "http://www.modeshape.org/1.0">
+<dnatest = "http://www.modeshape.org/test/1.0">
+
+[dnatest:testType] > mix:referenceable, mix:lockable mixin orderable
++ dnatest:namespace (dna:namespace) = dna:namespace protected version
+- * (string) = 'foo' version < 'foo', 'bar', 'baz'
+

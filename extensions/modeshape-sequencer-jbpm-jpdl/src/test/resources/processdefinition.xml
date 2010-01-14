@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+-->
+<process-definition xmlns="urn:jbpm.org:jpdl-3.2" name="Pd-Name">
+
+	<!-- roles in this process definition-->
+	<swimlane name="SL1">
+		<assignment class="com.sample.assigned.Task1Handler" config-type="constructor"/>
+	</swimlane>
+
+	<swimlane name="SL2">
+		<assignment class="com.sample.assigned.Task2Handler" />
+	</swimlane>
+
+	<swimlane name="SL3">
+		<assignment expression="group(group1)" />
+	</swimlane>
+
+	<swimlane name="SL4">
+		<assignment actor-id="bobthebuilder" />
+	</swimlane>
+	
+	<swimlane name="SL5">
+        <assignment pooled-actors='hippies,hells angles' />
+    </swimlane>
+    
+    <!-- Start of the process -->
+	<start-state name="S0">
+		<transition to="Phase01" name="Tr01_S01"></transition>
+	</start-state>
+
+	<task-node name="Phase01">
+		<task name="Task01_Phase01" swimlane="SL1" />
+		<task name="Task01_Phase011" swimlane="SL1" />
+		<transition to="Phase02" name="Tr01_Phase01"></transition>
+	</task-node>
+
+	<task-node name="Phase02">
+		<task name="Task01_Phase02" swimlane="SL2" />
+		<transition to="Phase03" name="Tr01_Phase02"></transition>
+	</task-node>
+
+	<task-node name="Phase03">
+		<task name="Task_01_Phase03">
+			<assignment class="com.sample.assigned.Task3Handler" />
+		</task>
+		<transition to="Phase04" name="Tr01_Phase03"></transition>
+	</task-node>
+
+	<task-node name="Phase04">
+		<task name="Task_01_Phase04" swimlane="SL4"/>
+		<transition to="Phase05" name="Tr01_Phase04"></transition>
+	</task-node>
+
+    <task-node name="Phase05">
+        <task name="Task_01_Phase05" swimlane="SL5"/>
+        <transition name="Tr01_Phase05" to="Phase06" />
+    </task-node>
+    
+	<task-node name="Phase06">
+		<task name="Task_01_Phase06">
+			<assignment class="com.sample.assigned.Task6Hanlder" />
+		</task>
+		<transition name="Tr01_Phase06" to="S1" />
+	</task-node>
+
+    <!-- End node in the process definition -->
+	<end-state name="S1" />
+
+</process-definition>

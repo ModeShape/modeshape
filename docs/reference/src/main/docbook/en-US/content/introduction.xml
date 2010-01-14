@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ JBoss DNA (http://www.jboss.org/dna)
+  ~ ModeShape (http://www.modeshape.org)
   ~
   ~ See the COPYRIGHT.txt file distributed with this work for information
   ~ regarding copyright ownership.  Some portions may be licensed
@@ -8,12 +8,12 @@
   ~ See the AUTHORS.txt file in the distribution for a full listing of 
   ~ individual contributors.
   ~
-  ~ JBoss DNA is free software. Unless otherwise indicated, all code in JBoss DNA
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
   ~ is licensed to you under the terms of the GNU Lesser General Public License as
   ~ published by the Free Software Foundation; either version 2.1 of
   ~ the License, or (at your option) any later version.
   ~
-  ~ JBoss DNA is distributed in the hope that it will be useful,
+  ~ ModeShape is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
   ~ for more details.
@@ -29,67 +29,67 @@
 %CustomDTD;
 ]>
 <chapter id="introduction">
-  <title>Introduction to JBoss DNA</title>
+  <title>Introduction to ModeShape</title>
 	<para>
-		JBoss DNA is a JCR implementation that provides access to content stored in many different kinds of systems. 
-		A JBoss DNA repository isn't yet another silo of isolated information, but rather it's a JCR view of the information 
+		ModeShape is a JCR implementation that provides access to content stored in many different kinds of systems. 
+		A ModeShape repository isn't yet another silo of isolated information, but rather it's a JCR view of the information 
 		you already have in your environment: files systems, databases, other repositories, services, applications, etc.
 	</para>
 	<para>
-		To your applications, JBoss DNA looks and behaves like a regular JCR repository.  Using the standard JCR API,
-		applications can search, navigate, version, and listen for changes in the content.  But under the covers, JBoss DNA
+		To your applications, ModeShape looks and behaves like a regular JCR repository.  Using the standard JCR API,
+		applications can search, navigate, version, and listen for changes in the content.  But under the covers, ModeShape
 		gets its content by federating multiple back-end systems (like databases, services, other repositories, etc.),
 		allowing those systems to continue "owning" the information while ensuring the unified repository stays up-to-date
 		and in sync.
 	</para>
 	<para>
 		Of course when you start providing a unified view of all this information, you start recognizing the need to store 
-		more information, including metadata about and relationships between the existing content. JBoss DNA lets you do this, too. 
-		And JBoss DNA even tries to help you discover more about the information you already have, especially the information 
+		more information, including metadata about and relationships between the existing content. ModeShape lets you do this, too. 
+		And ModeShape even tries to help you discover more about the information you already have, especially the information 
 		wrapped up in the kinds of files often found in enterprise systems: service definitions, policy files, images, media, 
 		documents, presentations, application components, reusable libraries, configuration files, application installations, 
-		databases schemas, management scripts, and so on. As files are loaded into the repository, you can make JBoss DNA
+		databases schemas, management scripts, and so on. As files are loaded into the repository, you can make ModeShape
 		automatically sequence these files to extract from their content meaningful information that can be stored in the repository, 
 		where it can then be searched, accessed, and analyzed using the JCR API.
 	</para>
 	<para>
-		This document goes into detail about how JBoss DNA works to provide these capabilities.  It also talks in detail
-		about many of the parts within JBoss DNA - what they do, how they work, and how you can extend or customize the
-		behavior.  In particular, you'll learn about JBoss DNA <link linkend='connector-framework'>connectors</link>
-		and <link linkend='sequencing-framework'>sequencers</link>, how you can use the implementations included in JBoss DNA,
-		and how you can write your own to tailor JBoss DNA for your needs.
+		This document goes into detail about how ModeShape works to provide these capabilities.  It also talks in detail
+		about many of the parts within ModeShape - what they do, how they work, and how you can extend or customize the
+		behavior.  In particular, you'll learn about ModeShape <link linkend='connector-framework'>connectors</link>
+		and <link linkend='sequencing-framework'>sequencers</link>, how you can use the implementations included in ModeShape,
+		and how you can write your own to tailor ModeShape for your needs.
 	</para>
 	<para>
 		So whether your a developer on the project, or you're trying to learn the intricate details of
-		how JBoss DNA works, this document hopefully serves a good reference for developers on the project.
+		how ModeShape works, this document hopefully serves a good reference for developers on the project.
 	</para>
 	<sect1 id="use_cases">
-		<title>Use cases for JBoss DNA</title>
+		<title>Use cases for ModeShape</title>
 		<para>
-			JBoss DNA repositories can be used in a variety of applications.  One of the more obvious use cases for a metadata repository
+			ModeShape repositories can be used in a variety of applications.  One of the more obvious use cases for a metadata repository
 			is in provisioning and management, where it's critical to understand and keep track of the metadata for models, database, services, 
 			components, applications, clusters, machines, and other systems used in an enterprise.  Governance takes that a step 
 			farther, by also tracking the policies and expectations against which performance of the systems described by the repository can be verified.
 			In these cases, a repository is an excellent mechanism for managing this complex and highly-varied information.
 		</para>
 		<para>
-			But these large and complex use cases aren't the only way to use a JBoss DNA repository.  You could use an embedded JBoss DNA repository
-			to manage configuration information for an application, or you could use JBoss DNA just to provide a JCR interface on top of a few non-JCR systems.
+			But these large and complex use cases aren't the only way to use a ModeShape repository.  You could use an embedded ModeShape repository
+			to manage configuration information for an application, or you could use ModeShape just to provide a JCR interface on top of a few non-JCR systems.
 		</para>
 		<para>
-			The point is that JBoss DNA can be used in many different ways, ranging from the very tiny embedded repository to a large and distributed
+			The point is that ModeShape can be used in many different ways, ranging from the very tiny embedded repository to a large and distributed
 			enterprise-grade repository.  The choice is yours.
 		</para>
 	</sect1>
 	<sect1 id="what_is_metadata">
 		<title>What is metadata?</title>
 		<para>
-		Before we dive into more detail about JBoss DNA and metadata repositories, it's probably useful to explain what we
+		Before we dive into more detail about ModeShape and metadata repositories, it's probably useful to explain what we
 		mean by the term "metadata."  Simply put, <emphasis>metadata</emphasis> is the information you need to manage something.  
 		For example, it's the information needed to configure an operating system, or the description of the information in an LDAP tree, 
 		or the topology of your network. It's the configuration of an application server or enterprise service bus.
 		It's the steps involved in validating an application before it can go into production. It's the description of your 
-		database schemas, or of your services, or of the messages going in and coming out of a service. JBoss DNA is 
+		database schemas, or of your services, or of the messages going in and coming out of a service. ModeShape is 
 		designed to be a repository for all this (and more).
 		</para>
 		<para>
@@ -115,7 +115,7 @@
 		to our metadata repository.  The problem is, all that metadata is tied up as blobs in the repository.
 		Ideally, our repository would automatically extract from those files the content that's most useful to us,
 		and place that content inside the repository where it can be much more easily used, searched, related, and analyzed.
-		JBoss DNA does exactly this via a process we call <emphasis><link linkend="sequencing">sequencing</link></emphasis>,
+		ModeShape does exactly this via a process we call <emphasis><link linkend="sequencing">sequencing</link></emphasis>,
 		and it's an important part of a metadata repository.
 		</para>
 		<para>
@@ -202,7 +202,7 @@
   <sect1 id="roadmap">
     <title>Project roadmap</title>
     <para>
-      The roadmap for JBoss DNA is managed in the project's
+      The roadmap for ModeShape is managed in the project's
       <ulink url="&JIRA;">JIRA instance</ulink>
       . The roadmap shows the different tasks, requirements, issues and other activities that have been targeted to each of the
       upcoming releases. (The
@@ -210,7 +210,7 @@
       always shows the next three releases.)
     </para>
     <para>
-      By convention, the JBoss DNA project team periodically review JIRA issues that aren't targeted to a release, and then schedule
+      By convention, the ModeShape project team periodically review JIRA issues that aren't targeted to a release, and then schedule
  			them based upon current workload, severity, and the roadmap.  And if we review an issue and don't know how to target it,
 			we target it to the
       <ulink url="&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">Future Releases</ulink>
@@ -222,39 +222,39 @@
     </para>
   </sect1>
   <sect1 id="modules">
-    <title>JBoss DNA modules</title>
+    <title>ModeShape modules</title>
     <para>
-      JBoss DNA consists of the following modules:
+      ModeShape consists of the following modules:
       <itemizedlist>
         <listitem>
           <para>
             <emphasis role="strong">dna-jcr</emphasis>
-            contains JBoss DNA's implementation of the JCR API. If you're using JBoss DNA as a JCR repository, this is the
+            contains ModeShape's implementation of the JCR API. If you're using ModeShape as a JCR repository, this is the
  						top-level dependency that you'll want to use.  The module defines all required dependencies, except for
  						the repository connector(s) and any sequencer implementations needed by your configuration.
-						As we'll see later on, using JBoss DNA as a JCR repository is easy: simply create a <link linkend="configuration">configuration</link>, 
-						start JBoss DNA's <link linkend="jcr_engine">JCR engine</link>,	get the JCR &Repository; object for your repository, and then use the JCR API.
-						This module also uses the JCR unit tests from the reference implementation to verify the behavior of the JBoss DNA implementation.
+						As we'll see later on, using ModeShape as a JCR repository is easy: simply create a <link linkend="configuration">configuration</link>, 
+						start ModeShape's <link linkend="jcr_engine">JCR engine</link>,	get the JCR &Repository; object for your repository, and then use the JCR API.
+						This module also uses the JCR unit tests from the reference implementation to verify the behavior of the ModeShape implementation.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-repository</emphasis>
-            provides the core DNA graph engine and services for managing repository connections, sequencers, MIME type detectors,
-						and observation. If you're using JBoss DNA repositories via our graph API rather than JCR, then this is where you'd start.
+            provides the core ModeShape graph engine and services for managing repository connections, sequencers, MIME type detectors,
+						and observation. If you're using ModeShape repositories via our graph API rather than JCR, then this is where you'd start.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-cnd</emphasis>
             provides a self-contained utility for parsing CND (Compact Node Definition) files and transforming
-						the node definitions into a graph notation compatible with JBoss DNA's JCR implementation.
+						the node definitions into a graph notation compatible with ModeShape's JCR implementation.
           </para>
         </listitem>        
         <listitem>
           <para>
             <emphasis role="strong">dna-graph</emphasis>
-            defines the Application Programming Interface (API) for JBoss DNA's low-level graph model,
+            defines the Application Programming Interface (API) for ModeShape's low-level graph model,
 						including a fluent-style API for working with graph content.  This module also defines the
  						APIs necessary to implement custom connectors, sequencers, and MIME type detectors.
           </para>
@@ -285,7 +285,7 @@
         <listitem>
           <para>
             <emphasis role="strong">dna-connector-infinispan</emphasis>
-            is the preferred DNA repository connector for persistently storing content.
+            is the preferred ModeShape repository connector for persistently storing content.
             <ulink url="http://infinispan.org">Infinispan</ulink> is an extremely scalable, highly available data grid platform
  						that distributes the data across the nodes in the grid.
             This connector makes it possible for repository content to be stored in a very efficient, fast,
@@ -298,7 +298,7 @@
         <listitem>
           <para>
             <emphasis role="strong">dna-connector-jbosscache</emphasis>
-            is a DNA repository connector that stores content within a
+            is a ModeShape repository connector that stores content within a
             <ulink url="http://www.jboss.org/jbosscache/">JBoss Cache</ulink>
             instance. JBoss Cache is a powerful cache implementation that can serve as a distributed cache and that can persist
             information. The cache instance can be found via JNDI or created and managed by the connector.
@@ -310,7 +310,7 @@
         <listitem>
           <para>
             <emphasis role="strong">dna-connector-jdbc-metadata</emphasis>
-            is a DNA repository connector that provides read-only access to metadata and schema information from relational databases 
+            is a ModeShape repository connector that provides read-only access to metadata and schema information from relational databases 
 						through a JDBC connection.  This connector provides an optional and configurable caching facility to prevent frequent
 						requests to the database.
           </para>
@@ -318,7 +318,7 @@
         <listitem>
           <para>
             <emphasis role="strong">dna-connector-store-jpa</emphasis>
-            is a DNA repository connector that stores content in a JDBC database, using the Java Persistence API (JPA) and the
+            is a ModeShape repository connector that stores content in a JDBC database, using the Java Persistence API (JPA) and the
 						very highly-regarded and widely-used <ulink url="http://www.hibernate.org">Hibernate</ulink> implementation.
 						This connector is capable of storing any kind of content, and dictates the schema in which it stores the content.
 						Therefore, this connector cannot be used to access the data in existing created by/for other applications.
@@ -327,7 +327,7 @@
         <listitem>
           <para>
             <emphasis role="strong">dna-connector-filesystem</emphasis>
-            is a DNA repository connector that accesses the files and folders on (a part of) the local file system, providing that
+            is a ModeShape repository connector that accesses the files and folders on (a part of) the local file system, providing that
   					content in the form of <code>nt:file</code> and <code>nt:folder</code> nodes. This connector <emphasis>does</emphasis>
 						support updating the file system when changes are made to the <code>nt:file</code> and <code>nt:folder</code> nodes.
 						However, this connector does not support storing other kinds of nodes.
@@ -336,7 +336,7 @@
         <listitem>
           <para>
             <emphasis role="strong">dna-connector-svn</emphasis>
-            is a DNA repository connector that accesses the content of an existing Subversion repository, providing that content in
+            is a ModeShape repository connector that accesses the content of an existing Subversion repository, providing that content in
 						the form of <code>nt:file</code> and <code>nt:folder</code> nodes. This connector <emphasis>does</emphasis>
 						support updating the SVN repository when changes are made to the <code>nt:file</code> and <code>nt:folder</code> nodes.
 						However, this connector does not support storing other kinds of nodes.
@@ -345,13 +345,13 @@
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-cnd</emphasis>
-            is a DNA sequencer that extracts JCR node definitions from JCR Compact Node Definition (CND) files.
+            is a ModeShape sequencer that extracts JCR node definitions from JCR Compact Node Definition (CND) files.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-ddl</emphasis>
-            is a DNA sequencer that extracts the structure and content from DDL files.
+            is a ModeShape sequencer that extracts the structure and content from DDL files.
             <emphasis>This is still under development and includes support for the basic DDL statements in
 							in the Oracle, PostgreSQL, Derby, and standard DDL dialects.</emphasis>
           </para>
@@ -359,40 +359,40 @@
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-zip</emphasis>
-            is a DNA sequencer that extracts the files (with content) and directories from ZIP archives.
+            is a ModeShape sequencer that extracts the files (with content) and directories from ZIP archives.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-xml</emphasis>
-            is a DNA sequencer that extracts the structure and content from XML files.
+            is a ModeShape sequencer that extracts the structure and content from XML files.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-classfile</emphasis>
-            is a DNA sequencer that extracts the package, class/type, member, documentation, annotations, and other information
+            is a ModeShape sequencer that extracts the package, class/type, member, documentation, annotations, and other information
             from Java class files.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-java</emphasis>
-            is a DNA sequencer that extracts the package, class/type, member, documentation, annotations, and other information
+            is a ModeShape sequencer that extracts the package, class/type, member, documentation, annotations, and other information
             from Java source files.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-jbpm-jpdl</emphasis>
-            is a prototype DNA sequencer that extracts process definition metadata from jBPM process definition language (jPDL) files.
+            is a prototype ModeShape sequencer that extracts process definition metadata from jBPM process definition language (jPDL) files.
 						<emphasis>This is still under development.</emphasis>
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-msoffice</emphasis>
-            is a DNA sequencer that extracts metadata and summary information from
+            is a ModeShape sequencer that extracts metadata and summary information from
             <ulink url="http://office.microsoft.com/en-us/">Microsoft Office</ulink>
             documents. For example, the sequencer extracts from a PowerPoint presentation the outline as well as thumbnails of
             each slide. Microsoft Word and Excel files are also supported.
@@ -401,20 +401,20 @@
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-images</emphasis>
-            is a DNA sequencer that extracts the image metadata (e.g., size, date, etc.) from PNG, JPEG, GIF, BMP, PCS, IFF,
+            is a ModeShape sequencer that extracts the image metadata (e.g., size, date, etc.) from PNG, JPEG, GIF, BMP, PCS, IFF,
             RAS, PBM, PGM, and PPM image files.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-mp3</emphasis>
-            is a DNA sequencer that extracts metadata (e.g., author, album name, etc.) from MP3 audio files.
+            is a ModeShape sequencer that extracts metadata (e.g., author, album name, etc.) from MP3 audio files.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">dna-sequencer-text</emphasis>
-            is a DNA sequencer that extracts data from text streams. There are separate sequencers for character-delimited sequencing 
+            is a ModeShape sequencer that extracts data from text streams. There are separate sequencers for character-delimited sequencing 
 						and fixed width sequencing, but both treat the incoming text stream as a series of rows separated by line-terminators
 						with each row consisting of one or more columns. 
           </para>
@@ -451,7 +451,7 @@
           <para>
             <emphasis role="strong">dna-web-jcr-rest</emphasis>
             provides a set of JSR-311 (JAX-RS) objects that form the basis of a RESTful server for Java Content Repositories.  This project 
-            provides integration with DNA's JCR implementation (of course) but also contains a service provider interface (SPI) that can be 
+            provides integration with ModeShape's JCR implementation (of course) but also contains a service provider interface (SPI) that can be 
             used to integrate other JCR implementations with these RESTful services in the future.  For ease of packaging, these classes are
             provided as a JAR that can be placed in the WEB-INF/lib of a deployed RESTful server WAR.
           </para>
@@ -468,7 +468,7 @@
             <emphasis role="strong">dna-web-jcr-rest-client</emphasis>
             is a library that uses POJOs to access the REST web service. This module eliminates the need for applications to know how
             to create HTTP request URLs and payloads, and how to parse the JSON responses. It can be used to publish (upload) 
-            and unpublish (delete) files from DNA repositories. 
+            and unpublish (delete) files from ModeShape repositories. 
           </para>
         </listitem>
       </itemizedlist>
@@ -481,13 +481,13 @@
             <emphasis role="strong">docs-getting-started</emphasis>
             is the project with the
             <ulink url="http://www.docbook.org/">DocBook</ulink>
-            source for the JBoss DNA Getting Started document.
+            source for the ModeShape Getting Started document.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">docs-getting-started-examples</emphasis>
-            is the project with the Java source for the example application used in the JBoss DNA Getting Started document.
+            is the project with the Java source for the example application used in the ModeShape Getting Started document.
           </para>
         </listitem>
         <listitem>
@@ -495,7 +495,7 @@
             <emphasis role="strong">docs-reference-guide</emphasis>
             is the project with the
             <ulink url="http://www.docbook.org/">DocBook</ulink>
-            source for this document, the JBoss DNA Reference Guide document.
+            source for this document, the ModeShape Reference Guide document.
           </para>
         </listitem>
       </itemizedlist>
@@ -515,7 +515,7 @@
           <para>
             <emphasis role="strong">dna-jcr-tck</emphasis> provides a separate testing project that executes all reference implementation's
  						JCR TCK tests on a nightly basis to track implementation progress against the JCR 1.0 specification. 
-						This module will likely be retired when the JBoss DNA JCR implementation is complete, since <code>dna-jcr</code> and
+						This module will likely be retired when the ModeShape JCR implementation is complete, since <code>dna-jcr</code> and
 						<code>dna-integration-tests</code> will be running the full suite of JCR TCK unit tests.
           </para>
         </listitem>
@@ -526,7 +526,7 @@
     </para>
   	<para>
       Each of these modules is a Maven project with a group ID of
-      <code>org.jboss.dna</code>
+      <code>org.modeshape</code>
       . All of these projects correspond to artifacts in the
       <ulink url="&JBossMaven;">JBoss Maven 2 Repository</ulink>
       .
@@ -535,13 +535,13 @@
   <sect1 id="whats_new">
     <title>What's new?</title>
 	  <para>
-			With version 0.7, JBoss DNA introduces support for JCR <link linkend="jcr-query-and-search">query and search</link> 
+			With version 0.7, ModeShape introduces support for JCR <link linkend="jcr-query-and-search">query and search</link> 
 			with a number of query languages, including the <link linkend="jcr-xpath-query-language">JCR XPath language</link> 
 			(required by the 1.0 specification), the <link linkend="jcr-sql2-query-language">JCR-SQL2 dialect</link>
 			defined by the JCR 2.0 specification, and a <link linkend="fulltext-search-query-language">full-text search language</link>.  
 			This release also adds support for JCR locking and observation.
 		</para>
-		<para>This means that <emphasis role="strong">JBoss DNA now implements all of the JCR Level 1 and Level 2 features, 
+		<para>This means that <emphasis role="strong">ModeShape now implements all of the JCR Level 1 and Level 2 features, 
 			along with the optional locking and observation features</emphasis>. 
 			The only optional feature not implemented is versioning, and that will be coming soon.
 		  This version passes more than 95% of the JCR TCK tests, and all of the failures are because of a handful of known issues.
@@ -556,7 +556,7 @@
 			information of relational databases through JDBC.
 		</para>
 		<para>
-			JBoss DNA 0.7 includes a number of new and improved sequencers. The new <link linkend="text-sequencer">text sequencer</link>
+			ModeShape 0.7 includes a number of new and improved sequencers. The new <link linkend="text-sequencer">text sequencer</link>
 			is able to extract structured data from comma-separated or fixed-width text files. The new <link linkend="ddl-file-sequencer">DDL sequencer</link>
 			is capable of parsing a number of DDL dialects to extract the more important DDL statements. The <link linkend="cnd-sequencer">CND sequencer</link>
 			was rewritten and dramatically simplified to perform better, fix a number of known issues, and eliminate a dependency on a third-party library.
@@ -569,7 +569,7 @@
 		  This release also brings numerous bug fixes and improvements, and upgrades all third-party dependencies to the latest
 		  versions available at the time of release. The build system now supports 
 			<ulink url="http://jbossdna.blogspot.com/2009/09/running-tests-against-different-dbmses.html">running all of the tests against a variety
-		  of databases</ulink>, making it very easy to test against DBMSes that JBoss DNA doesn't directly test against.
+		  of databases</ulink>, making it very easy to test against DBMSes that ModeShape doesn't directly test against.
 			A new DDL generation utility was also introduced that produces the DDL for the database used by the JPA connector.
 			And JCR repositories now support the use of <link linkend="jcr-guess-access">anonymous users</link> - this is 
 			enabled by default but can easily be changed for production purposes.
