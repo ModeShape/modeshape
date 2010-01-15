@@ -69,12 +69,14 @@
         <dna:repository jcr:name="Test Repository Source">
             <!-- Specify the source that should be used for the repository -->
             <dna:source>Store</dna:source>
-            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names-->
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names
+-->
             <dna:options jcr:primaryType="dna:options">
                 <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="dna-jcr"/>
                 <projectNodeTypes jcr:primaryType="dna:option" dna:value="false"/>
             </dna:options>
-            <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape-->
+            <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape
+-->
             <namespaces jcr:primaryType="dna:namespaces">
                 <dnatest jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/test/1.0"/>
             </namespaces>

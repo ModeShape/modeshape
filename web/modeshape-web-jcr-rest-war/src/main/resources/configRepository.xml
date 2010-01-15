@@ -34,14 +34,17 @@
         <!-- Specify the source that should be used for the repository -->
         <repository jcr:name="repository" sourceName="repositorySource">
             <source>repositorySource</source>
-            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names-->
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names
+-->
             <options jcr:primaryType="dna:options">
                 <projectNodeTypes jcr:primaryType="dna:option" value="false"/>
                 <jaasLoginConfigName jcr:primaryType="dna:option" value="dna-jcr"/>
             </options>
-            <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here.-->
+            <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here.
+-->
             <nodeTypes jcr:primaryType="dna:nodeTypes"/>
-            <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape-->
+            <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape
+-->
             <namespaces jcr:primaryType="dna:namespaces" />
         </repository>
     </repositories>
