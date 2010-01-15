@@ -1087,15 +1087,15 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseLiteralFromStringWithCastStringLiteralToName() {
-        assertThat((Name)parser.parseLiteral(tokens("CAST([dna:name] AS NAME)"), typeSystem).getValue(), is(name("dna:name")));
-        assertThat((Name)parser.parseLiteral(tokens("CAST('dna:name' AS NAME)"), typeSystem).getValue(), is(name("dna:name")));
-        assertThat((Name)parser.parseLiteral(tokens("CAST(\"dna:name\" AS NAME)"), typeSystem).getValue(), is(name("dna:name")));
+        assertThat((Name)parser.parseLiteral(tokens("CAST([mode:name] AS NAME)"), typeSystem).getValue(), is(name("mode:name")));
+        assertThat((Name)parser.parseLiteral(tokens("CAST('mode:name' AS NAME)"), typeSystem).getValue(), is(name("mode:name")));
+        assertThat((Name)parser.parseLiteral(tokens("CAST(\"mode:name\" AS NAME)"), typeSystem).getValue(), is(name("mode:name")));
     }
 
     @Test
     public void shouldParseLiteralFromStringWithCastStringLiteralToPath() {
-        assertThat((Path)parser.parseLiteral(tokens("CAST([/dna:name/a/b] AS PATH)"), typeSystem).getValue(),
-                   is(path("/dna:name/a/b")));
+        assertThat((Path)parser.parseLiteral(tokens("CAST([/mode:name/a/b] AS PATH)"), typeSystem).getValue(),
+                   is(path("/mode:name/a/b")));
     }
 
     @Test
@@ -1628,20 +1628,20 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseDynamicOperandFromStringWithQuotedSelectorNameAndUnquotedPropertyName() {
-        DynamicOperand operand = parser.parseDynamicOperand(tokens("[dna:tableA].property"), typeSystem, mock(Join.class));
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("[mode:tableA].property"), typeSystem, mock(Join.class));
         assertThat(operand, is(instanceOf(PropertyValue.class)));
         PropertyValue value = (PropertyValue)operand;
         assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("dna:tableA")));
+        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
     }
 
     @Test
     public void shouldParseDynamicOperandFromStringWithQuotedSelectorNameAndQuotedPropertyName() {
-        DynamicOperand operand = parser.parseDynamicOperand(tokens("[dna:tableA].[dna:property]"), typeSystem, mock(Join.class));
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("[mode:tableA].[mode:property]"), typeSystem, mock(Join.class));
         assertThat(operand, is(instanceOf(PropertyValue.class)));
         PropertyValue value = (PropertyValue)operand;
-        assertThat(value.getPropertyName(), is("dna:property"));
-        assertThat(value.getSelectorName(), is(selectorName("dna:tableA")));
+        assertThat(value.getPropertyName(), is("mode:property"));
+        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
     }
 
     @Test
@@ -1677,16 +1677,16 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParsePropertyValueFromStringWithQuotedSelectorNameAndUnquotedPropertyName() {
-        PropertyValue value = parser.parsePropertyValue(tokens("[dna:tableA].property"), typeSystem, mock(Join.class));
+        PropertyValue value = parser.parsePropertyValue(tokens("[mode:tableA].property"), typeSystem, mock(Join.class));
         assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("dna:tableA")));
+        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
     }
 
     @Test
     public void shouldParsePropertyValueFromStringWithQuotedSelectorNameAndQuotedPropertyName() {
-        PropertyValue value = parser.parsePropertyValue(tokens("[dna:tableA].[dna:property]"), typeSystem, mock(Join.class));
-        assertThat(value.getPropertyName(), is("dna:property"));
-        assertThat(value.getSelectorName(), is(selectorName("dna:tableA")));
+        PropertyValue value = parser.parsePropertyValue(tokens("[mode:tableA].[mode:property]"), typeSystem, mock(Join.class));
+        assertThat(value.getPropertyName(), is("mode:property"));
+        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
     }
 
     @Test
@@ -1888,12 +1888,12 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParsePathFromSingleQuotedString() {
-        assertThat(parser.parsePath(tokens("'/a/b/c/dna:something/d'"), typeSystem), is("/a/b/c/dna:something/d"));
+        assertThat(parser.parsePath(tokens("'/a/b/c/mode:something/d'"), typeSystem), is("/a/b/c/mode:something/d"));
     }
 
     @Test
     public void shouldParsePathFromDoubleQuotedString() {
-        assertThat(parser.parsePath(tokens("\"/a/b/c/dna:something/d\""), typeSystem), is("/a/b/c/dna:something/d"));
+        assertThat(parser.parsePath(tokens("\"/a/b/c/mode:something/d\""), typeSystem), is("/a/b/c/mode:something/d"));
     }
 
     @Test( expected = ParsingException.class )

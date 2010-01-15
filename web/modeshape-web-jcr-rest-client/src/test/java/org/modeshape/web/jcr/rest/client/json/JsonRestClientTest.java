@@ -56,7 +56,7 @@ public final class JsonRestClientTest {
     private static final String USER = "dnauser";
 
     private static final Server SERVER = new Server("http://localhost:8080", USER, PSWD);
-    private static final String REPOSITORY_NAME = "dna:repository";
+    private static final String REPOSITORY_NAME = "mode:repository";
     private static final Repository REPOSITORY1 = new Repository(REPOSITORY_NAME, SERVER);
     private static final String WORKSPACE_NAME = "default";
     private static final Workspace WORKSPACE1 = new Workspace(WORKSPACE_NAME, REPOSITORY1);

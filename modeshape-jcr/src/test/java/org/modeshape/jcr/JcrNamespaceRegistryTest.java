@@ -155,7 +155,7 @@ public class JcrNamespaceRegistryTest {
 
     @Test( expected = NamespaceException.class )
     public void shouldNotAllowRegisteringUsingDnaPrefix() throws Exception {
-        registry.registerNamespace("dna", "http://example.com");
+        registry.registerNamespace("mode", "http://example.com");
     }
 
     @Test( expected = NamespaceException.class )
@@ -189,7 +189,7 @@ public class JcrNamespaceRegistryTest {
     }
 
     @Test( expected = NamespaceException.class )
-    public void shouldNotAllowRegisteringUsingDnaUri() throws Exception {
+    public void shouldNotAllowRegisteringUsingModeUri() throws Exception {
         registry.registerNamespace("foo", "http://www.modeshape.org/1.0");
     }
 
@@ -234,8 +234,8 @@ public class JcrNamespaceRegistryTest {
     }
 
     @Test( expected = NamespaceException.class )
-    public void shouldNotAllowUnregisteringDnaPrefix() throws Exception {
-        registry.unregisterNamespace("dna");
+    public void shouldNotAllowUnregisteringModePrefix() throws Exception {
+        registry.unregisterNamespace("mode");
     }
 
     @Test( expected = NamespaceException.class )

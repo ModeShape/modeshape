@@ -97,10 +97,10 @@ public class CndNodeTypeRegistrationTest {
         assertThat(nodeType.getDeclaredSupertypes().length, is(2));
         assertThat(nodeType.getDeclaredChildNodeDefinitions().length, is(1));
         JcrNodeDefinition childNode = (JcrNodeDefinition)nodeType.getDeclaredChildNodeDefinitions()[0];
-        assertThat(childNode.getName(), is("dnatest:namespace"));
-        assertThat(childNode.getDefaultPrimaryType().getName(), is("dna:namespace"));
+        assertThat(childNode.getName(), is("modetest:namespace"));
+        assertThat(childNode.getDefaultPrimaryType().getName(), is("mode:namespace"));
         assertThat(childNode.getRequiredPrimaryTypes().length, is(1));
-        assertThat(childNode.getRequiredPrimaryTypes()[0].getName(), is("dna:namespace"));
+        assertThat(childNode.getRequiredPrimaryTypes()[0].getName(), is("mode:namespace"));
         assertThat(childNode.allowsSameNameSiblings(), is(false));
         assertThat(childNode.isMandatory(), is(false));
 

@@ -69,7 +69,7 @@
         <dna:repository jcr:name="Car Repository" dna:source="Cars">
             <dna:options>
                 <dna:option jcr:name="projectNodeTypes" dna:value="true"/>
-                <dna:option jcr:name="jaasLoginConfigName" dna:value="dna-jcr"/>
+                <dna:option jcr:name="jaasLoginConfigName" dna:value="modeshape-jcr"/>
             </dna:options>
         </dna:repository>
     </dna:repositories>

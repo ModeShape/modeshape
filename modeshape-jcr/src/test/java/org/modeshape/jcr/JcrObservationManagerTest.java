@@ -177,7 +177,7 @@ public final class JcrObservationManagerTest extends TestSuite {
         JcrConfiguration config = new JcrConfiguration();
         config.repositorySource("store").usingClass(InMemoryRepositorySource.class).setRetryLimit(100).setProperty("defaultWorkspaceName",
                                                                                                                    WORKSPACE);
-        config.repository(REPOSITORY).setSource(SOURCE).setOption(Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
+        config.repository(REPOSITORY).setSource(SOURCE).setOption(Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
         config.save();
 
         // Create and start the engine ...

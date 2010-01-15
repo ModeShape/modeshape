@@ -88,34 +88,34 @@ public class ModeShapeConfigurationTest {
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
         Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
 
-        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Cars"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Cars"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, "3"));
-        assertThat(subgraph.getNode("/dna:sources/Cars"), hasProperty(ModeShapeLexicon.CLASSNAME,
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Cars"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Cars"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, "3"));
+        assertThat(subgraph.getNode("/mode:sources/Cars"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                       InMemoryRepositorySource.class.getName()));
-        assertThat(subgraph.getNode("/dna:sources/Aircraft"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Aircraft"), hasProperty("defaultWorkspaceName", "default"));
-        assertThat(subgraph.getNode("/dna:sources/Aircraft"), hasProperty(ModeShapeLexicon.CLASSNAME,
+        assertThat(subgraph.getNode("/mode:sources/Aircraft"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Aircraft"), hasProperty("defaultWorkspaceName", "default"));
+        assertThat(subgraph.getNode("/mode:sources/Aircraft"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                           InMemoryRepositorySource.class.getName()));
-        assertThat(subgraph.getNode("/dna:sources/Cache"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Cache"), hasProperty("defaultWorkspaceName", "default"));
-        assertThat(subgraph.getNode("/dna:sources/Cache"), hasProperty(ModeShapeLexicon.CLASSNAME,
+        assertThat(subgraph.getNode("/mode:sources/Cache"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Cache"), hasProperty("defaultWorkspaceName", "default"));
+        assertThat(subgraph.getNode("/mode:sources/Cache"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                        InMemoryRepositorySource.class.getName()));
 
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors").getChildren(), hasChild(segment("Detector")));
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/Detector"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/Detector"),
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors").getChildren(), hasChild(segment("Detector")));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/Detector"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/Detector"),
                    hasProperty(ModeShapeLexicon.DESCRIPTION, "Standard extension-based MIME type detector"));
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/Detector"),
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/Detector"),
                    hasProperty(ModeShapeLexicon.CLASSNAME, ExtensionBasedMimeTypeDetector.class.getName()));
 
-        assertThat(subgraph.getNode("/dna:sequencers").getChildren(), hasChild(segment("Image Sequencer")));
-        assertThat(subgraph.getNode("/dna:sequencers/Image Sequencer"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sequencers/Image Sequencer"), hasProperty(ModeShapeLexicon.DESCRIPTION,
+        assertThat(subgraph.getNode("/mode:sequencers").getChildren(), hasChild(segment("Image Sequencer")));
+        assertThat(subgraph.getNode("/mode:sequencers/Image Sequencer"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sequencers/Image Sequencer"), hasProperty(ModeShapeLexicon.DESCRIPTION,
                                                                                     "Image metadata sequencer"));
-        assertThat(subgraph.getNode("/dna:sequencers/Image Sequencer"),
+        assertThat(subgraph.getNode("/mode:sequencers/Image Sequencer"),
                    hasProperty(ModeShapeLexicon.CLASSNAME, "org.modeshape.sequencer.image.ImageMetadataSequencer"));
-        assertThat(subgraph.getNode("/dna:sequencers/Image Sequencer"), hasProperty(ModeShapeLexicon.PATH_EXPRESSION,
+        assertThat(subgraph.getNode("/mode:sequencers/Image Sequencer"), hasProperty(ModeShapeLexicon.PATH_EXPRESSION,
                                                                                     "/foo/source => /foo/target",
                                                                                     "/bar/source => /bar/target"));
     }
@@ -216,11 +216,11 @@ public class ModeShapeConfigurationTest {
         // Verify that the graph has been updated correctly ...
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
         Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
-        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.DESCRIPTION, "description"));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.DESCRIPTION, "description"));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                          InMemoryRepositorySource.class.getName()));
     }
 
@@ -230,16 +230,16 @@ public class ModeShapeConfigurationTest {
         configuration.repositorySource("Source1")
                      .usingClass(InMemoryRepositorySource.class.getName())
                      .loadedFromClasspath()
-                     .setProperty("dna:description", "desc")
+                     .setProperty("mode:description", "desc")
                      .and()
                      .save();
 
         // Verify that the graph has been updated correctly ...
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
         Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
-        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.DESCRIPTION, "desc"));
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.DESCRIPTION, "desc"));
     }
 
     @Test
@@ -255,9 +255,9 @@ public class ModeShapeConfigurationTest {
         // Verify that the graph has been updated correctly ...
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
         Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
-        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.DESCRIPTION, "desc"));
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.DESCRIPTION, "desc"));
     }
 
     @Test
@@ -266,16 +266,16 @@ public class ModeShapeConfigurationTest {
         configuration.repositorySource("Source1")
                      .usingClass(InMemoryRepositorySource.class.getName())
                      .loadedFromClasspath()
-                     .setProperty("dna:retryLimit", 5)
+                     .setProperty("mode:retryLimit", 5)
                      .and()
                      .save();
 
         // Verify that the graph has been updated correctly ...
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
         Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
-        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
     }
 
     @Test
@@ -291,9 +291,9 @@ public class ModeShapeConfigurationTest {
         // Verify that the graph has been updated correctly ...
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
         Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
-        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
     }
 
     @Test
@@ -309,12 +309,12 @@ public class ModeShapeConfigurationTest {
         // Verify that the graph has been updated correctly ...
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
         Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
-        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                          InMemoryRepositorySource.class.getName()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSPATH, "cp1", "cp2"));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSPATH, "cp1", "cp2"));
     }
 
     @Test
@@ -329,10 +329,10 @@ public class ModeShapeConfigurationTest {
         // Verify that the graph has been updated correctly ...
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
         Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
-        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                          InMemoryRepositorySource.class.getName()));
     }
 
@@ -348,10 +348,10 @@ public class ModeShapeConfigurationTest {
         // Verify that the graph has been updated correctly ...
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
         Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors").getChildren(), hasChild(segment("detector")));
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"), hasProperty(ModeShapeLexicon.DESCRIPTION, "default detector"));
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"),
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors").getChildren(), hasChild(segment("detector")));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"), hasProperty(ModeShapeLexicon.DESCRIPTION, "default detector"));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"),
                    hasProperty(ModeShapeLexicon.CLASSNAME, ExtensionBasedMimeTypeDetector.class.getName()));
     }
 
@@ -371,13 +371,13 @@ public class ModeShapeConfigurationTest {
         // Verify that the graph has been updated correctly ...
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
         Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
-        assertThat(subgraph.getNode("/dna:sequencers").getChildren(), hasChild(segment("sequencerA")));
-        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.DESCRIPTION, "Mock Sequencer A"));
-        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.CLASSNAME,
+        assertThat(subgraph.getNode("/mode:sequencers").getChildren(), hasChild(segment("sequencerA")));
+        assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.DESCRIPTION, "Mock Sequencer A"));
+        assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                                MockStreamSequencerA.class.getName()));
-        System.out.println(subgraph.getNode("/dna:sequencers/sequencerA").getProperty(ModeShapeLexicon.PATH_EXPRESSION));
-        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.PATH_EXPRESSION,
+        System.out.println(subgraph.getNode("/mode:sequencers/sequencerA").getProperty(ModeShapeLexicon.PATH_EXPRESSION));
+        assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.PATH_EXPRESSION,
                                                                                "/foo/source => /foo/target",
                                                                                "/bar/source => /bar/target"));
     }
@@ -405,26 +405,26 @@ public class ModeShapeConfigurationTest {
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
         Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
 
-        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                          InMemoryRepositorySource.class.getName()));
-        assertThat(subgraph.getNode("/dna:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSPATH, "cp1", "cp2"));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSPATH, "cp1", "cp2"));
 
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors").getChildren(), hasChild(segment("detector")));
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"), hasProperty(ModeShapeLexicon.DESCRIPTION, "default detector"));
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/detector"),
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors").getChildren(), hasChild(segment("detector")));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"), hasProperty(ModeShapeLexicon.DESCRIPTION, "default detector"));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"),
                    hasProperty(ModeShapeLexicon.CLASSNAME, ExtensionBasedMimeTypeDetector.class.getName()));
 
-        assertThat(subgraph.getNode("/dna:sequencers").getChildren(), hasChild(segment("sequencerA")));
-        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.DESCRIPTION, "Mock Sequencer A"));
-        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.CLASSNAME,
+        assertThat(subgraph.getNode("/mode:sequencers").getChildren(), hasChild(segment("sequencerA")));
+        assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.DESCRIPTION, "Mock Sequencer A"));
+        assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                                MockStreamSequencerA.class.getName()));
-        System.out.println(subgraph.getNode("/dna:sequencers/sequencerA").getProperty(ModeShapeLexicon.PATH_EXPRESSION));
-        assertThat(subgraph.getNode("/dna:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.PATH_EXPRESSION,
+        System.out.println(subgraph.getNode("/mode:sequencers/sequencerA").getProperty(ModeShapeLexicon.PATH_EXPRESSION));
+        assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.PATH_EXPRESSION,
                                                                                "/foo/source => /foo/target",
                                                                                "/bar/source => /bar/target"));
     }

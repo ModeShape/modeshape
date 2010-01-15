@@ -233,7 +233,7 @@ public class JcrRepositoryTest {
     @SuppressWarnings( "cast" )
     @Test
     public void shouldAllowLoginWithNoCredentialsInPrivilegedBlock() throws Exception {
-        LoginContext login = new LoginContext("dna-jcr", new UserPasswordCallbackHandler("superuser", "superuser".toCharArray()));
+        LoginContext login = new LoginContext("modeshape-jcr", new UserPasswordCallbackHandler("superuser", "superuser".toCharArray()));
         login.login();
 
         Subject subject = login.getSubject();
@@ -369,15 +369,15 @@ public class JcrRepositoryTest {
     public void shouldHaveRegisteredThoseNamespacesNeedeByDna() throws Exception {
         session = createSession();
         // Don't use the constants, since this needs to check that the actual values are correct
-        assertThat(session.getNamespaceURI("dna"), is("http://www.modeshape.org/1.0"));
-        assertThat(session.getNamespaceURI("dnaint"), is("http://www.modeshape.org/internal/1.0"));
+        assertThat(session.getNamespaceURI("mode"), is("http://www.modeshape.org/1.0"));
+        assertThat(session.getNamespaceURI("modeint"), is("http://www.modeshape.org/internal/1.0"));
     }
 
     @Test
     public void shouldHaveRegisteredThoseNamespacesDefinedByTheJcrSpecification() throws Exception {
         session = createSession();
         // Don't use the constants, since this needs to check that the actual values are correct
-        assertThat(session.getNamespaceURI("dna"), is("http://www.modeshape.org/1.0"));
+        assertThat(session.getNamespaceURI("mode"), is("http://www.modeshape.org/1.0"));
         assertThat(session.getNamespaceURI("jcr"), is("http://www.jcp.org/jcr/1.0"));
         assertThat(session.getNamespaceURI("mix"), is("http://www.jcp.org/jcr/mix/1.0"));
         assertThat(session.getNamespaceURI("nt"), is("http://www.jcp.org/jcr/nt/1.0"));
@@ -434,7 +434,7 @@ public class JcrRepositoryTest {
     }
 
     protected JcrSession createSession() throws Exception {
-        LoginContext login = new LoginContext("dna-jcr", new UserPasswordCallbackHandler("superuser", "superuser".toCharArray()));
+        LoginContext login = new LoginContext("modeshape-jcr", new UserPasswordCallbackHandler("superuser", "superuser".toCharArray()));
         login.login();
 
         Subject subject = login.getSubject();

@@ -33,7 +33,7 @@ public class TestLexicon {
 
     public static class Namespace {
         public static final String URI = "http://www.modeshape.org/test/1.0";
-        public static final String PREFIX = "dnatest";
+        public static final String PREFIX = "modetest";
     }
 
     public static final Name CONSTRAINED_TYPE = new BasicName(Namespace.URI, "constrainedType");

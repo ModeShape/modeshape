@@ -21,11 +21,11 @@ import org.modeshape.jcr.nodetype.NodeTypeTemplate;
 /**
  * Additional ModeShape tests that check for JCR compliance.
  */
-public class DnaTckTest extends AbstractJCRTest {
+public class ModeShapeTckTest extends AbstractJCRTest {
 
     Session session;
 
-    public DnaTckTest( String testName ) {
+    public ModeShapeTckTest( String testName ) {
         super();
 
         this.setName(testName);
@@ -35,11 +35,11 @@ public class DnaTckTest extends AbstractJCRTest {
     public static Test readOnlySuite() {
         TestSuite suite = new TestSuite("ModeShape JCR API tests");
 
-        suite.addTest(new DnaTckTest("testShouldAllowAdminSessionToRead"));
-        suite.addTest(new DnaTckTest("testShouldAllowReadOnlySessionToRead"));
-        suite.addTest(new DnaTckTest("testShouldAllowReadWriteSessionToRead"));
-        suite.addTest(new DnaTckTest("testShouldNotSeeWorkspacesWithoutReadPermission"));
-        suite.addTest(new DnaTckTest("testShouldMapReadRolesToWorkspacesWhenSpecified"));
+        suite.addTest(new ModeShapeTckTest("testShouldAllowAdminSessionToRead"));
+        suite.addTest(new ModeShapeTckTest("testShouldAllowReadOnlySessionToRead"));
+        suite.addTest(new ModeShapeTckTest("testShouldAllowReadWriteSessionToRead"));
+        suite.addTest(new ModeShapeTckTest("testShouldNotSeeWorkspacesWithoutReadPermission"));
+        suite.addTest(new ModeShapeTckTest("testShouldMapReadRolesToWorkspacesWhenSpecified"));
 
         return suite;
     }
@@ -382,16 +382,16 @@ public class DnaTckTest extends AbstractJCRTest {
 
         String nodetype1 = this.getProperty("nodetype");
         Node node1 = session.getRootNode().addNode("cloneSource", nodetype1);
-        // This node is not a mandatory child of nodetype1 (dnatest:referenceableUnstructured)
-        node1.addNode("dnatest:mandatoryChild", nodetype1);
+        // This node is not a mandatory child of nodetype1 (modetest:referenceableUnstructured)
+        node1.addNode("modetest:mandatoryChild", nodetype1);
 
         session.save();
         session.logout();
 
-        // /cloneTarget in the default workspace is type dna:referenceableUnstructured
+        // /cloneTarget in the default workspace is type mode:referenceableUnstructured
         superuser.getRootNode().addNode("cloneTarget", nodetype1);
 
-        // /node3 in the default workspace is type dna:referenceableUnstructured
+        // /node3 in the default workspace is type mode:referenceableUnstructured
         superuser.getRootNode().addNode(nodeName3, nodetype1);
         superuser.save();
 
@@ -417,22 +417,22 @@ public class DnaTckTest extends AbstractJCRTest {
 
         assertThat(node4.getNodes().getSize(), is(0L));
 
-        superuser.getRootNode().addNode("nodeWithMandatoryChild", "dnatest:nodeWithMandatoryChild");
+        superuser.getRootNode().addNode("nodeWithMandatoryChild", "modetest:nodeWithMandatoryChild");
         try {
             superuser.save();
-            fail("A node with type dnatest:nodeWithMandatoryChild should not be savable until the child is added");
+            fail("A node with type modetest:nodeWithMandatoryChild should not be savable until the child is added");
         } catch (ConstraintViolationException cve) {
             // Expected
         }
 
-        superuser.move("/node3/cloneSource/dnatest:mandatoryChild", "/nodeWithMandatoryChild/dnatest:mandatoryChild");
+        superuser.move("/node3/cloneSource/modetest:mandatoryChild", "/nodeWithMandatoryChild/modetest:mandatoryChild");
         superuser.save();
         superuser.refresh(false);
 
         // Now clone from the same source under node3 and remove the existing records
         try {
             superuser.getWorkspace().clone("otherWorkspace", "/cloneSource", "/" + nodeName3 + "/cloneSource", true);
-            fail("Should not be able to use clone to remove the mandatory child node at /nodeWithMandatoryChild/dnatest:mandatoryChild");
+            fail("Should not be able to use clone to remove the mandatory child node at /nodeWithMandatoryChild/modetest:mandatoryChild");
         } catch (ConstraintViolationException cve) {
             // expected
         }

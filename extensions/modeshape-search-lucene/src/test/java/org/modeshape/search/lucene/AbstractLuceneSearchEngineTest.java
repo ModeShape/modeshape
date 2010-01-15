@@ -27,6 +27,8 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.UUID;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
@@ -48,8 +50,6 @@ import org.modeshape.graph.search.SearchEngineWorkspace;
 import org.modeshape.graph.search.AbstractSearchEngine.Workspaces;
 import org.modeshape.search.lucene.AbstractLuceneSearchEngine.AbstractLuceneProcessor;
 import org.modeshape.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 
@@ -115,14 +115,18 @@ public class AbstractLuceneSearchEngineTest {
     @Test
     public void shouldDeserializeMultiValuedProperty() {
         // The values are stored as strings, so names and paths must be stored as string-values in the property
-        Property p1 = property("p1", "v1", 4L, name("dna:something").getString(context.getNamespaceRegistry()), UUID.randomUUID());
+        Property p1 = property("p1",
+                               "v1",
+                               4L,
+                               name("mode:something").getString(context.getNamespaceRegistry()),
+                               UUID.randomUUID());
         Property p1a = processor.deserializeProperty(processor.serializeProperty(p1));
         assertThat(p1a, is(p1));
     }
 
     @Test
     public void shouldSerializeAndDeserializePropertyWithNameValues() {
-        Property p1 = property("p1", name("v1"), name("dna:something"));
+        Property p1 = property("p1", name("v1"), name("mode:something"));
         Property p2 = processor.deserializeProperty(processor.serializeProperty(p1));
         assertThat(p2.getName(), is(p1.getName()));
         Object[] values1 = p1.getValuesAsArray();

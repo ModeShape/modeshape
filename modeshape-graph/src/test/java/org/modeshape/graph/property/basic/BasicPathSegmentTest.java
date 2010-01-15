@@ -57,7 +57,7 @@ public class BasicPathSegmentTest {
         this.registry.register(ModeShapeLexicon.Namespace.PREFIX, ModeShapeLexicon.Namespace.URI);
         this.stringValueFactory = new StringValueFactory(registry, Path.DEFAULT_DECODER, Path.DEFAULT_ENCODER);
         this.nameFactory = new NameValueFactory(registry, Path.DEFAULT_DECODER, stringValueFactory);
-        this.validName = nameFactory.create("dna:something");
+        this.validName = nameFactory.create("mode:something");
         this.factory = new PathValueFactory(Path.DEFAULT_DECODER, stringValueFactory, nameFactory);
     }
 
@@ -170,7 +170,7 @@ public class BasicPathSegmentTest {
                 return text;
             }
         };
-        assertThat(segment.getString(registry, encoder, delimiterEncoder), is("dna\\:some\uf03aname\uf03awith\uf03acolons"));
+        assertThat(segment.getString(registry, encoder, delimiterEncoder), is("mode\\:some\uf03aname\uf03awith\uf03acolons"));
         assertThat(segment.getString(null, encoder, delimiterEncoder), is("\\{" + encoder.encode(ModeShapeLexicon.Namespace.URI)
                                                                           + "\\}some\uf03aname\uf03awith\uf03acolons"));
     }

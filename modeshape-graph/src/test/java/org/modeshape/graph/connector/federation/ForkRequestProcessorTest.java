@@ -195,8 +195,8 @@ public class ForkRequestProcessorTest {
 
     @Test
     public void shouldReturnReadableLocation() {
-        Location location = location("/dna:something/jcr:else");
-        String result = processor.readable(location("/dna:something/jcr:else"));
+        Location location = location("/mode:something/jcr:else");
+        String result = processor.readable(location("/mode:something/jcr:else"));
         assertThat(result, is(location.getString(context.getNamespaceRegistry())));
     }
 

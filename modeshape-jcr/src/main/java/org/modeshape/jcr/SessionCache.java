@@ -86,11 +86,11 @@ import org.modeshape.jcr.JcrRepository.Option;
  * </p>
  * <h3>JCR API objects</h3>
  * <p>
- * Clients using the ModeShape JCR implementation obtain a {@link JcrSession JCR Session} (which generally owns this cache instance) as
- * well as the JCR {@link JcrNode Node} and {@link AbstractJcrProperty Property} instances. This cache ensures that the same JCR
- * Node or Property objects are always returned for the same item in the repository, ensuring that the "==" operator always holds
- * true for the same item. However, as soon as all (client) references to these objects are garbage collected, this class is free
- * to also release those objects and, when needed, recreate new implementation objects.
+ * Clients using the ModeShape JCR implementation obtain a {@link JcrSession JCR Session} (which generally owns this cache
+ * instance) as well as the JCR {@link JcrNode Node} and {@link AbstractJcrProperty Property} instances. This cache ensures that
+ * the same JCR Node or Property objects are always returned for the same item in the repository, ensuring that the "==" operator
+ * always holds true for the same item. However, as soon as all (client) references to these objects are garbage collected, this
+ * class is free to also release those objects and, when needed, recreate new implementation objects.
  * </p>
  * <p>
  * This approach helps reduce memory utilization since any unused items are available for garbage collection, but it also
@@ -118,8 +118,8 @@ import org.modeshape.jcr.JcrRepository.Option;
 class SessionCache {
 
     /**
-     * Hidden flag that controls whether properties that appear on ModeShape nodes but not allowed by the node type or mixins should be
-     * included anyway. This is currently {@value} .
+     * Hidden flag that controls whether properties that appear on ModeShape nodes but not allowed by the node type or mixins
+     * should be included anyway. This is currently {@value} .
      */
     protected static final boolean INCLUDE_PROPERTIES_NOT_ALLOWED_BY_NODE_TYPE_OR_MIXINS = true;
 
@@ -728,7 +728,7 @@ class SessionCache {
         JcrNodeTypeManager nodeTypes = session().nodeTypeManager();
         for (Name mixinTypeName : node.getPayload().getMixinTypeNames()) {
             JcrNodeType mixinType = nodeTypes.getNodeType(mixinTypeName);
-            if (mixinType.isNodeType(nodeType)) {
+            if (mixinType != null && mixinType.isNodeType(nodeType)) {
                 return true;
             }
         }
@@ -1436,7 +1436,8 @@ class SessionCache {
 
                 // Create the initial properties ...
                 Property primaryTypeProp = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
-                Property nodeDefinitionProp = propertyFactory.create(ModeShapeIntLexicon.NODE_DEFINITON, definition.getId().getString());
+                Property nodeDefinitionProp = propertyFactory.create(ModeShapeIntLexicon.NODE_DEFINITON, definition.getId()
+                                                                                                                   .getString());
 
                 // Now add the "jcr:uuid" property if and only if referenceable ...
                 Node<JcrNodePayload, JcrPropertyPayload> result = null;
@@ -2038,7 +2039,8 @@ class SessionCache {
                                                                               ModeShapeIntLexicon.MULTI_VALUED_PROPERTIES,
                                                                               values,
                                                                               false);
-        Property dnaProp = propertyFactory.create(ModeShapeIntLexicon.MULTI_VALUED_PROPERTIES, singleMultiPropertyNames.iterator());
+        Property dnaProp = propertyFactory.create(ModeShapeIntLexicon.MULTI_VALUED_PROPERTIES,
+                                                  singleMultiPropertyNames.iterator());
         return createPropertyInfo(nodePayload, dnaProp, definition, PropertyType.STRING, existing);
     }
 

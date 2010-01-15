@@ -53,9 +53,9 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
         "[+1975-08-01T01:30:00.000Z,)"};
     protected final String[] EXPECTED_DOUBLE_CONSTRAINTS = new String[] {"[,5.0)", "[10.1, 20.2)", "(30.3,40.4]", "[50.5,]"};
     protected final String[] EXPECTED_LONG_CONSTRAINTS = new String[] {"[,5)", "[10, 20)", "(30,40]", "[50,]"};
-    protected final String[] EXPECTED_NAME_CONSTRAINTS = new String[] {"jcr:system", "dnatest:constrainedType"};
+    protected final String[] EXPECTED_NAME_CONSTRAINTS = new String[] {"jcr:system", "modetest:constrainedType"};
     protected final String[] EXPECTED_PATH_CONSTRAINTS = new String[] {"/jcr:system/*", "b", "/a/b/c"};
-    protected final String[] EXPECTED_REFERENCE_CONSTRAINTS = new String[] {"dna:root"};
+    protected final String[] EXPECTED_REFERENCE_CONSTRAINTS = new String[] {"mode:root"};
     protected final String[] EXPECTED_STRING_CONSTRAINTS = new String[] {"foo", "bar*", ".*baz"};
 
     protected NodeTypeManager nodeTypeManager;
@@ -70,7 +70,7 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
 
     @Override
     protected void initializeContent() {
-        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
+        graph.create("/jcr:system").and().create("/jcr:system/mode:namespaces");
         graph.create("/a").and().create("/a/b").and().create("/a/b/c");
 
         graph.set("jcr:mixinTypes").on("/a").to(JcrMixLexicon.REFERENCEABLE);
@@ -388,7 +388,7 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
         JcrPropertyDefinition prop = propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_NAME);
 
         assertThat(prop.satisfiesConstraints(valueFor("jcr:system", PropertyType.NAME)), is(true));
-        assertThat(prop.satisfiesConstraints(valueFor("dnatest:constrainedType", PropertyType.NAME)), is(true));
+        assertThat(prop.satisfiesConstraints(valueFor("modetest:constrainedType", PropertyType.NAME)), is(true));
 
         // Test that names work across namespace remaps
         session.setNamespacePrefix("newprefix", TestLexicon.Namespace.URI);
@@ -401,7 +401,7 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
         JcrPropertyDefinition prop = propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_NAME);
 
         Value[] values = new Value[] {valueFor("jcr:system", PropertyType.NAME),
-            valueFor("dnatest:constrainedType", PropertyType.NAME),};
+            valueFor("modetest:constrainedType", PropertyType.NAME),};
         assertThat(satisfiesConstraints(prop, new Value[] {}), is(true));
         assertThat(satisfiesConstraints(prop, new Value[] {valueFor("jcr:system", PropertyType.NAME)}), is(true));
         assertThat(satisfiesConstraints(prop, values), is(true));
@@ -417,7 +417,7 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
 
         // Test that old names fail after namespace remaps
         session.setNamespacePrefix("newprefix", TestLexicon.Namespace.URI);
-        assertThat(prop.satisfiesConstraints(valueFor("dnatest:constrainedType", PropertyType.NAME)), is(true));
+        assertThat(prop.satisfiesConstraints(valueFor("modetest:constrainedType", PropertyType.NAME)), is(true));
     }
 
     @Test
@@ -426,7 +426,7 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
         JcrPropertyDefinition prop = propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_NAME);
 
         Value[] values = new Value[] {valueFor("jcr:system", PropertyType.NAME),
-            valueFor("dnatest:constrainedType2", PropertyType.NAME),};
+            valueFor("modetest:constrainedType2", PropertyType.NAME),};
         assertThat(satisfiesConstraints(prop, new Value[] {valueFor("jcr:system2", PropertyType.NAME)}), is(false));
         assertThat(satisfiesConstraints(prop, values), is(false));
     }
@@ -485,13 +485,13 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
 
         assertThat(prop.satisfiesConstraints(valueFor("b", PropertyType.PATH)), is(true));
         assertThat(prop.satisfiesConstraints(valueFor("/a/b/c", PropertyType.PATH)), is(true));
-        assertThat(prop.satisfiesConstraints(valueFor("/jcr:system/dna:namespace", PropertyType.PATH)), is(true));
+        assertThat(prop.satisfiesConstraints(valueFor("/jcr:system/mode:namespace", PropertyType.PATH)), is(true));
         assertThat(prop.satisfiesConstraints(valueFor("/a/b/c/", PropertyType.PATH)), is(true));
 
         // Test that constraints work after session rename
         session.setNamespacePrefix("jcr2", JcrLexicon.Namespace.URI);
 
-        assertThat(prop.satisfiesConstraints(valueFor("/jcr2:system/dna:foo", PropertyType.PATH)), is(true));
+        assertThat(prop.satisfiesConstraints(valueFor("/jcr2:system/mode:foo", PropertyType.PATH)), is(true));
     }
 
     @Test
@@ -571,52 +571,52 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
     @Override
     protected List<NodeTypeTemplate> getTestTypes() {
         NodeTypeTemplate constrainedType = new JcrNodeTypeTemplate(this.context);
-        constrainedType.setName("dnatest:constrainedType");
+        constrainedType.setName("modetest:constrainedType");
 
         PropertyDefinitionTemplate propBinary = new JcrPropertyDefinitionTemplate(this.context);
-        propBinary.setName("dnatest:constrainedBinary");
+        propBinary.setName("modetest:constrainedBinary");
         propBinary.setRequiredType(PropertyType.BINARY);
         propBinary.setValueConstraints(EXPECTED_BINARY_CONSTRAINTS);
         constrainedType.getPropertyDefinitionTemplates().add(propBinary);
 
         PropertyDefinitionTemplate propDate = new JcrPropertyDefinitionTemplate(this.context);
-        propDate.setName("dnatest:constrainedDate");
+        propDate.setName("modetest:constrainedDate");
         propDate.setRequiredType(PropertyType.DATE);
         propDate.setValueConstraints(EXPECTED_DATE_CONSTRAINTS);
         constrainedType.getPropertyDefinitionTemplates().add(propDate);
 
         PropertyDefinitionTemplate propDouble = new JcrPropertyDefinitionTemplate(this.context);
-        propDouble.setName("dnatest:constrainedDouble");
+        propDouble.setName("modetest:constrainedDouble");
         propDouble.setRequiredType(PropertyType.DOUBLE);
         propDouble.setValueConstraints(EXPECTED_DOUBLE_CONSTRAINTS);
         constrainedType.getPropertyDefinitionTemplates().add(propDouble);
 
         PropertyDefinitionTemplate propLong = new JcrPropertyDefinitionTemplate(this.context);
-        propLong.setName("dnatest:constrainedLong");
+        propLong.setName("modetest:constrainedLong");
         propLong.setRequiredType(PropertyType.LONG);
         propLong.setValueConstraints(EXPECTED_LONG_CONSTRAINTS);
         constrainedType.getPropertyDefinitionTemplates().add(propLong);
 
         PropertyDefinitionTemplate propName = new JcrPropertyDefinitionTemplate(this.context);
-        propName.setName("dnatest:constrainedName");
+        propName.setName("modetest:constrainedName");
         propName.setRequiredType(PropertyType.NAME);
         propName.setValueConstraints(EXPECTED_NAME_CONSTRAINTS);
         constrainedType.getPropertyDefinitionTemplates().add(propName);
 
         PropertyDefinitionTemplate propPath = new JcrPropertyDefinitionTemplate(this.context);
-        propPath.setName("dnatest:constrainedPath");
+        propPath.setName("modetest:constrainedPath");
         propPath.setRequiredType(PropertyType.PATH);
         propPath.setValueConstraints(EXPECTED_PATH_CONSTRAINTS);
         constrainedType.getPropertyDefinitionTemplates().add(propPath);
 
         PropertyDefinitionTemplate propReference = new JcrPropertyDefinitionTemplate(this.context);
-        propReference.setName("dnatest:constrainedReference");
+        propReference.setName("modetest:constrainedReference");
         propReference.setRequiredType(PropertyType.REFERENCE);
         propReference.setValueConstraints(EXPECTED_REFERENCE_CONSTRAINTS);
         constrainedType.getPropertyDefinitionTemplates().add(propReference);
 
         PropertyDefinitionTemplate propString = new JcrPropertyDefinitionTemplate(this.context);
-        propString.setName("dnatest:constrainedString");
+        propString.setName("modetest:constrainedString");
         propString.setRequiredType(PropertyType.STRING);
         propString.setValueConstraints(EXPECTED_STRING_CONSTRAINTS);
         constrainedType.getPropertyDefinitionTemplates().add(propString);

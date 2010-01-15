@@ -69,7 +69,7 @@ public class JcrWorkspaceTest extends AbstractSessionTest {
         graph.set("stringProperty").on("/a/b/c").to("value");
 
         // Make sure the path to the namespaces exists ...
-        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces").ifAbsent().and();
+        graph.create("/jcr:system").and().create("/jcr:system/mode:namespaces").ifAbsent().and();
 
     }
 

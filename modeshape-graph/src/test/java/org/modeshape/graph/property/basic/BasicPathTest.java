@@ -300,15 +300,15 @@ public class BasicPathTest extends AbstractPathTest {
 
     @Test
     public void shouldReturnAncestorForNodeOtherThanRoot() {
-        assertThat(path.getParent(), is(pathFactory.create("/dna:a/dna:b")));
-        assertThat(path.getParent().getParent(), is(pathFactory.create("/dna:a")));
+        assertThat(path.getParent(), is(pathFactory.create("/mode:a/mode:b")));
+        assertThat(path.getParent().getParent(), is(pathFactory.create("/mode:a")));
         assertThat(path.getParent().getParent().getParent(), is(ROOT));
     }
 
     @Test
     public void shouldReturnNthDegreeAncestor() {
-        assertThat(path.getAncestor(1), is(pathFactory.create("/dna:a/dna:b")));
-        assertThat(path.getAncestor(2), is(pathFactory.create("/dna:a")));
+        assertThat(path.getAncestor(1), is(pathFactory.create("/mode:a/mode:b")));
+        assertThat(path.getAncestor(2), is(pathFactory.create("/mode:a")));
         assertThat(path.getAncestor(3), is(ROOT));
     }
 
@@ -698,112 +698,112 @@ public class BasicPathTest extends AbstractPathTest {
 
     @Test
     public void shouldGetStringWithNamespaceUrisIfNoNamespaceRegistryIsProvided() {
-        path = pathFactory.create("/dna:a/b/dna:c/../d/./dna:e/../..");
+        path = pathFactory.create("/mode:a/b/mode:c/../d/./mode:e/../..");
         assertThat(path.getString(NO_OP_ENCODER),
                    is("/{http://www.modeshape.org/1.0}a/{}b/{http://www.modeshape.org/1.0}c/../{}d/./{http://www.modeshape.org/1.0}e/../.."));
     }
 
     @Test
     public void shouldGetStringWithNamespacePrefixesForAllNamesIfNamespaceRegistryIsProvided() {
-        path = pathFactory.create("/dna:a/b/dna:c/../d/./dna:e/../..");
-        assertThat(path.getString(namespaceRegistry, NO_OP_ENCODER), is("/dna:a/b/dna:c/../d/./dna:e/../.."));
+        path = pathFactory.create("/mode:a/b/mode:c/../d/./mode:e/../..");
+        assertThat(path.getString(namespaceRegistry, NO_OP_ENCODER), is("/mode:a/b/mode:c/../d/./mode:e/../.."));
         namespaceRegistry.register("dna2", validNamespaceUri);
         assertThat(path.getString(namespaceRegistry, NO_OP_ENCODER), is("/dna2:a/b/dna2:c/../d/./dna2:e/../.."));
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToReturnSubpathIfStartingIndexIsNegative() {
-        path = pathFactory.create("/dna:a/b/dna:c/../d/./dna:e/../..");
+        path = pathFactory.create("/mode:a/b/mode:c/../d/./mode:e/../..");
         path.subpath(-1);
     }
 
     @Test( expected = IndexOutOfBoundsException.class )
     public void shouldFailToReturnSubpathWithoutEndingIndexIfStartingIndexIsEqualToOrLargerThanSize() {
-        path = pathFactory.create("/dna:a/b/dna:c/../d/./dna:e/../..");
+        path = pathFactory.create("/mode:a/b/mode:c/../d/./mode:e/../..");
         path.subpath(path.size() + 1);
     }
 
     @Test( expected = IndexOutOfBoundsException.class )
     public void shouldFailToReturnSubpathWithEndingIndexIfStartingIndexIsEqualToOrLargerThanSize() {
-        path = pathFactory.create("/dna:a/b/dna:c/../d/./dna:e/../..");
+        path = pathFactory.create("/mode:a/b/mode:c/../d/./mode:e/../..");
         path.subpath(path.size() + 1, path.size() + 2);
     }
 
     @Test( expected = IndexOutOfBoundsException.class )
     public void shouldFailToReturnSubpathIfEndingIndexIsSmallerThanStartingIndex() {
-        path = pathFactory.create("/dna:a/b/dna:c/../d/./dna:e/../..");
+        path = pathFactory.create("/mode:a/b/mode:c/../d/./mode:e/../..");
         path.subpath(2, 1);
     }
 
     @Test( expected = IndexOutOfBoundsException.class )
     public void shouldFailToReturnSubpathIfEndingIndexIsEqualToOrLargerThanSize() {
-        path = pathFactory.create("/dna:a/b/dna:c/../d/./dna:e/../..");
+        path = pathFactory.create("/mode:a/b/mode:c/../d/./mode:e/../..");
         path.subpath(2, path.size() + 1);
     }
 
     @Test
     public void shouldReturnRootAsSubpathIfStartingIndexAndEndingIndexAreBothZero() {
-        path = pathFactory.create("/dna:a/b/dna:c/../d/./dna:e/../..");
+        path = pathFactory.create("/mode:a/b/mode:c/../d/./mode:e/../..");
         assertThat(path.subpath(0, 0), is(ROOT));
     }
 
     @Test
     public void shouldReturnSubpathIfValidStartingIndexAndNoEndingIndexAreProvided() {
-        path = pathFactory.create("/dna:a/b/dna:c/../d/./dna:e/../..");
-        assertThat(path.subpath(0), hasSegments(pathFactory, "dna:a", "b", "dna:c", "..", "d", ".", "dna:e", "..", ".."));
+        path = pathFactory.create("/mode:a/b/mode:c/../d/./mode:e/../..");
+        assertThat(path.subpath(0), hasSegments(pathFactory, "mode:a", "b", "mode:c", "..", "d", ".", "mode:e", "..", ".."));
         assertThat(path.subpath(0), is(path));
         assertThat(path.subpath(0), is(sameInstance(path)));
-        assertThat(path.subpath(1), hasSegments(pathFactory, "b", "dna:c", "..", "d", ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(2), hasSegments(pathFactory, "dna:c", "..", "d", ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(3), hasSegments(pathFactory, "..", "d", ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(4), hasSegments(pathFactory, "d", ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(5), hasSegments(pathFactory, ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(6), hasSegments(pathFactory, "dna:e", "..", ".."));
+        assertThat(path.subpath(1), hasSegments(pathFactory, "b", "mode:c", "..", "d", ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(2), hasSegments(pathFactory, "mode:c", "..", "d", ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(3), hasSegments(pathFactory, "..", "d", ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(4), hasSegments(pathFactory, "d", ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(5), hasSegments(pathFactory, ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(6), hasSegments(pathFactory, "mode:e", "..", ".."));
         assertThat(path.subpath(7), hasSegments(pathFactory, "..", ".."));
         assertThat(path.subpath(8), hasSegments(pathFactory, ".."));
 
-        path = pathFactory.create("dna:a/b/dna:c/../d/./dna:e/../..");
-        assertThat(path.subpath(0), hasSegments(pathFactory, "dna:a", "b", "dna:c", "..", "d", ".", "dna:e", "..", ".."));
+        path = pathFactory.create("mode:a/b/mode:c/../d/./mode:e/../..");
+        assertThat(path.subpath(0), hasSegments(pathFactory, "mode:a", "b", "mode:c", "..", "d", ".", "mode:e", "..", ".."));
         assertThat(path.subpath(0), is(path));
         assertThat(path.subpath(0), is(sameInstance(path)));
-        assertThat(path.subpath(1), hasSegments(pathFactory, "b", "dna:c", "..", "d", ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(2), hasSegments(pathFactory, "dna:c", "..", "d", ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(3), hasSegments(pathFactory, "..", "d", ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(4), hasSegments(pathFactory, "d", ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(5), hasSegments(pathFactory, ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(6), hasSegments(pathFactory, "dna:e", "..", ".."));
+        assertThat(path.subpath(1), hasSegments(pathFactory, "b", "mode:c", "..", "d", ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(2), hasSegments(pathFactory, "mode:c", "..", "d", ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(3), hasSegments(pathFactory, "..", "d", ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(4), hasSegments(pathFactory, "d", ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(5), hasSegments(pathFactory, ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(6), hasSegments(pathFactory, "mode:e", "..", ".."));
         assertThat(path.subpath(7), hasSegments(pathFactory, "..", ".."));
         assertThat(path.subpath(8), hasSegments(pathFactory, ".."));
     }
 
     @Test
     public void shouldReturnSubpathIfValidStartingIndexAndEndingIndexAreProvided() {
-        path = pathFactory.create("/dna:a/b/dna:c/../d/./dna:e/../..");
+        path = pathFactory.create("/mode:a/b/mode:c/../d/./mode:e/../..");
         assertThat(path.subpath(0, path.size()), hasSegments(pathFactory,
-                                                             "dna:a",
+                                                             "mode:a",
                                                              "b",
-                                                             "dna:c",
+                                                             "mode:c",
                                                              "..",
                                                              "d",
                                                              ".",
-                                                             "dna:e",
+                                                             "mode:e",
                                                              "..",
                                                              ".."));
         assertThat(path.subpath(0, path.size()), is(path));
         assertThat(path.subpath(0, path.size()), is(sameInstance(path)));
-        assertThat(path.subpath(1, path.size()), hasSegments(pathFactory, "b", "dna:c", "..", "d", ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(2, path.size()), hasSegments(pathFactory, "dna:c", "..", "d", ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(3, path.size()), hasSegments(pathFactory, "..", "d", ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(4, path.size()), hasSegments(pathFactory, "d", ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(5, path.size()), hasSegments(pathFactory, ".", "dna:e", "..", ".."));
-        assertThat(path.subpath(6, path.size()), hasSegments(pathFactory, "dna:e", "..", ".."));
+        assertThat(path.subpath(1, path.size()), hasSegments(pathFactory, "b", "mode:c", "..", "d", ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(2, path.size()), hasSegments(pathFactory, "mode:c", "..", "d", ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(3, path.size()), hasSegments(pathFactory, "..", "d", ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(4, path.size()), hasSegments(pathFactory, "d", ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(5, path.size()), hasSegments(pathFactory, ".", "mode:e", "..", ".."));
+        assertThat(path.subpath(6, path.size()), hasSegments(pathFactory, "mode:e", "..", ".."));
         assertThat(path.subpath(7, path.size()), hasSegments(pathFactory, "..", ".."));
         assertThat(path.subpath(8, path.size()), hasSegments(pathFactory, ".."));
 
-        assertThat(path.subpath(0, 2), hasSegments(pathFactory, "dna:a", "b"));
+        assertThat(path.subpath(0, 2), hasSegments(pathFactory, "mode:a", "b"));
         assertThat(path.subpath(1, 2), hasSegments(pathFactory, "b"));
-        assertThat(path.subpath(1, 5), hasSegments(pathFactory, "b", "dna:c", "..", "d"));
-        assertThat(path.subpath(2, 5), hasSegments(pathFactory, "dna:c", "..", "d"));
+        assertThat(path.subpath(1, 5), hasSegments(pathFactory, "b", "mode:c", "..", "d"));
+        assertThat(path.subpath(2, 5), hasSegments(pathFactory, "mode:c", "..", "d"));
         assertThat(path.subpath(3, 5), hasSegments(pathFactory, "..", "d"));
     }
 
@@ -851,21 +851,21 @@ public class BasicPathTest extends AbstractPathTest {
         paths.add(pathFactory.create("/a/b"));
         paths.add(pathFactory.create("/a/b/alpha"));
         paths.add(pathFactory.create("/a/b/beta"));
-        paths.add(pathFactory.create("/a/b/dna:mixinTypes"));
-        paths.add(pathFactory.create("/a/b/dna:name"));
-        paths.add(pathFactory.create("/a/b/dna:primaryType"));
+        paths.add(pathFactory.create("/a/b/mode:mixinTypes"));
+        paths.add(pathFactory.create("/a/b/mode:name"));
+        paths.add(pathFactory.create("/a/b/mode:primaryType"));
         paths.add(pathFactory.create("/a/c[1]"));
         paths.add(pathFactory.create("/a/c[1]/alpha"));
         paths.add(pathFactory.create("/a/c[1]/beta"));
-        paths.add(pathFactory.create("/a/c[1]/dna:mixinTypes"));
-        paths.add(pathFactory.create("/a/c[1]/dna:name"));
-        paths.add(pathFactory.create("/a/c[1]/dna:primaryType"));
+        paths.add(pathFactory.create("/a/c[1]/mode:mixinTypes"));
+        paths.add(pathFactory.create("/a/c[1]/mode:name"));
+        paths.add(pathFactory.create("/a/c[1]/mode:primaryType"));
         paths.add(pathFactory.create("/a/c[2]"));
         paths.add(pathFactory.create("/a/c[2]/alpha"));
         paths.add(pathFactory.create("/a/c[2]/beta"));
-        paths.add(pathFactory.create("/a/c[2]/dna:mixinTypes"));
-        paths.add(pathFactory.create("/a/c[2]/dna:name"));
-        paths.add(pathFactory.create("/a/c[2]/dna:primaryType"));
+        paths.add(pathFactory.create("/a/c[2]/mode:mixinTypes"));
+        paths.add(pathFactory.create("/a/c[2]/mode:name"));
+        paths.add(pathFactory.create("/a/c[2]/mode:primaryType"));
 
         // Randomize the list of paths, so we have something to sort ...
         List<Path> randomizedPaths = new ArrayList<Path>(paths);
@@ -967,12 +967,12 @@ public class BasicPathTest extends AbstractPathTest {
         assertThat(path.getString(namespaceRegistry, encoder), is("/a/b/c"));
         assertThat(path.getString(namespaceRegistry, encoder, delimEncoder), is("\\/a\\/b\\/c"));
 
-        path = pathFactory.create("/dna:a/b/c");
+        path = pathFactory.create("/mode:a/b/c");
         assertThat(path.getString(encoder), is("/{" + encoder.encode(ModeShapeLexicon.Namespace.URI) + "}a/{}b/{}c"));
         assertThat(path.getString(null, encoder, delimEncoder), is("\\/\\{" + encoder.encode(ModeShapeLexicon.Namespace.URI)
                                                                    + "\\}a\\/\\{\\}b\\/\\{\\}c"));
-        assertThat(path.getString(namespaceRegistry), is("/dna:a/b/c"));
-        assertThat(path.getString(namespaceRegistry, encoder), is("/dna:a/b/c"));
-        assertThat(path.getString(namespaceRegistry, encoder, delimEncoder), is("\\/dna\\:a\\/b\\/c"));
+        assertThat(path.getString(namespaceRegistry), is("/mode:a/b/c"));
+        assertThat(path.getString(namespaceRegistry, encoder), is("/mode:a/b/c"));
+        assertThat(path.getString(namespaceRegistry, encoder, delimEncoder), is("\\/mode\\:a\\/b\\/c"));
     }
 }

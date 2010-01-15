@@ -123,7 +123,7 @@ public class RepositoryServiceTest {
     @Test
     public void shouldStartUpUsingConfigurationRepositoryThatContainsNoSources() throws Exception {
         // Set up the configuration repository to contain NO sources ...
-        configRepository.create("/dna:sources").and();
+        configRepository.create("/mode:sources").and();
 
         // Now, start up the service ...
         service.getAdministrator().start();
@@ -136,27 +136,27 @@ public class RepositoryServiceTest {
     public void shouldStartUpAndCreateRepositoryUsingConfigurationRepositoryThatContainsNoSources() {
         // Set up the configuration repository ...
         configRepository.useWorkspace("default");
-        configRepository.create("/dna:sources").and();
-        configRepository.create("/dna:sources/source A").and();
+        configRepository.create("/mode:sources").and();
+        configRepository.create("/mode:sources/source A").and();
 
         final String className = InMemoryRepositorySource.class.getName();
-        configRepository.set(ModeShapeLexicon.CLASSNAME).on("/dna:sources/source A").to(className);
-        configRepository.set(ModeShapeLexicon.CLASSPATH).on("/dna:sources/source A").to("");
-        configRepository.set("retryLimit").on("/dna:sources/source A").to(3);
+        configRepository.set(ModeShapeLexicon.CLASSNAME).on("/mode:sources/source A").to(className);
+        configRepository.set(ModeShapeLexicon.CLASSPATH).on("/mode:sources/source A").to("");
+        configRepository.set("retryLimit").on("/mode:sources/source A").to(3);
 
-        String fedReposPath = "/dna:repositories/fed repos/";
-        configRepository.create("/dna:repositories").and();
-        configRepository.create("/dna:repositories/fed repos").and();
-        configRepository.create("/dna:repositories/fed repos/dna:regions").and();
-        configRepository.create("/dna:repositories/fed repos/dna:regions/source A").and();
-        configRepository.create("/dna:repositories/fed repos/dna:regions/source B").and();
-        configRepository.create("/dna:repositories/fed repos/dna:regions/source C").and();
-        configRepository.create("/dna:repositories/fed repos/dna:regions/source D").and();
+        String fedReposPath = "/mode:repositories/fed repos/";
+        configRepository.create("/mode:repositories").and();
+        configRepository.create("/mode:repositories/fed repos").and();
+        configRepository.create("/mode:repositories/fed repos/mode:regions").and();
+        configRepository.create("/mode:repositories/fed repos/mode:regions/source A").and();
+        configRepository.create("/mode:repositories/fed repos/mode:regions/source B").and();
+        configRepository.create("/mode:repositories/fed repos/mode:regions/source C").and();
+        configRepository.create("/mode:repositories/fed repos/mode:regions/source D").and();
         configRepository.set(ModeShapeLexicon.TIME_TO_EXPIRE).on(fedReposPath).to(20000);
-        configRepository.set(ModeShapeLexicon.PROJECTION_RULES).on(fedReposPath + "dna:regions/source A").to("/a/b/c => /sx/sy");
-        configRepository.set(ModeShapeLexicon.PROJECTION_RULES).on(fedReposPath + "dna:regions/source B").to("/ => /");
-        configRepository.set(ModeShapeLexicon.PROJECTION_RULES).on(fedReposPath + "dna:regions/source C").to("/d/e/f => /");
-        configRepository.set(ModeShapeLexicon.PROJECTION_RULES).on(fedReposPath + "dna:regions/source D").to("/ => /x/y/z");
+        configRepository.set(ModeShapeLexicon.PROJECTION_RULES).on(fedReposPath + "mode:regions/source A").to("/a/b/c => /sx/sy");
+        configRepository.set(ModeShapeLexicon.PROJECTION_RULES).on(fedReposPath + "mode:regions/source B").to("/ => /");
+        configRepository.set(ModeShapeLexicon.PROJECTION_RULES).on(fedReposPath + "mode:regions/source C").to("/d/e/f => /");
+        configRepository.set(ModeShapeLexicon.PROJECTION_RULES).on(fedReposPath + "mode:regions/source D").to("/ => /x/y/z");
 
         // Now, start up the service ...
         service.getAdministrator().start();
@@ -192,28 +192,28 @@ public class RepositoryServiceTest {
 
     @Test
     public void shouldConfigureRepositorySourceWithSetterThatTakesArrayButWithSingleValues() {
-        Path configPath = context.getValueFactories().getPathFactory().create("/dna:system");
+        Path configPath = context.getValueFactories().getPathFactory().create("/mode:system");
         service = new RepositoryService(configRepositorySource, configWorkspaceName, configPath, context, problems);
 
         // Set up the configuration repository ...
         configRepository.useWorkspace("default");
-        configRepository.create("/dna:system").and();
-        configRepository.create("/dna:system/dna:sources").and();
-        configRepository.create("/dna:system/dna:sources/source A").and();
+        configRepository.create("/mode:system").and();
+        configRepository.create("/mode:system/mode:sources").and();
+        configRepository.create("/mode:system/mode:sources/source A").and();
 
         final String className = FakeRepositorySource.class.getName();
-        configRepository.set(ModeShapeLexicon.CLASSNAME).on("/dna:system/dna:sources/source A").to(className);
-        configRepository.set(ModeShapeLexicon.CLASSPATH).on("/dna:system/dna:sources/source A").to("");
-        configRepository.set("retryLimit").on("/dna:system/dna:sources/source A").to(3);
-        configRepository.set("intParam").on("/dna:system/dna:sources/source A").to("3");
-        configRepository.set("shortParam").on("/dna:system/dna:sources/source A").to("32");
-        configRepository.set("booleanParam").on("/dna:system/dna:sources/source A").to("true");
-        configRepository.set("stringParam").on("/dna:system/dna:sources/source A").to("string value");
-        configRepository.set("intArrayParam").on("/dna:system/dna:sources/source A").to("3");
-        configRepository.set("booleanArrayParam").on("/dna:system/dna:sources/source A").to("true");
-        configRepository.set("longObjectArrayParam").on("/dna:system/dna:sources/source A").to("987654321");
-        configRepository.set("booleanObjectArrayParam").on("/dna:system/dna:sources/source A").to("true");
-        configRepository.set("stringArrayParam").on("/dna:system/dna:sources/source A").to("string value");
+        configRepository.set(ModeShapeLexicon.CLASSNAME).on("/mode:system/mode:sources/source A").to(className);
+        configRepository.set(ModeShapeLexicon.CLASSPATH).on("/mode:system/mode:sources/source A").to("");
+        configRepository.set("retryLimit").on("/mode:system/mode:sources/source A").to(3);
+        configRepository.set("intParam").on("/mode:system/mode:sources/source A").to("3");
+        configRepository.set("shortParam").on("/mode:system/mode:sources/source A").to("32");
+        configRepository.set("booleanParam").on("/mode:system/mode:sources/source A").to("true");
+        configRepository.set("stringParam").on("/mode:system/mode:sources/source A").to("string value");
+        configRepository.set("intArrayParam").on("/mode:system/mode:sources/source A").to("3");
+        configRepository.set("booleanArrayParam").on("/mode:system/mode:sources/source A").to("true");
+        configRepository.set("longObjectArrayParam").on("/mode:system/mode:sources/source A").to("987654321");
+        configRepository.set("booleanObjectArrayParam").on("/mode:system/mode:sources/source A").to("true");
+        configRepository.set("stringArrayParam").on("/mode:system/mode:sources/source A").to("string value");
 
         // Now, start up the service ...
         service.getAdministrator().start();

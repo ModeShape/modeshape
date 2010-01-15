@@ -25,8 +25,8 @@ package org.modeshape.test.integration;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.modeshape.jcr.DnaRepositoryStub;
-import org.modeshape.jcr.DnaTckTest;
+import org.modeshape.jcr.ModeShapeRepositoryStub;
+import org.modeshape.jcr.ModeShapeTckTest;
 import org.modeshape.jcr.JcrTckTest;
 
 /**
@@ -35,8 +35,8 @@ import org.modeshape.jcr.JcrTckTest;
  * <p>
  * The tests require the repository implementation for the TCK tests to change between runs. This is accomplished by adding a
  * {@link ChangeRepositoryTestCase trivial test} to the beginning of the suite that
- * {@link DnaRepositoryStub#setCurrentConfigurationName(String) changes the repository configuration} in the
- * {@link DnaRepositoryStub}.
+ * {@link ModeShapeRepositoryStub#setCurrentConfigurationName(String) changes the repository configuration} in the
+ * {@link ModeShapeRepositoryStub}.
  * </p>
  */
 public abstract class AbstractRepositoryTckTest {
@@ -45,7 +45,7 @@ public abstract class AbstractRepositoryTckTest {
         TestSuite suite = new TestSuite("Tests for " + name + "(read-write)");
         suite.addTest(new ChangeRepositoryTestCase(name));
         suite.addTest(JcrTckTest.suite());
-        suite.addTestSuite(DnaTckTest.class);
+        suite.addTestSuite(ModeShapeTckTest.class);
 
         return suite;
     }
@@ -54,13 +54,13 @@ public abstract class AbstractRepositoryTckTest {
         TestSuite suite = new TestSuite("Tests for " + name + "(read-only)");
         suite.addTest(new ChangeRepositoryTestCase(name));
         suite.addTest(JcrTckTest.readOnlySuite());
-        suite.addTest(DnaTckTest.readOnlySuite());
+        suite.addTest(ModeShapeTckTest.readOnlySuite());
 
         return suite;
     }
 
     /**
-     * Trivial test case that invokes {@link DnaRepositoryStub#setCurrentConfigurationName(String)} to change the currently used
+     * Trivial test case that invokes {@link ModeShapeRepositoryStub#setCurrentConfigurationName(String)} to change the currently used
      * TCK configuration. If this test fails, that is an indication that the configuration is incorrect or that the {@code name}
      * parameter does not match a valid configuration name.
      */
@@ -74,7 +74,7 @@ public abstract class AbstractRepositoryTckTest {
         }
 
         public void testConfigurationNameChange() {
-            DnaRepositoryStub.setCurrentConfigurationName(configurationName);
+            ModeShapeRepositoryStub.setCurrentConfigurationName(configurationName);
         }
     }
 }

@@ -4,25 +4,25 @@
  
 <nt  = "http://www.jcp.org/jcr/nt/1.0">
 <mix = "http://www.jcp.org/jcr/mix/1.0">
-<dnatest = "http://www.modeshape.org/test/1.0">
+<modetest = "http://www.modeshape.org/test/1.0">
 
-[dnatest:noSameNameSibs]
+[modetest:noSameNameSibs]
 + * (nt:base) = nt:unstructured
 
-[dnatest:referenceableUnstructured] > nt:unstructured, mix:referenceable orderable
+[modetest:referenceableUnstructured] > nt:unstructured, mix:referenceable orderable
 
-[dnatest:nodeWithMandatoryProperty] > nt:unstructured, mix:referenceable
-- dnatest:mandatoryString (*) mandatory copy
+[modetest:nodeWithMandatoryProperty] > nt:unstructured, mix:referenceable
+- modetest:mandatoryString (*) mandatory copy
 
-[dnatest:nodeWithMandatoryChild] > nt:unstructured, mix:referenceable
-+ dnatest:mandatoryChild (nt:base) = nt:unstructured mandatory version
+[modetest:nodeWithMandatoryChild] > nt:unstructured, mix:referenceable
++ modetest:mandatoryChild (nt:base) = nt:unstructured mandatory version
 
-[dnatest:unorderableUnstructured] 
+[modetest:unorderableUnstructured] 
 - * (*) copy
 - * (*) multiple copy
-+ * (nt:base) = dnatest:unorderableUnstructured multiple version
++ * (nt:base) = modetest:unorderableUnstructured multiple version
 
-[dnatest:setPropertyAssumeTypeTest] 
+[modetest:setPropertyAssumeTypeTest] 
 - prop1 (PATH) copy
 - * (*) copy
 - * (*) multiple copy

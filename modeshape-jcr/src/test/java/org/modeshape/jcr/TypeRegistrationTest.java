@@ -48,10 +48,10 @@ import org.junit.Test;
 
 public class TypeRegistrationTest extends AbstractSessionTest {
 
-    private static final String TEST_TYPE_NAME = "dna:testNode";
-    private static final String TEST_TYPE_NAME2 = "dna:testNode2";
-    private static final String TEST_PROPERTY_NAME = "dna:testProperty";
-    private static final String TEST_CHILD_NODE_NAME = "dna:testChildNode";
+    private static final String TEST_TYPE_NAME = "mode:testNode";
+    private static final String TEST_TYPE_NAME2 = "mode:testNode2";
+    private static final String TEST_PROPERTY_NAME = "mode:testProperty";
+    private static final String TEST_CHILD_NODE_NAME = "mode:testChildNode";
 
     private JcrNodeTypeTemplate ntTemplate;
     private NamespaceRegistry registry;
@@ -350,7 +350,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowOverridingProtectedChildNode() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"dna:root", "mix:referenceable"});
+        ntTemplate.setDeclaredSupertypeNames(new String[] {"mode:root", "mix:referenceable"});
 
         JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(JcrLexicon.SYSTEM.getString(registry));

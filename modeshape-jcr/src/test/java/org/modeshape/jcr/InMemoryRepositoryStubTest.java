@@ -39,7 +39,7 @@ public class InMemoryRepositoryStubTest {
     public void shouldStartRepositoryStub() throws IOException {
         Properties env = new Properties();
         env.load(getClass().getClassLoader().getResourceAsStream("repositoryStubImpl.properties"));
-        DnaRepositoryStub stub = new DnaRepositoryStub(env);
+        ModeShapeRepositoryStub stub = new ModeShapeRepositoryStub(env);
         assertThat(stub.getRepository(), is(notNullValue()));
     }
 

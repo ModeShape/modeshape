@@ -35,7 +35,7 @@ public class ModeShapeLexicon {
 
     public static class Namespace {
         public static final String URI = "http://www.modeshape.org/1.0";
-        public static final String PREFIX = "dna";
+        public static final String PREFIX = "mode";
     }
 
     public static final Name UUID = new BasicName(Namespace.URI, "uuid");

@@ -66,12 +66,12 @@ import net.jcip.annotations.Immutable;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.jboss.resteasy.spi.NotFoundException;
+import org.jboss.resteasy.spi.UnauthorizedException;
 import org.modeshape.common.text.UrlEncoder;
 import org.modeshape.common.util.Base64;
 import org.modeshape.web.jcr.rest.model.RepositoryEntry;
 import org.modeshape.web.jcr.rest.model.WorkspaceEntry;
-import org.jboss.resteasy.spi.NotFoundException;
-import org.jboss.resteasy.spi.UnauthorizedException;
 
 /**
  * RESTEasy handler to provide the JCR resources at the URIs below. Please note that these URIs assume a context of {@code
@@ -278,7 +278,7 @@ public class JcrResources {
                            @PathParam( "repositoryName" ) String rawRepositoryName,
                            @PathParam( "workspaceName" ) String rawWorkspaceName,
                            @PathParam( "path" ) String path,
-                           @QueryParam( "dna:depth" ) @DefaultValue( "0" ) int depth )
+                           @QueryParam( "mode:depth" ) @DefaultValue( "0" ) int depth )
         throws JSONException, UnauthorizedException, RepositoryException {
         assert path != null;
         assert rawRepositoryName != null;

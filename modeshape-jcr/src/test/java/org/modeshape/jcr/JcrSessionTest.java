@@ -89,7 +89,7 @@ public class JcrSessionTest extends AbstractSessionTest {
         graph.set("multiLineProperty").on("/a/b/c").to(MULTI_LINE_VALUE);
 
         // Make sure the path to the namespaces exists ...
-        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces").and();
+        graph.create("/jcr:system").and().create("/jcr:system/mode:namespaces").and();
 
     }
 
@@ -298,7 +298,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldProvideNamespacePrefix() throws Exception {
-        assertThat(session.getNamespacePrefix("http://www.modeshape.org/1.0"), is("dna"));
+        assertThat(session.getNamespacePrefix("http://www.modeshape.org/1.0"), is("mode"));
         assertThat(session.getNamespacePrefix("http://www.jcp.org/jcr/1.0"), is("jcr"));
         assertThat(session.getNamespacePrefix("http://www.jcp.org/jcr/mix/1.0"), is("mix"));
         assertThat(session.getNamespacePrefix("http://www.jcp.org/jcr/nt/1.0"), is("nt"));
@@ -325,7 +325,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldProvideNamespaceUri() throws Exception {
-        assertThat(session.getNamespaceURI("dna"), is("http://www.modeshape.org/1.0"));
+        assertThat(session.getNamespaceURI("mode"), is("http://www.modeshape.org/1.0"));
         assertThat(session.getNamespaceURI("jcr"), is("http://www.jcp.org/jcr/1.0"));
         assertThat(session.getNamespaceURI("mix"), is("http://www.jcp.org/jcr/mix/1.0"));
         assertThat(session.getNamespaceURI("nt"), is("http://www.jcp.org/jcr/nt/1.0"));

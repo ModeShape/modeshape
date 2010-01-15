@@ -97,11 +97,11 @@ public abstract class AbstractSessionTest {
         graph = Graph.create(source, context);
 
         // Make sure the path to the namespaces exists ...
-        graph.create("/jcr:system").and(); // .and().create("/jcr:system/dna:namespaces");
+        graph.create("/jcr:system").and(); // .and().create("/jcr:system/mode:namespaces");
         graph.set("jcr:primaryType").on("/jcr:system").to(ModeShapeLexicon.SYSTEM);
 
-        graph.create("/jcr:system/dna:namespaces").and();
-        graph.set("jcr:primaryType").on("/jcr:system/dna:namespaces").to(ModeShapeLexicon.NAMESPACES);
+        graph.create("/jcr:system/mode:namespaces").and();
+        graph.set("jcr:primaryType").on("/jcr:system/mode:namespaces").to(ModeShapeLexicon.NAMESPACES);
 
         // Add the built-ins, ensuring we overwrite any badly-initialized values ...
         for (Map.Entry<String, String> builtIn : JcrNamespaceRegistry.STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX.entrySet()) {

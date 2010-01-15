@@ -121,21 +121,21 @@ public class FederatedRepositorySourceTest {
         batch.create("/a").and();
         batch.create("/a/b").and();
         batch.create("/a/b/Test Repository").with(ModeShapeLexicon.DEFAULT_WORKSPACE_NAME, "fedSpace").and();
-        batch.create("/a/b/Test Repository/dna:workspaces").and();
-        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace").and();
-        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:cache")
+        batch.create("/a/b/Test Repository/mode:workspaces").and();
+        batch.create("/a/b/Test Repository/mode:workspaces/fedSpace").and();
+        batch.create("/a/b/Test Repository/mode:workspaces/fedSpace/mode:cache")
              .with(ModeShapeLexicon.PROJECTION_RULES, "/ => /")
              .with(ModeShapeLexicon.SOURCE_NAME, "cache source")
              .with(ModeShapeLexicon.WORKSPACE_NAME, "cacheSpace")
              .with(ModeShapeLexicon.TIME_TO_EXPIRE, 100000)
              .and();
-        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:projections").and();
-        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:projections/projection1")
+        batch.create("/a/b/Test Repository/mode:workspaces/fedSpace/mode:projections").and();
+        batch.create("/a/b/Test Repository/mode:workspaces/fedSpace/mode:projections/projection1")
              .with(ModeShapeLexicon.PROJECTION_RULES, "/ => /s1")
              .with(ModeShapeLexicon.SOURCE_NAME, "source 1")
              .with(ModeShapeLexicon.WORKSPACE_NAME, "s1 workspace")
              .and();
-        batch.create("/a/b/Test Repository/dna:workspaces/fedSpace/dna:projections/projection2")
+        batch.create("/a/b/Test Repository/mode:workspaces/fedSpace/mode:projections/projection2")
              .with(ModeShapeLexicon.PROJECTION_RULES, "/ => /s2")
              .with(ModeShapeLexicon.SOURCE_NAME, "source 2")
              .with(ModeShapeLexicon.WORKSPACE_NAME, "s2 worskspace")

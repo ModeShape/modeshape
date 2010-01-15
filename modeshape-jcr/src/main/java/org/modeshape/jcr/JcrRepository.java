@@ -283,7 +283,7 @@ public class JcrRepository implements Repository {
         /**
          * The default value for the {@link Option#JAAS_LOGIN_CONFIG_NAME} option is {@value} .
          */
-        public static final String JAAS_LOGIN_CONFIG_NAME = "dna-jcr";
+        public static final String JAAS_LOGIN_CONFIG_NAME = "modeshape-jcr";
 
         /**
          * The default value for the {@link Option#READ_DEPTH} option is {@value} .

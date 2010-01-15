@@ -127,12 +127,12 @@ public class JcrConfigurationTest {
         // Verify that the graph has been updated correctly ...
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
         Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
-        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/name"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/name"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 100));
-        assertThat(subgraph.getNode("/dna:sources/name"), hasProperty("defaultCachePolicy", cachePolicy));
-        assertThat(subgraph.getNode("/dna:sources/name"), hasProperty("defaultWorkspaceName", "default workspace name"));
-        assertThat(subgraph.getNode("/dna:sources/name"), hasProperty("rootNodeUuid", rootUuid));
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/name"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/name"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 100));
+        assertThat(subgraph.getNode("/mode:sources/name"), hasProperty("defaultCachePolicy", cachePolicy));
+        assertThat(subgraph.getNode("/mode:sources/name"), hasProperty("defaultWorkspaceName", "default workspace name"));
+        assertThat(subgraph.getNode("/mode:sources/name"), hasProperty("rootNodeUuid", rootUuid));
     }
 
     @Test
@@ -163,9 +163,9 @@ public class JcrConfigurationTest {
         Graph graph = engine.getGraph(JcrConfiguration.DEFAULT_CONFIGURATION_SOURCE_NAME);
         assertThat(graph, is(notNullValue()));
         assertThat(graph.getNodeAt("/"), is(notNullValue()));
-        assertThat(graph.getNodeAt("/dna:sources"), is(notNullValue()));
-        assertThat(graph.getNodeAt("/dna:sources/Source2"), hasProperty(ModeShapeLexicon.DESCRIPTION, "description"));
-        assertThat(graph.getNodeAt("/dna:repositories/JCR Repository"), hasProperty(ModeShapeLexicon.SOURCE_NAME, "Source2"));
+        assertThat(graph.getNodeAt("/mode:sources"), is(notNullValue()));
+        assertThat(graph.getNodeAt("/mode:sources/Source2"), hasProperty(ModeShapeLexicon.DESCRIPTION, "description"));
+        assertThat(graph.getNodeAt("/mode:repositories/JCR Repository"), hasProperty(ModeShapeLexicon.SOURCE_NAME, "Source2"));
 
         // Get the repository ...
         JcrRepository repository = engine.getRepository("JCR Repository");
@@ -206,9 +206,9 @@ public class JcrConfigurationTest {
         Graph graph = engine.getGraph("config2");
         assertThat(graph, is(notNullValue()));
         assertThat(graph.getNodeAt("/"), is(notNullValue()));
-        assertThat(graph.getNodeAt("/dna:sources"), is(notNullValue()));
-        assertThat(graph.getNodeAt("/dna:sources/Source2"), hasProperty(ModeShapeLexicon.DESCRIPTION, "description"));
-        assertThat(graph.getNodeAt("/dna:repositories/JCR Repository"), hasProperty(ModeShapeLexicon.SOURCE_NAME, "Source2"));
+        assertThat(graph.getNodeAt("/mode:sources"), is(notNullValue()));
+        assertThat(graph.getNodeAt("/mode:sources/Source2"), hasProperty(ModeShapeLexicon.DESCRIPTION, "description"));
+        assertThat(graph.getNodeAt("/mode:repositories/JCR Repository"), hasProperty(ModeShapeLexicon.SOURCE_NAME, "Source2"));
 
         // Get the repository ...
         JcrRepository repository = engine.getRepository("JCR Repository");
@@ -232,15 +232,15 @@ public class JcrConfigurationTest {
         // Verify that the graph has been updated correctly ...
         Graph config = engine.getGraph(JcrConfiguration.DEFAULT_CONFIGURATION_SOURCE_NAME);
         Subgraph subgraph = config.getSubgraphOfDepth(6).at("/");
-        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source2"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Source2"), hasProperty(ModeShapeLexicon.CLASSNAME,
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source2"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source2"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                          InMemoryRepositorySource.class.getName()));
-        assertThat(subgraph.getNode("/dna:repositories"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:repositories/JCR Repository"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:repositories/JCR Repository"), hasProperty(ModeShapeLexicon.SOURCE_NAME, "Source2"));
-        assertThat(subgraph.getNode("/dna:repositories/JCR Repository/dna:options"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:repositories/JCR Repository/dna:options/JAAS_LOGIN_CONFIG_NAME"),
+        assertThat(subgraph.getNode("/mode:repositories"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:repositories/JCR Repository"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:repositories/JCR Repository"), hasProperty(ModeShapeLexicon.SOURCE_NAME, "Source2"));
+        assertThat(subgraph.getNode("/mode:repositories/JCR Repository/mode:options"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:repositories/JCR Repository/mode:options/JAAS_LOGIN_CONFIG_NAME"),
                    hasProperty(ModeShapeLexicon.VALUE, "test"));
 
         JcrRepository repository = engine.getRepository("JCR Repository");
@@ -273,38 +273,36 @@ public class JcrConfigurationTest {
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
         Subgraph subgraph = content.graph().getSubgraphOfDepth(6).at("/");
 
-        assertThat(subgraph.getNode("/dna:sources"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Cars"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Cars"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, "3"));
-        assertThat(subgraph.getNode("/dna:sources/Cars"), hasProperty(ModeShapeLexicon.CLASSNAME,
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Cars"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Cars"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, "3"));
+        assertThat(subgraph.getNode("/mode:sources/Cars"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                       InMemoryRepositorySource.class.getName()));
-        assertThat(subgraph.getNode("/dna:sources/Aircraft"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Aircraft"), hasProperty("defaultWorkspaceName", "default"));
-        assertThat(subgraph.getNode("/dna:sources/Aircraft"), hasProperty(ModeShapeLexicon.CLASSNAME,
+        assertThat(subgraph.getNode("/mode:sources/Aircraft"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Aircraft"), hasProperty("defaultWorkspaceName", "default"));
+        assertThat(subgraph.getNode("/mode:sources/Aircraft"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                           InMemoryRepositorySource.class.getName()));
-        assertThat(subgraph.getNode("/dna:sources/Cache"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:sources/Cache"), hasProperty(ModeShapeLexicon.CLASSNAME,
+        assertThat(subgraph.getNode("/mode:sources/Cache"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Cache"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                        InMemoryRepositorySource.class.getName()));
 
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors").getChildren(), hasChild(segment("Detector")));
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/Detector"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/Detector"),
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors").getChildren(), hasChild(segment("Detector")));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/Detector"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/Detector"),
                    hasProperty(ModeShapeLexicon.DESCRIPTION, "Standard extension-based MIME type detector"));
-        assertThat(subgraph.getNode("/dna:mimeTypeDetectors/Detector"),
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/Detector"),
                    hasProperty(ModeShapeLexicon.CLASSNAME, ExtensionBasedMimeTypeDetector.class.getName()));
 
-        assertThat(subgraph.getNode("/dna:repositories").getChildren(), hasChild(segment("Car Repository")));
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository"), hasProperty(ModeShapeLexicon.SOURCE_NAME, "Cars"));
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository").getChildren(), hasChild(segment("dna:options")));
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository/dna:options"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository/dna:options").getChildren(),
+        assertThat(subgraph.getNode("/mode:repositories").getChildren(), hasChild(segment("Car Repository")));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository"), hasProperty(ModeShapeLexicon.SOURCE_NAME, "Cars"));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository").getChildren(), hasChild(segment("mode:options")));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:options"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:options").getChildren(),
                    hasChild(segment("jaasLoginConfigName")));
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository/dna:options/jaasLoginConfigName"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository/dna:options/jaasLoginConfigName"),
-                   hasProperty(ModeShapeLexicon.VALUE, "dna-jcr"));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:options/jaasLoginConfigName"), is(notNullValue()));
 
-        // Initialize IDTrust and a policy file (which defines the "dna-jcr" login config name)
+        // Initialize IDTrust and a policy file (which defines the "modeshape-jcr" login config name)
         String configFile = "security/jaas.conf.xml";
         IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
         try {
@@ -355,29 +353,29 @@ public class JcrConfigurationTest {
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
         Subgraph subgraph = content.graph().getSubgraphOfDepth(6).at("/");
 
-        assertThat(subgraph.getNode("/dna:repositories").getChildren(), hasChild(segment("Car Repository")));
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository"), is(notNullValue()));
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository"), hasProperty(ModeShapeLexicon.SOURCE_NAME, "Cars"));
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository").getChildren(), hasChild(segment("dna:options")));
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository/jcr:nodeTypes"), is(notNullValue()));
-        // for (Location child : subgraph.getNode("/dna:repositories/Car Repository/dna:nodeTypes").getChildren()) {
+        assertThat(subgraph.getNode("/mode:repositories").getChildren(), hasChild(segment("Car Repository")));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository"), hasProperty(ModeShapeLexicon.SOURCE_NAME, "Cars"));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository").getChildren(), hasChild(segment("mode:options")));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository/jcr:nodeTypes"), is(notNullValue()));
+        // for (Location child : subgraph.getNode("/mode:repositories/Car Repository/mode:nodeTypes").getChildren()) {
         // System.out.println(child.getPath().getLastSegment().getString(context().getNamespaceRegistry()));
         // }
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository/jcr:nodeTypes").getChildren(),
-                   hasChildren(segment("dnatest:noSameNameSibs"),
-                               segment("dnatest:referenceableUnstructured"),
-                               segment("dnatest:nodeWithMandatoryProperty"),
-                               segment("dnatest:nodeWithMandatoryChild"),
-                               segment("dnatest:unorderableUnstructured")));
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository/dna:namespaces"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository/jcr:nodeTypes").getChildren(),
+                   hasChildren(segment("modetest:noSameNameSibs"),
+                               segment("modetest:referenceableUnstructured"),
+                               segment("modetest:nodeWithMandatoryProperty"),
+                               segment("modetest:nodeWithMandatoryChild"),
+                               segment("modetest:unorderableUnstructured")));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:namespaces"), is(notNullValue()));
 
         // Check that the namespace in the CND file was persisted correctly ...
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository/dna:namespaces").getChildren(),
-                   hasChild(segment("dnatest")));
-        assertThat(subgraph.getNode("/dna:repositories/Car Repository/dna:namespaces/dnatest"),
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:namespaces").getChildren(),
+                   hasChild(segment("modetest")));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:namespaces/modetest"),
                    hasProperty(ModeShapeLexicon.NAMESPACE_URI, "http://www.modeshape.org/test/1.0"));
 
-        // Initialize IDTrust and a policy file (which defines the "dna-jcr" login config name)
+        // Initialize IDTrust and a policy file (which defines the "modeshape-jcr" login config name)
         String configFile = "security/jaas.conf.xml";
         IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
         try {
@@ -398,15 +396,15 @@ public class JcrConfigurationTest {
             session = repository.login(new SimpleCredentials("superuser", "superuser".toCharArray()));
 
             // Check that the namespace showed up ...
-            assertThat(session.getNamespacePrefix("http://www.modeshape.org/test/1.0"), is("dnatest"));
+            assertThat(session.getNamespacePrefix("http://www.modeshape.org/test/1.0"), is("modetest"));
 
             // Check that some of the node types showed up ...
             NodeTypeManager ntm = session.getWorkspace().getNodeTypeManager();
-            assertThat(ntm.getNodeType("dnatest:noSameNameSibs"), is(notNullValue())); // throws exception
-            assertThat(ntm.getNodeType("dnatest:referenceableUnstructured"), is(notNullValue())); // throws exception
-            assertThat(ntm.getNodeType("dnatest:nodeWithMandatoryProperty"), is(notNullValue())); // throws exception
-            assertThat(ntm.getNodeType("dnatest:nodeWithMandatoryChild"), is(notNullValue())); // throws exception
-            assertThat(ntm.getNodeType("dnatest:unorderableUnstructured"), is(notNullValue())); // throws exception
+            assertThat(ntm.getNodeType("modetest:noSameNameSibs"), is(notNullValue())); // throws exception
+            assertThat(ntm.getNodeType("modetest:referenceableUnstructured"), is(notNullValue())); // throws exception
+            assertThat(ntm.getNodeType("modetest:nodeWithMandatoryProperty"), is(notNullValue())); // throws exception
+            assertThat(ntm.getNodeType("modetest:nodeWithMandatoryChild"), is(notNullValue())); // throws exception
+            assertThat(ntm.getNodeType("modetest:unorderableUnstructured"), is(notNullValue())); // throws exception
         } finally {
             if (session != null) session.logout();
         }

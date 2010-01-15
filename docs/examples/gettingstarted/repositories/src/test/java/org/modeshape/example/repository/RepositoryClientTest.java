@@ -168,7 +168,7 @@ public class RepositoryClientTest {
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         switch (getApi()) {
             case ModeShape:
-                assertThat(properties.containsKey("dna:uuid"), is(true));
+                assertThat(properties.containsKey("mode:uuid"), is(true));
                 assertThat(properties.size(), is(2));
                 break;
             case JCR:
@@ -181,7 +181,7 @@ public class RepositoryClientTest {
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         switch (getApi()) {
             case ModeShape:
-                assertThat(properties.containsKey("dna:uuid"), is(true));
+                assertThat(properties.containsKey("mode:uuid"), is(true));
                 assertThat(properties.size(), is(2));
                 break;
             case JCR:
@@ -205,7 +205,7 @@ public class RepositoryClientTest {
         assertProperty("engine", "5,935 cc 5.9 liters V 12");
         switch (getApi()) {
             case ModeShape:
-                assertThat(properties.containsKey("dna:uuid"), is(true));
+                assertThat(properties.containsKey("mode:uuid"), is(true));
                 assertThat(properties.size(), is(12));
                 break;
             case JCR:
@@ -221,7 +221,7 @@ public class RepositoryClientTest {
         getNodeInfo("Aircraft", "/Aircraft");
         assertThat(children, hasItems("Business", "Commercial", "Vintage", "Homebuilt"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
-        // assertThat(properties.containsKey("dna:uuid"), is(true)); // not referenceable in JCR
+        // assertThat(properties.containsKey("mode:uuid"), is(true)); // not referenceable in JCR
 
         getNodeInfo("Aircraft", "/Aircraft/Commercial");
         assertThat(children, hasItems("Boeing 777",
@@ -233,12 +233,12 @@ public class RepositoryClientTest {
                                       "Airbus A310",
                                       "Embraer RJ-175"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
-        // assertThat(properties.containsKey("dna:uuid"), is(true)); // not referenceable in JCR
+        // assertThat(properties.containsKey("mode:uuid"), is(true)); // not referenceable in JCR
 
         getNodeInfo("Aircraft", "/Aircraft/Vintage/Wright Flyer");
         assertThat(children.size(), is(0));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
-        // assertThat(properties.containsKey("dna:uuid"), is(true));
+        // assertThat(properties.containsKey("mode:uuid"), is(true));
         assertProperty("maker", "Wright Brothers");
         assertProperty("introduced", "1903");
         assertProperty("range", "852ft");

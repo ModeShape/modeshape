@@ -99,7 +99,7 @@ public class JcrQueryManagerTest {
                      .addNodeTypes(resourceUrl("cars.cnd"))
                      .setOption(Option.ANONYMOUS_USER_ROLES,
                                 JcrSession.ModeShape_READ_PERMISSION + "," + JcrSession.ModeShape_WRITE_PERMISSION)
-                     .setOption(Option.JAAS_LOGIN_CONFIG_NAME, "dna-jcr");
+                     .setOption(Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
         engine = configuration.build();
         engine.start();
 

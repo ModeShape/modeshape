@@ -161,12 +161,12 @@ public class BasicNameTest {
     @Test
     public void shouldUseNamespacePrefixInResultFromGetStringWithNamespaceRegistry() {
         String result = name.getString(namespaceRegistry, encoder);
-        assertThat(result, is("dna:" + validLocalName));
+        assertThat(result, is("mode:" + validLocalName));
 
         validLocalName = "some:name:with:colons";
         name = new BasicName(validNamespaceUri, validLocalName);
         result = name.getString(namespaceRegistry, encoder);
-        assertThat(result, is("dna:some%3aname%3awith%3acolons"));
+        assertThat(result, is("mode:some%3aname%3awith%3acolons"));
     }
 
     @Test
@@ -188,7 +188,7 @@ public class BasicNameTest {
     public void shouldUseDelimiterEncoderToEncodeDelimiterBetweenPrefixAndLocalPart() {
         encoder = new Jsr283Encoder();
         name = new BasicName(ModeShapeLexicon.Namespace.URI, "some:name:with:colons");
-        assertThat(name.getString(namespaceRegistry, encoder, delimiterEncoder), is("dna\\:some\uf03aname\uf03awith\uf03acolons"));
+        assertThat(name.getString(namespaceRegistry, encoder, delimiterEncoder), is("mode\\:some\uf03aname\uf03awith\uf03acolons"));
         assertThat(name.getString(null, encoder, delimiterEncoder), is("\\{" + encoder.encode(ModeShapeLexicon.Namespace.URI)
                                                                        + "\\}some\uf03aname\uf03awith\uf03acolons"));
     }

@@ -36,10 +36,10 @@ import org.jboss.security.config.IDTrustConfiguration;
 /**
  * Concrete implementation of {@link RepositoryStub} based on ModeShape-specific configuration.
  */
-public class DnaRepositoryStub extends RepositoryStub {
+public class ModeShapeRepositoryStub extends RepositoryStub {
 
-    public static final String ModeShape_SKIP_IMPORT = "javax.jcr.tck.dnaSkipImport";
-    public static final String ModeShape_NODE_TYPE_PATH = "javax.jcr.tck.dnaNodeTypePath";
+    public static final String MODE_SHAPE_SKIP_IMPORT = "javax.jcr.tck.modeSkipImport";
+    public static final String MODE_SHAPE_NODE_TYPE_PATH = "javax.jcr.tck.modeNodeTypePath";
 
     private static final String REPOSITORY_SOURCE_NAME = "Test Repository Source";
 
@@ -62,7 +62,7 @@ public class DnaRepositoryStub extends RepositoryStub {
         }
     }
 
-    public DnaRepositoryStub( Properties env ) {
+    public ModeShapeRepositoryStub( Properties env ) {
         super(env);
 
         configureRepository();
@@ -85,9 +85,10 @@ public class DnaRepositoryStub extends RepositoryStub {
             // Add the the node types for the source ...
             configuration.repository(REPOSITORY_SOURCE_NAME).addNodeTypes(getClass().getResourceAsStream("/tck/tck_test_types.cnd"));
 
-            String nodeTypePath = configProps.getProperty(ModeShape_NODE_TYPE_PATH);
+            String nodeTypePath = configProps.getProperty(MODE_SHAPE_NODE_TYPE_PATH);
             if (nodeTypePath != null) {
-                configuration.repository(REPOSITORY_SOURCE_NAME).addNodeTypes(getClass().getResourceAsStream(nodeTypePath));
+            	InputStream is = getClass().getResourceAsStream(nodeTypePath);
+                configuration.repository(REPOSITORY_SOURCE_NAME).addNodeTypes(is);
             }
 
             JcrEngine engine = configuration.build();
@@ -108,7 +109,7 @@ public class DnaRepositoryStub extends RepositoryStub {
             repository = engine.getRepository(REPOSITORY_SOURCE_NAME);
 
             // This needs to check configProps directly to avoid an infinite loop
-            String skipImport = (String)configProps.get(ModeShape_SKIP_IMPORT);
+            String skipImport = (String)configProps.get(MODE_SHAPE_SKIP_IMPORT);
             if (!Boolean.valueOf(skipImport)) {
 
                 // Set up some sample nodes in the graph to match the expected test configuration
@@ -131,7 +132,7 @@ public class DnaRepositoryStub extends RepositoryStub {
     }
 
     public static void setCurrentConfigurationName( String newConfigName ) {
-        DnaRepositoryStub.currentConfigurationName = newConfigName;
+        ModeShapeRepositoryStub.currentConfigurationName = newConfigName;
     }
 
     /**

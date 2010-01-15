@@ -35,7 +35,7 @@ public class ModeShapeIntLexicon {
 
     public static class Namespace {
         public static final String URI = "http://www.modeshape.org/internal/1.0";
-        public static final String PREFIX = "dnaint";
+        public static final String PREFIX = "modeint";
     }
 
     public static final Name NODE_DEFINITON = new BasicName(Namespace.URI, "nodeDefinition");

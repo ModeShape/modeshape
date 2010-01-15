@@ -159,21 +159,21 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
     public void shouldReturnAllResultsOrderedByNodeLocalNameWhenThereAreDuplicateTuples() {
         orderings.add(orderByNodeName("Selector1"));
         component = new SortValuesComponent(delegate, orderings);
-        inputTuples.add(tuple(columns, "/a/b1/dna:c1", "v1", 100, "v3"));
-        inputTuples.add(tuple(columns, "/a/b2/dna:c4", "v1", 100, "v3"));
-        inputTuples.add(tuple(columns, "/a/b3/dna:c2", "v1", 100, "v3"));
-        inputTuples.add(tuple(columns, "/a/b4/dna:c3", "v1", 100, "v3"));
+        inputTuples.add(tuple(columns, "/a/b1/mode:c1", "v1", 100, "v3"));
+        inputTuples.add(tuple(columns, "/a/b2/mode:c4", "v1", 100, "v3"));
+        inputTuples.add(tuple(columns, "/a/b3/mode:c2", "v1", 100, "v3"));
+        inputTuples.add(tuple(columns, "/a/b4/mode:c3", "v1", 100, "v3"));
         inputTuples.add(tuple(columns, "/a/b5/jcr:c4", "v1", 100, "v3"));
-        inputTuples.add(tuple(columns, "/a/b6/dna:c3", "v1", 100, "v3"));
-        inputTuples.add(tuple(columns, "/a/b7/dna:c0", "v1", 100, "v3"));
+        inputTuples.add(tuple(columns, "/a/b6/mode:c3", "v1", 100, "v3"));
+        inputTuples.add(tuple(columns, "/a/b7/mode:c0", "v1", 100, "v3"));
         List<Object[]> expected = new ArrayList<Object[]>();
+        expected.add(inputTuples.get(4));
         expected.add(inputTuples.get(6));
         expected.add(inputTuples.get(0));
         expected.add(inputTuples.get(2));
         expected.add(inputTuples.get(3));
         expected.add(inputTuples.get(5));
         expected.add(inputTuples.get(1));
-        expected.add(inputTuples.get(4));
         assertThat(component.execute(), is(expected));
     }
 

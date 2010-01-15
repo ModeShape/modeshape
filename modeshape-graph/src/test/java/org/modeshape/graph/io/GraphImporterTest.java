@@ -101,23 +101,23 @@ public class GraphImporterTest {
         assertThat(lastExecutedRequest, is(instanceOf(CompositeRequest.class)));
         Iterator<Request> iter = ((CompositeRequest)lastExecutedRequest).iterator();
         // assertCreateNode(iter, "/a/b/", "jcr:primaryType={http://www.modeshape.org/xml/1.0}document");
-        assertCreateNode(iter, "/a/b/dna:system[1]");
-        assertCreateNode(iter, "/a/b/dna:system[1]/dna:sources[1]");
+        assertCreateNode(iter, "/a/b/mode:system[1]");
+        assertCreateNode(iter, "/a/b/mode:system[1]/mode:sources[1]");
         assertCreateNode(iter,
-                         "/a/b/dna:system[1]/dna:sources[1]/sourceA[1]",
+                         "/a/b/mode:system[1]/mode:sources[1]/sourceA[1]",
                          "repositoryName=repositoryA",
                          "retryLimit=3",
                          "jcr:primaryType={http://www.modeshape.org/1.0}xyz",
-                         "dna:classname=org.modeshape.connector.inmemory.InMemoryRepositorySource");
+                         "mode:classname=org.modeshape.connector.inmemory.InMemoryRepositorySource");
         assertCreateNode(iter,
-                         "/a/b/dna:system[1]/dna:sources[1]/sourceB[1]",
+                         "/a/b/mode:system[1]/mode:sources[1]/sourceB[1]",
                          "repositoryName=repositoryB",
                          "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured",
-                         "dna:classname=org.modeshape.connector.inmemory.InMemoryRepositorySource");
+                         "mode:classname=org.modeshape.connector.inmemory.InMemoryRepositorySource");
         assertCreateProperties(iter,
-                               "/a/b/dna:system[1]/dna:sources[1]",
+                               "/a/b/mode:system[1]/mode:sources[1]",
                                "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured");
-        assertCreateProperties(iter, "/a/b/dna:system[1]", "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured");
+        assertCreateProperties(iter, "/a/b/mode:system[1]", "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured");
         assertThat(iter.hasNext(), is(false));
     }
 

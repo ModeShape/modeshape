@@ -66,7 +66,7 @@ public class ItemDefinitionTest extends AbstractSessionTest {
 
     @Override
     protected void initializeContent() {
-        graph.create("/jcr:system").and().create("/jcr:system/dna:namespaces");
+        graph.create("/jcr:system").and().create("/jcr:system/mode:namespaces");
 
     }
 
@@ -174,62 +174,62 @@ public class ItemDefinitionTest extends AbstractSessionTest {
     /*
     * Build a hierarchy of node types with the following relationships:
     *  
-    *   dnatest:nodeA extends nt:base
-    *   dnatest:nodeB extends nt:base
-    *   dnatest:nodeC extends dnatest:nodeB
+    *   modetest:nodeA extends nt:base
+    *   modetest:nodeB extends nt:base
+    *   modetest:nodeC extends modetest:nodeB
     *   
     * And the following single-valued property definitions
     * 
-    *   dnatest:nodeA defines properties:
-    *      dnatest:singleProp1 of type STRING
-    *   dnatest:nodeB defines properties:
-    *      dnatest:singleProp1 of type DOUBLE
-    *      dnatest:singleProp2 of type UNDEFINED
-    *   dnatest:nodeC defines properties:
-    *      dnatest:singleProp1 of type LONG
-    *      dnatest:singleProp2 of type DOUBLE     
-    *      dnatest:singleProp2 of type LONG (note the double-definition)
+    *   modetest:nodeA defines properties:
+    *      modetest:singleProp1 of type STRING
+    *   modetest:nodeB defines properties:
+    *      modetest:singleProp1 of type DOUBLE
+    *      modetest:singleProp2 of type UNDEFINED
+    *   modetest:nodeC defines properties:
+    *      modetest:singleProp1 of type LONG
+    *      modetest:singleProp2 of type DOUBLE     
+    *      modetest:singleProp2 of type LONG (note the double-definition)
     */
 
     @Override
     protected List<NodeTypeTemplate> getTestTypes() {
         NodeTypeTemplate nodeA = new JcrNodeTypeTemplate(context);
-        nodeA.setName("dnatest:nodeA");
+        nodeA.setName("modetest:nodeA");
 
         JcrPropertyDefinitionTemplate nodeASingleProp1 = new JcrPropertyDefinitionTemplate(context);
-        nodeASingleProp1.setName("dnatest:singleProp1");
+        nodeASingleProp1.setName("modetest:singleProp1");
         nodeASingleProp1.setRequiredType(PropertyType.STRING);
         nodeA.getPropertyDefinitionTemplates().add(nodeASingleProp1);
 
         NodeTypeTemplate nodeB = new JcrNodeTypeTemplate(context);
-        nodeB.setName("dnatest:nodeB");
+        nodeB.setName("modetest:nodeB");
 
         JcrPropertyDefinitionTemplate nodeBSingleProp1 = new JcrPropertyDefinitionTemplate(context);
-        nodeBSingleProp1.setName("dnatest:singleProp1");
+        nodeBSingleProp1.setName("modetest:singleProp1");
         nodeBSingleProp1.setRequiredType(PropertyType.DOUBLE);
         nodeB.getPropertyDefinitionTemplates().add(nodeBSingleProp1);
 
         JcrPropertyDefinitionTemplate nodeBSingleProp2 = new JcrPropertyDefinitionTemplate(context);
-        nodeBSingleProp2.setName("dnatest:singleProp2");
+        nodeBSingleProp2.setName("modetest:singleProp2");
         nodeBSingleProp2.setRequiredType(PropertyType.UNDEFINED);
         nodeB.getPropertyDefinitionTemplates().add(nodeBSingleProp2);
 
         NodeTypeTemplate nodeC = new JcrNodeTypeTemplate(context);
-        nodeC.setName("dnatest:nodeC");
-        nodeC.setDeclaredSupertypeNames(new String[] {"dnatest:nodeB"});
+        nodeC.setName("modetest:nodeC");
+        nodeC.setDeclaredSupertypeNames(new String[] {"modetest:nodeB"});
 
         JcrPropertyDefinitionTemplate nodeCSingleProp1 = new JcrPropertyDefinitionTemplate(context);
-        nodeCSingleProp1.setName("dnatest:singleProp1");
+        nodeCSingleProp1.setName("modetest:singleProp1");
         nodeCSingleProp1.setRequiredType(PropertyType.LONG);
         nodeC.getPropertyDefinitionTemplates().add(nodeCSingleProp1);
 
         JcrPropertyDefinitionTemplate nodeCSingleProp2Double = new JcrPropertyDefinitionTemplate(context);
-        nodeCSingleProp2Double.setName("dnatest:singleProp2");
+        nodeCSingleProp2Double.setName("modetest:singleProp2");
         nodeCSingleProp2Double.setRequiredType(PropertyType.DOUBLE);
         nodeC.getPropertyDefinitionTemplates().add(nodeCSingleProp2Double);
 
         JcrPropertyDefinitionTemplate nodeCSingleProp2Long = new JcrPropertyDefinitionTemplate(context);
-        nodeCSingleProp2Long.setName("dnatest:singleProp2");
+        nodeCSingleProp2Long.setName("modetest:singleProp2");
         nodeCSingleProp2Long.setRequiredType(PropertyType.LONG);
         nodeC.getPropertyDefinitionTemplates().add(nodeCSingleProp2Long);
 

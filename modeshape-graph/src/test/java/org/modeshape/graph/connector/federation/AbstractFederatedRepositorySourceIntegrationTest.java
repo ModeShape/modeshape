@@ -126,7 +126,7 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
         config.create("/a").and();
         config.create("/a/b").and();
         config.create("/a/b/Test Repository").and();
-        config.create("/a/b/Test Repository/dna:workspaces").and();
+        config.create("/a/b/Test Repository/mode:workspaces").and();
 
         // Set up the source ...
         source = new FederatedRepositorySource();
@@ -181,12 +181,12 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
                                              .getPath()
                                              .getString(context.getNamespaceRegistry());
         assertThat(configPath.endsWith("/"), is(false));
-        String wsPath = configPath + "/dna:workspaces/" + federatedWorkspace;
-        String projectionPath = wsPath + "/dna:projections/" + projectionName;
+        String wsPath = configPath + "/mode:workspaces/" + federatedWorkspace;
+        String projectionPath = wsPath + "/mode:projections/" + projectionName;
         Graph config = Graph.create(configRepositorySource, context);
         config.useWorkspace(configurationWorkspaceName);
         config.create(wsPath).ifAbsent().and();
-        config.create(wsPath + "/dna:projections").ifAbsent().and();
+        config.create(wsPath + "/mode:projections").ifAbsent().and();
         config.createAt(projectionPath)
               .with(ModeShapeLexicon.PROJECTION_RULES, (Object[])projectionRules)
               .with(ModeShapeLexicon.SOURCE_NAME, sourceName)

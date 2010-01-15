@@ -24,121 +24,121 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<configuration xmlns:dna="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
     Define the sources for the content.  These sources are directly accessible using the ModeShape-specific Graph API.
     In fact, this is how the ModeShape JCR implementation works.  You can think of these as being similar to
     JDBC DataSource objects, except that they expose graph content via the Graph API instead of records via SQL or JDBC. 
     -->
-    <dna:sources jcr:primaryType="nt:unstructured">
+    <mode:sources jcr:primaryType="nt:unstructured">
         <!-- 
         The 'Cars' repository is an in-memory source with a single default workspace (though others could be created, too).
         -->
-        <dna:source jcr:name="Cars" dna:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" dna:defaultWorkspaceName="workspace1"/>
+        <mode:source jcr:name="Cars" mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" mode:retryLimit="3" mode:defaultWorkspaceName="workspace1"/>
         <!-- 
         The 'Aircraft' repository is also a JPA source (pointing to an in-memory HSQL database with a single default workspace.
         By defining a default workspace, the clients using the Graph API will by default use that workspace,
         but can easily say to use other workspaces (or create, clone, or destroy workspaces).
         
         If you wanted to use a JNDI datasource instead of manually specifying the database login information, you would replace this:
-        	dna:driverClassName="org.hsqldb.jdbcDriver"
-        	dna:username="sa"
-        	dna:password=""
-        	dna:url="jdbc:hsqldb:mem:target"
+        	mode:driverClassName="org.hsqldb.jdbcDriver"
+        	mode:username="sa"
+        	mode:password=""
+        	mode:url="jdbc:hsqldb:mem:target"
         
         With this:
-        	dna:dataSourceJndiName="your JNDI name"
+        	mode:dataSourceJndiName="your JNDI name"
         -->
-        <dna:source jcr:name="Aircraft" dna:classname="org.modeshape.connector.store.jpa.JpaSource"
-        	dna:model="Simple"
-        	dna:dialect="org.hibernate.dialect.HSQLDialect"
-        	dna:driverClassName="org.hsqldb.jdbcDriver"
-        	dna:username="sa"
-        	dna:password=""
-        	dna:url="jdbc:hsqldb:mem:target"
-        	dna:maximumConnectionsInPool="1"
-        	dna:referentialIntegrityEnforced="true"
-        	dna:largeValueSizeInBytes="10000"
-        	dna:retryLimit="3"
-        	dna:compressData="false"
-        	dna:predefinedWorkspaceNames="workspace2"
-        	dna:showSql="false"
-            dna:autoGenerateSchema="create"
-            dna:creatingWorkspacesAllowed="true"
-        	dna:defaultWorkspaceName="workspace2" />    
+        <mode:source jcr:name="Aircraft" mode:classname="org.modeshape.connector.store.jpa.JpaSource"
+        	mode:model="Simple"
+        	mode:dialect="org.hibernate.dialect.HSQLDialect"
+        	mode:driverClassName="org.hsqldb.jdbcDriver"
+        	mode:username="sa"
+        	mode:password=""
+        	mode:url="jdbc:hsqldb:mem:target"
+        	mode:maximumConnectionsInPool="1"
+        	mode:referentialIntegrityEnforced="true"
+        	mode:largeValueSizeInBytes="10000"
+        	mode:retryLimit="3"
+        	mode:compressData="false"
+        	mode:predefinedWorkspaceNames="workspace2"
+        	mode:showSql="false"
+            mode:autoGenerateSchema="create"
+            mode:creatingWorkspacesAllowed="true"
+        	mode:defaultWorkspaceName="workspace2" />    
 
         <!-- 
         The 'UFO' repository is a file system source with a single default workspace.  The file system connector exposes
         files and folders as JCR nodes.  It can save JCR nodes too, but only if they have certain primary types.
         -->
-        <dna:source jcr:name="UFOs" dna:classname="org.modeshape.connector.filesystem.FileSystemSource"
-        	dna:workspaceRootPath="./ufoSource"
-        	dna:defaultWorkspaceName="workspace1"
-        	dna:creatingWorkspacesAllowed="false"
-        	dna:updatesAllowed="true"/>    
+        <mode:source jcr:name="UFOs" mode:classname="org.modeshape.connector.filesystem.FileSystemSource"
+        	mode:workspaceRootPath="./ufoSource"
+        	mode:defaultWorkspaceName="workspace1"
+        	mode:creatingWorkspacesAllowed="false"
+        	mode:updatesAllowed="true"/>    
         <!-- 
         The 'Vehicles' repository is a federated source that owns none of its own content, but instead
         projects (in this case) all of the content from the 'Cars' source as if it appears
         under '/Vehicles/Cars', while all the 'Aircraft' content appears under '/Vehicles/Aircraft'.
         -->
-        <dna:source jcr:name="Vehicles">
-            <dna:classname>org.modeshape.graph.connector.federation.FederatedRepositorySource</dna:classname>
-            <dna:workspaces>
+        <mode:source jcr:name="Vehicles">
+            <mode:classname>org.modeshape.graph.connector.federation.FederatedRepositorySource</mode:classname>
+            <mode:workspaces>
                 <!-- 
                 Unlike some other repository sources, federated sources have to define all of their workspaces,
                 including how and where the content is projected.  So, we only need a single workspace,
                 but we could actually define additional workspaces that expose various combinations or portions
                 of 'Cars' and/or 'Aircraft' content.
                 -->
-                <dna:workspace jcr:name="virtual">
-                    <dna:projections>
+                <mode:workspace jcr:name="virtual">
+                    <mode:projections>
                         <!-- Project the 'Cars' content, starting with the '/Cars' node. -->
-                        <dna:projection jcr:name="Cars projection" dna:source="Cars" dna:workspaceName="workspace1">
-                            <dna:projectionRules>/Vehicles/Cars => /Cars</dna:projectionRules>
-                        </dna:projection>
+                        <mode:projection jcr:name="Cars projection" mode:source="Cars" mode:workspaceName="workspace1">
+                            <mode:projectionRules>/Vehicles/Cars => /Cars</mode:projectionRules>
+                        </mode:projection>
                         <!-- Project the 'Aircraft' content, starting with the '/Aircraft' node. -->
-                        <dna:projection jcr:name="Aircarft projection" dna:source="Aircraft" dna:workspaceName="workspace2">
-                            <dna:projectionRules>/Vehicles/Aircraft => /Aircraft</dna:projectionRules>
-                        </dna:projection>
+                        <mode:projection jcr:name="Aircarft projection" mode:source="Aircraft" mode:workspaceName="workspace2">
+                            <mode:projectionRules>/Vehicles/Aircraft => /Aircraft</mode:projectionRules>
+                        </mode:projection>
                         <!-- Project the 'UFO' content, starting with the root node. -->
-                        <dna:projection jcr:name="UFO projection" dna:source="UFOs" dna:workspaceName="workspace1">
-                            <dna:projectionRules>/Vehicles/UFOs => /</dna:projectionRules>
-                        </dna:projection>
+                        <mode:projection jcr:name="UFO projection" mode:source="UFOs" mode:workspaceName="workspace1">
+                            <mode:projectionRules>/Vehicles/UFOs => /</mode:projectionRules>
+                        </mode:projection>
                         <!-- Project the 'System' content. Only needed when this source is accessed through JCR. -->
-                        <!-- dna:projection jcr:name="System projection" dna:source="System" dna:workspaceName="default">
-                            <dna:projectionRules>/jcr:system => /</dna:projectionRules>
-                        </dna:projection-->
-                    </dna:projections>
-                </dna:workspace>
-            </dna:workspaces>
-        </dna:source>
+                        <!-- mode:projection jcr:name="System projection" mode:source="System" mode:workspaceName="default">
+                            <mode:projectionRules>/jcr:system => /</mode:projectionRules>
+                        </mode:projection-->
+                    </mode:projections>
+                </mode:workspace>
+            </mode:workspaces>
+        </mode:source>
         <!-- 
         A 'System' source needed for the '/jcr:system' branch of the Vehicles source when it is access through JCR.
         -->
-        <!-- dna:source jcr:name="System" dna:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" dna:defaultWorkspaceName="default"/-->
-    </dna:sources>
+        <!-- mode:source jcr:name="System" mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" mode:retryLimit="3" mode:defaultWorkspaceName="default"/-->
+    </mode:sources>
     <!-- 
     Define the sequencers. This is an optional section. For this example, we're not using any sequencers. 
     -->
-    <dna:sequencers>
-        <!--dna:sequencer jcr:name="Image Sequencer" dna:classname="org.modeshape.sequencer.image.ImageMetadataSequencer">
-            <dna:description>Image metadata sequencer</dna:description>        
-            <dna:pathExpression>/foo/source => /foo/target</dna:pathExpression>
-            <dna:pathExpression>/bar/source => /bar/target</dna:pathExpression>
-        </dna:sequencer-->
-    </dna:sequencers>
+    <mode:sequencers>
+        <!--mode:sequencer jcr:name="Image Sequencer" mode:classname="org.modeshape.sequencer.image.ImageMetadataSequencer">
+            <mode:description>Image metadata sequencer</mode:description>        
+            <mode:pathExpression>/foo/source => /foo/target</mode:pathExpression>
+            <mode:pathExpression>/bar/source => /bar/target</mode:pathExpression>
+        </mode:sequencer-->
+    </mode:sequencers>
     <!-- 
     Define the mime type detectors. This is an optional section.  By default, each engine will use the 
     MIME type detector that uses filename extensions.  So we wouldn't need to define the same detector again,
     but this is how you'd define another extension.
     -->
-    <dna:mimeTypeDetectors>
-        <dna:mimeTypeDetector jcr:name="Detector">
-            <dna:description>Standard extension-based MIME type detector</dna:description>        
+    <mode:mimeTypeDetectors>
+        <mode:mimeTypeDetector jcr:name="Detector">
+            <mode:description>Standard extension-based MIME type detector</mode:description>        
             <!-- 
             Specify the implementation class (required), as a child element or attribute on parent element.
             -->
-            <dna:classname>org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector</dna:classname>
+            <mode:classname>org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector</mode:classname>
             <!-- 
             Specify the classpath (optional) as an ordered list of 'names', where each name is significant to 
             the classpath factory.  For example, a name could be an OSGI identifier or a Maven coordinate,
@@ -146,80 +146,80 @@
             it may be specified as an attribute on the 'mimeTypeDetector' element.  If there is more than one
             'name', then they must be specified as child 'classpath' elements. Blank or empty values are ignored. 
              -->
-            <dna:classpath></dna:classpath>
-            <dna:classpath></dna:classpath>
-        </dna:mimeTypeDetector>
-    </dna:mimeTypeDetectors>
+            <mode:classpath></mode:classpath>
+            <mode:classpath></mode:classpath>
+        </mode:mimeTypeDetector>
+    </mode:mimeTypeDetectors>
     <!-- 
     Define the JCR repositories 
     -->
-    <dna:repositories>
+    <mode:repositories>
         <!-- 
         Define a JCR repository that accesses the 'Cars' source directly.
         This of course is optional, since we could access the same content through 'vehicles'.
         -->
-        <dna:repository jcr:name="Cars">
+        <mode:repository jcr:name="Cars">
             <!-- Specify the source that should be used for the repository -->
-            <dna:source>Cars</dna:source>
+            <mode:source>Cars</mode:source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
-            <dna:options jcr:primaryType="dna:options">
-                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="modeshape-jcr"/>
-            </dna:options>
+            <mode:options jcr:primaryType="mode:options">
+                <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
+            </mode:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
-            <dna:nodeTypes jcr:primaryType="dna:nodeTypes"/>
+            <mode:nodeTypes jcr:primaryType="mode:nodeTypes"/>
             <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape -->
-            <namespaces jcr:primaryType="dna:namespaces">
-                <car jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/cars/1.0"/>
+            <namespaces jcr:primaryType="mode:namespaces">
+                <car jcr:primaryType="mode:namespace" mode:uri="http://jboss.org/dna/examples/cars/1.0"/>
             </namespaces>
-        </dna:repository>
+        </mode:repository>
         <!-- 
         Define a JCR repository that accesses the 'Aircraft' source directly.
         This of course isn't really necessary for this example, since we could access the same content through 'vehicles'.
         -->
-        <dna:repository jcr:name="Aircraft">
+        <mode:repository jcr:name="Aircraft">
             <!-- Specify the source that should be used for the repository -->
-            <dna:source>Aircraft</dna:source>
+            <mode:source>Aircraft</mode:source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
-            <dna:options jcr:primaryType="dna:options">
-                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="modeshape-jcr"/>
-            </dna:options>
-        </dna:repository>
+            <mode:options jcr:primaryType="mode:options">
+                <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
+            </mode:options>
+        </mode:repository>
         <!-- 
         Define a JCR repository that accesses the 'UFO' source directly.
         This of course is optional, since we could access the same content through 'vehicles'.
         -->
-        <dna:repository jcr:name="UFOs">
+        <mode:repository jcr:name="UFOs">
             <!-- Specify the source that should be used for the repository -->
-            <dna:source>UFOs</dna:source>
+            <mode:source>UFOs</mode:source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
-            <dna:options jcr:primaryType="dna:options">
-                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="modeshape-jcr"/>
-            </dna:options>
+            <mode:options jcr:primaryType="mode:options">
+                <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
+            </mode:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
-            <dna:nodeTypes jcr:primaryType="dna:nodeTypes"/>
+            <mode:nodeTypes jcr:primaryType="mode:nodeTypes"/>
             <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape -->
-            <namespaces jcr:primaryType="dna:namespaces" />
-        </dna:repository>
+            <namespaces jcr:primaryType="mode:namespaces" />
+        </mode:repository>
         <!-- 
         Define a JCR repository that accesses the 'Vehicles' federated source directly,
         which is defined in the sources to be a projection of the 'Cars' and 'Vehicles' content.
         -->
         <!-- Define a JCR repository that accesses the 'Vehicles' federated source directly -->
-        <dna:repository jcr:name="Vehicles">
+        <mode:repository jcr:name="Vehicles">
             <!-- Specify the source that should be used for the repository -->
-            <dna:source>Vehicles</dna:source>
+            <mode:source>Vehicles</mode:source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
-            <dna:options jcr:primaryType="dna:options">
-                <projectNodeTypes jcr:primaryType="dna:option" dna:value="false"/>
-                <jaasLoginConfigName jcr:primaryType="dna:option" dna:value="modeshape-jcr"/>
-            </dna:options>
+            <mode:options jcr:primaryType="mode:options">
+                <projectNodeTypes jcr:primaryType="mode:option" mode:value="false"/>
+                <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
+            </mode:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
-            <dna:nodeTypes jcr:primaryType="dna:nodeTypes"/>
+            <mode:nodeTypes jcr:primaryType="mode:nodeTypes"/>
             <!-- Define any namespaces for this repository, other than those already defined by JCR, ModeShape or by imported content. -->
-            <dna:namespaces jcr:primaryType="dna:namespaces">
-                <car jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/cars/1.0"/>
-                <air jcr:primaryType="dna:namespace" dna:uri="http://jboss.org/dna/examples/aircraft/1.0"/>
-            </dna:namespaces>
-        </dna:repository>
-    </dna:repositories>
+            <mode:namespaces jcr:primaryType="mode:namespaces">
+                <car jcr:primaryType="mode:namespace" mode:uri="http://www.modeshape.org/examples/cars/1.0"/>
+                <air jcr:primaryType="mode:namespace" mode:uri="http://www.modeshape.org/examples/aircraft/1.0"/>
+            </mode:namespaces>
+        </mode:repository>
+    </mode:repositories>
 </configuration>

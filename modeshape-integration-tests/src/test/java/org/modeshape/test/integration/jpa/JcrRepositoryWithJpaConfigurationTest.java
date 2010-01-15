@@ -153,7 +153,7 @@ public class JcrRepositoryWithJpaConfigurationTest {
 
                     // Get the "jcr:system" node ...
                     Node jcrSystem = root.getNode("jcr:system");
-                    Node namespaces = jcrSystem.getNode("dna:namespaces");
+                    Node namespaces = jcrSystem.getNode("mode:namespaces");
                     assert namespaces != null;
 
                     // Create a few children under the root node, all with the same name (but different SNS indexes) ...
