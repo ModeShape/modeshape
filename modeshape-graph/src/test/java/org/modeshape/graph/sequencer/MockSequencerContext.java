@@ -35,8 +35,8 @@ public class MockSequencerContext extends StreamSequencerContext {
 
     public MockSequencerContext() {
         super(new ExecutionContext(), null, null, null, new SimpleProblems());
-        getNamespaceRegistry().register("dnadtd", "http://www.modeshape.org/dtd/1.0");
-        getNamespaceRegistry().register("dnaxml", "http://www.modeshape.org/xml/1.0");
+        getNamespaceRegistry().register("modedtd", "http://www.modeshape.org/dtd/1.0");
+        getNamespaceRegistry().register("modexml", "http://www.modeshape.org/xml/1.0");
     }
 
     public MockSequencerContext( String inputPath ) {
@@ -46,7 +46,7 @@ public class MockSequencerContext extends StreamSequencerContext {
     public MockSequencerContext( ExecutionContext context,
                                  String inputPath ) {
         super(context, context.getValueFactories().getPathFactory().create(inputPath), null, null, new SimpleProblems());
-        getNamespaceRegistry().register("dnadtd", "http://www.modeshape.org/dtd/1.0");
-        getNamespaceRegistry().register("dnaxml", "http://www.modeshape.org/xml/1.0");
+        getNamespaceRegistry().register("modedtd", "http://www.modeshape.org/dtd/1.0");
+        getNamespaceRegistry().register("modexml", "http://www.modeshape.org/xml/1.0");
     }
 }

@@ -24,7 +24,7 @@ import org.modeshape.graph.request.LockBranchRequest;
 import org.modeshape.graph.request.Request;
 import org.modeshape.graph.request.UnlockBranchRequest;
 import org.modeshape.graph.request.LockBranchRequest.LockScope;
-import org.modeshape.jcr.WorkspaceLockManager.DnaLock;
+import org.modeshape.jcr.WorkspaceLockManager.ModeShapeLock;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -136,7 +136,7 @@ public class WorkspaceLockManagerTest {
 
     @Test
     public void shouldCreateLockRequestWhenLockingNode() throws RepositoryException {
-        DnaLock lock = workspaceLockManager.createLock("testOwner", UUID.randomUUID(), validUuid, false, false);
+        ModeShapeLock lock = workspaceLockManager.createLock("testOwner", UUID.randomUUID(), validUuid, false, false);
         PropertyFactory propFactory = context.getPropertyFactory();
         String lockOwner = "testOwner";
         boolean isDeep = false;
@@ -153,7 +153,7 @@ public class WorkspaceLockManagerTest {
 
     @Test
     public void shouldCreateLockRequestWhenUnlockingNode() {
-        DnaLock lock = workspaceLockManager.createLock("testOwner", UUID.randomUUID(), validUuid, false, false);
+        ModeShapeLock lock = workspaceLockManager.createLock("testOwner", UUID.randomUUID(), validUuid, false, false);
         workspaceLockManager.unlockNodeInRepository(context, lock);
 
         assertNextRequestIsUnlock(validLocation);

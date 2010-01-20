@@ -71,7 +71,7 @@ import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrContentHandler.SaveMode;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
-import org.modeshape.jcr.WorkspaceLockManager.DnaLock;
+import org.modeshape.jcr.WorkspaceLockManager.ModeShapeLock;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -856,7 +856,7 @@ class JcrSession implements Session {
          * this method to throw a LockException.  We'll throw a runtime exception for now.
          */
 
-        DnaLock lock = workspace().lockManager().lockFor(lt);
+        ModeShapeLock lock = workspace().lockManager().lockFor(lt);
         if (lock == null) {
             // The lock is no longer valid
             lockTokens.remove(lt);

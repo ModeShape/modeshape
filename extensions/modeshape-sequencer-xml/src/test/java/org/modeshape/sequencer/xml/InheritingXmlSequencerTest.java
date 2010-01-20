@@ -30,20 +30,20 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.sequencer.MockSequencerContext;
 import org.modeshape.graph.sequencer.MockSequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author John Verhaeg
  */
 public class InheritingXmlSequencerTest {
 
-    private static final String DOCUMENT = "dnaxml:document";
+    private static final String DOCUMENT = "modexml:document";
 
     private XmlSequencer sequencer;
     private InputStream stream;

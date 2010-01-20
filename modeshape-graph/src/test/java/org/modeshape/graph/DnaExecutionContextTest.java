@@ -42,6 +42,7 @@ import org.modeshape.graph.property.basic.BasicNamespace;
 /**
  * 
  */
+@SuppressWarnings( "deprecation" )
 public class DnaExecutionContextTest {
 
     private static final Namespace DNA = new BasicNamespace(LegacyNamespacePrefixes.DNA, LegacyNamespaceUris.DNA);
@@ -87,19 +88,17 @@ public class DnaExecutionContextTest {
     }
 
     @Test
-    public void shouldFindDnaNamespacesInDnaExecutionContext() {
-        assertThat(dnaRegistry.isRegisteredNamespaceUri(DNA.getNamespaceUri()), is(true));
-        assertThat(dnaRegistry.isRegisteredNamespaceUri(DNAINT.getNamespaceUri()), is(true));
-        assertThat(dnaRegistry.getNamespaces().contains(DNA), is(true));
-        assertThat(dnaRegistry.getNamespaces().contains(DNAINT), is(true));
+    public void shouldNotFindDnaNamespacesInDnaExecutionContext() {
+        assertThat(dnaRegistry.isRegisteredNamespaceUri(DNA.getNamespaceUri()), is(false));
+        assertThat(dnaRegistry.isRegisteredNamespaceUri(DNAINT.getNamespaceUri()), is(false));
+        assertThat(dnaRegistry.getNamespaces().contains(DNA), is(false));
+        assertThat(dnaRegistry.getNamespaces().contains(DNAINT), is(false));
     }
 
     @Test
     public void shouldAliasDnaNamespaceToModeShapeNamespace() {
-        assertThat(dnaRegistry.isRegisteredNamespaceUri(DNA.getNamespaceUri()), is(true));
         assertThat(dnaRegistry.getPrefixForNamespaceUri(DNA.getNamespaceUri(), false), is(MODE.getPrefix()));
         assertThat(dnaRegistry.getNamespaceForPrefix(DNA.getPrefix()), is(MODE.getNamespaceUri()));
-        assertThat(dnaRegistry.isRegisteredNamespaceUri(DNAINT.getNamespaceUri()), is(true));
         assertThat(dnaRegistry.getPrefixForNamespaceUri(DNAINT.getNamespaceUri(), false),
                    is(ModeShapeIntLexicon.Namespace.PREFIX));
         assertThat(dnaRegistry.getNamespaceForPrefix(DNAINT.getPrefix()), is(MODEINT.getNamespaceUri()));

@@ -76,6 +76,7 @@ import org.xml.sax.SAXException;
  * configuration.save();
  * </pre>
  */
+@SuppressWarnings( "deprecation" )
 @NotThreadSafe
 public class ModeShapeConfiguration {
 

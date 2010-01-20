@@ -30,30 +30,30 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.sequencer.MockSequencerContext;
 import org.modeshape.graph.sequencer.MockSequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author John Verhaeg
  */
 public class XmlSequencerTest {
 
-    private static final String CDATA = "dnaxml:cData";
-    private static final String CDATA_CONTENT = "dnaxml:cDataContent";
-    private static final String DOCUMENT = "dnaxml:document";
-    private static final String DTD_NAME = "dnadtd:name";
-    private static final String DTD_SYSTEM_ID = "dnadtd:systemId";
-    private static final String DTD_VALUE = "dnadtd:value";
-    private static final String ELEMENT_CONTENT = "dnaxml:elementContent";
-    private static final String ENTITY = "dnadtd:entity";
-    private static final String PI = "dnaxml:processingInstruction";
-    private static final String PI_CONTENT = "dnaxml:processingInstructionContent";
-    private static final String TARGET = "dnaxml:target";
+    private static final String CDATA = "modexml:cData";
+    private static final String CDATA_CONTENT = "modexml:cDataContent";
+    private static final String DOCUMENT = "modexml:document";
+    private static final String DTD_NAME = "modedtd:name";
+    private static final String DTD_SYSTEM_ID = "modedtd:systemId";
+    private static final String DTD_VALUE = "modedtd:value";
+    private static final String ELEMENT_CONTENT = "modexml:elementContent";
+    private static final String ENTITY = "modedtd:entity";
+    private static final String PI = "modexml:processingInstruction";
+    private static final String PI_CONTENT = "modexml:processingInstructionContent";
+    private static final String TARGET = "modexml:target";
 
     private XmlSequencer sequencer;
     private InputStream stream;

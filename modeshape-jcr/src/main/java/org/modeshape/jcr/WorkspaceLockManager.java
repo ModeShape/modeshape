@@ -37,7 +37,7 @@ class WorkspaceLockManager {
     private final Path locksPath;
     private final JcrRepository repository;
     private final String workspaceName;
-    private final ConcurrentMap<UUID, DnaLock> workspaceLocksByNodeUuid;
+    private final ConcurrentMap<UUID, ModeShapeLock> workspaceLocksByNodeUuid;
 
     WorkspaceLockManager( ExecutionContext context,
                           JcrRepository repository,
@@ -48,7 +48,7 @@ class WorkspaceLockManager {
         this.workspaceName = workspaceName;
         this.locksPath = locksPath;
 
-        this.workspaceLocksByNodeUuid = new ConcurrentHashMap<UUID, DnaLock>();
+        this.workspaceLocksByNodeUuid = new ConcurrentHashMap<UUID, ModeShapeLock>();
 
         Property locksPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.LOCKS);
         repository.createSystemGraph(context).create(locksPath, locksPrimaryType).ifAbsent().and();
@@ -69,7 +69,7 @@ class WorkspaceLockManager {
      * @return an object representing the newly created lock
      * @throws RepositoryException if an error occurs updating the graph state
      */
-    DnaLock lock( JcrSession session,
+    ModeShapeLock lock( JcrSession session,
                   Location nodeLocation,
                   boolean isDeep,
                   boolean isSessionScoped ) throws RepositoryException {
@@ -84,7 +84,7 @@ class WorkspaceLockManager {
 
         ExecutionContext sessionContext = session.getExecutionContext();
         String lockOwner = session.getUserID();
-        DnaLock lock = createLock(lockOwner, lockUuid, nodeUuid, isDeep, isSessionScoped);
+        ModeShapeLock lock = createLock(lockOwner, lockUuid, nodeUuid, isDeep, isSessionScoped);
 
         Graph.Batch batch = repository.createSystemGraph(sessionContext).batch();
 
@@ -126,17 +126,17 @@ class WorkspaceLockManager {
         return lock;
     }
 
-    DnaLock createLock( org.modeshape.graph.Node lockNode ) {
-        return new DnaLock(lockNode);
+    ModeShapeLock createLock( org.modeshape.graph.Node lockNode ) {
+        return new ModeShapeLock(lockNode);
     }
 
     /* Factory method added to facilitate mocked testing */
-    DnaLock createLock( String lockOwner,
+    ModeShapeLock createLock( String lockOwner,
                         UUID lockUuid,
                         UUID nodeUuid,
                         boolean isDeep,
                         boolean isSessionScoped ) {
-        return new DnaLock(lockOwner, lockUuid, nodeUuid, isDeep, isSessionScoped);
+        return new ModeShapeLock(lockOwner, lockUuid, nodeUuid, isDeep, isSessionScoped);
     }
 
     /**
@@ -146,7 +146,7 @@ class WorkspaceLockManager {
      * <p>
      * This method will also attempt to {@link Graph#lock(Location) lock the node in the underlying repository}. If the underlying
      * repository supports locks and {@link LockFailedException the lock attempt fails}, this method will cancel the lock attempt
-     * by calling {@link #unlock(ExecutionContext, DnaLock)} and will throw a {@code RepositoryException}.
+     * by calling {@link #unlock(ExecutionContext, ModeShapeLock)} and will throw a {@code RepositoryException}.
      * </p>
      * <p>
      * This method does not modify the system graph. In other words, it will not create the record for the lock in the {@code
@@ -171,7 +171,7 @@ class WorkspaceLockManager {
                                UUID nodeUuid,
                                Property lockOwnerProp,
                                Property lockIsDeepProp,
-                               DnaLock lock,
+                               ModeShapeLock lock,
                                boolean isDeep ) throws RepositoryException {
         // Write them directly to the underlying graph
         Graph.Batch workspaceBatch = repository.createWorkspaceGraph(workspaceName, session.getExecutionContext()).batch();
@@ -198,7 +198,7 @@ class WorkspaceLockManager {
      * @param lock the lock to be removed
      */
     void unlock( ExecutionContext sessionExecutionContext,
-                 DnaLock lock ) {
+                 ModeShapeLock lock ) {
         try {
             PathFactory pathFactory = sessionExecutionContext.getValueFactories().getPathFactory();
 
@@ -237,7 +237,7 @@ class WorkspaceLockManager {
      * @param lock
      */
     void unlockNodeInRepository( ExecutionContext sessionExecutionContext,
-                                 DnaLock lock ) {
+                                 ModeShapeLock lock ) {
         Graph.Batch workspaceBatch = repository.createWorkspaceGraph(this.workspaceName, sessionExecutionContext).batch();
 
         workspaceBatch.remove(JcrLexicon.LOCK_OWNER, JcrLexicon.LOCK_IS_DEEP).on(lock.nodeUuid);
@@ -301,8 +301,8 @@ class WorkspaceLockManager {
      * @see Session#addLockToken(String)
      * @see Session#removeLockToken(String)
      */
-    DnaLock lockFor( String lockToken ) {
-        for (DnaLock lock : workspaceLocksByNodeUuid.values()) {
+    ModeShapeLock lockFor( String lockToken ) {
+        for (ModeShapeLock lock : workspaceLocksByNodeUuid.values()) {
             if (lockToken.equals(lock.getLockToken())) {
                 return lock;
             }
@@ -318,7 +318,7 @@ class WorkspaceLockManager {
      * @param nodeLocation the node UUID
      * @return the corresponding lock, possibly null if there is no such lock
      */
-    DnaLock lockFor( JcrSession session,
+    ModeShapeLock lockFor( JcrSession session,
                      Location nodeLocation ) {
         UUID nodeUuid = uuidFor(session, nodeLocation);
         if (nodeUuid == null) return null;
@@ -356,7 +356,7 @@ class WorkspaceLockManager {
         ExecutionContext context = session.getExecutionContext();
         Collection<String> lockTokens = session.lockTokens();
         for (String lockToken : lockTokens) {
-            DnaLock lock = lockFor(lockToken);
+            ModeShapeLock lock = lockFor(lockToken);
             if (lock != null && lock.isSessionScoped()) {
                 unlock(context, lock);
             }
@@ -368,7 +368,7 @@ class WorkspaceLockManager {
      * {@link WorkspaceLockManager#lock(JcrSession, Location, boolean, boolean)}.
      */
     @ThreadSafe
-    public class DnaLock {
+    public class ModeShapeLock {
         final UUID nodeUuid;
         private final UUID lockUuid;
         private final String lockOwner;
@@ -376,7 +376,7 @@ class WorkspaceLockManager {
         private final boolean sessionScoped;
 
         @SuppressWarnings( "synthetic-access" )
-        DnaLock( org.modeshape.graph.Node lockNode ) {
+        ModeShapeLock( org.modeshape.graph.Node lockNode ) {
             ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
             ValueFactory<UUID> uuidFactory = context.getValueFactories().getUuidFactory();
             ValueFactory<Boolean> booleanFactory = context.getValueFactories().getBooleanFactory();
@@ -402,7 +402,7 @@ class WorkspaceLockManager {
             this.sessionScoped = booleanFactory.create(isSessionScopedProperty.getFirstValue());
         }
 
-        DnaLock( String lockOwner,
+        ModeShapeLock( String lockOwner,
                  UUID lockUuid,
                  UUID nodeUuid,
                  boolean deep,

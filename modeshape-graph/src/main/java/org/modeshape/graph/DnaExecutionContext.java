@@ -46,17 +46,61 @@ import org.modeshape.graph.property.basic.StandardValueFactories;
  * A specialized form of {@link ExecutionContext} that supports the legacy JBoss DNA namespaces by automatically mapping them to
  * the corresponding ModeShape namespaces. <b><i>Note: This is only needed in cases where content originally persisted using JBoss
  * DNA is being accessed by ModeShape.</i></b>
+ * 
+ * @deprecated As of 1.0; exists solely to allow for backward compatibility with content persisted by JBoss DNA
  */
+@Deprecated
 public class DnaExecutionContext extends ExecutionContext {
 
     public static class LegacyNamespaceUris {
         public static final String DNA = "http://www.jboss.org/dna/1.0";
         public static final String DNAINT = "http://www.jboss.org/dna/int/1.0";
+        public static final String MP3 = "http://www.jboss.org/dna/mp3/1.0";
+        public static final String XML = "http://www.jboss.org/dna/xml/1.0";
+        public static final String DTD = "http://www.jboss.org/dna/dtd/1.0";
+        public static final String TEXT = "http://www.jboss.org/dna/sequencer/text/1.0";
+        public static final String MSOFFICE = "http://www.jboss.org/dna/msoffice/1.0";
+        public static final String JAVA = "http://www.jboss.org/dna/java/1.0";
+        public static final String JAVACLASS = "http://www.jboss.org/dna/sequencer/javaclass/1.0";
+        public static final String IMAGES = "http://www.jboss.org/dna/images/1.0";
+        public static final String DDL = "http://www.jboss.org/dna/ddl/1.0";
+        public static final String DDL_DERBY = "http://www.jboss.org/dna/ddl/derby/1.0";
+        public static final String DDL_ORACLE = "http://www.jboss.org/dna/ddl/oracle/1.0";
+        public static final String DDL_POSTGRES = "http://www.jboss.org/dna/ddl/postgres/1.0";
     }
 
     public static class LegacyNamespacePrefixes {
         public static final String DNA = "dna";
         public static final String DNAINT = "dnaint";
+        public static final String MP3 = "dnamp3";
+        public static final String XML = "dnaxml";
+        public static final String DTD = "dnadtd";
+        public static final String TEXT = "dnatext";
+        public static final String MSOFFICE = "dnamsoffice";
+        public static final String JAVA = "dnajava";
+        public static final String JAVACLASS = "dnaclass";
+        public static final String IMAGES = "dnaimage";
+        public static final String DDL = "dnaddl";
+        public static final String DDL_DERBY = "dnaddlderby";
+        public static final String DDL_ORACLE = "dnaddloracle";
+        public static final String DDL_POSTGRES = "dnaddlpostgres";
+    }
+
+    public static class ModeShapeNamespaceUris {
+        public static final String DNA = ModeShapeLexicon.Namespace.URI;
+        public static final String DNAINT = ModeShapeIntLexicon.Namespace.URI;
+        public static final String MP3 = "http://www.modeshape.org/mp3/1.0";
+        public static final String XML = "http://www.modeshape.org/xml/1.0";
+        public static final String DTD = "http://www.modeshape.org/dtd/1.0";
+        public static final String TEXT = "http://www.modeshape.org/sequencer/text/1.0";
+        public static final String MSOFFICE = "http://www.modeshape.org/msoffice/1.0";
+        public static final String JAVA = "http://www.modeshape.org/java/1.0";
+        public static final String JAVACLASS = "http://www.modeshape.org/sequencer/javaclass/1.0";
+        public static final String IMAGES = "http://www.modeshape.org/images/1.0";
+        public static final String DDL = "http://www.modeshape.org/ddl/1.0";
+        public static final String DDL_DERBY = "http://www.modeshape.org/ddl/derby/1.0";
+        public static final String DDL_ORACLE = "http://www.modeshape.org/ddl/oracle/1.0";
+        public static final String DDL_POSTGRES = "http://www.modeshape.org/ddl/postgres/1.0";
     }
 
     private static final Map<String, String> LEGACY_NAMESPACE_URIS_BY_PREFIX;
@@ -66,15 +110,40 @@ public class DnaExecutionContext extends ExecutionContext {
         LEGACY_NAMESPACE_URIS_BY_PREFIX = new HashMap<String, String>();
         LEGACY_NAMESPACE_URIS_BY_PREFIX.put(LegacyNamespacePrefixes.DNA, LegacyNamespaceUris.DNA);
         LEGACY_NAMESPACE_URIS_BY_PREFIX.put(LegacyNamespacePrefixes.DNAINT, LegacyNamespaceUris.DNAINT);
+        LEGACY_NAMESPACE_URIS_BY_PREFIX.put(LegacyNamespacePrefixes.MP3, LegacyNamespaceUris.MP3);
+        LEGACY_NAMESPACE_URIS_BY_PREFIX.put(LegacyNamespacePrefixes.XML, LegacyNamespaceUris.XML);
+        LEGACY_NAMESPACE_URIS_BY_PREFIX.put(LegacyNamespacePrefixes.DTD, LegacyNamespaceUris.DTD);
+        LEGACY_NAMESPACE_URIS_BY_PREFIX.put(LegacyNamespacePrefixes.TEXT, LegacyNamespaceUris.TEXT);
+        LEGACY_NAMESPACE_URIS_BY_PREFIX.put(LegacyNamespacePrefixes.MSOFFICE, LegacyNamespaceUris.MSOFFICE);
+        LEGACY_NAMESPACE_URIS_BY_PREFIX.put(LegacyNamespacePrefixes.JAVA, LegacyNamespaceUris.JAVA);
+        LEGACY_NAMESPACE_URIS_BY_PREFIX.put(LegacyNamespacePrefixes.JAVACLASS, LegacyNamespaceUris.JAVACLASS);
+        LEGACY_NAMESPACE_URIS_BY_PREFIX.put(LegacyNamespacePrefixes.IMAGES, LegacyNamespaceUris.IMAGES);
+        LEGACY_NAMESPACE_URIS_BY_PREFIX.put(LegacyNamespacePrefixes.DDL, LegacyNamespaceUris.DDL);
+        LEGACY_NAMESPACE_URIS_BY_PREFIX.put(LegacyNamespacePrefixes.DDL_DERBY, LegacyNamespaceUris.DDL_DERBY);
+        LEGACY_NAMESPACE_URIS_BY_PREFIX.put(LegacyNamespacePrefixes.DDL_ORACLE, LegacyNamespaceUris.DDL_ORACLE);
+        LEGACY_NAMESPACE_URIS_BY_PREFIX.put(LegacyNamespacePrefixes.DDL_POSTGRES, LegacyNamespaceUris.DDL_POSTGRES);
         ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI = new HashMap<String, String>();
-        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.DNA, ModeShapeLexicon.Namespace.URI);
-        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.DNAINT, ModeShapeIntLexicon.Namespace.URI);
+        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.DNA, ModeShapeNamespaceUris.DNA);
+        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.DNAINT, ModeShapeNamespaceUris.DNAINT);
+        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.MP3, ModeShapeNamespaceUris.MP3);
+        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.XML, ModeShapeNamespaceUris.XML);
+        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.DTD, ModeShapeNamespaceUris.DTD);
+        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.TEXT, ModeShapeNamespaceUris.TEXT);
+        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.MSOFFICE, ModeShapeNamespaceUris.MSOFFICE);
+        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.JAVA, ModeShapeNamespaceUris.JAVA);
+        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.JAVACLASS, ModeShapeNamespaceUris.JAVACLASS);
+        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.IMAGES, ModeShapeNamespaceUris.IMAGES);
+        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.DDL, ModeShapeNamespaceUris.DDL);
+        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.DDL_DERBY, ModeShapeNamespaceUris.DDL_DERBY);
+        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.DDL_ORACLE, ModeShapeNamespaceUris.DDL_ORACLE);
+        ORIGINAL_NAMESPACE_URIS_BY_LEGACY_URI.put(LegacyNamespaceUris.DDL_POSTGRES, ModeShapeNamespaceUris.DDL_POSTGRES);
     }
 
     /**
      * Create a new execution context that supports the legacy JBoss DNA namespaces by automatically mapping them to the
      * corresponding ModeShape namespaces;
      */
+    @Deprecated
     public DnaExecutionContext() {
         this(new ExecutionContext());
     }
@@ -85,6 +154,7 @@ public class DnaExecutionContext extends ExecutionContext {
      * 
      * @param original the original
      */
+    @Deprecated
     public DnaExecutionContext( ExecutionContext original ) {
         super(legacyContextUsing(original)); // super just extracts the various pieces from the supplied context
     }

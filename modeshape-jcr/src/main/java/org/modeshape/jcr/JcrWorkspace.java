@@ -73,7 +73,7 @@ import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrContentHandler.SaveMode;
 import org.modeshape.jcr.SessionCache.JcrNodePayload;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
-import org.modeshape.jcr.WorkspaceLockManager.DnaLock;
+import org.modeshape.jcr.WorkspaceLockManager.ModeShapeLock;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -329,7 +329,7 @@ class JcrWorkspace implements Workspace {
             if (uuidProp != null) {
                 UUID sourceUuid = this.context.getValueFactories().getUuidFactory().create(uuidProp.getFirstValue());
 
-                DnaLock sourceLock = lockManager().lockFor(session, Location.create(sourceUuid));
+                ModeShapeLock sourceLock = lockManager().lockFor(session, Location.create(sourceUuid));
                 if (sourceLock != null && sourceLock.getLockToken() == null) {
                     throw new LockException(JcrI18n.lockTokenNotHeld.text(srcAbsPath));
                 }
@@ -484,7 +484,7 @@ class JcrWorkspace implements Workspace {
             if (uuidProp != null) {
                 UUID sourceUuid = this.context.getValueFactories().getUuidFactory().create(uuidProp.getFirstValue());
 
-                DnaLock sourceLock = lockManager().lockFor(session, Location.create(sourceUuid));
+                ModeShapeLock sourceLock = lockManager().lockFor(session, Location.create(sourceUuid));
                 if (sourceLock != null && sourceLock.getLockToken() == null) {
                     throw new LockException(srcAbsPath);
                 }

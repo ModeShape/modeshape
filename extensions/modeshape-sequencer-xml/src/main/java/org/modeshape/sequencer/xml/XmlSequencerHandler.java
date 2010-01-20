@@ -217,9 +217,9 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         // Skip if nothing in content but whitespace
         if (content.length() > 0) {
             // Create separate node for each content entry since entries can be interspersed amongst child elements
-            startNode(DnaXmlLexicon.ELEMENT_CONTENT);
-            output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, DnaXmlLexicon.ELEMENT_CONTENT);
-            output.setProperty(currentPath, DnaXmlLexicon.ELEMENT_CONTENT, content);
+            startNode(ModeShapeXmlLexicon.ELEMENT_CONTENT);
+            output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, ModeShapeXmlLexicon.ELEMENT_CONTENT);
+            output.setProperty(currentPath, ModeShapeXmlLexicon.ELEMENT_CONTENT, content);
             endNode();
         }
     }
@@ -233,7 +233,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
      */
     @Override
     public void startDocument() {
-        output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, DnaXmlLexicon.DOCUMENT);
+        output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, ModeShapeXmlLexicon.DOCUMENT);
     }
 
     /**
@@ -247,9 +247,9 @@ public class XmlSequencerHandler extends DefaultHandler2 {
     public void startDTD( String name,
                           String publicId,
                           String systemId ) {
-        output.setProperty(currentPath, DnaDtdLexicon.NAME, name);
-        output.setProperty(currentPath, DnaDtdLexicon.PUBLIC_ID, publicId);
-        output.setProperty(currentPath, DnaDtdLexicon.SYSTEM_ID, systemId);
+        output.setProperty(currentPath, ModeShapeDtdLexicon.NAME, name);
+        output.setProperty(currentPath, ModeShapeDtdLexicon.PUBLIC_ID, publicId);
+        output.setProperty(currentPath, ModeShapeDtdLexicon.SYSTEM_ID, systemId);
     }
 
     /**
@@ -264,11 +264,11 @@ public class XmlSequencerHandler extends DefaultHandler2 {
                                     String publicId,
                                     String systemId ) {
         // Add "synthetic" entity container to path to help prevent name collisions with XML elements
-        startNode(DnaDtdLexicon.ENTITY);
-        output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, DnaDtdLexicon.ENTITY);
-        output.setProperty(currentPath, DnaDtdLexicon.NAME, name);
-        if (publicId != null) output.setProperty(currentPath, DnaDtdLexicon.PUBLIC_ID, publicId);
-        if (systemId != null) output.setProperty(currentPath, DnaDtdLexicon.SYSTEM_ID, systemId);
+        startNode(ModeShapeDtdLexicon.ENTITY);
+        output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, ModeShapeDtdLexicon.ENTITY);
+        output.setProperty(currentPath, ModeShapeDtdLexicon.NAME, name);
+        if (publicId != null) output.setProperty(currentPath, ModeShapeDtdLexicon.PUBLIC_ID, publicId);
+        if (systemId != null) output.setProperty(currentPath, ModeShapeDtdLexicon.SYSTEM_ID, systemId);
         endNode();
     }
 
@@ -281,10 +281,10 @@ public class XmlSequencerHandler extends DefaultHandler2 {
     public void internalEntityDecl( String name,
                                     String value ) {
         // Add "synthetic" entity container to path to help prevent name collisions with XML elements
-        startNode(DnaDtdLexicon.ENTITY);
-        output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, DnaDtdLexicon.ENTITY);
-        output.setProperty(currentPath, DnaDtdLexicon.NAME, name);
-        output.setProperty(currentPath, DnaDtdLexicon.VALUE, value);
+        startNode(ModeShapeDtdLexicon.ENTITY);
+        output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, ModeShapeDtdLexicon.ENTITY);
+        output.setProperty(currentPath, ModeShapeDtdLexicon.NAME, name);
+        output.setProperty(currentPath, ModeShapeDtdLexicon.VALUE, value);
         // Record the name/value pair ...
         entityValues.put(name, value);
         endNode();
@@ -301,11 +301,11 @@ public class XmlSequencerHandler extends DefaultHandler2 {
     public void processingInstruction( String target,
                                        String data ) {
         // Output separate nodes for each instruction since multiple are allowed
-        startNode(DnaXmlLexicon.PROCESSING_INSTRUCTION);
-        output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, DnaXmlLexicon.PROCESSING_INSTRUCTION);
-        output.setProperty(currentPath, DnaXmlLexicon.TARGET, target.trim());
+        startNode(ModeShapeXmlLexicon.PROCESSING_INSTRUCTION);
+        output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, ModeShapeXmlLexicon.PROCESSING_INSTRUCTION);
+        output.setProperty(currentPath, ModeShapeXmlLexicon.TARGET, target.trim());
         if (data != null) {
-            output.setProperty(currentPath, DnaXmlLexicon.PROCESSING_INSTRUCTION_CONTENT, data.trim());
+            output.setProperty(currentPath, ModeShapeXmlLexicon.PROCESSING_INSTRUCTION_CONTENT, data.trim());
         }
         endNode();
     }
@@ -431,9 +431,9 @@ public class XmlSequencerHandler extends DefaultHandler2 {
     @Override
     public void endCDATA() {
         // Output CDATA built in characters() method
-        startNode(DnaXmlLexicon.CDATA);
+        startNode(ModeShapeXmlLexicon.CDATA);
         output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, defaultPrimaryType);
-        output.setProperty(currentPath, DnaXmlLexicon.CDATA_CONTENT, cDataContent.toString());
+        output.setProperty(currentPath, ModeShapeXmlLexicon.CDATA_CONTENT, cDataContent.toString());
         endNode();
         // Null-out builder to free memory
         cDataContent = null;
@@ -495,9 +495,9 @@ public class XmlSequencerHandler extends DefaultHandler2 {
                          int start,
                          int length ) {
         // Output separate nodes for each comment since multiple are allowed
-        startNode(DnaXmlLexicon.COMMENT);
-        output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, DnaXmlLexicon.COMMENT);
-        output.setProperty(currentPath, DnaXmlLexicon.COMMENT_CONTENT, String.valueOf(ch, start, length).trim());
+        startNode(ModeShapeXmlLexicon.COMMENT);
+        output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, ModeShapeXmlLexicon.COMMENT);
+        output.setProperty(currentPath, ModeShapeXmlLexicon.COMMENT_CONTENT, String.valueOf(ch, start, length).trim());
         endNode();
     }
 

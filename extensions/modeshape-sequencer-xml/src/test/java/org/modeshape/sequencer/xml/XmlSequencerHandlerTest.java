@@ -33,6 +33,8 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.text.Jsr283Encoder;
 import org.modeshape.common.text.TextDecoder;
@@ -46,8 +48,6 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.sequencer.MockSequencerContext;
 import org.modeshape.graph.sequencer.MockSequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
-import org.junit.Before;
-import org.junit.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -73,8 +73,8 @@ public class XmlSequencerHandlerTest {
         output = new MockSequencerOutput(context, true);
         context.getNamespaceRegistry().register(JcrLexicon.Namespace.PREFIX, JcrLexicon.Namespace.URI);
         context.getNamespaceRegistry().register(JcrNtLexicon.Namespace.PREFIX, JcrNtLexicon.Namespace.URI);
-        context.getNamespaceRegistry().register(DnaXmlLexicon.Namespace.PREFIX, DnaXmlLexicon.Namespace.URI);
-        context.getNamespaceRegistry().register(DnaDtdLexicon.Namespace.PREFIX, DnaDtdLexicon.Namespace.URI);
+        context.getNamespaceRegistry().register(ModeShapeXmlLexicon.Namespace.PREFIX, ModeShapeXmlLexicon.Namespace.URI);
+        context.getNamespaceRegistry().register(ModeShapeDtdLexicon.Namespace.PREFIX, ModeShapeDtdLexicon.Namespace.URI);
         decoder = null;
         nameAttribute = JcrLexicon.NAME;
         primaryType = JcrNtLexicon.UNSTRUCTURED;
@@ -275,12 +275,12 @@ public class XmlSequencerHandlerTest {
         parse("docWithComments.xml");
         assertDocumentNode();
         assertNode("c:Cars");
-        assertComment("c:Cars/dnaxml:comment[1]", "This is a comment");
+        assertComment("c:Cars/modexml:comment[1]", "This is a comment");
         assertNode("c:Cars/c:Hybrid");
         assertNode("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
         assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
         assertNode("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
-        assertComment("c:Cars/dnaxml:comment[2]", "This is another comment");
+        assertComment("c:Cars/modexml:comment[2]", "This is another comment");
         assertNode("c:Cars/c:Sports");
         assertNode("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
         assertNode("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
@@ -302,7 +302,7 @@ public class XmlSequencerHandlerTest {
 
         parse("docWithDtdEntities.xml");
         assertDocumentNode("book", "-//OASIS//DTD DocBook XML V4.4//EN", "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd");
-        assertComment("dnaxml:comment", "Document comment");
+        assertComment("modexml:comment", "Document comment");
         assertEntity(1, "%RH-ENTITIES", null, "Common_Config/rh-entities.ent");
         assertEntity(2, "versionNumber", "0.1");
         assertEntity(3, "copyrightYear", "2008");
@@ -310,39 +310,39 @@ public class XmlSequencerHandlerTest {
         assertNode("book");
         assertNode("book/bookinfo");
         assertNode("book/bookinfo/title");
-        assertNode("book/bookinfo/title/dnaxml:elementContent",
+        assertNode("book/bookinfo/title/modexml:elementContent",
                    "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "dnaxml:elementContent=ModeShape");
+                   "modexml:elementContent=ModeShape");
         assertNode("book/bookinfo/releaseinfo");
-        assertNode("book/bookinfo/releaseinfo/dnaxml:elementContent",
+        assertNode("book/bookinfo/releaseinfo/modexml:elementContent",
                    "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "dnaxml:elementContent=&versionNumber;");
+                   "modexml:elementContent=&versionNumber;");
         assertNode("book/bookinfo/productnumber");
-        assertNode("book/bookinfo/productnumber/dnaxml:elementContent",
+        assertNode("book/bookinfo/productnumber/modexml:elementContent",
                    "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "dnaxml:elementContent=some text with &versionNumber;inside");
+                   "modexml:elementContent=some text with &versionNumber;inside");
         assertNode("book/bookinfo/abstract");
-        assertNode("book/bookinfo/abstract/dnaxml:elementContent",
+        assertNode("book/bookinfo/abstract/modexml:elementContent",
                    "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "dnaxml:elementContent=" + longContent);
+                   "modexml:elementContent=" + longContent);
         assertNode("book/programlisting1");
-        assertNode("book/programlisting1/dnaxml:elementContent",
+        assertNode("book/programlisting1/modexml:elementContent",
                    "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "dnaxml:elementContent=&lt;dependency&gt; &lt;/dependency&gt;");
+                   "modexml:elementContent=&lt;dependency&gt; &lt;/dependency&gt;");
         assertNode("book/programlisting2");
-        assertNode("book/programlisting2/dnaxml:cData", "dnaxml:cDataContent=\n&lt;dependency&gt;\n&lt;/dependency&gt;\n");
+        assertNode("book/programlisting2/modexml:cData", "modexml:cDataContent=\n&lt;dependency&gt;\n&lt;/dependency&gt;\n");
         assertNode("book/programlisting3");
-        assertNode("book/programlisting3/dnaxml:elementContent[1]",
+        assertNode("book/programlisting3/modexml:elementContent[1]",
                    "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "dnaxml:elementContent=mixture of text and");
-        assertNode("book/programlisting3/dnaxml:cData", "dnaxml:cDataContent=\n&lt;dependency&gt;\n&lt;/dependency&gt;\n");
-        assertNode("book/programlisting3/dnaxml:elementContent[2]",
+                   "modexml:elementContent=mixture of text and");
+        assertNode("book/programlisting3/modexml:cData", "modexml:cDataContent=\n&lt;dependency&gt;\n&lt;/dependency&gt;\n");
+        assertNode("book/programlisting3/modexml:elementContent[2]",
                    "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "dnaxml:elementContent=and some text");
-        assertComment("book/programlisting3/dnaxml:comment", "comment in content");
-        assertNode("book/programlisting3/dnaxml:elementContent[3]",
+                   "modexml:elementContent=and some text");
+        assertComment("book/programlisting3/modexml:comment", "comment in content");
+        assertNode("book/programlisting3/modexml:elementContent[3]",
                    "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "dnaxml:elementContent=after.");
+                   "modexml:elementContent=after.");
         assertNoMoreNodes();
     }
 
@@ -353,7 +353,7 @@ public class XmlSequencerHandlerTest {
         assertPI(1, "target", "content");
         assertPI(2, "target2", "other stuff in the processing instruction");
         assertNode("Cars");
-        assertComment("Cars/dnaxml:comment", "This is a comment");
+        assertComment("Cars/modexml:comment", "This is a comment");
         assertNode("Cars/Hybrid");
         assertNode("Cars/Hybrid/Toyota Prius");
         assertNode("Cars/Sports");
@@ -375,24 +375,24 @@ public class XmlSequencerHandlerTest {
                        + "        ";
         parse("docWithCDATA.xml");
         assertDocumentNode();
-        assertComment("dnaxml:comment", "Simple example to demonstrate the CurrencyFormatter.");
+        assertComment("modexml:comment", "Simple example to demonstrate the CurrencyFormatter.");
         assertNode("mx:Application");
         assertNode("mx:Application/mx:Script");
-        assertCdata("mx:Application/mx:Script/dnaxml:cData", cdata);
+        assertCdata("mx:Application/mx:Script/modexml:cData", cdata);
         // Now there's an element that contains a mixture of regular element content, CDATA content, and comments
         assertNode("mx:Application/programlisting3");
-        assertNode("mx:Application/programlisting3/dnaxml:elementContent[1]",
+        assertNode("mx:Application/programlisting3/modexml:elementContent[1]",
                    "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "dnaxml:elementContent=mixture of text and");
-        assertNode("mx:Application/programlisting3/dnaxml:cData",
-                   "dnaxml:cDataContent=\n<dependency>entities like &gt; are not replaced in a CDATA\n</dependency>\n");
-        assertNode("mx:Application/programlisting3/dnaxml:elementContent[2]",
+                   "modexml:elementContent=mixture of text and");
+        assertNode("mx:Application/programlisting3/modexml:cData",
+                   "modexml:cDataContent=\n<dependency>entities like &gt; are not replaced in a CDATA\n</dependency>\n");
+        assertNode("mx:Application/programlisting3/modexml:elementContent[2]",
                    "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "dnaxml:elementContent=and some text");
-        assertComment("mx:Application/programlisting3/dnaxml:comment", "comment in content");
-        assertNode("mx:Application/programlisting3/dnaxml:elementContent[3]",
+                   "modexml:elementContent=and some text");
+        assertComment("mx:Application/programlisting3/modexml:comment", "comment in content");
+        assertNode("mx:Application/programlisting3/modexml:elementContent[3]",
                    "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "dnaxml:elementContent=after.");
+                   "modexml:elementContent=after.");
         // Now the final element
         assertNode("mx:Application/mx:NumberValidator",
                    "id=numVal",
@@ -476,7 +476,7 @@ public class XmlSequencerHandlerTest {
 
     protected void assertComment( String path,
                                   String comment ) {
-        assertNode(path, "jcr:primaryType={http://www.modeshape.org/xml/1.0}comment", "dnaxml:commentContent=" + comment.trim());
+        assertNode(path, "jcr:primaryType={http://www.modeshape.org/xml/1.0}comment", "modexml:commentContent=" + comment.trim());
     }
 
     protected void assertCdata( String path,
@@ -495,9 +495,9 @@ public class XmlSequencerHandlerTest {
         // There should be a single property ...
         Property actualPrimaryType = output.getProperty(expectedPath, JcrLexicon.PRIMARY_TYPE);
         assertThat(actualPrimaryType.getValues().next(), is((Object)JcrNtLexicon.UNSTRUCTURED));
-        Property actual = output.getProperty(expectedPath, DnaXmlLexicon.CDATA_CONTENT);
+        Property actual = output.getProperty(expectedPath, ModeShapeXmlLexicon.CDATA_CONTENT);
         assertThat("expected one CDATA property", actual, is(notNullValue()));
-        Property expected = context.getPropertyFactory().create(DnaXmlLexicon.CDATA_CONTENT, content);
+        Property expected = context.getPropertyFactory().create(ModeShapeXmlLexicon.CDATA_CONTENT, content);
         assertThat("CDATA content differed", actual, is(expected));
     }
 
@@ -510,45 +510,47 @@ public class XmlSequencerHandlerTest {
                                        String systemId ) {
         assertNode("",
                    "jcr:primaryType={http://www.modeshape.org/xml/1.0}document",
-                   "dnadtd:name=" + name,
-                   "dnadtd:publicId=" + publicId,
-                   "dnadtd:systemId=" + systemId);
+                   "modedtd:name=" + name,
+                   "modedtd:publicId=" + publicId,
+                   "modedtd:systemId=" + systemId);
     }
 
     protected void assertEntity( int index,
                                  String entityName,
                                  String value ) {
-        String path = "dnadtd:entity[" + index + "]";
-        assertNode(path, "jcr:primaryType={http://www.modeshape.org/dtd/1.0}entity", "dnadtd:name=" + entityName, "dnadtd:value="
-                                                                                                                  + value);
+        String path = "modedtd:entity[" + index + "]";
+        assertNode(path,
+                   "jcr:primaryType={http://www.modeshape.org/dtd/1.0}entity",
+                   "modedtd:name=" + entityName,
+                   "modedtd:value=" + value);
     }
 
     protected void assertEntity( int index,
                                  String entityName,
                                  String publicId,
                                  String systemId ) {
-        String path = "dnadtd:entity[" + index + "]";
+        String path = "modedtd:entity[" + index + "]";
         if (publicId != null) {
             assertNode(path,
                        "jcr:primaryType={http://www.modeshape.org/dtd/1.0}entity",
-                       "dnadtd:name=" + entityName,
-                       "dnadtd:publicId=" + publicId,
-                       "dnadtd:systemId=" + systemId);
+                       "modedtd:name=" + entityName,
+                       "modedtd:publicId=" + publicId,
+                       "modedtd:systemId=" + systemId);
         } else {
             assertNode(path,
                        "jcr:primaryType={http://www.modeshape.org/dtd/1.0}entity",
-                       "dnadtd:name=" + entityName,
-                       "dnadtd:systemId=" + systemId);
+                       "modedtd:name=" + entityName,
+                       "modedtd:systemId=" + systemId);
         }
     }
 
     protected void assertPI( int index,
                              String target,
                              String data ) {
-        assertNode("dnaxml:processingInstruction[" + index + "]",
+        assertNode("modexml:processingInstruction[" + index + "]",
                    "jcr:primaryType={http://www.modeshape.org/xml/1.0}processingInstruction",
-                   "dnaxml:target=" + target,
-                   "dnaxml:processingInstructionContent=" + data);
+                   "modexml:target=" + target,
+                   "modexml:processingInstructionContent=" + data);
     }
 
     protected void parse( String relativePathToXmlFile ) throws IOException, SAXException {

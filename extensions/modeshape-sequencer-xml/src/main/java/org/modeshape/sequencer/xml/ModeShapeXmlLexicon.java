@@ -29,11 +29,11 @@ import org.modeshape.graph.property.basic.BasicName;
 /**
  * Lexicon of names for XML concepts.
  */
-public class DnaXmlLexicon {
+public class ModeShapeXmlLexicon {
 
     public static class Namespace {
         public static final String URI = "http://www.modeshape.org/xml/1.0";
-        public static final String PREFIX = "dnaxml";
+        public static final String PREFIX = "modexml";
     }
 
     public static final Name CDATA = new BasicName(Namespace.URI, "cData");

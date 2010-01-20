@@ -29,11 +29,11 @@ import org.modeshape.graph.property.basic.BasicName;
 /**
  * Lexicon of names for XML DTD concepts.
  */
-public class DnaDtdLexicon {
+public class ModeShapeDtdLexicon {
 
     public static class Namespace {
         public static final String URI = "http://www.modeshape.org/dtd/1.0";
-        public static final String PREFIX = "dnadtd";
+        public static final String PREFIX = "modedtd";
     }
 
     public static final Name NAME = new BasicName(Namespace.URI, "name");

@@ -25,7 +25,6 @@ package org.modeshape.graph.property.basic;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.modeshape.common.i18n.I18n;
@@ -121,19 +120,8 @@ public class NamespaceRegistryWithAliases implements NamespaceRegistry {
      * @see org.modeshape.graph.property.NamespaceRegistry#getNamespaces()
      */
     public Set<Namespace> getNamespaces() {
-        Set<String> prefixes = new HashSet<String>();
-        Set<Namespace> namespaces = new HashSet<Namespace>();
-        for (Namespace actualNamespace : delegate.getNamespaces()) {
-            if (prefixes.add(actualNamespace.getPrefix())) {
-                namespaces.add(actualNamespace);
-            }
-        }
-        for (Map.Entry<String, String> alias : aliaseNamespaceUriByPrefix.entrySet()) {
-            if (prefixes.add(alias.getKey())) {
-                namespaces.add(new BasicNamespace(alias.getKey(), alias.getValue()));
-            }
-        }
-        return Collections.unmodifiableSet(namespaces);
+        // Do not include the aliases in the namespaces ...
+        return delegate.getNamespaces();
     }
 
     /**
@@ -148,7 +136,7 @@ public class NamespaceRegistryWithAliases implements NamespaceRegistry {
         if (originalNamespaceUri != null) {
             namespaceUri = originalNamespaceUri;
         }
-        return delegate.getPrefixForNamespaceUri(namespaceUri, false);
+        return delegate.getPrefixForNamespaceUri(namespaceUri, generateIfMissing);
     }
 
     /**
@@ -157,9 +145,8 @@ public class NamespaceRegistryWithAliases implements NamespaceRegistry {
      * @see org.modeshape.graph.property.NamespaceRegistry#getRegisteredNamespaceUris()
      */
     public Set<String> getRegisteredNamespaceUris() {
-        Set<String> uris = new HashSet<String>(aliaseNamespaceUriByPrefix.values());
-        uris.addAll(delegate.getRegisteredNamespaceUris()); // overwrites any aliased namespaces
-        return Collections.unmodifiableSet(uris);
+        // Do not include the aliases in the namespace URIs ...
+        return delegate.getRegisteredNamespaceUris();
     }
 
     /**
@@ -168,7 +155,7 @@ public class NamespaceRegistryWithAliases implements NamespaceRegistry {
      * @see org.modeshape.graph.property.NamespaceRegistry#isRegisteredNamespaceUri(java.lang.String)
      */
     public boolean isRegisteredNamespaceUri( String namespaceUri ) {
-        return delegate.isRegisteredNamespaceUri(namespaceUri) || aliaseNamespaceUriByPrefix.containsValue(namespaceUri);
+        return delegate.isRegisteredNamespaceUri(namespaceUri);
     }
 
     /**
