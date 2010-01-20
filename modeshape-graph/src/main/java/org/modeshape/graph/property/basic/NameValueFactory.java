@@ -124,9 +124,7 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
                 String namespaceUri = matcher.group(1);
                 String localName = matcher.group(2);
                 // Decode the parts ...
-                namespaceUri = decoder.decode(namespaceUri);
-                localName = decoder.decode(localName);
-                return new BasicName(namespaceUri, localName);
+                return create(namespaceUri, localName, decoder);
             }
         } catch (NamespaceException err) {
             throw new ValueFormatException(value, getPropertyType(),

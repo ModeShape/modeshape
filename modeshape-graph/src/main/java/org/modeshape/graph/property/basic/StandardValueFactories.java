@@ -65,8 +65,6 @@ public class StandardValueFactories extends AbstractValueFactories {
     private final ValueFactory<Object> objectFactory;
 
     private final NamespaceRegistry namespaceRegistry;
-    private final TextDecoder decoder;
-    private final TextEncoder encoder;
 
     private final TypeSystem typeSystem;
 
@@ -96,8 +94,8 @@ public class StandardValueFactories extends AbstractValueFactories {
                                    ValueFactory<?>... extraFactories ) {
         CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
         this.namespaceRegistry = namespaceRegistry;
-        this.decoder = decoder != null ? decoder : ValueFactory.DEFAULT_DECODER;
-        this.encoder = encoder != null ? encoder : ValueFactory.DEFAULT_ENCODER;
+        decoder = decoder != null ? decoder : ValueFactory.DEFAULT_DECODER;
+        encoder = encoder != null ? encoder : ValueFactory.DEFAULT_ENCODER;
         Map<PropertyType, ValueFactory<?>> factories = new HashMap<PropertyType, ValueFactory<?>>();
 
         // Put the extra factories into the map first ...
@@ -107,25 +105,24 @@ public class StandardValueFactories extends AbstractValueFactories {
         }
 
         // Now assign the members, using the factories in the map or (if null) the supplied default ...
-        this.stringFactory = getFactory(factories, new StringValueFactory(this.namespaceRegistry, this.decoder, this.encoder));
+        this.stringFactory = getFactory(factories, new StringValueFactory(this.namespaceRegistry, decoder, encoder));
 
         // The binary factory should NOT use the string factory that converts namespaces to prefixes ...
-        StringValueFactory stringFactoryWithoutNamespaces = new StringValueFactory(this.decoder, this.encoder);
-        this.binaryFactory = (BinaryFactory)getFactory(factories, new InMemoryBinaryValueFactory(this.decoder,
+        StringValueFactory stringFactoryWithoutNamespaces = new StringValueFactory(decoder, encoder);
+        this.binaryFactory = (BinaryFactory)getFactory(factories, new InMemoryBinaryValueFactory(decoder,
                                                                                                  stringFactoryWithoutNamespaces));
-        this.booleanFactory = getFactory(factories, new BooleanValueFactory(this.decoder, this.stringFactory));
-        this.dateFactory = (DateTimeFactory)getFactory(factories, new JodaDateTimeValueFactory(this.decoder, this.stringFactory));
-        this.decimalFactory = getFactory(factories, new DecimalValueFactory(this.decoder, this.stringFactory));
-        this.doubleFactory = getFactory(factories, new DoubleValueFactory(this.decoder, this.stringFactory));
-        this.longFactory = getFactory(factories, new LongValueFactory(this.decoder, this.stringFactory));
-        this.nameFactory = (NameFactory)getFactory(factories, new NameValueFactory(this.namespaceRegistry, this.decoder,
+        this.booleanFactory = getFactory(factories, new BooleanValueFactory(decoder, this.stringFactory));
+        this.dateFactory = (DateTimeFactory)getFactory(factories, new JodaDateTimeValueFactory(decoder, this.stringFactory));
+        this.decimalFactory = getFactory(factories, new DecimalValueFactory(decoder, this.stringFactory));
+        this.doubleFactory = getFactory(factories, new DoubleValueFactory(decoder, this.stringFactory));
+        this.longFactory = getFactory(factories, new LongValueFactory(decoder, this.stringFactory));
+        this.nameFactory = (NameFactory)getFactory(factories, new NameValueFactory(this.namespaceRegistry, decoder,
                                                                                    this.stringFactory));
-        this.pathFactory = (PathFactory)getFactory(factories, new PathValueFactory(this.decoder, this.stringFactory,
-                                                                                   this.nameFactory));
-        this.referenceFactory = getFactory(factories, new UuidReferenceValueFactory(this.decoder, this.stringFactory));
-        this.uuidFactory = (UuidFactory)getFactory(factories, new UuidValueFactory(this.decoder, this.stringFactory));
-        this.uriFactory = getFactory(factories, new UriValueFactory(this.namespaceRegistry, this.decoder, this.stringFactory));
-        this.objectFactory = getFactory(factories, new ObjectValueFactory(this.decoder, this.stringFactory, this.binaryFactory));
+        this.pathFactory = (PathFactory)getFactory(factories, new PathValueFactory(decoder, this.stringFactory, this.nameFactory));
+        this.referenceFactory = getFactory(factories, new UuidReferenceValueFactory(decoder, this.stringFactory));
+        this.uuidFactory = (UuidFactory)getFactory(factories, new UuidValueFactory(decoder, this.stringFactory));
+        this.uriFactory = getFactory(factories, new UriValueFactory(this.namespaceRegistry, decoder, this.stringFactory));
+        this.objectFactory = getFactory(factories, new ObjectValueFactory(decoder, this.stringFactory, this.binaryFactory));
 
         this.typeSystem = new ValueTypeSystem(this);
     }
@@ -149,13 +146,6 @@ public class StandardValueFactories extends AbstractValueFactories {
      */
     public TypeSystem getTypeSystem() {
         return typeSystem;
-    }
-
-    /**
-     * @return decoder
-     */
-    public TextDecoder getTextDecoder() {
-        return this.decoder;
     }
 
     /**

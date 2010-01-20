@@ -87,6 +87,8 @@ public final class GraphI18n {
     public static I18n actualNewLocationMustHaveSameNameAsRequest;
     public static I18n requestIsFrozenAndMayNotBeChanged;
     public static I18n propertyIsNotPartOfRequest;
+    public static I18n namespaceAliasWasNotMappedToRealNamespace;
+    public static I18n aliasesMappedToRealNamespacesButWereNotRegisteredInAliasNamespace;
 
     public static I18n errorImportingContent;
     public static I18n unableToFindRepositorySourceWithName;
