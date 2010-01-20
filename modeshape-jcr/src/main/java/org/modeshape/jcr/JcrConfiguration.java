@@ -360,7 +360,8 @@ public class JcrConfiguration extends ModeShapeConfiguration {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.repository.ModeShapeConfiguration#loadFrom(org.modeshape.graph.connector.RepositorySource, java.lang.String)
+     * @see org.modeshape.repository.ModeShapeConfiguration#loadFrom(org.modeshape.graph.connector.RepositorySource,
+     *      java.lang.String)
      */
     @Override
     public JcrConfiguration loadFrom( RepositorySource source,
@@ -372,8 +373,8 @@ public class JcrConfiguration extends ModeShapeConfiguration {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.repository.ModeShapeConfiguration#loadFrom(org.modeshape.graph.connector.RepositorySource, java.lang.String,
-     *      java.lang.String)
+     * @see org.modeshape.repository.ModeShapeConfiguration#loadFrom(org.modeshape.graph.connector.RepositorySource,
+     *      java.lang.String, java.lang.String)
      */
     @Override
     public JcrConfiguration loadFrom( RepositorySource source,
@@ -481,7 +482,7 @@ public class JcrConfiguration extends ModeShapeConfiguration {
     @Override
     public JcrEngine build() {
         save();
-        return new JcrEngine(getExecutionContext(), getConfigurationDefinition());
+        return new JcrEngine(getExecutionContextForEngine(), getConfigurationDefinition());
     }
 
     /**
@@ -497,7 +498,8 @@ public class JcrConfiguration extends ModeShapeConfiguration {
                                                                                                            String name ) {
         RepositoryDefinition<ReturnType> definition = (RepositoryDefinition<ReturnType>)repositoryDefinitions.get(name);
         if (definition == null) {
-            definition = new RepositoryBuilder<ReturnType>(returnObject, changes(), path(), ModeShapeLexicon.REPOSITORIES, name(name));
+            definition = new RepositoryBuilder<ReturnType>(returnObject, changes(), path(), ModeShapeLexicon.REPOSITORIES,
+                                                           name(name));
             repositoryDefinitions.put(name, definition);
         }
         return definition;

@@ -28,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.property.BinaryFactory;
 import org.modeshape.graph.property.DateTimeFactory;
 import org.modeshape.graph.sequencer.SequencerOutput;
@@ -50,6 +51,7 @@ public class ZipSequencer implements StreamSequencer {
                           StreamSequencerContext context ) {
         BinaryFactory binaryFactory = context.getValueFactories().getBinaryFactory();
         DateTimeFactory dateFactory = context.getValueFactories().getDateFactory();
+        String resourcePrimaryType = context.getValueFactories().getStringFactory().create(ModeShapeLexicon.RESOURCE);
 
         try {
             ZipInputStream in = new ZipInputStream(stream);
@@ -64,7 +66,7 @@ public class ZipSequencer implements StreamSequencer {
                     output.setProperty("zip:content/" + entry.getName(), "jcr:primaryType", "nt:folder");
                 } else { // If entry is File, create nt:file
                     output.setProperty("zip:content/" + entry.getName(), "jcr:primaryType", "nt:file");
-                    output.setProperty("zip:content/" + entry.getName() + "/jcr:content", "jcr:primaryType", "dna:resource");
+                    output.setProperty("zip:content/" + entry.getName() + "/jcr:content", "jcr:primaryType", resourcePrimaryType);
                     int n;
                     ByteArrayOutputStream baout = new ByteArrayOutputStream();
                     while ((n = in.read(buf, 0, 1024)) > -1) {

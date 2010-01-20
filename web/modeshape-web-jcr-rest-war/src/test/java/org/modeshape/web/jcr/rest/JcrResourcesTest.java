@@ -274,7 +274,7 @@ public class JcrResourcesTest {
         assertThat(properties.getString("jcr:primaryType"), is("mode:namespaces"));
 
         JSONArray namespace = namespaces.getJSONArray("children");
-        assertThat(namespace.length(), is(10));
+        assertThat(namespace.length(), is(12)); // includes the 2 DNA legacy namespaces
         Set<String> prefixes = new HashSet<String>(namespace.length());
 
         for (int i = 0; i < namespace.length(); i++) {

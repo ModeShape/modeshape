@@ -42,6 +42,7 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.component.ClassLoaderFactory;
 import org.modeshape.common.component.StandardClassLoaderFactory;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.graph.DnaExecutionContext;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
@@ -61,8 +62,8 @@ import org.modeshape.graph.sequencer.StreamSequencer;
 import org.xml.sax.SAXException;
 
 /**
- * A configuration builder for a {@link ModeShapeEngine}. This class is an internal domain-specific language (DSL), and is designed to
- * be used in a traditional way or in a method-chained manner:
+ * A configuration builder for a {@link ModeShapeEngine}. This class is an internal domain-specific language (DSL), and is
+ * designed to be used in a traditional way or in a method-chained manner:
  * 
  * <pre>
  * configuration.repositorySource(&quot;Source1&quot;).setClass(InMemoryRepositorySource.class).setDescription(&quot;description&quot;);
@@ -155,7 +156,7 @@ public class ModeShapeConfiguration {
      * @throws IllegalArgumentException if the path is null or empty
      */
     public ModeShapeConfiguration loadFrom( String pathToConfigurationFile,
-                                      String path ) throws IOException, SAXException {
+                                            String path ) throws IOException, SAXException {
         CheckArg.isNotEmpty(pathToConfigurationFile, "pathToConfigurationFile");
         return loadFrom(new File(pathToConfigurationFile), path);
     }
@@ -186,7 +187,7 @@ public class ModeShapeConfiguration {
      * @throws IllegalArgumentException if the file reference is null
      */
     public ModeShapeConfiguration loadFrom( File configurationFile,
-                                      String path ) throws IOException, SAXException {
+                                            String path ) throws IOException, SAXException {
         CheckArg.isNotNull(configurationFile, "configurationFile");
         InputStream stream = new FileInputStream(configurationFile);
         try {
@@ -222,7 +223,7 @@ public class ModeShapeConfiguration {
      * @throws IllegalArgumentException if the URL is null
      */
     public ModeShapeConfiguration loadFrom( URL urlToConfigurationFile,
-                                      String path ) throws IOException, SAXException {
+                                            String path ) throws IOException, SAXException {
         CheckArg.isNotNull(urlToConfigurationFile, "urlToConfigurationFile");
         InputStream stream = urlToConfigurationFile.openStream();
         try {
@@ -258,7 +259,7 @@ public class ModeShapeConfiguration {
      * @throws IllegalArgumentException if the stream is null
      */
     public ModeShapeConfiguration loadFrom( InputStream configurationFileInputStream,
-                                      String path ) throws IOException, SAXException {
+                                            String path ) throws IOException, SAXException {
         CheckArg.isNotNull(configurationFileInputStream, "configurationFileInputStream");
 
         // Create the in-memory repository source in which the content will be stored ...
@@ -303,7 +304,7 @@ public class ModeShapeConfiguration {
      * @throws IllegalArgumentException if the source is null
      */
     public ModeShapeConfiguration loadFrom( RepositorySource source,
-                                      String workspaceName ) {
+                                            String workspaceName ) {
         CheckArg.isNotNull(source, "source");
         return loadFrom(source, workspaceName, null);
     }
@@ -322,8 +323,8 @@ public class ModeShapeConfiguration {
      * @throws IllegalArgumentException if the source is null
      */
     public ModeShapeConfiguration loadFrom( RepositorySource source,
-                                      String workspaceName,
-                                      String pathInWorkspace ) {
+                                            String workspaceName,
+                                            String pathInWorkspace ) {
         CheckArg.isNotNull(source, "source");
 
         // Verify connectivity ...
@@ -551,10 +552,26 @@ public class ModeShapeConfiguration {
      * Construct an engine that reflects the current state of this configuration. This method always creates a new instance.
      * 
      * @return the resulting engine; never null
+     * @see #getExecutionContextForEngine()
      */
     public ModeShapeEngine build() {
         save();
-        return new ModeShapeEngine(getExecutionContext(), getConfigurationDefinition());
+        return new ModeShapeEngine(getExecutionContextForEngine(), getConfigurationDefinition());
+    }
+
+    /**
+     * Utility method used by {@link #build()} to get the {@link ExecutionContext} instance for the engine. This method gives
+     * subclasses the ability to override this behavior.
+     * <p>
+     * Currently, this method wraps the {@link #getExecutionContext() configuration's execution context} to provide
+     * backward-compability with JBoss DNA namespaces. See MODE-647 for details.
+     * </p>
+     * 
+     * @return the execution context to be used for the engine
+     * @see #build()
+     */
+    protected ExecutionContext getExecutionContextForEngine() {
+        return new DnaExecutionContext(getExecutionContext());
     }
 
     /**
@@ -893,11 +910,11 @@ public class ModeShapeConfiguration {
      */
     @SuppressWarnings( "unchecked" )
     protected <ReturnType extends ModeShapeConfiguration> MimeTypeDetectorDefinition<ReturnType> mimeTypeDetectorDefinition( ReturnType returnObject,
-                                                                                                                       String name ) {
+                                                                                                                             String name ) {
         MimeTypeDetectorDefinition<ReturnType> definition = (MimeTypeDetectorDefinition<ReturnType>)mimeTypeDetectorDefinitions.get(name);
         if (definition == null) {
-            definition = new MimeTypeDetectorBuilder<ReturnType>(returnObject, changes(), path(), ModeShapeLexicon.MIME_TYPE_DETECTORS,
-                                                                 name(name));
+            definition = new MimeTypeDetectorBuilder<ReturnType>(returnObject, changes(), path(),
+                                                                 ModeShapeLexicon.MIME_TYPE_DETECTORS, name(name));
             mimeTypeDetectorDefinitions.put(name, definition);
         }
         return definition;
@@ -913,7 +930,7 @@ public class ModeShapeConfiguration {
      */
     @SuppressWarnings( "unchecked" )
     protected <ReturnType extends ModeShapeConfiguration> RepositorySourceDefinition<ReturnType> repositorySourceDefinition( ReturnType returnObject,
-                                                                                                                       String name ) {
+                                                                                                                             String name ) {
         RepositorySourceDefinition<ReturnType> definition = (RepositorySourceDefinition<ReturnType>)repositorySourceDefinitions.get(name);
         if (definition == null) {
             definition = new SourceBuilder<ReturnType>(returnObject, changes(), path(), ModeShapeLexicon.SOURCES, name(name));
@@ -932,10 +949,11 @@ public class ModeShapeConfiguration {
      */
     @SuppressWarnings( "unchecked" )
     protected <ReturnType extends ModeShapeConfiguration> SequencerDefinition<ReturnType> sequencerDefinition( ReturnType returnObject,
-                                                                                                         String name ) {
+                                                                                                               String name ) {
         SequencerDefinition<ReturnType> definition = (SequencerDefinition<ReturnType>)sequencerDefinitions.get(name);
         if (definition == null) {
-            definition = new SequencerBuilder<ReturnType>(returnObject, changes(), path(), ModeShapeLexicon.SEQUENCERS, name(name));
+            definition = new SequencerBuilder<ReturnType>(returnObject, changes(), path(), ModeShapeLexicon.SEQUENCERS,
+                                                          name(name));
             sequencerDefinitions.put(name, definition);
         }
         return definition;
