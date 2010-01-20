@@ -565,6 +565,75 @@ try {
 			</para>
 		</note>
 	</sect1>
+	<sect1 id="migrating_from_dna">
+		<title>Migrating from JBoss DNA to ModeShape</title>
+		<para>
+			If you're currently using JBoss DNA, we highly recommend migrating to ModeShape. The process is actually
+			pretty straightforward, since most of your code is probably using the JCR API. (Thank goodness for standards!)
+		</para>
+		<para>
+			First, change over to use the ModeShape artifacts in Maven. In your application's POM:
+			<itemizedlist>
+				<listitem>
+					<para>
+						change the group ID from "<code>org.jboss.dna</code>" to "<code>org.modeshape</code>";
+						</para>
+					</listitem>
+					<listitem>
+						<para>
+						change the artifact IDs to use the "<code>modeshape-</code>" prefix instead of "<code>dna-</code>"; and
+						</para>
+					</listitem>
+					<listitem>
+						<para>
+						change the version numbers to "<code>1.0.0.Beta1</code>". 
+					</para>
+				</listitem>
+			</itemizedlist>
+			Your Maven dependencies should then look like what is shown in the <link linkend="maven">Maven</link> chapter.
+		</para>
+		<note>
+			<para>
+				None of the third-party dependencies have changed from JBoss DNA 0.7 to ModeShape 1.0.0.Beta1.
+			</para>
+		</note>
+		<para>
+			Second, change your Java code to use the ModeShape classes. 
+			Wherever your code is using JBoss DNA classes, simply replace the "<code>org.jboss.dna...</code>" imports 
+			with "<code>org.modeshape...</code>". All of the method names are the same, and nearly all of the class names are the same.
+			(The names of some internal classes did begin with "Dna", and these were changed to begin with "ModeShape". But you're not
+			likely using any of these internal classes anyway.)
+		</para>
+		<para>
+			Third, in your configuration files, change the JBoss DNA namespace URIs to the ModeShape namespace URIs. In other words, 
+			any namespace URI starting with "<code>http://www.jboss.org/dna</code>" should be changed to start with 
+			"<code>http://www.modeshape.org</code>". We also suggest changing the prefixes to "<code>mode</code>", but
+			this is technically optional.
+		</para>
+		<para>
+			What about persisted data? ModeShape will automatically convert any names or paths that use the old DNA namespaces
+			to instead use the corresponding ModeShape namespaces. And, when that data is modified and the node updated, the
+			ModeShape namespaces will be saved in the store.
+			<note>
+				<para>
+					Be aware that any string property values that contain the DNA namespaces and that are treated by your application 
+					as strings will not be changed. The automatic conversion only happens when Name or Path objects are created,
+					or when string values are converted to Name or Path objects.
+				</para>
+			</note>
+			<note>
+				<para>
+					The search indexes are <emphasis>not</emphasis> automatically converted, so the easiest solution is to simply
+					rebuild the indexes.
+				</para>
+			</note>
+		</para>
+		<para>
+			One final note. If you've begun using the "Simple" JPA connector model just recently introduced in JBoss DNA 0.7, please 
+			be aware that we've changed the names of the database tables. We could have kept using the "DNA_" prefix, but we thought 
+			it best to change the name because the "Simple" model is so new and will be with ModeShape for a long time to come.
+		</para>
+	</sect1>
 	<sect1 id="using_modeshape_whats_next">
 		<title>What's next</title>
 		<para>

@@ -535,7 +535,7 @@
   <sect1 id="whats_new">
     <title>What's new?</title>
 	  <para>
-			With version 0.7, ModeShape introduces support for JCR <link linkend="jcr-query-and-search">query and search</link> 
+			With version &versionNumber;, ModeShape introduces support for JCR <link linkend="jcr-query-and-search">query and search</link> 
 			with a number of query languages, including the <link linkend="jcr-xpath-query-language">JCR XPath language</link> 
 			(required by the 1.0 specification), the <link linkend="jcr-sql2-query-language">JCR-SQL2 dialect</link>
 			defined by the JCR 2.0 specification, and a <link linkend="fulltext-search-query-language">full-text search language</link>.  
@@ -556,7 +556,7 @@
 			information of relational databases through JDBC.
 		</para>
 		<para>
-			ModeShape 0.7 includes a number of new and improved sequencers. The new <link linkend="text-sequencer">text sequencer</link>
+			ModeShape &versionNumber; includes a number of new and improved sequencers. The new <link linkend="text-sequencer">text sequencer</link>
 			is able to extract structured data from comma-separated or fixed-width text files. The new <link linkend="ddl-file-sequencer">DDL sequencer</link>
 			is capable of parsing a number of DDL dialects to extract the more important DDL statements. The <link linkend="cnd-sequencer">CND sequencer</link>
 			was rewritten and dramatically simplified to perform better, fix a number of known issues, and eliminate a dependency on a third-party library.
@@ -574,5 +574,11 @@
 			And JCR repositories now support the use of <link linkend="jcr-guess-access">anonymous users</link> - this is 
 			enabled by default but can easily be changed for production purposes.
 		</para>
+		<note>
+			<para>
+				If you're migrating from JBoss DNA 0.7, please see the <link linkend="migrating_from_dna">migration</link> section
+				for a straightforward recipe.
+			</para>
+		</note>
   </sect1>
 </chapter>
