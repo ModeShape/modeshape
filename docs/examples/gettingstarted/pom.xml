@@ -4,7 +4,7 @@
   <groupId>org.modeshape.examples</groupId>
   <artifactId>getting_started</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.0.Beta1</version>
+  <version>1.0.0-SNAPSHOT</version>
   <name>ModeShape Getting Started examples</name>
   <description />
 
