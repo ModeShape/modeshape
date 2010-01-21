@@ -108,6 +108,15 @@
 			</roles>
 			<timezone>+10</timezone>
 		</developer>
+		<developer>
+			<name>Vijay Kiran</name>
+			<id>vijay.duvvuri</id>
+			<email>mail@vijaykiran.com</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
 	</developers>
 	<contributors>
 		<contributor>
