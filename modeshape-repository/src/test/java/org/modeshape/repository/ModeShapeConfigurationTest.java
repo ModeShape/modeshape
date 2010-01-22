@@ -24,21 +24,23 @@ package org.modeshape.repository;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
 import static org.modeshape.graph.IsNodeWithChildren.hasChild;
 import static org.modeshape.graph.IsNodeWithProperty.hasProperty;
-import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.graph.connector.path.cache.InMemoryWorkspaceCache;
 import org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.request.ReadBranchRequest;
 import org.modeshape.repository.sequencer.MockStreamSequencerA;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author Randall Hauch
@@ -86,13 +88,14 @@ public class ModeShapeConfigurationTest {
 
         // Verify that the graph has been updated correctly ...
         ModeShapeConfiguration.ConfigurationDefinition content = configuration.getConfigurationDefinition();
-        Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
+        Subgraph subgraph = content.graph().getSubgraphOfDepth(ReadBranchRequest.NO_MAXIMUM_DEPTH).at("/");
 
         assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Cars"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Cars"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, "3"));
         assertThat(subgraph.getNode("/mode:sources/Cars"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                       InMemoryRepositorySource.class.getName()));
+
         assertThat(subgraph.getNode("/mode:sources/Aircraft"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Aircraft"), hasProperty("defaultWorkspaceName", "default"));
         assertThat(subgraph.getNode("/mode:sources/Aircraft"), hasProperty(ModeShapeLexicon.CLASSNAME,
@@ -101,6 +104,8 @@ public class ModeShapeConfigurationTest {
         assertThat(subgraph.getNode("/mode:sources/Cache"), hasProperty("defaultWorkspaceName", "default"));
         assertThat(subgraph.getNode("/mode:sources/Cache"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                        InMemoryRepositorySource.class.getName()));
+        assertThat(subgraph.getNode("/mode:sources/Cache/cachePolicy"),
+                   hasProperty(ModeShapeLexicon.CLASSNAME, InMemoryWorkspaceCache.InMemoryCachePolicy.class.getName()));
 
         assertThat(subgraph.getNode("/mode:mimeTypeDetectors").getChildren(), hasChild(segment("Detector")));
         assertThat(subgraph.getNode("/mode:mimeTypeDetectors/Detector"), is(notNullValue()));

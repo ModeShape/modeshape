@@ -33,15 +33,17 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.observation.Event;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.common.collection.Problem;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.graph.connector.path.cache.InMemoryWorkspaceCache.InMemoryCachePolicy;
 import org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.modeshape.graph.mimetype.MimeTypeDetector;
 import org.modeshape.repository.sequencer.MockStreamSequencerA;
 import org.modeshape.repository.sequencer.SequencingService;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author Randall Hauch
@@ -186,6 +188,27 @@ public class ModeShapeEngineTest {
         //        
         // assertThat(sequencer.getStatistics().getNumberOfNodesSequenced(), is(1L));
 
+    }
+
+    @Test
+    public void shouldSetCachePolicyDefinedInConfigFile() throws Exception {
+        engine = new ModeShapeConfiguration().loadFrom("src/test/resources/config/cacheConfigRepository.xml").build();
+        engine.start();
+
+        for (Problem problem : engine.getProblems()) {
+            System.err.println(problem.toString());
+        }
+        assertThat(engine.getProblems().isEmpty(), is(true));
+
+        assertThat(engine.getRepositorySource("Cache"), is(notNullValue()));
+        assertThat(engine.getRepositorySource("Cache"), is(instanceOf(FakeRepositorySource.class)));
+
+        FakeRepositorySource source = (FakeRepositorySource)engine.getRepositorySource("Cache");
+        assertThat(source.getCachePolicy(), is(notNullValue()));
+        assertThat(source.getCachePolicy(), is(instanceOf(InMemoryCachePolicy.class)));
+
+        InMemoryCachePolicy cachePolicy = (InMemoryCachePolicy)source.getCachePolicy();
+        assertThat(cachePolicy.getTimeToLive(), is(30L));
     }
 
     public static class MockMimeTypeDetector implements MimeTypeDetector {

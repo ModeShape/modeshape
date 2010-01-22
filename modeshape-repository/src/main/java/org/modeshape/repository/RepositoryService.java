@@ -52,6 +52,7 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
+import org.modeshape.graph.request.ReadBranchRequest;
 import org.modeshape.repository.service.AbstractServiceAdministrator;
 import org.modeshape.repository.service.AdministeredService;
 import org.modeshape.repository.service.ServiceAdministrator;
@@ -221,12 +222,11 @@ public class RepositoryService implements AdministeredService, Observer {
                 String workspaceName = getConfigurationWorkspaceName();
                 if (workspaceName != null) graph.useWorkspace(workspaceName);
 
-                Subgraph sourcesGraph = graph.getSubgraphOfDepth(3).at(pathToSourcesNode);
+                Subgraph sourcesGraph = graph.getSubgraphOfDepth(ReadBranchRequest.NO_MAXIMUM_DEPTH).at(pathToSourcesNode);
 
                 // Iterate over each of the children, and create the RepositorySource ...
                 for (Location location : sourcesGraph.getRoot().getChildren()) {
-                    Node sourceNode = sourcesGraph.getNode(location);
-                    sources.addSource(createRepositorySource(location.getPath(), sourceNode.getPropertiesByName(), problems));
+                    sources.addSource(createRepositorySource(sourcesGraph, location, problems));
                 }
             } catch (PathNotFoundException e) {
                 // No sources were found, and this is okay!
@@ -246,16 +246,35 @@ public class RepositoryService implements AdministeredService, Observer {
     /**
      * Instantiate the {@link RepositorySource} described by the supplied properties.
      * 
-     * @param path the path to the node where these properties were found; never null
-     * @param properties the properties; never null
+     * @param subgraph the subgraph containing the configuration information for this {@link RepositorySource}
+     * @param location the location of the properties to apply to the new {@link RepositorySource}
      * @param problems the problems container in which any problems should be reported; never null
      * @return the repository source instance, or null if it could not be created
      */
-    protected RepositorySource createRepositorySource( Path path,
-                                                       Map<Name, Property> properties,
+    protected RepositorySource createRepositorySource( Subgraph subgraph,
+                                                       Location location,
                                                        Problems problems ) {
+        return (RepositorySource)createInstanceFromProperties(subgraph, location, problems);
+    }
+
+    /**
+     * Instantiate the {@link Object} described by the supplied properties.
+     * 
+     * @param subgraph the subgraph containing the configuration information for this instance
+     * @param location the location of the properties to apply to the new instance
+     * @param problems the problems container in which any problems should be reported; never null
+     * @return the instance, or null if it could not be created
+     */
+    protected Object createInstanceFromProperties( Subgraph subgraph,
+                                                   Location location,
+                                                   Problems problems ) {
         ValueFactories valueFactories = context.getValueFactories();
         ValueFactory<String> stringFactory = valueFactories.getStringFactory();
+
+        Node node = subgraph.getNode(location);
+        assert location.hasPath();
+        Path path = node.getLocation().getPath();
+        Map<Name, Property> properties = node.getPropertiesByName();
 
         // Get the classname and classpath ...
         Property classnameProperty = properties.get(ModeShapeLexicon.CLASSNAME);
@@ -271,10 +290,10 @@ public class RepositoryService implements AdministeredService, Observer {
         String classname = stringFactory.create(classnameProperty.getValues().next());
         String[] classpath = classpathProperty == null ? new String[] {} : stringFactory.create(classpathProperty.getValuesAsArray());
         ClassLoader classLoader = context.getClassLoader(classpath);
-        RepositorySource source = null;
+        Object instance = null;
         try {
             Class<?> sourceClass = classLoader.loadClass(classname);
-            source = (RepositorySource)sourceClass.newInstance();
+            instance = sourceClass.newInstance();
         } catch (ClassNotFoundException err) {
             problems.addError(err, RepositoryI18n.unableToLoadClassUsingClasspath, classname, classpath);
         } catch (IllegalAccessException err) {
@@ -282,7 +301,7 @@ public class RepositoryService implements AdministeredService, Observer {
         } catch (Throwable err) {
             problems.addError(err, RepositoryI18n.unableToInstantiateClassUsingClasspath, classname, classpath);
         }
-        if (source == null) return null;
+        if (instance == null) return null;
 
         // We need to set the name using the local name of the node...
         Property nameProperty = context.getPropertyFactory().create(JcrLexicon.NAME,
@@ -290,13 +309,13 @@ public class RepositoryService implements AdministeredService, Observer {
         properties.put(JcrLexicon.NAME, nameProperty);
 
         // Attempt to set the configuration information as bean properties,
-        // if they exist on the RepositorySource object and are not already set to some value ...
-        setBeanPropertyIfExistsAndNotSet(source, "configurationSourceName", getConfigurationSourceName());
-        setBeanPropertyIfExistsAndNotSet(source, "configurationWorkspaceName", getConfigurationWorkspaceName());
-        setBeanPropertyIfExistsAndNotSet(source, "configurationPath", stringFactory.create(path));
+        // if they exist on the object and are not already set to some value ...
+        setBeanPropertyIfExistsAndNotSet(instance, "configurationSourceName", getConfigurationSourceName());
+        setBeanPropertyIfExistsAndNotSet(instance, "configurationWorkspaceName", getConfigurationWorkspaceName());
+        setBeanPropertyIfExistsAndNotSet(instance, "configurationPath", stringFactory.create(path));
 
         // Now set all the properties that we can, ignoring any property that doesn't fit the pattern ...
-        Reflection reflection = new Reflection(source.getClass());
+        Reflection reflection = new Reflection(instance.getClass());
         for (Map.Entry<Name, Property> entry : properties.entrySet()) {
             Name propertyName = entry.getKey();
             Property property = entry.getValue();
@@ -378,9 +397,9 @@ public class RepositoryService implements AdministeredService, Observer {
                                                    path,
                                                    configurationSourceName,
                                                    configurationWorkspaceName);
-                setter.invoke(source, value);
+                setter.invoke(instance, value);
             } catch (SecurityException err) {
-                Logger.getLogger(getClass()).debug(err, "Error invoking {0}.{1}", source.getClass(), setter);
+                Logger.getLogger(getClass()).debug(err, "Error invoking {0}.{1}", instance.getClass(), setter);
             } catch (IllegalArgumentException err) {
                 // Do nothing ... assume not a JavaBean property (but log)
                 String msg = "Invalid argument invoking {0} with parameter {1} on source at {2} in configuration repository {3} in workspace {4}";
@@ -392,7 +411,7 @@ public class RepositoryService implements AdministeredService, Observer {
                                                    configurationSourceName,
                                                    configurationWorkspaceName);
             } catch (IllegalAccessException err) {
-                Logger.getLogger(getClass()).debug(err, "Error invoking {0}.{1}", source.getClass(), setter);
+                Logger.getLogger(getClass()).debug(err, "Error invoking {0}.{1}", instance.getClass(), setter);
             } catch (InvocationTargetException err) {
                 // Do nothing ... assume not a JavaBean property (but log)
                 String msg = "Error invoking {0} with parameter {1} on source at {2} in configuration repository {3} in workspace {4}";
@@ -405,7 +424,63 @@ public class RepositoryService implements AdministeredService, Observer {
                                                    configurationWorkspaceName);
             }
         }
-        return source;
+
+        // Check for nested instances in the configuration
+        for (Location childLocation : node.getChildren()) {
+            assert childLocation.hasPath();
+            Path childPath = childLocation.getPath();
+            Name childName = childPath.getLastSegment().getName();
+
+            Object value = createInstanceFromProperties(subgraph, childLocation, problems);
+            if (problems.hasErrors()) {
+                return null;
+            }
+
+            String javaPropertyName = childName.getLocalName();
+            Method setter = reflection.findFirstMethod("set" + javaPropertyName, false);
+            if (setter == null) continue;
+
+            try {
+                setter.invoke(instance, value);
+                // Invoke the method ...
+                String msg = "Setting property {0} to {1} on object at {2} in configuration repository {3} in workspace {4}";
+                Logger.getLogger(getClass()).trace(msg,
+                                                   javaPropertyName,
+                                                   value,
+                                                   childPath,
+                                                   configurationSourceName,
+                                                   configurationWorkspaceName);
+                setter.invoke(instance, value);
+            } catch (SecurityException err) {
+                Logger.getLogger(getClass()).debug(err, "Error invoking {0}.{1}", instance.getClass(), setter);
+            } catch (IllegalArgumentException err) {
+                // Do nothing ... assume not a JavaBean property (but log)
+                String msg = "Invalid argument invoking {0} with parameter {1} on object at {2} in configuration repository {3} in workspace {4}";
+                Logger.getLogger(getClass()).debug(err,
+                                                   msg,
+                                                   setter,
+                                                   value,
+                                                   childPath,
+                                                   configurationSourceName,
+                                                   configurationWorkspaceName);
+            } catch (IllegalAccessException err) {
+                Logger.getLogger(getClass()).debug(err, "Error invoking {0}.{1}", instance.getClass(), setter);
+            } catch (InvocationTargetException err) {
+                // Do nothing ... assume not a JavaBean property (but log)
+                String msg = "Error invoking {0} with parameter {1} on source at {2} in configuration repository {3} in workspace {4}";
+                Logger.getLogger(getClass()).debug(err.getTargetException(),
+                                                   msg,
+                                                   setter,
+                                                   value,
+                                                   childPath,
+                                                   configurationSourceName,
+                                                   configurationWorkspaceName);
+            }
+
+        }
+
+        return instance;
+
     }
 
     protected boolean setBeanPropertyIfExistsAndNotSet( Object target,
@@ -476,8 +551,8 @@ public class RepositoryService implements AdministeredService, Observer {
                     try {
                         String workspaceName = getConfigurationWorkspaceName();
                         if (workspaceName != null) graph.useWorkspace(workspaceName);
-                        Map<Name, Property> properties = graph.getPropertiesByName().on(sourcePath);
-                        RepositorySource source = createRepositorySource(sourcePath, properties, problems);
+                        Subgraph subgraph = graph.getSubgraphOfDepth(ReadBranchRequest.NO_MAXIMUM_DEPTH).at(sourcePath);
+                        RepositorySource source = createRepositorySource(subgraph, Location.create(sourcePath), problems);
                         if (source != null) {
                             // It was the config for a source, so try to add or replace an existing source ...
                             getRepositoryLibrary().addSource(source, true);

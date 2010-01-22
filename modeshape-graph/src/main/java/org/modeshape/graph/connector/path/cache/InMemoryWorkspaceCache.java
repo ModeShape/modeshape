@@ -137,12 +137,7 @@ public class InMemoryWorkspaceCache implements WorkspaceCache {
 
         private static final long serialVersionUID = 1L;
 
-        private final long cacheTimeToLiveInSeconds;
-
-        public InMemoryCachePolicy( long cacheTimeToLiveInSeconds ) {
-            super();
-            this.cacheTimeToLiveInSeconds = cacheTimeToLiveInSeconds;
-        }
+        private long cacheTimeToLiveInSeconds;
 
         /**
          * @return true for all nodes
@@ -154,6 +149,10 @@ public class InMemoryWorkspaceCache implements WorkspaceCache {
 
         public long getTimeToLive() {
             return this.cacheTimeToLiveInSeconds;
+        }
+
+        public void setTimeToLive( long timeToLiveInSeconds ) {
+            this.cacheTimeToLiveInSeconds = timeToLiveInSeconds;
         }
 
         public Class<? extends WorkspaceCache> getCacheClass() {

@@ -23,18 +23,21 @@
  */
 package org.modeshape.repository;
 
+import java.util.UUID;
 import javax.naming.Reference;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
+import org.modeshape.graph.connector.path.PathRepositorySource;
+import org.modeshape.graph.connector.path.cache.PathCachePolicy;
 
 /**
  * A fake {@link RepositorySource} implementation that has a variety of parameters, used for testing whether
  * {@link RepositoryService} can properly configure different kinds of properties.
  */
-public class FakeRepositorySource implements RepositorySource {
+public class FakeRepositorySource implements PathRepositorySource {
 
     /**
      */
@@ -51,6 +54,7 @@ public class FakeRepositorySource implements RepositorySource {
     private Long[] longObjectArrayParam;
     private Boolean[] booleanObjectArrayParam;
     private String[] stringArrayParam;
+    private PathCachePolicy cachePolicy;
 
     /**
      * 
@@ -207,6 +211,34 @@ public class FakeRepositorySource implements RepositorySource {
 
     public void setStringArrayParam( String[] stringArrayParam ) {
         this.stringArrayParam = stringArrayParam;
+    }
+
+    public boolean areUpdatesAllowed() {
+        return false;
+    }
+
+    public void setCachePolicy( PathCachePolicy cachePolicy ) {
+        this.cachePolicy = cachePolicy;
+    }
+
+    public PathCachePolicy getCachePolicy() {
+        return this.cachePolicy;
+    }
+
+    public String getDefaultWorkspaceName() {
+        return null;
+    }
+
+    public RepositoryContext getRepositoryContext() {
+        return null;
+    }
+
+    public UUID getRootNodeUuid() {
+        return null;
+    }
+
+    public void setUpdatesAllowed( boolean updatesAllowed ) {
+        // NOP
     }
 
 }
