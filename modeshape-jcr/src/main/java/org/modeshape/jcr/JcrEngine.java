@@ -207,7 +207,7 @@ public class JcrEngine extends ModeShapeEngine {
 
     protected JcrRepository doCreateJcrRepository( String repositoryName ) throws RepositoryException, PathNotFoundException {
         RepositoryConnectionFactory connectionFactory = getRepositoryConnectionFactory();
-        Map<String, String> descriptors = null;
+        Map<String, String> descriptors = new HashMap<String, String>();
         Map<Option, String> options = new HashMap<Option, String>();
 
         // Read the subgraph that represents the repository ...
@@ -228,6 +228,18 @@ public class JcrEngine extends ModeShapeEngine {
                 Option option = Option.findOption(segment.getName().getLocalName());
                 if (option == null) continue;
                 options.put(option, valueProperty.getFirstValue().toString());
+            }
+        }
+
+        // Read the descriptors ...
+        Node descriptorsNode = subgraph.getNode(ModeShapeLexicon.DESCRIPTORS);
+        if (descriptorsNode != null) {
+            for (Location descriptorLocation : descriptorsNode.getChildren()) {
+                Node optionNode = configuration.getNodeAt(descriptorLocation);
+                Path.Segment segment = descriptorLocation.getPath().getLastSegment();
+                Property valueProperty = optionNode.getProperty(ModeShapeLexicon.VALUE);
+                if (valueProperty == null) continue;
+                descriptors.put(segment.getName().getLocalName(), valueProperty.getFirstValue().toString());
             }
         }
 

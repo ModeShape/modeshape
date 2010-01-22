@@ -24,35 +24,35 @@
   ~ 51 Franklin Street, Fifth Floor
   ~ Boston, MA  02110-1301  USA
   -->
-<configuration xmlns:dna="http://www.modeshape.org/1.0"
+<configuration xmlns:mode="http://www.modeshape.org/1.0"
                xmlns:jcr="http://www.jcp.org/jcr/1.0"
                xmlns:nt="http://www.jcp.org/jcr/nt/1.0">
     <!-- Define the sources from which content is made available.  -->
-    <dna:sources jcr:primaryType="nt:unstructured">
-        <dna:source jcr:name="Cars" dna:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" dna:retryLimit="3" defaultWorkspaceName="default"/>
-        <dna:source jcr:name="Aircraft" dna:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource">
+    <mode:sources jcr:primaryType="nt:unstructured">
+        <mode:source jcr:name="Cars" mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" mode:retryLimit="3" defaultWorkspaceName="default"/>
+        <mode:source jcr:name="Aircraft" mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource">
             <defaultWorkspaceName>default</defaultWorkspaceName>
-        </dna:source>
-        <dna:source jcr:name="Cache" dna:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource">
+        </mode:source>
+        <mode:source jcr:name="Cache" mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource">
             <defaultWorkspaceName>default</defaultWorkspaceName>
-        </dna:source>
-    </dna:sources>
+        </mode:source>
+    </mode:sources>
     <!-- Define the sequencers. This is an optional section. -->
-    <dna:sequencers>
-        <!--dna:sequencer jcr:name="Image Sequencer" dna:classname="org.modeshape.sequencer.image.ImageMetadataSequencer">
-            <dna:description>Image metadata sequencer</dna:description>        
-            <dna:pathExpression>/foo/source => /foo/target</dna:pathExpression>
-            <dna:pathExpression>/bar/source => /bar/target</dna:pathExpression>
-        </dna:sequencer-->
-    </dna:sequencers>
+    <mode:sequencers>
+        <!--mode:sequencer jcr:name="Image Sequencer" mode:classname="org.modeshape.sequencer.image.ImageMetadataSequencer">
+            <mode:description>Image metadata sequencer</mode:description>        
+            <mode:pathExpression>/foo/source => /foo/target</mode:pathExpression>
+            <mode:pathExpression>/bar/source => /bar/target</mode:pathExpression>
+        </mode:sequencer-->
+    </mode:sequencers>
     <!-- Define the mime type detectors. This is an optional section. -->
-    <dna:mimeTypeDetectors>
-        <dna:mimeTypeDetector jcr:name="Detector">
-            <dna:description>Standard extension-based MIME type detector</dna:description>        
+    <mode:mimeTypeDetectors>
+        <mode:mimeTypeDetector jcr:name="Detector">
+            <mode:description>Standard extension-based MIME type detector</mode:description>        
             <!-- 
             Specify the implementation class (required), as a child element or attribute on parent element.
             -->
-            <dna:classname>org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector</dna:classname>
+            <mode:classname>org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector</mode:classname>
             <!-- 
             Specify the classpath (optional) as an ordered list of 'names', where each name is significant to 
             the classpath factory.  For example, a name could be an OSGI identifier or a Maven coordinate,
@@ -60,17 +60,21 @@
             it may be specified as an attribute on the 'mimeTypeDetector' element.  If there is more than one
             'name', then they must be specified as child 'classpath' elements. Blank or empty values are ignored. 
              -->
-            <dna:classpath></dna:classpath>
-            <dna:classpath></dna:classpath>
-        </dna:mimeTypeDetector>
-    </dna:mimeTypeDetectors>
+            <mode:classpath></mode:classpath>
+            <mode:classpath></mode:classpath>
+        </mode:mimeTypeDetector>
+    </mode:mimeTypeDetectors>
     <!-- JCR Repositories.  This is required, with a separate repository for each JCR repository instance. -->
-    <dna:repositories>
-        <dna:repository jcr:name="Car Repository" dna:source="Cars">
-            <dna:options>
-                <dna:option jcr:name="projectNodeTypes" dna:value="true"/>
-                <dna:option jcr:name="jaasLoginConfigName" dna:value="modeshape-jcr"/>
-            </dna:options>
-        </dna:repository>
-    </dna:repositories>
+    <mode:repositories>
+        <mode:repository jcr:name="Car Repository" mode:source="Cars">
+            <mode:options>
+                <mode:option jcr:name="projectNodeTypes" mode:value="true"/>
+                <mode:option jcr:name="jaasLoginConfigName" mode:value="modeshape-jcr"/>
+            </mode:options>
+            <mode:descriptors>
+                <mode:descriptor jcr:name="query.xpath.doc.order" mode:value="false"/>
+                <mode:descriptor jcr:name="myDescriptor" mode:value="foo"/>
+            </mode:descriptors>
+        </mode:repository>
+    </mode:repositories>
 </configuration>

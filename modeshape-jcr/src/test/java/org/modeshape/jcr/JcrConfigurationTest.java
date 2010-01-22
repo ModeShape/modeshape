@@ -301,6 +301,8 @@ public class JcrConfigurationTest {
         assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:options").getChildren(),
                    hasChild(segment("jaasLoginConfigName")));
         assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:options/jaasLoginConfigName"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:descriptors/query.xpath.doc.order"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:descriptors/myDescriptor"), is(notNullValue()));
 
         // Initialize IDTrust and a policy file (which defines the "modeshape-jcr" login config name)
         String configFile = "security/jaas.conf.xml";
@@ -316,6 +318,8 @@ public class JcrConfigurationTest {
         engine.start();
         Repository repository = engine.getRepository("Car Repository");
         assertThat(repository, is(notNullValue()));
+        assertThat(repository.getDescriptor("query.xpath.doc.order"), is("false"));
+        assertThat(repository.getDescriptor("myDescriptor"), is("foo"));
 
         // Create a session, authenticating using one of the usernames defined by our JAAS policy file(s) ...
         Session session = null;
