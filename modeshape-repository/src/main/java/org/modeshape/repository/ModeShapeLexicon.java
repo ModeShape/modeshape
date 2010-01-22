@@ -37,6 +37,7 @@ public class ModeShapeLexicon extends org.modeshape.graph.ModeShapeLexicon {
     public static final Name SOURCE = new BasicName(Namespace.URI, "source");
     public static final Name READABLE_NAME = new BasicName(Namespace.URI, "readableName");
     public static final Name DESCRIPTION = new BasicName(Namespace.URI, "description");
+    public static final Name DESCRIPTORS = new BasicName(Namespace.URI, "descriptors");
     public static final Name SEQUENCERS = new BasicName(Namespace.URI, "sequencers");
     public static final Name SEQUENCER = new BasicName(Namespace.URI, "sequencer");
     public static final Name PATH_EXPRESSION = new BasicName(Namespace.URI, "pathExpression");
