@@ -262,7 +262,9 @@ class JcrNodeType implements NodeType {
      * @see javax.jcr.nodetype.NodeType#canRemoveItem(java.lang.String)
      */
     public boolean canRemoveItem( String itemName ) {
-        return canRemoveNode(itemName) || canRemoveProperty(itemName);
+        CheckArg.isNotNull(itemName, "itemName");
+        Name childName = context.getValueFactories().getNameFactory().create(itemName);
+        return nodeTypeManager().canRemoveItem(this.name, null, childName, true);
     }
 
     /**

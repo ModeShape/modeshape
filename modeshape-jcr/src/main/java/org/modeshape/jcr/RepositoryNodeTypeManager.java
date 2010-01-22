@@ -753,7 +753,7 @@ class RepositoryNodeTypeManager {
                 // Skip protected definitions ...
                 if (skipProtected && definition.isProtected()) continue;
                 // If this definition is not mandatory, then we have found that we CAN remove the property ...
-                if (!definition.isMandatory()) return true;
+                return !definition.isMandatory();
             }
         }
 
@@ -766,7 +766,7 @@ class RepositoryNodeTypeManager {
                     // Skip protected definitions ...
                     if (skipProtected && definition.isProtected()) continue;
                     // If this definition is not mandatory, then we have found that we CAN remove the property ...
-                    if (!definition.isMandatory()) return true;
+                    return !definition.isMandatory();
                 }
             }
         }
@@ -776,6 +776,80 @@ class RepositoryNodeTypeManager {
                                                                                       mixinTypeNamesOfParent,
                                                                                       JcrNodeType.RESIDUAL_NAME,
                                                                                       skipProtected);
+        return false;
+    }
+
+    /**
+     * Determine if the node and property definitions of the supplied primary type and mixin types allow the item with the
+     * supplied name to be removed.
+     * 
+     * @param primaryTypeNameOfParent the name of the primary type for the parent node; may not be null
+     * @param mixinTypeNamesOfParent the names of the mixin types for the parent node; may be null or empty if there are no mixins
+     *        to include in the search
+     * @param itemName the name of the item to be removed; may not be null
+     * @param skipProtected true if this operation is being done from within the public JCR node and property API, or false if
+     *        this operation is being done from within internal implementations
+     * @return true if at least one child node definition does not require children with the supplied name to exist, or false
+     *         otherwise
+     */
+    boolean canRemoveItem( Name primaryTypeNameOfParent,
+                           List<Name> mixinTypeNamesOfParent,
+                           Name itemName,
+                           boolean skipProtected ) {
+        // First look in the primary type for a matching property definition...
+        JcrNodeType primaryType = getNodeType(primaryTypeNameOfParent);
+        if (primaryType != null) {
+            for (JcrPropertyDefinition definition : primaryType.allPropertyDefinitions(itemName)) {
+                // Skip protected definitions ...
+                if (skipProtected && definition.isProtected()) continue;
+                // If this definition is not mandatory, then we have found that we CAN remove the property ...
+                return !definition.isMandatory();
+            }
+        }
+
+        // Then, look in the primary type for a matching child node definition...
+        if (primaryType != null) {
+            for (JcrNodeDefinition definition : primaryType.allChildNodeDefinitions(itemName)) {
+                // Skip protected definitions ...
+                if (skipProtected && definition.isProtected()) continue;
+                // If this definition is not mandatory, then we have found that we CAN remove all children ...
+                return !definition.isMandatory();
+            }
+        }
+
+        // Then, look in the mixin types for a matching property definition...
+        if (mixinTypeNamesOfParent != null && !mixinTypeNamesOfParent.isEmpty()) {
+            for (Name mixinTypeName : mixinTypeNamesOfParent) {
+                JcrNodeType mixinType = getNodeType(mixinTypeName);
+                if (mixinType == null) continue;
+                for (JcrPropertyDefinition definition : mixinType.allPropertyDefinitions(itemName)) {
+                    // Skip protected definitions ...
+                    if (skipProtected && definition.isProtected()) continue;
+                    // If this definition is not mandatory, then we have found that we CAN remove the property ...
+                    return !definition.isMandatory();
+                }
+            }
+        }
+
+        // Then, look in the mixin types for a matching child node definition...
+        if (mixinTypeNamesOfParent != null && !mixinTypeNamesOfParent.isEmpty()) {
+            for (Name mixinTypeName : mixinTypeNamesOfParent) {
+                JcrNodeType mixinType = getNodeType(mixinTypeName);
+                if (mixinType == null) continue;
+                for (JcrNodeDefinition definition : mixinType.allChildNodeDefinitions(itemName)) {
+                    // Skip protected definitions ...
+                    if (skipProtected && definition.isProtected()) continue;
+                    // If this definition is not mandatory, then we have found that we CAN remove all children ...
+                    return !definition.isMandatory();
+                }
+            }
+        }
+
+        // Nothing was found, so look for residual item definitions ...
+        if (!itemName.equals(JcrNodeType.RESIDUAL_NAME)) return canRemoveItem(primaryTypeNameOfParent,
+                                                                              mixinTypeNamesOfParent,
+                                                                              JcrNodeType.RESIDUAL_NAME,
+                                                                              skipProtected);
         return false;
     }
 
@@ -912,7 +986,7 @@ class RepositoryNodeTypeManager {
                 // Skip protected definitions ...
                 if (skipProtected && definition.isProtected()) continue;
                 // If this definition is not mandatory, then we have found that we CAN remove all children ...
-                if (!definition.isMandatory()) return true;
+                return !definition.isMandatory();
             }
         }
 
@@ -925,7 +999,7 @@ class RepositoryNodeTypeManager {
                     // Skip protected definitions ...
                     if (skipProtected && definition.isProtected()) continue;
                     // If this definition is not mandatory, then we have found that we CAN remove all children ...
-                    if (!definition.isMandatory()) return true;
+                    return !definition.isMandatory();
                 }
             }
         }
