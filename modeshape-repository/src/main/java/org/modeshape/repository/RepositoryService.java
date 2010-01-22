@@ -254,7 +254,7 @@ public class RepositoryService implements AdministeredService, Observer {
     protected RepositorySource createRepositorySource( Subgraph subgraph,
                                                        Location location,
                                                        Problems problems ) {
-        return (RepositorySource)createInstanceFromProperties(subgraph, location, problems);
+        return (RepositorySource)createInstanceFromProperties(subgraph, location, problems, true);
     }
 
     /**
@@ -263,11 +263,14 @@ public class RepositoryService implements AdministeredService, Observer {
      * @param subgraph the subgraph containing the configuration information for this instance
      * @param location the location of the properties to apply to the new instance
      * @param problems the problems container in which any problems should be reported; never null
+     * @param mustHaveClassName indicates that the properties must include a class name; if true a problem will be added for
+     *        instances that do not have a class name specified
      * @return the instance, or null if it could not be created
      */
     protected Object createInstanceFromProperties( Subgraph subgraph,
                                                    Location location,
-                                                   Problems problems ) {
+                                                   Problems problems,
+                                                   boolean mustHaveClassName ) {
         ValueFactories valueFactories = context.getValueFactories();
         ValueFactory<String> stringFactory = valueFactories.getStringFactory();
 
@@ -280,7 +283,10 @@ public class RepositoryService implements AdministeredService, Observer {
         Property classnameProperty = properties.get(ModeShapeLexicon.CLASSNAME);
         Property classpathProperty = properties.get(ModeShapeLexicon.CLASSPATH);
         if (classnameProperty == null) {
-            problems.addError(RepositoryI18n.requiredPropertyIsMissingFromNode, ModeShapeLexicon.CLASSNAME, path);
+            if (mustHaveClassName) {
+                problems.addError(RepositoryI18n.requiredPropertyIsMissingFromNode, ModeShapeLexicon.CLASSNAME, path);
+            }
+            return null;
         }
         // If the classpath property is null or empty, the default classpath will be used
         if (problems.hasErrors()) return null;
@@ -431,7 +437,7 @@ public class RepositoryService implements AdministeredService, Observer {
             Path childPath = childLocation.getPath();
             Name childName = childPath.getLastSegment().getName();
 
-            Object value = createInstanceFromProperties(subgraph, childLocation, problems);
+            Object value = createInstanceFromProperties(subgraph, childLocation, problems, false);
             if (problems.hasErrors()) {
                 return null;
             }
@@ -495,8 +501,7 @@ public class RepositoryService implements AdministeredService, Observer {
             return false;
         } catch (Exception e) {
             // Log that the property was not found ...
-            Logger.getLogger(getClass())
-                  .debug("Unknown property '{0}' on '{1}' class", propertyName, target.getClass().getName());
+            Logger.getLogger(getClass()).debug("Unknown property '{0}' on '{1}' class", propertyName, target.getClass().getName());
             return false;
         }
     }
