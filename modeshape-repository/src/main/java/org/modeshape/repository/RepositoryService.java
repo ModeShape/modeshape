@@ -292,7 +292,6 @@ public class RepositoryService implements AdministeredService, Observer {
         if (problems.hasErrors()) return null;
 
         // Create the instance ...
-        assert classnameProperty != null;
         String classname = stringFactory.create(classnameProperty.getValues().next());
         String[] classpath = classpathProperty == null ? new String[] {} : stringFactory.create(classpathProperty.getValuesAsArray());
         ClassLoader classLoader = context.getClassLoader(classpath);
@@ -501,7 +500,8 @@ public class RepositoryService implements AdministeredService, Observer {
             return false;
         } catch (Exception e) {
             // Log that the property was not found ...
-            Logger.getLogger(getClass()).debug("Unknown property '{0}' on '{1}' class", propertyName, target.getClass().getName());
+            Logger.getLogger(getClass())
+                  .debug("Unknown property '{0}' on '{1}' class", propertyName, target.getClass().getName());
             return false;
         }
     }
