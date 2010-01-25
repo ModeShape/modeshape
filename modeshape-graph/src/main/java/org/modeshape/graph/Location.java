@@ -108,8 +108,8 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
      * Create a location defined by a UUID.
      * 
      * @param uuid the UUID
-     * @return a new <code>Location</code> with no path and a single identification property with the name {@link ModeShapeLexicon#UUID}
-     *         and the given <code>uuid</code> for a value.
+     * @return a new <code>Location</code> with no path and a single identification property with the name
+     *         {@link ModeShapeLexicon#UUID} and the given <code>uuid</code> for a value.
      * @throws IllegalArgumentException if <code>uuid</code> is null
      */
     public static Location create( UUID uuid ) {
@@ -332,11 +332,28 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
         return null;
     }
 
+    /**
+     * Determine whether this location has the same {@link #getPath() path} and {@link #getIdProperties() identification
+     * properties}: if one location has a path, then both must have the same path; likewise, if one location has ID properties,
+     * then both must have the same ID properties.
+     * <p>
+     * This is different than the behavior of {@link #equals(Object)}, which attempts to determine whether two locations are
+     * <i>equivalent</i>. Two location objects are equivalent if they share the same path and/or ID properties: if both locations
+     * have a path, they must have the same path; if both locations have ID properties, these properties must match.
+     * </p>
+     * 
+     * @param that the other location to be compared
+     * @return true if they are the same, or false otherwise (or if the supplied location is null)
+     * @see #equals(Object)
+     */
     public boolean isSame( Location that ) {
         if (that == null) return false;
         if (this.hasPath()) {
             if (!this.getPath().equals(that.getPath())) return false;
-        } else if (that.hasPath()) return false;
+        } else if (that.hasPath()) {
+            // this has no path, but that does
+            return false;
+        }
         if (this.hasIdProperties()) {
             if (that.hasIdProperties()) return this.getIdProperties().containsAll(that.getIdProperties());
             return false;
@@ -365,8 +382,18 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Two location objects are equal (or equivalent) if they share the same path and/or ID properties: if both locations have a
+     * path, they must have the same path; if both locations have ID properties, these properties must match.
+     * </p>
+     * <p>
+     * To determine whether two location objects represent the same location, use {@link #isSame(Location)}: if one location has a
+     * path, then both must have the same path; likewise, if one location has ID properties, then both must have the same ID
+     * properties.
+     * </p>
      * 
      * @see java.lang.Object#equals(java.lang.Object)
+     * @see #isSame(Location)
      */
     @Override
     public boolean equals( Object obj ) {
