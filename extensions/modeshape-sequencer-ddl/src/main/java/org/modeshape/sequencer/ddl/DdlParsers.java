@@ -35,13 +35,15 @@ import org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlParser;
 import org.modeshape.sequencer.ddl.node.AstNode;
 
 /**
- * A parser of DDL file content. This class can be used directly to create an {@link AstNode} tree representing nodes and
- * properties for DDL statement components.
+ * A set of parsers capable of understanding DDL file content. This class can be used directly to create an {@link AstNode} tree
+ * representing nodes and properties for DDL statement components.
  * <p>
  * You can also provide an input or parent {@link AstNode} node as the starting point for your tree.
+ * </p>
  * <p>
  * The parser is based on the SQL-92 and extended by specific dialects. These dialect-specific parsers provide db-specific parsing
  * of db-specific statements of statement extensions, features or properties.
+ * </p>
  */
 public class DdlParsers {
     private List<DdlParser> parsers;
@@ -52,7 +54,7 @@ public class DdlParsers {
         parsers.add(new OracleDdlParser());
         parsers.add(new DerbyDdlParser());
         parsers.add(new PostgresDdlParser());
-        //parsers.add(new MySqlDdlParser());
+        // parsers.add(new MySqlDdlParser());
     }
 
     /**
@@ -89,7 +91,6 @@ public class DdlParsers {
         DdlTokenStream tokens = null;
         DdlParser validParser = null;
         DdlTokenStream validTokens = null;
-        
 
         // FIRST token should be DIALECT
         // for (DdlParser parser : library.getInstances()) {

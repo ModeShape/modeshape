@@ -27,7 +27,7 @@ import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.basic.BasicName;
 
 /**
- * Lexicon for DDL concepts
+ * Lexicon for DDL concepts.
  */
 public class StandardDdlLexicon {
 
@@ -104,7 +104,8 @@ public class StandardDdlLexicon {
     public static final Name TYPE_REVOKE_ON_TABLE_STATEMENT = new BasicName(Namespace.URI, "revokeOnTableStatement");
     public static final Name TYPE_REVOKE_ON_DOMAIN_STATEMENT = new BasicName(Namespace.URI, "revokeOnDomainStatement");
     public static final Name TYPE_REVOKE_ON_COLLATION_STATEMENT = new BasicName(Namespace.URI, "revokeOnCollationStatement");
-    public static final Name TYPE_REVOKE_ON_CHARACTER_SET_STATEMENT = new BasicName(Namespace.URI, "revokeOnCharacterSetStatement");
+    public static final Name TYPE_REVOKE_ON_CHARACTER_SET_STATEMENT = new BasicName(Namespace.URI,
+                                                                                    "revokeOnCharacterSetStatement");
     public static final Name TYPE_REVOKE_ON_TRANSLATION_STATEMENT = new BasicName(Namespace.URI, "revokeOnTranslationStatement");
     public static final Name TYPE_SET_STATEMENT = new BasicName(Namespace.URI, "setStatement");
     public static final Name TYPE_INSERT_STATEMENT = new BasicName(Namespace.URI, "insertStatement");
@@ -133,11 +134,11 @@ public class StandardDdlLexicon {
     public static final Name TYPE_FK_COLUMN_REFERENCE = new BasicName(Namespace.URI, "fkColumnReference");
     public static final Name TYPE_CLAUSE = new BasicName(Namespace.URI, "clause");
 
-    public static final Name DDL_EXPRESSION                 = new BasicName(Namespace.URI, "expression");
-    public static final Name DDL_ORIGINAL_EXPRESSION        = new BasicName(Namespace.URI, "originalExpression");
-    public static final Name DDL_START_LINE_NUMBER          = new BasicName(Namespace.URI, "startLineNumber");
-    public static final Name DDL_START_COLUMN_NUMBER        = new BasicName(Namespace.URI, "startColumnNumber");
-    public static final Name DDL_START_CHAR_INDEX           = new BasicName(Namespace.URI, "startCharIndex");
+    public static final Name DDL_EXPRESSION = new BasicName(Namespace.URI, "expression");
+    public static final Name DDL_ORIGINAL_EXPRESSION = new BasicName(Namespace.URI, "originalExpression");
+    public static final Name DDL_START_LINE_NUMBER = new BasicName(Namespace.URI, "startLineNumber");
+    public static final Name DDL_START_COLUMN_NUMBER = new BasicName(Namespace.URI, "startColumnNumber");
+    public static final Name DDL_START_CHAR_INDEX = new BasicName(Namespace.URI, "startCharIndex");
     // public static final Name DDL_LENGTH = new BasicName(Namespace.URI, "length");
 
     /*

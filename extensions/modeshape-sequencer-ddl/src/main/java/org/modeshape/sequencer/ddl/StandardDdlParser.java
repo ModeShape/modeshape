@@ -29,12 +29,80 @@
  */
 package org.modeshape.sequencer.ddl;
 
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.ALL_PRIVILEGES;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CHECK_SEARCH_CONDITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.COLLATION_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_ATTRIBUTE_TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CREATE_VIEW_QUERY_EXPRESSION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_EXPRESSION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_CHAR_INDEX;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_COLUMN_NUMBER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_LINE_NUMBER;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_OPTION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_PRECISION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_VALUE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANTEE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANT_PRIVILEGE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.MESSAGE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NULLABLE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PROBLEM_LEVEL;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PROPERTY_VALUE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TEMPORARY;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ADD_TABLE_CONSTRAINT_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_DOMAIN_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_ASSERTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_CHARACTER_SET_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_COLLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_DOMAIN_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TRANSLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_ASSERTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_CHARACTER_SET_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_DOMAIN_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_CONSTRAINT_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TRANSLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_VIEW_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_FK_COLUMN_REFERENCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_CHARACTER_SET_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_COLLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_DOMAIN_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_TRANSLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_INSERT_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_MISSING_TERMINATOR;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_CHARACTER_SET_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_COLLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_DOMAIN_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_REVOKE_ON_TRANSLATION_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_SET_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_CONSTRAINT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_REFERENCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.WITH_GRANT_OPTION;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.util.CheckArg;
@@ -49,26 +117,20 @@ import org.modeshape.sequencer.ddl.node.AstNodeFactory;
 /**
  * Standard SQL 92 DDL file content parser.
  */
+@NotThreadSafe
 public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.StatementStartPhrases {
+
     private final String parserId = "SQL92";
-
     private boolean testMode = false;
-
     private List<DdlParserProblem> problems;
-
     private AstNodeFactory nodeFactory;
-
     private AstNode rootNode;
-
     private DdlTokenStream tokens;
     private List<String> allDataTypeStartWords = null;
     private List<Name> validSchemaChildTypes = null;
     private DataTypeParser datatypeParser = null;
-
     private String terminator = DEFAULT_TERMINATOR;
-
     private boolean useTerminator = false;
-
     private Position currentMarkedPosition;
 
     public StandardDdlParser() {
@@ -81,22 +143,15 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     }
 
     /**
-     * Method provide means for DB-specific Statement implementations can contribute DDL Start Phrases and Keywords. These words
-     * are critical pieces of data the parser needs to segment the DDL file into statements. These statements all begin with
-     * unique start phrases like: CREATE TABLE, DROP VIEW, ALTER TABLE. The base method provided here registers the set of SQL 92
-     * based start phrases as well as the set of SQL 92 reserved words (i.e. CREATE, DROP, SCHEMA, CONSTRAINT, etc...).
+     * {@inheritDoc}
      * 
-     * @param tokens the token stream containing the tokenized DDL content. may not be null
+     * @see org.modeshape.sequencer.ddl.DdlParser#registerWords(org.modeshape.sequencer.ddl.DdlTokenStream)
      */
     public void registerWords( DdlTokenStream tokens ) {
         CheckArg.isNotNull(tokens, "tokens");
-        
         this.tokens = tokens;
-        
         registerKeyWords(SQL_92_RESERVED_WORDS);
-
         registerStatementStartPhrase(SQL_92_ALL_PHRASES);
-
         registerSchemaChildTypes(getValidSchemaChildTypes());
     }
 
@@ -146,26 +201,19 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      */
     public int getNumberOfKeyWords( DdlTokenStream tokens ) {
         int count = 0;
-
         while (tokens.hasNext()) {
             if (tokens.isNextKeyWord()) {
                 count++;
             }
             tokens.consume();
         }
-
         return count;
     }
 
     /**
-     * Parses a DDL string and adds discovered child {@link AstNode}s and properties. This method instantiates the tokenizer,
-     * calls a method to allow subclasses to register keywords and statement start phrases with the tokenizer and finally performs
-     * the tokenizing (i.e. tokens.start()) before calling the actual parse method.
+     * {@inheritDoc}
      * 
-     * @param ddl the input string to parse; may not be null
-     * @param rootNode the top level {@link AstNode}; may not be null
-     * @return true if parsing successful (i.e. no problems were discovered during parsing)
-     * @throws ParsingException
+     * @see org.modeshape.sequencer.ddl.DdlParser#parse(java.lang.String, org.modeshape.sequencer.ddl.node.AstNode)
      */
     public boolean parse( String ddl,
                           AstNode rootNode ) throws ParsingException {
@@ -173,23 +221,16 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         CheckArg.isNotNull(rootNode, "rootNode");
 
         tokens = new DdlTokenStream(ddl, DdlTokenStream.ddlTokenizer(false), false);
-
         registerWords(tokens);
-
         tokens.start();
-
         return parse(tokens, rootNode);
     }
 
     /**
-     * Parses DDL content from the {@link DdlTokenStream} provided. Parsed data is converted to an AST via {@link AstNode}s. This
-     * tree, represents all recognizable statements and properties within a DDL file. Note that db-specific dialects will need to
-     * override many methods, as well as add methods to fully parse their specific DDL.
+     * {@inheritDoc}
      * 
-     * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
-     * @param rootNode the top level {@link AstNode}; may not be null
-     * @return true if parsing successful (i.e. no problems were discovered during parsing)
-     * @throws ParsingException
+     * @see org.modeshape.sequencer.ddl.DdlParser#parse(org.modeshape.sequencer.ddl.DdlTokenStream,
+     *      org.modeshape.sequencer.ddl.node.AstNode)
      */
     public boolean parse( DdlTokenStream tokens,
                           AstNode rootNode ) throws ParsingException {
@@ -197,16 +238,13 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         CheckArg.isNotNull(rootNode, "rootNode");
 
         testPrint("\n== >> StandardDdlParser.parse() PARSING STARTED: ");
-
         setRootNode(rootNode);
-
         problems.clear();
 
         // Check the header of the DDL file (first tokens) to see if they are coded to a specific database dialect
         if (tokens.canConsume("PARSER_ID")) {
             tokens.consume("=");
             String parserType = tokens.consume();
-
             if (!parserType.equalsIgnoreCase(getId())) {
                 String msg = "Incompatable parser ID = " + parserType + " Expected = " + getId();
                 throw new DdlParserProblem(DdlConstants.Problems.ERROR, new Position(-1, 1, 0), msg);
@@ -214,19 +252,15 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         }
 
         // Simply move to the next statement start (registered prior to tokenizing).
-
         while (moveToNextStatementStart(tokens)) {
 
             // It is assumed that if a statement is registered, the registering dialect will handle the parsing of that object
             // and successfully create a statement {@link AstNode}
             AstNode stmtNode = parseNextStatement(tokens, rootNode);
-
             if (stmtNode == null) {
                 markStartOfStatement(tokens);
-
                 String stmtName = tokens.consume();
                 stmtNode = parseIgnorableStatement(tokens, stmtName, rootNode);
-
                 markEndOfStatement(tokens, stmtNode);
             }
             // testPrint("== >> Found Statement" + "(" + (++count) + "):\n" + stmtNode);
@@ -276,7 +310,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             stmtNode = parseSetStatement(tokens, node);
         } else if (tokens.matches(GRANT)) {
             stmtNode = parseGrantStatement(tokens, node);
-        } else if( tokens.matches(REVOKE)) {
+        } else if (tokens.matches(REVOKE)) {
             stmtNode = parseRevokeStatement(tokens, node);
         }
 
@@ -391,7 +425,6 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     protected void removeMissingTerminatorNodes( AstNode parentNode ) {
         assert parentNode != null;
         // Walk the tree and remove any missing missing terminator nodes
-
         List<AstNode> copyOfNodes = new ArrayList<AstNode>(parentNode.getChildren());
 
         for (AstNode child : copyOfNodes) {
@@ -440,7 +473,6 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                                        String tokenValue ) throws ParsingException {
         assert tokens != null;
         assert tokenValue != null;
-
         // DEFAULT IMPLEMENTATION DOES NOTHING
         return null;
     }
@@ -524,19 +556,13 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             return parseAlterTableStatement(tokens, parentNode);
         } else if (tokens.matches("ALTER", "DOMAIN")) {
             markStartOfStatement(tokens);
-
             tokens.consume("ALTER", "DOMAIN");
             String domainName = parseName(tokens);
-
             AstNode alterNode = nodeFactory().node(domainName, parentNode, TYPE_ALTER_DOMAIN_STATEMENT);
-
             parseUntilTerminator(tokens);
-
             markEndOfStatement(tokens, alterNode);
-
             return alterNode;
         }
-
         return null;
     }
 
@@ -576,13 +602,10 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             } else {
                 parseSingleTerminatedColumnDefinition(tokens, alterTableNode, true);
             }
-
         } else if (tokens.canConsume("DROP")) {
             if (tokens.canConsume("CONSTRAINT")) {
                 String constraintName = parseName(tokens); // constraint name
-
                 AstNode constraintNode = nodeFactory().node(constraintName, alterTableNode, TYPE_DROP_TABLE_CONSTRAINT_DEFINITION);
-
                 if (tokens.canConsume(DropBehavior.CASCADE)) {
                     constraintNode.setProperty(DROP_BEHAVIOR, DropBehavior.CASCADE);
                 } else if (tokens.canConsume(DropBehavior.RESTRICT)) {
@@ -594,11 +617,8 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
                 // DROP [ COLUMN ] <column name> <drop behavior>
                 tokens.canConsume("COLUMN"); // "COLUMN" is optional
-
                 String columnName = parseName(tokens);
-
                 AstNode columnNode = nodeFactory().node(columnName, alterTableNode, TYPE_DROP_COLUMN_DEFINITION);
-
                 if (tokens.canConsume(DropBehavior.CASCADE)) {
                     columnNode.setProperty(DROP_BEHAVIOR, DropBehavior.CASCADE);
                 } else if (tokens.canConsume(DropBehavior.RESTRICT)) {
@@ -612,21 +632,17 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
             tokens.canConsume("COLUMN");
             String alterColumnName = parseName(tokens);
-
             AstNode columnNode = nodeFactory().node(alterColumnName, alterTableNode, TYPE_ALTER_COLUMN_DEFINITION);
-
             if (tokens.canConsume("SET")) {
                 parseDefaultClause(tokens, columnNode);
             } else if (tokens.canConsume("DROP", "DEFAULT")) {
                 columnNode.setProperty(DROP_BEHAVIOR, "DROP DEFAULT");
             }
-
         } else {
             parseUntilTerminator(tokens); // COULD BE "NESTED TABLE xxxxxxxx" option clause
         }
 
         markEndOfStatement(tokens, alterTableNode);
-
         return alterTableNode;
     }
 
@@ -677,10 +693,8 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         assert parentNode != null;
 
         markStartOfStatement(tokens);
-
         String behavior = null;
         tokens.consume(startPhrase);
-
         List<String> nameList = new ArrayList<String>();
         nameList.add(parseName(tokens));
         while (tokens.matches(COMMA)) {
@@ -695,11 +709,9 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         }
 
         AstNode dropNode = nodeFactory().node(nameList.get(0), parentNode, stmtType);
-
         if (behavior != null) {
             dropNode.setProperty(DROP_BEHAVIOR, behavior);
         }
-
         markEndOfStatement(tokens, dropNode);
 
         return dropNode;
@@ -721,18 +733,13 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         // Original implementation does NOT parse Insert statement, but just returns a generic TypedStatement
         if (tokens.matches(STMT_INSERT_INTO)) {
             markStartOfStatement(tokens);
-
             tokens.consume(STMT_INSERT_INTO);
             String prefix = getStatementTypeName(STMT_INSERT_INTO);
             AstNode node = nodeFactory().node(prefix, parentNode, TYPE_INSERT_STATEMENT);
-
             parseUntilTerminator(tokens);
-
             markEndOfStatement(tokens, node);
-
             return node;
         }
-
         return null;
     }
 
@@ -752,16 +759,12 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         // Original implementation does NOT parse Insert statement, but just returns a generic TypedStatement
         if (tokens.matches(SET)) {
             markStartOfStatement(tokens);
-
             tokens.consume(SET);
             AstNode node = nodeFactory().node("SET", parentNode, TYPE_SET_STATEMENT);
-
             parseUntilTerminator(tokens);
-
             markEndOfStatement(tokens, node);
             return node;
         }
-
         return null;
     }
 
@@ -778,29 +781,29 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         assert tokens != null;
         assert parentNode != null;
         assert tokens.matches(GRANT);
-        
+
         markStartOfStatement(tokens);
 
-        //      Syntax for tables
+        // Syntax for tables
         //
-        //             GRANT <privileges> ON <object name>
-        //                      TO <grantee> [ { <comma> <grantee> }... ]
-        //                      [ WITH GRANT OPTION ]
+        // GRANT <privileges> ON <object name>
+        // TO <grantee> [ { <comma> <grantee> }... ]
+        // [ WITH GRANT OPTION ]
         //
-        //        <object name> ::=
-        //            [ TABLE ] <table name>
-        //          | DOMAIN <domain name>
-        //          | COLLATION <collation name>
-        //          | CHARACTER SET <character set name>
-        //          | TRANSLATION <translation name>
+        // <object name> ::=
+        // [ TABLE ] <table name>
+        // | DOMAIN <domain name>
+        // | COLLATION <collation name>
+        // | CHARACTER SET <character set name>
+        // | TRANSLATION <translation name>
         //
-        //      Syntax for roles
+        // Syntax for roles
         //
-        //          GRANT roleName [ {, roleName }* ] TO grantees
-        
-        //      privilege-types
+        // GRANT roleName [ {, roleName }* ] TO grantees
+
+        // privilege-types
         //
-        //          ALL PRIVILEGES | privilege-list
+        // ALL PRIVILEGES | privilege-list
         //
         AstNode grantNode = null;
         boolean allPrivileges = false;
@@ -809,23 +812,23 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         tokens.consume("GRANT");
 
-        if( tokens.canConsume("ALL", "PRIVILEGES")) {
+        if (tokens.canConsume("ALL", "PRIVILEGES")) {
             allPrivileges = true;
-        } else { 
+        } else {
             parseGrantPrivileges(tokens, privileges);
         }
         tokens.consume("ON");
 
-        if( tokens.canConsume("DOMAIN") ) {
+        if (tokens.canConsume("DOMAIN")) {
             String name = parseName(tokens);
             grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_DOMAIN_STATEMENT);
-        } else if( tokens.canConsume("COLLATION")) {
+        } else if (tokens.canConsume("COLLATION")) {
             String name = parseName(tokens);
             grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_COLLATION_STATEMENT);
-        } else if( tokens.canConsume("CHARACTER", "SET")) {
+        } else if (tokens.canConsume("CHARACTER", "SET")) {
             String name = parseName(tokens);
             grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_CHARACTER_SET_STATEMENT);
-        } else if( tokens.canConsume("TRANSLATION")) {
+        } else if (tokens.canConsume("TRANSLATION")) {
             String name = parseName(tokens);
             grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_TRANSLATION_STATEMENT);
         } else {
@@ -833,98 +836,98 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             String name = parseName(tokens);
             grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_TABLE_STATEMENT);
         }
-            
+
         // Attach privileges to grant node
-        for( AstNode node : privileges ) {
+        for (AstNode node : privileges) {
             node.setParent(grantNode);
         }
-        if( allPrivileges ) {
+        if (allPrivileges) {
             grantNode.setProperty(ALL_PRIVILEGES, allPrivileges);
         }
 
-        
         tokens.consume("TO");
-        
+
         do {
             String grantee = parseName(tokens);
             nodeFactory().node(grantee, grantNode, GRANTEE);
-        } while( tokens.canConsume(COMMA));
-        
-        if( tokens.canConsume("WITH", "GRANT", "OPTION")) {
+        } while (tokens.canConsume(COMMA));
+
+        if (tokens.canConsume("WITH", "GRANT", "OPTION")) {
             grantNode.setProperty(WITH_GRANT_OPTION, "WITH GRANT OPTION");
         }
-        
+
         markEndOfStatement(tokens, grantNode);
 
         return grantNode;
     }
 
-    protected void parseGrantPrivileges( DdlTokenStream tokens, List<AstNode> privileges) throws ParsingException {
-        //      privilege-types
+    protected void parseGrantPrivileges( DdlTokenStream tokens,
+                                         List<AstNode> privileges ) throws ParsingException {
+        // privilege-types
         //
-        //          ALL PRIVILEGES | privilege-list
+        // ALL PRIVILEGES | privilege-list
         //
-        //      privilege-list
+        // privilege-list
         //
-        //          table-privilege {, table-privilege }*
+        // table-privilege {, table-privilege }*
         //
-        //      table-privilege
-        //          SELECT
-        //        | DELETE
-        //        | INSERT [ <left paren> <privilege column list> <right paren> ]
-        //        | UPDATE [ <left paren> <privilege column list> <right paren> ]
-        //        | REFERENCES [ <left paren> <privilege column list> <right paren> ]
-        //        | USAGE
+        // table-privilege
+        // SELECT
+        // | DELETE
+        // | INSERT [ <left paren> <privilege column list> <right paren> ]
+        // | UPDATE [ <left paren> <privilege column list> <right paren> ]
+        // | REFERENCES [ <left paren> <privilege column list> <right paren> ]
+        // | USAGE
 
         do {
             AstNode node = null;
-            
-            if( tokens.canConsume(DELETE)) {
+
+            if (tokens.canConsume(DELETE)) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, DELETE);
-            } else if( tokens.canConsume(INSERT)) {
+            } else if (tokens.canConsume(INSERT)) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, INSERT);
                 parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
-            } else if( tokens.canConsume("REFERENCES")) {
+            } else if (tokens.canConsume("REFERENCES")) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, "REFERENCES");
                 parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
-            } else if( tokens.canConsume(SELECT)) {
+            } else if (tokens.canConsume(SELECT)) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, SELECT);
-            } else if( tokens.canConsume("USAGE")) {
+            } else if (tokens.canConsume("USAGE")) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, "USAGE");
-            } else if( tokens.canConsume(UPDATE)) {
+            } else if (tokens.canConsume(UPDATE)) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, UPDATE);
                 parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
             }
-            if( node == null) {
+            if (node == null) {
                 break;
             }
             nodeFactory().setType(node, GRANT_PRIVILEGE);
             privileges.add(node);
-            
-        } while( tokens.canConsume(COMMA));
+
+        } while (tokens.canConsume(COMMA));
 
     }
-    
+
     protected AstNode parseRevokeStatement( DdlTokenStream tokens,
                                             AstNode parentNode ) throws ParsingException {
         assert tokens != null;
         assert parentNode != null;
         assert tokens.matches(REVOKE);
-        
+
         markStartOfStatement(tokens);
-        
-        //    <revoke statement> ::=
-        //        REVOKE [ GRANT OPTION FOR ]
-        //            <privileges>
-        //            ON <object name>
-        //            FROM <grantee> [ { <comma> <grantee> }... ] <drop behavior>
-        
+
+        // <revoke statement> ::=
+        // REVOKE [ GRANT OPTION FOR ]
+        // <privileges>
+        // ON <object name>
+        // FROM <grantee> [ { <comma> <grantee> }... ] <drop behavior>
+
         AstNode revokeNode = null;
         boolean allPrivileges = false;
         boolean withGrantOption = false;
@@ -932,26 +935,26 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         List<AstNode> privileges = new ArrayList<AstNode>();
 
         tokens.consume("REVOKE");
-        
+
         withGrantOption = tokens.canConsume("WITH", "GRANT", "OPTION");
 
-        if( tokens.canConsume("ALL", "PRIVILEGES")) {
+        if (tokens.canConsume("ALL", "PRIVILEGES")) {
             allPrivileges = true;
-        } else { 
+        } else {
             parseGrantPrivileges(tokens, privileges);
         }
         tokens.consume("ON");
 
-        if( tokens.canConsume("DOMAIN") ) {
+        if (tokens.canConsume("DOMAIN")) {
             String name = parseName(tokens);
             revokeNode = nodeFactory().node(name, parentNode, TYPE_REVOKE_ON_DOMAIN_STATEMENT);
-        } else if( tokens.canConsume("COLLATION")) {
+        } else if (tokens.canConsume("COLLATION")) {
             String name = parseName(tokens);
             revokeNode = nodeFactory().node(name, parentNode, TYPE_REVOKE_ON_COLLATION_STATEMENT);
-        } else if( tokens.canConsume("CHARACTER", "SET")) {
+        } else if (tokens.canConsume("CHARACTER", "SET")) {
             String name = parseName(tokens);
             revokeNode = nodeFactory().node(name, parentNode, TYPE_REVOKE_ON_CHARACTER_SET_STATEMENT);
-        } else if( tokens.canConsume("TRANSLATION")) {
+        } else if (tokens.canConsume("TRANSLATION")) {
             String name = parseName(tokens);
             revokeNode = nodeFactory().node(name, parentNode, TYPE_REVOKE_ON_TRANSLATION_STATEMENT);
         } else {
@@ -959,45 +962,44 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             String name = parseName(tokens);
             revokeNode = nodeFactory().node(name, parentNode, TYPE_REVOKE_ON_TABLE_STATEMENT);
         }
-        
+
         // Attach privileges to grant node
-        for( AstNode node : privileges ) {
+        for (AstNode node : privileges) {
             node.setParent(revokeNode);
         }
-        
-        if( allPrivileges ) {
+
+        if (allPrivileges) {
             revokeNode.setProperty(ALL_PRIVILEGES, allPrivileges);
         }
 
         tokens.consume("FROM");
-        
+
         do {
             String grantee = parseName(tokens);
             nodeFactory().node(grantee, revokeNode, GRANTEE);
-        } while( tokens.canConsume(COMMA));
-        
+        } while (tokens.canConsume(COMMA));
+
         String behavior = null;
-        
+
         if (tokens.canConsume("CASCADE")) {
             behavior = "CASCADE";
         } else if (tokens.canConsume("RESTRICT")) {
             behavior = "RESTRICT";
         }
-        
+
         if (behavior != null) {
             revokeNode.setProperty(DROP_BEHAVIOR, behavior);
         }
-        
-        if( withGrantOption ) {
+
+        if (withGrantOption) {
             revokeNode.setProperty(WITH_GRANT_OPTION, "WITH GRANT OPTION");
         }
-        
+
         markEndOfStatement(tokens, revokeNode);
 
         return revokeNode;
     }
-    
-    
+
     /**
      * Parses DDL CREATE DOMAIN {@link AstNode} based on SQL 92 specifications.
      * 
@@ -1007,21 +1009,21 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * @throws ParsingException
      */
     protected AstNode parseCreateDomainStatement( DdlTokenStream tokens,
-                                            AstNode parentNode ) throws ParsingException {
+                                                  AstNode parentNode ) throws ParsingException {
         assert tokens != null;
         assert parentNode != null;
-        
-        //<domain definition> ::=
-        //    CREATE DOMAIN <domain name>
-        //        [ AS ] <data type>
-        //      [ <default clause> ]
-        //      [ <domain constraint>... ]
-        //      [ <collate clause> ]
-        
+
+        // <domain definition> ::=
+        // CREATE DOMAIN <domain name>
+        // [ AS ] <data type>
+        // [ <default clause> ]
+        // [ <domain constraint>... ]
+        // [ <collate clause> ]
+
         markStartOfStatement(tokens);
 
         tokens.consume(STMT_CREATE_DOMAIN);
-        
+
         String name = parseName(tokens);
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_DOMAIN_STATEMENT);
@@ -1029,10 +1031,10 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         parseUntilTerminator(tokens);
 
         markEndOfStatement(tokens, node);
-        
+
         return node;
     }
-    
+
     /**
      * Parses DDL CREATE COLLATION {@link AstNode} based on SQL 92 specifications.
      * 
@@ -1042,14 +1044,14 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * @throws ParsingException
      */
     protected AstNode parseCreateCollationStatement( DdlTokenStream tokens,
-                                            AstNode parentNode ) throws ParsingException {
+                                                     AstNode parentNode ) throws ParsingException {
         assert tokens != null;
         assert parentNode != null;
-        
+
         markStartOfStatement(tokens);
 
         tokens.consume(STMT_CREATE_COLLATION);
-        
+
         String name = parseName(tokens);
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_COLLATION_STATEMENT);
@@ -1057,10 +1059,10 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         parseUntilTerminator(tokens);
 
         markEndOfStatement(tokens, node);
-        
+
         return node;
     }
-    
+
     /**
      * Parses DDL CREATE TRANSLATION {@link AstNode} based on SQL 92 specifications.
      * 
@@ -1070,14 +1072,14 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * @throws ParsingException
      */
     protected AstNode parseCreateTranslationStatement( DdlTokenStream tokens,
-                                            AstNode parentNode ) throws ParsingException {
+                                                       AstNode parentNode ) throws ParsingException {
         assert tokens != null;
         assert parentNode != null;
-        
+
         markStartOfStatement(tokens);
 
         tokens.consume(STMT_CREATE_TRANSLATION);
-        
+
         String name = parseName(tokens);
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_TRANSLATION_STATEMENT);
@@ -1085,10 +1087,10 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         parseUntilTerminator(tokens);
 
         markEndOfStatement(tokens, node);
-        
+
         return node;
     }
-    
+
     /**
      * Parses DDL CREATE CHARACTER SET {@link AstNode} based on SQL 92 specifications.
      * 
@@ -1098,14 +1100,14 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * @throws ParsingException
      */
     protected AstNode parseCreateCharacterSetStatement( DdlTokenStream tokens,
-                                            AstNode parentNode ) throws ParsingException {
+                                                        AstNode parentNode ) throws ParsingException {
         assert tokens != null;
         assert parentNode != null;
-        
+
         markStartOfStatement(tokens);
 
         tokens.consume(STMT_CREATE_CHARACTER_SET);
-        
+
         String name = parseName(tokens);
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_CHARACTER_SET_STATEMENT);
@@ -1113,10 +1115,10 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         parseUntilTerminator(tokens);
 
         markEndOfStatement(tokens, node);
-        
+
         return node;
     }
-    
+
     /**
      * Catch-all method to parse unknown (not registered or handled by sub-classes) statements.
      * 
@@ -1927,7 +1929,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         parseColumnNameList(tokens, createViewNode, TYPE_COLUMN_REFERENCE);
 
         tokens.consume("AS");
-        
+
         String queryExpression = parseUntilTerminator(tokens);
 
         createViewNode.setProperty(CREATE_VIEW_QUERY_EXPRESSION, queryExpression);
@@ -1987,6 +1989,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         return schemaNode;
     }
+
     /**
      * Parses DDL CREATE ASSERTION {@link AstNode} based on SQL 92 specifications. Initial implementation here does not parse the
      * statement's search condition in detail.
@@ -1997,26 +2000,26 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * @throws ParsingException
      */
     protected AstNode parseCreateAssertionStatement( DdlTokenStream tokens,
-                                                  AstNode parentNode ) throws ParsingException {
+                                                     AstNode parentNode ) throws ParsingException {
         markStartOfStatement(tokens);
 
-        //      <assertion definition> ::=
-        //      CREATE ASSERTION <constraint name> CHECK <left paren> <search condition> <right paren>  [ <constraint attributes> ]         
-        
+        // <assertion definition> ::=
+        // CREATE ASSERTION <constraint name> CHECK <left paren> <search condition> <right paren> [ <constraint attributes> ]
+
         AstNode node = null;
 
         tokens.consume("CREATE", "ASSERTION");
 
         String name = parseName(tokens);
-                
+
         // Must have one or the other or both
 
         node = nodeFactory().node(name, parentNode, TYPE_CREATE_ASSERTION_STATEMENT);
-        
+
         tokens.consume("CHECK");
-        
+
         String searchCondition = consumeParenBoundedTokens(tokens, false);
-        
+
         node.setProperty(CHECK_SEARCH_CONDITION, searchCondition);
 
         parseConstraintAttributes(tokens, node);
@@ -2848,6 +2851,11 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         this.testMode = testMode;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.sequencer.ddl.DdlParser#getId()
+     */
     public String getId() {
         return this.parserId;
     }
