@@ -2559,20 +2559,12 @@ class SessionCache {
     final static class JcrPropertyPayload {
         private final PropertyDefinitionId propertyDefinitionId;
         private final int jcrPropertyType;
-        private final SoftReference<AbstractJcrProperty> jcrProperty;
+        private final AbstractJcrProperty jcrProperty;
 
         JcrPropertyPayload( PropertyDefinitionId propertyDefinitionId,
                             int jcrPropertyType,
                             AbstractJcrProperty jcrProperty ) {
             assert jcrProperty != null;
-            this.propertyDefinitionId = propertyDefinitionId;
-            this.jcrPropertyType = jcrPropertyType;
-            this.jcrProperty = new SoftReference<AbstractJcrProperty>(jcrProperty);
-        }
-
-        JcrPropertyPayload( PropertyDefinitionId propertyDefinitionId,
-                            int jcrPropertyType,
-                            SoftReference<AbstractJcrProperty> jcrProperty ) {
             this.propertyDefinitionId = propertyDefinitionId;
             this.jcrPropertyType = jcrPropertyType;
             this.jcrProperty = jcrProperty;
@@ -2582,7 +2574,7 @@ class SessionCache {
          * @return jcrProperty
          */
         public AbstractJcrProperty getJcrProperty() {
-            return jcrProperty.get();
+            return jcrProperty;
         }
 
         /**
