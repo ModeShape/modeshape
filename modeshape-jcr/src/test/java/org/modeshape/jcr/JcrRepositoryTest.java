@@ -40,6 +40,14 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
+import org.jboss.security.config.IDTrustConfiguration;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.MockSecurityContext;
@@ -51,14 +59,6 @@ import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.observe.MockObservable;
 import org.modeshape.jcr.JcrRepository.Option;
-import org.jboss.security.config.IDTrustConfiguration;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 
 /**
  */
@@ -233,7 +233,8 @@ public class JcrRepositoryTest {
     @SuppressWarnings( "cast" )
     @Test
     public void shouldAllowLoginWithNoCredentialsInPrivilegedBlock() throws Exception {
-        LoginContext login = new LoginContext("modeshape-jcr", new UserPasswordCallbackHandler("superuser", "superuser".toCharArray()));
+        LoginContext login = new LoginContext("modeshape-jcr", new UserPasswordCallbackHandler("superuser",
+                                                                                               "superuser".toCharArray()));
         login.login();
 
         Subject subject = login.getSubject();
@@ -434,7 +435,8 @@ public class JcrRepositoryTest {
     }
 
     protected JcrSession createSession() throws Exception {
-        LoginContext login = new LoginContext("modeshape-jcr", new UserPasswordCallbackHandler("superuser", "superuser".toCharArray()));
+        LoginContext login = new LoginContext("modeshape-jcr", new UserPasswordCallbackHandler("superuser",
+                                                                                               "superuser".toCharArray()));
         login.login();
 
         Subject subject = login.getSubject();
@@ -478,7 +480,7 @@ public class JcrRepositoryTest {
         assertThat(repository.getDescriptor(Repository.OPTION_QUERY_SQL_SUPPORTED), is("false"));
         assertThat(repository.getDescriptor(Repository.OPTION_TRANSACTIONS_SUPPORTED), is("false"));
         assertThat(repository.getDescriptor(Repository.OPTION_VERSIONING_SUPPORTED), is("false"));
-        assertThat(repository.getDescriptor(Repository.QUERY_XPATH_DOC_ORDER), is("true"));
+        assertThat(repository.getDescriptor(Repository.QUERY_XPATH_DOC_ORDER), is("false"));
         assertThat(repository.getDescriptor(Repository.QUERY_XPATH_POS_INDEX), is("true"));
         assertThat(repository.getDescriptor(Repository.REP_NAME_DESC), is(JcrI18n.REP_NAME_DESC.text()));
         assertThat(repository.getDescriptor(Repository.REP_VENDOR_DESC), is(JcrI18n.REP_VENDOR_DESC.text()));
