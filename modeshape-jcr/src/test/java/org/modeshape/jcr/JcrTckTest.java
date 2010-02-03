@@ -176,7 +176,7 @@ public class JcrTckTest {
 
             // addTestSuite(org.apache.jackrabbit.test.api.query.ElementTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathPosIndexTest.class);
-            // addTestSuite(org.apache.jackrabbit.test.api.query.XPathDocOrderTest.class);
+            addTestSuite(org.apache.jackrabbit.test.api.query.XPathDocOrderTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathOrderByTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathJcrPathTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.DerefQueryLevel1Test.class);

@@ -418,10 +418,7 @@ public class JcrRepository implements Repository {
         modifiableDescriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, "false"); // not JCR 1.0 SQL
         modifiableDescriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, "false");
         modifiableDescriptors.put(Repository.OPTION_VERSIONING_SUPPORTED, "false");
-        if (!modifiableDescriptors.containsKey(Repository.QUERY_XPATH_DOC_ORDER)) {
-            // don't override what was supplied ...
-            modifiableDescriptors.put(Repository.QUERY_XPATH_DOC_ORDER, "true");
-        }
+        modifiableDescriptors.put(Repository.QUERY_XPATH_DOC_ORDER, "false"); // see MODE-613
         if (!modifiableDescriptors.containsKey(Repository.QUERY_XPATH_POS_INDEX)) {
             // don't override what was supplied ...
             modifiableDescriptors.put(Repository.QUERY_XPATH_POS_INDEX, "true");
@@ -1056,7 +1053,8 @@ public class JcrRepository implements Repository {
         for (Location lockLocation : locksGraph.getRoot().getChildren()) {
             Node lockNode = locksGraph.getNode(lockLocation);
 
-            Boolean isSessionScoped = booleanFactory.create(lockNode.getProperty(ModeShapeLexicon.IS_SESSION_SCOPED).getFirstValue());
+            Boolean isSessionScoped = booleanFactory.create(lockNode.getProperty(ModeShapeLexicon.IS_SESSION_SCOPED)
+                                                                    .getFirstValue());
 
             if (!isSessionScoped) continue;
             String lockingSession = stringFactory.create(lockNode.getProperty(ModeShapeLexicon.LOCKING_SESSION).getFirstValue());
@@ -1065,7 +1063,8 @@ public class JcrRepository implements Repository {
             if (activeSessionIds.contains(lockingSession)) {
                 systemGraph.set(ModeShapeLexicon.EXPIRATION_DATE).on(lockLocation).to(newExpirationDate);
             } else {
-                DateTime expirationDate = dateFactory.create(lockNode.getProperty(ModeShapeLexicon.EXPIRATION_DATE).getFirstValue());
+                DateTime expirationDate = dateFactory.create(lockNode.getProperty(ModeShapeLexicon.EXPIRATION_DATE)
+                                                                     .getFirstValue());
                 // Destroy expired locks (if it was still held by an active session, it would have been extended by now)
                 if (expirationDate.isBefore(now)) {
                     String workspaceName = stringFactory.create(lockNode.getProperty(ModeShapeLexicon.WORKSPACE).getFirstValue());
