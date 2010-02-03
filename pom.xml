@@ -328,6 +328,7 @@
 			            -group "JCR implementation" ${project.groupId}.jcr*:${project.groupId}.cnd*
 			            -group "Repository engine" ${project.groupId}.repository*
 			            -group "Graph API" ${project.groupId}.graph:${project.groupId}.graph.io*:${project.groupId}.graph.property*:${project.groupId}.graph.request*:${project.groupId}.graph.session*:${project.groupId}.graph.xml*
+			            -group "Query and Search" ${project.groupId}.graph.query*:${project.groupId}.graph.search*:${project.groupId}.search*
 			            -group "Connectors" ${project.groupId}.graph.cache*:${project.groupId}.graph.connector*:${project.groupId}.connector*
 			            -group "Observation" ${project.groupId}.graph.observation*
 			            -group "Sequencers" ${project.groupId}.graph.sequencer*:${project.groupId}.sequencer*
