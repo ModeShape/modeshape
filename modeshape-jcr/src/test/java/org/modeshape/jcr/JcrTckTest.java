@@ -92,6 +92,7 @@ import org.apache.jackrabbit.test.api.observation.NodeReorderTest;
 import org.apache.jackrabbit.test.api.observation.PropertyAddedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyChangedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
+import org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test;
 
 /**
  * Test suite to wrap Apache Jackrabbit JCR technology compatibility kit (TCK) unit tests. Note that technically these are not the
@@ -269,7 +270,7 @@ public class JcrTckTest {
             addTestSuite(SerializationTest.class);
 
             addTestSuite(ValueFactoryTest.class);
-            // addTestSuite(XPathQueryLevel2Test.class);
+            addTestSuite(XPathQueryLevel2Test.class);
         }
     }
 

@@ -24,6 +24,7 @@
 package org.modeshape.search.lucene;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,6 +33,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.NotThreadSafe;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Collector;
@@ -39,14 +43,13 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.Logger;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.JcrLexicon;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.property.Binary;
@@ -420,6 +423,9 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 try {
                     // Execute the query against the content indexes ...
                     IndexSearcher searcher = session.getContentSearcher();
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("query \"{0}\" workspace: {1}", session.getWorkspaceName(), pushDownQuery);
+                    }
                     TupleCollector collector = session.createTupleCollector(columns);
                     searcher.search(pushDownQuery, collector);
                     tuples = collector.getTuples();
@@ -477,19 +483,11 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
         protected class QueryFactory {
             private final WorkspaceSession session;
             private final Map<String, Object> variables;
-            private final String fullTextFieldName;
 
             protected QueryFactory( WorkspaceSession session,
                                     Map<String, Object> variables ) {
-                this(session, variables, null);
-            }
-
-            protected QueryFactory( WorkspaceSession session,
-                                    Map<String, Object> variables,
-                                    String fullTextFieldName ) {
                 this.session = session;
                 this.variables = variables;
-                this.fullTextFieldName = fullTextFieldName;
             }
 
             public Query createQuery( Constraint constraint ) throws IOException {
@@ -499,8 +497,8 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                     Query rightQuery = createQuery(and.getRight());
                     if (leftQuery == null || rightQuery == null) return null;
                     BooleanQuery booleanQuery = new BooleanQuery();
-                    booleanQuery.add(createQuery(and.getLeft()), Occur.MUST);
-                    booleanQuery.add(createQuery(and.getRight()), Occur.MUST);
+                    booleanQuery.add(leftQuery, Occur.MUST);
+                    booleanQuery.add(rightQuery, Occur.MUST);
                     return booleanQuery;
                 }
                 if (constraint instanceof Or) {
@@ -513,8 +511,8 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                         return leftQuery;
                     }
                     BooleanQuery booleanQuery = new BooleanQuery();
-                    booleanQuery.add(createQuery(or.getLeft()), Occur.SHOULD);
-                    booleanQuery.add(createQuery(or.getRight()), Occur.SHOULD);
+                    booleanQuery.add(leftQuery, Occur.SHOULD);
+                    booleanQuery.add(rightQuery, Occur.SHOULD);
                     return booleanQuery;
                 }
                 if (constraint instanceof Not) {
@@ -544,7 +542,15 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 }
                 if (constraint instanceof Between) {
                     Between between = (Between)constraint;
-                    return createQuery(between);
+                    DynamicOperand operand = between.getOperand();
+                    StaticOperand lower = between.getLowerBound();
+                    StaticOperand upper = between.getUpperBound();
+                    return createQuery(operand,
+                                       lower,
+                                       upper,
+                                       between.isLowerBoundIncluded(),
+                                       between.isUpperBoundIncluded(),
+                                       false);
                 }
                 if (constraint instanceof Comparison) {
                     Comparison comparison = (Comparison)constraint;
@@ -552,11 +558,9 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 }
                 if (constraint instanceof FullTextSearch) {
                     FullTextSearch search = (FullTextSearch)constraint;
-                    String fieldName = this.fullTextFieldName;
                     String propertyName = search.getPropertyName();
-                    if (propertyName != null) {
-                        fieldName = fullTextFieldName(fieldNameFor(propertyName));
-                    }
+                    if (propertyName != null) propertyName = fieldNameFor(propertyName);
+                    String fieldName = fullTextFieldName(propertyName);
                     return createQuery(fieldName, search.getTerm());
                 }
                 if (constraint instanceof SameNode) {
@@ -712,7 +716,8 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
             }
 
             public Query createQuery( String fieldName,
-                                      FullTextSearch.Term term ) {
+                                      FullTextSearch.Term term ) throws IOException {
+                assert fieldName != null;
                 if (term instanceof FullTextSearch.Conjunction) {
                     FullTextSearch.Conjunction conjunction = (FullTextSearch.Conjunction)term;
                     BooleanQuery query = new BooleanQuery();
@@ -739,15 +744,18 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 }
                 if (term instanceof FullTextSearch.SimpleTerm) {
                     FullTextSearch.SimpleTerm simple = (FullTextSearch.SimpleTerm)term;
-                    if (simple.isQuotingRequired()) {
-                        PhraseQuery query = new PhraseQuery();
-                        query.setSlop(0); // terms must be adjacent
-                        for (String value : simple.getValues()) {
-                            query.add(new Term(fieldName, value));
-                        }
-                        return query;
+                    PhraseQuery query = new PhraseQuery();
+                    query.setSlop(0); // terms must be adjacent
+                    String expression = simple.getValue();
+                    // Run the expression through the Lucene analyzer to extract the terms ...
+                    TokenStream stream = session.getAnalyzer().tokenStream(fieldName, new StringReader(expression));
+                    TermAttribute termAttribute = stream.addAttribute(TermAttribute.class);
+                    while (stream.incrementToken()) {
+                        // The term attribute object has been modified to contain the next term ...
+                        String analyzedTerm = termAttribute.term();
+                        query.add(new Term(fieldName, analyzedTerm));
                     }
-                    return new TermQuery(new Term(fieldName, simple.getValue()));
+                    return query;
                 }
                 // Should not get here ...
                 assert false;
@@ -786,6 +794,8 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
         int getChangeCount();
 
         IndexSearcher getContentSearcher() throws IOException;
+
+        Analyzer getAnalyzer();
 
         /**
          * Create a {@link TupleCollector} instance that collects the results from the index(es).

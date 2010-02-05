@@ -127,6 +127,7 @@ class JcrQueryManager implements QueryManager {
             // If using XPath, we need to add a few hints ...
             if (Query.XPATH.equals(language)) {
                 hints.hasFullTextSearch = true; // requires 'jcr:score' to exist
+                hints.validateColumnExistance = false; // XPath can use residual properties that are not in the schema
             }
             return new JcrQuery(this.session, expression, parser.getLanguage(), command, hints, storedAtPath);
         } catch (ParsingException e) {

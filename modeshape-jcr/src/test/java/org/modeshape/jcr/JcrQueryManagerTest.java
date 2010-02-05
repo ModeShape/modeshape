@@ -44,6 +44,12 @@ import javax.jcr.SimpleCredentials;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
+import org.jboss.security.config.IDTrustConfiguration;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path.Segment;
@@ -51,12 +57,6 @@ import org.modeshape.jcr.JcrQueryManager.JcrQueryResult;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
 import org.modeshape.jcr.nodetype.InvalidNodeTypeDefinitionException;
-import org.jboss.security.config.IDTrustConfiguration;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 /**
  * This is a test suite that operates against a complete JcrRepository instance created and managed using the JcrEngine.
@@ -471,4 +471,24 @@ public class JcrQueryManagerTest {
         }
     }
 
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithContainsCriteria() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., 'liter')]", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 2);
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+    }
+
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteria() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., '\"liter V 12\"')]",
+                                                                           Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+    }
 }

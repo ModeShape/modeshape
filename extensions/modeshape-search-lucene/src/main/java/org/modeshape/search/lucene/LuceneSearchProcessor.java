@@ -96,7 +96,8 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
      */
     @Override
     protected String fullTextFieldName( String propertyName ) {
-        return LuceneSearchWorkspace.FULL_TEXT_PREFIX + propertyName;
+        return propertyName == null ? LuceneSearchWorkspace.ContentIndex.FULL_TEXT : LuceneSearchWorkspace.FULL_TEXT_PREFIX
+                                                                                     + propertyName;
     }
 
     /**

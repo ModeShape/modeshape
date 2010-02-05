@@ -28,7 +28,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.query.QueryResults;
 
 @NotThreadSafe
-public final class PlanHints implements Serializable {
+public final class PlanHints implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
 
@@ -65,6 +65,9 @@ public final class PlanHints implements Serializable {
     /** Flag indicates whether the query plan should be included in the {@link QueryResults} */
     public boolean showPlan = false;
 
+    /** Flag indicates whether to check during validation for the existance of columns used in column selectors and criteria. */
+    public boolean validateColumnExistance = true;
+
     public PlanHints() {
     }
 
@@ -80,7 +83,29 @@ public final class PlanHints implements Serializable {
         sb.append(", hasOptionalJoin=").append(hasOptionalJoin);
         sb.append(", hasFullTextSearch=").append(hasFullTextSearch);
         sb.append(", showPlan=").append(showPlan);
+        sb.append(", validateColumnExistance=").append(validateColumnExistance);
         sb.append('}');
         return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#clone()
+     */
+    @Override
+    public PlanHints clone() {
+        PlanHints clone = new PlanHints();
+        clone.hasCriteria = this.hasCriteria;
+        clone.hasView = this.hasView;
+        clone.hasJoin = this.hasJoin;
+        clone.hasSort = this.hasSort;
+        clone.hasSetQuery = this.hasSetQuery;
+        clone.hasLimit = this.hasLimit;
+        clone.hasOptionalJoin = this.hasOptionalJoin;
+        clone.hasFullTextSearch = this.hasFullTextSearch;
+        clone.showPlan = this.showPlan;
+        clone.validateColumnExistance = this.validateColumnExistance;
+        return clone;
     }
 }

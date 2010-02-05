@@ -74,7 +74,7 @@
       <sv:property sv:name="car:model" sv:type="String"><sv:value>DTS</sv:value></sv:property>
       <sv:property sv:name="car:year" sv:type="String"><sv:value>2008</sv:value></sv:property>
       <sv:property sv:name="car:userRating" sv:type="Long"><sv:value>1</sv:value></sv:property>
-      <sv:property sv:name="car:engine" sv:type="String"><sv:value>3.6-liter V6</sv:value></sv:property>
+      <sv:property sv:name="car:engine" sv:type="String"><sv:value>3.6 liter V6</sv:value></sv:property>
     </sv:node>
     <sv:node sv:name="Bentley Continental">
       <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>

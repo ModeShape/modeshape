@@ -701,7 +701,19 @@ public class XPathParser {
      * @return the text without leading and trailing quotes, or <code>text</code> if there were no square brackets or quotes
      */
     protected String removeQuotes( String text ) {
-        return text.replaceFirst("^['\"]+", "").replaceAll("['\"]+$", "");
+        assert text != null;
+        if (text.length() > 2) {
+            char first = text.charAt(0);
+            // Need to remove these only if they are paired ...
+            if (first == '"' || first == '\'') {
+                int indexOfLast = text.length() - 1;
+                char last = text.charAt(indexOfLast);
+                if (last == first) {
+                    text = text.substring(1, indexOfLast);
+                }
+            }
+        }
+        return text;
     }
 
     protected Component collapse( Component component ) {

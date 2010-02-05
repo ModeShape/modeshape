@@ -31,6 +31,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.InvalidQueryException;
+import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
+import org.apache.lucene.util.Version;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.i18n.I18n;
@@ -273,7 +275,7 @@ abstract class RepositoryQueryManager {
             IndexRules indexRules = null;
 
             // Set up the search engine ...
-            org.apache.lucene.analysis.Analyzer analyzer = null;
+            org.apache.lucene.analysis.Analyzer analyzer = new SnowballAnalyzer(Version.LUCENE_30, "English");
             boolean verifyWorkspaces = false;
             searchEngine = new LuceneSearchEngine(nameOfSourceToBeSearchable, connectionFactory, verifyWorkspaces, configuration,
                                                   indexRules, analyzer);

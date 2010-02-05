@@ -24,6 +24,7 @@
 package org.modeshape.search.lucene;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -31,6 +32,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import net.jcip.annotations.NotThreadSafe;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldSelector;
@@ -58,9 +62,9 @@ import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
 import org.modeshape.common.util.Logger;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
@@ -177,6 +181,15 @@ public class LuceneSearchSession implements WorkspaceSession {
             contentSearcher = new IndexSearcher(getContentReader());
         }
         return contentSearcher;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession#getAnalyzer()
+     */
+    public Analyzer getAnalyzer() {
+        return workspace.analyzer;
     }
 
     public boolean hasWriters() {
@@ -470,7 +483,40 @@ public class LuceneSearchSession implements WorkspaceSession {
         if (fullTextSearchValue.length() != 0) {
             doc.add(new Field(ContentIndex.FULL_TEXT, fullTextSearchValue.toString(), Field.Store.NO, Field.Index.ANALYZED));
         }
-        logger.trace("index for \"{0}\" workspace: ADD {1}", workspace.getWorkspaceName(), doc);
+        if (logger.isTraceEnabled()) {
+            logger.trace("index for \"{0}\" workspace: ADD {1} {2}", workspace.getWorkspaceName(), pathStr, doc);
+            if (fullTextSearchValue.length() != 0) {
+
+                // Run the expression through the Lucene analyzer to extract the terms ...
+                String fullTextContent = fullTextSearchValue.toString();
+                TokenStream stream = getAnalyzer().tokenStream(ContentIndex.FULL_TEXT, new StringReader(fullTextContent));
+                TermAttribute term = stream.addAttribute(TermAttribute.class);
+                // PositionIncrementAttribute positionIncrement = stream.addAttribute(PositionIncrementAttribute.class);
+                // OffsetAttribute offset = stream.addAttribute(OffsetAttribute.class);
+                // TypeAttribute type = stream.addAttribute(TypeAttribute.class);
+                // int position = 0;
+                StringBuilder output = new StringBuilder();
+                while (stream.incrementToken()) {
+                    output.append(term.term()).append(' ');
+                    // // The term attribute object has been modified to contain the next term ...
+                    // int incr = positionIncrement.getPositionIncrement();
+                    // if (incr > 0) {
+                    // position = position + incr;
+                    // output.append(' ').append(position).append(':');
+                    // }
+                    // output.append('[')
+                    // .append(term.term())
+                    // .append(':')
+                    // .append(offset.startOffset())
+                    // .append("->")
+                    // .append(offset.endOffset())
+                    // .append(':')
+                    // .append(type.type())
+                    // .append(']');
+                }
+                logger.trace("index for \"{0}\" workspace:     {1} fts terms: {2}", workspace.getWorkspaceName(), pathStr, output);
+            }
+        }
         getContentWriter().updateDocument(new Term(ContentIndex.PATH, pathStr), doc);
     }
 
