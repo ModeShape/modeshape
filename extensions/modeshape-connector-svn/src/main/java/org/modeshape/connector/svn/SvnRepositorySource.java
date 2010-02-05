@@ -400,6 +400,8 @@ public class SvnRepositorySource extends AbstractPathRepositorySource implements
             I18n msg = SvnRepositoryConnectorI18n.propertyIsRequired;
             throw new RepositorySourceException(getRepositoryRootUrl(), msg.text("repositoryRootURL"));
         }
+        repositoryRootURL = repositoryRootURL.trim();
+        if (repositoryRootURL.endsWith("/")) repositoryRootURL = repositoryRootURL + "/";
 
         if (this.repository == null) {
             this.repository = new SvnRepository(this);
