@@ -1,0 +1,41 @@
+id: v.0.r32/0
+type: dir
+count: 0
+cpath: /branches
+copyroot: 0 /
+
+PLAIN
+K 8
+branches
+V 13
+dir v.0.r32/0
+K 5
+nodeA
+V 15
+dir 1.0.r5/4139
+K 5
+nodeB
+V 15
+dir 2.0.r5/5040
+K 4
+tags
+V 13
+dir u.0.r30/0
+K 5
+trunk
+V 18
+dir n.0.r28/176280
+END
+ENDREP
+id: 0.0.r32/238
+type: dir
+pred: 0.0.r31/141
+count: 32
+text: 32 65 160 160 7ae882bf05a651dae6e1808346128fce
+cpath: /
+copyroot: 0 /
+
+_0.0.t31-1 add false false /branches
+
+
+238 369

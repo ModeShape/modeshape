@@ -27,6 +27,8 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.util.Map;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
@@ -39,8 +41,6 @@ import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Property;
-import org.junit.Before;
-import org.junit.Test;
 
 public class SvnIntegrationTest {
 
@@ -51,7 +51,7 @@ public class SvnIntegrationTest {
 
     @Before
     public void beforeEach() {
-        repositoryUrl = "http://anonsvn.jboss.org/repos/dna/";
+        repositoryUrl = "http://anonsvn.jboss.org/repos/modeshape/";
         predefinedWorkspaceNames = new String[] {"trunk", "tags", "branches"};
         context = new ExecutionContext();
         source = new SvnRepositorySource();

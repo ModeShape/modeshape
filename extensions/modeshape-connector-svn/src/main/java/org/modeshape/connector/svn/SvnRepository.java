@@ -18,11 +18,11 @@ import org.modeshape.connector.svn.mgnt.AddDirectory;
 import org.modeshape.connector.svn.mgnt.AddFile;
 import org.modeshape.connector.svn.mgnt.DeleteEntry;
 import org.modeshape.connector.svn.mgnt.UpdateFile;
-import org.modeshape.graph.ModeShapeIntLexicon;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
+import org.modeshape.graph.ModeShapeIntLexicon;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.NodeConflictBehavior;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.path.AbstractWritablePathWorkspace;
@@ -248,8 +248,7 @@ public class SvnRepository extends WritablePathRepository {
                 try {
                     if (SvnRepositoryUtil.exists(workspaceRoot, newChildPath)) {
                         if (conflictBehavior.equals(NodeConflictBehavior.APPEND)) {
-                            I18n msg = SvnRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
-                            throw new InvalidRequestException(msg.text("SVN Connector does not support Same Name Sibling"));
+                            throw new InvalidRequestException(SvnRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed.text());
                         } else if (conflictBehavior.equals(NodeConflictBehavior.DO_NOT_REPLACE)) {
                             skipWrite = true;
                         }
@@ -308,26 +307,27 @@ public class SvnRepository extends WritablePathRepository {
                     throw new RepositorySourceException(getSourceName(), msg.text(parentPathAsString, getName(), getSourceName()));
                 }
 
-                boolean skipWrite = false;
-                if (conflictBehavior.equals(NodeConflictBehavior.APPEND)) {
-                    I18n msg = SvnRepositoryConnectorI18n.sameNameSiblingsAreNotAllowed;
-                    throw new InvalidRequestException(msg.text("SVN Connector does not support Same Name Sibling"));
-                } else if (conflictBehavior.equals(NodeConflictBehavior.DO_NOT_REPLACE)) {
-                    // TODO check if the file already has content
-                    skipWrite = true;
+                boolean updateFileContent = true;
+                switch (conflictBehavior) {
+                    case APPEND:
+                    case REPLACE:
+                    case UPDATE:
+                        // When the "nt:file" parent node was created, it automatically creates the "jcr:content"
+                        // child node with empty content. Therefore, creating a new "jcr:content" node is
+                        // not technically possible (recall that same-name-siblings are not supported in general,
+                        // but certainly not for the "jcr:content" node). Therefore, we can treat all these
+                        // conflict behavior cases as a simple update to the existing "jcr:content" child node.
+                        break;
+                    case DO_NOT_REPLACE:
+                        // TODO check if the file already has content
+                        updateFileContent = false;
                 }
 
-                if (!skipWrite) {
-                    Property dataProperty = properties.get(JcrLexicon.DATA);
-                    if (dataProperty == null) {
-                        I18n msg = SvnRepositoryConnectorI18n.missingRequiredProperty;
-                        String dataPropName = JcrLexicon.DATA.getString(registry);
-                        throw new RepositorySourceException(getSourceName(), msg.text(parentPathAsString,
-                                                                                      getName(),
-                                                                                      getSourceName(),
-                                                                                      dataPropName));
-                    }
-
+                Property dataProperty = properties.get(JcrLexicon.DATA);
+                if (dataProperty == null) {
+                    updateFileContent = false; // no content to write, so just continue
+                }
+                if (updateFileContent) {
                     BinaryFactory binaryFactory = context.getValueFactories().getBinaryFactory();
                     Binary binary = binaryFactory.create(properties.get(JcrLexicon.DATA).getFirstValue());
                     // get old data

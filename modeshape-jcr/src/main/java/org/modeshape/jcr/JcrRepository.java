@@ -926,7 +926,13 @@ public class JcrRepository implements Repository {
             // We're not sharing a '/jcr:system' branch, so we need to make sure there is one in the source.
             // Note that this doesn't always work with some connectors (e.g., the FileSystem or SVN connectors)
             // that don't allow arbitrary nodes.
-            initializeSystemContent(graph);
+            try {
+                initializeSystemContent(graph);
+            } catch (RepositorySourceException e) {
+                Logger.getLogger(getClass())
+                      .debug(e,
+                             "Workspaces do not share a common /jcr:system branch, but the connector was unable to create one in this session. Errors may result.");
+            }
         }
 
         // Create the workspace, which will create its own session ...

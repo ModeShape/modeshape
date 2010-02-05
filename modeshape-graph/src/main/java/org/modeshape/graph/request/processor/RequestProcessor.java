@@ -308,7 +308,9 @@ public abstract class RequestProcessor {
         boolean hasErrors = false;
         boolean readonly = request.isReadOnly();
         // Iterate over the requests in this composite, but only iterate once so that
-        for (Request embedded : request) {
+        Iterator<Request> iter = request.iterator();
+        while (iter.hasNext()) {
+            Request embedded = iter.next();
             assert embedded != null;
             if (embedded.isCancelled()) return;
             process(embedded);
@@ -320,6 +322,13 @@ public abstract class RequestProcessor {
                     // on the composite request ...
                     assert embedded.getError() != null;
                     request.setError(embedded.getError());
+                    // We need to freeze all the remaining (unprocessed) requests before returning ...
+                    while (iter.hasNext()) {
+                        embedded = iter.next();
+                        // Cancel this request and then freeze ...
+                        embedded.cancel();
+                        embedded.freeze();
+                    }
                     return;
                 }
             }

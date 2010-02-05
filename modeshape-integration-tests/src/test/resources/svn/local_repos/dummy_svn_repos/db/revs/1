@@ -1,0 +1,25 @@
+id: 1.0.r1/0
+type: dir
+count: 0
+cpath: /nodeA
+copyroot: 0 /
+
+PLAIN
+K 5
+nodeA
+V 12
+dir 1.0.r1/0
+END
+ENDREP
+id: 0.0.r1/106
+type: dir
+pred: 0.0.r0/17
+count: 1
+text: 1 61 32 32 0a7bf440dc5f1312709d13a558f30bf3
+cpath: /
+copyroot: 0 /
+
+_0.0.t0-1 add false false /nodeA
+
+
+106 230

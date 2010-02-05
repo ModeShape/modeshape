@@ -1,0 +1,41 @@
+id: u.0.r30/0
+type: dir
+count: 0
+cpath: /tags
+copyroot: 0 /
+
+PLAIN
+K 8
+branches
+V 13
+dir t.0.r29/0
+K 5
+nodeA
+V 15
+dir 1.0.r5/4139
+K 5
+nodeB
+V 15
+dir 2.0.r5/5040
+K 4
+tags
+V 13
+dir u.0.r30/0
+K 5
+trunk
+V 18
+dir n.0.r28/176280
+END
+ENDREP
+id: 0.0.r30/234
+type: dir
+pred: 0.0.r29/210
+count: 30
+text: 30 61 160 160 8b114e8bbd8c11af3ca74cb5e31e139e
+cpath: /
+copyroot: 0 /
+
+_0.0.t29-1 add false false /tags
+
+
+234 365

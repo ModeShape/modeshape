@@ -1,0 +1,48 @@
+id: o.0.r24/0
+type: dir
+count: 0
+cpath: /trunk/root
+copyroot: 0 /
+
+PLAIN
+K 4
+root
+V 13
+dir o.0.r24/0
+END
+ENDREP
+id: n.0.r24/112
+type: dir
+pred: n.0.r23/0
+count: 1
+text: 24 67 32 32 1f9df28309ef0792764bf510e4fa7cc6
+cpath: /trunk
+copyroot: 0 /
+
+PLAIN
+K 5
+nodeA
+V 15
+dir 1.0.r5/4139
+K 5
+nodeB
+V 15
+dir 2.0.r5/5040
+K 5
+trunk
+V 15
+dir n.0.r24/112
+END
+ENDREP
+id: 0.0.r24/353
+type: dir
+pred: 0.0.r23/170
+count: 24
+text: 24 243 97 97 ba154ee6fefe2a1f03f3e5b73bf23c1e
+cpath: /
+copyroot: 0 /
+
+_0.0.t23-1 add false false /trunk/root
+
+
+353 483

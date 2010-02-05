@@ -85,5 +85,4 @@ public final class SvnRepositoryConnectorI18n {
         return I18n.getLocalizationProblems(SvnRepositoryConnectorI18n.class, locale);
     }
 
-  
 }

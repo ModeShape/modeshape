@@ -1,0 +1,29 @@
+id: 2.0.r2/0
+type: dir
+count: 0
+cpath: /nodeB
+copyroot: 0 /
+
+PLAIN
+K 5
+nodeA
+V 12
+dir 1.0.r1/0
+K 5
+nodeB
+V 12
+dir 2.0.r2/0
+END
+ENDREP
+id: 0.0.r2/134
+type: dir
+pred: 0.0.r1/106
+count: 2
+text: 2 61 60 60 ab44b9439c3c85149e68425b5a1d27c1
+cpath: /
+copyroot: 0 /
+
+_0.0.t1-1 add false false /nodeB
+
+
+134 259

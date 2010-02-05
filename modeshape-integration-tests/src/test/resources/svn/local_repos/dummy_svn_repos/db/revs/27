@@ -1,0 +1,82 @@
+id: r.0.r27/0
+type: dir
+count: 0
+cpath: /trunk/root/c/h
+copyroot: 0 /
+
+PLAIN
+K 1
+h
+V 13
+dir r.0.r27/0
+END
+ENDREP
+id: q.0.r27/113
+type: dir
+pred: q.0.r26/0
+count: 1
+text: 27 71 29 29 c263743f50376e8568a6766b99e5f7f7
+cpath: /trunk/root/c
+copyroot: 0 /
+
+PLAIN
+K 1
+a
+V 13
+dir p.0.r25/0
+K 1
+c
+V 15
+dir q.0.r27/113
+END
+ENDREP
+id: o.0.r27/320
+type: dir
+pred: o.0.r26/136
+count: 3
+text: 27 251 56 56 a52216246ee43f7d62b5b3af46d2e866
+cpath: /trunk/root
+copyroot: 0 /
+
+PLAIN
+K 4
+root
+V 15
+dir o.0.r27/320
+END
+ENDREP
+id: n.0.r27/506
+type: dir
+pred: n.0.r26/321
+count: 4
+text: 27 459 34 34 b0fe673d5c46e582be15bbd4682c24c6
+cpath: /trunk
+copyroot: 0 /
+
+PLAIN
+K 5
+nodeA
+V 15
+dir 1.0.r5/4139
+K 5
+nodeB
+V 15
+dir 2.0.r5/5040
+K 5
+trunk
+V 15
+dir n.0.r27/506
+END
+ENDREP
+id: 0.0.r27/750
+type: dir
+pred: 0.0.r26/565
+count: 27
+text: 27 640 97 97 f4976b49507d2213db153963ce3984ae
+cpath: /
+copyroot: 0 /
+
+_0.0.t26-1 add false false /trunk/root/c/h
+
+
+750 880

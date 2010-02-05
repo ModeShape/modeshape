@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import java.util.Iterator;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
@@ -40,6 +41,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.session.GraphSession.PropertyInfo;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
 import org.modeshape.jcr.SessionCache.NodeEditor;
@@ -273,6 +275,35 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
             return this.getName().compareTo(that.getName());
         } catch (RepositoryException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        try {
+            ValueFactory<String> stringFactory = session().getExecutionContext().getValueFactories().getStringFactory();
+            StringBuilder sb = new StringBuilder();
+            sb.append(getName()).append('=');
+            org.modeshape.graph.property.Property property = propertyInfo().getProperty();
+            if (isMultiple()) {
+                sb.append('[');
+                Iterator<?> iter = property.iterator();
+                if (iter.hasNext()) {
+                    sb.append(stringFactory.create(iter.next()));
+                    if (iter.hasNext()) sb.append(',');
+                }
+                sb.append(']');
+            } else {
+                sb.append(stringFactory.create(property.getFirstValue()));
+            }
+            return sb.toString();
+        } catch (RepositoryException e) {
+            return super.toString();
         }
     }
 }

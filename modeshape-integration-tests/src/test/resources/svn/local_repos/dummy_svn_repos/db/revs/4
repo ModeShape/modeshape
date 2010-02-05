@@ -1,0 +1,59 @@
+id: 4.0.r4/0
+type: dir
+count: 0
+cpath: /nodeB/nodeB1/nodeB1_1
+copyroot: 0 /
+
+PLAIN
+K 8
+nodeB1_1
+V 12
+dir 4.0.r4/0
+END
+ENDREP
+id: 3.0.r4/125
+type: dir
+pred: 3.0.r3/0
+count: 1
+text: 4 77 35 35 9292256a44ccf3258265082625b73ee4
+cpath: /nodeB/nodeB1
+copyroot: 0 /
+
+PLAIN
+K 6
+nodeB1
+V 14
+dir 3.0.r4/125
+END
+ENDREP
+id: 2.0.r4/308
+type: dir
+pred: 2.0.r3/114
+count: 2
+text: 4 260 35 35 8483a3c424dc83b6290426cc82a0f828
+cpath: /nodeB
+copyroot: 0 /
+
+PLAIN
+K 5
+nodeA
+V 12
+dir 1.0.r1/0
+K 5
+nodeB
+V 14
+dir 2.0.r4/308
+END
+ENDREP
+id: 0.0.r4/514
+type: dir
+pred: 0.0.r3/317
+count: 4
+text: 4 439 62 62 3838f2508ade408bb5bb4cc3b819a9ac
+cpath: /
+copyroot: 0 /
+
+_0.0.t3-1 add false false /nodeB/nodeB1/nodeB1_1
+
+
+514 640
