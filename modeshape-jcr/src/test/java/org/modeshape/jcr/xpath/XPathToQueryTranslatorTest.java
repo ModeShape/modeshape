@@ -26,14 +26,14 @@ package org.modeshape.jcr.xpath;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import org.hamcrest.Matcher;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.parse.SqlQueryParser;
 import org.modeshape.jcr.xpath.XPath.Component;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 
@@ -293,6 +293,42 @@ public class XPathToQueryTranslatorTest {
     public void shouldTranslateFromXPathUsingNameTestsAndWildcardOrderBy() {
         assertThat(xpath("/jcr:root/testroot/*[@prop1] order by @prop1 ascending"),
                    isSql("SELECT nodeSet1.prop1 FROM __ALLNODES__ as nodeSet1 WHERE (PATH(nodeSet1) LIKE '/testroot/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)) AND nodeSet1.prop1 IS NOT NULL ORDER BY nodeSet1.prop1"));
+    }
+
+    @Test
+    public void shouldTranslateFromXPathUsingElementTestForChildrenOfRoot() {
+        assertThat(xpath("/jcr:root/element()"),
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE DEPTH(nodeSet1) = CAST(1 AS LONG)"));
+    }
+
+    @Test
+    public void shouldTranslateFromXPathUsingElementTestAndParentPath() {
+        assertThat(xpath("/jcr:root/testroot/element()"),
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) LIKE '/testroot/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
+    }
+
+    @Test
+    public void shouldTranslateFromXPathUsingElementTestAndAncestorPath() {
+        assertThat(xpath("/jcr:root/testroot//element()"),
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) LIKE '/testroot/%'"));
+    }
+
+    @Test
+    public void shouldTranslateFromXPathUsingElementTestWithTypeNameForChildrenOfRoot() {
+        assertThat(xpath("/jcr:root/element(nodeName)"),
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND DEPTH(nodeSet1) = CAST(1 AS LONG)"));
+    }
+
+    @Test
+    public void shouldTranslateFromXPathUsingElementTestWithTypeNameAndParentPath() {
+        assertThat(xpath("/jcr:root/testroot/element(nodeName)"),
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND PATH(nodeSet1) LIKE '/testroot/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
+    }
+
+    @Test
+    public void shouldTranslateFromXPathUsingElementTestWithTypeNameAndAncestorPath() {
+        assertThat(xpath("/jcr:root/testroot//element(nodeName)"),
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND PATH(nodeSet1) LIKE '/testroot/%'"));
     }
 
     @Test

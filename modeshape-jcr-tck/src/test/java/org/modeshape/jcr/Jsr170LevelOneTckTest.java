@@ -98,7 +98,6 @@ public class Jsr170LevelOneTckTest {
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathOrderByTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathJcrPathTest.class);
 
-            addTestSuite(org.apache.jackrabbit.test.api.query.ElementTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.QueryResultNodeIteratorTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathDocOrderTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathJcrPathTest.class);

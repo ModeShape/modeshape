@@ -68,8 +68,8 @@ import org.modeshape.jcr.xpath.XPath.StepExpression;
 import org.modeshape.jcr.xpath.XPath.Union;
 
 /**
- * A component that translates an {@link XPath} abstract syntax model representation into a {@link QueryCommand ModeShape abstract query
- * model}.
+ * A component that translates an {@link XPath} abstract syntax model representation into a {@link QueryCommand ModeShape abstract
+ * query model}.
  */
 public class XPathToQueryTranslator {
 
@@ -419,6 +419,13 @@ public class XPathToQueryTranslator {
         }
         if (pathConstraint.isEmpty()) {
             where.depth(tableName).isEqualTo(1);
+        } else {
+            List<StepExpression> path = new ArrayList<StepExpression>(pathConstraint);
+            if (!path.isEmpty() && path.get(path.size() - 1) instanceof AxisStep) {
+                // Element test should always apply to descendants, never to self, so add a descedant
+                path.add(new AxisStep(new NameTest(null, null), Collections.<Component>emptyList()));
+            }
+            translatePathExpressionConstraint(new PathExpression(true, path, null), where, tableName);
         }
         return tableName;
     }
@@ -768,7 +775,12 @@ public class XPathToQueryTranslator {
                 if (builder.isEmpty()) {
                     builder.append("%/");
                 } else {
-                    builder = new DualPathLikeBuilder(builder.clone(), builder.append("/%"));
+                    if (iterator.hasNext()) {
+                        builder.append('/');
+                        builder = new DualPathLikeBuilder(builder.clone(), builder.append("%"));
+                    } else {
+                        builder.append('/').append('%');
+                    }
                 }
             } else if (step instanceof AxisStep) {
                 ++depth;
@@ -841,14 +853,19 @@ public class XPathToQueryTranslator {
 
     protected static class SinglePathLikeBuilder implements PathLikeBuilder {
         private final StringBuilder builder = new StringBuilder();
+        private char lastChar;
 
         public SinglePathLikeBuilder append( String string ) {
             builder.append(string);
+            if (string.length() > 0) lastChar = string.charAt(string.length() - 1);
             return this;
         }
 
         public SinglePathLikeBuilder append( char c ) {
-            builder.append(c);
+            if (lastChar != c) {
+                builder.append(c);
+                lastChar = c;
+            }
             return this;
         }
 

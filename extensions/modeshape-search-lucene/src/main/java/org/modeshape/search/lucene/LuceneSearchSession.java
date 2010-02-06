@@ -1006,19 +1006,27 @@ public class LuceneSearchSession implements WorkspaceSession {
         String stringValue = processor.stringFactory.create(value);
         if (!caseSensitive) stringValue = stringValue.toLowerCase();
         Path.Segment segment = operator != Operator.LIKE ? processor.pathFactory.createSegment(stringValue) : null;
+        // Determine if the string value contained a SNS index ...
+        boolean includeSns = stringValue.indexOf('[') != -1;
         int snsIndex = operator != Operator.LIKE ? segment.getIndex() : 0;
         Query query = null;
         switch (operator) {
             case EQUAL_TO:
+                if (!includeSns) {
+                    return new TermQuery(new Term(ContentIndex.NODE_NAME, stringValue));
+                }
                 BooleanQuery booleanQuery = new BooleanQuery();
                 booleanQuery.add(new TermQuery(new Term(ContentIndex.NODE_NAME, stringValue)), Occur.MUST);
-                booleanQuery.add(NumericRangeQuery.newIntRange(ContentIndex.SNS_INDEX, snsIndex, snsIndex, true, false),
+                booleanQuery.add(NumericRangeQuery.newIntRange(ContentIndex.SNS_INDEX, snsIndex, snsIndex, true, true),
                                  Occur.MUST);
                 return booleanQuery;
             case NOT_EQUAL_TO:
+                if (!includeSns) {
+                    return new NotQuery(new TermQuery(new Term(ContentIndex.NODE_NAME, stringValue)));
+                }
                 booleanQuery = new BooleanQuery();
                 booleanQuery.add(new TermQuery(new Term(ContentIndex.NODE_NAME, stringValue)), Occur.MUST);
-                booleanQuery.add(NumericRangeQuery.newIntRange(ContentIndex.SNS_INDEX, snsIndex, snsIndex, true, false),
+                booleanQuery.add(NumericRangeQuery.newIntRange(ContentIndex.SNS_INDEX, snsIndex, snsIndex, true, true),
                                  Occur.MUST);
                 return new NotQuery(booleanQuery);
             case GREATER_THAN:
@@ -1026,28 +1034,32 @@ public class LuceneSearchSession implements WorkspaceSession {
                                                                                 ContentIndex.NODE_NAME,
                                                                                 ContentIndex.SNS_INDEX,
                                                                                 factories,
-                                                                                caseSensitive);
+                                                                                caseSensitive,
+                                                                                includeSns);
                 break;
             case GREATER_THAN_OR_EQUAL_TO:
                 query = CompareNameQuery.createQueryForNodesWithNameGreaterThanOrEqualTo(segment,
                                                                                          ContentIndex.NODE_NAME,
                                                                                          ContentIndex.SNS_INDEX,
                                                                                          factories,
-                                                                                         caseSensitive);
+                                                                                         caseSensitive,
+                                                                                         includeSns);
                 break;
             case LESS_THAN:
                 query = CompareNameQuery.createQueryForNodesWithNameLessThan(segment,
                                                                              ContentIndex.NODE_NAME,
                                                                              ContentIndex.SNS_INDEX,
                                                                              factories,
-                                                                             caseSensitive);
+                                                                             caseSensitive,
+                                                                             includeSns);
                 break;
             case LESS_THAN_OR_EQUAL_TO:
                 query = CompareNameQuery.createQueryForNodesWithNameLessThanOrEqualTo(segment,
                                                                                       ContentIndex.NODE_NAME,
                                                                                       ContentIndex.SNS_INDEX,
                                                                                       factories,
-                                                                                      caseSensitive);
+                                                                                      caseSensitive,
+                                                                                      includeSns);
                 break;
             case LIKE:
                 // See whether the like expression has brackets ...

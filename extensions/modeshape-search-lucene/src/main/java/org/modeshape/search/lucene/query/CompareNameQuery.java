@@ -100,6 +100,59 @@ public class CompareNameQuery extends CompareQuery<Path.Segment> {
         }
     };
 
+    protected static final Evaluator<Path.Segment> IS_LESS_THAN_NO_SNS = new Evaluator<Path.Segment>() {
+        private static final long serialVersionUID = 1L;
+
+        public boolean satisfiesConstraint( Path.Segment nodeValue,
+                                            Path.Segment constraintValue ) {
+            return ValueComparators.PATH_SEGMENT_NAME_COMPARATOR.compare(nodeValue, constraintValue) < 0;
+        }
+
+        @Override
+        public String toString() {
+            return " < ";
+        }
+    };
+    protected static final Evaluator<Path.Segment> IS_LESS_THAN_OR_EQUAL_TO_NO_SNS = new Evaluator<Path.Segment>() {
+        private static final long serialVersionUID = 1L;
+
+        public boolean satisfiesConstraint( Path.Segment nodeValue,
+                                            Path.Segment constraintValue ) {
+            return ValueComparators.PATH_SEGMENT_NAME_COMPARATOR.compare(nodeValue, constraintValue) <= 0;
+        }
+
+        @Override
+        public String toString() {
+            return " <= ";
+        }
+    };
+    protected static final Evaluator<Path.Segment> IS_GREATER_THAN_NO_SNS = new Evaluator<Path.Segment>() {
+        private static final long serialVersionUID = 1L;
+
+        public boolean satisfiesConstraint( Path.Segment nodeValue,
+                                            Path.Segment constraintValue ) {
+            return ValueComparators.PATH_SEGMENT_NAME_COMPARATOR.compare(nodeValue, constraintValue) > 0;
+        }
+
+        @Override
+        public String toString() {
+            return " > ";
+        }
+    };
+    protected static final Evaluator<Path.Segment> IS_GREATER_THAN_OR_EQUAL_TO_NO_SNS = new Evaluator<Path.Segment>() {
+        private static final long serialVersionUID = 1L;
+
+        public boolean satisfiesConstraint( Path.Segment nodeValue,
+                                            Path.Segment constraintValue ) {
+            return ValueComparators.PATH_SEGMENT_NAME_COMPARATOR.compare(nodeValue, constraintValue) >= 0;
+        }
+
+        @Override
+        public String toString() {
+            return " >= ";
+        }
+    };
+
     /**
      * Construct a {@link Query} implementation that scores documents such that the node represented by the document has a name
      * that is greater than the supplied constraint name.
@@ -110,15 +163,18 @@ public class CompareNameQuery extends CompareQuery<Path.Segment> {
      * @param factories the value factories that can be used during the scoring; may not be null
      * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
      *        case-insensitive
+     * @param includeSns true if the SNS index should be considered, or false if the SNS value should be ignored
      * @return the query; never null
      */
     public static CompareNameQuery createQueryForNodesWithNameGreaterThan( Path.Segment constraintValue,
                                                                            String localNameField,
                                                                            String snsIndexFieldName,
                                                                            ValueFactories factories,
-                                                                           boolean caseSensitive ) {
+                                                                           boolean caseSensitive,
+                                                                           boolean includeSns ) {
         return new CompareNameQuery(localNameField, snsIndexFieldName, constraintValue, factories.getPathFactory(),
-                                    factories.getStringFactory(), factories.getLongFactory(), IS_GREATER_THAN, caseSensitive);
+                                    factories.getStringFactory(), factories.getLongFactory(),
+                                    includeSns ? IS_GREATER_THAN : IS_GREATER_THAN_NO_SNS, caseSensitive);
     }
 
     /**
@@ -131,16 +187,18 @@ public class CompareNameQuery extends CompareQuery<Path.Segment> {
      * @param factories the value factories that can be used during the scoring; may not be null
      * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
      *        case-insensitive
+     * @param includeSns true if the SNS index should be considered, or false if the SNS value should be ignored
      * @return the query; never null
      */
     public static CompareNameQuery createQueryForNodesWithNameGreaterThanOrEqualTo( Path.Segment constraintValue,
                                                                                     String localNameField,
                                                                                     String snsIndexFieldName,
                                                                                     ValueFactories factories,
-                                                                                    boolean caseSensitive ) {
+                                                                                    boolean caseSensitive,
+                                                                                    boolean includeSns ) {
         return new CompareNameQuery(localNameField, snsIndexFieldName, constraintValue, factories.getPathFactory(),
-                                    factories.getStringFactory(), factories.getLongFactory(), IS_GREATER_THAN_OR_EQUAL_TO,
-                                    caseSensitive);
+                                    factories.getStringFactory(), factories.getLongFactory(),
+                                    includeSns ? IS_GREATER_THAN_OR_EQUAL_TO : IS_GREATER_THAN_OR_EQUAL_TO_NO_SNS, caseSensitive);
     }
 
     /**
@@ -153,15 +211,18 @@ public class CompareNameQuery extends CompareQuery<Path.Segment> {
      * @param factories the value factories that can be used during the scoring; may not be null
      * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
      *        case-insensitive
+     * @param includeSns true if the SNS index should be considered, or false if the SNS value should be ignored
      * @return the query; never null
      */
     public static CompareNameQuery createQueryForNodesWithNameLessThan( Path.Segment constraintValue,
                                                                         String localNameField,
                                                                         String snsIndexFieldName,
                                                                         ValueFactories factories,
-                                                                        boolean caseSensitive ) {
+                                                                        boolean caseSensitive,
+                                                                        boolean includeSns ) {
         return new CompareNameQuery(localNameField, snsIndexFieldName, constraintValue, factories.getPathFactory(),
-                                    factories.getStringFactory(), factories.getLongFactory(), IS_LESS_THAN, caseSensitive);
+                                    factories.getStringFactory(), factories.getLongFactory(),
+                                    includeSns ? IS_LESS_THAN : IS_LESS_THAN_NO_SNS, caseSensitive);
     }
 
     /**
@@ -174,16 +235,18 @@ public class CompareNameQuery extends CompareQuery<Path.Segment> {
      * @param factories the value factories that can be used during the scoring; may not be null
      * @param caseSensitive true if the comparison should be done in a case-sensitive manner, or false if it is to be
      *        case-insensitive
+     * @param includeSns true if the SNS index should be considered, or false if the SNS value should be ignored
      * @return the query; never null
      */
     public static CompareNameQuery createQueryForNodesWithNameLessThanOrEqualTo( Path.Segment constraintValue,
                                                                                  String localNameField,
                                                                                  String snsIndexFieldName,
                                                                                  ValueFactories factories,
-                                                                                 boolean caseSensitive ) {
+                                                                                 boolean caseSensitive,
+                                                                                 boolean includeSns ) {
         return new CompareNameQuery(localNameField, snsIndexFieldName, constraintValue, factories.getPathFactory(),
-                                    factories.getStringFactory(), factories.getLongFactory(), IS_LESS_THAN_OR_EQUAL_TO,
-                                    caseSensitive);
+                                    factories.getStringFactory(), factories.getLongFactory(),
+                                    includeSns ? IS_LESS_THAN_OR_EQUAL_TO : IS_LESS_THAN_OR_EQUAL_TO_NO_SNS, caseSensitive);
     }
 
     private final String snsIndexFieldName;

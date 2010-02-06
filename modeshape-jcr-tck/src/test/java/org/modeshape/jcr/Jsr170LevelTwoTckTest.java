@@ -84,6 +84,7 @@ import org.apache.jackrabbit.test.api.WorkspaceMoveReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
+import org.apache.jackrabbit.test.api.query.ElementTest;
 import org.apache.jackrabbit.test.api.query.GetPersistentQueryPathTest;
 import org.apache.jackrabbit.test.api.query.SaveTest;
 import org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test;
@@ -189,6 +190,7 @@ public class Jsr170LevelTwoTckTest {
 
             addTestSuite(GetPersistentQueryPathTest.class);
             addTestSuite(SaveTest.class);
+            addTestSuite(ElementTest.class);
             addTestSuite(XPathQueryLevel2Test.class);
 
         }

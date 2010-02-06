@@ -274,6 +274,19 @@ public class ValueComparators {
         }
     };
     /**
+     * A comparator of path segment names, excluding same-name-sibling indexes.
+     */
+    public static final Comparator<Path.Segment> PATH_SEGMENT_NAME_COMPARATOR = new Comparator<Path.Segment>() {
+
+        public int compare( Path.Segment o1,
+                            Path.Segment o2 ) {
+            if (o1 == o2) return 0;
+            if (o1 == null) return -1;
+            if (o2 == null) return 1;
+            return o1.getName().compareTo(o2.getName());
+        }
+    };
+    /**
      * A comparator of URI values.
      */
     public static final Comparator<URI> URI_COMPARATOR = new Comparator<URI>() {

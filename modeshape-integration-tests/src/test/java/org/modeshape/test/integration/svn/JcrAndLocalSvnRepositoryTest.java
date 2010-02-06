@@ -132,9 +132,9 @@ public class JcrAndLocalSvnRepositoryTest {
         contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
         contentNode.setProperty("jcr:data", fileContent);
 
-        System.out.println("## STARTING TO SAVE ##");
+        print("## STARTING TO SAVE ##");
         rootNode.getSession().save();
-        System.out.println("## SAVED ##");
+        print("## SAVED ##");
     }
 
     protected void print( String str ) {

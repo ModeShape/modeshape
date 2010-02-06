@@ -92,6 +92,7 @@ import org.apache.jackrabbit.test.api.observation.NodeReorderTest;
 import org.apache.jackrabbit.test.api.observation.PropertyAddedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyChangedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
+import org.apache.jackrabbit.test.api.query.ElementTest;
 import org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test;
 
 /**
@@ -175,7 +176,6 @@ public class JcrTckTest {
             addTestSuite(org.apache.jackrabbit.test.api.ExportDocViewTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.RepositoryLoginTest.class);
 
-            // addTestSuite(org.apache.jackrabbit.test.api.query.ElementTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathPosIndexTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathDocOrderTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathOrderByTest.class);
@@ -271,6 +271,7 @@ public class JcrTckTest {
 
             addTestSuite(ValueFactoryTest.class);
             addTestSuite(XPathQueryLevel2Test.class);
+            addTestSuite(ElementTest.class);
         }
     }
 
