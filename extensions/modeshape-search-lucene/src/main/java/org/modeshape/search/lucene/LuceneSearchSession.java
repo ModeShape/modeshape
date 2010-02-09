@@ -483,6 +483,9 @@ public class LuceneSearchSession implements WorkspaceSession {
         if (fullTextSearchValue.length() != 0) {
             doc.add(new Field(ContentIndex.FULL_TEXT, fullTextSearchValue.toString(), Field.Store.NO, Field.Index.ANALYZED));
         }
+        if (AbstractLuceneSearchEngine.DEBUG) {
+            System.out.println("index for \"" + workspace.getWorkspaceName() + "\" workspace: ADD " + pathStr + " " + doc);
+        }
         if (logger.isTraceEnabled()) {
             logger.trace("index for \"{0}\" workspace: ADD {1} {2}", workspace.getWorkspaceName(), pathStr, doc);
             if (fullTextSearchValue.length() != 0) {

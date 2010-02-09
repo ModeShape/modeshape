@@ -57,6 +57,7 @@ import org.modeshape.jcr.JcrQueryManager.JcrQueryResult;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
 import org.modeshape.jcr.nodetype.InvalidNodeTypeDefinitionException;
+import org.modeshape.search.lucene.AbstractLuceneSearchEngine;
 
 /**
  * This is a test suite that operates against a complete JcrRepository instance created and managed using the JcrEngine.
@@ -554,6 +555,7 @@ public class JcrQueryManagerTest {
 
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithRangeCriteria() throws RepositoryException {
+        AbstractLuceneSearchEngine.DEBUG = true;
         Query query = session.getWorkspace()
                              .getQueryManager()
                              .createQuery("/jcr:root/Other/*[@something <= 'value2' and @something > 'value1']", Query.XPATH);
