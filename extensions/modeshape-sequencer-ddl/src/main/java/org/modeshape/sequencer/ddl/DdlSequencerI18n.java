@@ -43,6 +43,8 @@ public final class DdlSequencerI18n {
     public static I18n unusedTokensParsingCreateIndex;
     public static I18n missingReturnTypeForFunction;
     public static I18n unsupportedProcedureParameterDeclaration;
+    public static I18n errorInstantiatingParserForGrammarUsingDefaultClasspath;
+    public static I18n errorInstantiatingParserForGrammarClasspath;
 
     static {
         try {

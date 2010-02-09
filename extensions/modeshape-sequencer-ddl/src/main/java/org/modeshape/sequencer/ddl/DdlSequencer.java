@@ -25,12 +25,17 @@ package org.modeshape.sequencer.ddl;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.graph.io.Destination;
 import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.sequencer.SequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencer;
@@ -40,10 +45,69 @@ import org.modeshape.sequencer.ddl.node.AstNode;
 /**
  * A sequencer of DDL files.
  */
+@NotThreadSafe
 public class DdlSequencer implements StreamSequencer {
-    protected Destination destination;
-    protected Path outputPath;
-    protected PathFactory pathFactory;
+
+    protected static final String[] DEFAULT_CLASSPATH = new String[] {};
+    protected static final List<String> DEFAULT_GRAMMARS;
+    protected static final Map<String, DdlParser> STANDARD_PARSERS_BY_NAME;
+
+    static {
+        List<String> grammarNames = new ArrayList<String>();
+        Map<String, DdlParser> parsersByName = new HashMap<String, DdlParser>();
+        for (DdlParser parser : DdlParsers.BUILTIN_PARSERS) {
+            String grammarName = parser.getId().toLowerCase();
+            grammarNames.add(grammarName);
+            parsersByName.put(grammarName, parser);
+        }
+        DEFAULT_GRAMMARS = Collections.unmodifiableList(grammarNames);
+        STANDARD_PARSERS_BY_NAME = Collections.unmodifiableMap(parsersByName);
+    }
+
+    private String[] parserGrammars = DEFAULT_GRAMMARS.toArray(new String[DEFAULT_GRAMMARS.size()]);
+    private String[] classpath = DEFAULT_CLASSPATH;
+
+    /**
+     * Get the names of the grammars that should be considered during processing. The grammar names may be the case-insensitive
+     * {@link DdlParser#getId() identifier} of a built-in grammar, or the name of a {@link DdlParser} implementation class.
+     * 
+     * @return the array of grammar names or classes; never null but possibly empty
+     */
+    public String[] getGrammars() {
+        return parserGrammars;
+    }
+
+    /**
+     * Set the names of the grammars that should be considered during processing. The grammar names may be the case-insensitive
+     * {@link DdlParser#getId() identifier} of a built-in grammar, or the name of a {@link DdlParser} implementation class.
+     * 
+     * @param grammarNamesOrClasses the names; may be null if the default grammar list should be used
+     */
+    public void setGrammars( String[] grammarNamesOrClasses ) {
+        this.parserGrammars = grammarNamesOrClasses != null && grammarNamesOrClasses.length != 0 ? grammarNamesOrClasses : DEFAULT_GRAMMARS.toArray(new String[DEFAULT_GRAMMARS.size()]);
+    }
+
+    /**
+     * Get the names of the classloaders that should be used to load any non-standard DdlParser implementations specified in the
+     * list of grammars.
+     * 
+     * @return the classloader names that make up the classpath; never null but possibly empty if the default classpath should be
+     *         used
+     */
+    public String[] getClasspath() {
+        return classpath;
+    }
+
+    /**
+     * Set the names of the classloaders that should be used to load any non-standard DdlParser implementations specified in the
+     * list of grammars.
+     * 
+     * @param classpath the classloader names that make up the classpath; may be null or empty if the default classpath should be
+     *        used
+     */
+    public void setClasspath( String[] classpath ) {
+        this.classpath = classpath != null ? classpath : DEFAULT_CLASSPATH;
+    }
 
     /**
      * {@inheritDoc}
@@ -54,54 +118,75 @@ public class DdlSequencer implements StreamSequencer {
     public void sequence( InputStream stream,
                           SequencerOutput output,
                           StreamSequencerContext context ) {
-
-        // Create path factory
-
-        this.pathFactory = context.getValueFactories().getPathFactory();
-        
-        DdlParsers parsers = new DdlParsers();
-
-        AstNode rootNode = null;
-
         try {
             // Perform the parsing
-            rootNode = parsers.parse(IoUtil.read(stream));
-            
-            
-            // The AstNode objects getPath() method returns a ChildPath object which is built with a parent path. If the parent
-            // path is NULL, as in the case of the parsed DDL, the parent path is set to the default ("/") which already has a parent.
-            // So we need to set the root node with relative path. This creates a BasicPath path which can be directly re-parented.
-            //Path nodePath = pathFactory.createRelativePath(StandardDdlLexicon.STATEMENTS_CONTAINER);
-            
-            Path nodePath = rootNode.getPath(context);
+            DdlParsers parsers = createParsers(getParserList(context));
+            final AstNode rootNode = parsers.parse(IoUtil.read(stream));
 
-            for (Property property : rootNode.getProperties()) {
-                output.setProperty(nodePath, property.getName(), property.getValuesAsArray());
+            // Convert the AST graph into graph nodes in the output ...
+            Queue<AstNode> queue = new LinkedList<AstNode>();
+            queue.add(rootNode);
+            while (queue.peek() != null) {
+                AstNode astNode = queue.poll();
+                Path path = astNode.getPath(context);
+                // Write the AST node properties to the output ...
+                for (Property property : astNode.getProperties()) {
+                    output.setProperty(path, property.getName(), property.getValuesAsArray());
+                }
+                // Add the children to the queue ...
+                for (AstNode child : astNode.getChildren()) {
+                    queue.add(child);
+                }
             }
-
-            convertAstNodesToGraphNodes(rootNode, nodePath, output, context);
-
         } catch (ParsingException e) {
             context.getProblems().addError(e, DdlSequencerI18n.errorParsingDdlContent, e.getLocalizedMessage());
         } catch (IOException e) {
             context.getProblems().addError(e, DdlSequencerI18n.errorSequencingDdlContent, e.getLocalizedMessage());
         }
-
     }
 
-    protected void convertAstNodesToGraphNodes( AstNode parentNode, Path parentPath, SequencerOutput output, StreamSequencerContext context ) {
-        // Walk the nodes and set all properties, recursively
+    /**
+     * Method that creates the DdlParsers instance. This may be overridden in subclasses to creates specific implementations.
+     * 
+     * @param parsers the list of DdlParser instances to use; may be empty or null
+     * @return the DdlParsers implementation; may not be null
+     */
+    protected DdlParsers createParsers( List<DdlParser> parsers ) {
+        return new DdlParsers(parsers);
+    }
 
-        List<AstNode> children = parentNode.getChildren();
-
-        for (AstNode child : children) {
-            Path nodePath = child.getPath(context); //pathFactory.create(parentPath, child.getName());
-
-            for (Property property : child.getProperties()) {
-                output.setProperty(nodePath, property.getName(), property.getValuesAsArray());
+    @SuppressWarnings( "unchecked" )
+    protected List<DdlParser> getParserList( StreamSequencerContext context ) {
+        List<DdlParser> parserList = new LinkedList<DdlParser>();
+        for (String grammar : getGrammars()) {
+            if (grammar == null) continue;
+            // Look for a standard parser using a case-insensitive name ...
+            String lowercaseGrammar = grammar.toLowerCase();
+            DdlParser parser = STANDARD_PARSERS_BY_NAME.get(lowercaseGrammar);
+            if (parser == null) {
+                // Attempt to instantiate the parser if its a classname ...
+                String[] classpath = getClasspath();
+                try {
+                    ClassLoader classloader = context.getClassLoader(classpath);
+                    Class<DdlParser> componentClass = (Class<DdlParser>)Class.forName(grammar, true, classloader);
+                    parser = componentClass.newInstance();
+                } catch (Throwable e) {
+                    if (classpath == null || classpath.length == 0) {
+                        context.getProblems().addError(e,
+                                                       DdlSequencerI18n.errorInstantiatingParserForGrammarUsingDefaultClasspath,
+                                                       grammar,
+                                                       e.getLocalizedMessage());
+                    } else {
+                        context.getProblems().addError(e,
+                                                       DdlSequencerI18n.errorInstantiatingParserForGrammarClasspath,
+                                                       grammar,
+                                                       classpath,
+                                                       e.getLocalizedMessage());
+                    }
+                }
             }
-            convertAstNodesToGraphNodes(child, nodePath, output, context);
+            if (parser != null) parserList.add(parser);
         }
+        return parserList; // okay if empty
     }
-
 }

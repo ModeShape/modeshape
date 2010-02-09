@@ -85,6 +85,14 @@ public interface &StreamSequencer; {
 }
 </programlisting>
 		<para>
+			A new instance is created for each sequencing operation, so there is no need for the class to be synchronized
+			or thread-safe. Additionally, when a sequencer configuration includes properties (see 
+			<link linkend="programmatically_configuring_sequencers">configuring a sequencer</link>), ModeShape will 
+			set those properties on the &StreamSequencer; implementation using JavaBean-style setter methods.
+			This makes it easy to define sequencer-specific properties on the sequencer configurations,
+			while making it easy to implement with JavaBean-style setter methods.
+		</para>
+		<para>
 			Implementations are responsible for processing the content in the supplied &InputStream; content and generating
 			structured content using the supplied &SequencerOutput; interface.  
 	    The &StreamSequencerContext; provides additional details about the information that is being sequenced,

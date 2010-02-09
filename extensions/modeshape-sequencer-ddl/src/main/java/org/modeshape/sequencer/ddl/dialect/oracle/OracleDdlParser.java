@@ -119,7 +119,6 @@ public class OracleDdlParser extends StandardDdlParser
 
         for (AstNode child : copyOfNodes) {
 
-
             if ((complexNode != null && nodeFactory().hasMixinType(child, TYPE_UNKNOWN_STATEMENT))
                 || (complexNode != null && nodeFactory().hasMixinType(child, TYPE_BACKSLASH_TERMINATOR))) {
                 mergeNodes(tokens, complexNode, child);
@@ -128,12 +127,11 @@ public class OracleDdlParser extends StandardDdlParser
                 complexNode = null;
             }
 
-
             if (nodeFactory().hasMixinType(child, TYPE_CREATE_FUNCTION_STATEMENT)
-                       || nodeFactory().hasMixinType(child, TYPE_CREATE_TRIGGER_STATEMENT)
-                       || nodeFactory().hasMixinType(child, TYPE_CREATE_LIBRARY_STATEMENT)
-                       || nodeFactory().hasMixinType(child, TYPE_CREATE_PACKAGE_STATEMENT)
-                       || nodeFactory().hasMixinType(child, TYPE_CREATE_PROCEDURE_STATEMENT)) {
+                || nodeFactory().hasMixinType(child, TYPE_CREATE_TRIGGER_STATEMENT)
+                || nodeFactory().hasMixinType(child, TYPE_CREATE_LIBRARY_STATEMENT)
+                || nodeFactory().hasMixinType(child, TYPE_CREATE_PACKAGE_STATEMENT)
+                || nodeFactory().hasMixinType(child, TYPE_CREATE_PROCEDURE_STATEMENT)) {
                 complexNode = child;
             }
         }
@@ -370,35 +368,37 @@ public class OracleDdlParser extends StandardDdlParser
 
         return super.parseCreateStatement(tokens, parentNode);
     }
-    
-    private AstNode parseCreateClusterStatement( DdlTokenStream tokens, AstNode parentNode ) throws ParsingException {
+
+    private AstNode parseCreateClusterStatement( DdlTokenStream tokens,
+                                                 AstNode parentNode ) throws ParsingException {
         markStartOfStatement(tokens);
         tokens.consume(STMT_CREATE_CLUSTER);
         String name = parseName(tokens);
-        
+
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_CLUSTER_STATEMENT);
-        
+
         parseUntilTerminator(tokens);
-        
+
         markEndOfStatement(tokens, node);
 
         return node;
     }
-    
-    private AstNode parseCreateDimensionStatement( DdlTokenStream tokens, AstNode parentNode ) throws ParsingException {
+
+    private AstNode parseCreateDimensionStatement( DdlTokenStream tokens,
+                                                   AstNode parentNode ) throws ParsingException {
         markStartOfStatement(tokens);
         tokens.consume(STMT_CREATE_DIMENSION);
         String name = parseName(tokens);
-        
+
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_DIMENSION_STATEMENT);
-        
+
         parseUntilTerminator(tokens);
-        
+
         markEndOfStatement(tokens, node);
 
         return node;
     }
-    
+
     /**
      * Parses DDL CREATE FUNCTION statement
      * 
@@ -408,12 +408,12 @@ public class OracleDdlParser extends StandardDdlParser
      * @throws ParsingException
      */
     protected AstNode parseCreateFunctionStatement( DdlTokenStream tokens,
-                                        AstNode parentNode ) throws ParsingException {
+                                                    AstNode parentNode ) throws ParsingException {
         assert tokens != null;
         assert parentNode != null;
 
         markStartOfStatement(tokens);
-        
+
         /* ----------------------------------------------------------------------
             CREATE [ OR REPLACE ] FUNCTION [ schema. ] function_name
               [ ( parameter_declaration [, parameter_declaration] ) 
@@ -432,39 +432,39 @@ public class OracleDdlParser extends StandardDdlParser
             
             parameter_declaration = parameter_name [ IN | { { OUT | { IN OUT }} [ NOCOPY ] } ] datatype [ { := | DEFAULT } expression ]
         ---------------------------------------------------------------------- */
-        
+
         boolean isReplace = tokens.canConsume(STMT_CREATE_OR_REPLACE_FUNCTION);
-        
+
         tokens.canConsume(STMT_CREATE_FUNCTION);
 
         String name = parseName(tokens);
 
         AstNode node = nodeFactory().node(name, parentNode, TYPE_CREATE_FUNCTION_STATEMENT);
-        
+
         if (isReplace) {
             // TODO: SET isReplace = TRUE to node (possibly a cnd mixin of "replaceable"
         }
-        
+
         boolean ok = parseParameters(tokens, node);
-        
-        if( ok ) {
-            if( tokens.canConsume("RETURN")) {
+
+        if (ok) {
+            if (tokens.canConsume("RETURN")) {
                 DataType dType = getDatatypeParser().parse(tokens);
-                if( dType != null ) {
+                if (dType != null) {
                     getDatatypeParser().setPropertiesOnNode(node, dType);
                 }
             }
         }
-        
+
         parseUntilFwdSlash(tokens, false);
-        
+
         tokens.canConsume("/");
-        
+
         markEndOfStatement(tokens, node);
 
         return node;
     }
-    
+
     /**
      * Parses DDL CREATE PROCEDURE statement
      * 
@@ -474,7 +474,7 @@ public class OracleDdlParser extends StandardDdlParser
      * @throws ParsingException
      */
     protected AstNode parseCreateProcedureStatement( DdlTokenStream tokens,
-                                        AstNode parentNode ) throws ParsingException {
+                                                     AstNode parentNode ) throws ParsingException {
         assert tokens != null;
         assert parentNode != null;
 
@@ -499,9 +499,9 @@ public class OracleDdlParser extends StandardDdlParser
                     
             parameter_declaration = parameter_name [ IN | { { OUT | { IN OUT }} [ NOCOPY ] } ] datatype [ { := | DEFAULT } expression ]
         ---------------------------------------------------------------------- */
-        
+
         boolean isReplace = tokens.canConsume(STMT_CREATE_OR_REPLACE_PROCEDURE);
-        
+
         tokens.canConsume(STMT_CREATE_PROCEDURE);
 
         String name = parseName(tokens);
@@ -511,12 +511,12 @@ public class OracleDdlParser extends StandardDdlParser
         if (isReplace) {
             // TODO: SET isReplace = TRUE to node (possibly a cnd mixin of "replaceable"
         }
-        
+
         boolean ok = parseParameters(tokens, node);
-        
-        if( ok ) {
-            if( tokens.canConsume("AUTHID")) {
-                if( tokens.canConsume("CURRENT_USER")) {
+
+        if (ok) {
+            if (tokens.canConsume("AUTHID")) {
+                if (tokens.canConsume("CURRENT_USER")) {
                     node.setProperty(AUTHID_VALUE, "AUTHID CURRENT_USER");
                 } else {
                     tokens.consume("DEFINER");
@@ -524,35 +524,37 @@ public class OracleDdlParser extends StandardDdlParser
                 }
             }
         }
-        
+
         parseUntilFwdSlash(tokens, false);
-        
+
         tokens.canConsume("/");
-        
+
         markEndOfStatement(tokens, node);
 
         return node;
     }
-    
-    
-    private boolean parseParameters( DdlTokenStream tokens, AstNode procedureNode) throws ParsingException {
+
+    private boolean parseParameters( DdlTokenStream tokens,
+                                     AstNode procedureNode ) throws ParsingException {
         assert tokens != null;
         assert procedureNode != null;
 
-        //  parameter_declaration = parameter_name [ IN | { { OUT | { IN OUT }} [ NOCOPY ] } ] datatype [ { := | DEFAULT } expression ]
+        // parameter_declaration = parameter_name [ IN | { { OUT | { IN OUT }} [ NOCOPY ] } ] datatype [ { := | DEFAULT }
+        // expression ]
         // Assume we start with open parenthesis '(', then we parse comma separated list of function parameters
-        // which have the form:  [ parameter-Name ] DataType
-        // So, try getting datatype, if datatype == NULL, then parseName() & parse datatype, then repeat as long as next token is ","
-        
+        // which have the form: [ parameter-Name ] DataType
+        // So, try getting datatype, if datatype == NULL, then parseName() & parse datatype, then repeat as long as next token is
+        // ","
+
         tokens.consume(L_PAREN); // EXPECTED
 
         while (!tokens.canConsume(R_PAREN)) {
 
             String paramName = parseName(tokens);
             String inOutStr = null;
-            if( tokens.matches("IN")) {
-                if( tokens.canConsume("IN", "OUT")){
-                    if( tokens.canConsume("NOCOPY")) {
+            if (tokens.matches("IN")) {
+                if (tokens.canConsume("IN", "OUT")) {
+                    if (tokens.canConsume("NOCOPY")) {
                         inOutStr = "IN OUT NOCOPY";
                     } else {
                         inOutStr = "IN OUT";
@@ -561,43 +563,41 @@ public class OracleDdlParser extends StandardDdlParser
                     tokens.consume("IN");
                     inOutStr = "IN";
                 }
-                
-            } else if( tokens.matches("OUT")) {
-                if( tokens.canConsume("OUT", "NOCOPY")) {
+
+            } else if (tokens.matches("OUT")) {
+                if (tokens.canConsume("OUT", "NOCOPY")) {
                     inOutStr = "OUT NOCOPY";
                 } else {
                     tokens.consume("OUT");
                     inOutStr = "OUT";
                 }
             }
-            
+
             DataType datatype = getDatatypeParser().parse(tokens);
             AstNode paramNode = nodeFactory().node(paramName, procedureNode, TYPE_FUNCTION_PARAMETER);
-            if( datatype != null ) {
+            if (datatype != null) {
                 getDatatypeParser().setPropertiesOnNode(paramNode, datatype);
             }
-            
-            if( tokens.matchesAnyOf(":=", "DEFAULT") || !tokens.matchesAnyOf(COMMA, R_PAREN)) {
+
+            if (tokens.matchesAnyOf(":=", "DEFAULT") || !tokens.matchesAnyOf(COMMA, R_PAREN)) {
                 String msg = DdlSequencerI18n.unsupportedProcedureParameterDeclaration.text(procedureNode.getProperty(StandardDdlLexicon.NAME));
                 DdlParserProblem problem = new DdlParserProblem(Problems.WARNING, getCurrentMarkedPosition(), msg);
                 addProblem(problem, procedureNode);
                 return false;
             }
-            
-            if( inOutStr != null ) {
+
+            if (inOutStr != null) {
                 paramNode.setProperty(IN_OUT_NO_COPY, inOutStr);
             }
 
             tokens.canConsume(COMMA);
         }
-        
+
         return true;
     }
-    
+
     /**
-     * Parses DDL CREATE MATERIALIZED VIEW statement
-     * 
-     * This could either be a standard view or a VIEW LOG ON statement.
+     * Parses DDL CREATE MATERIALIZED VIEW statement This could either be a standard view or a VIEW LOG ON statement.
      * 
      * @param tokens the tokenized {@link DdlTokenStream} of the DDL input content; may not be null
      * @param parentNode the parent {@link AstNode} node; may not be null
@@ -605,12 +605,12 @@ public class OracleDdlParser extends StandardDdlParser
      * @throws ParsingException
      */
     protected AstNode parseMaterializedViewStatement( DdlTokenStream tokens,
-                                        AstNode parentNode ) throws ParsingException {
+                                                      AstNode parentNode ) throws ParsingException {
         assert tokens != null;
         assert parentNode != null;
 
         markStartOfStatement(tokens);
-        
+
         /* ----------------------------------------------------------------------
             CREATE MATERIALIZED VIEW
               [ schema. ]materialized_view
@@ -632,55 +632,55 @@ public class OracleDdlParser extends StandardDdlParser
                       WHERE t.time_id = s.time_id AND p.prod_id = s.prod_id
                       GROUP BY t.calendar_year, p.prod_id;
         ---------------------------------------------------------------------- */
-        
+
         boolean isLog = tokens.canConsume(STMT_CREATE_MATERIALIZED_VEIW_LOG);
-        
+
         tokens.canConsume(STMT_CREATE_MATERIALIZED_VIEW);
 
         String name = parseName(tokens);
 
         AstNode node = null;
-        
-        if( isLog ) {
+
+        if (isLog) {
             node = nodeFactory().node(name, parentNode, TYPE_CREATE_MATERIALIZED_VIEW_LOG_STATEMENT);
         } else {
             node = nodeFactory().node(name, parentNode, TYPE_CREATE_MATERIALIZED_VIEW_STATEMENT);
         }
-        
+
         parseUntilTerminator(tokens);
-        
+
         markEndOfStatement(tokens, node);
 
         return node;
     }
 
-    
     @Override
     protected AstNode parseGrantStatement( DdlTokenStream tokens,
                                            AstNode parentNode ) throws ParsingException {
         CheckArg.isNotNull(tokens, "tokens");
         CheckArg.isNotNull(parentNode, "parentNode");
 
-        //        GRANT { grant_system_privileges | grant_object_privileges } ;
+        // GRANT { grant_system_privileges | grant_object_privileges } ;
         //
-        //            ** grant_system_privileges **
+        // ** grant_system_privileges **
         //        
-        //            { system_privilege | role | ALL PRIVILEGES } [, { system_privilege | role | ALL PRIVILEGES } ]...
-        //             TO grantee_clause [ WITH ADMIN OPTION ]
+        // { system_privilege | role | ALL PRIVILEGES } [, { system_privilege | role | ALL PRIVILEGES } ]...
+        // TO grantee_clause [ WITH ADMIN OPTION ]
         //
-        //            ** grant_object_privileges **
+        // ** grant_object_privileges **
         //
-        //            { object_privilege | ALL [ PRIVILEGES ] } [ (column [, column ]...) ] [, { object_privilege | ALL [ PRIVILEGES ] }  [ (column [, column ]...) ] ]...
-        //                 on_object_clause
-        //              TO grantee_clause [ WITH HIERARCHY OPTION ] [ WITH GRANT OPTION ]
+        // { object_privilege | ALL [ PRIVILEGES ] } [ (column [, column ]...) ] [, { object_privilege | ALL [ PRIVILEGES ] } [
+        // (column [, column ]...) ] ]...
+        // on_object_clause
+        // TO grantee_clause [ WITH HIERARCHY OPTION ] [ WITH GRANT OPTION ]
 
-        //            ** on_object_clause **
+        // ** on_object_clause **
         //
-        //            { [ schema. ] object | { DIRECTORY directory_name | JAVA { SOURCE | RESOURCE } [ schema. ] object } }
+        // { [ schema. ] object | { DIRECTORY directory_name | JAVA { SOURCE | RESOURCE } [ schema. ] object } }
         //
-        //            ** grantee_clause **
+        // ** grantee_clause **
         //
-        //            { user [ IDENTIFIED BY password ] | role | PUBLIC } [, { user [ IDENTIFIED BY password ] | role | PUBLIC  } ]...
+        // { user [ IDENTIFIED BY password ] | role | PUBLIC } [, { user [ IDENTIFIED BY password ] | role | PUBLIC } ]...
 
         AstNode node = null;
 
@@ -703,8 +703,8 @@ public class OracleDdlParser extends StandardDdlParser
 
         markEndOfStatement(tokens, node);
 
-        return node; 
-        
+        return node;
+
         // if( tokens.matches(GRANT, DdlTokenStream.ANY_VALUE, "TO")) {
         // markStartOfStatement(tokens);
         // tokens.consume(GRANT);
@@ -778,9 +778,11 @@ public class OracleDdlParser extends StandardDdlParser
         // tokens.matches(GRANT, "SELECT") ||
         // tokens.matches(GRANT, "RESTRICTED") ||
         // //
-        // ===========================================================================================================================
+        //========================================================================================================================
+        // ===
         // //
-        // ===========================================================================================================================
+        //========================================================================================================================
+        // ===
         // tokens.matches(GRANT, "FLASHBACK") ||
         // tokens.matches(GRANT, "GLOBAL") ||
         // tokens.matches(GRANT, "DEBUG") ||
@@ -819,11 +821,11 @@ public class OracleDdlParser extends StandardDdlParser
         // return super.parseGrantStatement(tokens, parentNode);
     }
 
-    
     /**
      * {@inheritDoc}
-     *
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseRevokeStatement(org.modeshape.sequencer.ddl.DdlTokenStream, org.modeshape.sequencer.ddl.node.AstNode)
+     * 
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseRevokeStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
+     *      org.modeshape.sequencer.ddl.node.AstNode)
      */
     @Override
     protected AstNode parseRevokeStatement( DdlTokenStream tokens,
@@ -1062,13 +1064,12 @@ public class OracleDdlParser extends StandardDdlParser
 
         return super.parseAlterStatement(tokens, parentNode);
     }
-    
-    
 
     /**
      * {@inheritDoc}
-     *
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseCreateViewStatement(org.modeshape.sequencer.ddl.DdlTokenStream, org.modeshape.sequencer.ddl.node.AstNode)
+     * 
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseCreateViewStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
+     *      org.modeshape.sequencer.ddl.node.AstNode)
      */
     @Override
     protected AstNode parseCreateViewStatement( DdlTokenStream tokens,
@@ -1077,21 +1078,20 @@ public class OracleDdlParser extends StandardDdlParser
         assert parentNode != null;
 
         markStartOfStatement(tokens);
-        //CREATE [OR REPLACE]
-        //        [[NO] FORCE] VIEW [schema.] view
-        //         [ ( { alias [ inline_constraint... ]
-        //             | out_of_line_constraint
-        //             }
-        //               [, { alias [ inline_constraint...]
-        //                  | out_of_line_constraint
-        //                  }
-        //               ]
-        //           )
-        //         | object_view_clause
-        //         | XMLType_view_clause
-        //         ]
-        //         AS subquery [ subquery_restriction_clause ] ;
-
+        // CREATE [OR REPLACE]
+        // [[NO] FORCE] VIEW [schema.] view
+        // [ ( { alias [ inline_constraint... ]
+        // | out_of_line_constraint
+        // }
+        // [, { alias [ inline_constraint...]
+        // | out_of_line_constraint
+        // }
+        // ]
+        // )
+        // | object_view_clause
+        // | XMLType_view_clause
+        // ]
+        // AS subquery [ subquery_restriction_clause ] ;
 
         // NOTE: the query expression along with the CHECK OPTION clause require no SQL statement terminator.
         // So the CHECK OPTION clause will NOT
@@ -1100,12 +1100,12 @@ public class OracleDdlParser extends StandardDdlParser
         tokens.consume("CREATE");
         if (tokens.canConsume("OR", "REPLACE")) {
             stmtType = stmtType + SPACE + "OR REPLACE";
-        } else if( tokens.canConsume("NO", "FORCE")) {
+        } else if (tokens.canConsume("NO", "FORCE")) {
             stmtType = stmtType + SPACE + "NO FORCE";
-        } else if( tokens.canConsume("FORCE")) {
+        } else if (tokens.canConsume("FORCE")) {
             stmtType = stmtType + SPACE + "FORCE";
         }
-        
+
         tokens.consume("VIEW");
         stmtType = stmtType + SPACE + "VIEW";
 
@@ -1118,35 +1118,35 @@ public class OracleDdlParser extends StandardDdlParser
 
         // (object_view_clause)
         //
-        //    OF [ schema. ] type_name
-        //    { WITH OBJECT IDENTIFIER
-        //      { DEFAULT | ( attribute [, attribute ]... ) }
-        //    | UNDER [ schema. ] superview
-        //    }
-        //    ( { out_of_line_constraint
-        //      | attribute { inline_constraint }...
-        //      }  [, { out_of_line_constraint
-        //            | attribute { inline_constraint }...
-        //            }
-        //         ]...
-        //    )
+        // OF [ schema. ] type_name
+        // { WITH OBJECT IDENTIFIER
+        // { DEFAULT | ( attribute [, attribute ]... ) }
+        // | UNDER [ schema. ] superview
+        // }
+        // ( { out_of_line_constraint
+        // | attribute { inline_constraint }...
+        // } [, { out_of_line_constraint
+        // | attribute { inline_constraint }...
+        // }
+        // ]...
+        // )
 
         // (XMLType_view_clause)
         //
-        //    OF XMLTYPE [ XMLSchema_spec ]
-        //                 WITH OBJECT IDENTIFIER
-        //                   { DEFAULT | ( expr [, expr ]...) }
+        // OF XMLTYPE [ XMLSchema_spec ]
+        // WITH OBJECT IDENTIFIER
+        // { DEFAULT | ( expr [, expr ]...) }
 
         // Basically, if next token matches "OF", then parse until token matches "AS"
-        
-        if( tokens.matches("OF") ) {
+
+        if (tokens.matches("OF")) {
             do {
                 tokens.consume();
-            } while( !tokens.matches("AS"));
+            } while (!tokens.matches("AS"));
         }
-        
+
         tokens.consume("AS");
-        
+
         String queryExpression = parseUntilTerminator(tokens);
 
         createViewNode.setProperty(CREATE_VIEW_QUERY_EXPRESSION, queryExpression);
@@ -1506,30 +1506,29 @@ public class OracleDdlParser extends StandardDdlParser
                                        boolean stopAtStatementStart ) throws ParsingException {
         StringBuffer sb = new StringBuffer();
         if (stopAtStatementStart) {
-            while (tokens.hasNext() 
-                    
-                    && !tokens.matches(DdlTokenizer.STATEMENT_KEY) 
-                    && !tokens.matches('/')) { // !tokens.matches(DdlTokenizer.STATEMENT_KEY)
+            while (tokens.hasNext()
+
+            && !tokens.matches(DdlTokenizer.STATEMENT_KEY) && !tokens.matches('/')) { //!tokens.matches(DdlTokenizer.STATEMENT_KEY
+                // )
                 // &&
                 sb.append(SPACE).append(tokens.consume());
             }
         } else {
-            while (tokens.hasNext() 
-                    && !isFwdSlashedStatement(tokens)
-                    && !tokens.matches('/')) { // !tokens.matches(DdlTokenizer.STATEMENT_KEY) &&
+            while (tokens.hasNext() && !isFwdSlashedStatement(tokens) && !tokens.matches('/')) { // !tokens.matches(DdlTokenizer.
+                // STATEMENT_KEY) &&
                 sb.append(SPACE).append(tokens.consume());
             }
         }
         return sb.toString();
     }
-    
+
     private boolean isFwdSlashedStatement( DdlTokenStream tokens ) throws ParsingException {
-        for(int i=0; i< SLASHED_STMT_PHRASES.length; i++ ) {
-            if( tokens.matches(SLASHED_STMT_PHRASES[i])) {
+        for (int i = 0; i < SLASHED_STMT_PHRASES.length; i++) {
+            if (tokens.matches(SLASHED_STMT_PHRASES[i])) {
                 return true;
             }
         }
-        
+
         return false;
     }
 

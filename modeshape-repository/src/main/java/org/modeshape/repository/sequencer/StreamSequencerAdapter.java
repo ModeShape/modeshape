@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.modeshape.common.collection.Problems;
+import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.Reflection;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
@@ -54,6 +55,8 @@ import org.modeshape.repository.util.RepositoryNodePath;
  * An adapter class that wraps a {@link StreamSequencer} instance to be a {@link Sequencer}.
  */
 public class StreamSequencerAdapter implements Sequencer {
+
+    private static final Logger LOGGER = Logger.getLogger(StreamSequencerAdapter.class);
 
     private SequencerConfig configuration;
     private final StreamSequencer streamSequencer;
@@ -79,12 +82,35 @@ public class StreamSequencerAdapter implements Sequencer {
          * Try to pass the configured properties through to the stream sequencer
          */
         if (configuration.getProperties() != null) {
+            final Class<?> streamSequencerClass = streamSequencer.getClass();
+            Reflection reflection = new Reflection(streamSequencerClass);
+            // Try to set the 'classpath' property first ...
+            try {
+                reflection.invokeSetterMethodOnTarget("classpath", streamSequencer, configuration.getComponentClasspathArray());
+            } catch (Exception e) {
+                // Ignore, but try the list form ...
+                try {
+                    reflection.invokeSetterMethodOnTarget("classpath", streamSequencer, configuration.getComponentClasspath());
+                } catch (Exception e2) {
+                    // Ignore ...
+                }
+            }
+            // Now set all the other properties ...
             for (Map.Entry<String, Object> entry : configuration.getProperties().entrySet()) {
                 // Set the JavaBean-style property on the RepositorySource instance ...
-                Reflection reflection = new Reflection(streamSequencer.getClass());
+                final String propertyName = entry.getKey();
                 try {
-                    reflection.invokeSetterMethodOnTarget(entry.getKey(), streamSequencer, entry.getValue());
+                    reflection.invokeSetterMethodOnTarget(propertyName, streamSequencer, entry.getValue());
+                    LOGGER.trace("Set '{0}' property from sequencer configuration on '{1}' stream sequencer implementation to {2}",
+                                 propertyName,
+                                 streamSequencerClass.getName(),
+                                 entry.getValue());
+                } catch (NoSuchMethodException e) {
+                    // If the value is an Object[], see if the values are compatible with String[] and try again
                 } catch (Exception ignore) {
+                    LOGGER.debug("Unable to set '{0}' property from sequencer configuration on '{1}' stream sequencer implementation",
+                                 propertyName,
+                                 streamSequencerClass.getName());
                     // It's possible that these properties weren't intended for the stream sequencer anyway
                 }
             }
@@ -286,7 +312,8 @@ public class StreamSequencerAdapter implements Sequencer {
         Path path = factories.getPathFactory().create(input.getLocation().getPath());
 
         Set<org.modeshape.graph.property.Property> props = new HashSet<org.modeshape.graph.property.Property>(
-                                                                                                              input.getPropertiesByName().values());
+                                                                                                              input.getPropertiesByName()
+                                                                                                                   .values());
         props = Collections.unmodifiableSet(props);
         String mimeType = getMimeType(context, sequencedProperty, path.getLastSegment().getName().getLocalName());
         return new StreamSequencerContext(context.getExecutionContext(), path, props, mimeType, problems);

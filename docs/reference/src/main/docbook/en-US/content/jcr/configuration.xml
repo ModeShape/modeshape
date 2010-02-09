@@ -339,6 +339,13 @@ config.sequencer("Image Sequencer")
 					The set of existing definitions can be accessed with the <code>sequencers()</code> method.
 					</para>
 				</note>
+				<para>Note that in addition to including a description for the configuration, it is also possible to set sequencer-specific properties
+					using the <code>setProperty(String,String[])</code> method. When ModeShape uses this configuration to set up a sequencing
+					operation, it will instantiate the &StreamSequencer; class and will call a JavaBean-style setter method for each property.
+					For example, calling <code>setProperty("foo","val1")</code> on the sequencer configuration will mean that ModeShape
+					will instantiate the sequencer implementation and will look for a <code>setFoo(String)</code> method on the sequencer implementation
+					class, and use that method (if found) to pass the "val1" value to the instance.
+				</para>
 			</sect3>
 			<sect3 id="programmatically_configuring_mime_type_detectors">
 				<title>MIME Type Detectors</title>

@@ -26,10 +26,12 @@ package org.modeshape.graph.sequencer;
 import java.io.InputStream;
 
 /**
- * The interface for a ModeShape sequencer that processes a property as a stream to extract information from the content and store in
- * the repository.
+ * The interface for a ModeShape sequencer that processes a property as a stream to extract information from the content and store
+ * in the repository.
  * <p>
- * Implementations must provide a no-argument constructor.
+ * ModeShape creates a new StreamSequencer instance each time a sequencing operation is to be performed on some input data.
+ * Therefore, implementations must provide a no-argument constructor. Implementations may also define Java-bean style property
+ * setters that will be used to pass sequencer configuration properties to the sequencer instance.
  * </p>
  */
 public interface StreamSequencer {

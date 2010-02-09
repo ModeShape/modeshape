@@ -2857,7 +2857,31 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * @see org.modeshape.sequencer.ddl.DdlParser#getId()
      */
     public String getId() {
-        return this.parserId;
+        return parserId;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return this.parserId.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof DdlParser) {
+            return ((DdlParser)obj).getId().equals(this.getId());
+        }
+        return false;
     }
 
     /**

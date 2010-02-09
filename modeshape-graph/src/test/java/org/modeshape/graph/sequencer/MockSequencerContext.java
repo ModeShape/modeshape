@@ -27,9 +27,6 @@ import net.jcip.annotations.Immutable;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.graph.ExecutionContext;
 
-/**
- * @author John Verhaeg
- */
 @Immutable
 public class MockSequencerContext extends StreamSequencerContext {
 

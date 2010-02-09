@@ -24,7 +24,9 @@
 package org.modeshape.sequencer.ddl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import net.jcip.annotations.Immutable;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
 import org.modeshape.graph.JcrLexicon;
@@ -45,16 +47,36 @@ import org.modeshape.sequencer.ddl.node.AstNode;
  * of db-specific statements of statement extensions, features or properties.
  * </p>
  */
+@Immutable
 public class DdlParsers {
-    private List<DdlParser> parsers;
 
-    public DdlParsers() {
-        parsers = new ArrayList<DdlParser>();
+    public static final List<DdlParser> BUILTIN_PARSERS;
+
+    static {
+        List<DdlParser> parsers = new ArrayList<DdlParser>();
         parsers.add(new StandardDdlParser());
         parsers.add(new OracleDdlParser());
         parsers.add(new DerbyDdlParser());
         parsers.add(new PostgresDdlParser());
-        // parsers.add(new MySqlDdlParser());
+        BUILTIN_PARSERS = Collections.unmodifiableList(parsers);
+    }
+
+    private List<DdlParser> parsers;
+
+    /**
+     * Create an instance that uses all of the {@link #BUILTIN_PARSERS built-in parsers}.
+     */
+    public DdlParsers() {
+        this.parsers = BUILTIN_PARSERS;
+    }
+
+    /**
+     * Create an instance that uses the supplied parsers, in order.
+     * 
+     * @param parsers the list of parsers; may be empty or null if the {@link #BUILTIN_PARSERS built-in parsers} should be used
+     */
+    public DdlParsers( List<DdlParser> parsers ) {
+        this.parsers = (parsers != null && !parsers.isEmpty()) ? parsers : BUILTIN_PARSERS;
     }
 
     /**

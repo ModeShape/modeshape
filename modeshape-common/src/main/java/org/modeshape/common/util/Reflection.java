@@ -23,6 +23,7 @@
  */
 package org.modeshape.common.util;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -389,7 +390,32 @@ public class Reflection {
         throws NoSuchMethodException, SecurityException, IllegalArgumentException, IllegalAccessException,
         InvocationTargetException {
         String[] methodNamesArray = findMethodNames("set" + javaPropertyName);
-        return invokeBestMethodOnTarget(methodNamesArray, target, argument);
+        try {
+            return invokeBestMethodOnTarget(methodNamesArray, target, argument);
+        } catch (NoSuchMethodException e) {
+            // If the argument is an Object[], see if it works with an array of whatever type the actual value is ...
+            if (argument instanceof Object[]) {
+                Object[] arrayArg = (Object[])argument;
+                for (Object arrayValue : arrayArg) {
+                    if (arrayValue == null) continue;
+                    Class<?> arrayValueType = arrayValue.getClass();
+                    // Create an array of this type ...
+                    Object typedArray = Array.newInstance(arrayValueType, arrayArg.length);
+                    Object[] newArray = (Object[])typedArray;
+                    for (int i = 0; i != arrayArg.length; ++i) {
+                        newArray[i] = arrayArg[i];
+                    }
+                    // Try to execute again ...
+                    try {
+                        return invokeBestMethodOnTarget(methodNamesArray, target, typedArray);
+                    } catch (NoSuchMethodException e2) {
+                        // Throw the original exception ...
+                        throw e;
+                    }
+                }
+            }
+            throw e;
+        }
     }
 
     /**
@@ -533,7 +559,13 @@ public class Reflection {
                     for (int i = 0; i < args.length; ++i) {
                         clazz = argumentsClassList.get(i);
                         if (clazz != null) {
-                            if (!args[i].isAssignableFrom(clazz)) {
+                            Class<?> argClass = args[i];
+                            if (argClass.isAssignableFrom(clazz)) {
+                                // It's a match
+                            } else if (argClass.isArray() && clazz.isArray()
+                                       && argClass.getComponentType().isAssignableFrom(clazz.getComponentType())) {
+                                // They're both arrays, and they're castable, so we're good ...
+                            } else {
                                 allMatch = false; // found one that doesn't match
                                 i = args.length; // force completion
                             }
