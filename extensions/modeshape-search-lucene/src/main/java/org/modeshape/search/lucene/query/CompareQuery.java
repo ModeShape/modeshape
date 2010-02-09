@@ -239,7 +239,7 @@ public abstract class CompareQuery<ValueType> extends Query {
      */
     protected class CompareScorer extends Scorer {
         private int docId = -1;
-        private final int maxDocId;
+        private final int pastMaxDocId;
         private final IndexReader reader;
 
         protected CompareScorer( IndexReader reader ) {
@@ -247,7 +247,7 @@ public abstract class CompareQuery<ValueType> extends Query {
             super(Similarity.getDefault());
             this.reader = reader;
             assert this.reader != null;
-            this.maxDocId = this.reader.maxDoc() - 1;
+            this.pastMaxDocId = this.reader.maxDoc();
         }
 
         /**
@@ -269,7 +269,7 @@ public abstract class CompareQuery<ValueType> extends Query {
         public int nextDoc() throws IOException {
             do {
                 ++docId;
-                if (docId >= maxDocId) return Scorer.NO_MORE_DOCS;
+                if (docId == pastMaxDocId) return Scorer.NO_MORE_DOCS;
                 if (reader.isDeleted(docId)) {
                     // We should skip this document ...
                     continue;

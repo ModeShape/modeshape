@@ -189,7 +189,7 @@ public class HasValueQuery extends Query {
      */
     protected class ExistsScorer extends Scorer {
         private int docId = -1;
-        private final int maxDocId;
+        private final int pastMaxDocId;
         private final IndexReader reader;
 
         protected ExistsScorer( IndexReader reader ) {
@@ -197,7 +197,7 @@ public class HasValueQuery extends Query {
             super(Similarity.getDefault());
             this.reader = reader;
             assert this.reader != null;
-            this.maxDocId = this.reader.maxDoc() - 1;
+            this.pastMaxDocId = this.reader.maxDoc();
         }
 
         /**
@@ -219,7 +219,7 @@ public class HasValueQuery extends Query {
         public int nextDoc() throws IOException {
             do {
                 ++docId;
-                if (docId >= maxDocId) return Scorer.NO_MORE_DOCS;
+                if (docId == pastMaxDocId) return Scorer.NO_MORE_DOCS;
                 if (reader.isDeleted(docId)) {
                     // We should skip this document ...
                     continue;

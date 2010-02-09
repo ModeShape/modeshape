@@ -191,7 +191,7 @@ public class IdsQuery extends Query {
      */
     protected class IdScorer extends Scorer {
         private int docId = -1;
-        private final int maxDocId;
+        private final int pastMaxDocId;
         private final IndexReader reader;
 
         protected IdScorer( IndexReader reader ) {
@@ -199,7 +199,7 @@ public class IdsQuery extends Query {
             super(Similarity.getDefault());
             this.reader = reader;
             assert this.reader != null;
-            this.maxDocId = this.reader.maxDoc();
+            this.pastMaxDocId = this.reader.maxDoc();
         }
 
         /**
@@ -221,7 +221,7 @@ public class IdsQuery extends Query {
         public int nextDoc() throws IOException {
             do {
                 ++docId;
-                if (docId >= maxDocId) return Scorer.NO_MORE_DOCS;
+                if (docId == pastMaxDocId) return Scorer.NO_MORE_DOCS;
                 if (reader.isDeleted(docId)) {
                     // We should skip this document ...
                     continue;
