@@ -121,8 +121,6 @@ import org.modeshape.search.lucene.query.MatchNoneQuery;
 public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEngineWorkspace, ProcessorType extends SearchEngineProcessor>
     extends AbstractSearchEngine<WorkspaceType, ProcessorType> {
 
-    public static boolean DEBUG = false;
-
     /**
      * Create a {@link SearchEngine} instance that uses Lucene.
      * 
@@ -428,15 +426,9 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                     if (logger.isTraceEnabled()) {
                         logger.trace("query \"{0}\" workspace: {1}", session.getWorkspaceName(), pushDownQuery);
                     }
-                    if (DEBUG) {
-                        System.out.println("BEGIN query \"" + session.getWorkspaceName() + "\" workspace: " + pushDownQuery);
-                    }
                     TupleCollector collector = session.createTupleCollector(columns);
                     searcher.search(pushDownQuery, collector);
                     tuples = collector.getTuples();
-                    if (DEBUG) {
-                        System.out.println("END   query \"" + session.getWorkspaceName() + "\" workspace: " + pushDownQuery);
-                    }
                 } catch (IOException e) {
                     // There was a problem executing the Lucene query ...
                     request.setError(e);

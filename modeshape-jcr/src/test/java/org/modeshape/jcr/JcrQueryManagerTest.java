@@ -57,7 +57,6 @@ import org.modeshape.jcr.JcrQueryManager.JcrQueryResult;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
 import org.modeshape.jcr.nodetype.InvalidNodeTypeDefinitionException;
-import org.modeshape.search.lucene.AbstractLuceneSearchEngine;
 
 /**
  * This is a test suite that operates against a complete JcrRepository instance created and managed using the JcrEngine.
@@ -555,40 +554,13 @@ public class JcrQueryManagerTest {
 
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithRangeCriteria() throws RepositoryException {
-        try {
-            AbstractLuceneSearchEngine.DEBUG = true;
-            System.out.println(repository.getOptions());
-            Query query = session.getWorkspace()
-                                 .getQueryManager()
-                                 .createQuery("/jcr:root/Other/*[@something <= 'value2' and @something > 'value1']", Query.XPATH);
-            assertThat(query, is(notNullValue()));
-            QueryResult result = query.execute();
-            assertThat(result, is(notNullValue()));
-            assertResults(query, result, 1);
-            assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-
-            // Try adding more data right before querying ...
-            Node other = session.getRootNode().addNode("Wow", "nt:unstructured");
-            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value3");
-            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value2");
-            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value1");
-            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value0");
-            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value4");
-            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value5");
-            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value6");
-            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value7");
-            session.save();
-
-            query = session.getWorkspace()
-                           .getQueryManager()
-                           .createQuery("/jcr:root/Wow/*[@something <= 'value4' and @something > 'value1']", Query.XPATH);
-            result = query.execute();
-            assertThat(result, is(notNullValue()));
-            print = true;
-            assertResults(query, result, 3);
-            assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
-        } finally {
-            AbstractLuceneSearchEngine.DEBUG = false;
-        }
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root/Other/*[@something <= 'value2' and @something > 'value1']", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 }

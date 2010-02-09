@@ -37,7 +37,6 @@ import org.apache.lucene.search.Similarity;
 import org.apache.lucene.search.Weight;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.query.model.Comparison;
-import org.modeshape.search.lucene.AbstractLuceneSearchEngine;
 
 /**
  * A Lucene {@link Query} implementation that is used to apply a {@link Comparison} constraint against the Path of nodes. This
@@ -275,10 +274,6 @@ public abstract class CompareQuery<ValueType> extends Query {
                     continue;
                 }
                 ValueType value = readFromDocument(reader, docId);
-                if (AbstractLuceneSearchEngine.DEBUG) {
-                    System.out.println("" + value + evaluator + constraintValue + " ? "
-                                       + evaluator.satisfiesConstraint(value, constraintValue));
-                }
                 if (evaluator.satisfiesConstraint(value, constraintValue)) return docId;
             } while (true);
         }
