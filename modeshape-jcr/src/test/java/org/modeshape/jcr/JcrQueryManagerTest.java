@@ -556,6 +556,7 @@ public class JcrQueryManagerTest {
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithRangeCriteria() throws RepositoryException {
         AbstractLuceneSearchEngine.DEBUG = true;
+        System.out.println(repository.getOptions());
         Query query = session.getWorkspace()
                              .getQueryManager()
                              .createQuery("/jcr:root/Other/*[@something <= 'value2' and @something > 'value1']", Query.XPATH);
@@ -585,5 +586,6 @@ public class JcrQueryManagerTest {
         print = true;
         assertResults(query, result, 3);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+        AbstractLuceneSearchEngine.DEBUG = false;
     }
 }
