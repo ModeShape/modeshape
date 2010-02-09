@@ -45,6 +45,15 @@
 			To get around this, the sequencer uses a "best fit" algorithm: run the DDL stream through the parser for each of
 			the dialects, and determine which parser was able to successfully read the greatest number of statements and tokens.
 		</para>
+		<note>
+			<para>
+				It is possible to define which DDL dialects (or grammars) should be considered during sequencing using the
+				"grammars" property in the sequencer configuration. Set the values of this property to the names of the grammars
+				(e.g., "oracle", "postgres", "standard", or "derby"), specified in the order they should be used. To use
+				a custom DDL parser not provided by ModeShape, simply provide the fully-qualified class name of the &DdlParser;
+				implementation class.
+			</para>
+		</note>
     <para>
         One very interesting capability of this sequencer is that, although only a subset of the (more common) DDL statements 
         are supported, the sequencer is still extremely functional since it does still add all statements into the output graph, 
@@ -144,6 +153,33 @@ config.sequencer("DDL Sequencer")
       .usingClass("org.modeshape.sequencer.ddl.DdlSequencer")
       .loadedFromClasspath()
       .setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values")
+      .sequencingFrom("//(*.(ddl)[*])/jcr:content[@jcr:data]")
+      .andOutputtingTo("/ddls/$1"); 
+]]></programlisting>
+    <para>
+	    This will use all of the built-in grammars (e.g., "standard", "oracle", "postgres", and "derby"). To specify a different
+	    order or subset of the grammars, use the <code>setProperty(...)</code> method. Here's an example that just uses the
+	    standard grammar followed by the PostgreSQL grammar:
+	  </para>
+   <programlisting role="JAVA"><![CDATA[
+config.sequencer("DDL Sequencer")
+      .usingClass("org.modeshape.sequencer.ddl.DdlSequencer")
+      .loadedFromClasspath()
+      .setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values")
+      .setProperty("grammar","standard","postgres")
+      .sequencingFrom("//(*.(ddl)[*])/jcr:content[@jcr:data]")
+      .andOutputtingTo("/ddls/$1"); 
+]]></programlisting>
+    <para>
+	    And, to use a custom implementation of &DdlParser;, simply use the fully-qualified name of the implementation class
+	    (which must have a no-arg constructor) as the name of the grammar:
+	  </para>
+   <programlisting role="JAVA"><![CDATA[
+config.sequencer("DDL Sequencer")
+      .usingClass("org.modeshape.sequencer.ddl.DdlSequencer")
+      .loadedFromClasspath()
+      .setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values")
+      .setProperty("grammar","standard","postgres","org.example.ddl.MyCustomDdlParser")
       .sequencingFrom("//(*.(ddl)[*])/jcr:content[@jcr:data]")
       .andOutputtingTo("/ddls/$1"); 
 ]]></programlisting>

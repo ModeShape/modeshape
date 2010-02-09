@@ -248,3 +248,6 @@
 <!ENTITY FixedWidthTextSequencer			"<ulink url='&API;sequencer/text/FixedWidthTextSequencer'><classname>FixedWidthTextSequencer</classname></ulink>">
 <!ENTITY RowFactory		  							"<ulink url='&API;sequencer/text/RowFactory'><classname>RowFactory</classname></ulink>">
 
+<!ENTITY DdlSequencer	  							"<ulink url='&API;sequencer/ddl/DdlSequencer'><classname>DdlSequencer</classname></ulink>">
+<!ENTITY DdlParser		  							"<ulink url='&API;sequencer/ddl/DdlParser'><interface>DdlParser</interface></ulink>">
+
