@@ -551,4 +551,37 @@ public class JcrQueryManagerTest {
         assertResults(query, result, 3);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
+
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithRangeCriteria() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root/Other/*[@something <= 'value2' and @something > 'value1']", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+
+        // Try adding more data right before querying ...
+        Node other = session.getRootNode().addNode("Wow", "nt:unstructured");
+        other.addNode("NodeA", "nt:unstructured").setProperty("something", "value3");
+        other.addNode("NodeA", "nt:unstructured").setProperty("something", "value2");
+        other.addNode("NodeA", "nt:unstructured").setProperty("something", "value1");
+        other.addNode("NodeA", "nt:unstructured").setProperty("something", "value0");
+        other.addNode("NodeA", "nt:unstructured").setProperty("something", "value4");
+        other.addNode("NodeA", "nt:unstructured").setProperty("something", "value5");
+        other.addNode("NodeA", "nt:unstructured").setProperty("something", "value6");
+        other.addNode("NodeA", "nt:unstructured").setProperty("something", "value7");
+        session.save();
+
+        query = session.getWorkspace()
+                       .getQueryManager()
+                       .createQuery("/jcr:root/Wow/*[@something <= 'value4' and @something > 'value1']", Query.XPATH);
+        result = query.execute();
+        assertThat(result, is(notNullValue()));
+        print = true;
+        assertResults(query, result, 3);
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+    }
 }

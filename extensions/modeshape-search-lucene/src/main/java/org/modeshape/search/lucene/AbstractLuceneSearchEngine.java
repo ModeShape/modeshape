@@ -550,7 +550,7 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                                        upper,
                                        between.isLowerBoundIncluded(),
                                        between.isUpperBoundIncluded(),
-                                       false);
+                                       true);
                 }
                 if (constraint instanceof Comparison) {
                     Comparison comparison = (Comparison)constraint;
