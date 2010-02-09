@@ -58,7 +58,7 @@ public class CompareStringQuery extends CompareQuery<String> {
 
         @Override
         public String toString() {
-            return " = ";
+            return "=";
         }
     };
     protected static final Evaluator<String> IS_LESS_THAN = new Evaluator<String>() {
@@ -71,7 +71,7 @@ public class CompareStringQuery extends CompareQuery<String> {
 
         @Override
         public String toString() {
-            return " < ";
+            return "<";
         }
     };
     protected static final Evaluator<String> IS_LESS_THAN_OR_EQUAL_TO = new Evaluator<String>() {
@@ -84,7 +84,7 @@ public class CompareStringQuery extends CompareQuery<String> {
 
         @Override
         public String toString() {
-            return " <= ";
+            return "<=";
         }
     };
     protected static final Evaluator<String> IS_GREATER_THAN = new Evaluator<String>() {
@@ -97,7 +97,7 @@ public class CompareStringQuery extends CompareQuery<String> {
 
         @Override
         public String toString() {
-            return " > ";
+            return ">";
         }
     };
     protected static final Evaluator<String> IS_GREATER_THAN_OR_EQUAL_TO = new Evaluator<String>() {
@@ -110,7 +110,7 @@ public class CompareStringQuery extends CompareQuery<String> {
 
         @Override
         public String toString() {
-            return " >= ";
+            return ">=";
         }
     };
 
@@ -335,5 +335,16 @@ public class CompareStringQuery extends CompareQuery<String> {
     @Override
     public Object clone() {
         return new CompareStringQuery(fieldName, constraintValue, valueTypeFactory, stringFactory, evaluator, caseSensitive);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.apache.lucene.search.Query#toString(java.lang.String)
+     */
+    @Override
+    public String toString( String field ) {
+        return "(" + fieldName + evaluator.toString() + "'"
+               + (stringFactory != null ? stringFactory.create(constraintValue) : constraintValue.toString()) + "')";
     }
 }

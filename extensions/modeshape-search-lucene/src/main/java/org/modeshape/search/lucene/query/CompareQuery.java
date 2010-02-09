@@ -143,7 +143,8 @@ public abstract class CompareQuery<ValueType> extends Query {
      */
     @Override
     public String toString( String field ) {
-        return fieldName + " " + evaluator.toString() + " " + stringFactory != null ? stringFactory.create(constraintValue) : constraintValue.toString();
+        return "(" + fieldName + evaluator.toString()
+               + (stringFactory != null ? stringFactory.create(constraintValue) : constraintValue.toString()) + ")";
     }
 
     /**
