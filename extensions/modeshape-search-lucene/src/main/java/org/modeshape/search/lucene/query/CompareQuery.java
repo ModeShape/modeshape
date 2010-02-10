@@ -274,6 +274,9 @@ public abstract class CompareQuery<ValueType> extends Query {
                     continue;
                 }
                 ValueType value = readFromDocument(reader, docId);
+                if (value == null) {
+                    continue; // skip null values
+                }
                 if (evaluator.satisfiesConstraint(value, constraintValue)) return docId;
             } while (true);
         }

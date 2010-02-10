@@ -77,7 +77,7 @@ public class IdsQuery extends Query {
                                        int docId ) throws IOException {
         Document doc = reader.document(docId, fieldSelector);
         String valueString = doc.get(fieldName);
-        return uuids.contains(valueString);
+        return valueString != null && uuids.contains(valueString);
     }
 
     /**
