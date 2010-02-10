@@ -64,40 +64,31 @@ import org.modeshape.sequencer.ddl.node.AstNode;
 public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstants, DerbyDdlConstants.DerbyStatementStartPhrases {
     private final String parserId = "DERBY";
 
-    static List<String[]> derbyDataTypeStrings = new ArrayList<String[]>();
+    protected static final List<String[]> derbyDataTypeStrings = new ArrayList<String[]>(
+                                                                                         DerbyDataTypes.CUSTOM_DATATYPE_START_PHRASES);
 
     private static final String TERMINATOR = DEFAULT_TERMINATOR;
 
     public DerbyDdlParser() {
         setDatatypeParser(new DerbyDataTypeParser());
-
-        initialize();
-    }
-
-    private void initialize() {
-
         setDoUseTerminator(true);
-
         setTerminator(TERMINATOR);
-
-        derbyDataTypeStrings.addAll(DerbyDataTypes.CUSTOM_DATATYPE_START_PHRASES);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#registerWords(org.modeshape.sequencer.ddl.DdlTokenStream)
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#initializeTokenStream(org.modeshape.sequencer.ddl.DdlTokenStream)
      */
     @Override
-    public void registerWords( DdlTokenStream tokens ) {
+    protected void initializeTokenStream( DdlTokenStream tokens ) {
+        super.initializeTokenStream(tokens);
         tokens.registerKeyWords(CUSTOM_KEYWORDS);
-
         tokens.registerStatementStartPhrase(ALTER_PHRASES);
         tokens.registerStatementStartPhrase(CREATE_PHRASES);
         tokens.registerStatementStartPhrase(DROP_PHRASES);
         tokens.registerStatementStartPhrase(SET_PHRASES);
         tokens.registerStatementStartPhrase(MISC_PHRASES);
-        super.registerWords(tokens);
     }
 
     /**
@@ -332,6 +323,11 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
             } else if (tokens.canConsume("CALLED", "ON", "NULL", "INPUT")) {
                 AstNode optionNode = nodeFactory().node("nullInput", functionNode, TYPE_STATEMENT_OPTION);
                 optionNode.setProperty(VALUE, "CALLED ON NULL INPUT");
+            } else {
+                String msg = DdlSequencerI18n.errorParsingDdlContent.text(functionName);
+                DdlParserProblem problem = new DdlParserProblem(Problems.ERROR, getCurrentMarkedPosition(), msg);
+                addProblem(problem, functionNode);
+                break;
             }
         }
 

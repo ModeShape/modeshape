@@ -24,6 +24,11 @@
 package org.modeshape.sequencer.ddl;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_ATTRIBUTE_TYPE;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.CONSTRAINT_TYPE;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_LENGTH;
@@ -52,21 +57,17 @@ import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_VIEW_STAT
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_TABLE_CONSTRAINT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import java.util.List;
-import org.modeshape.graph.JcrLexicon;
-import org.modeshape.sequencer.ddl.node.AstNode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.graph.JcrLexicon;
+import org.modeshape.sequencer.ddl.node.AstNode;
 
 public class StandardDdlParserTest extends DdlParserTestHelper {
     private StandardDdlParser parser;
     private AstNode rootNode;
+    private DdlParserScorer scorer;
 
     public static final String DDL_FILE_PATH = "src/test/resources/ddl/";
     public static final String MM_DDL_FILE_PATH = "src/test/resources/mmddl/";
@@ -78,6 +79,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         parser.setTestMode(isPrintToConsole());
         rootNode = parser.nodeFactory().node("ddlRootNode");
         parser.setRootNode(rootNode);
+        scorer = new DdlParserScorer();
     }
 
     @After
@@ -131,7 +133,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         tokens = getTokens(content);
         result = parser.parseName(tokens);
         assertEquals(targetName, result);
-        
+
         content = "\"_RETURN\"";
         targetName = "_RETURN";
         tokens = getTokens(content);
@@ -190,7 +192,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
 
         String content = "CREATE TABLE EQPT_TYPE ( CAT_CODE CHAR(7) NOT NULL);";
 
-        parser.parse(content, rootNode);
+        parser.parse(content, null, rootNode, scorer);
 
     }
 
@@ -203,7 +205,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
                          + "CREATE LOCAL TEMPORARY TABLE yourTable (PART_COLOR varchar(255) NOT NULL DEFAULT BLUE);";
 
         parser.setDoUseTerminator(true);
-        parser.parse(content, rootNode);
+        parser.parse(content, null, rootNode, scorer);
 
         printNodeChildren(rootNode);
 
@@ -226,7 +228,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
                          + ", PRIMARY KEY (PART_COLOR)" + ", PART_ID int NOT NULL DEFAULT (1000));";
 
         parser.setDoUseTerminator(true);
-        parser.parse(content, rootNode);
+        parser.parse(content, null, rootNode, scorer);
 
         printNodeChildren(rootNode);
 
@@ -247,7 +249,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
 
         String content = "ALTER TABLE table_name_14 ADD CONSTRAINT fk_name FOREIGN KEY (ref_col_name) REFERENCES ref_table_name(ref_table_column_name);";
 
-        parser.parse(content, rootNode);
+        parser.parse(content, null, rootNode, scorer);
 
         assertEquals(1, rootNode.getChildCount());
         AstNode alterTableNode = rootNode.getChildren().get(0);
@@ -272,7 +274,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
                          + "     GRANT SELECT ON TABLE films TO producer_role " + SPACE + "     CREATE VIEW winners AS\n" + SPACE
                          + "             SELECT title, release FROM films WHERE producerName IS NOT NULL;";
 
-        parser.parse(content, rootNode);
+        parser.parse(content, null, rootNode, scorer);
 
         assertThat(rootNode.getChildCount(), is(1));
 
@@ -296,7 +298,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseSchemaDefinitionStatements()");
 
         String content = getFileContent(DDL_FILE_PATH + "schema_definition.ddl");
-        parser.parse(content, rootNode);
+        parser.parse(content, null, rootNode, scorer);
 
         assertEquals(13, rootNode.getChildCount());
 
@@ -311,7 +313,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseSchemaManipulationStatements()");
 
         String content = getFileContent(DDL_FILE_PATH + "schema_manipulation.ddl");
-        parser.parse(content, rootNode);
+        parser.parse(content, null, rootNode, scorer);
 
         assertEquals(31, rootNode.getChildCount());
 
@@ -329,7 +331,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseTableDefinitionStatements()");
 
         String content = getFileContent(DDL_FILE_PATH + "table_definition.ddl");
-        parser.parse(content, rootNode);
+        parser.parse(content, null, rootNode, scorer);
     }
 
     @Test
@@ -678,10 +680,10 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseCreateTables()");
 
         String content = getFileContent(DDL_FILE_PATH + "createTables.ddl");
-        boolean success = parser.parse(content, rootNode);
+        parser.parse(content, null, rootNode, scorer);
 
         assertThat(rootNode.getChildCount(), is(20));
-        assertThat(success, is(true));
+        assertThat(scorer.getScore() > 0, is(true));
         List<AstNode> theNodes = parser.nodeFactory().getChildrenForType(rootNode, TYPE_CREATE_TABLE_STATEMENT);
 
         assertThat(theNodes.size(), is(16));
@@ -696,10 +698,10 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseDropStatements()");
 
         String content = getFileContent(DDL_FILE_PATH + "drop_statements.ddl");
-        boolean success = parser.parse(content, rootNode);
+        parser.parse(content, "drop_statements.ddl", rootNode, scorer);
 
         assertThat(rootNode.getChildCount(), is(12));
-        assertThat(success, is(true));
+        assertThat(scorer.getScore() > 0, is(true));
 
         List<AstNode> theNodes = parser.nodeFactory().getChildrenForType(rootNode, TYPE_DROP_TABLE_STATEMENT);
         assertThat(theNodes.size(), is(2));
@@ -753,10 +755,10 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         String content = "CREATE VIEW new_product_view" + " AS SELECT color, quantity FROM new_product WHERE color = 'RED'"
                          + " GRANT select ON new_product_view TO hr;";
 
-        boolean success = parser.parse(content, rootNode);
+        parser.parse(content, null, rootNode, scorer);
 
         assertThat(rootNode.getChildCount(), is(2));
-        assertThat(success, is(true));
+        assertThat(scorer.getScore() > 0, is(true));
 
         AstNode viewNode = rootNode.getChildren().get(0);
         assertEquals("new_product_view", viewNode.getName().getString());
@@ -769,10 +771,10 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         String content = "CREATE VIEW CORPDATA.EMP_YEARSOFSERVICE (LASTNAME, YEARSOFSERVICE)"
                          + " AS SELECT LASTNAME, YEAR (CURRENT DATE - HIREDATE) FROM CORPDATA.EMPLOYEE;";
 
-        boolean success = parser.parse(content, rootNode);
+        parser.parse(content, null, rootNode, scorer);
 
         assertThat(rootNode.getChildCount(), is(1));
-        assertThat(success, is(true));
+        assertThat(scorer.getScore() > 0, is(true));
 
         AstNode viewNode = rootNode.getChildren().get(0);
         assertEquals("CORPDATA.EMP_YEARSOFSERVICE", viewNode.getName().getString());
@@ -787,9 +789,9 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
 
         String content = getFileContent(DDL_FILE_PATH + "standardDdlTest.ddl");
 
-        boolean success = parser.parse(content, rootNode);
+        parser.parse(content, "standardDdlTest", rootNode, scorer);
 
-        assertThat(success, is(true));
+        assertThat(scorer.getScore() > 0, is(true));
         assertThat(rootNode.getChildCount(), is(11));
 
         // List<AstNode> theNodes = parser.nodeFactory().getChildrenForType(rootNode, TYPE_MISSING_TERMINATOR);
@@ -804,10 +806,9 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
 
         // parser.setTestMode(true);
 
-        boolean success = parser.parse(content, rootNode);
+        parser.parse(content, "GFM_Physical_Partial.ddl", rootNode, scorer);
 
-        assertThat(success, is(true));
-
+        assertThat(scorer.getScore() > 0, is(true));
         assertThat(rootNode.getChildCount(), is(5));
 
         List<AstNode> schemaNodes = parser.nodeFactory().getChildrenForType(rootNode, TYPE_CREATE_SCHEMA_STATEMENT);
@@ -816,62 +817,58 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertThat(schemaNodes.get(0).getName().getString(), is("GLOBALFORCEMGMT"));
 
     }
-    
+
     @Test
     public void shouldParseStatementsWithDoubleQuotes() {
         printTest("shouldParseUnterminatedOracleFile()");
-        String content = "ALTER JAVA CLASS \"Agent\""
-    + "RESOLVER ((\"/home/java.101/bin/*\" pm)(* public)) RESOLVE;"
-    + "CREATE SERVER foo FOREIGN DATA WRAPPER \"default\";"
-    + "CREATE RULE \"_RETURN\" AS ON SELECT TO t1 DO INSTEAD SELECT * FROM t2;";
+        String content = "ALTER JAVA CLASS \"Agent\"" + "RESOLVER ((\"/home/java.101/bin/*\" pm)(* public)) RESOLVE;"
+                         + "CREATE SERVER foo FOREIGN DATA WRAPPER \"default\";"
+                         + "CREATE RULE \"_RETURN\" AS ON SELECT TO t1 DO INSTEAD SELECT * FROM t2;";
 
         // parser.setTestMode(true);
 
-        boolean success = parser.parse(content, rootNode);
+        parser.parse(content, null, rootNode, scorer);
 
-        assertThat(success, is(true));
-
+        assertThat(scorer.getScore() > 0, is(true));
         assertThat(rootNode.getChildCount(), is(3));
 
     }
-    
+
     @Test
     public void shouldParseGrantStatements() {
         printTest("shouldParseGrantStatements()");
         String content = "GRANT SELECT ON TABLE purchaseOrders TO maria,harry;" + NEWLINE
-            + "GRANT UPDATE, USAGE ON TABLE purchaseOrders TO anita,zhi;" + NEWLINE
-            + "GRANT SELECT ON TABLE orders.bills to PUBLIC;" + NEWLINE
-            + "GRANT INSERT(a, b, c) ON TABLE purchaseOrders TO purchases_reader_role;";
+                         + "GRANT UPDATE, USAGE ON TABLE purchaseOrders TO anita,zhi;" + NEWLINE
+                         + "GRANT SELECT ON TABLE orders.bills to PUBLIC;" + NEWLINE
+                         + "GRANT INSERT(a, b, c) ON TABLE purchaseOrders TO purchases_reader_role;";
 
-        boolean success = parser.parse(content, rootNode);
-        assertThat(true, is(success));
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertThat(rootNode.getChildCount(), is(4));
     }
-    
+
     @Test
     public void shouldParseRevokeStatements() {
         printTest("shouldParseRevokeStatements()");
         String content = "REVOKE SELECT ON TABLE purchaseOrders FROM maria,harry;" + NEWLINE
-            + "REVOKE UPDATE, USAGE ON TABLE purchaseOrders FROM anita,zhi CASCADE;" + NEWLINE
-            + "REVOKE SELECT ON TABLE orders.bills FROM PUBLIC RESTRICT;" + NEWLINE
-            + "REVOKE INSERT(a, b, c) ON TABLE purchaseOrders FROM purchases_reader_role;";
+                         + "REVOKE UPDATE, USAGE ON TABLE purchaseOrders FROM anita,zhi CASCADE;" + NEWLINE
+                         + "REVOKE SELECT ON TABLE orders.bills FROM PUBLIC RESTRICT;" + NEWLINE
+                         + "REVOKE INSERT(a, b, c) ON TABLE purchaseOrders FROM purchases_reader_role;";
 
-        boolean success = parser.parse(content, rootNode);
-        assertThat(true, is(success));
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertThat(rootNode.getChildCount(), is(4));
     }
-    
+
     @Test
     public void shouldParseSchemaWithTableAndView() {
         printTest("shouldParseSchemaWithTableAndView()");
-        String content = 
-              "create schema schema_1 authorization ADM default character set UNICODE" + NEWLINE
-            + "     create table table_1 (col1 varchar(20) not null, col2 nchar default current_user)" + NEWLINE
-            + "     create view view_1 (col1, col2) as select*from a with check option" + NEWLINE
-            + ";";
+        String content = "create schema schema_1 authorization ADM default character set UNICODE" + NEWLINE
+                         + "     create table table_1 (col1 varchar(20) not null, col2 nchar default current_user)" + NEWLINE
+                         + "     create view view_1 (col1, col2) as select*from a with check option" + NEWLINE + ";";
 
-        boolean success = parser.parse(content, rootNode);
-        assertThat(true, is(success));
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertThat(rootNode.getChildCount(), is(1));
     }
 }

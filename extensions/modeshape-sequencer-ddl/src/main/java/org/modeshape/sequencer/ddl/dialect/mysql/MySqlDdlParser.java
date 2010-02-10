@@ -225,18 +225,17 @@ public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstan
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#registerWords(org.modeshape.sequencer.ddl.DdlTokenStream)
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#initializeTokenStream(org.modeshape.sequencer.ddl.DdlTokenStream)
      */
     @Override
-    public void registerWords( DdlTokenStream tokens ) {
-        super.registerWords(tokens);
-
-        registerKeyWords(CUSTOM_KEYWORDS);
-        registerKeyWords(MySqlDataTypes.CUSTOM_DATATYPE_START_WORDS);
-        registerStatementStartPhrase(ALTER_PHRASES);
-        registerStatementStartPhrase(CREATE_PHRASES);
-        registerStatementStartPhrase(DROP_PHRASES);
-        registerStatementStartPhrase(MISC_PHRASES);
+    protected void initializeTokenStream( DdlTokenStream tokens ) {
+        super.initializeTokenStream(tokens);
+        tokens.registerKeyWords(CUSTOM_KEYWORDS);
+        tokens.registerKeyWords(MySqlDataTypes.CUSTOM_DATATYPE_START_WORDS);
+        tokens.registerStatementStartPhrase(ALTER_PHRASES);
+        tokens.registerStatementStartPhrase(CREATE_PHRASES);
+        tokens.registerStatementStartPhrase(DROP_PHRASES);
+        tokens.registerStatementStartPhrase(MISC_PHRASES);
     }
 
     /**

@@ -24,92 +24,91 @@
 package org.modeshape.sequencer.ddl.dialect.mysql;
 
 import static org.hamcrest.core.Is.is;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
-import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.*;
 import static org.junit.Assert.assertThat;
-
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_VIEW_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_INSERT_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
+import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_CREATE_INDEX_STATEMENT;
 import java.util.List;
-
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.sequencer.ddl.DdlParserScorer;
 import org.modeshape.sequencer.ddl.DdlParserTestHelper;
 import org.modeshape.sequencer.ddl.StandardDdlParser;
 import org.modeshape.sequencer.ddl.node.AstNode;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  *
  */
 public class MySqlDdlParserTest extends DdlParserTestHelper {
-	private StandardDdlParser parser;
-	private AstNode rootNode;
-	
-	public static final String DDL_FILE_PATH = "src/test/resources/ddl/dialect/mysql/";
-	
-	
-	@Before
-	public void beforeEach() {
-		parser = new MySqlDdlParser();
-		setPrintToConsole(false);
-    	parser.setTestMode(isPrintToConsole());
-    	parser.setDoUseTerminator(true);
-    	rootNode = parser.nodeFactory().node("ddlRootNode");
-	}
+    private StandardDdlParser parser;
+    private AstNode rootNode;
+    private DdlParserScorer scorer;
 
-	
-    @Test
-    public void shouldParseCreateTableWithMySqlDataTypes() {
-    	printTest("shouldParseAlterTableAlterColumnDefaultRealNumber()");
-    	String content = "CREATE TABLE CS_EXT_FILES  (\n"
-			   + "     FILE_NAME        VARCHAR(255),\n"
-			   + "     FILE_CONTENTS    LONGBLOB,\n"
-			   + "     CONFIG_CONTENTS	LONGTEXT);";
+    public static final String DDL_FILE_PATH = "src/test/resources/ddl/dialect/mysql/";
 
-    	boolean success = parser.parse(content, rootNode);
-    	
-    	assertThat(true, is(success));
-    	assertThat(rootNode.getChildCount(), is(1));
-    	assertThat(rootNode.getChild(0).getChildCount(), is(3));
-    	assertThat(rootNode.getChild(0).getName().getString(), is("CS_EXT_FILES"));
+    @Before
+    public void beforeEach() {
+        parser = new MySqlDdlParser();
+        setPrintToConsole(false);
+        parser.setTestMode(isPrintToConsole());
+        parser.setDoUseTerminator(true);
+        rootNode = parser.nodeFactory().node("ddlRootNode");
+        scorer = new DdlParserScorer();
     }
 
-	@Test
-	public void shouldParseTestCreate() {
-		printTest("shouldParseTestCreate()");
-	  	String content = getFileContent(DDL_FILE_PATH + "mysql_test_create.ddl");
+    @Test
+    public void shouldParseCreateTableWithMySqlDataTypes() {
+        printTest("shouldParseAlterTableAlterColumnDefaultRealNumber()");
+        String content = "CREATE TABLE CS_EXT_FILES  (\n" + "     FILE_NAME        VARCHAR(255),\n"
+                         + "     FILE_CONTENTS    LONGBLOB,\n" + "     CONFIG_CONTENTS	LONGTEXT);";
 
-    	boolean success = parser.parse(content, rootNode);
-    	assertThat(true, is(success));
-		
-		List<AstNode> problems = parser.nodeFactory().getChildrenForType(rootNode, TYPE_PROBLEM);
-		assertThat(problems.size(), is(0));
-		assertThat(rootNode.getChildCount(), is(145));
-		List<AstNode> createTables = parser.nodeFactory().getChildrenForType(rootNode, TYPE_CREATE_TABLE_STATEMENT);
-		assertThat(createTables.size(), is(57));
-		List<AstNode> alterTables = parser.nodeFactory().getChildrenForType(rootNode, TYPE_ALTER_TABLE_STATEMENT);
-		assertThat(alterTables.size(), is(31));
-		List<AstNode> createViews = parser.nodeFactory().getChildrenForType(rootNode, TYPE_CREATE_VIEW_STATEMENT);
-		assertThat(createViews.size(), is(3));
-		List<AstNode> createIndexes = parser.nodeFactory().getChildrenForType(rootNode, TYPE_CREATE_INDEX_STATEMENT);
-		assertThat(createIndexes.size(), is(53));
-		List<AstNode> insertIntos = parser.nodeFactory().getChildrenForType(rootNode, TYPE_INSERT_STATEMENT);
-		assertThat(insertIntos.size(), is(1));
-	}
-	
-	//@Test
-	public void shouldParseMySqlTestStatements() {
-		printTest("shouldParseMySqlTestStatements()");
-	  	String content = getFileContent(DDL_FILE_PATH + "mysql_test_statements.ddl");
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
+        assertThat(rootNode.getChildCount(), is(1));
+        assertThat(rootNode.getChild(0).getChildCount(), is(3));
+        assertThat(rootNode.getChild(0).getName().getString(), is("CS_EXT_FILES"));
+    }
 
-    	boolean success = parser.parse(content, rootNode);
-    	
-    	printUnknownStatements(parser, rootNode);
-    	printProblems(parser, rootNode);
-    	
-    	assertThat(true, is(success));
+    @Test
+    public void shouldParseTestCreate() {
+        printTest("shouldParseTestCreate()");
+        String content = getFileContent(DDL_FILE_PATH + "mysql_test_create.ddl");
 
-		List<AstNode> problems = parser.nodeFactory().getChildrenForType(rootNode, TYPE_PROBLEM);
-		assertThat(problems.size(), is(0));
-		assertThat(rootNode.getChildCount(), is(106));
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
 
-	}
+        List<AstNode> problems = parser.nodeFactory().getChildrenForType(rootNode, TYPE_PROBLEM);
+        assertThat(problems.size(), is(0));
+        assertThat(rootNode.getChildCount(), is(145));
+        List<AstNode> createTables = parser.nodeFactory().getChildrenForType(rootNode, TYPE_CREATE_TABLE_STATEMENT);
+        assertThat(createTables.size(), is(57));
+        List<AstNode> alterTables = parser.nodeFactory().getChildrenForType(rootNode, TYPE_ALTER_TABLE_STATEMENT);
+        assertThat(alterTables.size(), is(31));
+        List<AstNode> createViews = parser.nodeFactory().getChildrenForType(rootNode, TYPE_CREATE_VIEW_STATEMENT);
+        assertThat(createViews.size(), is(3));
+        List<AstNode> createIndexes = parser.nodeFactory().getChildrenForType(rootNode, TYPE_CREATE_INDEX_STATEMENT);
+        assertThat(createIndexes.size(), is(53));
+        List<AstNode> insertIntos = parser.nodeFactory().getChildrenForType(rootNode, TYPE_INSERT_STATEMENT);
+        assertThat(insertIntos.size(), is(1));
+    }
+
+    // @Test
+    public void shouldParseMySqlTestStatements() {
+        printTest("shouldParseMySqlTestStatements()");
+        String content = getFileContent(DDL_FILE_PATH + "mysql_test_statements.ddl");
+
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
+
+        printUnknownStatements(parser, rootNode);
+        printProblems(parser, rootNode);
+
+        List<AstNode> problems = parser.nodeFactory().getChildrenForType(rootNode, TYPE_PROBLEM);
+        assertThat(problems.size(), is(0));
+        assertThat(rootNode.getChildCount(), is(106));
+
+    }
 }

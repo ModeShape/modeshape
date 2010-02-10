@@ -113,7 +113,9 @@ public class AstNode implements Iterable<AstNode> {
     public Path getPath( ExecutionContext context ) {
         assert context != null;
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        Path parentPath = this.parent != null ? this.parent.getPath(context) : pathFactory.createRelativePath(); //StandardDdlLexicon.STATEMENTS_CONTAINER
+        Path parentPath = this.parent != null ? this.parent.getPath(context) : pathFactory.createRelativePath(); // StandardDdlLexicon
+                                                                                                                 // .
+                                                                                                                 // STATEMENTS_CONTAINER
         return pathFactory.create(parentPath, name, getSameNameSiblingIndex());
     }
 

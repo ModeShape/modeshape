@@ -1,10 +1,34 @@
 package org.modeshape.sequencer.ddl.dialect.postgres;
 
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.ALL_PRIVILEGES;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_EXPRESSION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_ORIGINAL_EXPRESSION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_CHAR_INDEX;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_COLUMN_NUMBER;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DDL_START_LINE_NUMBER;
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_OPTION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_PRECISION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DEFAULT_VALUE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DROP_BEHAVIOR;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANTEE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.GRANT_PRIVILEGE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.NEW_NAME;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_COLUMN_REFERENCE;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_DOMAIN_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_CONSTRAINT_DEFINITION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_VIEW_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_ON_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_MISSING_TERMINATOR;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_STATEMENT_OPTION;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_UNKNOWN_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.VALUE;
 import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,21 +84,18 @@ public class PostgresDdlParser extends StandardDdlParser
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#registerWords(org.modeshape.sequencer.ddl.DdlTokenStream)
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#initializeTokenStream(org.modeshape.sequencer.ddl.DdlTokenStream)
      */
     @Override
-    public void registerWords( DdlTokenStream tokens ) {
-        super.registerWords(tokens);
-
-        registerKeyWords(CUSTOM_KEYWORDS);
-        registerKeyWords(PostgresDataTypes.CUSTOM_DATATYPE_START_WORDS);
-
-        registerStatementStartPhrase(ALTER_PHRASES);
-        registerStatementStartPhrase(CREATE_PHRASES);
-        registerStatementStartPhrase(DROP_PHRASES);
-        registerStatementStartPhrase(SET_PHRASES);
-        registerStatementStartPhrase(MISC_PHRASES);
-
+    protected void initializeTokenStream( DdlTokenStream tokens ) {
+        super.initializeTokenStream(tokens);
+        tokens.registerKeyWords(CUSTOM_KEYWORDS);
+        tokens.registerKeyWords(PostgresDataTypes.CUSTOM_DATATYPE_START_WORDS);
+        tokens.registerStatementStartPhrase(ALTER_PHRASES);
+        tokens.registerStatementStartPhrase(CREATE_PHRASES);
+        tokens.registerStatementStartPhrase(DROP_PHRASES);
+        tokens.registerStatementStartPhrase(SET_PHRASES);
+        tokens.registerStatementStartPhrase(MISC_PHRASES);
     }
 
     @Override
@@ -1031,12 +1052,12 @@ public class PostgresDdlParser extends StandardDdlParser
 
         return newNode;
     }
-    
+
     /**
-     * 
      * {@inheritDoc}
-     *
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseGrantStatement(org.modeshape.sequencer.ddl.DdlTokenStream, org.modeshape.sequencer.ddl.node.AstNode)
+     * 
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseGrantStatement(org.modeshape.sequencer.ddl.DdlTokenStream,
+     *      org.modeshape.sequencer.ddl.node.AstNode)
      */
     @Override
     protected AstNode parseGrantStatement( DdlTokenStream tokens,
@@ -1044,44 +1065,45 @@ public class PostgresDdlParser extends StandardDdlParser
         assert tokens != null;
         assert parentNode != null;
         assert tokens.matches(GRANT);
-        
+
         markStartOfStatement(tokens);
 
         // NOTE: The first wack at this does not take into account the apparent potential repeating name elements after each type
         // declaration. Example:
-        //          GRANT { { SELECT | INSERT | UPDATE | DELETE | TRUNCATE | REFERENCES | TRIGGER }
-        //             [,...] | ALL [ PRIVILEGES ] }
-        //             ON [ TABLE ] tablename [, ...]
-        //             TO { [ GROUP ] rolename | PUBLIC } [, ...] [ WITH GRANT OPTION ]
+        // GRANT { { SELECT | INSERT | UPDATE | DELETE | TRUNCATE | REFERENCES | TRIGGER }
+        // [,...] | ALL [ PRIVILEGES ] }
+        // ON [ TABLE ] tablename [, ...]
+        // TO { [ GROUP ] rolename | PUBLIC } [, ...] [ WITH GRANT OPTION ]
         //
-        // the "ON [ TABLE ] tablename [, ...]" seems to indicate that you can grant privileges on multiple tables at once, which is
+        // the "ON [ TABLE ] tablename [, ...]" seems to indicate that you can grant privileges on multiple tables at once, which
+        // is
         // different thatn the SQL 92 standard. So this pass ONLY allows one and an parsing error will probably occur if multiple.
         //
-        //      Syntax for tables
+        // Syntax for tables
         //
-        //             GRANT <privileges> ON <object name>
-        //                      TO <grantee> [ { <comma> <grantee> }... ]
-        //                      [ WITH GRANT OPTION ]
+        // GRANT <privileges> ON <object name>
+        // TO <grantee> [ { <comma> <grantee> }... ]
+        // [ WITH GRANT OPTION ]
         //
-        //        <object name> ::=
-        //            [ TABLE ] <table name>
-        //          | SEQUENCE <sequence name>
-        //          | DATABASE <db name>
-        //          | FOREIGN DATA WRAPPER <fdw name>
-        //          | FOREIGN SERVER <server name>
-        //          | FUNCTION <function name>
-        //          | LANGUAGE <language name>
-        //          | SCHEMA <schema name>
-        //          | TABLESPACE <tablespace name>
+        // <object name> ::=
+        // [ TABLE ] <table name>
+        // | SEQUENCE <sequence name>
+        // | DATABASE <db name>
+        // | FOREIGN DATA WRAPPER <fdw name>
+        // | FOREIGN SERVER <server name>
+        // | FUNCTION <function name>
+        // | LANGUAGE <language name>
+        // | SCHEMA <schema name>
+        // | TABLESPACE <tablespace name>
 
         //
-        //      Syntax for roles
+        // Syntax for roles
         //
-        //          GRANT roleName [ {, roleName }* ] TO grantees
-        
-        //      privilege-types
+        // GRANT roleName [ {, roleName }* ] TO grantees
+
+        // privilege-types
         //
-        //          ALL PRIVILEGES | privilege-list
+        // ALL PRIVILEGES | privilege-list
         //
         List<AstNode> grantNodes = new ArrayList<AstNode>();
         boolean allPrivileges = false;
@@ -1090,38 +1112,38 @@ public class PostgresDdlParser extends StandardDdlParser
 
         tokens.consume("GRANT");
 
-        if( tokens.canConsume("ALL", "PRIVILEGES")) {
+        if (tokens.canConsume("ALL", "PRIVILEGES")) {
             allPrivileges = true;
-        } else { 
+        } else {
             parseGrantPrivileges(tokens, privileges);
         }
-        
-        if( allPrivileges || !privileges.isEmpty() ) {
-            
+
+        if (allPrivileges || !privileges.isEmpty()) {
+
             tokens.consume("ON");
-            
-            if( tokens.canConsume("SCHEMA")) {
+
+            if (tokens.canConsume("SCHEMA")) {
                 grantNodes = parseMultipleGrantTargets(tokens, parentNode, TYPE_GRANT_ON_SCHEMA_STATEMENT);
-            } else if( tokens.canConsume("SEQUENCE") ) {
+            } else if (tokens.canConsume("SEQUENCE")) {
                 grantNodes = parseMultipleGrantTargets(tokens, parentNode, TYPE_GRANT_ON_SEQUENCE_STATEMENT);
-            } else if( tokens.canConsume("TABLESPACE") ) {
+            } else if (tokens.canConsume("TABLESPACE")) {
                 grantNodes = parseMultipleGrantTargets(tokens, parentNode, TYPE_GRANT_ON_TABLESPACE_STATEMENT);
-            } else if( tokens.canConsume("DATABASE")) {
+            } else if (tokens.canConsume("DATABASE")) {
                 grantNodes = parseMultipleGrantTargets(tokens, parentNode, TYPE_GRANT_ON_DATABASE_STATEMENT);
-            } else if( tokens.canConsume("FUNCTION")) {
+            } else if (tokens.canConsume("FUNCTION")) {
                 grantNodes = parseFunctionAndParameters(tokens, parentNode);
-            } else if( tokens.canConsume("LANGUAGE")) {
+            } else if (tokens.canConsume("LANGUAGE")) {
                 grantNodes = parseMultipleGrantTargets(tokens, parentNode, TYPE_GRANT_ON_LANGUAGE_STATEMENT);
-            } else if( tokens.canConsume("FOREIGN", "DATA", "WRAPPER")) {
+            } else if (tokens.canConsume("FOREIGN", "DATA", "WRAPPER")) {
                 grantNodes = parseMultipleGrantTargets(tokens, parentNode, TYPE_GRANT_ON_FOREIGN_DATA_WRAPPER_STATEMENT);
-            } else if( tokens.canConsume("FOREIGN", "SERVER")) {
+            } else if (tokens.canConsume("FOREIGN", "SERVER")) {
                 grantNodes = parseMultipleGrantTargets(tokens, parentNode, TYPE_GRANT_ON_FOREIGN_SERVER_STATEMENT);
             } else {
                 tokens.canConsume(TABLE); // OPTIONAL
                 String name = parseName(tokens);
                 AstNode grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_TABLE_STATEMENT);
                 grantNodes.add(grantNode);
-                while( tokens.canConsume(COMMA) ) {
+                while (tokens.canConsume(COMMA)) {
                     // Assume more names here
                     name = parseName(tokens);
                     grantNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_TABLE_STATEMENT);
@@ -1136,222 +1158,221 @@ public class PostgresDdlParser extends StandardDdlParser
             do {
                 String role = parseName(tokens);
                 nodeFactory().node(role, grantNode, ROLE);
-            } while( tokens.canConsume(COMMA));
+            } while (tokens.canConsume(COMMA));
         }
-        
+
         tokens.consume("TO");
         List<String> grantees = new ArrayList<String>();
-        
+
         do {
             String grantee = parseName(tokens);
             grantees.add(grantee);
-        } while( tokens.canConsume(COMMA));
-        
+        } while (tokens.canConsume(COMMA));
+
         boolean withGrantOption = false;
-        if( tokens.canConsume("WITH", "GRANT", "OPTION")) {
+        if (tokens.canConsume("WITH", "GRANT", "OPTION")) {
             withGrantOption = true;
         }
-        
+
         // Set all properties and children on Grant Nodes
-        for( AstNode grantNode : grantNodes) {
+        for (AstNode grantNode : grantNodes) {
             List<AstNode> copyOfPrivileges = copyOfPrivileges(privileges);
             // Attach privileges to grant node
-            for( AstNode node : copyOfPrivileges ) {
+            for (AstNode node : copyOfPrivileges) {
                 node.setParent(grantNode);
             }
-            if( allPrivileges ) {
+            if (allPrivileges) {
                 grantNode.setProperty(ALL_PRIVILEGES, allPrivileges);
             }
-            for( String grantee : grantees) {
+            for (String grantee : grantees) {
                 nodeFactory().node(grantee, grantNode, GRANTEE);
             }
-            
-            if( withGrantOption ) {
+
+            if (withGrantOption) {
                 AstNode optionNode = nodeFactory().node("withGrant", grantNode, TYPE_STATEMENT_OPTION);
                 optionNode.setProperty(VALUE, "WITH GRANT OPTION");
             }
         }
         AstNode firstGrantNode = grantNodes.get(0);
-        
+
         markEndOfStatement(tokens, firstGrantNode);
 
         // Update additional grant nodes with statement info
-        
-        for( int i=1; i<grantNodes.size(); i++) {
+
+        for (int i = 1; i < grantNodes.size(); i++) {
             AstNode grantNode = grantNodes.get(i);
             grantNode.setProperty(DDL_EXPRESSION, firstGrantNode.getProperty(DDL_EXPRESSION));
             grantNode.setProperty(DDL_START_LINE_NUMBER, firstGrantNode.getProperty(DDL_START_LINE_NUMBER));
             grantNode.setProperty(DDL_START_CHAR_INDEX, firstGrantNode.getProperty(DDL_START_CHAR_INDEX));
             grantNode.setProperty(DDL_START_COLUMN_NUMBER, firstGrantNode.getProperty(DDL_START_COLUMN_NUMBER));
         }
-        
-        
+
         return grantNodes.get(0);
     }
 
-
     /**
-     * 
      * {@inheritDoc}
-     *
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseGrantPrivileges(org.modeshape.sequencer.ddl.DdlTokenStream, java.util.List)
+     * 
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#parseGrantPrivileges(org.modeshape.sequencer.ddl.DdlTokenStream,
+     *      java.util.List)
      */
     @Override
-    protected void parseGrantPrivileges( DdlTokenStream tokens, List<AstNode> privileges) throws ParsingException {
-        //      privilege-types
+    protected void parseGrantPrivileges( DdlTokenStream tokens,
+                                         List<AstNode> privileges ) throws ParsingException {
+        // privilege-types
         //
-        //          ALL PRIVILEGES | privilege-list
+        // ALL PRIVILEGES | privilege-list
         //
-        //      privilege-list
+        // privilege-list
         //
-        //          table-privilege {, table-privilege }*
+        // table-privilege {, table-privilege }*
         //
-        //      table-privilege
-        //          SELECT [ <left paren> <privilege column list> <right paren> ]
-        //        | DELETE
-        //        | INSERT [ <left paren> <privilege column list> <right paren> ]
-        //        | UPDATE [ <left paren> <privilege column list> <right paren> ]
-        //        | REFERENCES [ <left paren> <privilege column list> <right paren> ]
-        //        | USAGE
-        //        | TRIGGER
-        //        | TRUNCATE
-        //        | CREATE
-        //        | CONNECT
-        //        | TEMPORARY
-        //        | TEMP
-        //        | EXECUTE
-        
-        //  POSTGRES has the following Privileges:
-        //          GRANT { { SELECT | INSERT | UPDATE | DELETE | TRUNCATE | REFERENCES | TRIGGER }
-        
+        // table-privilege
+        // SELECT [ <left paren> <privilege column list> <right paren> ]
+        // | DELETE
+        // | INSERT [ <left paren> <privilege column list> <right paren> ]
+        // | UPDATE [ <left paren> <privilege column list> <right paren> ]
+        // | REFERENCES [ <left paren> <privilege column list> <right paren> ]
+        // | USAGE
+        // | TRIGGER
+        // | TRUNCATE
+        // | CREATE
+        // | CONNECT
+        // | TEMPORARY
+        // | TEMP
+        // | EXECUTE
+
+        // POSTGRES has the following Privileges:
+        // GRANT { { SELECT | INSERT | UPDATE | DELETE | TRUNCATE | REFERENCES | TRIGGER }
+
         do {
             AstNode node = null;
-            
-            if( tokens.canConsume(DELETE)) {
+
+            if (tokens.canConsume(DELETE)) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, DELETE);
-            } else if( tokens.canConsume(INSERT)) {
+            } else if (tokens.canConsume(INSERT)) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, INSERT);
                 parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
-            } else if( tokens.canConsume("REFERENCES")) {
+            } else if (tokens.canConsume("REFERENCES")) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, "REFERENCES");
                 parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
-            } else if( tokens.canConsume(SELECT)) {
+            } else if (tokens.canConsume(SELECT)) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, SELECT);
                 // Could have columns here
                 // GRANT SELECT (col1), UPDATE (col1) ON mytable TO miriam_rw;
 
                 // Let's just swallow the column data.
-                
+
                 consumeParenBoundedTokens(tokens, true);
-            } else if( tokens.canConsume("USAGE")) {
+            } else if (tokens.canConsume("USAGE")) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, "USAGE");
-            } else if( tokens.canConsume(UPDATE)) {
+            } else if (tokens.canConsume(UPDATE)) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, UPDATE);
                 parseColumnNameList(tokens, node, TYPE_COLUMN_REFERENCE);
-            } else if( tokens.canConsume("TRIGGER")) {
+            } else if (tokens.canConsume("TRIGGER")) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, "TRIGGER");
-            } else if( tokens.canConsume("TRUNCATE")) {
+            } else if (tokens.canConsume("TRUNCATE")) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, "TRUNCATE");
-            } else if( tokens.canConsume("CREATE")) {
+            } else if (tokens.canConsume("CREATE")) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, "CREATE");
-            } else if( tokens.canConsume("CONNECT")) {
+            } else if (tokens.canConsume("CONNECT")) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, "CONNECT");
-            } else if( tokens.canConsume("TEMPORARY")) {
+            } else if (tokens.canConsume("TEMPORARY")) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, "TEMPORARY");
-            } else if( tokens.canConsume("TEMP")) {
+            } else if (tokens.canConsume("TEMP")) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, "TEMP");
-            } else if( tokens.canConsume("EXECUTE")) {
+            } else if (tokens.canConsume("EXECUTE")) {
                 node = nodeFactory().node("privilege");
                 node.setProperty(TYPE, "EXECUTE");
             }
-            
-            if( node == null) {
+
+            if (node == null) {
                 break;
             }
             nodeFactory().setType(node, GRANT_PRIVILEGE);
             privileges.add(node);
-            
-        } while( tokens.canConsume(COMMA));
+
+        } while (tokens.canConsume(COMMA));
 
     }
-    
-    private List<AstNode> parseMultipleGrantTargets(DdlTokenStream tokens,
-                                                    AstNode parentNode,
-                                                    Name nodeType) throws ParsingException {
+
+    private List<AstNode> parseMultipleGrantTargets( DdlTokenStream tokens,
+                                                     AstNode parentNode,
+                                                     Name nodeType ) throws ParsingException {
         List<AstNode> grantNodes = new ArrayList<AstNode>();
         String name = parseName(tokens);
         AstNode grantNode = nodeFactory().node(name, parentNode, nodeType);
         grantNodes.add(grantNode);
-        while( tokens.canConsume(COMMA) ) {
+        while (tokens.canConsume(COMMA)) {
             // Assume more names here
             name = parseName(tokens);
             grantNode = nodeFactory().node(name, parentNode, nodeType);
             grantNodes.add(grantNode);
         }
-        
+
         return grantNodes;
     }
-    
-    private List<AstNode> copyOfPrivileges(List<AstNode> privileges) {
+
+    private List<AstNode> copyOfPrivileges( List<AstNode> privileges ) {
         List<AstNode> copyOfPrivileges = new ArrayList<AstNode>();
-        for( AstNode node : privileges) {
+        for (AstNode node : privileges) {
             copyOfPrivileges.add(node.clone());
         }
-        
+
         return copyOfPrivileges;
     }
-    
+
     private List<AstNode> parseFunctionAndParameters( DdlTokenStream tokens,
-                                                AstNode parentNode ) throws ParsingException {
+                                                      AstNode parentNode ) throws ParsingException {
         boolean isFirstFunction = true;
         List<AstNode> grantNodes = new ArrayList<AstNode>();
-        
+
         // FUNCTION funcname ( [ [ argmode ] [ argname ] argtype [, ...] ] ) [, ...]
 
         // argmode = [ IN, OUT, INOUT, or VARIADIC ]
-        
+
         // p(a int, b TEXT), q(integer, double)
-        
-        //        [postgresddl:grantOnFunctionStatement]         > ddl:grantStatement, postgresddl:functionOperand mixin
-        //        + * (postgresddl:functionParameter) = postgresddl:functionParameter multiple
-        
+
+        // [postgresddl:grantOnFunctionStatement] > ddl:grantStatement, postgresddl:functionOperand mixin
+        // + * (postgresddl:functionParameter) = postgresddl:functionParameter multiple
+
         do {
             String name = parseName(tokens);
             AstNode grantFunctionNode = nodeFactory().node(name, parentNode, TYPE_GRANT_ON_FUNCTION_STATEMENT);
-            
+
             grantNodes.add(grantFunctionNode);
 
             // Parse Parameter Data
-            if( tokens.matches(L_PAREN)) {
+            if (tokens.matches(L_PAREN)) {
                 tokens.consume(L_PAREN);
-                
-                if( !tokens.canConsume(R_PAREN)) {
+
+                if (!tokens.canConsume(R_PAREN)) {
                     // check for datatype
-                    do{
+                    do {
                         String mode = null;
-                        
-                        if( tokens.matchesAnyOf("IN", "OUT", "INOUT", "VARIADIC")) {
+
+                        if (tokens.matchesAnyOf("IN", "OUT", "INOUT", "VARIADIC")) {
                             mode = tokens.consume();
                         }
                         AstNode paramNode = null;
-                        
+
                         DataType dType = getDatatypeParser().parse(tokens);
-                        if( dType != null ) {
+                        if (dType != null) {
                             // NO Parameter Name, only DataType
                             paramNode = nodeFactory().node("parameter", grantFunctionNode, FUNCTION_PARAMETER);
-                            if( mode != null ) {
+                            if (mode != null) {
                                 paramNode.setProperty(FUNCTION_PARAMETER_MODE, mode);
                             }
                             getDatatypeParser().setPropertiesOnNode(paramNode, dType);
@@ -1361,26 +1382,25 @@ public class PostgresDdlParser extends StandardDdlParser
                             assert paramName != null;
 
                             paramNode = nodeFactory().node(paramName, grantFunctionNode, FUNCTION_PARAMETER);
-                            if( mode != null ) {
+                            if (mode != null) {
                                 paramNode.setProperty(FUNCTION_PARAMETER_MODE, mode);
                             }
-                            if( dType != null ) {
+                            if (dType != null) {
                                 getDatatypeParser().setPropertiesOnNode(paramNode, dType);
                             }
                         }
-                    } while( tokens.canConsume(COMMA));
-                    
+                    } while (tokens.canConsume(COMMA));
+
                     tokens.consume(R_PAREN);
                 }
             }
-            
+
             // RESET first parameter flag
-            if( isFirstFunction ) {
+            if (isFirstFunction) {
                 isFirstFunction = false;
             }
-        } while( tokens.canConsume(COMMA) );
-        
-        
+        } while (tokens.canConsume(COMMA));
+
         return grantNodes;
     }
 
@@ -1555,17 +1575,16 @@ public class PostgresDdlParser extends StandardDdlParser
         }
 
         AstNode commentNode = null;
-        
 
         if (objectName != null) {
             commentNode = nodeFactory().node(objectName, parentNode, TYPE_COMMENT_ON_STATEMENT);
+            commentNode.setProperty(PostgresDdlLexicon.TARGET_OBJECT_NAME, objectName);
         } else {
             commentNode = nodeFactory().node("commentOn", parentNode, TYPE_COMMENT_ON_STATEMENT);
-            commentNode.setProperty(PostgresDdlLexicon.TARGET_OBJECT_NAME, objectName);
         }
         commentNode.setProperty(PostgresDdlLexicon.COMMENT, commentString);
         commentNode.setProperty(PostgresDdlLexicon.TARGET_OBJECT_TYPE, objectType);
-        
+
         markEndOfStatement(tokens, commentNode);
 
         return commentNode;

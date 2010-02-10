@@ -108,6 +108,7 @@ import org.modeshape.common.text.Position;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.Property;
 import org.modeshape.sequencer.ddl.DdlTokenStream.DdlTokenizer;
 import org.modeshape.sequencer.ddl.datatype.DataType;
 import org.modeshape.sequencer.ddl.datatype.DataTypeParser;
@@ -122,12 +123,11 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     private final String parserId = "SQL92";
     private boolean testMode = false;
-    private List<DdlParserProblem> problems;
-    private AstNodeFactory nodeFactory;
+    private final List<DdlParserProblem> problems;
+    private final AstNodeFactory nodeFactory;
     private AstNode rootNode;
     private DdlTokenStream tokens;
     private List<String> allDataTypeStartWords = null;
-    private List<Name> validSchemaChildTypes = null;
     private DataTypeParser datatypeParser = null;
     private String terminator = DEFAULT_TERMINATOR;
     private boolean useTerminator = false;
@@ -139,20 +139,6 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         setDatatypeParser(new DataTypeParser());
         nodeFactory = new AstNodeFactory();
         problems = new ArrayList<DdlParserProblem>();
-        validSchemaChildTypes = new ArrayList<Name>();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.DdlParser#registerWords(org.modeshape.sequencer.ddl.DdlTokenStream)
-     */
-    public void registerWords( DdlTokenStream tokens ) {
-        CheckArg.isNotNull(tokens, "tokens");
-        this.tokens = tokens;
-        registerKeyWords(SQL_92_RESERVED_WORDS);
-        registerStatementStartPhrase(SQL_92_ALL_PHRASES);
-        registerSchemaChildTypes(getValidSchemaChildTypes());
     }
 
     /**
@@ -195,60 +181,54 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     }
 
     /**
-     * {@inheritDoc}
+     * Method called by {@link #parse(String, String, AstNode, DdlParserScorer)} to initialize the {@link DdlTokenStream token
+     * stream}, giving subclasses a chance to {@link DdlTokenStream#registeredKeyWords register key words} and
+     * {@link DdlTokenStream#registerStatementStartPhrase(String[]) statement start phrases}.
      * 
-     * @see org.modeshape.sequencer.ddl.DdlParser#getNumberOfKeyWords(org.modeshape.sequencer.ddl.DdlTokenStream)
+     * @param tokens the stream of tokens
      */
-    public int getNumberOfKeyWords( DdlTokenStream tokens ) {
-        int count = 0;
-        while (tokens.hasNext()) {
-            if (tokens.isNextKeyWord()) {
-                count++;
-            }
-            tokens.consume();
-        }
-        return count;
+    protected void initializeTokenStream( DdlTokenStream tokens ) {
+        tokens.registerKeyWords(SQL_92_RESERVED_WORDS);
+        tokens.registerStatementStartPhrase(SQL_92_ALL_PHRASES);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.sequencer.ddl.DdlParser#parse(java.lang.String, org.modeshape.sequencer.ddl.node.AstNode)
+     * @see org.modeshape.sequencer.ddl.DdlParser#parse(java.lang.String, java.lang.String,
+     *      org.modeshape.sequencer.ddl.node.AstNode, org.modeshape.sequencer.ddl.DdlParserScorer)
      */
-    public boolean parse( String ddl,
-                          AstNode rootNode ) throws ParsingException {
+    public void parse( String ddl,
+                       String fileName,
+                       AstNode rootNode,
+                       final DdlParserScorer scorer ) throws ParsingException {
         CheckArg.isNotNull(ddl, "ddl");
         CheckArg.isNotNull(rootNode, "rootNode");
+        CheckArg.isNotNull(scorer, "scorer");
 
-        tokens = new DdlTokenStream(ddl, DdlTokenStream.ddlTokenizer(false), false);
-        registerWords(tokens);
+        if (fileName != null) {
+            // Score the filename using the identifier only ...
+            scorer.scoreText(fileName, 2, getIdentifyingKeywords());
+        }
+
+        // Create the state of this parser ...
+        problems.clear();
+        setRootNode(rootNode);
+        tokens = new DdlTokenStream(ddl, DdlTokenStream.ddlTokenizer(true), false);
+        initializeTokenStream(tokens);
         tokens.start();
-        return parse(tokens, rootNode);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.DdlParser#parse(org.modeshape.sequencer.ddl.DdlTokenStream,
-     *      org.modeshape.sequencer.ddl.node.AstNode)
-     */
-    public boolean parse( DdlTokenStream tokens,
-                          AstNode rootNode ) throws ParsingException {
-        CheckArg.isNotNull(tokens, "tokens");
-        CheckArg.isNotNull(rootNode, "rootNode");
 
         testPrint("\n== >> StandardDdlParser.parse() PARSING STARTED: ");
-        setRootNode(rootNode);
-        problems.clear();
 
-        // Check the header of the DDL file (first tokens) to see if they are coded to a specific database dialect
-        if (tokens.canConsume("PARSER_ID")) {
-            tokens.consume("=");
-            String parserType = tokens.consume();
-            if (!parserType.equalsIgnoreCase(getId())) {
-                String msg = "Incompatable parser ID = " + parserType + " Expected = " + getId();
-                throw new DdlParserProblem(DdlConstants.Problems.ERROR, new Position(-1, 1, 0), msg);
-            }
+        // Compute the score for this content (and then rewind the tokens)...
+        computeScore(tokens, scorer);
+        tokens.rewind();
+
+        // Consume the first block of comments ...
+        while (tokens.matches(DdlTokenizer.COMMENT)) {
+            // Consume the comment ...
+            String comment = tokens.consume();
+            scorer.scoreText(comment, 2, getIdentifyingKeywords());
         }
 
         // Simply move to the next statement start (registered prior to tokenizing).
@@ -268,18 +248,66 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         rewrite(tokens, rootNode);
 
-        List<DdlParserProblem> copyOfProblems = new ArrayList<DdlParserProblem>(problems);
-        for (DdlParserProblem problem : copyOfProblems) {
+        for (DdlParserProblem problem : problems) {
             attachNewProblem(problem, rootNode);
         }
 
-        // testPrint("== >> StandardDdlParser.parse() PARSING COMPLETE: " + statements.size() + " statements parsed.\n\n");
-        int count = 0;
-        for (AstNode child : rootNode.getChildren()) {
-            testPrint("== >> Found Statement" + "(" + (++count) + "):\n" + child);
-        }
+        // // Compute the score based upon the number of AST nodes ...
+        // // System.out.println("\n\n " + getId() + " (score=" + (getScore(rootNode) - 1 - (problems.size() * 2)) + ")\n" +
+        // // rootNode);
+        // int score = getScore(rootNode) - 1; // exclude the root, since we didn't create it
+        // score -= (problems.size() * 2); // remove double the # of problems
+        // scorer.scoreStatements(score);
 
-        return problems.isEmpty();
+        if (testMode) {
+            // testPrint("== >> StandardDdlParser.parse() PARSING COMPLETE: " + statements.size() + " statements parsed.\n\n");
+            int count = 0;
+            for (AstNode child : rootNode.getChildren()) {
+                testPrint("== >> Found Statement" + "(" + (++count) + "):\n" + child);
+            }
+        }
+    }
+
+    protected void computeScore( DdlTokenStream tokens,
+                                 DdlParserScorer scorer ) {
+        while (tokens.hasNext()) {
+            if (tokens.isNextKeyWord()) {
+                scorer.scoreStatements(1);
+            }
+            tokens.consume();
+        }
+    }
+
+    public String[] getIdentifyingKeywords() {
+        return new String[] {getId()};
+    }
+
+    protected int getScore( AstNode node ) {
+        int count = 1;
+        // Now count the children ...
+        for (AstNode child : node) {
+            count += getScore(child);
+        }
+        return count;
+    }
+
+    protected boolean hasType( AstNode node,
+                               Name... names ) {
+        Property primaryType = node.getProperty(JcrLexicon.PRIMARY_TYPE);
+        if (primaryType != null) {
+            for (Name typeName : names) {
+                if (typeName.equals(primaryType.getFirstValue())) return true;
+            }
+        }
+        Property mixinType = node.getProperty(JcrLexicon.MIXIN_TYPES);
+        if (mixinType != null) {
+            for (Object value : mixinType) {
+                for (Name typeName : names) {
+                    if (typeName.equals(value)) return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -330,6 +358,8 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         // Check to see if any more tokens exists
         if (tokens.hasNext()) {
             while (tokens.hasNext()) {
+                if (tokens.canConsume(DdlTokenizer.COMMENT)) continue;
+
                 // If the next toke is a STATEMENT_KEY, then stop
                 if (!tokens.matches(DdlTokenizer.STATEMENT_KEY)) {
                     // If the next toke is NOT a statement, create a problem statement in case it can't be fully recognized as
@@ -1360,6 +1390,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 parseColumnConstraint(tokens, columnNode, isAlterTable);
             }
             consumeComment(tokens);
+            if (tokens.canConsume(COMMA)) break;
         }
     }
 
@@ -2207,54 +2238,6 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         return true;
     }
 
-    /**
-     * Adds the provided key words array to the list of registered key words.
-     * 
-     * @param keywords
-     */
-    public void registerKeyWords( String[] keywords ) {
-        tokens.registerKeyWords(keywords);
-    }
-
-    /**
-     * Adds the provided key words list to the list of registered key words.
-     * 
-     * @param keywords
-     */
-    public void registerKeyWords( List<String> keywords ) {
-        tokens.registerKeyWords(keywords);
-    }
-
-    /**
-     * Adds the provided statement start phrase to the list of registered phrases.
-     * 
-     * @param phrase
-     */
-    public void registerStatementStartPhrase( String[] phrase ) {
-        tokens.registerStatementStartPhrase(phrase);
-    }
-
-    /**
-     * Adds the provided statement start phrases to the list of registered phrases.
-     * 
-     * @param phrases
-     */
-    public void registerStatementStartPhrase( String[][] phrases ) {
-        tokens.registerStatementStartPhrase(phrases);
-    }
-
-    /**
-     * Adds the provided statement start phrases to the list of registered phrases.
-     * 
-     * @param phrases
-     */
-    private void registerSchemaChildTypes( Name[] phrases ) {
-        validSchemaChildTypes.clear();
-        for (Name phrase : phrases) {
-            validSchemaChildTypes.add(phrase);
-        }
-    }
-
     protected Name[] getValidSchemaChildTypes() {
         return VALID_SCHEMA_CHILD_TYPES;
     }
@@ -2881,26 +2864,6 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         if (obj instanceof DdlParser) {
             return ((DdlParser)obj).getId().equals(this.getId());
         }
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.sequencer.ddl.DdlParser#isType(String)
-     */
-    public boolean isType( String ddl ) {
-        String trimmedDDL = ddl.trim();
-        int endIndex = 400;
-        if (trimmedDDL.length() < endIndex) {
-            endIndex = trimmedDDL.length() - 1;
-        }
-        DdlTokenStream tokens = new DdlTokenStream(ddl.substring(0, endIndex), DdlTokenStream.ddlTokenizer(false), false);
-        tokens.start();
-        if (tokens.matches("PARSER_ID", "=", getId())) {
-            return true;
-        }
-
         return false;
     }
 }

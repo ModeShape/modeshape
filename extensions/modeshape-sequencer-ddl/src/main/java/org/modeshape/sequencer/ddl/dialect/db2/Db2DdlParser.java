@@ -1,6 +1,7 @@
 package org.modeshape.sequencer.ddl.dialect.db2;
 
 import org.modeshape.sequencer.ddl.DdlParser;
+import org.modeshape.sequencer.ddl.DdlTokenStream;
 import org.modeshape.sequencer.ddl.StandardDdlParser;
 
 public class Db2DdlParser extends StandardDdlParser {
@@ -78,22 +79,19 @@ public class Db2DdlParser extends StandardDdlParser {
 
     public Db2DdlParser() {
         super();
-        initialize();
-    }
-
-    private void initialize() {
-        registerStatementStartPhrase(COMMENT_ON);
         setTerminator(TERMINATOR);
     }
 
-    // ===========================================================================================================================
-    // ===========================================================================================================================
-
-    // ===========================================================================================================================
-    // ===========================================================================================================================
-
-    // ===========================================================================================================================
-    // ===========================================================================================================================
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#initializeTokenStream(org.modeshape.sequencer.ddl.DdlTokenStream)
+     */
+    @Override
+    protected void initializeTokenStream( DdlTokenStream tokens ) {
+        super.initializeTokenStream(tokens);
+        tokens.registerStatementStartPhrase(COMMENT_ON);
+    }
 
     /**
      * {@inheritDoc}

@@ -280,8 +280,9 @@ public class DdlTokenStream extends TokenStream {
          */
         public static final int DOUBLE_QUOTED_STRING = 16;
         /**
-         * The {@link TokenStream.Token#type() token type} for tokens that consist of all the characters between "/*" and "&#42;/"
-         * or between "//" and the next line terminator (e.g., '\n', '\r' or "\r\n").
+         * The {@link TokenStream.Token#type() token type} for tokens that consist of all the characters between "/*" and
+         * "&#42;/", between "//" and the next line terminator (e.g., '\n', '\r' or "\r\n"), or between "--" and the next line
+         * terminator (e.g., '\n', '\r' or "\r\n").
          */
         public static final int COMMENT = 32;
 

@@ -100,13 +100,22 @@ public class DdlIntegrationTestUtil {
 
     public void waitUntilSequencedNodesIs( int totalNumberOfNodesSequenced ) throws InterruptedException {
         // check 50 times, waiting 0.1 seconds between (for a total of 5 seconds max) ...
+        waitUntilSequencedNodesIs(totalNumberOfNodesSequenced, 5);
+    }
+
+    public void waitUntilSequencedNodesIs( int totalNumberOfNodesSequenced,
+                                           int numberOfSeconds ) throws InterruptedException {
         long numFound = 0;
-        for (int i = 0; i != 50; i++) {
+        int actualMillis = 0;
+        int numberOfMillis = numberOfSeconds * 1000;
+        int numberOfIterations = numberOfMillis / 100;
+        for (int i = 0; i != numberOfIterations; i++) {
             numFound = getStatistics().getNumberOfNodesSequenced();
             if (numFound >= totalNumberOfNodesSequenced) {
                 return;
             }
             Thread.sleep(100);
+            actualMillis += 100;
         }
         fail("Expected to find " + totalNumberOfNodesSequenced + " nodes sequenced, but found " + numFound);
     }
@@ -222,6 +231,9 @@ public class DdlIntegrationTestUtil {
     public void verifySingleValueProperty( Node node,
                                            String propNameStr,
                                            String expectedValue ) throws Exception {
+        if (node == null) {
+            return;
+        }
         Value expValue = value(expectedValue);
         Property prop = node.getProperty(propNameStr);
         if (prop.getDefinition().isMultiple()) {
@@ -343,8 +355,8 @@ public class DdlIntegrationTestUtil {
             // String nextNodeName = nextNode.getName();
             // boolean isNodeType = nextNode.isNodeType(type);
             if (nextNode.getName().equals(name) && nextNode.isNodeType(type)) { // nextNodeName.equals(name) && isNodeType) {
-                                                                                // //(hasMixin(node, type) ||
-                                                                                // node.isNodeType(type))) {
+                // //(hasMixin(node, type) ||
+                // node.isNodeType(type))) {
                 return nextNode;
             }
             Node someNode = findNode(nextNode, name, type);

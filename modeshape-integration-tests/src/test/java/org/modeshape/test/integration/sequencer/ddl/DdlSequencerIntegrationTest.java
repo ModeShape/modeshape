@@ -36,7 +36,7 @@ import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrTools;
 import org.modeshape.jcr.SecurityContextCredentials;
-import org.modeshape.sequencer.ddl.DdlTokenStream;
+import org.modeshape.sequencer.ddl.DdlParserScorer;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import org.modeshape.sequencer.ddl.StandardDdlParser;
 import org.modeshape.sequencer.ddl.node.AstNode;
@@ -136,82 +136,80 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         Node root = session.getRootNode();
 
         if (root.hasNode("ddls")) {
-            if (root.hasNode("ddls")) {
-                Node ddlsNode = root.getNode("ddls");
-                // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
-                for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
-                    Node ddlNode = iter.nextNode();
+            Node ddlsNode = root.getNode("ddls");
+            // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
+            for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
+                Node ddlNode = iter.nextNode();
 
-                    // printPropertiesRecursive(ddlNode);
+                // printPropertiesRecursive(ddlNode);
 
-                    // printChildProperties(ddlNode.getNodes().nextNode());
+                // printChildProperties(ddlNode.getNodes().nextNode());
 
-                    long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
-                    assertEquals(44, numStatements);
+                long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
+                assertEquals(44, numStatements);
 
-                    // assertNotNull <ns001:startLineNumber = 40, jcr:primaryType = nt:unstructured, ns001:startColumnNumber = 1,
-                    // jcr:mixinTypes = ns001:createAssertionStatement, ns001:expression = CREATE ASSERTION assertNotNull CHECK
-                    // (value != null) NOT DEFERRABLE, ns001:startCharIndex = 1400, ns001:searchCondition = value ! = null>
-                    // CONSTRAINT_ATTRIBUTE <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:constraintAttribute,
-                    // ns001:propValue = NOT DEFERRABLE>
-                    // assertIsZero <ns001:startLineNumber = 42, jcr:primaryType = nt:unstructured, ns001:startColumnNumber = 1,
-                    // jcr:mixinTypes = ns001:createAssertionStatement, ns001:expression = CREATE ASSERTION assertIsZero CHECK
-                    // (value != null and value == 0) INITIALLY DEFERRED, ns001:startCharIndex = 1469, ns001:searchCondition =
-                    // value ! = null and value = = 0>
-                    // CONSTRAINT_ATTRIBUTE <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:constraintAttribute,
-                    // ns001:propValue = INITIALLY DEFERRED>
-                    Node stmtNode = assertNode(ddlNode, "assertNotNull", "ddl:createAssertionStatement");
-                    Node constraintAttribute = assertNode(stmtNode, "CONSTRAINT_ATTRIBUTE", "ddl:constraintAttribute");
-                    verifySingleValueProperty(constraintAttribute, "ddl:propValue", "NOT DEFERRABLE");
+                // assertNotNull <ns001:startLineNumber = 40, jcr:primaryType = nt:unstructured, ns001:startColumnNumber = 1,
+                // jcr:mixinTypes = ns001:createAssertionStatement, ns001:expression = CREATE ASSERTION assertNotNull CHECK
+                // (value != null) NOT DEFERRABLE, ns001:startCharIndex = 1400, ns001:searchCondition = value ! = null>
+                // CONSTRAINT_ATTRIBUTE <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:constraintAttribute,
+                // ns001:propValue = NOT DEFERRABLE>
+                // assertIsZero <ns001:startLineNumber = 42, jcr:primaryType = nt:unstructured, ns001:startColumnNumber = 1,
+                // jcr:mixinTypes = ns001:createAssertionStatement, ns001:expression = CREATE ASSERTION assertIsZero CHECK
+                // (value != null and value == 0) INITIALLY DEFERRED, ns001:startCharIndex = 1469, ns001:searchCondition =
+                // value ! = null and value = = 0>
+                // CONSTRAINT_ATTRIBUTE <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:constraintAttribute,
+                // ns001:propValue = INITIALLY DEFERRED>
+                Node stmtNode = assertNode(ddlNode, "assertNotNull", "ddl:createAssertionStatement");
+                Node constraintAttribute = assertNode(stmtNode, "CONSTRAINT_ATTRIBUTE", "ddl:constraintAttribute");
+                verifySingleValueProperty(constraintAttribute, "ddl:propValue", "NOT DEFERRABLE");
 
-                    stmtNode = assertNode(ddlNode, "assertIsZero", "ddl:createAssertionStatement");
-                    constraintAttribute = assertNode(stmtNode, "CONSTRAINT_ATTRIBUTE", "ddl:constraintAttribute");
-                    verifySingleValueProperty(constraintAttribute, "ddl:propValue", "INITIALLY DEFERRED");
-                    // employee <ns001:startLineNumber = 40, jcr:primaryType = nt:unstructured, ns001:startColumnNumber = 1,
-                    // jcr:mixinTypes = ns001:createTableStatement, ns001:expression = CREATE TABLE employee (
-                    // empno NUMBER(4) NOT NULL,
-                    // empname CHAR(10),
-                    // job CHAR(9),
-                    // deptno NUMBER(2) NOT NULL,
-                    // CONSTRAINT emp_fk1 FOREIGN KEY (deptno) REFERENCES dept (deptno) INITIALLY IMMEDIATE,
-                    // CONSTRAINT emp_pk PRIMARY KEY (empno));, ns001:startCharIndex = 1404>
-                    // empno <ns001:datatypeName = NUMBER, jcr:primaryType = nt:unstructured, ns001:datatypePrecision = 4,
-                    // ns001:nullable = NOT NULL, jcr:mixinTypes = ns001:columnDefinition, ns001:datatypeScale = 0>
-                    // empname <ns001:datatypeName = CHAR, ns001:datatypeLength = 10, jcr:primaryType = nt:unstructured,
-                    // jcr:mixinTypes = ns001:columnDefinition>
-                    // job <ns001:datatypeName = CHAR, ns001:datatypeLength = 9, jcr:primaryType = nt:unstructured, jcr:mixinTypes
-                    // = ns001:columnDefinition>
-                    // deptno <ns001:datatypeName = NUMBER, jcr:primaryType = nt:unstructured, ns001:datatypePrecision = 2,
-                    // ns001:nullable = NOT NULL, jcr:mixinTypes = ns001:columnDefinition, ns001:datatypeScale = 0>
-                    // emp_fk1 <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:tableConstraint, ns001:constraintType =
-                    // 1>
-                    // deptno <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:columnReference>
-                    // dept <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:tableReference>
-                    // deptno <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:fkColumnReference>
-                    // CONSTRAINT_ATTRIBUTE <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:constraintAttribute,
-                    // ns001:propValue = INITIALLY IMMEDIATE>
-                    // emp_pk <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:tableConstraint, ns001:constraintType =
-                    // 2>
-                    // empno <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:columnReference>
+                stmtNode = assertNode(ddlNode, "assertIsZero", "ddl:createAssertionStatement");
+                constraintAttribute = assertNode(stmtNode, "CONSTRAINT_ATTRIBUTE", "ddl:constraintAttribute");
+                verifySingleValueProperty(constraintAttribute, "ddl:propValue", "INITIALLY DEFERRED");
+                // employee <ns001:startLineNumber = 40, jcr:primaryType = nt:unstructured, ns001:startColumnNumber = 1,
+                // jcr:mixinTypes = ns001:createTableStatement, ns001:expression = CREATE TABLE employee (
+                // empno NUMBER(4) NOT NULL,
+                // empname CHAR(10),
+                // job CHAR(9),
+                // deptno NUMBER(2) NOT NULL,
+                // CONSTRAINT emp_fk1 FOREIGN KEY (deptno) REFERENCES dept (deptno) INITIALLY IMMEDIATE,
+                // CONSTRAINT emp_pk PRIMARY KEY (empno));, ns001:startCharIndex = 1404>
+                // empno <ns001:datatypeName = NUMBER, jcr:primaryType = nt:unstructured, ns001:datatypePrecision = 4,
+                // ns001:nullable = NOT NULL, jcr:mixinTypes = ns001:columnDefinition, ns001:datatypeScale = 0>
+                // empname <ns001:datatypeName = CHAR, ns001:datatypeLength = 10, jcr:primaryType = nt:unstructured,
+                // jcr:mixinTypes = ns001:columnDefinition>
+                // job <ns001:datatypeName = CHAR, ns001:datatypeLength = 9, jcr:primaryType = nt:unstructured, jcr:mixinTypes
+                // = ns001:columnDefinition>
+                // deptno <ns001:datatypeName = NUMBER, jcr:primaryType = nt:unstructured, ns001:datatypePrecision = 2,
+                // ns001:nullable = NOT NULL, jcr:mixinTypes = ns001:columnDefinition, ns001:datatypeScale = 0>
+                // emp_fk1 <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:tableConstraint, ns001:constraintType =
+                // 1>
+                // deptno <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:columnReference>
+                // dept <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:tableReference>
+                // deptno <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:fkColumnReference>
+                // CONSTRAINT_ATTRIBUTE <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:constraintAttribute,
+                // ns001:propValue = INITIALLY IMMEDIATE>
+                // emp_pk <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:tableConstraint, ns001:constraintType =
+                // 2>
+                // empno <jcr:primaryType = nt:unstructured, jcr:mixinTypes = ns001:columnReference>
 
-                    Node tbleNode = assertNode(ddlNode, "employee", "ddl:createTableStatement");
-                    Node columnNode = assertNode(ddlNode, "empname", "ddl:columnDefinition");
-                    verifySingleValueProperty(columnNode, "ddl:datatypeName", "CHAR");
-                    verifySingleValueProperty(columnNode, "ddl:datatypeLength", 10);
-                    Node constraintNode = assertNode(tbleNode, "emp_fk1", "ddl:tableConstraint");
-                    constraintAttribute = assertNode(constraintNode, "CONSTRAINT_ATTRIBUTE", "ddl:constraintAttribute");
-                    verifySingleValueProperty(constraintAttribute, "ddl:propValue", "INITIALLY IMMEDIATE");
-                    assertNode(constraintNode, "deptno", "ddl:columnReference");
-                    assertNode(constraintNode, "dept", "ddl:tableReference");
-                    assertNode(constraintNode, "deptno", "ddl:fkColumnReference");
+                Node tbleNode = assertNode(ddlNode, "employee", "ddl:createTableStatement");
+                Node columnNode = assertNode(ddlNode, "empname", "ddl:columnDefinition");
+                verifySingleValueProperty(columnNode, "ddl:datatypeName", "CHAR");
+                verifySingleValueProperty(columnNode, "ddl:datatypeLength", 10);
+                Node constraintNode = assertNode(tbleNode, "emp_fk1", "ddl:tableConstraint");
+                constraintAttribute = assertNode(constraintNode, "CONSTRAINT_ATTRIBUTE", "ddl:constraintAttribute");
+                verifySingleValueProperty(constraintAttribute, "ddl:propValue", "INITIALLY IMMEDIATE");
+                assertNode(constraintNode, "deptno", "ddl:columnReference");
+                assertNode(constraintNode, "dept", "ddl:tableReference");
+                assertNode(constraintNode, "deptno", "ddl:fkColumnReference");
 
-                    Node viewNode = assertNode(ddlNode, "view_1", "ddl:createViewStatement");
-                    assertNode(viewNode, "col1", "ddl:columnReference");
+                Node viewNode = assertNode(ddlNode, "view_1", "ddl:createViewStatement");
+                assertNode(viewNode, "col1", "ddl:columnReference");
 
-                    Node tableNode = assertNode(ddlNode, "table_5", "ddl:createTableStatement");
-                    // printChildProperties(tableNode);
-                    assertEquals(18, tableNode.getNodes().getSize());
-                }
+                Node tableNode = assertNode(ddlNode, "table_5", "ddl:createTableStatement");
+                // printChildProperties(tableNode);
+                assertEquals(18, tableNode.getNodes().getSize());
             }
         }
     }
@@ -388,19 +386,18 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
             return "ARGLE";
         }
 
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.sequencer.ddl.StandardDdlParser#parse(java.lang.String, java.lang.String,
+         *      org.modeshape.sequencer.ddl.node.AstNode, org.modeshape.sequencer.ddl.DdlParserScorer)
+         */
         @Override
-        public boolean parse( String ddl,
-                              AstNode rootNode ) throws ParsingException {
+        public void parse( String ddl,
+                           String fileName,
+                           AstNode rootNode,
+                           DdlParserScorer scorer ) throws ParsingException {
             ++tried;
-            return false;
         }
-
-        @Override
-        public boolean parse( DdlTokenStream tokens,
-                              AstNode rootNode ) throws ParsingException {
-            ++tried;
-            return false;
-        }
-
     }
 }

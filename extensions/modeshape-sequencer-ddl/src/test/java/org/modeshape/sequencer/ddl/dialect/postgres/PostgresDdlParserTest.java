@@ -23,18 +23,30 @@
  */
 package org.modeshape.sequencer.ddl.dialect.postgres;
 
-import static org.modeshape.sequencer.ddl.StandardDdlLexicon.*;
-import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.*;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import org.modeshape.graph.JcrLexicon;
-import org.modeshape.sequencer.ddl.DdlConstants;
-import org.modeshape.sequencer.ddl.DdlParserTestHelper;
-import org.modeshape.sequencer.ddl.StandardDdlParser;
-import org.modeshape.sequencer.ddl.node.AstNode;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_TABLE_STATEMENT;
+import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_COLUMN_DEFINITION;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_FOREIGN_DATA_WRAPPER_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_ALTER_TABLE_STATEMENT_POSTGRES;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_COMMENT_ON_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_RULE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_CREATE_SEQUENCE_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_GRANT_ON_FUNCTION_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_LISTEN_STATEMENT;
+import static org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlLexicon.TYPE_RENAME_COLUMN;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.graph.JcrLexicon;
+import org.modeshape.sequencer.ddl.DdlConstants;
+import org.modeshape.sequencer.ddl.DdlParserScorer;
+import org.modeshape.sequencer.ddl.DdlParserTestHelper;
+import org.modeshape.sequencer.ddl.StandardDdlParser;
+import org.modeshape.sequencer.ddl.node.AstNode;
 
 /**
  *
@@ -43,6 +55,7 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
     private StandardDdlParser parser;
     private static final String SPACE = DdlConstants.SPACE;
     private AstNode rootNode;
+    private DdlParserScorer scorer;
 
     public static final String DDL_FILE_PATH = "src/test/resources/ddl/dialect/postgres/";
 
@@ -53,6 +66,7 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         parser.setTestMode(isPrintToConsole());
         parser.setDoUseTerminator(true);
         rootNode = parser.nodeFactory().node("ddlRootNode");
+        scorer = new DdlParserScorer();
     }
 
     @Test
@@ -61,9 +75,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         String content = "ALTER TABLE distributors \n" + "        ADD COLUMN nick_name varchar(30), \n"
                          + "        ADD COLUMN address varchar(30);";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_TABLE_STATEMENT_POSTGRES));
@@ -79,9 +92,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
                          + "        ALTER COLUMN address TYPE varchar(255), \n" + "        RENAME COLUMN address TO city, \n"
                          + "        DROP COLUMN address;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_TABLE_STATEMENT_POSTGRES));
@@ -97,9 +109,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseAlterTableMultipleAlterColumns()");
         String content = "ALTER TABLE distributors ALTER COLUMN address TYPE varchar(80), ALTER COLUMN name TYPE varchar(100);";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_TABLE_STATEMENT_POSTGRES));
@@ -114,9 +125,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
                          + "USING timestamp with time zone ’epoch’ + foo_timestamp *GO interval ’1 second’," + SPACE
                          + "ALTER COLUMN foo_timestamp SET DEFAULT now();";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_TABLE_STATEMENT_POSTGRES));
@@ -128,9 +138,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         String content = "ALTER TABLE foo" + SPACE + "ALTER COLUMN foo_timestamp SET DATA TYPE timestamp with time zone" + SPACE
                          + "USING timestamp with time zone ’epoch’ + foo_timestamp * interval ’1 second’;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_TABLE_STATEMENT_POSTGRES));
@@ -141,9 +150,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseAlterTableMultipeColumns_4()");
         String content = "ALTER TABLE distributors ALTER COLUMN street DROP NOT NULL;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_TABLE_STATEMENT_POSTGRES));
@@ -154,9 +162,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseAlterTableMultipeColumns_5()");
         String content = "ALTER TABLE distributors ADD CONSTRAINT zipchk CHECK (char_length(zipcode) = 5);";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_TABLE_STATEMENT_POSTGRES));
@@ -167,9 +174,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseAlterTableMultipeColumns_6()");
         String content = "ALTER TABLE distributors SET TABLESPACE fasttablespace;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_TABLE_STATEMENT_POSTGRES));
@@ -181,9 +187,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         String content = "CREATE SCHEMA hollywood" + SPACE + "CREATE TABLE films (title text, release date, awards text[])"
                          + SPACE + "CREATE VIEW winners AS SELECT title, release FROM films WHERE awards IS NOT NULL;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount()); // SCHEMA
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_SCHEMA_STATEMENT));
@@ -194,9 +199,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseCreateSequence()");
         String content = "CREATE SEQUENCE serial START 101;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_SEQUENCE_STATEMENT));
@@ -219,9 +223,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
                          + "date_prod   date," + SPACE + "kind        varchar(10)," + SPACE
                          + "len         interval hour to minute" + SPACE + ");";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_TABLE_STATEMENT));
@@ -239,9 +242,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         String content = "CREATE TABLE distributors (" + SPACE + "did    integer PRIMARY KEY DEFAULT nextval(’serial’)," + SPACE
                          + "name      varchar(40) NOT NULL CHECK (name <> ”)" + SPACE + ");";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_TABLE_STATEMENT));
@@ -261,10 +263,10 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
                          + "name      varchar(40) DEFAULT ’Luso Films’," + SPACE
                          + "did       integer DEFAULT nextval(’distributors_serial’)," + SPACE
                          + "modtime   timestamp DEFAULT current_timestamp" + SPACE + ");";
-        boolean success = parser.parse(content, rootNode);
+        parser.parse(content, null, rootNode, scorer);
         System.out.println(parser.getProblems());
 
-        assertEquals(true, success);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_TABLE_STATEMENT));
@@ -278,9 +280,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseCreateTable_4()");
         String content = "CREATE TABLE films_recent AS" + SPACE + "SELECT * FROM films WHERE date_prod >= ’2002-01-01’;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_TABLE_STATEMENT));
@@ -293,9 +294,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseListen()");
         String content = "LISTEN virtual;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_LISTEN_STATEMENT));
@@ -309,9 +309,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseCreateTempTable()");
         String content = "CREATE TEMP TABLE films_recent WITH (OIDS) ON COMMIT DROP AS EXECUTE recentfilms(’2002-01-01’);";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_TABLE_STATEMENT));
@@ -324,9 +323,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseCreateRule()");
         String content = "CREATE RULE notify_me AS ON UPDATE TO mytable DO ALSO NOTIFY mytable;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_RULE_STATEMENT));
@@ -338,9 +336,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("");
         String content = "ALTER FOREIGN DATA WRAPPER dbi OPTIONS (ADD foo ’1’, DROP ’bar’);";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_FOREIGN_DATA_WRAPPER_STATEMENT));
@@ -351,9 +348,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseCommentOn()");
         String content = "COMMENT ON TABLE mytable IS ’This is my table.’;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_COMMENT_ON_STATEMENT));
@@ -365,9 +361,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         String content = "CREATE OR REPLACE FUNCTION increment(i integer) RETURNS integer AS $$ BEGIN RETURN i + 1; END;" + SPACE
                          + "CREATE TABLE tblName_A (col_1 varchar(255));";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(2, rootNode.getChildCount());
     }
 
@@ -376,9 +371,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseLockTable()");
         String content = "LOCK TABLE films IN SHARE MODE;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
     }
 
@@ -387,9 +381,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParsePrepareStatement()");
         String content = "PREPARE fooplan (int, text, bool, numeric) AS INSERT INTO foo VALUES($1, $2, $3, $4);";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
     }
 
@@ -398,9 +391,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseDropDomain()");
         String content = "DROP DOMAIN IF EXISTS domain_name CASCADE;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
     }
 
@@ -409,55 +401,50 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseDropDomain()");
         String content = "DROP TABLE films, distributors;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(2, rootNode.getChildCount());
     }
-    
+
     @Test
     public void shouldParseGrantOnTable() {
         printTest("shouldParseGrantOnTable()");
         String content = "GRANT UPDATE, TRIGGER ON TABLE t TO anita,zhi;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
     }
-    
+
     @Test
     public void shouldParseGrantOnMultipleTables() {
         printTest("shouldParseGrantOnMultipleTables()");
         String content = "GRANT UPDATE, TRIGGER ON TABLE t1, t2, t3 TO anita,zhi;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(3, rootNode.getChildCount());
     }
-    
+
     @Test
     public void shouldParseGrantExecuteOnFunction() {
         printTest("shouldParseGrantExecuteOnFunction()");
         String content = "GRANT EXECUTE ON FUNCTION divideByTwo(numerator int, IN demoninator int) TO george;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(1, rootNode.getChildCount());
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_GRANT_ON_FUNCTION_STATEMENT));
     }
-    
+
     @Test
     public void shouldParseGrantExecuteAndUpdateOnMultipleFunctions() {
         printTest("shouldParseGrantExecuteOnMultipleFunctions()");
         String content = "GRANT EXECUTE, UPDATE ON FUNCTION cos(), sin(b double precision) TO peter;";
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(2, rootNode.getChildCount());
         AstNode childNode = rootNode.getChild(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_GRANT_ON_FUNCTION_STATEMENT));
@@ -465,15 +452,14 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         childNode = rootNode.getChild(1);
         assertEquals(4, childNode.getChildCount());
     }
-    
+
     @Test
     public void shouldParsePostgresStatements_1() {
         printTest("shouldParsePostgresStatements_1()");
         String content = getFileContent(DDL_FILE_PATH + "postgres_test_statements_1.ddl");
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(82, rootNode.getChildCount());
     }
 
@@ -483,9 +469,9 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParsePostgresStatements_2()");
         String content = getFileContent(DDL_FILE_PATH + "postgres_test_statements_2.ddl");
 
-        boolean success = parser.parse(content, rootNode);
+        parser.parse(content, null, rootNode, scorer);
         System.out.println(parser.getProblems());
-        assertEquals(true, success);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(101, rootNode.getChildCount());
     }
 
@@ -494,9 +480,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParsePostgresStatements_3()");
         String content = getFileContent(DDL_FILE_PATH + "postgres_test_statements_3.ddl");
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(143, rootNode.getChildCount());
     }
 
@@ -505,9 +490,8 @@ public class PostgresDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParsePostgresStatements_4()");
         String content = getFileContent(DDL_FILE_PATH + "postgres_test_statements_4.ddl");
 
-        boolean success = parser.parse(content, rootNode);
-
-        assertEquals(true, success);
+        parser.parse(content, null, rootNode, scorer);
+        assertThat(scorer.getScore() > 0, is(true));
         assertEquals(34, rootNode.getChildCount());
     }
 }

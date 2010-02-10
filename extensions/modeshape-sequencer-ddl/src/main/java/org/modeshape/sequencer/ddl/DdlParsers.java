@@ -80,86 +80,48 @@ public class DdlParsers {
     }
 
     /**
-     * Parses input ddl string and adds discovered child {@link AstNode}s and properties to a new root node.
+     * Parse the supplied DDL content and return the {@link AstNode root node} of the AST representation.
      * 
      * @param ddl content string; may not be null
+     * @param fileName the approximate name of the file containing the DDL content; may be null if this is not known
      * @return the root tree {@link AstNode}
-     * @throws ParsingException
+     * @throws ParsingException if there is an error parsing the supplied DDL content
      */
-    public AstNode parse( String ddl ) throws ParsingException {
+    public AstNode parse( String ddl,
+                          String fileName ) throws ParsingException {
         assert ddl != null;
-        AstNode rootNode = new AstNode(StandardDdlLexicon.STATEMENTS_CONTAINER);
-        rootNode.setProperty(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
 
-        parse(ddl, rootNode);
-
-        return rootNode;
-    }
-
-    /**
-     * Parses input ddl string and adds discovered child {@link AstNode}s and properties.
-     * 
-     * @param ddl content string; may not be null
-     * @param rootNode the root {@link AstNode}; may not be null
-     * @return true if parsed successfully
-     * @throws ParsingException
-     */
-    public boolean parse( String ddl,
-                          AstNode rootNode ) throws ParsingException {
-        assert ddl != null;
-        assert rootNode != null;
-        // Find registered parser for DDL
-
-        DdlTokenStream tokens = null;
-        DdlParser validParser = null;
-        DdlTokenStream validTokens = null;
-
-        // FIRST token should be DIALECT
-        // for (DdlParser parser : library.getInstances()) {
+        // Go through each parser and grab the one with the greatest score ...
+        int maxScore = 0;
+        AstNode astOfMaxScore = null;
+        Throwable firstException = null;
         for (DdlParser parser : parsers) {
-            if (parser.isType(ddl)) {
-                validParser = parser;
-                break;
-            }
-        }
-
-        if (validParser == null) {
-            // NO TYPE DEFINED IN DDL file
-            // FIND BEST KEYWORD FIT
-
-            int keywordCount = 0;
-            // for (DdlParser parser : library.getInstances()) {
-            for (DdlParser parser : parsers) {
-                tokens = new DdlTokenStream(ddl, DdlTokenStream.ddlTokenizer(false), false);
-                parser.registerWords(tokens);
-                tokens.start(); // COMPLETE TOKENIZATION
-                int numKeywords = parser.getNumberOfKeyWords(tokens);
-                if (numKeywords > keywordCount) {
-                    keywordCount = numKeywords;
-                    validParser = parser;
-                    validTokens = tokens;
+            DdlParserScorer scorer = new DdlParserScorer();
+            try {
+                AstNode rootNode = new AstNode(StandardDdlLexicon.STATEMENTS_CONTAINER);
+                rootNode.setProperty(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
+                parser.parse(ddl, fileName, rootNode, scorer);
+                rootNode.setProperty(StandardDdlLexicon.PARSER_ID, parser.getId());
+                int score = scorer.getScore();
+                if (score > maxScore) {
+                    maxScore = score;
+                    astOfMaxScore = rootNode;
                 }
+            } catch (Throwable t) {
+                if (firstException == null) firstException = t;
+                // Continue ...
             }
-            if (validTokens != null) {
-                validTokens.rewind();
+        }
+        if (astOfMaxScore == null) {
+            if (firstException != null) {
+                if (firstException instanceof ParsingException) {
+                    throw (ParsingException)firstException;
+                }
+                throw (RuntimeException)firstException;
             }
-        } else {
-            validTokens = new DdlTokenStream(ddl, DdlTokenStream.ddlTokenizer(false), false);
-            validParser.registerWords(validTokens);
-            validTokens.start(); // COMPLETE TOKENIZATION
+            // No exceptions, but nothing was found ...
+            throw new ParsingException(new Position(-1, 1, 0), DdlSequencerI18n.errorParsingDdlContent.text());
         }
-
-        if (validParser == null) {
-            String msg = "NO VALID PARSER FOUND";
-            throw new ParsingException(new Position(-1, 1, 0), msg);
-        }
-
-        // tokens = new DdlTokenStream(ddl, DdlTokenStream.ddlTokenizer(false), false);
-        // validParser.registerWords(tokens);
-        // tokens.start();
-        boolean success = validParser.parse(validTokens, rootNode);
-        rootNode.setProperty(StandardDdlLexicon.PARSER_ID, validParser.getId());
-
-        return success;
+        return astOfMaxScore;
     }
 }

@@ -86,21 +86,30 @@ public class OracleDdlParser extends StandardDdlParser
     }
 
     /**
-     * Method allows registering Oracle-specific Statement Start Keyword Phrases and Keywords {@inheritDoc}
+     * {@inheritDoc}
      * 
-     * @see org.modeshape.sequencer.ddl.StandardDdlParser#registerWords(org.modeshape.sequencer.ddl.DdlTokenStream)
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#getIdentifyingKeywords()
      */
     @Override
-    public void registerWords( DdlTokenStream tokens ) {
-        super.registerWords(tokens);
+    public String[] getIdentifyingKeywords() {
+        return new String[] {getId(), "spool.log"};
+    }
 
-        registerKeyWords(CUSTOM_KEYWORDS);
-        registerKeyWords(OracleDataTypes.CUSTOM_DATATYPE_START_WORDS);
-        registerStatementStartPhrase(ALTER_PHRASES);
-        registerStatementStartPhrase(CREATE_PHRASES);
-        registerStatementStartPhrase(DROP_PHRASES);
-        registerStatementStartPhrase(MISC_PHRASES);
-        registerStatementStartPhrase(SET_PHRASES);
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.sequencer.ddl.StandardDdlParser#initializeTokenStream(org.modeshape.sequencer.ddl.DdlTokenStream)
+     */
+    @Override
+    protected void initializeTokenStream( DdlTokenStream tokens ) {
+        super.initializeTokenStream(tokens);
+        tokens.registerKeyWords(CUSTOM_KEYWORDS);
+        tokens.registerKeyWords(OracleDataTypes.CUSTOM_DATATYPE_START_WORDS);
+        tokens.registerStatementStartPhrase(ALTER_PHRASES);
+        tokens.registerStatementStartPhrase(CREATE_PHRASES);
+        tokens.registerStatementStartPhrase(DROP_PHRASES);
+        tokens.registerStatementStartPhrase(MISC_PHRASES);
+        tokens.registerStatementStartPhrase(SET_PHRASES);
     }
 
     @Override

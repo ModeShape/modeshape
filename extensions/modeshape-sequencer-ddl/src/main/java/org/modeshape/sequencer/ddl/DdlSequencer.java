@@ -35,6 +35,7 @@ import java.util.Queue;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.sequencer.SequencerOutput;
@@ -119,9 +120,12 @@ public class DdlSequencer implements StreamSequencer {
                           SequencerOutput output,
                           StreamSequencerContext context ) {
         try {
+            // Look at the input path to get the name of the input node (or it's parent if it's "jcr:content") ...
+            String fileName = getNameOfDdlContent(context);
+
             // Perform the parsing
             DdlParsers parsers = createParsers(getParserList(context));
-            final AstNode rootNode = parsers.parse(IoUtil.read(stream));
+            final AstNode rootNode = parsers.parse(IoUtil.read(stream), fileName);
 
             // Convert the AST graph into graph nodes in the output ...
             Queue<AstNode> queue = new LinkedList<AstNode>();
@@ -153,6 +157,24 @@ public class DdlSequencer implements StreamSequencer {
      */
     protected DdlParsers createParsers( List<DdlParser> parsers ) {
         return new DdlParsers(parsers);
+    }
+
+    /**
+     * Utility method that attempts to discover the "name" of the DDL content being sequenced, which may help identify the
+     * dialect.
+     * 
+     * @param context the sequencing context; never null
+     * @return the name, or null if no name could be identified
+     */
+    protected String getNameOfDdlContent( StreamSequencerContext context ) {
+        Path inputPath = context.getInputPath();
+        if (inputPath.isRoot()) return null;
+        Path.Segment segment = inputPath.getLastSegment();
+        if (JcrLexicon.CONTENT.equals(segment.getName()) && inputPath.size() > 1) {
+            // Get the name of the parent ...
+            segment = inputPath.getParent().getLastSegment();
+        }
+        return segment.getName().getLocalName();
     }
 
     @SuppressWarnings( "unchecked" )

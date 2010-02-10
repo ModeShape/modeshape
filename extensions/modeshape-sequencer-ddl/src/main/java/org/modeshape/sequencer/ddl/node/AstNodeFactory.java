@@ -157,9 +157,9 @@ public class AstNodeFactory {
         assert astNode != null;
         assert nodeType != null;
 
-        List<AstNode> childrenOfType = new ArrayList<AstNode>(astNode.getChildCount());
+        List<AstNode> childrenOfType = new ArrayList<AstNode>();
         for (AstNode child : astNode.getChildren()) {
-            if (hasMixinType(child.getProperty(JcrLexicon.MIXIN_TYPES), nodeType)) {
+            if (hasMixinType(child, nodeType)) {
                 childrenOfType.add(child);
             }
         }
