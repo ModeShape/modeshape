@@ -1,8 +1,6 @@
 package org.modeshape.sequencer.ddl.dialect.oracle;
 
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_STATEMENT;
@@ -23,13 +21,9 @@ import org.modeshape.graph.JcrLexicon;
 import org.modeshape.sequencer.ddl.DdlConstants;
 import org.modeshape.sequencer.ddl.DdlParserScorer;
 import org.modeshape.sequencer.ddl.DdlParserTestHelper;
-import org.modeshape.sequencer.ddl.StandardDdlParser;
 import org.modeshape.sequencer.ddl.node.AstNode;
 
 public class OracleDdlParserTest extends DdlParserTestHelper {
-    private StandardDdlParser parser;
-    private AstNode rootNode;
-    private DdlParserScorer scorer;
 
     public static final String DDL_FILE_PATH = "src/test/resources/ddl/dialect/oracle/";
 
@@ -60,10 +54,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
                          + DdlConstants.SPACE + "BEGIN" + DdlConstants.SPACE
                          + "RAISE_APPLICATION_ERROR ( num => -20000,msg => 'Cannot drop object');" + DdlConstants.SPACE + "END;"
                          + DdlConstants.SPACE + "/";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_TRIGGER_STATEMENT));
 
@@ -73,10 +64,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     public void shouldParseAnalyze() {
         printTest("shouldParseAnalyze()");
         String content = "ANALYZE TABLE customers VALIDATE STRUCTURE ONLINE;";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ANALYZE_STATEMENT));
     }
@@ -85,10 +73,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     public void shouldParseRollbackToSavepoint() {
         printTest("shouldParseRollbackToSavepoint()");
         String content = "ROLLBACK TO SAVEPOINT banda_sal;";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ROLLBACK_STATEMENT));
     }
@@ -97,10 +82,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     public void shouldParseAlterTableAddREF() {
         printTest("shouldParseAlterTableAddREF()");
         String content = "ALTER TABLE staff ADD (REF(dept) WITH ROWID);";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_TABLE_STATEMENT));
     }
@@ -110,10 +92,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         // This is a one-off case where there is a custom datatype (i.e. skill_table_type)
         printTest("shouldParseAlterTableADDWithNESTED_TABLE()");
         String content = "ALTER TABLE employees ADD (skills skill_table_type) NESTED TABLE skills STORE AS nested_skill_table;";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true)); // DO NOT HAVE CUSTOM DATATYPE wired to isColumnDefintion() method.
-        assertEquals(2, rootNode.getChildCount()); // ALTER TABLE + 1 PROBLEM
+        assertScoreAndParse(content, null, 2); // ALTER TABLE + 1 PROBLEM
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_TABLE_STATEMENT));
     }
@@ -122,10 +101,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     public void shouldParseAlterIndexRename() {
         printTest("shouldParseAlterIndexRename()");
         String content = "ALTER INDEX upper_ix RENAME TO upper_name_ix;";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_INDEX_STATEMENT));
     }
@@ -134,10 +110,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     public void shouldParseAlterIndexMODIFY() {
         printTest("shouldParseAlterIndexMODIFY()");
         String content = "ALTER INDEX cost_ix MODIFY PARTITION p3 STORAGE(MAXEXTENTS 30) LOGGING;";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_INDEX_STATEMENT));
     }
@@ -146,10 +119,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     public void shouldParseAlterIndexDROP() {
         printTest("shouldParseAlterIndexDROP()");
         String content = "ALTER INDEX cost_ix DROP PARTITION p1;";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_INDEX_STATEMENT));
     }
@@ -158,10 +128,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     public void shouldParseAlterIndexTypeADD() {
         printTest("shouldParseAlterIndexTypeADD()");
         String content = "ALTER INDEXTYPE position_indextype ADD lob_contains(CLOB, CLOB);";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_INDEXTYPE_STATEMENT));
     }
@@ -170,10 +137,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     public void shouldParseTEMP_TEST() {
         printTest("shouldParseTEMP_TEST()");
         String content = "COMMENT ON COLUMN employees.job_id IS 'abbreviated job title';";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_COMMENT_ON_STATEMENT));
     }
@@ -183,10 +147,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     public void shouldParseGrantAllOn() {
         printTest("shouldParseGrant()");
         String content = "GRANT ALL ON bonuses TO hr WITH GRANT OPTION;";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_GRANT_STATEMENT));
     }
@@ -196,10 +157,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseAlterTableWithModifyClause()");
 
         String content = "ALTER TABLE employees MODIFY LOB (resume) (CACHE);";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_TABLE_STATEMENT));
     }
@@ -210,10 +168,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
 
         String content = "ALTER TABLE countries \n" + "     ADD (duty_pct     NUMBER(2,2)  CHECK (duty_pct < 10.5),\n"
                          + "     visa_needed  VARCHAR2(3));";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_ALTER_TABLE_STATEMENT));
         assertEquals(3, childNode.getChildCount()); // 2 columns + CHECK constraint
@@ -224,10 +179,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseJava()");
 
         String content = "CREATE JAVA SOURCE NAMED \"Hello\" AS public class Hello { public static String hello() {return \"Hello World\";   } };";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_JAVA_STATEMENT));
     }
@@ -244,10 +196,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
                          + "   :new.order_date," + "   :new.customer_id);" + " EXCEPTION" + "   WHEN duplicate_info THEN"
                          + "    RAISE_APPLICATION_ERROR (" + "       num=> -20107,"
                          + "       msg=> 'Duplicate customer or order ID');" + " END order_info_insert;" + " /";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_TRIGGER_STATEMENT));
 
@@ -258,10 +207,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseGrantReadOnDirectory()");
 
         String content = "GRANT READ ON DIRECTORY bfile_dir TO hr \n" + "     WITH GRANT OPTION;";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_GRANT_STATEMENT));
     }
@@ -271,10 +217,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseCreateFunction_1()");
         String content = "CREATE OR REPLACE FUNCTION text_length(a CLOB)"
                          + " RETURN NUMBER DETERMINISTIC IS BEGIN RETURN DBMS_LOB.GETLENGTH(a); END; /";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_FUNCTION_STATEMENT));
     }
@@ -285,10 +228,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         String content = "CREATE PROCEDURE remove_emp (employee_id NUMBER) AS tot_emps NUMBER;" + NEWLINE + "BEGIN" + NEWLINE
                          + "   DELETE FROM employees" + NEWLINE + "   WHERE employees.employee_id = remove_emp.employee_id;"
                          + NEWLINE + "tot_emps := tot_emps - 1;" + NEWLINE + "END;" + NEWLINE + "/";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_PROCEDURE_STATEMENT));
     }
@@ -300,10 +240,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
                          + NEWLINE + "BEGIN" + NEWLINE + "   INSERT INTO employees" + NEWLINE
                          + "   WHERE employees.employee_id = remove_emp.employee_id;" + NEWLINE + "tot_emps := tot_emps + 1;"
                          + NEWLINE + "END;" + NEWLINE + "/";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_PROCEDURE_STATEMENT));
         assertEquals(2, childNode.getChildCount());
@@ -313,10 +250,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     public void shouldParseOracleProceduresAndFunctions() {
         printTest("shouldParseOracleProceduresAndFunctions()");
         String content = getFileContent(DDL_FILE_PATH + "create_procedure_statements.ddl");
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(4, rootNode.getChildCount());
+        assertScoreAndParse(content, "create_procedure_statements.ddl", 4);
     }
 
     @Test
@@ -327,10 +261,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
                          + NEWLINE + "   FROM times t, products p, sales s" + NEWLINE
                          + "   WHERE t.time_id = s.time_id AND p.prod_id = s.prod_id" + NEWLINE
                          + "   GROUP BY t.calendar_year, p.prod_id;" + NEWLINE;
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_MATERIALIZED_VIEW_STATEMENT));
     }
@@ -340,10 +271,7 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseCreateMaterializedViewLog()");
         String content = "CREATE MATERIALIZED VIEW LOG ON products" + NEWLINE + "WITH ROWID, SEQUENCE (prod_id)" + NEWLINE
                          + "INCLUDING NEW VALUES;";
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(1, rootNode.getChildCount());
+        assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_CREATE_MATERIALIZED_VIEW_LOG_STATEMENT));
     }
@@ -352,40 +280,27 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
     public void shouldParseOracleStatements_1() {
         printTest("shouldParseOracleStatements_1()");
         String content = getFileContent(DDL_FILE_PATH + "oracle_test_statements_1.ddl");
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(50, rootNode.getChildCount());
+        assertScoreAndParse(content, "oracle_test_statements_1", 50);
     }
 
     @Test
     public void shouldParseOracleStatements_2() {
         printTest("shouldParseOracleStatements_2()");
         String content = getFileContent(DDL_FILE_PATH + "oracle_test_statements_2.ddl");
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(50, rootNode.getChildCount());
+        assertScoreAndParse(content, "oracle_test_statements_2", 50);
     }
 
     @Test
     public void shouldParseOracleStatements_3() {
         printTest("shouldParseOracleStatements_3()");
         String content = getFileContent(DDL_FILE_PATH + "oracle_test_statements_3.ddl");
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(50, rootNode.getChildCount());
+        assertScoreAndParse(content, "oracle_test_statements_3", 50);
     }
 
     @Test
     public void shouldParseOracleStatements_4() {
         printTest("shouldParseOracleStatements_4()");
         String content = getFileContent(DDL_FILE_PATH + "oracle_test_statements_4.ddl");
-
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertEquals(48, rootNode.getChildCount());
+        assertScoreAndParse(content, "oracle_test_statements_4", 48);
     }
-
 }

@@ -25,6 +25,7 @@ package org.modeshape.sequencer.ddl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.text.ParsingException;
@@ -91,37 +92,100 @@ public class DdlParsers {
                           String fileName ) throws ParsingException {
         assert ddl != null;
 
-        // Go through each parser and grab the one with the greatest score ...
-        int maxScore = 0;
-        AstNode astOfMaxScore = null;
-        Throwable firstException = null;
+        // Go through each parser and score the DDL content ...
+        List<ScoredParser> scoredParsers = new LinkedList<ScoredParser>();
         for (DdlParser parser : parsers) {
             DdlParserScorer scorer = new DdlParserScorer();
             try {
-                AstNode rootNode = new AstNode(StandardDdlLexicon.STATEMENTS_CONTAINER);
-                rootNode.setProperty(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
-                parser.parse(ddl, fileName, rootNode, scorer);
-                rootNode.setProperty(StandardDdlLexicon.PARSER_ID, parser.getId());
-                int score = scorer.getScore();
-                if (score > maxScore) {
-                    maxScore = score;
-                    astOfMaxScore = rootNode;
-                }
+                Object scoreResult = parser.score(ddl, fileName, scorer);
+                scoredParsers.add(new ScoredParser(parser, scorer, scoreResult));
             } catch (Throwable t) {
+                // Continue ...
+            }
+        }
+
+        if (!scoredParsers.isEmpty()) {
+            Collections.sort(scoredParsers);
+        } else {
+            // Just keep the parsers in order ...
+            for (DdlParser parser : parsers) {
+                scoredParsers.add(new ScoredParser(parser, new DdlParserScorer(), null));
+            }
+        }
+
+        // Go through each of the parsers (in order) to parse the content. Start with the first one
+        // and return if there is no parsing failure; otherwise, just continue with the next parser
+        // until no failure ...
+        AstNode astRoot = null;
+        RuntimeException firstException = null;
+        for (ScoredParser scoredParser : scoredParsers) {
+            try {
+                astRoot = new AstNode(StandardDdlLexicon.STATEMENTS_CONTAINER);
+                astRoot.setProperty(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
+                DdlParser parser = scoredParser.getParser();
+                parser.parse(ddl, astRoot, scoredParser.getScoringResult());
+                astRoot.setProperty(StandardDdlLexicon.PARSER_ID, parser.getId());
+                // Success, so return the resulting AST ...
+                return astRoot;
+            } catch (ParsingException t) {
+                if (firstException == null) firstException = t;
+                // Continue ...
+            } catch (RuntimeException t) {
                 if (firstException == null) firstException = t;
                 // Continue ...
             }
         }
-        if (astOfMaxScore == null) {
-            if (firstException != null) {
-                if (firstException instanceof ParsingException) {
-                    throw (ParsingException)firstException;
-                }
-                throw (RuntimeException)firstException;
-            }
-            // No exceptions, but nothing was found ...
-            throw new ParsingException(new Position(-1, 1, 0), DdlSequencerI18n.errorParsingDdlContent.text());
+        if (firstException != null) {
+            throw firstException;
         }
-        return astOfMaxScore;
+        // No exceptions, but nothing was found ...
+        throw new ParsingException(new Position(-1, 1, 0), DdlSequencerI18n.errorParsingDdlContent.text());
+    }
+
+    protected static class ScoredParser implements Comparable<ScoredParser> {
+        private final DdlParserScorer scorer;
+        private final DdlParser parser;
+        private final Object scoringResult;
+
+        protected ScoredParser( DdlParser parser,
+                                DdlParserScorer scorer,
+                                Object scoringResult ) {
+            this.parser = parser;
+            this.scorer = scorer;
+            this.scoringResult = scoringResult;
+            assert this.parser != null;
+            assert this.scorer != null;
+        }
+
+        /**
+         * @return parser
+         */
+        public DdlParser getParser() {
+            return parser;
+        }
+
+        /**
+         * @return scorer
+         */
+        public DdlParserScorer getScorer() {
+            return scorer;
+        }
+
+        /**
+         * @return scoringResult
+         */
+        public Object getScoringResult() {
+            return scoringResult;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Comparable#compareTo(java.lang.Object)
+         */
+        public int compareTo( ScoredParser that ) {
+            if (that == null) return 1;
+            return that.getScorer().getScore() - this.getScorer().getScore();
+        }
     }
 }

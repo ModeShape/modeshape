@@ -36,16 +36,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.sequencer.ddl.DdlParserScorer;
 import org.modeshape.sequencer.ddl.DdlParserTestHelper;
-import org.modeshape.sequencer.ddl.StandardDdlParser;
 import org.modeshape.sequencer.ddl.node.AstNode;
 
 /**
  *
  */
 public class MySqlDdlParserTest extends DdlParserTestHelper {
-    private StandardDdlParser parser;
-    private AstNode rootNode;
-    private DdlParserScorer scorer;
 
     public static final String DDL_FILE_PATH = "src/test/resources/ddl/dialect/mysql/";
 
@@ -65,9 +61,7 @@ public class MySqlDdlParserTest extends DdlParserTestHelper {
         String content = "CREATE TABLE CS_EXT_FILES  (\n" + "     FILE_NAME        VARCHAR(255),\n"
                          + "     FILE_CONTENTS    LONGBLOB,\n" + "     CONFIG_CONTENTS	LONGTEXT);";
 
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
-        assertThat(rootNode.getChildCount(), is(1));
+        assertScoreAndParse(content, null, 1);
         assertThat(rootNode.getChild(0).getChildCount(), is(3));
         assertThat(rootNode.getChild(0).getName().getString(), is("CS_EXT_FILES"));
     }
@@ -77,12 +71,10 @@ public class MySqlDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseTestCreate()");
         String content = getFileContent(DDL_FILE_PATH + "mysql_test_create.ddl");
 
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
+        assertScoreAndParse(content, "mysql_test_create.ddl", 145);
 
         List<AstNode> problems = parser.nodeFactory().getChildrenForType(rootNode, TYPE_PROBLEM);
         assertThat(problems.size(), is(0));
-        assertThat(rootNode.getChildCount(), is(145));
         List<AstNode> createTables = parser.nodeFactory().getChildrenForType(rootNode, TYPE_CREATE_TABLE_STATEMENT);
         assertThat(createTables.size(), is(57));
         List<AstNode> alterTables = parser.nodeFactory().getChildrenForType(rootNode, TYPE_ALTER_TABLE_STATEMENT);
@@ -100,15 +92,12 @@ public class MySqlDdlParserTest extends DdlParserTestHelper {
         printTest("shouldParseMySqlTestStatements()");
         String content = getFileContent(DDL_FILE_PATH + "mysql_test_statements.ddl");
 
-        parser.parse(content, null, rootNode, scorer);
-        assertThat(scorer.getScore() > 0, is(true));
+        assertScoreAndParse(content, "mysql_test_statements.ddl", 106);
 
         printUnknownStatements(parser, rootNode);
         printProblems(parser, rootNode);
 
         List<AstNode> problems = parser.nodeFactory().getChildrenForType(rootNode, TYPE_PROBLEM);
         assertThat(problems.size(), is(0));
-        assertThat(rootNode.getChildCount(), is(106));
-
     }
 }

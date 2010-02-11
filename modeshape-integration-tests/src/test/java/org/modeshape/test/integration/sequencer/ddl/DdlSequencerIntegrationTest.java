@@ -368,15 +368,19 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         this.session = this.engine.getRepository(repositoryName)
                                   .login(new SecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
 
-        ArgleDdlParser.tried = 0;
+        ArgleDdlParser.parsed = 0;
+        ArgleDdlParser.scored = 0;
         uploadFile(ddlTestResourceRootFolder, "create_schema.ddl", "shouldSequenceCreateSchemaDdlFile");
         waitUntilSequencedNodesIs(1);
 
-        assertThat(ArgleDdlParser.tried, is(1));
+        // Scored but not parsed ...
+        assertThat(ArgleDdlParser.scored, is(1));
+        assertThat(ArgleDdlParser.parsed, is(0));
     }
 
     public static class ArgleDdlParser extends StandardDdlParser {
-        protected static int tried = 0;
+        protected static int scored = 0;
+        protected static int parsed = 0;
 
         public ArgleDdlParser() {
         }
@@ -389,15 +393,28 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.sequencer.ddl.StandardDdlParser#parse(java.lang.String, java.lang.String,
-         *      org.modeshape.sequencer.ddl.node.AstNode, org.modeshape.sequencer.ddl.DdlParserScorer)
+         * @see org.modeshape.sequencer.ddl.StandardDdlParser#score(java.lang.String, java.lang.String,
+         *      org.modeshape.sequencer.ddl.DdlParserScorer)
+         */
+        @Override
+        public Object score( String ddl,
+                             String fileName,
+                             DdlParserScorer scorer ) throws ParsingException {
+            ++scored;
+            return new Object();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.sequencer.ddl.StandardDdlParser#parse(java.lang.String, org.modeshape.sequencer.ddl.node.AstNode,
+         *      java.lang.Object)
          */
         @Override
         public void parse( String ddl,
-                           String fileName,
                            AstNode rootNode,
-                           DdlParserScorer scorer ) throws ParsingException {
-            ++tried;
+                           Object scoreReturnObject ) throws ParsingException {
+            ++parsed;
         }
     }
 }
