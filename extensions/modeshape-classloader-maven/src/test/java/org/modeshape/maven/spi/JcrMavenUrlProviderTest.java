@@ -34,13 +34,13 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Properties;
 import javax.jcr.SimpleCredentials;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.maven.AbstractJcrRepositoryTest;
 import org.modeshape.maven.ArtifactType;
 import org.modeshape.maven.MavenId;
 import org.modeshape.maven.SignatureType;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author Randall Hauch
@@ -61,8 +61,8 @@ public class JcrMavenUrlProviderTest extends AbstractJcrRepositoryTest {
         validProperties.setProperty("unused.property", "whatever");
         validProperties.setProperty(JcrMavenUrlProvider.WORKSPACE_NAME, WORKSPACE_NAME);
         validProperties.setProperty(JcrMavenUrlProvider.REPOSITORY_PATH, "/path/to/repository/root");
-        validProperties.setProperty(JcrMavenUrlProvider.USERNAME, "jsmith");
-        validProperties.setProperty(JcrMavenUrlProvider.PASSWORD, "secret");
+        validProperties.setProperty(JcrMavenUrlProvider.USERNAME, USERNAME);
+        validProperties.setProperty(JcrMavenUrlProvider.PASSWORD, PASSWORD);
         mavenId1 = new MavenId("org.modeshape", "modeshape-maven", "1.0-SNAPSHOT");
 
         // Configure the JCR URL provider to use the repository ...
@@ -104,8 +104,8 @@ public class JcrMavenUrlProviderTest extends AbstractJcrRepositoryTest {
         assertThat(provider.getCredentials(), is(notNullValue()));
         assertThat(provider.getCredentials() instanceof SimpleCredentials, is(true));
         SimpleCredentials simpleCreds = (SimpleCredentials)provider.getCredentials();
-        assertThat(simpleCreds.getUserID(), is("jsmith"));
-        assertThat(simpleCreds.getPassword(), is("secret".toCharArray()));
+        assertThat(simpleCreds.getUserID(), is(USERNAME));
+        assertThat(simpleCreds.getPassword(), is(PASSWORD.toCharArray()));
     }
 
     @Test
@@ -118,8 +118,8 @@ public class JcrMavenUrlProviderTest extends AbstractJcrRepositoryTest {
         assertThat(provider.getCredentials(), is(notNullValue()));
         assertThat(provider.getCredentials() instanceof SimpleCredentials, is(true));
         SimpleCredentials simpleCreds = (SimpleCredentials)provider.getCredentials();
-        assertThat(simpleCreds.getUserID(), is("jsmith"));
-        assertThat(simpleCreds.getPassword(), is("secret".toCharArray()));
+        assertThat(simpleCreds.getUserID(), is(USERNAME));
+        assertThat(simpleCreds.getPassword(), is(PASSWORD.toCharArray()));
     }
 
     @Test
@@ -151,7 +151,8 @@ public class JcrMavenUrlProviderTest extends AbstractJcrRepositoryTest {
         assertThat(provider.getUrlPath(mavenId1, ArtifactType.POM, SignatureType.SHA1),
                    is("/org/modeshape/modeshape-maven/1.0-SNAPSHOT/modeshape-maven-1.0-SNAPSHOT.pom.sha1"));
 
-        assertThat(provider.getUrlPath(mavenId1, ArtifactType.METADATA, null), is("/org/modeshape/modeshape-maven/maven-metadata.xml"));
+        assertThat(provider.getUrlPath(mavenId1, ArtifactType.METADATA, null),
+                   is("/org/modeshape/modeshape-maven/maven-metadata.xml"));
         assertThat(provider.getUrlPath(mavenId1, ArtifactType.METADATA, SignatureType.MD5),
                    is("/org/modeshape/modeshape-maven/maven-metadata.xml.md5"));
         assertThat(provider.getUrlPath(mavenId1, ArtifactType.METADATA, SignatureType.PGP),
@@ -206,7 +207,8 @@ public class JcrMavenUrlProviderTest extends AbstractJcrRepositoryTest {
 
     @Test
     public void shouldReturnValidUrlForMavenIdWithNoArtifactType() throws Exception {
-        assertThat(provider.getUrl(mavenId1, null, null, false).toString(), is("jcr://org/modeshape/modeshape-maven/1.0-SNAPSHOT/"));
+        assertThat(provider.getUrl(mavenId1, null, null, false).toString(),
+                   is("jcr://org/modeshape/modeshape-maven/1.0-SNAPSHOT/"));
     }
 
     @Test

@@ -37,11 +37,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import javax.jcr.RepositoryException;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.maven.spi.JcrMavenUrlProvider;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author Randall Hauch
@@ -75,8 +75,8 @@ public class MavenRepositoryTest extends AbstractJcrRepositoryTest {
         this.urlProviderProperties = new Properties();
         this.urlProviderProperties.setProperty(JcrMavenUrlProvider.WORKSPACE_NAME, WORKSPACE_NAME);
         this.urlProviderProperties.setProperty(JcrMavenUrlProvider.REPOSITORY_PATH, "/path/to/repository/root");
-        this.urlProviderProperties.setProperty(JcrMavenUrlProvider.USERNAME, "jsmith");
-        this.urlProviderProperties.setProperty(JcrMavenUrlProvider.PASSWORD, "secret");
+        this.urlProviderProperties.setProperty(JcrMavenUrlProvider.USERNAME, USERNAME);
+        this.urlProviderProperties.setProperty(JcrMavenUrlProvider.PASSWORD, PASSWORD);
         this.urlProvider = new JcrMavenUrlProvider();
         this.urlProvider.setRepository(getRepository());
         // this.urlProvider.configure(urlProviderProperties);

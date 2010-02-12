@@ -27,15 +27,12 @@ import java.io.IOException;
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
-import org.apache.jackrabbit.api.JackrabbitRepository;
-import org.apache.jackrabbit.core.TransientRepository;
-import org.modeshape.common.util.FileUtil;
-import org.modeshape.common.util.Logger;
+import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.JcrConfiguration;
+import org.modeshape.jcr.JcrEngine;
 
 /**
  * An abstract base class for any unit test class that needs a JCR repository during one or more (but not necessarily all) of its
@@ -49,54 +46,33 @@ import org.junit.BeforeClass;
  * </p>
  * <p>
  * Some unit test methods may have a need to repeatedly start and stop the repository, and this can be done by calling
- * {@link #startRepository()} and {@link #shutdownRepository()} as many times as required.
+ * {@link #startRepository()} and {@link #shutdownRepository()} as many times as required. Note that shutting down the repository
+ * will cause all transient state to be lost.
  * </p>
- * <p>
- * Because the {@link TransientRepository transient repository} implementation used by this class automatically cleans itself up
- * whenever all {@link Session sessions} are closed, this class maintains an open session between the time the repository is
- * started and stopped. Therefore, unit tests can persist information in one session and see the information in other sessions.
- * </p>
- * 
- * @author Randall Hauch
  */
 public abstract class AbstractJcrRepositoryTest {
 
     public static final String TESTDATA_PATH = "./src/test/resources/";
-    public static final String JACKRABBIT_DATA_PATH = "./target/testdata/jackrabbittest/";
-    public static final String REPOSITORY_DIRECTORY_PATH = JACKRABBIT_DATA_PATH + "repository";
-    public static final String REPOSITORY_CONFIG_PATH = TESTDATA_PATH + "jackrabbitInMemoryTestRepositoryConfig.xml";
-
     public static final String WORKSPACE_NAME = "default";
+    public static final String USERNAME = "superuser";
+    public static final String PASSWORD = "secret";
 
+    private static JcrEngine engine;
     private static Repository repository;
 
-    @BeforeClass
-    public static void beforeAll() throws Exception {
-        // Clean up the test data ...
-        FileUtil.delete(JACKRABBIT_DATA_PATH);
+    static {
+        // Initialize IDTrust
+        String configFile = "security/jaas.conf.xml";
+        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
 
-        // Set up the transient repository (this shouldn't do anything yet)...
-        repository = new TransientRepository(REPOSITORY_CONFIG_PATH, REPOSITORY_DIRECTORY_PATH);
-    }
-
-    @AfterClass
-    public static void afterAll() {
-        if (repository != null) {
-            try {
-                JackrabbitRepository jackrabbit = (JackrabbitRepository)repository;
-                jackrabbit.shutdown();
-            } finally {
-                repository = null;
-                // Clean up the test data ...
-                FileUtil.delete(JACKRABBIT_DATA_PATH);
-            }
+        try {
+            idtrustConfig.config(configFile);
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
         }
     }
 
-    /** Used to keep at least one session open during each test; when last session is closed, all data is cleaned up */
-    private Session keepAliveSession;
-
-    protected Credentials simpleCredentials = new SimpleCredentials("jsmith", "secret".toCharArray());
+    protected Credentials simpleCredentials = new SimpleCredentials(USERNAME, PASSWORD.toCharArray());
 
     /**
      * Call this method during a test that needs the repository. It only needs to be called once during a test, although calling
@@ -111,15 +87,26 @@ public abstract class AbstractJcrRepositoryTest {
      */
     public synchronized void startRepository() throws RepositoryException, IOException {
         if (repository == null) {
-            // Clean up the test data ...
-            FileUtil.delete(JACKRABBIT_DATA_PATH);
+            // Set up an in-memory ModeShape JCR engine with an in-memory repository ...
+            JcrConfiguration config = new JcrConfiguration();
 
-            // Set up the transient repository (this shouldn't do anything yet)...
-            repository = new TransientRepository(REPOSITORY_CONFIG_PATH, REPOSITORY_DIRECTORY_PATH);
+            String repositoryName = "Maven Repository";
+            String workspaceName = "default";
+            String repositorySource = "ddlRepositorySource";
 
-        }
-        if (keepAliveSession == null) {
-            keepAliveSession = repository.login();
+            config = new JcrConfiguration();
+            // Set up the in-memory source where we'll upload the content and where the sequenced output will be stored ...
+            config.repositorySource(repositorySource)
+                  .usingClass(InMemoryRepositorySource.class)
+                  .setDescription("The repository for our content")
+                  .setProperty("defaultWorkspaceName", workspaceName);
+            // Set up the JCR repository to use the source ...
+            config.repository(repositoryName).setSource(repositorySource);
+            config.save();
+            engine = config.build();
+            engine.start();
+
+            repository = engine.getRepository(repositoryName);
         }
     }
 
@@ -129,28 +116,20 @@ public abstract class AbstractJcrRepositoryTest {
      */
     @After
     public synchronized void shutdownRepository() {
-        if (keepAliveSession != null) {
-            try {
-                Logger.getLogger(this.getClass()).debug("Shutting down repository");
-                keepAliveSession.logout();
-            } finally {
-                keepAliveSession = null;
-                if (repository != null) {
-                    try {
-                        JackrabbitRepository jackrabbit = (JackrabbitRepository)repository;
-                        jackrabbit.shutdown();
-                    } finally {
-                        repository = null;
-                        // Clean up the test data ...
-                        FileUtil.delete(JACKRABBIT_DATA_PATH);
-                    }
+        if (repository != null) {
+            if (engine != null) {
+                try {
+                    engine.shutdown();
+                } finally {
+                    engine = null;
+                    repository = null;
                 }
             }
         }
     }
 
     public boolean isRepositoryStarted() {
-        return this.keepAliveSession != null;
+        return repository != null;
     }
 
     /**

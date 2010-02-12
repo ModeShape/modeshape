@@ -23,15 +23,23 @@
       <artifactId>modeshape-common</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>javax.jcr</groupId>
+      <artifactId>jcr</artifactId>
+    </dependency>
+    <!-- 
+    Testing (note the scope)
+    -->
+    <dependency>
       <groupId>org.modeshape</groupId>
       <artifactId>modeshape-common</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
-    <!-- 
-    Testing (note the scope)
-    -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -42,12 +50,17 @@
       <scope>test</scope>
     </dependency>
     <!-- 
-    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
+      ModeShape JCR Implementation for testing purposes
     -->
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
+      <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-jcr</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
+    <!-- 
+    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
+    -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
@@ -57,48 +70,35 @@
       <artifactId>log4j</artifactId>
     </dependency>
     <!-- 
-      Java Content Repository API 
+    JAAS implementation for testing
     -->
     <dependency>
-      <groupId>javax.jcr</groupId>
-      <artifactId>jcr</artifactId>
+      <groupId>org.jboss.security</groupId>
+      <artifactId>jboss-idtrust</artifactId>
+      <version>2.0.2.CR1</version>
+      <scope>test</scope>
     </dependency>
-    <!-- 
-      Apache Jackrabbit (JCR Implementation) for testing purposes
-    -->
-		<dependency>
-			<groupId>org.apache.jackrabbit</groupId>
-			<artifactId>jackrabbit-api</artifactId>
-			<version>1.4</version>
-			<scope>test</scope>
-			<!-- Exclude these since they are included in JDK 1.5 -->
-			<exclusions>
-				<exclusion>
-					<groupId>xml-apis</groupId>
-					<artifactId>xml-apis</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>xerces</groupId>
-					<artifactId>xercesImpl</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.jackrabbit</groupId>
-			<artifactId>jackrabbit-core</artifactId>
-			<version>1.4.5</version>
-			<scope>test</scope>
-			<!-- Exclude these since they are included in JDK 1.5 -->
-			<exclusions>
-				<exclusion>
-					<groupId>xml-apis</groupId>
-					<artifactId>xml-apis</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>xerces</groupId>
-					<artifactId>xercesImpl</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
+    <dependency>
+      <groupId>org.jboss.security</groupId>
+      <artifactId>jboss-security-spi-bare</artifactId>
+      <version>2.0.2.SP6</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.jboss.security</groupId>
+        <artifactId>jbosssx-bare</artifactId>
+        <version>2.0.2.SP6</version>
+        <exclusions>
+            <exclusion>
+                <groupId>apache-xalan</groupId>
+                <artifactId>xalan</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>apache-xalan</groupId>
+                <artifactId>serializer</artifactId>
+            </exclusion>
+        </exclusions>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
