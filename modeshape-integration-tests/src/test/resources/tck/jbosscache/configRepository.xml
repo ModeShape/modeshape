@@ -76,6 +76,7 @@
             </mode:options>
             <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape
 -->
+            <jcr:nodeTypes mode:resource="/tck/tck_test_types.cnd" />
             <namespaces jcr:primaryType="mode:namespaces">
                 <modetest jcr:primaryType="mode:namespace" mode:uri="http://www.modeshape.org/test/1.0"/>
             </namespaces>

@@ -23,6 +23,8 @@
  */
 package org.modeshape.jcr;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,6 +40,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import net.jcip.annotations.ThreadSafe;
+import org.modeshape.cnd.CndImporter;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
@@ -48,6 +51,7 @@ import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
+import org.modeshape.graph.io.GraphBatchDestination;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
@@ -273,7 +277,41 @@ public class JcrEngine extends ModeShapeEngine {
         // Register all the the node types ...
         Node nodeTypesNode = subgraph.getNode(JcrLexicon.NODE_TYPES);
         if (nodeTypesNode != null) {
-            repository.getRepositoryTypeManager().registerNodeTypes(subgraph, nodeTypesNode.getLocation());// throws exception
+            boolean needToRefreshSubgraph = false;
+
+            // Expand any references to a CND file
+            Property resourceProperty = nodeTypesNode.getProperty(ModeShapeLexicon.RESOURCE);
+            if (resourceProperty != null) {
+                String resources = this.context.getValueFactories().getStringFactory().create(resourceProperty.getFirstValue());
+
+                for (String resource : resources.split("\\s*,\\s*")) {
+                    Graph.Batch batch = configuration.batch();
+                    GraphBatchDestination destination = new GraphBatchDestination(batch);
+
+                    Path nodeTypesPath = pathFactory.create(repositoryPath, JcrLexicon.NODE_TYPES);
+                    CndImporter importer = new CndImporter(destination, nodeTypesPath, false);
+                    InputStream is = getClass().getResourceAsStream(resource);
+                    try {
+                        if (is != null) {
+                            importer.importFrom(is, this.getProblems(), resource);
+                            batch.execute();
+                            needToRefreshSubgraph = true;
+                        }
+                    } catch (IOException ioe) {
+                        ioe.printStackTrace();
+                    }
+                }
+
+            }
+
+            // Re-read the subgraph, in case any new nodes were added
+            Subgraph nodeTypesSubgraph = subgraph;
+            if (needToRefreshSubgraph) {
+                nodeTypesSubgraph = configuration.getSubgraphOfDepth(4).at(nodeTypesNode.getLocation().getPath());
+            }
+
+            repository.getRepositoryTypeManager().registerNodeTypes(nodeTypesSubgraph, nodeTypesNode.getLocation());// throws
+                                                                                                                    // exception
         }
 
         return repository;

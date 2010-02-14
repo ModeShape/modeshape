@@ -88,6 +88,7 @@
             <mode:options jcr:primaryType="mode:options">
                 <projectNodeTypes jcr:primaryType="mode:option" mode:value="false"/>
             </mode:options>
+            <jcr:nodeTypes mode:resource="/tck/tck_test_types.cnd" />
             <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape-->
             <namespaces jcr:primaryType="mode:namespaces">
                 <modetest jcr:primaryType="mode:namespace" mode:uri="http://www.modeshape.org/test/1.0"/>

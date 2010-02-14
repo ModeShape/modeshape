@@ -26,12 +26,12 @@ package org.modeshape.jcr;
 import java.io.InputStream;
 import java.util.Properties;
 import org.apache.jackrabbit.test.RepositoryStub;
+import org.jboss.security.config.IDTrustConfiguration;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.property.Path;
-import org.jboss.security.config.IDTrustConfiguration;
 
 /**
  * Concrete implementation of {@link RepositoryStub} based on ModeShape-specific configuration.
@@ -81,15 +81,6 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
 
             String configFileName = "/tck/" + repositoryConfigurationName + "/configRepository.xml";
             configuration.loadFrom(getClass().getResourceAsStream(configFileName));
-
-            // Add the the node types for the source ...
-            configuration.repository(REPOSITORY_SOURCE_NAME).addNodeTypes(getClass().getResourceAsStream("/tck/tck_test_types.cnd"));
-
-            String nodeTypePath = configProps.getProperty(MODE_SHAPE_NODE_TYPE_PATH);
-            if (nodeTypePath != null) {
-            	InputStream is = getClass().getResourceAsStream(nodeTypePath);
-                configuration.repository(REPOSITORY_SOURCE_NAME).addNodeTypes(is);
-            }
 
             JcrEngine engine = configuration.build();
             engine.start();

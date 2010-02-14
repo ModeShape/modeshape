@@ -90,7 +90,7 @@
             <mode:options jcr:primaryType="mode:options">
                 <projectNodeTypes jcr:primaryType="mode:option" mode:value="false"/>
             </mode:options>
-            <jcr:nodeTypes />
+            <jcr:nodeTypes mode:resource="/tck/tck_test_types.cnd, /org/modeshape/connector/meta/jdbc/connector-metajdbc.cnd" />
             <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape -->
             <mode:namespaces jcr:primaryType="mode:namespaces">
                 <mj jcr:primaryType="mode:namespace" mode:uri="http://www.modeshape.org/connector/meta/jdbc/1.0"/>

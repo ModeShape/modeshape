@@ -20,7 +20,7 @@
 [modetest:unorderableUnstructured] 
 - * (*) copy
 - * (*) multiple copy
-+ * (nt:base) = modetest:unorderableUnstructured multiple version
++ * (nt:base) = modetest:unorderableUnstructured version
 
 [modetest:setPropertyAssumeTypeTest] 
 - prop1 (PATH) copy
