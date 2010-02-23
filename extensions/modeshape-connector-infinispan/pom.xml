@@ -50,7 +50,7 @@
     <dependency>
       <groupId>org.infinispan</groupId>
       <artifactId>infinispan-core</artifactId>
-      <version>4.0.0.BETA1</version>
+      <version>4.0.0.FINAL</version>
     </dependency>
     <!-- 
     Testing (note the scope)
