@@ -10,6 +10,21 @@
 		  <!--
 			Gather into the distribution the various text files for inclusion
 		  -->
+		  <directory>src/main/resources</directory>
+		  <outputDirectory></outputDirectory>
+		  <includes>
+			<include>README*</include>
+			<include>LICENSE*</include>
+			<include>NOTICE*</include>
+			<include>AUTHORS*</include>
+			<include>COPYRIGHT*</include>
+			<include>*.txt</include>
+		  </includes>
+		</fileSet>
+		<fileSet>
+		  <!--
+			Gather into the distribution the various text files for inclusion
+		  -->
 		  <directory></directory>
 		  <outputDirectory></outputDirectory>
 	    <excludes>

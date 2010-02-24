@@ -29,6 +29,7 @@ import org.modeshape.graph.NodeConflictBehavior;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
+import org.modeshape.graph.property.Path.Segment;
 
 /**
  * Extension of {@link PathWorkspace} for repositories that support modification of nodes as well as access to the nodes.
@@ -67,7 +68,7 @@ public interface WritablePathWorkspace extends PathWorkspace {
 
     /**
      * Move the supplied node to the new parent within this workspace. This method automatically removes the node from its
-     * existing parent, and also correctly adjusts the {@link Path.Segment#getIndex() index} to be correct in the new parent.
+     * existing parent, and also correctly adjusts the {@link Segment#getIndex() index} to be correct in the new parent.
      * 
      * @param context
      * @param node the node to be moved; may not be the workspace root node
@@ -112,7 +113,6 @@ public interface WritablePathWorkspace extends PathWorkspace {
      */
     // public void addChild( int index,
     // PathNode child );
-
     /**
      * Removes the node at the given path
      * 

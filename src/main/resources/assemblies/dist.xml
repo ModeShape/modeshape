@@ -10,7 +10,7 @@
 		  <!--
 			Gather into the distribution the various text files for inclusion
 		  -->
-		  <directory>build</directory>
+		  <directory>src/main/resources</directory>
 		  <outputDirectory></outputDirectory>
 		  <includes>
 			<include>README*</include>
