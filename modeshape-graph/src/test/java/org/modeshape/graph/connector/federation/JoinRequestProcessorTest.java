@@ -28,7 +28,7 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -49,7 +49,7 @@ import org.modeshape.graph.request.Request;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 /**
  * 
@@ -73,8 +73,8 @@ public class JoinRequestProcessorTest {
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
         sourceName = "MySource";
-        stub(repository.getDefaultCachePolicy()).toReturn(cachePolicy);
-        stub(repository.getSourceName()).toReturn(sourceName);
+        when(repository.getDefaultCachePolicy()).thenReturn(cachePolicy);
+        when(repository.getSourceName()).thenReturn(sourceName);
 
         unknownRequests = new ArrayList<Request>();
         context = new ExecutionContext();
@@ -139,7 +139,7 @@ public class JoinRequestProcessorTest {
         List<FederatedRequest> requests = new ArrayList<FederatedRequest>();
         Request original = mock(Request.class);
         FederatedRequest request = mock(FederatedRequest.class);
-        stub(request.original()).toReturn(original);
+        when(request.original()).thenReturn(original);
         requests.add(request);
         joinProcessor.process(requests);
         assertThat(joinProcessor.federatedRequest, is(sameInstance(request)));

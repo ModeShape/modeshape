@@ -29,7 +29,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import java.util.concurrent.TimeUnit;
 import org.modeshape.common.collection.Problems;
@@ -47,7 +47,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 /**
  * @author Randall Hauch
@@ -77,7 +77,7 @@ public class RepositoryServiceTest {
         configRepositorySource.setDefaultWorkspaceName("default");
         configRepository = Graph.create(configRepositorySource, context);
         RepositoryConnection configRepositoryConnection = configRepositorySource.getConnection();
-        stub(sources.createConnection(configSourceName)).toReturn(configRepositoryConnection);
+        when(sources.createConnection(configSourceName)).thenReturn(configRepositoryConnection);
         root = context.getValueFactories().getPathFactory().createRootPath();
         problems = new SimpleProblems();
         service = new RepositoryService(configRepositorySource, configWorkspaceName, root, context, problems);

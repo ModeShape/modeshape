@@ -27,7 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import org.modeshape.graph.cache.CachePolicy;
@@ -37,7 +37,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 /**
  * @author Randall Hauch
@@ -67,7 +67,7 @@ public class FederatedRepositoryConnectionTest {
     @Test
     public void shouldGetDefaultCachePolicyFromRepository() {
         CachePolicy cachePolicy = mock(CachePolicy.class);
-        stub(repository.getDefaultCachePolicy()).toReturn(cachePolicy);
+        when(repository.getDefaultCachePolicy()).thenReturn(cachePolicy);
         assertThat(connection.getDefaultCachePolicy(), is(cachePolicy));
         verify(repository, times(1)).getDefaultCachePolicy();
     }
@@ -75,7 +75,7 @@ public class FederatedRepositoryConnectionTest {
     @Test
     public void shouldGetSourceNameFromRepository() {
         String name = "Something";
-        stub(repository.getSourceName()).toReturn(name);
+        when(repository.getSourceName()).thenReturn(name);
         assertThat(connection.getSourceName(), is(name));
         verify(repository, times(1)).getSourceName();
     }
@@ -89,7 +89,7 @@ public class FederatedRepositoryConnectionTest {
     @Test
     public void shouldProcessCompositeRequestWithOneRequestSynchronously() {
         CompositeRequest request = mock(CompositeRequest.class);
-        stub(request.size()).toReturn(1);
+        when(request.size()).thenReturn(1);
         assertThat(connection.shouldProcessSynchronously(request), is(true));
     }
 
@@ -97,7 +97,7 @@ public class FederatedRepositoryConnectionTest {
     @Test
     public void shouldProcessCompositeRequestWithMultipleRequestsAsynchronously() {
         CompositeRequest request = mock(CompositeRequest.class);
-        stub(request.size()).toReturn(2);
+        when(request.size()).thenReturn(2);
         assertThat(connection.shouldProcessSynchronously(request), is(false));
     }
 

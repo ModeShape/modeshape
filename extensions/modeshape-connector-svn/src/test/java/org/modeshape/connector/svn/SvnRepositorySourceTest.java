@@ -27,7 +27,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.mock;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -41,6 +40,11 @@ import javax.naming.Name;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.cache.BasicCachePolicy;
@@ -49,11 +53,6 @@ import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.observe.Observer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.MockitoAnnotations;
 
 /**
  * @author Serge Pagop
@@ -151,7 +150,7 @@ public class SvnRepositorySourceTest {
     public void shouldAllowSettingNameToNull() {
         source.setName("something that can change the world");
         source.setName(null);
-        assertThat(source.getName(), is(isNull()));
+        assertThat(source.getName(), is(nullValue()));
     }
 
     @Test
@@ -257,8 +256,7 @@ public class SvnRepositorySourceTest {
         assertThat((String)refAttributes.remove(SvnRepositorySource.RETRY_LIMIT), is(Integer.toString(source.getRetryLimit())));
         assertThat((String)refAttributes.remove(SvnRepositorySource.ALLOW_CREATING_WORKSPACES),
                    is(Boolean.toString(source.isCreatingWorkspacesAllowed())));
-        assertThat((String)refAttributes.remove(SvnRepositorySource.DEFAULT_WORKSPACE),
-                   is(source.getDefaultWorkspaceName()));
+        assertThat((String)refAttributes.remove(SvnRepositorySource.DEFAULT_WORKSPACE), is(source.getDefaultWorkspaceName()));
         refAttributes.remove(SvnRepositorySource.PREDEFINED_WORKSPACE_NAMES);
         assertThat(refAttributes.isEmpty(), is(true));
 

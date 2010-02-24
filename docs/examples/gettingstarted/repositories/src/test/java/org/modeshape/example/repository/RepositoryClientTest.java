@@ -26,7 +26,7 @@ package org.modeshape.example.repository;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.IsCollectionContaining.hasItems;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,7 +41,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 /**
  * @author Randall Hauch
@@ -64,9 +64,9 @@ public class RepositoryClientTest {
         client = new RepositoryClient();
         client.setUserInterface(userInterface);
         client.setApi(getApi());
-        stub(userInterface.getLocationOfRepositoryFiles()).toReturn(new File("src/main/resources").getAbsolutePath());
-        stub(userInterface.getLocationOfCndFiles()).toReturn(new File("src/main/resources").getAbsolutePath());
-        stub(userInterface.getRepositoryConfiguration()).toReturn(new File("src/main/resources/configRepository.xml"));
+        when(userInterface.getLocationOfRepositoryFiles()).thenReturn(new File("src/main/resources").getAbsolutePath());
+        when(userInterface.getLocationOfCndFiles()).thenReturn(new File("src/main/resources").getAbsolutePath());
+        when(userInterface.getRepositoryConfiguration()).thenReturn(new File("src/main/resources/configRepository.xml"));
 
         // Set up the JAAS provider (IDTrust) and a policy file (which defines the "modeshape-jcr" login config name)
         IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
@@ -77,7 +77,7 @@ public class RepositoryClientTest {
         }
 
         CallbackHandler handler = new JaasSecurityContext.UserPasswordCallbackHandler("jsmith", "secret".toCharArray());
-        stub(userInterface.getCallbackHandler()).toReturn(handler);
+        when(userInterface.getCallbackHandler()).thenReturn(handler);
     }
 
     @After

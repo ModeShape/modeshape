@@ -29,7 +29,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -53,7 +53,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 /**
  * 
@@ -143,7 +143,7 @@ public class FederatedRepositorySourceTest {
         batch.execute();
 
         configRepositoryConnection = configRepositorySource.getConnection();
-        stub(connectionFactory.createConnection(configurationSourceName)).toReturn(configRepositoryConnection);
+        when(connectionFactory.createConnection(configurationSourceName)).thenReturn(configRepositoryConnection);
     }
 
     protected static CallbackHandler anyCallbackHandler() {

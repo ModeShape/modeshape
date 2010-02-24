@@ -6,7 +6,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.LinkedList;
 import java.util.UUID;
 import javax.jcr.RepositoryException;
@@ -28,7 +28,7 @@ import org.modeshape.jcr.WorkspaceLockManager.ModeShapeLock;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -59,7 +59,7 @@ public class WorkspaceLockManagerTest {
         workspaceName = "default";
         context = new ExecutionContext();
         connection = new MockRepositoryConnection(sourceName, executedRequests);
-        stub(connectionFactory.createConnection(sourceName)).toReturn(connection);
+        when(connectionFactory.createConnection(sourceName)).thenReturn(connection);
         graph = Graph.create(sourceName, connectionFactory, context);
 
         validUuid = UUID.randomUUID();
@@ -67,15 +67,15 @@ public class WorkspaceLockManagerTest {
 
 
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        stub(repository.getExecutionContext()).toReturn(context);
-        stub(repository.getRepositorySourceName()).toReturn(sourceName);
-        stub(repository.getPersistentRegistry()).toReturn(context.getNamespaceRegistry());
-        stub(repository.createWorkspaceGraph(anyString(), (ExecutionContext)anyObject())).toAnswer(new Answer<Graph>() {
+        when(repository.getExecutionContext()).thenReturn(context);
+        when(repository.getRepositorySourceName()).thenReturn(sourceName);
+        when(repository.getPersistentRegistry()).thenReturn(context.getNamespaceRegistry());
+        when(repository.createWorkspaceGraph(anyString(), (ExecutionContext)anyObject())).thenAnswer(new Answer<Graph>() {
             public Graph answer( InvocationOnMock invocation ) throws Throwable {
                 return graph;
             }
         });
-        stub(repository.createSystemGraph(context)).toAnswer(new Answer<Graph>() {
+        when(repository.createSystemGraph(context)).thenAnswer(new Answer<Graph>() {
             public Graph answer( InvocationOnMock invocation ) throws Throwable {
                 return graph;
             }
@@ -84,7 +84,7 @@ public class WorkspaceLockManagerTest {
         Path locksPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, ModeShapeLexicon.LOCKS);
         workspaceLockManager = new WorkspaceLockManager(context, repository, workspaceName, locksPath);
 
-        stub(repository.getLockManager(anyString())).toAnswer(new Answer<WorkspaceLockManager>() {
+        when(repository.getLockManager(anyString())).thenAnswer(new Answer<WorkspaceLockManager>() {
             public WorkspaceLockManager answer( InvocationOnMock invocation ) throws Throwable {
                 return workspaceLockManager;
             }
@@ -93,7 +93,7 @@ public class WorkspaceLockManagerTest {
         // Stub out the repository, since we only need a few methods ...
         repoTypeManager = new RepositoryNodeTypeManager(repository, true);
 
-        stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
+        when(repository.getRepositoryTypeManager()).thenReturn(repoTypeManager);
 
         executedRequests.clear();
     }
@@ -145,7 +145,7 @@ public class WorkspaceLockManagerTest {
         Property lockIsDeepProp = propFactory.create(JcrLexicon.LOCK_IS_DEEP, isDeep);
 
         JcrSession session = mock(JcrSession.class);
-        stub(session.getExecutionContext()).toReturn(context);
+        when(session.getExecutionContext()).thenReturn(context);
         workspaceLockManager.lockNodeInRepository(session, validUuid, lockOwnerProp, lockIsDeepProp, lock, isDeep);
 
         assertNextRequestIsLock(validLocation, LockScope.SELF_ONLY, 0);

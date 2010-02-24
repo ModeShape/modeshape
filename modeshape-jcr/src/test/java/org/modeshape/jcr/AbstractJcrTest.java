@@ -24,7 +24,7 @@
 package org.modeshape.jcr;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.io.IOException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Workspace;
@@ -70,7 +70,7 @@ public abstract class AbstractJcrTest {
         // Create the node type manager ...
         context.getNamespaceRegistry().register(Vehicles.Lexicon.Namespace.PREFIX, Vehicles.Lexicon.Namespace.URI);
         repository = mock(JcrRepository.class);
-        stub(repository.getExecutionContext()).toReturn(context);
+        when(repository.getExecutionContext()).thenReturn(context);
 
         rntm = new RepositoryNodeTypeManager(repository, true);
         try {
@@ -117,16 +117,16 @@ public abstract class AbstractJcrTest {
         // Stub the session, workspace, and repository; then stub some critical methods ...
         jcrSession = mock(JcrSession.class);
         workspace = mock(Workspace.class);
-        stub(jcrSession.getExecutionContext()).toReturn(context);
-        stub(jcrSession.getWorkspace()).toReturn(workspace);
-        stub(jcrSession.getRepository()).toReturn(repository);
-        stub(workspace.getName()).toReturn("workspace1");
+        when(jcrSession.getExecutionContext()).thenReturn(context);
+        when(jcrSession.getWorkspace()).thenReturn(workspace);
+        when(jcrSession.getRepository()).thenReturn(repository);
+        when(workspace.getName()).thenReturn("workspace1");
 
         // Create the node type manager for the session ...
         // no need to stub the 'JcrSession.checkPermission' methods, since we're never calling 'register' on the
         // JcrNodeTypeManager
         nodeTypes = new JcrNodeTypeManager(jcrSession, rntm);
-        stub(jcrSession.nodeTypeManager()).toReturn(nodeTypes);
+        when(jcrSession.nodeTypeManager()).thenReturn(nodeTypes);
 
         cache = new SessionCache(jcrSession, store.getCurrentWorkspaceName(), context, nodeTypes, store);
 

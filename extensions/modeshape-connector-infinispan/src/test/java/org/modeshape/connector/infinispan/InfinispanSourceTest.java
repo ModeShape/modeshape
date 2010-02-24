@@ -28,7 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -47,7 +47,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 /**
  */
@@ -75,7 +75,7 @@ public class InfinispanSourceTest {
 
         // Set up the fake JNDI context ...
         source.setContext(jndiContext);
-        stub(jndiContext.lookup(validCacheManagerJndiName)).toReturn(cacheManager);
+        when(jndiContext.lookup(validCacheManagerJndiName)).thenReturn(cacheManager);
     }
 
     @After

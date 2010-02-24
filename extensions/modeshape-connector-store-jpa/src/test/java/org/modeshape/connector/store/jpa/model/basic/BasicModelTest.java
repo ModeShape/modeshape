@@ -28,7 +28,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
@@ -127,13 +127,13 @@ public class BasicModelTest {
         EntityManagers managers = mock(EntityManagers.class);
         JpaSource source = mock(JpaSource.class);
 
-        stub(manager.getTransaction()).toReturn(txn);
+        when(manager.getTransaction()).thenReturn(txn);
 
-        stub(managers.checkout()).toReturn(manager);
+        when(managers.checkout()).thenReturn(manager);
 
-        stub(source.getName()).toReturn("some name");
-        stub(source.getRootUuid()).toReturn(UUID.randomUUID());
-        stub(source.getEntityManagers()).toReturn(managers);
+        when(source.getName()).thenReturn("some name");
+        when(source.getRootUuid()).thenReturn(UUID.randomUUID());
+        when(source.getEntityManagers()).thenReturn(managers);
 
         RepositoryConnection conn = model.createConnection(source);
 

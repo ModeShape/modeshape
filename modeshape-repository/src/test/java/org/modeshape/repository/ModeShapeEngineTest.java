@@ -28,7 +28,7 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
@@ -176,9 +176,9 @@ public class ModeShapeEngineTest {
         assertThat(sequencer.getStatistics().getNumberOfNodesSequenced(), is(0L));
 
         Event e1 = mock(Event.class);
-        stub(e1.getType()).toReturn(Event.NODE_ADDED);
-        stub(e1.getPath()).toReturn("/test");
-        stub(e1.getUserID()).toReturn("Test");
+        when(e1.getType()).thenReturn(Event.NODE_ADDED);
+        when(e1.getPath()).thenReturn("/test");
+        when(e1.getUserID()).thenReturn("Test");
 
         // changes = NodeChanges.create("", Arrays.asList(new Event[] { e1, }));
         // sequencer.onNodeChanges(changes);

@@ -28,7 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 import org.modeshape.graph.ExecutionContext;
@@ -38,7 +38,7 @@ import org.modeshape.graph.connector.federation.Projection.Rule;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 /**
  * 
@@ -60,7 +60,7 @@ public class FederatedWorkspaceTest {
         sourceName = "federated";
         workspaceName = "my workspace";
         context = new ExecutionContext();
-        stub(repositoryContext.getExecutionContext()).toReturn(context);
+        when(repositoryContext.getExecutionContext()).thenReturn(context);
         projections = new ArrayList<Projection>();
         projections.add(new Projection("source1", "workspace1", false, rule("/a => /a1")));
         projections.add(new Projection("source2", "workspace2", false, rule("/a => /a2", "/b => /b")));
@@ -139,7 +139,7 @@ public class FederatedWorkspaceTest {
     @Test
     public void shouldConsiderWorkspacesEqualIfSameSourceNameAndSameWorkspaceNameAndSameProjections() {
         RepositoryContext otherReposContext = mock(RepositoryContext.class);
-        stub(otherReposContext.getExecutionContext()).toReturn(context);
+        when(otherReposContext.getExecutionContext()).thenReturn(context);
         CachePolicy otherPolicy = mock(CachePolicy.class);
         FederatedWorkspace other = new FederatedWorkspace(otherReposContext, sourceName, workspaceName, projections, otherPolicy);
         assertThat(workspace.equals(other), is(true));
@@ -148,7 +148,7 @@ public class FederatedWorkspaceTest {
     @Test
     public void shouldConsiderWorkspacesNotEqualIfDifferentSourceName() {
         RepositoryContext otherReposContext = mock(RepositoryContext.class);
-        stub(otherReposContext.getExecutionContext()).toReturn(context);
+        when(otherReposContext.getExecutionContext()).thenReturn(context);
         CachePolicy otherPolicy = mock(CachePolicy.class);
         FederatedWorkspace other = new FederatedWorkspace(otherReposContext, "diff", workspaceName, projections, otherPolicy);
         assertThat(workspace.equals(other), is(false));
@@ -157,7 +157,7 @@ public class FederatedWorkspaceTest {
     @Test
     public void shouldConsiderWorkspacesNotEqualIfDifferentWorkspaceName() {
         RepositoryContext otherReposContext = mock(RepositoryContext.class);
-        stub(otherReposContext.getExecutionContext()).toReturn(context);
+        when(otherReposContext.getExecutionContext()).thenReturn(context);
         CachePolicy otherPolicy = mock(CachePolicy.class);
         FederatedWorkspace other = new FederatedWorkspace(otherReposContext, sourceName, "diff", projections, otherPolicy);
         assertThat(workspace.equals(other), is(false));
@@ -166,7 +166,7 @@ public class FederatedWorkspaceTest {
     @Test
     public void shouldConsiderWorkspacesNotEqualIfDifferentProjections() {
         RepositoryContext otherReposContext = mock(RepositoryContext.class);
-        stub(otherReposContext.getExecutionContext()).toReturn(context);
+        when(otherReposContext.getExecutionContext()).thenReturn(context);
         CachePolicy otherPolicy = mock(CachePolicy.class);
         FederatedWorkspace other = new FederatedWorkspace(otherReposContext, sourceName, workspaceName,
                                                           projections.subList(0, 3), otherPolicy);

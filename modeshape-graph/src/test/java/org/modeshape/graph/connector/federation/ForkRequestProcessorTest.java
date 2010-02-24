@@ -29,7 +29,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,7 +54,7 @@ import org.modeshape.graph.request.ReadNodeRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 /**
  * 
@@ -113,19 +113,19 @@ public class ForkRequestProcessorTest {
         connectionForSourceA = new MockRepositoryConnection(sourceNameA);
         connectionForSourceB = new MockRepositoryConnection(sourceNameB);
         connectionForSourceC = new MockRepositoryConnection(sourceNameC);
-        stub(connectionFactory.createConnection(sourceNameA)).toReturn(connectionForSourceA);
-        stub(connectionFactory.createConnection(sourceNameB)).toReturn(connectionForSourceB);
-        stub(connectionFactory.createConnection(sourceNameC)).toReturn(connectionForSourceC);
+        when(connectionFactory.createConnection(sourceNameA)).thenReturn(connectionForSourceA);
+        when(connectionFactory.createConnection(sourceNameB)).thenReturn(connectionForSourceB);
+        when(connectionFactory.createConnection(sourceNameC)).thenReturn(connectionForSourceC);
 
         // Stub the FederatedRepository ...
-        stub(repository.getSourceName()).toReturn(sourceName);
-        stub(repository.getWorkspace(workspaceName)).toReturn(workspace);
-        stub(repository.getExecutor()).toReturn(executor);
-        stub(repository.getConnectionFactory()).toReturn(connectionFactory);
-        stub(repository.getWorkspace(nonExistantWorkspaceName)).toThrow(new InvalidWorkspaceException());
+        when(repository.getSourceName()).thenReturn(sourceName);
+        when(repository.getWorkspace(workspaceName)).thenReturn(workspace);
+        when(repository.getExecutor()).thenReturn(executor);
+        when(repository.getConnectionFactory()).thenReturn(connectionFactory);
+        when(repository.getWorkspace(nonExistantWorkspaceName)).thenThrow(new InvalidWorkspaceException());
 
         // Stub the FederatedWorkspace ...
-        stub(workspace.getName()).toReturn(workspaceName);
+        when(workspace.getName()).thenReturn(workspaceName);
         // workspace.project(context,location) needs to be stubbed ...
 
         // Set up the projections ...
@@ -219,7 +219,7 @@ public class ForkRequestProcessorTest {
     @Test
     public void shouldSubmitFederatedRequestToQueueIfFederatedRequestHasNoIncompleteRequests() {
         FederatedRequest request = mock(FederatedRequest.class);
-        stub(request.hasIncompleteRequests()).toReturn(false);
+        when(request.hasIncompleteRequests()).thenReturn(false);
         processor.submit(request);
         assertThat(federatedRequests.size(), is(1));
         assertThat(federatedRequests.get(0), is(sameInstance(request)));
@@ -284,7 +284,7 @@ public class ForkRequestProcessorTest {
     public void shouldNotForkReadNodeRequestIfWorkspaceNameIsInvalid() {
         // Stub the workspace to have no projection ...
         Location locationInFed = location("/a/b");
-        stub(workspace.project(context, locationInFed, false)).toReturn(null);
+        when(workspace.project(context, locationInFed, false)).thenReturn(null);
 
         ReadNodeRequest request = new ReadNodeRequest(locationInFed, nonExistantWorkspaceName);
         processor.process(request);
@@ -296,7 +296,7 @@ public class ForkRequestProcessorTest {
     public void shouldNotForkReadNodeRequestIfThereIsNoProjection() {
         // Stub the workspace to have no projection ...
         Location locationInFed = location("/a/b");
-        stub(workspace.project(context, locationInFed, false)).toReturn(null);
+        when(workspace.project(context, locationInFed, false)).thenReturn(null);
 
         ReadNodeRequest request = new ReadNodeRequest(locationInFed, workspaceName);
         processor.process(request);
@@ -310,7 +310,7 @@ public class ForkRequestProcessorTest {
         Location locationInFed = location("/a/x/y");
         Location locationInSource = location("/x/y");
         ProjectedNode projectedNode = new ProxyNode(projectionA, locationInSource, locationInFed, false);
-        stub(workspace.project(context, locationInFed, false)).toReturn(projectedNode);
+        when(workspace.project(context, locationInFed, false)).thenReturn(projectedNode);
 
         ReadNodeRequest request = new ReadNodeRequest(locationInFed, workspaceName);
         processor.process(request);
@@ -343,7 +343,7 @@ public class ForkRequestProcessorTest {
         addChild(locationInSource, "child1");
         addChild(locationInSource, "child2");
         PlaceholderNode projectedNode = new PlaceholderNode(locationInSource, properties, children);
-        stub(workspace.project(context, locationInFed, false)).toReturn(projectedNode);
+        when(workspace.project(context, locationInFed, false)).thenReturn(projectedNode);
 
         ReadNodeRequest request = new ReadNodeRequest(locationInFed, workspaceName);
         processor.process(request);

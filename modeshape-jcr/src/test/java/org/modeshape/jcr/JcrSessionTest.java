@@ -32,7 +32,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -201,10 +201,10 @@ public class JcrSessionTest extends AbstractSessionTest {
     public void shouldProvideUserId() throws Exception {
         assertThat(session.getUserID(), nullValue());
         Principal principal = Mockito.mock(Principal.class);
-        stub(principal.getName()).toReturn("name");
+        when(principal.getName()).thenReturn("name");
         Subject subject = new Subject(false, Collections.singleton(principal), Collections.EMPTY_SET, Collections.EMPTY_SET);
         LoginContext loginContext = mock(LoginContext.class);
-        stub(loginContext.getSubject()).toReturn(subject);
+        when(loginContext.getSubject()).thenReturn(subject);
         NamespaceRegistry globalRegistry = context.getNamespaceRegistry();
         ExecutionContext sessionContext = context.with(new JaasSecurityContext(loginContext));
         Session session = new JcrSession(repository, workspace, sessionContext, globalRegistry, sessionAttributes);
@@ -250,8 +250,8 @@ public class JcrSessionTest extends AbstractSessionTest {
         assertThat(factory.createValue(stream), notNullValue());
         assertThat(factory.createValue(0L), notNullValue());
         Node node = Mockito.mock(Node.class);
-        stub(node.getUUID()).toReturn(UUID.randomUUID().toString());
-        stub(node.isNodeType("mix:referenceable")).toReturn(true);
+        when(node.getUUID()).thenReturn(UUID.randomUUID().toString());
+        when(node.isNodeType("mix:referenceable")).thenReturn(true);
         assertThat(factory.createValue(node), notNullValue());
         assertThat(factory.createValue(""), notNullValue());
         assertThat(factory.createValue("", PropertyType.BINARY), notNullValue());
@@ -261,7 +261,7 @@ public class JcrSessionTest extends AbstractSessionTest {
     public void shouldNotCreateValueForNonReferenceableNode() throws Exception {
         ValueFactory factory = session.getValueFactory();
         Node node = Mockito.mock(Node.class);
-        stub(node.getUUID()).toReturn(UUID.randomUUID().toString());
+        when(node.getUUID()).thenReturn(UUID.randomUUID().toString());
         factory.createValue(node);
     }
 

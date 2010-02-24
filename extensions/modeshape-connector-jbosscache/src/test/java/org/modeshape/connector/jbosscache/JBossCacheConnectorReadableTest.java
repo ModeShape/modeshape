@@ -25,7 +25,7 @@ package org.modeshape.connector.jbosscache;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.io.File;
 import java.io.IOException;
 import javax.naming.Context;
@@ -59,7 +59,7 @@ public class JBossCacheConnectorReadableTest extends ReadableConnectorTest {
 
         // Set up the mock JNDI ...
         mockJndi = mock(Context.class);
-        stub(mockJndi.lookup(anyString())).toReturn(null);
+        when(mockJndi.lookup(anyString())).thenReturn(null);
         source.setContext(mockJndi);
 
         return source;

@@ -28,7 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -48,7 +48,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 /**
  * @author Randall Hauch
@@ -81,8 +81,8 @@ public class JBossCacheSourceTest {
 
         // Set up the fake JNDI context ...
         source.setContext(jndiContext);
-        stub(jndiContext.lookup(validCacheFactoryJndiName)).toReturn(cacheFactory);
-        stub(jndiContext.lookup(validCacheJndiName)).toReturn(cache);
+        when(jndiContext.lookup(validCacheFactoryJndiName)).thenReturn(cacheFactory);
+        when(jndiContext.lookup(validCacheJndiName)).thenReturn(cache);
     }
 
     @After

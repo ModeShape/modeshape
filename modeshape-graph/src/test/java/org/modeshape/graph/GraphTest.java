@@ -32,7 +32,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -103,7 +103,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 /**
  * @author Randall Hauch
@@ -142,7 +142,7 @@ public class GraphTest {
         sourceName = "Source";
         context = new ExecutionContext();
         connection = new MockRepositoryConnection();
-        stub(connectionFactory.createConnection(sourceName)).toReturn(connection);
+        when(connectionFactory.createConnection(sourceName)).thenReturn(connection);
         graph = new Graph(sourceName, connectionFactory, context);
         validPathString = "/a/b/c";
         validUuid = UUID.randomUUID();

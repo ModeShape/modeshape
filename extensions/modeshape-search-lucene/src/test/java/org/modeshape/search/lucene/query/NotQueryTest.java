@@ -27,7 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -42,8 +42,8 @@ public class NotQueryTest {
     @Test
     public void scorerShouldSkipAdjacentDocsIfScoredByOperandScorer() throws IOException {
         IndexReader reader = mock(IndexReader.class);
-        stub(reader.isDeleted(anyInt())).toReturn(false);
-        stub(reader.maxDoc()).toReturn(10);
+        when(reader.isDeleted(anyInt())).thenReturn(false);
+        when(reader.maxDoc()).thenReturn(10);
         Scorer operandScorer = new MockScorer(0, 1, 2, 3, 4);
         Scorer notScorer = new NotQuery.NotScorer(operandScorer, reader);
         assertScores(notScorer, 5, 6, 7, 8, 9);
@@ -52,8 +52,8 @@ public class NotQueryTest {
     @Test
     public void scorerShouldSkipDocsAtEndIfScoredByOperandScorer() throws IOException {
         IndexReader reader = mock(IndexReader.class);
-        stub(reader.isDeleted(anyInt())).toReturn(false);
-        stub(reader.maxDoc()).toReturn(10);
+        when(reader.isDeleted(anyInt())).thenReturn(false);
+        when(reader.maxDoc()).thenReturn(10);
         Scorer operandScorer = new MockScorer(8, 9);
         Scorer notScorer = new NotQuery.NotScorer(operandScorer, reader);
         assertScores(notScorer, 0, 1, 2, 3, 4, 5, 6, 7);
@@ -62,8 +62,8 @@ public class NotQueryTest {
     @Test
     public void scorerShouldScoreFirstDocsIfNotScoredByOperandScorer() throws IOException {
         IndexReader reader = mock(IndexReader.class);
-        stub(reader.isDeleted(anyInt())).toReturn(false);
-        stub(reader.maxDoc()).toReturn(10);
+        when(reader.isDeleted(anyInt())).thenReturn(false);
+        when(reader.maxDoc()).thenReturn(10);
         Scorer operandScorer = new MockScorer(2, 3, 4);
         Scorer notScorer = new NotQuery.NotScorer(operandScorer, reader);
         assertScores(notScorer, 0, 1, 5, 6, 7, 8, 9);
@@ -72,8 +72,8 @@ public class NotQueryTest {
     @Test
     public void scorerShouldScoreNonAdjacentDocsNotScoredByOperandScorer() throws IOException {
         IndexReader reader = mock(IndexReader.class);
-        stub(reader.isDeleted(anyInt())).toReturn(false);
-        stub(reader.maxDoc()).toReturn(10);
+        when(reader.isDeleted(anyInt())).thenReturn(false);
+        when(reader.maxDoc()).thenReturn(10);
         Scorer operandScorer = new MockScorer(2, 4, 8);
         Scorer notScorer = new NotQuery.NotScorer(operandScorer, reader);
         assertScores(notScorer, 0, 1, 3, 5, 6, 7, 9);

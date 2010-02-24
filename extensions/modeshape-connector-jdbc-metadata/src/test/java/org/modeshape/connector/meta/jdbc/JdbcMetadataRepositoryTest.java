@@ -28,7 +28,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -55,7 +55,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 public class JdbcMetadataRepositoryTest {
 
@@ -91,7 +91,7 @@ public class JdbcMetadataRepositoryTest {
         longFactory = context.getValueFactories().getLongFactory();
         stringFactory = context.getValueFactories().getStringFactory();
 
-        stub(repositoryContext.getExecutionContext()).toReturn(context);
+        when(repositoryContext.getExecutionContext()).thenReturn(context);
 
         // Set the connection properties using the environment defined in the POM files ...
         this.source = TestEnvironment.configureJdbcMetadataSource("Test Repository", this);

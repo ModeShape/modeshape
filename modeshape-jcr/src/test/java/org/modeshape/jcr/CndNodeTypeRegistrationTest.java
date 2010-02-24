@@ -26,7 +26,7 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.io.IOException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -36,7 +36,7 @@ import org.modeshape.graph.property.Name;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 /**
  * Test of CND-based type definitions. These test cases focus on ensuring that an import of a type from a CND file registers the
@@ -60,7 +60,7 @@ public class CndNodeTypeRegistrationTest {
         context = new ExecutionContext();
         context.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
 
-        stub(repository.getExecutionContext()).toReturn(context);
+        when(repository.getExecutionContext()).thenReturn(context);
 
         repoTypeManager = new RepositoryNodeTypeManager(repository, true);
         try {

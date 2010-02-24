@@ -28,7 +28,7 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import java.util.ArrayList;
@@ -88,7 +88,7 @@ public class ChildPathTest extends AbstractPathTest {
     @Test
     public void shouldDelegateToParentForAncestorOfDegreeGreaterThanOne() {
         parent = mock(Path.class);
-        stub(parent.getAncestor(anyInt())).toReturn(null);
+        when(parent.getAncestor(anyInt())).thenReturn(null);
         path = new ChildPath(parent, segment("d"));
         for (int i = 2; i != 10; ++i) {
             path.getAncestor(i);
@@ -116,11 +116,11 @@ public class ChildPathTest extends AbstractPathTest {
         parent = mock(Path.class);
         path = new ChildPath(parent, segment("d"));
         Path other = mock(Path.class);
-        stub(parent.isAtOrBelow(other)).toReturn(true);
+        when(parent.isAtOrBelow(other)).thenReturn(true);
         assertThat(path.isDecendantOf(other), is(true));
         verify(parent).isAtOrBelow(other);
 
-        stub(parent.isAtOrBelow(other)).toReturn(false);
+        when(parent.isAtOrBelow(other)).thenReturn(false);
         assertThat(path.isDecendantOf(other), is(false));
         verify(parent, times(2)).isAtOrBelow(other);
     }
@@ -144,9 +144,9 @@ public class ChildPathTest extends AbstractPathTest {
     public void shouldDelegateGetSegmentToParentIfIndexNotEqualToSizeMinusOne() {
         Path.Segment segment = mock(Path.Segment.class);
         parent = mock(Path.class);
-        stub(parent.size()).toReturn(10);
+        when(parent.size()).thenReturn(10);
         path = new ChildPath(parent, segment("d"));
-        stub(parent.getSegment(anyInt())).toReturn(segment);
+        when(parent.getSegment(anyInt())).thenReturn(segment);
         for (int i = 0; i < path.size() - 1; ++i) {
             assertThat(path.getSegment(i), is(sameInstance(segment)));
         }
@@ -196,17 +196,17 @@ public class ChildPathTest extends AbstractPathTest {
     // @Test
     // public void shouldReturnRootForLowestCommonAncestorWithAnyNodePath() {
     // Path other = mock(Path.class);
-    // stub(other.isRoot()).toReturn(true);
+    // when(other.isRoot()).thenReturn(true);
     // assertThat(root.getCommonAncestor(other).isRoot(), is(true));
     //
-    // stub(other.isRoot()).toReturn(false);
+    // when(other.isRoot()).thenReturn(false);
     // assertThat(root.getCommonAncestor(other).isRoot(), is(true));
     // }
     //
     // @Test
     // public void shouldConsiderRootToBeAncestorOfEveryNodeExceptRoot() {
     // Path other = mock(Path.class);
-    // stub(other.size()).toReturn(1);
+    // when(other.size()).thenReturn(1);
     // assertThat(root.isAncestorOf(other), is(true));
     // assertThat(root.isAncestorOf(root), is(false));
     // }
@@ -275,7 +275,7 @@ public class ChildPathTest extends AbstractPathTest {
     // public void shouldAlwaysReturnPathWithSingleSlashForGetString() {
     // NamespaceRegistry registry = mock(NamespaceRegistry.class);
     // TextEncoder encoder = mock(TextEncoder.class);
-    // stub(encoder.encode("/")).toReturn("/");
+    // when(encoder.encode("/")).thenReturn("/");
     // assertThat(root.getString(), is("/"));
     // assertThat(root.getString(registry), is("/"));
     // assertThat(root.getString(registry, encoder), is("/"));
@@ -286,7 +286,7 @@ public class ChildPathTest extends AbstractPathTest {
     // @Test
     // public void shouldAllowNullNamespaceRegistryWithNonNullTextEncodersSinceRegistryIsNotNeeded() {
     // TextEncoder encoder = mock(TextEncoder.class);
-    // stub(encoder.encode("/")).toReturn("/");
+    // when(encoder.encode("/")).thenReturn("/");
     // assertThat(root.getString((NamespaceRegistry)null, encoder, encoder), is("/"));
     // }
     //
@@ -350,8 +350,8 @@ public class ChildPathTest extends AbstractPathTest {
     // List<Path.Segment> segments = new ArrayList<Path.Segment>();
     // segments.add(new BasicPathSegment(new BasicName("http://example.com", "a")));
     // Path other = mock(Path.class);
-    // stub(other.isAbsolute()).toReturn(false);
-    // stub(other.getSegmentsList()).toReturn(segments);
+    // when(other.isAbsolute()).thenReturn(false);
+    // when(other.getSegmentsList()).thenReturn(segments);
     // Path resolved = root.resolve(other);
     // assertThat(resolved.getSegmentsList(), is(segments));
     // assertThat(resolved.isAbsolute(), is(true));
@@ -360,14 +360,14 @@ public class ChildPathTest extends AbstractPathTest {
     // @Test( expected = InvalidPathException.class )
     // public void shouldNotResolveRelativePathUsingAnAbsolutePath() {
     // Path other = mock(Path.class);
-    // stub(other.isAbsolute()).toReturn(true);
+    // when(other.isAbsolute()).thenReturn(true);
     // root.resolve(other);
     // }
     //
     // @Test
     // public void shouldAlwaysConsiderRootAsLessThanAnyPathOtherThanRoot() {
     // Path other = mock(Path.class);
-    // stub(other.isRoot()).toReturn(false);
+    // when(other.isRoot()).thenReturn(false);
     // assertThat(root.compareTo(other), is(-1));
     // assertThat(root.equals(other), is(false));
     // }
@@ -375,7 +375,7 @@ public class ChildPathTest extends AbstractPathTest {
     // @Test
     // public void shouldAlwaysConsiderRootAsEqualToAnyOtherRoot() {
     // Path other = mock(Path.class);
-    // stub(other.isRoot()).toReturn(true);
+    // when(other.isRoot()).thenReturn(true);
     // assertThat(root.compareTo(other), is(0));
     // assertThat(root.equals(other), is(true));
     // assertThat(root.equals(root), is(true));

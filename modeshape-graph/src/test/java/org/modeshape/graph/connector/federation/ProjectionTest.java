@@ -28,7 +28,7 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItems;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.Set;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Path;
@@ -36,7 +36,7 @@ import org.modeshape.graph.property.PathFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 /**
  * @author Randall Hauch
@@ -141,9 +141,9 @@ public class ProjectionTest {
     @Test
     public void shouldGetNoPathsInSourceGivenPathInRepositoryAndNoApplicableRules() {
         Path pathInRepository = pathFactory.create("/a/b/c");
-        stub(mockRule1.getPathInSource(pathInRepository, pathFactory)).toReturn(null);
-        stub(mockRule2.getPathInSource(pathInRepository, pathFactory)).toReturn(null);
-        stub(mockRule3.getPathInSource(pathInRepository, pathFactory)).toReturn(null);
+        when(mockRule1.getPathInSource(pathInRepository, pathFactory)).thenReturn(null);
+        when(mockRule2.getPathInSource(pathInRepository, pathFactory)).thenReturn(null);
+        when(mockRule3.getPathInSource(pathInRepository, pathFactory)).thenReturn(null);
         Set<Path> pathsInSource = projection.getPathsInSource(pathInRepository, pathFactory);
         assertThat(pathsInSource.isEmpty(), is(true));
     }
@@ -152,9 +152,9 @@ public class ProjectionTest {
     public void shouldGetPathInSourceGivenPathInRepositoryAndOneApplicableRules() {
         Path pathInRepository = pathFactory.create("/a/b/c");
         Path pathInSource = pathFactory.create("/d/e/f");
-        stub(mockRule1.getPathInSource(pathInRepository, pathFactory)).toReturn(pathInSource);
-        stub(mockRule2.getPathInSource(pathInRepository, pathFactory)).toReturn(null);
-        stub(mockRule3.getPathInSource(pathInRepository, pathFactory)).toReturn(null);
+        when(mockRule1.getPathInSource(pathInRepository, pathFactory)).thenReturn(pathInSource);
+        when(mockRule2.getPathInSource(pathInRepository, pathFactory)).thenReturn(null);
+        when(mockRule3.getPathInSource(pathInRepository, pathFactory)).thenReturn(null);
         Set<Path> pathsInSource = projection.getPathsInSource(pathInRepository, pathFactory);
         assertThat(pathsInSource, hasItems(pathInSource));
     }
@@ -165,9 +165,9 @@ public class ProjectionTest {
         Path pathInSource1 = pathFactory.create("/d/e/f");
         Path pathInSource2 = pathFactory.create("/d/e/g");
         Path pathInSource3 = pathFactory.create("/d/e/h");
-        stub(mockRule1.getPathInSource(pathInRepository, pathFactory)).toReturn(pathInSource1);
-        stub(mockRule2.getPathInSource(pathInRepository, pathFactory)).toReturn(pathInSource2);
-        stub(mockRule3.getPathInSource(pathInRepository, pathFactory)).toReturn(pathInSource3);
+        when(mockRule1.getPathInSource(pathInRepository, pathFactory)).thenReturn(pathInSource1);
+        when(mockRule2.getPathInSource(pathInRepository, pathFactory)).thenReturn(pathInSource2);
+        when(mockRule3.getPathInSource(pathInRepository, pathFactory)).thenReturn(pathInSource3);
         Set<Path> pathsInSource = projection.getPathsInSource(pathInRepository, pathFactory);
         assertThat(pathsInSource, hasItems(pathInSource1, pathInSource2, pathInSource3));
     }
@@ -177,9 +177,9 @@ public class ProjectionTest {
         Path pathInRepository = pathFactory.create("/a/b/c");
         Path pathInSource1 = pathFactory.create("/d/e/f");
         Path pathInSource23 = pathFactory.create("/d/e/g");
-        stub(mockRule1.getPathInSource(pathInRepository, pathFactory)).toReturn(pathInSource1);
-        stub(mockRule2.getPathInSource(pathInRepository, pathFactory)).toReturn(pathInSource23);
-        stub(mockRule3.getPathInSource(pathInRepository, pathFactory)).toReturn(pathInSource23);
+        when(mockRule1.getPathInSource(pathInRepository, pathFactory)).thenReturn(pathInSource1);
+        when(mockRule2.getPathInSource(pathInRepository, pathFactory)).thenReturn(pathInSource23);
+        when(mockRule3.getPathInSource(pathInRepository, pathFactory)).thenReturn(pathInSource23);
         Set<Path> pathsInSource = projection.getPathsInSource(pathInRepository, pathFactory);
         assertThat(pathsInSource, hasItems(pathInSource1, pathInSource23));
     }
@@ -199,9 +199,9 @@ public class ProjectionTest {
     @Test
     public void shouldGetNoPathsInRepositoryGivenPathInSourceAndNoApplicableRules() {
         Path pathInSource = pathFactory.create("/d/e/f");
-        stub(mockRule1.getPathInRepository(pathInSource, pathFactory)).toReturn(null);
-        stub(mockRule2.getPathInRepository(pathInSource, pathFactory)).toReturn(null);
-        stub(mockRule3.getPathInRepository(pathInSource, pathFactory)).toReturn(null);
+        when(mockRule1.getPathInRepository(pathInSource, pathFactory)).thenReturn(null);
+        when(mockRule2.getPathInRepository(pathInSource, pathFactory)).thenReturn(null);
+        when(mockRule3.getPathInRepository(pathInSource, pathFactory)).thenReturn(null);
         Set<Path> pathsInRepository = projection.getPathsInRepository(pathInSource, pathFactory);
         assertThat(pathsInRepository.isEmpty(), is(true));
     }
@@ -210,9 +210,9 @@ public class ProjectionTest {
     public void shouldGetPathInRepositoryGivenPathInSourceAndOneApplicableRules() {
         Path pathInRepository = pathFactory.create("/a/b/c");
         Path pathInSource = pathFactory.create("/d/e/f");
-        stub(mockRule1.getPathInRepository(pathInSource, pathFactory)).toReturn(pathInRepository);
-        stub(mockRule2.getPathInRepository(pathInSource, pathFactory)).toReturn(null);
-        stub(mockRule3.getPathInRepository(pathInSource, pathFactory)).toReturn(null);
+        when(mockRule1.getPathInRepository(pathInSource, pathFactory)).thenReturn(pathInRepository);
+        when(mockRule2.getPathInRepository(pathInSource, pathFactory)).thenReturn(null);
+        when(mockRule3.getPathInRepository(pathInSource, pathFactory)).thenReturn(null);
         Set<Path> pathsInRepository = projection.getPathsInRepository(pathInSource, pathFactory);
         assertThat(pathsInRepository, hasItems(pathInRepository));
     }
@@ -223,9 +223,9 @@ public class ProjectionTest {
         Path pathInRepository1 = pathFactory.create("/d/e/f");
         Path pathInRepository2 = pathFactory.create("/d/e/g");
         Path pathInRepository3 = pathFactory.create("/d/e/h");
-        stub(mockRule1.getPathInRepository(pathInSource, pathFactory)).toReturn(pathInRepository1);
-        stub(mockRule2.getPathInRepository(pathInSource, pathFactory)).toReturn(pathInRepository2);
-        stub(mockRule3.getPathInRepository(pathInSource, pathFactory)).toReturn(pathInRepository3);
+        when(mockRule1.getPathInRepository(pathInSource, pathFactory)).thenReturn(pathInRepository1);
+        when(mockRule2.getPathInRepository(pathInSource, pathFactory)).thenReturn(pathInRepository2);
+        when(mockRule3.getPathInRepository(pathInSource, pathFactory)).thenReturn(pathInRepository3);
         Set<Path> pathsInRepository = projection.getPathsInRepository(pathInSource, pathFactory);
         assertThat(pathsInRepository, hasItems(pathInRepository1, pathInRepository2, pathInRepository3));
     }
@@ -235,9 +235,9 @@ public class ProjectionTest {
         Path pathInSource = pathFactory.create("/a/b/c");
         Path pathInRepository1 = pathFactory.create("/d/e/f");
         Path pathInRepository23 = pathFactory.create("/d/e/g");
-        stub(mockRule1.getPathInRepository(pathInSource, pathFactory)).toReturn(pathInRepository1);
-        stub(mockRule2.getPathInRepository(pathInSource, pathFactory)).toReturn(pathInRepository23);
-        stub(mockRule3.getPathInRepository(pathInSource, pathFactory)).toReturn(pathInRepository23);
+        when(mockRule1.getPathInRepository(pathInSource, pathFactory)).thenReturn(pathInRepository1);
+        when(mockRule2.getPathInRepository(pathInSource, pathFactory)).thenReturn(pathInRepository23);
+        when(mockRule3.getPathInRepository(pathInSource, pathFactory)).thenReturn(pathInRepository23);
         Set<Path> pathsInRepository = projection.getPathsInRepository(pathInSource, pathFactory);
         assertThat(pathsInRepository, hasItems(pathInRepository1, pathInRepository23));
     }

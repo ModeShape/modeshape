@@ -31,7 +31,7 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import java.io.IOException;
@@ -64,7 +64,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 import org.xml.sax.SAXException;
 
 public class SearchableRepositorySourceTest {
@@ -99,8 +99,8 @@ public class SearchableRepositorySourceTest {
         searchProcessor = new MockSearchEngineProcessor("source1", context, searchRequests);
 
         // Stub the search engine methods ...
-        stub(searchEngine.createProcessor(context, null, true)).toReturn(searchProcessor);
-        stub(searchEngine.createProcessor(context, null, false)).toReturn(searchProcessor);
+        when(searchEngine.createProcessor(context, null, true)).thenReturn(searchProcessor);
+        when(searchEngine.createProcessor(context, null, false)).thenReturn(searchProcessor);
     }
 
     @After
@@ -125,7 +125,7 @@ public class SearchableRepositorySourceTest {
     @Test
     public void shouldReturnNameOfWrappedSource() {
         wrapped = mock(RepositorySource.class);
-        stub(wrapped.getName()).toReturn("name");
+        when(wrapped.getName()).thenReturn("name");
         searchable = newSynchronousSearchable();
         assertThat(searchable.getName(), is(wrapped.getName()));
         verify(wrapped, times(2)).getName();
@@ -134,7 +134,7 @@ public class SearchableRepositorySourceTest {
     @Test
     public void shouldReturnRetryLimitOfWrappedSource() {
         wrapped = mock(RepositorySource.class);
-        stub(wrapped.getRetryLimit()).toReturn(3);
+        when(wrapped.getRetryLimit()).thenReturn(3);
         searchable = newSynchronousSearchable();
         assertThat(searchable.getRetryLimit(), is(wrapped.getRetryLimit()));
         verify(wrapped, times(2)).getRetryLimit();

@@ -26,7 +26,7 @@ package org.modeshape.graph.connector.federation;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ExecutorService;
@@ -37,7 +37,7 @@ import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 /**
  * @author Randall Hauch
@@ -60,8 +60,8 @@ public class FederatedRepositoryTest {
         MockitoAnnotations.initMocks(this);
         name = "Repository";
         executor = Executors.newSingleThreadExecutor();
-        stub(workspace1.getName()).toReturn("workspace1");
-        stub(workspace2.getName()).toReturn("workspace2");
+        when(workspace1.getName()).thenReturn("workspace1");
+        when(workspace2.getName()).thenReturn("workspace2");
         Collection<FederatedWorkspace> configs = new ArrayList<FederatedWorkspace>();
         configs.add(workspace1);
         configs.add(workspace2);

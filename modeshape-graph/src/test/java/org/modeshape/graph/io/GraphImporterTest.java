@@ -27,7 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.io.File;
 import java.net.URI;
 import java.util.HashMap;
@@ -58,7 +58,7 @@ import org.modeshape.graph.request.VerifyWorkspaceRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 /**
  * @author Randall Hauch
@@ -89,7 +89,7 @@ public class GraphImporterTest {
         graph = Graph.create(sourceName, sources, context);
         importer = new GraphImporter(graph);
         connection = new MockRepositoryConnection();
-        stub(sources.createConnection(sourceName)).toReturn(connection);
+        when(sources.createConnection(sourceName)).thenReturn(connection);
     }
 
     @Test

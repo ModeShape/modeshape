@@ -27,7 +27,7 @@ package org.modeshape.sequencer.zip;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.io.InputStream;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
@@ -61,7 +61,7 @@ public class ZipSequencerTest {
         ZipSequencer zs = new ZipSequencer();
         SequencingOutputTestClass seqtest = new SequencingOutputTestClass();
         StreamSequencerContext context = mock(StreamSequencerContext.class);
-        stub(context.getValueFactories()).toReturn(new ExecutionContext().getValueFactories());
+        when(context.getValueFactories()).thenReturn(new ExecutionContext().getValueFactories());
 
         zs.sequence(is, seqtest, context);
 

@@ -25,7 +25,7 @@ package org.modeshape.jcr;
 
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -49,7 +49,7 @@ import org.modeshape.graph.query.parse.QueryParsers;
 import org.modeshape.jcr.nodetype.NodeTypeTemplate;
 import org.modeshape.jcr.xpath.XPathQueryParser;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -122,24 +122,24 @@ public abstract class AbstractSessionTest {
             }
         };
 
-        stub(repository.getExecutionContext()).toReturn(context);
-        stub(repository.getRepositorySourceName()).toReturn(repositorySourceName);
-        stub(repository.getPersistentRegistry()).toReturn(context.getNamespaceRegistry());
-        stub(repository.createWorkspaceGraph(anyString(), (ExecutionContext)anyObject())).toAnswer(new Answer<Graph>() {
+        when(repository.getExecutionContext()).thenReturn(context);
+        when(repository.getRepositorySourceName()).thenReturn(repositorySourceName);
+        when(repository.getPersistentRegistry()).thenReturn(context.getNamespaceRegistry());
+        when(repository.createWorkspaceGraph(anyString(), (ExecutionContext)anyObject())).thenAnswer(new Answer<Graph>() {
             public Graph answer( InvocationOnMock invocation ) throws Throwable {
                 return graph;
             }
         });
-        stub(repository.createSystemGraph(context)).toAnswer(new Answer<Graph>() {
+        when(repository.createSystemGraph(context)).thenAnswer(new Answer<Graph>() {
             public Graph answer( InvocationOnMock invocation ) throws Throwable {
                 return graph;
             }
         });
-        stub(this.repository.getRepositoryObservable()).toReturn(new MockObservable());
+        when(this.repository.getRepositoryObservable()).thenReturn(new MockObservable());
 
         // Stub out the repository, since we only need a few methods ...
         repoTypeManager = new RepositoryNodeTypeManager(repository, true);
-        stub(repository.getRepositoryTypeManager()).toReturn(repoTypeManager);
+        when(repository.getRepositoryTypeManager()).thenReturn(repoTypeManager);
 
         try {
             this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/modeshape/jcr/jsr_170_builtins.cnd",
@@ -158,18 +158,18 @@ public abstract class AbstractSessionTest {
         Path locksPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, ModeShapeLexicon.LOCKS);
         workspaceLockManager = new WorkspaceLockManager(context, repository, workspaceName, locksPath);
 
-        stub(repository.getLockManager(anyString())).toAnswer(new Answer<WorkspaceLockManager>() {
+        when(repository.getLockManager(anyString())).thenAnswer(new Answer<WorkspaceLockManager>() {
             public WorkspaceLockManager answer( InvocationOnMock invocation ) throws Throwable {
                 return workspaceLockManager;
             }
         });
 
         initializeOptions();
-        stub(repository.getOptions()).toReturn(options);
+        when(repository.getOptions()).thenReturn(options);
 
         // Set up the parsers for the repository (we only need the XPath parsers at the moment) ...
         parsers = new QueryParsers(new XPathQueryParser());
-        stub(repository.queryParsers()).toReturn(parsers);
+        when(repository.queryParsers()).thenReturn(parsers);
 
         // Set up the session attributes ...
         // Set up the session attributes ...

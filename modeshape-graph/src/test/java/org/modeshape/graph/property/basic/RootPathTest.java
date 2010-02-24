@@ -28,7 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -58,17 +58,17 @@ public class RootPathTest extends AbstractPathTest {
     @Test
     public void shouldReturnRootForLowestCommonAncestorWithAnyNodePath() {
         Path other = mock(Path.class);
-        stub(other.isRoot()).toReturn(true);
+        when(other.isRoot()).thenReturn(true);
         assertThat(root.getCommonAncestor(other).isRoot(), is(true));
 
-        stub(other.isRoot()).toReturn(false);
+        when(other.isRoot()).thenReturn(false);
         assertThat(root.getCommonAncestor(other).isRoot(), is(true));
     }
 
     @Test
     public void shouldConsiderRootToBeAncestorOfEveryNodeExceptRoot() {
         Path other = mock(Path.class);
-        stub(other.size()).toReturn(1);
+        when(other.size()).thenReturn(1);
         assertThat(root.isAncestorOf(other), is(true));
         assertThat(root.isAncestorOf(root), is(false));
     }
@@ -143,7 +143,7 @@ public class RootPathTest extends AbstractPathTest {
     public void shouldAlwaysReturnPathWithSingleSlashForGetString() {
         NamespaceRegistry registry = mock(NamespaceRegistry.class);
         TextEncoder encoder = mock(TextEncoder.class);
-        stub(encoder.encode("/")).toReturn("/");
+        when(encoder.encode("/")).thenReturn("/");
         assertThat(root.getString(), is("/"));
         assertThat(root.getString(registry), is("/"));
         assertThat(root.getString(registry, encoder), is("/"));
@@ -154,7 +154,7 @@ public class RootPathTest extends AbstractPathTest {
     @Test
     public void shouldAllowNullNamespaceRegistryWithNonNullTextEncodersSinceRegistryIsNotNeeded() {
         TextEncoder encoder = mock(TextEncoder.class);
-        stub(encoder.encode("/")).toReturn("/");
+        when(encoder.encode("/")).thenReturn("/");
         assertThat(root.getString((NamespaceRegistry)null, encoder, encoder), is("/"));
     }
 
@@ -218,9 +218,9 @@ public class RootPathTest extends AbstractPathTest {
         List<Path.Segment> segments = new ArrayList<Path.Segment>();
         segments.add(new BasicPathSegment(new BasicName("http://example.com", "a")));
         Path other = mock(Path.class);
-        stub(other.isAbsolute()).toReturn(false);
-        stub(other.getSegmentsList()).toReturn(segments);
-        stub(other.getNormalizedPath()).toReturn(other);
+        when(other.isAbsolute()).thenReturn(false);
+        when(other.getSegmentsList()).thenReturn(segments);
+        when(other.getNormalizedPath()).thenReturn(other);
         Path resolved = root.resolve(other);
         assertThat(resolved.getSegmentsList(), is(segments));
         assertThat(resolved.isAbsolute(), is(true));
@@ -229,14 +229,14 @@ public class RootPathTest extends AbstractPathTest {
     @Test( expected = InvalidPathException.class )
     public void shouldNotResolveRelativePathUsingAnAbsolutePath() {
         Path other = mock(Path.class);
-        stub(other.isAbsolute()).toReturn(true);
+        when(other.isAbsolute()).thenReturn(true);
         root.resolve(other);
     }
 
     @Test
     public void shouldAlwaysConsiderRootAsLessThanAnyPathOtherThanRoot() {
         Path other = mock(Path.class);
-        stub(other.isRoot()).toReturn(false);
+        when(other.isRoot()).thenReturn(false);
         assertThat(root.compareTo(other), is(-1));
         assertThat(root.equals(other), is(false));
     }
@@ -244,7 +244,7 @@ public class RootPathTest extends AbstractPathTest {
     @Test
     public void shouldAlwaysConsiderRootAsEqualToAnyOtherRoot() {
         Path other = mock(Path.class);
-        stub(other.isRoot()).toReturn(true);
+        when(other.isRoot()).thenReturn(true);
         assertThat(root.compareTo(other), is(0));
         assertThat(root.equals(other), is(true));
         assertThat(root.equals(root), is(true));

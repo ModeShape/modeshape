@@ -26,7 +26,7 @@ package org.modeshape.connector.meta.jdbc;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 import org.modeshape.graph.ExecutionContext;
@@ -37,7 +37,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 
 public class JdbcMetadataSourceTest {
 
@@ -50,7 +50,7 @@ public class JdbcMetadataSourceTest {
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        stub(repositoryContext.getExecutionContext()).toReturn(new ExecutionContext());
+        when(repositoryContext.getExecutionContext()).thenReturn(new ExecutionContext());
 
         // Set the connection properties using the environment defined in the POM files ...
         this.source = TestEnvironment.configureJdbcMetadataSource("Test Repository", this);

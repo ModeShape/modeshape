@@ -27,7 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
@@ -139,14 +139,14 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         Graph store2 = Graph.create(source2, context);
         store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
         JcrSession jcrSession2 = mock(JcrSession.class);
-        stub(jcrSession2.nodeTypeManager()).toReturn(nodeTypes);
+        when(jcrSession2.nodeTypeManager()).thenReturn(nodeTypes);
         SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
 
         Workspace workspace2 = mock(Workspace.class);
         Repository repository2 = mock(Repository.class);
-        stub(jcrSession2.getWorkspace()).toReturn(workspace2);
-        stub(jcrSession2.getRepository()).toReturn(repository2);
-        stub(workspace2.getName()).toReturn("workspace1");
+        when(jcrSession2.getWorkspace()).thenReturn(workspace2);
+        when(jcrSession2.getRepository()).thenReturn(repository2);
+        when(workspace2.getName()).thenReturn("workspace1");
 
         // Use the same id and location ...
         javax.jcr.Node prius2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));
@@ -166,14 +166,14 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         Graph store2 = Graph.create(source2, context);
         store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
         JcrSession jcrSession2 = mock(JcrSession.class);
-        stub(jcrSession2.nodeTypeManager()).toReturn(nodeTypes);
+        when(jcrSession2.nodeTypeManager()).thenReturn(nodeTypes);
         SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
 
         Workspace workspace2 = mock(Workspace.class);
         Repository repository2 = mock(Repository.class);
-        stub(jcrSession2.getWorkspace()).toReturn(workspace2);
-        stub(jcrSession2.getRepository()).toReturn(repository2);
-        stub(workspace2.getName()).toReturn("workspace2");
+        when(jcrSession2.getWorkspace()).thenReturn(workspace2);
+        when(jcrSession2.getRepository()).thenReturn(repository2);
+        when(workspace2.getName()).thenReturn("workspace2");
 
         // Use the same id and location; use 'Toyota Prius'
         // since the UUID is defined in 'cars.xml' and therefore will be the same
@@ -199,14 +199,14 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         Graph store2 = Graph.create(source2, context);
         store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
         JcrSession jcrSession2 = mock(JcrSession.class);
-        stub(jcrSession2.nodeTypeManager()).toReturn(nodeTypes);
+        when(jcrSession2.nodeTypeManager()).thenReturn(nodeTypes);
         SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
 
         Workspace workspace2 = mock(Workspace.class);
         Repository repository2 = mock(Repository.class);
-        stub(jcrSession2.getWorkspace()).toReturn(workspace2);
-        stub(jcrSession2.getRepository()).toReturn(repository2);
-        stub(workspace2.getName()).toReturn("workspace1");
+        when(jcrSession2.getWorkspace()).thenReturn(workspace2);
+        when(jcrSession2.getRepository()).thenReturn(repository2);
+        when(workspace2.getName()).thenReturn("workspace1");
 
         // Use the same id and location; use 'Nissan Altima'
         // since the UUIDs will be different (cars.xml doesn't define on this node) ...
@@ -232,13 +232,13 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         Graph store2 = Graph.create(source2, context);
         store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
         JcrSession jcrSession2 = mock(JcrSession.class);
-        stub(jcrSession2.nodeTypeManager()).toReturn(nodeTypes);
+        when(jcrSession2.nodeTypeManager()).thenReturn(nodeTypes);
         SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
 
         Workspace workspace2 = mock(Workspace.class);
-        stub(jcrSession2.getWorkspace()).toReturn(workspace2);
-        stub(jcrSession2.getRepository()).toReturn(repository);
-        stub(workspace2.getName()).toReturn("workspace1");
+        when(jcrSession2.getWorkspace()).thenReturn(workspace2);
+        when(jcrSession2.getRepository()).thenReturn(repository);
+        when(workspace2.getName()).thenReturn("workspace1");
 
         // Use the same id and location ...
         javax.jcr.Node prius2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));

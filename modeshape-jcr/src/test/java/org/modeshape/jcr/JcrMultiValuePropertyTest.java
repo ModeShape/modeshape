@@ -310,9 +310,9 @@ public class JcrMultiValuePropertyTest extends AbstractJcrTest {
     //
     // Object value = "value";
     // dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, value);
-    // stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-    // stub(definition.getRequiredType()).toReturn(PropertyType.STRING);
-    // stub(definition.isMultiple()).toReturn(true);
+    // when(propertyInfo.getProperty()).thenReturn(dnaProperty);
+    // when(definition.getRequiredType()).thenReturn(PropertyType.STRING);
+    // when(definition.isMultiple()).thenReturn(true);
     // prop = new JcrMultiValueProperty(cache, propertyId);
     // lengths = prop.getLengths();
     // assertThat(lengths, notNullValue());
@@ -322,9 +322,9 @@ public class JcrMultiValuePropertyTest extends AbstractJcrTest {
     // value = new Object();
     // long expectedLength = executionContext.getValueFactories().getBinaryFactory().create(value).getSize();
     // dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, value);
-    // stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-    // stub(definition.getRequiredType()).toReturn(PropertyType.STRING);
-    // stub(definition.isMultiple()).toReturn(true);
+    // when(propertyInfo.getProperty()).thenReturn(dnaProperty);
+    // when(definition.getRequiredType()).thenReturn(PropertyType.STRING);
+    // when(definition.isMultiple()).thenReturn(true);
     // prop = new JcrMultiValueProperty(cache, propertyId);
     // lengths = prop.getLengths();
     // assertThat(lengths, notNullValue());
@@ -333,9 +333,9 @@ public class JcrMultiValuePropertyTest extends AbstractJcrTest {
     //
     // String[] values = new String[] {"value1", "value2", "value 3 is longer"};
     // dnaProperty = executionContext.getPropertyFactory().create(JcrLexicon.MIMETYPE, (Object[])values);
-    // stub(propertyInfo.getProperty()).toReturn(dnaProperty);
-    // stub(definition.getRequiredType()).toReturn(PropertyType.STRING);
-    // stub(definition.isMultiple()).toReturn(true);
+    // when(propertyInfo.getProperty()).thenReturn(dnaProperty);
+    // when(definition.getRequiredType()).thenReturn(PropertyType.STRING);
+    // when(definition.isMultiple()).thenReturn(true);
     // prop = new JcrMultiValueProperty(cache, propertyId);
     // lengths = prop.getLengths();
     // assertThat(lengths, notNullValue());

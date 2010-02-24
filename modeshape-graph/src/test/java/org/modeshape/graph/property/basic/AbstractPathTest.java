@@ -29,7 +29,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -216,14 +216,14 @@ public abstract class AbstractPathTest {
     @Test( expected = InvalidPathException.class )
     public void shouldNotFindRelativePathToAnotherRelativePath() {
         Path other = mock(Path.class);
-        stub(other.isAbsolute()).toReturn(false);
+        when(other.isAbsolute()).thenReturn(false);
         path.relativeTo(other);
     }
 
     @Test
     public void shouldAlwaysConsiderPathEqualToItself() {
         Path other = mock(Path.class);
-        stub(other.isRoot()).toReturn(true);
+        when(other.isRoot()).thenReturn(true);
         assertThat(path.compareTo(path), is(0));
         assertThat(path.equals(path), is(true));
     }

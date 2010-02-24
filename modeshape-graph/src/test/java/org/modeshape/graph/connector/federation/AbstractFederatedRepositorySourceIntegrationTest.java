@@ -27,7 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,7 +55,7 @@ import org.modeshape.graph.property.Property;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
+import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -140,8 +140,8 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
 
         // Stub the RepositoryContext and RepositoryConnectionFactory instances ...
         configRepositoryConnection = configRepositorySource.getConnection();
-        stub(connectionFactory.createConnection(configurationSourceName)).toReturn(configRepositoryConnection);
-        stub(connectionFactory.createConnection(sourceName)).toAnswer(new Answer<RepositoryConnection>() {
+        when(connectionFactory.createConnection(configurationSourceName)).thenReturn(configRepositoryConnection);
+        when(connectionFactory.createConnection(sourceName)).thenAnswer(new Answer<RepositoryConnection>() {
             public RepositoryConnection answer( InvocationOnMock invocation ) throws Throwable {
                 return source.getConnection();
             }
@@ -216,7 +216,7 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
             sources.put(sourceName, source);
             final InMemoryRepositorySource newSource = source;
             // Stub the repository connection factory to return a new connection for this source ...
-            stub(connectionFactory.createConnection(sourceName)).toAnswer(new Answer<RepositoryConnection>() {
+            when(connectionFactory.createConnection(sourceName)).thenAnswer(new Answer<RepositoryConnection>() {
                 public RepositoryConnection answer( InvocationOnMock invocation ) throws Throwable {
                     return newSource.getConnection();
                 }
