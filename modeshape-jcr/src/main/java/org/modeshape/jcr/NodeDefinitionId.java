@@ -50,7 +50,7 @@ import org.modeshape.graph.property.ValueFormatException;
  * </p>
  */
 @Immutable
-public final class NodeDefinitionId implements Serializable {
+final class NodeDefinitionId implements Serializable {
 
     /**
      * Current version is {@value} .

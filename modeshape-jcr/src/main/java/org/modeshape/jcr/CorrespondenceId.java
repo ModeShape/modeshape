@@ -38,7 +38,7 @@ import org.modeshape.graph.property.basic.BasicPath;
  * </p>
  */
 @Immutable
-public class CorrespondenceId {
+class CorrespondenceId {
 
     private static final Path NO_PATH = BasicPath.SELF_PATH;
 

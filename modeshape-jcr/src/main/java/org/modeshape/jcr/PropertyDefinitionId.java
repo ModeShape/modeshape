@@ -52,7 +52,7 @@ import org.modeshape.graph.property.ValueFormatException;
  * </p>
  */
 @Immutable
-public final class PropertyDefinitionId implements Serializable {
+final class PropertyDefinitionId implements Serializable {
 
     /**
      * Current version is {@value} .

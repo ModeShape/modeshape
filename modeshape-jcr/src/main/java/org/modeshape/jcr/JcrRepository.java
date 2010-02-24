@@ -51,6 +51,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.query.Query;
+import javax.jcr.query.QueryManager;
 import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
@@ -322,6 +323,12 @@ public class JcrRepository implements Repository {
      */
     protected static final Map<Option, String> DEFAULT_OPTIONS;
 
+    /**
+     * The set of supported query language string constants.
+     * 
+     * @see QueryManager#getSupportedQueryLanguages()
+     * @see QueryManager#createQuery(String, String)
+     */
     public static final class QueryLanguage {
         /**
          * The standard JCR 1.0 XPath query language.
