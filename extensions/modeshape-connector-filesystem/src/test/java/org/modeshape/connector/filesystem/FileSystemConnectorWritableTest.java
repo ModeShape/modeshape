@@ -30,17 +30,17 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrMixLexicon;
 import org.modeshape.graph.JcrNtLexicon;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.test.AbstractConnectorTest;
 import org.modeshape.graph.request.InvalidRequestException;
-import org.junit.Test;
 
 public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
 
@@ -96,6 +96,18 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         FileUtil.delete(scratchDirectory);
 
         super.afterEach();
+    }
+
+    @Test
+    public void shouldBeAbleToCreateFileWithContentAndNotRequiringOrReplace() {
+        graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .and();
+
+        File newFile = new File(testWorkspaceRoot, "testFile");
+        assertContents(newFile, TEST_CONTENT);
     }
 
     @Test

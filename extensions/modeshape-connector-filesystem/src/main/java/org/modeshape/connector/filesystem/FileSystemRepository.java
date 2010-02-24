@@ -39,11 +39,11 @@ import java.util.Map;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.NodeConflictBehavior;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.path.AbstractWritablePathWorkspace;
@@ -71,8 +71,8 @@ import org.modeshape.graph.request.Request;
 /**
  * Implementation of {@code WritablePathRepository} that provides access to an underlying file system. This repository only
  * natively supports nodes of primary types {@link JcrNtLexicon#FOLDER nt:folder}, {@link JcrNtLexicon#FILE nt:file}, and
- * {@link ModeShapeLexicon#RESOURCE dna:resource}, although the {@link CustomPropertiesFactory} allows for the addition of mixin types
- * to any and all primary types.
+ * {@link ModeShapeLexicon#RESOURCE dna:resource}, although the {@link CustomPropertiesFactory} allows for the addition of mixin
+ * types to any and all primary types.
  */
 public class FileSystemRepository extends WritablePathRepository {
     private static final String DEFAULT_MIME_TYPE = "application/octet";
@@ -125,7 +125,6 @@ public class FileSystemRepository extends WritablePathRepository {
             doCreateWorkspace(context, defaultWorkspaceName);
         }
     }
-
 
     public WorkspaceCache getCache( String workspaceName ) {
         return source.getPathRepositoryCache().getCache(workspaceName);
@@ -281,32 +280,22 @@ public class FileSystemRepository extends WritablePathRepository {
                     throw new RepositorySourceException(getSourceName(), msg.text(parentPath, getName(), getSourceName()));
                 }
 
-                boolean skipWrite = false;
-
-                if (parentFile.exists()) {
-                    if (conflictBehavior.equals(NodeConflictBehavior.APPEND)) {
-                        I18n msg = FileSystemI18n.sameNameSiblingsAreNotAllowed;
-                        throw new InvalidRequestException(msg.text(getSourceName(), newName));
-                    } else if (conflictBehavior.equals(NodeConflictBehavior.DO_NOT_REPLACE)) {
-                        // The content node logically maps to the file contents. If there are file contents, don't replace them.
-                        FileInputStream checkForContents = null;
-                        try {
-                            checkForContents = new FileInputStream(parentFile);
-                            if (-1 != checkForContents.read()) skipWrite = true;
-
-                        } catch (IOException ignore) {
-
-                        } finally {
-                            try {
-                                if (checkForContents != null) checkForContents.close();
-                            } catch (Exception ignore) {
-                            }
-                        }
-                        skipWrite = true;
-                    }
+                boolean updateFileContent = true;
+                switch (conflictBehavior) {
+                    case APPEND:
+                    case REPLACE:
+                    case UPDATE:
+                        // When the "nt:file" parent node was created, it automatically creates the "jcr:content"
+                        // child node with empty content. Therefore, creating a new "jcr:content" node is
+                        // not technically possible (recall that same-name-siblings are not supported in general,
+                        // but certainly not for the "jcr:content" node). Therefore, we can treat all these
+                        // conflict behavior cases as a simple update to the existing "jcr:content" child node.
+                        break;
+                    case DO_NOT_REPLACE:
+                        updateFileContent = false;
                 }
 
-                if (!skipWrite) {
+                if (updateFileContent) {
                     // Copy over data into a temp file, then move it to the correct location
                     FileOutputStream fos = null;
                     try {
