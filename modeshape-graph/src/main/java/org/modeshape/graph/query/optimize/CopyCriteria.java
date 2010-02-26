@@ -35,6 +35,7 @@ import org.modeshape.graph.query.model.EquiJoinCondition;
 import org.modeshape.graph.query.model.JoinCondition;
 import org.modeshape.graph.query.model.PropertyExistence;
 import org.modeshape.graph.query.model.PropertyValue;
+import org.modeshape.graph.query.model.ReferenceValue;
 import org.modeshape.graph.query.model.SameNodeJoinCondition;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.model.Visitable;
@@ -216,6 +217,14 @@ public class CopyCriteria implements OptimizerRule {
             @Override
             public void visit( PropertyValue prop ) {
                 addColumnFor(prop.getSelectorName(), prop.getPropertyName());
+            }
+
+            @Override
+            public void visit( ReferenceValue ref ) {
+                String propertyName = ref.getPropertyName();
+                if (propertyName != null) {
+                    addColumnFor(ref.getSelectorName(), propertyName);
+                }
             }
         });
         return symbols;

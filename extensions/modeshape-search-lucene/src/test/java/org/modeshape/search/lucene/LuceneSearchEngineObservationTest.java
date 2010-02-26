@@ -35,6 +35,9 @@ import java.util.List;
 import java.util.Map;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Field;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.math.Duration;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.graph.ExecutionContext;
@@ -69,9 +72,6 @@ import org.modeshape.graph.request.AccessQueryRequest;
 import org.modeshape.graph.request.FullTextSearchRequest;
 import org.modeshape.graph.request.processor.RequestProcessor;
 import org.modeshape.graph.search.SearchEngineIndexer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import org.xml.sax.SAXException;
 
 /**
@@ -136,8 +136,8 @@ public class LuceneSearchEngineObservationTest {
 
         // Set up the provider and the search engine ...
         IndexRules.Builder rulesBuilder = IndexRules.createBuilder(LuceneSearchEngine.DEFAULT_RULES);
-        rulesBuilder.defaultTo(Field.Store.YES, Field.Index.NOT_ANALYZED);
-        rulesBuilder.stringField(name("model"), Field.Store.YES, Field.Index.ANALYZED);
+        rulesBuilder.defaultTo(Field.Store.YES, Field.Index.NOT_ANALYZED, false);
+        rulesBuilder.stringField(name("model"), Field.Store.YES, Field.Index.ANALYZED, false);
         rulesBuilder.integerField(name("year"), Field.Store.YES, Field.Index.NOT_ANALYZED, 1990, 2020);
         rulesBuilder.floatField(name("userRating"), Field.Store.YES, Field.Index.NOT_ANALYZED, 0.0f, 10.0f);
         rulesBuilder.integerField(name("mpgCity"), Field.Store.YES, Field.Index.NOT_ANALYZED, 0, 50);

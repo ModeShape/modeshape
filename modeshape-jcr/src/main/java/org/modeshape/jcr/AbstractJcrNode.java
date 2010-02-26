@@ -59,6 +59,8 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryResult;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
@@ -74,6 +76,8 @@ import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.ValueFactories;
+import org.modeshape.graph.query.QueryBuilder;
+import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.session.GraphSession.Node;
 import org.modeshape.graph.session.GraphSession.NodeId;
 import org.modeshape.graph.session.GraphSession.PropertyInfo;
@@ -468,22 +472,87 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     }
 
     /**
+     * Obtain an iterator over the nodes that reference this node.
+     * 
+     * @param maxNumberOfNodes the maximum number of nodes that should be returned, or {@link Integer#MAX_VALUE} (or a negative
+     *        value) for all nodes
+     * @return the iterator over the referencing nodes; never null
+     * @throws RepositoryException if an error occurs while obtaining the information
+     */
+    protected final NodeIterator referencingNodes( int maxNumberOfNodes ) throws RepositoryException {
+        if (!this.isReferenceable()) {
+            return new JcrEmptyNodeIterator();
+        }
+        if (maxNumberOfNodes < 0) maxNumberOfNodes = Integer.MAX_VALUE;
+
+        // Execute a query that will report all nodes referencing this node ...
+        String uuid = getUUID();
+        QueryBuilder builder = new QueryBuilder(context().getValueFactories().getTypeSystem());
+        QueryCommand query = builder.select("jcr:primaryType")
+                                    .fromAllNodesAs("allNodes")
+                                    .where()
+                                    .referenceValue("allNodes")
+                                    .isEqualTo(uuid)
+                                    .end()
+                                    .limit(maxNumberOfNodes)
+                                    .query();
+        Query jcrQuery = session().workspace().queryManager().createQuery(query);
+        QueryResult result = jcrQuery.execute();
+        return result.getNodes();
+    }
+
+    /**
+     * Determine whether there is at least one other node that has a reference to this node.
+     * 
+     * @return true if this node is referenced by at least one other node, or false if there are no references to this node
+     * @throws RepositoryException if an error occurs while obtaining the information
+     */
+    protected final boolean hasReferencingNodes() throws RepositoryException {
+        return referencingNodes(1).hasNext();
+    }
+
+    /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Node#getReferences()
      */
     public final PropertyIterator getReferences() throws RepositoryException {
-        if (true) throw new UnsupportedOperationException();
-        // This implementation is just wrong.
-        // Iterate through the properties to see which ones have a REFERENCE type ...
-        Collection<AbstractJcrProperty> properties = cache.findJcrPropertiesFor(nodeId, location.getPath());
-        Collection<AbstractJcrProperty> references = new LinkedList<AbstractJcrProperty>();
-        Iterator<AbstractJcrProperty> iter = properties.iterator();
-        while (iter.hasNext()) {
-            AbstractJcrProperty property = iter.next();
-            if (property.getType() == PropertyType.REFERENCE) references.add(property);
+        if (!this.isReferenceable()) {
+            // This node is not referenceable, so it cannot have any references to it ...
+            return new JcrEmptyPropertyIterator();
         }
+        NodeIterator iter = referencingNodes(Integer.MAX_VALUE);
+        if (!iter.hasNext()) {
+            return new JcrEmptyPropertyIterator();
+        }
+        String uuid = getUUID();
+        List<Property> references = new LinkedList<Property>();
+        while (iter.hasNext()) {
+            javax.jcr.Node node = iter.nextNode();
+            // Go through the properties and look for reference properties that have a value of this node's UUID ...
+            PropertyIterator propIter = node.getProperties();
+            while (propIter.hasNext()) {
+                Property prop = propIter.nextProperty();
+                // Look at the definition's required type ...
+                int propType = prop.getDefinition().getRequiredType();
+                if (propType == PropertyType.REFERENCE || propType == PropertyType.UNDEFINED || propType == PropertyType.STRING) {
+                    if (prop.getDefinition().isMultiple()) {
+                        for (Value value : prop.getValues()) {
+                            if (uuid.equals(value.getString())) {
+                                references.add(prop);
+                                break;
+                            }
+                        }
+                    } else {
+                        Value value = prop.getValue();
+                        if (uuid.equals(value.getString())) {
+                            references.add(prop);
+                        }
+                    }
+                }
+            }
+        }
+
         if (references.isEmpty()) return new JcrEmptyPropertyIterator();
         return new JcrPropertyIterator(references);
     }
@@ -702,8 +771,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * <b>ModeShape Implementation Notes</b>
      * </p>
      * <p>
-     * ModeShape imposes the following additional restrictions on the addition of mixin types in addition to the restrictions provided
-     * by the JCR 1.0 specification:
+     * ModeShape imposes the following additional restrictions on the addition of mixin types in addition to the restrictions
+     * provided by the JCR 1.0 specification:
      * <ol>
      * <li>No properties defined by the mixin type can have the same name as any property defined by the node's primary type or
      * any of its existing mixin types.</li>
@@ -843,9 +912,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * <b>ModeShape Implementation Notes</b>
      * </p>
      * <p>
-     * ModeShape allows the removal of a mixin type if and only if all of the node's existing child nodes and properties would still
-     * have a valid definition from the node's primary type or other mixin types. In practice, this means that either the node
-     * must have a residual definition compatible with any of the remaining child nodes or properties that currently use a
+     * ModeShape allows the removal of a mixin type if and only if all of the node's existing child nodes and properties would
+     * still have a valid definition from the node's primary type or other mixin types. In practice, this means that either the
+     * node must have a residual definition compatible with any of the remaining child nodes or properties that currently use a
      * definition from the to-be-removed mixin type or all of the child nodes and properties that use a definition from the
      * to-be-removed mixin type must be removed prior to calling this method.
      * </p>
@@ -1381,9 +1450,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         }
 
         WorkspaceLockManager.ModeShapeLock lock = session().workspace().lockManager().lock(session(),
-                                                                                     this.location,
-                                                                                     isDeep,
-                                                                                     isSessionScoped);
+                                                                                           this.location,
+                                                                                           isDeep,
+                                                                                           isSessionScoped);
 
         cache.session().addLockToken(lock.getLockToken());
         return lock.lockFor(cache);
@@ -1658,8 +1727,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (destChildRelPath != null) {
             Path destPath = pathFactory.create(destChildRelPath);
             if (destPath.isAbsolute() || destPath.size() != 1) {
-                throw new ItemNotFoundException(
-                                                JcrI18n.pathNotFound.text(destPath.getString(cache.context().getNamespaceRegistry()),
+                throw new ItemNotFoundException(JcrI18n.pathNotFound.text(destPath.getString(cache.context()
+                                                                                                  .getNamespaceRegistry()),
                                                                           cache.session().workspace().getName()));
             }
 
@@ -1779,7 +1848,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (obj instanceof AbstractJcrNode) {
             AbstractJcrNode that = (AbstractJcrNode)obj;
             if (this.cache != that.cache) return false;
-            return this.location.isSame(that.location);
+            return this.location.equals(that.location);
         }
         return false;
     }

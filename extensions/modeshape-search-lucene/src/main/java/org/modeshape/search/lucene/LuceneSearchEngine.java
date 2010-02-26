@@ -40,10 +40,10 @@ import org.modeshape.common.text.FilenameEncoder;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.UrlEncoder;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.property.Name;
@@ -73,9 +73,10 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
 
     /**
      * The default set of {@link IndexRules} used by {@link LuceneSearchEngine} instances when no rules are provided. These rules
-     * default to index and analyze all properties, and to index the {@link ModeShapeLexicon#UUID dna:uuid} and {@link JcrLexicon#UUID
-     * jcr:uuid} properties to be indexed and stored only (not analyzed and not included in full-text search. The rules also treat
-     * {@link JcrLexicon#CREATED jcr:created} and {@link JcrLexicon#LAST_MODIFIED jcr:lastModified} properties as dates.
+     * default to index and analyze all properties, and to index the {@link ModeShapeLexicon#UUID dna:uuid} and
+     * {@link JcrLexicon#UUID jcr:uuid} properties to be indexed and stored only (not analyzed and not included in full-text
+     * search. The rules also treat {@link JcrLexicon#CREATED jcr:created} and {@link JcrLexicon#LAST_MODIFIED jcr:lastModified}
+     * properties as dates.
      */
     public static final IndexRules DEFAULT_RULES;
 
@@ -86,10 +87,10 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
 
         IndexRules.Builder builder = IndexRules.createBuilder();
         // Configure the default behavior ...
-        builder.defaultTo(Field.Store.YES, Field.Index.ANALYZED);
+        builder.defaultTo(Field.Store.YES, Field.Index.ANALYZED, true);
         // Configure the UUID properties to be just indexed and stored (not analyzed, not included in full-text) ...
-        builder.stringField(JcrLexicon.UUID, Field.Store.YES, Field.Index.NOT_ANALYZED);
-        builder.stringField(ModeShapeLexicon.UUID, Field.Store.YES, Field.Index.NOT_ANALYZED);
+        builder.stringField(JcrLexicon.UUID, Field.Store.YES, Field.Index.NOT_ANALYZED, false);
+        builder.stringField(ModeShapeLexicon.UUID, Field.Store.YES, Field.Index.NOT_ANALYZED, false);
         // Configure the properties that we'll treat as dates ...
         builder.dateField(JcrLexicon.CREATED, Field.Store.YES, Field.Index.NOT_ANALYZED, earliestChangeDate);
         builder.dateField(JcrLexicon.LAST_MODIFIED, Field.Store.YES, Field.Index.NOT_ANALYZED, earliestChangeDate);

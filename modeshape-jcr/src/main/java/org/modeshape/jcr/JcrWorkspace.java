@@ -130,7 +130,7 @@ class JcrWorkspace implements Workspace {
      * Reference to the JCR query manager for this workspace.
      */
     private final JcrQueryManager queryManager;
-    
+
     /**
      * Reference to the JCR observation manager for this workspace.
      */
@@ -205,7 +205,11 @@ class JcrWorkspace implements Workspace {
     final JcrObservationManager observationManager() {
         return this.observationManager;
     }
-    
+
+    final JcrQueryManager queryManager() {
+        return this.queryManager;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -261,7 +265,7 @@ class JcrWorkspace implements Workspace {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see javax.jcr.Workspace#getObservationManager()
      */
     public final ObservationManager getObservationManager() {

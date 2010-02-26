@@ -33,6 +33,7 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.modeshape.graph.ExecutionContext;
@@ -103,6 +104,7 @@ class NodeTypeSchemata implements Schemata {
 
         // Create the "ALLNODES" table, which will contain all possible properties ...
         IndexRules.Builder indexRulesBuilder = IndexRules.createBuilder(LuceneSearchEngine.DEFAULT_RULES);
+        indexRulesBuilder.defaultTo(Field.Store.YES, Field.Index.ANALYZED, true);
         addAllNodesTable(builder, indexRulesBuilder, context);
 
         // Define a view for each node type ...
@@ -148,6 +150,12 @@ class NodeTypeSchemata implements Schemata {
                 builder.addTable(tableName, columnName);
                 first = false;
             }
+            boolean canBeReference = false;
+            switch (defn.getRequiredType()) {
+                case PropertyType.REFERENCE:
+                case PropertyType.UNDEFINED:
+                    canBeReference = true;
+            }
             String type = typeSystem.getDefaultType();
             if (defn.getRequiredType() != PropertyType.UNDEFINED) {
                 type = types.get(defn.getRequiredType());
@@ -164,7 +172,7 @@ class NodeTypeSchemata implements Schemata {
             builder.addColumn(tableName, columnName, type, fullTextSearchable);
 
             // And build an indexing rule for this type ...
-            if (indexRuleBuilder != null) addIndexRule(indexRuleBuilder, defn, type, typeSystem);
+            if (indexRuleBuilder != null) addIndexRule(indexRuleBuilder, defn, type, typeSystem, canBeReference);
         }
     }
 
@@ -175,16 +183,18 @@ class NodeTypeSchemata implements Schemata {
      * @param defn the property definition; never null
      * @param type the TypeSystem type, which may be a more general type than dictated by the definition, since multiple
      *        definitions with the same name require the index rule to use the common base type; never null
+     * @param canBeReference true if the property described the rule can hold reference values, or false otherwise
      * @param typeSystem the type system; never null
      */
     protected final void addIndexRule( IndexRules.Builder builder,
                                        JcrPropertyDefinition defn,
                                        String type,
-                                       TypeSystem typeSystem ) {
+                                       TypeSystem typeSystem,
+                                       boolean canBeReference ) {
         Store store = Store.YES;
         Index index = defn.isFullTextSearchable() ? Index.ANALYZED : Index.NO;
         if (typeSystem.getStringFactory().getTypeName().equals(type)) {
-            builder.stringField(defn.getInternalName(), store, index);
+            builder.stringField(defn.getInternalName(), store, index, canBeReference);
         } else if (typeSystem.getDateTimeFactory().getTypeName().equals(type)) {
             Long minimum = typeSystem.getLongFactory().create(defn.getMinimumValue());
             Long maximum = typeSystem.getLongFactory().create(defn.getMaximumValue());
@@ -202,9 +212,15 @@ class NodeTypeSchemata implements Schemata {
         } else if (typeSystem.getBinaryFactory().getTypeName().equals(type)) {
             store = Store.NO;
             builder.binaryField(defn.getInternalName(), store, index);
+        } else if (typeSystem.getReferenceFactory().getTypeName().equals(type)) {
+            store = Store.NO;
+            builder.referenceField(defn.getInternalName(), store, index);
+        } else if (typeSystem.getPathFactory().getTypeName().equals(type)) {
+            store = Store.NO;
+            builder.weakReferenceField(defn.getInternalName(), store, index);
         } else {
             // Everything else gets stored as a string ...
-            builder.stringField(defn.getInternalName(), store, index);
+            builder.stringField(defn.getInternalName(), store, index, canBeReference);
         }
 
     }

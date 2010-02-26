@@ -187,6 +187,11 @@ public class Visitors {
             }
 
             @Override
+            public void visit( ReferenceValue ref ) {
+                symbols.add(ref.getSelectorName());
+            }
+
+            @Override
             public void visit( SameNode node ) {
                 symbols.add(node.getSelectorName());
             }
@@ -451,6 +456,14 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Query)
          */
         public void visit( Query obj ) {
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.ReferenceValue)
+         */
+        public void visit( ReferenceValue obj ) {
         }
 
         /**
@@ -875,6 +888,16 @@ public class Visitors {
             enqueue(query.getColumns());
             enqueue(query.getConstraint());
             enqueue(query.getOrderings());
+            visitNext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.ReferenceValue)
+         */
+        public void visit( ReferenceValue referenceValue ) {
+            strategy.visit(referenceValue);
             visitNext();
         }
 
@@ -1356,6 +1379,18 @@ public class Visitors {
          */
         public void visit( PropertyValue value ) {
             append(value.getSelectorName()).append('.').append(value.getPropertyName());
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.ReferenceValue)
+         */
+        public void visit( ReferenceValue value ) {
+            append(value.getSelectorName());
+            if (value.getPropertyName() != null) {
+                append('.').append(value.getPropertyName());
+            }
         }
 
         /**

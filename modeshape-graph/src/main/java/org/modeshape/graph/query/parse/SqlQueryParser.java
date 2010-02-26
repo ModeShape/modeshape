@@ -76,6 +76,7 @@ import org.modeshape.graph.query.model.PropertyExistence;
 import org.modeshape.graph.query.model.PropertyValue;
 import org.modeshape.graph.query.model.Query;
 import org.modeshape.graph.query.model.QueryCommand;
+import org.modeshape.graph.query.model.ReferenceValue;
 import org.modeshape.graph.query.model.SameNode;
 import org.modeshape.graph.query.model.SameNodeJoinCondition;
 import org.modeshape.graph.query.model.Selector;
@@ -103,7 +104,12 @@ import org.modeshape.graph.query.model.TypeSystem.TypeFactory;
  * <li>Additional dynamic operands "<code>DEPTH([&lt;selectorName>])</code>" and "<code>PATH([&lt;selectorName>])</code>" that
  * enables placing constraints on the node depth and path, respectively, and which can be used in a manner similar to "
  * <code>NAME([&lt;selectorName>])</code>" and "<code>LOCALNAME([&lt;selectorName>])</code>. Note in each of these cases, the
- * selector name is optional if there is only one selector in the query. on the node depth</li>
+ * selector name is optional if there is only one selector in the query.</li>
+ * <li>Additional dynamic operand "<code>REFERENCE([&lt;selectorName>.]&lt;propertyName>])</code>" that
+ * enables placing constraints on one or all reference properties, and which can be used in a manner similar to "
+ * <code>PropertyValue([&lt;selectorName>.]&lt;propertyName>)</code>". Note in each of these cases, the
+ * selector name is optional if there is only one selector in the query, and that the property name can be excluded
+ * if the constraint should apply to all reference properties.</li>
  * <li>Support for the IN clause and NOT IN clause to more easily supply a list of valid discrete static operands: "
  * <code>&lt;dynamicOperand> [NOT] IN (&lt;staticOperand> {, &lt;staticOperand>})</code>"</li>
  * <li>Support for the BETWEEN clause: "<code>&lt;dynamicOperand> [NOT] BETWEEN &lt;lowerBoundStaticOperand> [EXCLUSIVE] AND
@@ -350,8 +356,8 @@ import org.modeshape.graph.query.model.TypeSystem.TypeFactory;
  * <h4>Dynamic operands</h4>
  * 
  * <pre>
- * DynamicOperand ::= PropertyValue | Length | NodeName | NodeLocalName | NodePath | NodeDepth | 
- *                    FullTextSearchScore | LowerCase | UpperCase | Arithmetic | 
+ * DynamicOperand ::= PropertyValue | ReferenceValue | Length | NodeName | NodeLocalName | NodePath | NodeDepth | 
+ *                    FullTextSearchScore | LowerCase | UpperCase | Arithmetic |
  *                    '(' DynamicOperand ')'
  * </pre>
  * <h5>Property value</h5>
@@ -359,6 +365,15 @@ import org.modeshape.graph.query.model.TypeSystem.TypeFactory;
  * PropertyValue ::= [selectorName'.'] propertyName
  *                    /* If only one selector exists in this query, explicit specification of the selectorName
  *                       preceding the propertyName is optional *&#47;
+ * </pre>
+ * <h5>Reference value</h5>
+ * <pre>
+ * ReferenceValue ::= 'REFERENCE(' selectorName '.' propertyName ')' |
+ *                    'REFERENCE(' selectorName ')' |
+ *                    'REFERENCE()' |
+ *                    /* If only one selector exists in this query, explicit specification of the selectorName
+ *                       preceding the propertyName is optional. Also, the property name may be excluded 
+ *                       if the constraint should apply to any reference property. *&#47;
  * </pre>
  * <h5>Property length</h5>
  * <pre>
@@ -458,7 +473,7 @@ public class SqlQueryParser implements QueryParser {
      */
     @Override
     public String toString() {
-        return LANGUAGE;
+        return getLanguage();
     }
 
     /**
@@ -1108,6 +1123,8 @@ public class SqlQueryParser implements QueryParser {
             }
             result = new NodePath(parseSelectorName(tokens));
             tokens.consume(")");
+        } else if (tokens.canConsume("REFERENCE", "(")) {
+            result = parseReferenceValue(tokens, typeSystem, source);
         } else {
             result = parsePropertyValue(tokens, typeSystem, source);
         }
@@ -1171,6 +1188,47 @@ public class SqlQueryParser implements QueryParser {
         }
         String msg = GraphI18n.mustBeScopedAtLineAndColumn.text(firstWord, pos.getLine(), pos.getColumn());
         throw new ParsingException(pos, msg);
+    }
+
+    protected ReferenceValue parseReferenceValue( TokenStream tokens,
+                                                  TypeSystem typeSystem,
+                                                  Source source ) {
+        Position pos = tokens.nextPosition();
+        SelectorName selectorName = null;
+        if (tokens.canConsume(')')) {
+            // There should be a single source ...
+            if (source instanceof Selector) {
+                selectorName = ((Selector)source).getAliasOrName();
+                return new ReferenceValue(selectorName);
+            }
+            String msg = GraphI18n.functionIsAmbiguous.text("REFERENCE()", pos.getLine(), pos.getColumn());
+            throw new ParsingException(pos, msg);
+        }
+        // Otherwise, there is at least one word inside the parentheses ...
+        String firstWord = removeBracketsAndQuotes(tokens.consume());
+        if (tokens.canConsume('.')) {
+            // We actually read the selector name, so now read the property name ...
+            selectorName = new SelectorName(firstWord);
+            String propertyName = parseName(tokens, typeSystem);
+            return new ReferenceValue(selectorName, propertyName);
+        }
+        tokens.consume(")");
+        // The name may be a selector name, or it may be a property name on the default selector.
+        // If there is just a single selector ...
+        if (source instanceof Selector) {
+            Selector selector = (Selector)source;
+            // and the selector name matches ...
+            selectorName = new SelectorName(firstWord);
+            if (selectorName.equals(selector.getName()) || (selector.hasAlias() && selectorName.equals(selector.getAlias()))) {
+                // This is a reference value with just the selector name ...
+                return new ReferenceValue(selectorName);
+            }
+            // Otherwise, the reference value is just the property name ...
+            return new ReferenceValue(selector.getAliasOrName(), firstWord);
+        }
+        // Otherwise, the first word is the name of a selector ...
+        selectorName = new SelectorName(firstWord);
+        return new ReferenceValue(selectorName);
     }
 
     protected Limit parseLimit( TokenStream tokens ) {

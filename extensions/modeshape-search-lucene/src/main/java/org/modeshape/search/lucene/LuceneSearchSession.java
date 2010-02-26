@@ -26,6 +26,8 @@ package org.modeshape.search.lucene;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -64,13 +66,16 @@ import org.apache.lucene.util.Version;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeIntLexicon;
 import org.modeshape.graph.ModeShapeLexicon;
+import org.modeshape.graph.ModeShapeIntLexicon.Namespace;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
+import org.modeshape.graph.property.basic.BasicName;
 import org.modeshape.graph.query.QueryResults.Columns;
 import org.modeshape.graph.query.QueryResults.Statistics;
 import org.modeshape.graph.query.model.Length;
@@ -80,6 +85,7 @@ import org.modeshape.graph.query.model.NodeName;
 import org.modeshape.graph.query.model.NodePath;
 import org.modeshape.graph.query.model.Operator;
 import org.modeshape.graph.query.model.PropertyValue;
+import org.modeshape.graph.query.model.ReferenceValue;
 import org.modeshape.search.lucene.AbstractLuceneSearchEngine.TupleCollector;
 import org.modeshape.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession;
 import org.modeshape.search.lucene.IndexRules.FieldType;
@@ -98,6 +104,16 @@ import org.modeshape.search.lucene.query.NotQuery;
  */
 @NotThreadSafe
 public class LuceneSearchSession implements WorkspaceSession {
+
+    protected static final Set<Name> NON_SEARCHABLE_NAMES = Collections.unmodifiableSet(new HashSet<Name>(
+                                                                                                          Arrays.asList(JcrLexicon.UUID,
+                                                                                                                        ModeShapeLexicon.UUID,
+                                                                                                                        JcrLexicon.PRIMARY_TYPE,
+                                                                                                                        JcrLexicon.MIXIN_TYPES,
+                                                                                                                        ModeShapeIntLexicon.NODE_DEFINITON,
+                                                                                                                        new BasicName(
+                                                                                                                                      Namespace.URI,
+                                                                                                                                      "multiValuedProperties"))));
 
     /**
      * An immutable {@link FieldSelector} instance that accesses the UUID field.
@@ -462,6 +478,28 @@ public class LuceneSearchSession implements WorkspaceSession {
                 // TODO : add to full-text search ...
                 continue;
             }
+            if (type == FieldType.WEAK_REFERENCE) {
+                ValueFactory<Path> pathFactory = processor.valueFactories.getPathFactory();
+                for (Object value : property) {
+                    if (value == null) continue;
+                    // Add a separate field for each property value ...
+                    String valueStr = processor.stringFactory.create(pathFactory.create(value));
+                    doc.add(new Field(nameString, valueStr, rule.getStoreOption(), Field.Index.NOT_ANALYZED));
+                }
+                continue;
+            }
+            if (type == FieldType.REFERENCE) {
+                for (Object value : property) {
+                    if (value == null) continue;
+                    // Obtain the string value of the reference (i.e., should be the string of the UUID) ...
+                    stringValue = processor.stringFactory.create(value);
+                    // Add a separate field for each property value in exact form (not analyzed) ...
+                    doc.add(new Field(nameString, stringValue, rule.getStoreOption(), Field.Index.NOT_ANALYZED));
+                    // Add a value to the common reference value ...
+                    doc.add(new Field(ContentIndex.REFERENCES, stringValue, Field.Store.NO, Field.Index.NOT_ANALYZED));
+                }
+                continue;
+            }
             assert type == FieldType.STRING;
             for (Object value : property) {
                 if (value == null) continue;
@@ -469,7 +507,21 @@ public class LuceneSearchSession implements WorkspaceSession {
                 // Add a separate field for each property value in exact form (not analyzed) ...
                 doc.add(new Field(nameString, stringValue, rule.getStoreOption(), Field.Index.NOT_ANALYZED));
 
-                if (rule.getIndexOption() != Field.Index.NO) {
+                boolean treatedAsReference = false;
+                if (rule.canBeReference()) {
+                    if (stringValue.length() == 36 && stringValue.charAt(8) == '-') {
+                        // The value looks like a string representation of a UUID ...
+                        try {
+                            UUID.fromString(stringValue);
+                            // Add a value to the common reference value ...
+                            treatedAsReference = true;
+                            doc.add(new Field(ContentIndex.REFERENCES, stringValue, Field.Store.YES, Field.Index.NOT_ANALYZED));
+                        } catch (IllegalArgumentException e) {
+                            // Must not conform to the UUID format
+                        }
+                    }
+                }
+                if (!treatedAsReference && rule.getIndexOption() != Field.Index.NO && !NON_SEARCHABLE_NAMES.contains(name)) {
                     // This field is to be full-text searchable ...
                     fullTextSearchValue.append(' ').append(stringValue);
 
@@ -647,12 +699,14 @@ public class LuceneSearchSession implements WorkspaceSession {
                                 boolean caseSensitive ) {
         ValueFactory<String> stringFactory = processor.stringFactory;
         String field = stringFactory.create(propertyValue.getPropertyName());
-        Name fieldName = processor.nameFactory.create(propertyValue.getPropertyName());
+        Name fieldName = processor.nameFactory.create(field);
         ValueFactories factories = processor.valueFactories;
         IndexRules.Rule rule = workspace.rules.getRule(fieldName);
         if (rule == null || rule.isSkipped()) return new MatchNoneQuery();
         FieldType type = rule.getType();
         switch (type) {
+            case REFERENCE:
+            case WEAK_REFERENCE:
             case STRING:
                 String stringValue = stringFactory.create(value);
                 if (value instanceof Path) {
@@ -878,6 +932,39 @@ public class LuceneSearchSession implements WorkspaceSession {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession#findNodesWith(org.modeshape.graph.query.model.ReferenceValue,
+     *      org.modeshape.graph.query.model.Operator, java.lang.Object)
+     */
+    @Override
+    public Query findNodesWith( ReferenceValue referenceValue,
+                                Operator operator,
+                                Object value ) {
+        String field = referenceValue.getPropertyName();
+        if (field == null) field = LuceneSearchWorkspace.ContentIndex.REFERENCES;
+        ValueFactories factories = processor.valueFactories;
+        String stringValue = processor.stringFactory.create(value);
+        switch (operator) {
+            case EQUAL_TO:
+                return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue, field, factories, true);
+            case NOT_EQUAL_TO:
+                return new NotQuery(CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue, field, factories, true));
+            case GREATER_THAN:
+                return CompareStringQuery.createQueryForNodesWithFieldGreaterThan(stringValue, field, factories, true);
+            case GREATER_THAN_OR_EQUAL_TO:
+                return CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(stringValue, field, factories, true);
+            case LESS_THAN:
+                return CompareStringQuery.createQueryForNodesWithFieldLessThan(stringValue, field, factories, true);
+            case LESS_THAN_OR_EQUAL_TO:
+                return CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(stringValue, field, factories, true);
+            case LIKE:
+                return findNodesLike(field, stringValue, false);
+        }
+        return null;
+    }
+
     public Query findNodesWithNumericRange( PropertyValue propertyValue,
                                             Object lowerValue,
                                             Object upperValue,
@@ -931,6 +1018,8 @@ public class LuceneSearchSession implements WorkspaceSession {
                 upperInt = factories.getBooleanFactory().create(upperValue).booleanValue() ? 1 : 0;
                 return NumericRangeQuery.newIntRange(field, lowerInt, upperInt, includesLower, includesUpper);
             case STRING:
+            case REFERENCE:
+            case WEAK_REFERENCE:
             case BINARY:
                 assert false;
         }

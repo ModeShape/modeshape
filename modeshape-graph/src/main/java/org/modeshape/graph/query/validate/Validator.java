@@ -50,6 +50,7 @@ import org.modeshape.graph.query.model.NodePath;
 import org.modeshape.graph.query.model.PropertyExistence;
 import org.modeshape.graph.query.model.PropertyValue;
 import org.modeshape.graph.query.model.Query;
+import org.modeshape.graph.query.model.ReferenceValue;
 import org.modeshape.graph.query.model.SameNode;
 import org.modeshape.graph.query.model.SameNodeJoinCondition;
 import org.modeshape.graph.query.model.SelectorName;
@@ -341,6 +342,21 @@ public class Validator extends AbstractVisitor {
     @Override
     public void visit( PropertyValue obj ) {
         verify(obj.getSelectorName(), obj.getPropertyName(), this.validateColumnExistence);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.Visitors.AbstractVisitor#visit(org.modeshape.graph.query.model.ReferenceValue)
+     */
+    @Override
+    public void visit( ReferenceValue obj ) {
+        String propName = obj.getPropertyName();
+        if (propName != null) {
+            verify(obj.getSelectorName(), propName, this.validateColumnExistence);
+        } else {
+            verify(obj.getSelectorName());
+        }
     }
 
     /**

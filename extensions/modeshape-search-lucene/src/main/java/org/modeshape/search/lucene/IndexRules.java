@@ -48,7 +48,9 @@ public class IndexRules {
         BOOLEAN,
         LONG,
         DATE,
-        BINARY;
+        BINARY,
+        REFERENCE,
+        WEAK_REFERENCE;
     }
 
     /**
@@ -60,6 +62,8 @@ public class IndexRules {
     public static interface Rule {
 
         boolean isSkipped();
+
+        boolean canBeReference();
 
         FieldType getType();
 
@@ -101,6 +105,16 @@ public class IndexRules {
         /**
          * {@inheritDoc}
          * 
+         * @see org.modeshape.search.lucene.IndexRules.Rule#canBeReference()
+         */
+        @Override
+        public boolean canBeReference() {
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see Rule#getIndexOption()
          */
         public Index getIndexOption() {
@@ -119,16 +133,19 @@ public class IndexRules {
 
     @Immutable
     protected static class TypedRule implements Rule {
+        protected final boolean canBeReference;
         protected final FieldType type;
         protected final Field.Store store;
         protected final Field.Index index;
 
         protected TypedRule( FieldType type,
                              Field.Store store,
-                             Field.Index index ) {
+                             Field.Index index,
+                             boolean canBeReference ) {
             this.type = type;
             this.index = index;
             this.store = store;
+            this.canBeReference = canBeReference;
             assert this.type != null;
             assert this.index != null;
             assert this.store != null;
@@ -150,6 +167,16 @@ public class IndexRules {
          */
         public boolean isSkipped() {
             return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.search.lucene.IndexRules.Rule#canBeReference()
+         */
+        @Override
+        public boolean canBeReference() {
+            return canBeReference;
         }
 
         /**
@@ -191,7 +218,7 @@ public class IndexRules {
                                     Field.Index index,
                                     T minValue,
                                     T maxValue ) {
-            super(type, store, index);
+            super(type, store, index, false);
             this.minValue = minValue;
             this.maxValue = maxValue;
             assert this.minValue != null;
@@ -304,13 +331,15 @@ public class IndexRules {
          * 
          * @param store the storage setting, or null if the field should be {@link Store#YES stored}
          * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @param canBeReference true if this field can contain references; or false if it cannot
          * @return this builder for convenience and method chaining; never null
          */
         public Builder defaultTo( Field.Store store,
-                                  Field.Index index ) {
+                                  Field.Index index,
+                                  boolean canBeReference ) {
             if (store == null) store = Field.Store.YES;
             if (index == null) index = Field.Index.NOT_ANALYZED;
-            defaultRule = new TypedRule(FieldType.STRING, store, index);
+            defaultRule = new TypedRule(FieldType.STRING, store, index, canBeReference);
             return this;
         }
 
@@ -320,14 +349,16 @@ public class IndexRules {
          * @param name the name of the field
          * @param store the storage setting, or null if the field should be {@link Store#YES stored}
          * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @param canBeReference true if this field can contain references; or false if it cannot
          * @return this builder for convenience and method chaining; never null
          */
         public Builder stringField( Name name,
                                     Field.Store store,
-                                    Field.Index index ) {
+                                    Field.Index index,
+                                    boolean canBeReference ) {
             if (store == null) store = Field.Store.YES;
             if (index == null) index = Field.Index.NOT_ANALYZED;
-            Rule rule = new TypedRule(FieldType.STRING, store, index);
+            Rule rule = new TypedRule(FieldType.STRING, store, index, canBeReference);
             rulesByName.put(name, rule);
             return this;
         }
@@ -345,7 +376,43 @@ public class IndexRules {
                                     Field.Index index ) {
             if (store == null) store = Field.Store.YES;
             if (index == null) index = Field.Index.NOT_ANALYZED;
-            Rule rule = new TypedRule(FieldType.BINARY, store, index);
+            Rule rule = new TypedRule(FieldType.BINARY, store, index, false);
+            rulesByName.put(name, rule);
+            return this;
+        }
+
+        /**
+         * Define a reference-based field in the indexes. This method will overwrite any existing definition in this builder.
+         * 
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @return this builder for convenience and method chaining; never null
+         */
+        public Builder referenceField( Name name,
+                                       Field.Store store,
+                                       Field.Index index ) {
+            if (store == null) store = Field.Store.YES;
+            if (index == null) index = Field.Index.NOT_ANALYZED;
+            Rule rule = new TypedRule(FieldType.REFERENCE, store, index, true);
+            rulesByName.put(name, rule);
+            return this;
+        }
+
+        /**
+         * Define a weak-reference-based field in the indexes. This method will overwrite any existing definition in this builder.
+         * 
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @return this builder for convenience and method chaining; never null
+         */
+        public Builder weakReferenceField( Name name,
+                                           Field.Store store,
+                                           Field.Index index ) {
+            if (store == null) store = Field.Store.YES;
+            if (index == null) index = Field.Index.NOT_ANALYZED;
+            Rule rule = new TypedRule(FieldType.WEAK_REFERENCE, store, index, false);
             rulesByName.put(name, rule);
             return this;
         }

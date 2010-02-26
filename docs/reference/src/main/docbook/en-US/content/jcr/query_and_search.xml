@@ -535,6 +535,17 @@ ORDER BY nodeSet1.title,
         </listitem>
         <listitem>
 	        <para>
+						Additional dynamic operand "<code>REFERENCE([&lt;selectorName>.]&lt;propertyName>)</code>" and
+						"<code>REFERENCE([&lt;selectorName>])</code>" that
+						enables placing constraints on one or any of the reference properties, respectively, and which can be used in a manner similar to "
+						<code>PropertyValue([&lt;selectorName>.]&lt;propertyName>)</code>". Note in each of these cases, the
+						selector name is optional if there is only one selector in the query, and that the property name can be excluded
+						if the constraint should apply to all reference properties.
+						For detail, see the <link linkend="jcr-sql2-dynamic-operands">grammar for dynamic operands</link>.
+	        </para>
+        </listitem>
+        <listitem>
+	        <para>
 						Support for the <code>IN</code> and <code>NOT IN</code> clauses to more easily and concisely supply multiple
 						of discrete static operands.
 						For example, "<code>WHERE ... [my:type].[prop1] IN (3,5,7,10,11,50) ...</code>".
@@ -871,13 +882,20 @@ bindVariableName ::= /* A string that conforms to the JCR Name syntax, though th
 				<title>Dynamic Operands</title>
 <programlisting><![CDATA[
 	
-DynamicOperand ::= PropertyValue | Length | NodeName | NodeLocalName | NodePath | NodeDepth | 
+DynamicOperand ::= PropertyValue | ReferenceValue | Length | NodeName | NodeLocalName | NodePath | NodeDepth | 
                    FullTextSearchScore | LowerCase | UpperCase | Arithmetic | 
                    '(' DynamicOperand ')'
 
 PropertyValue ::= [selectorName'.'] propertyName
                    /* If only one selector exists in this query, explicit specification of the selectorName
                       preceding the propertyName is optional */
+
+ReferenceValue ::= 'REFERENCE(' selectorName '.' propertyName ')' |
+                   'REFERENCE(' selectorName ')' |
+                   'REFERENCE()' |
+                   /* If only one selector exists in this query, explicit specification of the selectorName
+                      preceding the propertyName is optional. Also, the property name may be excluded 
+                      if the constraint should apply to any reference property. *&#47;
 
 Length ::= 'LENGTH(' PropertyValue ')'
 

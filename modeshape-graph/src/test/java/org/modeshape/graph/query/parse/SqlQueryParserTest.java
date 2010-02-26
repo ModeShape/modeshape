@@ -31,6 +31,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.text.TokenStream;
@@ -65,6 +67,7 @@ import org.modeshape.graph.query.model.Order;
 import org.modeshape.graph.query.model.Ordering;
 import org.modeshape.graph.query.model.PropertyExistence;
 import org.modeshape.graph.query.model.PropertyValue;
+import org.modeshape.graph.query.model.ReferenceValue;
 import org.modeshape.graph.query.model.SameNode;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.model.Source;
@@ -74,8 +77,6 @@ import org.modeshape.graph.query.model.UpperCase;
 import org.modeshape.graph.query.model.FullTextSearch.Conjunction;
 import org.modeshape.graph.query.model.FullTextSearch.Disjunction;
 import org.modeshape.graph.query.model.FullTextSearch.Term;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 
@@ -1665,6 +1666,90 @@ public class SqlQueryParserTest {
     }
 
     // ----------------------------------------------------------------------------------------------------------------
+    // parseDynamicOperand - ReferenceValue
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldParseDynamicOperandFromStringContainingReferenceValueOfSelector() {
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("REFERENCE(tableA)"), typeSystem, mock(Source.class));
+        assertThat(operand, is(instanceOf(ReferenceValue.class)));
+        ReferenceValue value = (ReferenceValue)operand;
+        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.getPropertyName(), is(nullValue()));
+    }
+
+    @Test
+    public void shouldParseDynamicOperandFromStringContainingReferenceValueWithNoSelectorOnlyIfThereIsOneSelectorAsSource() {
+        Source source = new NamedSelector(selectorName("tableA"));
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("REFERENCE()"), typeSystem, source);
+        assertThat(operand, is(instanceOf(ReferenceValue.class)));
+        ReferenceValue value = (ReferenceValue)operand;
+        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.getPropertyName(), is(nullValue()));
+    }
+
+    @Test
+    public void shouldParseDynamicOperandFromStringContainingReferenceValueWithWithOnlyPropertyNameIfThereIsOneSelectorAsSource() {
+        Source source = new NamedSelector(selectorName("tableA"));
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("REFERENCE(property) other"), typeSystem, source);
+        assertThat(operand, is(instanceOf(ReferenceValue.class)));
+        ReferenceValue value = (ReferenceValue)operand;
+        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.getPropertyName(), is("property"));
+    }
+
+    @Test
+    public void shouldParseDynamicOperandFromStringContainingReferenceValueWithWithSelectorNameAndPropertyNameIfThereIsOneSelectorAsSource() {
+        Source source = new NamedSelector(selectorName("tableA"));
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("REFERENCE(tableA.property) other"), typeSystem, source);
+        assertThat(operand, is(instanceOf(ReferenceValue.class)));
+        ReferenceValue value = (ReferenceValue)operand;
+        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.getPropertyName(), is("property"));
+    }
+
+    @Test
+    public void shouldParseDynamicOperandFromStringContainingReferenceValueWithWithOnlySelectorNameMatchingThatOfOneSelectorAsSource() {
+        Source source = new NamedSelector(selectorName("tableA"));
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("REFERENCE(tableA) other"), typeSystem, source);
+        assertThat(operand, is(instanceOf(ReferenceValue.class)));
+        ReferenceValue value = (ReferenceValue)operand;
+        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.getPropertyName(), is(nullValue()));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingReferenceValueWithNoSelectorIfTheSourceIsNotASelector() {
+        parser.parseDynamicOperand(tokens("REFERENCE()"), typeSystem, mock(Source.class));
+    }
+
+    @Test
+    public void shouldParseDynamicOperandFromStringContainingReferenceValueWithWithSelectorNameAndProperty() {
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("REFERENCE(tableA.property) other"),
+                                                            typeSystem,
+                                                            mock(Source.class));
+        assertThat(operand, is(instanceOf(ReferenceValue.class)));
+        ReferenceValue value = (ReferenceValue)operand;
+        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.getPropertyName(), is("property"));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingReferenceValueWithoutClosingParenthesis() {
+        parser.parseDynamicOperand(tokens("REFERENCE(tableA other"), typeSystem, mock(Source.class));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingReferenceValueWithoutSelectorOrPropertyIfTheSourceIsNotASelector() {
+        parser.parseDynamicOperand(tokens("REFERENCE() other"), typeSystem, mock(Source.class));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseDynamicOperandFromStringContainingReferenceValueWithoutOpeningParenthesis() {
+        parser.parseDynamicOperand(tokens("Reference  tableA other"), typeSystem, mock(Source.class));
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
     // parsePropertyValue
     // ----------------------------------------------------------------------------------------------------------------
 
@@ -1705,6 +1790,75 @@ public class SqlQueryParserTest {
     @Test( expected = ParsingException.class )
     public void shouldFailToParsePropertyValueFromStringWithOnlySelectorNameAndPeriod() {
         parser.parsePropertyValue(tokens("tableA. "), typeSystem, mock(Join.class));
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // parseReferenceValue
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldParseReferenceValueFromStringWithUnquotedSelectorNameAndUnquotedPropertyName() {
+        ReferenceValue value = parser.parseReferenceValue(tokens("tableA.property"), typeSystem, mock(Join.class));
+        assertThat(value.getPropertyName(), is("property"));
+        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+
+        Source source = new NamedSelector(selectorName("tableA"));
+        value = parser.parseReferenceValue(tokens("tableA.property"), typeSystem, source);
+        assertThat(value.getPropertyName(), is("property"));
+        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+    }
+
+    @Test
+    public void shouldParseReferenceValueFromStringWithQuotedSelectorNameAndUnquotedPropertyName() {
+        ReferenceValue value = parser.parseReferenceValue(tokens("[mode:tableA].property"), typeSystem, mock(Join.class));
+        assertThat(value.getPropertyName(), is("property"));
+        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
+
+        Source source = new NamedSelector(selectorName("mode:tableA"));
+        value = parser.parseReferenceValue(tokens("[mode:tableA].property"), typeSystem, source);
+        assertThat(value.getPropertyName(), is("property"));
+        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
+    }
+
+    @Test
+    public void shouldParseReferenceValueFromStringWithQuotedSelectorNameAndQuotedPropertyName() {
+        ReferenceValue value = parser.parseReferenceValue(tokens("[mode:tableA].[mode:property]"), typeSystem, mock(Join.class));
+        assertThat(value.getPropertyName(), is("mode:property"));
+        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
+
+        Source source = new NamedSelector(selectorName("mode:tableA"));
+        value = parser.parseReferenceValue(tokens("[mode:tableA].[mode:property]"), typeSystem, source);
+        assertThat(value.getPropertyName(), is("mode:property"));
+        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
+    }
+
+    @Test
+    public void shouldParseReferenceValueFromStringWithOnlyPropertyNameIfSourceIsSelector() {
+        Source source = new NamedSelector(selectorName("tableA"));
+        ReferenceValue value = parser.parseReferenceValue(tokens("property)"), typeSystem, source);
+        assertThat(value.getPropertyName(), is("property"));
+        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+    }
+
+    @Test
+    public void shouldParseReferenceValueFromStringWithMatchingSelectorNameIfSourceIsSelector() {
+        Source source = new NamedSelector(selectorName("tableA"));
+        ReferenceValue value = parser.parseReferenceValue(tokens("tableA)"), typeSystem, source);
+        assertThat(value.getPropertyName(), is(nullValue()));
+        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+    }
+
+    @Test
+    public void shouldParseReferenceValueFromStringWithOnlySelectorNameIfSourceIsNotSelector() {
+        Source source = mock(Join.class);
+        ReferenceValue value = parser.parseReferenceValue(tokens("tableA)"), typeSystem, source);
+        assertThat(value.getPropertyName(), is(nullValue()));
+        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailToParseReferenceValueFromStringWithOnlySelectorNameAndPeriod() {
+        parser.parseReferenceValue(tokens("tableA. "), typeSystem, mock(Join.class));
     }
 
     // ----------------------------------------------------------------------------------------------------------------

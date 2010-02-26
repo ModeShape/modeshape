@@ -42,6 +42,7 @@ import org.modeshape.graph.query.model.NodeLocalName;
 import org.modeshape.graph.query.model.NodeName;
 import org.modeshape.graph.query.model.NodePath;
 import org.modeshape.graph.query.model.PropertyValue;
+import org.modeshape.graph.query.model.ReferenceValue;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.model.UpperCase;
 import org.modeshape.graph.query.model.TypeSystem.TypeFactory;
@@ -160,6 +161,26 @@ public abstract class ProcessingComponent {
             final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
             // Find the expected property type of the value ...
             Table table = schemata.getTable(propValue.getSelectorName());
+            Column schemaColumn = table.getColumn(propertyName);
+            final String expectedType = schemaColumn.getPropertyType();
+            final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
+            return new DynamicOperation() {
+                public String getExpectedType() {
+                    return expectedType;
+                }
+
+                public Object evaluate( Object[] tuple ) {
+                    return typeFactory.create(tuple[index]);
+                }
+            };
+        }
+        if (operand instanceof ReferenceValue) {
+            ReferenceValue refValue = (ReferenceValue)operand;
+            String propertyName = refValue.getPropertyName();
+            String selectorName = refValue.getSelectorName().getName();
+            final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
+            // Find the expected property type of the value ...
+            Table table = schemata.getTable(refValue.getSelectorName());
             Column schemaColumn = table.getColumn(propertyName);
             final String expectedType = schemaColumn.getPropertyType();
             final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);

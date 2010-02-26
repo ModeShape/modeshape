@@ -355,7 +355,7 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
             return false;
         }
         if (this.hasIdProperties()) {
-            if (that.hasIdProperties()) return this.getIdProperties().containsAll(that.getIdProperties());
+            if (that.hasIdProperties()) return this.getIdProperties().equals(that.getIdProperties());
             return false;
         }
         return (!that.hasIdProperties());

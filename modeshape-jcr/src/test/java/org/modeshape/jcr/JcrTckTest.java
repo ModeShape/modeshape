@@ -41,6 +41,7 @@ import org.apache.jackrabbit.test.api.NodeTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsModifiedTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsNewTest;
 import org.apache.jackrabbit.test.api.PropertyTest;
+import org.apache.jackrabbit.test.api.ReferencesTest;
 import org.apache.jackrabbit.test.api.RepositoryLoginTest;
 import org.apache.jackrabbit.test.api.SerializationTest;
 import org.apache.jackrabbit.test.api.SessionTest;
@@ -206,7 +207,7 @@ public class JcrTckTest {
             // level 2 tests
             addTestSuite(AddNodeTest.class);
             addTestSuite(NamespaceRegistryTest.class);
-            // addTestSuite(ReferencesTest.class);
+            addTestSuite(ReferencesTest.class);
             addTestSuite(SessionTest.class);
             // addTestSuite(SessionUUIDTest.class);
             addTestSuite(NodeTest.class);

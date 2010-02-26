@@ -94,7 +94,6 @@ import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
 import org.modeshape.graph.query.parse.QueryParsers;
-import org.modeshape.graph.query.parse.SqlQueryParser;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.jcr.RepositoryQueryManager.PushDown;
 import org.modeshape.jcr.xpath.XPathQueryParser;
@@ -334,10 +333,18 @@ public class JcrRepository implements Repository {
          * The standard JCR 1.0 XPath query language.
          */
         public static final String XPATH = Query.XPATH;
+
         /**
          * The SQL dialect that is based upon an enhanced version of the JCR 2.0 SQL query language.
          */
-        public static final String SQL = SqlQueryParser.LANGUAGE;
+        public static final String JCR_SQL2 = JcrSql2QueryParser.LANGUAGE;
+        /**
+         * The SQL dialect that is based upon an enhanced version of the JCR 2.0 SQL query language.
+         * 
+         * @deprecated use {@link #JCR_SQL2} instead
+         */
+        @Deprecated
+        public static final String SQL = JCR_SQL2;
         /**
          * The full-text search language defined as part of the abstract query model, in Section 6.7.19 of the JCR 2.0
          * specification.
@@ -511,7 +518,7 @@ public class JcrRepository implements Repository {
         }
 
         // Set up the query parsers, which we have to have even though queries might be disabled ...
-        this.queryParsers = new QueryParsers(new SqlQueryParser(), new XPathQueryParser(), new FullTextSearchParser());
+        this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(), new FullTextSearchParser());
         assert this.queryParsers.getParserFor(Query.XPATH) != null;
 
         this.systemWorkspaceName = systemWorkspaceName;
@@ -604,7 +611,8 @@ public class JcrRepository implements Repository {
                 boolean updateIndexesSynchronously = Boolean.valueOf(this.options.get(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY));
                 this.queryManager = new RepositoryQueryManager.SelfContained(executionContext, this.sourceName,
                                                                              connectionFactory, repositoryObservable,
-                                                                             indexDirectory, updateIndexesSynchronously);
+                                                                             repositoryTypeManager, indexDirectory,
+                                                                             updateIndexesSynchronously);
             }
         } else {
             this.queryManager = new RepositoryQueryManager.Disabled(this.sourceName);

@@ -138,7 +138,7 @@ public class JcrQueryManagerTest {
 
             // Prime creating a first XPath query and SQL query ...
             session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
-            session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", JcrRepository.QueryLanguage.SQL);
+            session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", JcrRepository.QueryLanguage.JCR_SQL2);
         } finally {
             session.logout();
         }
@@ -245,7 +245,7 @@ public class JcrQueryManagerTest {
 
     @Test
     public void shouldBeAbleToCreateAndExecuteSqlQuery() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", QueryLanguage.SQL);
+        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", QueryLanguage.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));

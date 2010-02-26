@@ -93,6 +93,13 @@ public interface TypeSystem {
     TypeFactory<?> getPathFactory();
 
     /**
+     * Get the type factory for references objects.
+     * 
+     * @return the reference factory, or null if this type system doesn't support reference objects
+     */
+    TypeFactory<?> getReferenceFactory();
+
+    /**
      * Get the type factory for binary objects.
      * 
      * @return the binary factory, or null if this type system doesn't support binary objects

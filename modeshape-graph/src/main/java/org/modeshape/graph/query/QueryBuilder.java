@@ -77,6 +77,7 @@ import org.modeshape.graph.query.model.PropertyExistence;
 import org.modeshape.graph.query.model.PropertyValue;
 import org.modeshape.graph.query.model.Query;
 import org.modeshape.graph.query.model.QueryCommand;
+import org.modeshape.graph.query.model.ReferenceValue;
 import org.modeshape.graph.query.model.SameNode;
 import org.modeshape.graph.query.model.SameNodeJoinCondition;
 import org.modeshape.graph.query.model.Selector;
@@ -764,6 +765,28 @@ public class QueryBuilder {
                                              String property );
 
         /**
+         * Constrains the nodes in the the supplied table such that they must have a matching value for any of the node's
+         * reference properties.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the order-by specification; never null
+         */
+        public OrderByBuilder referenceValue( String table );
+
+        /**
+         * Constrains the nodes in the the supplied table such that they must have a matching value for the named property.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @param property the name of the reference property; may be null if the constraint applies to all/any reference
+         *        properties on the node
+         * @return the interface for completing the order-by specification; never null
+         */
+        public OrderByBuilder referenceValue( String table,
+                                              String property );
+
+        /**
          * Adds to the order-by clause by using the full-text search score for the given table.
          * 
          * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
@@ -893,6 +916,25 @@ public class QueryBuilder {
         public OrderByBuilder propertyValue( String table,
                                              String property ) {
             return addOrdering(new PropertyValue(selector(table), property));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.query.QueryBuilder.OrderByOperandBuilder#referenceValue(java.lang.String)
+         */
+        public OrderByBuilder referenceValue( String table ) {
+            return addOrdering(new ReferenceValue(selector(table)));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.query.QueryBuilder.OrderByOperandBuilder#referenceValue(java.lang.String, java.lang.String)
+         */
+        public OrderByBuilder referenceValue( String table,
+                                              String property ) {
+            return addOrdering(new ReferenceValue(selector(table), property));
         }
 
         /**
@@ -1135,6 +1177,28 @@ public class QueryBuilder {
          */
         public ComparisonBuilder propertyValue( String table,
                                                 String property );
+
+        /**
+         * Constrains the nodes in the the supplied table such that they must have a matching value for any of the node's
+         * reference properties.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the value portion of the criteria specification; never null
+         */
+        public ComparisonBuilder referenceValue( String table );
+
+        /**
+         * Constrains the nodes in the the supplied table such that they must have a matching value for the named property.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @param property the name of the reference property; may be null if the constraint applies to all/any reference
+         *        properties on the node
+         * @return the interface for completing the value portion of the criteria specification; never null
+         */
+        public ComparisonBuilder referenceValue( String table,
+                                                 String property );
 
         /**
          * Constrains the nodes in the the supplied table such that they must satisfy the supplied full-text search on the nodes'
@@ -1412,6 +1476,25 @@ public class QueryBuilder {
         public ComparisonBuilder propertyValue( String table,
                                                 String property ) {
             return comparisonBuilder(new PropertyValue(selector(table), property));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.query.QueryBuilder.DynamicOperandBuilder#referenceValue(java.lang.String)
+         */
+        public ComparisonBuilder referenceValue( String table ) {
+            return comparisonBuilder(new ReferenceValue(selector(table)));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.query.QueryBuilder.DynamicOperandBuilder#referenceValue(java.lang.String, java.lang.String)
+         */
+        public ComparisonBuilder referenceValue( String table,
+                                                 String property ) {
+            return comparisonBuilder(new ReferenceValue(selector(table), property));
         }
 
         /**
@@ -2483,6 +2566,32 @@ public class QueryBuilder {
         public ComparisonBuilder propertyValue( String table,
                                                 String property ) {
             return comparisonBuilder(new PropertyValue(selector(table), property));
+        }
+
+        /**
+         * Constrains the nodes in the the supplied table such that they must have a matching value for any of the node's
+         * reference properties.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the value portion of the criteria specification; never null
+         */
+        public ComparisonBuilder referenceValue( String table ) {
+            return comparisonBuilder(new ReferenceValue(selector(table)));
+        }
+
+        /**
+         * Constrains the nodes in the the supplied table such that they must have a matching value for the named property.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @param property the name of the reference property; may be null if the constraint applies to all/any reference
+         *        properties on the node
+         * @return the interface for completing the value portion of the criteria specification; never null
+         */
+        public ComparisonBuilder referenceValue( String table,
+                                                 String property ) {
+            return comparisonBuilder(new ReferenceValue(selector(table), property));
         }
 
         /**

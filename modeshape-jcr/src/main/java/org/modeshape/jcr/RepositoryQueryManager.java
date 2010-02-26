@@ -227,6 +227,7 @@ abstract class RepositoryQueryManager {
                        String nameOfSourceToBeSearchable,
                        RepositoryConnectionFactory connectionFactory,
                        Observable observable,
+                       RepositoryNodeTypeManager nodeTypeManager,
                        String indexDirectory,
                        boolean updateIndexesSynchronously ) throws RepositoryException {
             super(nameOfSourceToBeSearchable);
@@ -272,7 +273,7 @@ abstract class RepositoryQueryManager {
             assert configuration != null;
 
             // Set up the indexing rules ...
-            IndexRules indexRules = null;
+            IndexRules indexRules = nodeTypeManager.getRepositorySchemata().getIndexRules();
 
             // Set up the search engine ...
             org.apache.lucene.analysis.Analyzer analyzer = new SnowballAnalyzer(Version.LUCENE_30, "English");

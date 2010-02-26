@@ -60,9 +60,11 @@ import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.QueryResults.Columns;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.TypeSystem;
+import org.modeshape.graph.query.model.Visitors;
 import org.modeshape.graph.query.parse.QueryParser;
 import org.modeshape.graph.query.plan.PlanHints;
 import org.modeshape.graph.query.validate.Schemata;
+import org.modeshape.jcr.JcrRepository.QueryLanguage;
 
 /**
  * Place-holder implementation of {@link QueryManager} interface.
@@ -96,7 +98,7 @@ class JcrQueryManager implements QueryManager {
      * string from among those returned by {@code QueryManager#getSupportedQueryLanguages()}.
      * 
      * @param expression the original query expression as supplied by the client; may not be null
-     * @param language the language obtained from the {@link QueryParser}; may not be null
+     * @param language the language in which the expression is represented; may not be null
      * @param storedAtPath the path at which this query was stored, or null if this is not a stored query
      * @return query the JCR query object; never null
      * @throws InvalidQueryException if expression is invalid or language is unsupported
@@ -138,6 +140,34 @@ class JcrQueryManager implements QueryManager {
             // The query was parsed, but there is an error in the query
             String reason = e.getMessage();
             throw new InvalidQueryException(JcrI18n.queryInLanguageIsNotValid.text(language, expression, reason));
+        }
+    }
+
+    /**
+     * Creates a new JCR {@link Query} by specifying the query expression itself, the language in which the query is stated, the
+     * {@link QueryCommand} representation. This method is more efficient than {@link #createQuery(String, String, Path)} if the
+     * QueryCommand is created directly.
+     * 
+     * @param command the query command; may not be null
+     * @return query the JCR query object; never null
+     * @throws InvalidQueryException if expression is invalid or language is unsupported
+     */
+    public Query createQuery( QueryCommand command ) throws InvalidQueryException {
+        if (command == null) {
+            // The query is not well-formed and cannot be parsed ...
+            throw new InvalidQueryException(JcrI18n.queryInLanguageIsNotValid.text(QueryLanguage.JCR_SQL2, command));
+        }
+        // Produce the expression string ...
+        String expression = Visitors.readable(command);
+        try {
+            // Parsing must be done now ...
+            PlanHints hints = new PlanHints();
+            hints.showPlan = true;
+            return new JcrQuery(this.session, expression, QueryLanguage.JCR_SQL2, command, hints, null);
+        } catch (org.modeshape.graph.query.parse.InvalidQueryException e) {
+            // The query was parsed, but there is an error in the query
+            String reason = e.getMessage();
+            throw new InvalidQueryException(JcrI18n.queryInLanguageIsNotValid.text(QueryLanguage.JCR_SQL2, expression, reason));
         }
     }
 

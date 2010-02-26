@@ -67,6 +67,7 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
         public static final String LOCATION_ID_PROPERTIES = "::idp";
         public static final String DEPTH = "::dep";
         public static final String FULL_TEXT = "::fts";
+        public static final String REFERENCES = "::ref";
     }
 
     private final String workspaceName;

@@ -51,6 +51,7 @@ public class ValueTypeSystem implements TypeSystem {
     private final TypeFactory<Double> doubleFactory;
     private final TypeFactory<?> dateFactory;
     private final TypeFactory<?> pathFactory;
+    private final TypeFactory<?> referenceFactory;
     private final TypeFactory<?> binaryFactory;
 
     /**
@@ -103,6 +104,7 @@ public class ValueTypeSystem implements TypeSystem {
             }
         };
         this.pathFactory = new Factory<Path>(valueFactories.getPathFactory());
+        this.referenceFactory = new Factory<Reference>(valueFactories.getReferenceFactory());
         this.binaryFactory = new Factory<Binary>(valueFactories.getBinaryFactory()) {
             /**
              * {@inheritDoc}
@@ -233,6 +235,15 @@ public class ValueTypeSystem implements TypeSystem {
      */
     public TypeFactory<?> getPathFactory() {
         return pathFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.TypeSystem#getReferenceFactory()
+     */
+    public TypeFactory<?> getReferenceFactory() {
+        return referenceFactory;
     }
 
     /**

@@ -86,6 +86,8 @@ public interface Visitor {
 
     void visit( Query obj );
 
+    void visit( ReferenceValue obj );
+
     void visit( SameNode obj );
 
     void visit( SameNodeJoinCondition obj );

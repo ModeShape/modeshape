@@ -91,6 +91,7 @@ import org.modeshape.graph.query.model.Operator;
 import org.modeshape.graph.query.model.Or;
 import org.modeshape.graph.query.model.PropertyExistence;
 import org.modeshape.graph.query.model.PropertyValue;
+import org.modeshape.graph.query.model.ReferenceValue;
 import org.modeshape.graph.query.model.SameNode;
 import org.modeshape.graph.query.model.SetCriteria;
 import org.modeshape.graph.query.model.StaticOperand;
@@ -603,6 +604,8 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                     return null;
                 } else if (left instanceof PropertyValue) {
                     return session.findNodesWith((PropertyValue)left, operator, value, caseSensitive);
+                } else if (left instanceof ReferenceValue) {
+                    return session.findNodesWith((ReferenceValue)left, operator, value);
                 } else if (left instanceof Length) {
                     return session.findNodesWith((Length)left, operator, right);
                 } else if (left instanceof LowerCase) {
@@ -850,6 +853,10 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                              Operator operator,
                              Object value,
                              boolean caseSensitive ) throws IOException;
+
+        Query findNodesWith( ReferenceValue referenceValue,
+                             Operator operator,
+                             Object value ) throws IOException;
 
         Query findNodesWithNumericRange( PropertyValue propertyValue,
                                          Object lowerValue,

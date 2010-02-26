@@ -60,6 +60,7 @@ import org.modeshape.graph.query.model.Or;
 import org.modeshape.graph.query.model.Ordering;
 import org.modeshape.graph.query.model.PropertyExistence;
 import org.modeshape.graph.query.model.PropertyValue;
+import org.modeshape.graph.query.model.ReferenceValue;
 import org.modeshape.graph.query.model.SameNode;
 import org.modeshape.graph.query.model.SameNodeJoinCondition;
 import org.modeshape.graph.query.model.SelectorName;
@@ -194,6 +195,19 @@ public class PlanUtil {
         @Override
         public void visit( PropertyValue value ) {
             requireColumn(value.getSelectorName(), value.getPropertyName());
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.query.model.Visitors.AbstractVisitor#visit(org.modeshape.graph.query.model.ReferenceValue)
+         */
+        @Override
+        public void visit( ReferenceValue value ) {
+            String propertyName = value.getPropertyName();
+            if (propertyName != null) {
+                requireColumn(value.getSelectorName(), propertyName);
+            }
         }
 
         /**
@@ -385,6 +399,12 @@ public class PlanUtil {
             SelectorName replacement = rewrittenSelectors.get(value.getSelectorName());
             if (replacement == null) return operand;
             return new PropertyValue(replacement, value.getPropertyName());
+        }
+        if (operand instanceof ReferenceValue) {
+            ReferenceValue value = (ReferenceValue)operand;
+            SelectorName replacement = rewrittenSelectors.get(value.getSelectorName());
+            if (replacement == null) return operand;
+            return new ReferenceValue(replacement, value.getPropertyName());
         }
         if (operand instanceof NodeDepth) {
             NodeDepth depth = (NodeDepth)operand;
@@ -778,6 +798,14 @@ public class PlanUtil {
             if (sourceColumn == null) return value;
             node.addSelector(sourceColumn.getSelectorName());
             return new PropertyValue(sourceColumn.getSelectorName(), sourceColumn.getPropertyName());
+        }
+        if (operand instanceof ReferenceValue) {
+            ReferenceValue value = (ReferenceValue)operand;
+            if (!mapping.getOriginalName().equals(value.getSelectorName())) return value;
+            Column sourceColumn = mapping.getMappedColumn(value.getPropertyName());
+            if (sourceColumn == null) return value;
+            node.addSelector(sourceColumn.getSelectorName());
+            return new ReferenceValue(sourceColumn.getSelectorName(), sourceColumn.getPropertyName());
         }
         if (operand instanceof NodeDepth) {
             NodeDepth depth = (NodeDepth)operand;
