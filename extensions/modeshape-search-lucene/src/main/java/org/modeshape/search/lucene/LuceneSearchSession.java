@@ -521,7 +521,8 @@ public class LuceneSearchSession implements WorkspaceSession {
                         }
                     }
                 }
-                if (!treatedAsReference && rule.getIndexOption() != Field.Index.NO && !NON_SEARCHABLE_NAMES.contains(name)) {
+                if (!treatedAsReference && rule.getIndexOption() != Field.Index.NO && rule.isFullTextSearchable()
+                    && !NON_SEARCHABLE_NAMES.contains(name)) {
                     // This field is to be full-text searchable ...
                     fullTextSearchValue.append(' ').append(stringValue);
 

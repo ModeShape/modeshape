@@ -60,6 +60,9 @@ import com.google.common.collect.Multimap;
 @Immutable
 class NodeTypeSchemata implements Schemata {
 
+    protected static final boolean DEFAULT_CAN_CONTAIN_REFERENCES = true;
+    protected static final boolean DEFAULT_FULL_TEXT_SEARCHABLE = true;
+
     private final Schemata schemata;
     private final Map<Integer, String> types;
     private final Map<String, String> prefixesByUris = new HashMap<String, String>();
@@ -104,7 +107,10 @@ class NodeTypeSchemata implements Schemata {
 
         // Create the "ALLNODES" table, which will contain all possible properties ...
         IndexRules.Builder indexRulesBuilder = IndexRules.createBuilder(LuceneSearchEngine.DEFAULT_RULES);
-        indexRulesBuilder.defaultTo(Field.Store.YES, Field.Index.ANALYZED, true);
+        indexRulesBuilder.defaultTo(Field.Store.YES,
+                                    Field.Index.ANALYZED,
+                                    DEFAULT_CAN_CONTAIN_REFERENCES,
+                                    DEFAULT_FULL_TEXT_SEARCHABLE);
         addAllNodesTable(builder, indexRulesBuilder, context);
 
         // Define a view for each node type ...
@@ -194,7 +200,7 @@ class NodeTypeSchemata implements Schemata {
         Store store = Store.YES;
         Index index = defn.isFullTextSearchable() ? Index.ANALYZED : Index.NO;
         if (typeSystem.getStringFactory().getTypeName().equals(type)) {
-            builder.stringField(defn.getInternalName(), store, index, canBeReference);
+            builder.stringField(defn.getInternalName(), store, index, canBeReference, defn.isFullTextSearchable());
         } else if (typeSystem.getDateTimeFactory().getTypeName().equals(type)) {
             Long minimum = typeSystem.getLongFactory().create(defn.getMinimumValue());
             Long maximum = typeSystem.getLongFactory().create(defn.getMaximumValue());
@@ -211,16 +217,16 @@ class NodeTypeSchemata implements Schemata {
             builder.booleanField(defn.getInternalName(), store, index);
         } else if (typeSystem.getBinaryFactory().getTypeName().equals(type)) {
             store = Store.NO;
-            builder.binaryField(defn.getInternalName(), store, index);
+            builder.binaryField(defn.getInternalName(), store, index, defn.isFullTextSearchable());
         } else if (typeSystem.getReferenceFactory().getTypeName().equals(type)) {
             store = Store.NO;
             builder.referenceField(defn.getInternalName(), store, index);
         } else if (typeSystem.getPathFactory().getTypeName().equals(type)) {
             store = Store.NO;
-            builder.weakReferenceField(defn.getInternalName(), store, index);
+            builder.weakReferenceField(defn.getInternalName(), store, index, defn.isFullTextSearchable());
         } else {
             // Everything else gets stored as a string ...
-            builder.stringField(defn.getInternalName(), store, index, canBeReference);
+            builder.stringField(defn.getInternalName(), store, index, canBeReference, defn.isFullTextSearchable());
         }
 
     }

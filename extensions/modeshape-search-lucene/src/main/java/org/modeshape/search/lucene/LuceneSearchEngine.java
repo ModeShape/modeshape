@@ -87,10 +87,10 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
 
         IndexRules.Builder builder = IndexRules.createBuilder();
         // Configure the default behavior ...
-        builder.defaultTo(Field.Store.YES, Field.Index.ANALYZED, true);
+        builder.defaultTo(Field.Store.YES, Field.Index.ANALYZED, true, true);
         // Configure the UUID properties to be just indexed and stored (not analyzed, not included in full-text) ...
-        builder.stringField(JcrLexicon.UUID, Field.Store.YES, Field.Index.NOT_ANALYZED, false);
-        builder.stringField(ModeShapeLexicon.UUID, Field.Store.YES, Field.Index.NOT_ANALYZED, false);
+        builder.stringField(JcrLexicon.UUID, Field.Store.YES, Field.Index.NOT_ANALYZED, false, false);
+        builder.stringField(ModeShapeLexicon.UUID, Field.Store.YES, Field.Index.NOT_ANALYZED, false, false);
         // Configure the properties that we'll treat as dates ...
         builder.dateField(JcrLexicon.CREATED, Field.Store.YES, Field.Index.NOT_ANALYZED, earliestChangeDate);
         builder.dateField(JcrLexicon.LAST_MODIFIED, Field.Store.YES, Field.Index.NOT_ANALYZED, earliestChangeDate);

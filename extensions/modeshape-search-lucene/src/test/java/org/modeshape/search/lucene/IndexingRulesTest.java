@@ -52,7 +52,7 @@ public class IndexingRulesTest {
 
     @Test
     public void shouldBuildValidRulesFromBuilderAfterJustSettingDefaultRules() {
-        builder.defaultTo(Field.Store.NO, Field.Index.ANALYZED_NO_NORMS, false);
+        builder.defaultTo(Field.Store.NO, Field.Index.ANALYZED_NO_NORMS, false, false);
         rules = builder.build();
         assertThat(rules.getRule(null).getIndexOption(), is(Field.Index.ANALYZED_NO_NORMS));
         assertThat(rules.getRule(null).getStoreOption(), is(Field.Store.NO));

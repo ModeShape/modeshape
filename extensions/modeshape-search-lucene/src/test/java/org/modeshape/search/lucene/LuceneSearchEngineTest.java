@@ -115,8 +115,8 @@ public class LuceneSearchEngineTest {
 
         // Set up the provider and the search engine ...
         IndexRules.Builder rulesBuilder = IndexRules.createBuilder(LuceneSearchEngine.DEFAULT_RULES);
-        rulesBuilder.defaultTo(Field.Store.YES, Field.Index.NOT_ANALYZED, false);
-        rulesBuilder.stringField(name("model"), Field.Store.YES, Field.Index.ANALYZED, false);
+        rulesBuilder.defaultTo(Field.Store.YES, Field.Index.NOT_ANALYZED, false, true);
+        rulesBuilder.stringField(name("model"), Field.Store.YES, Field.Index.ANALYZED, false, true);
         rulesBuilder.integerField(name("year"), Field.Store.YES, Field.Index.NOT_ANALYZED);
         rulesBuilder.floatField(name("userRating"), Field.Store.YES, Field.Index.NOT_ANALYZED, 0.0f, 10.0f);
         rulesBuilder.integerField(name("mpgCity"), Field.Store.YES, Field.Index.NOT_ANALYZED, 0, 50);

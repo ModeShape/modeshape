@@ -65,6 +65,8 @@ public class IndexRules {
 
         boolean canBeReference();
 
+        boolean isFullTextSearchable();
+
         FieldType getType();
 
         Field.Store getStoreOption();
@@ -105,6 +107,16 @@ public class IndexRules {
         /**
          * {@inheritDoc}
          * 
+         * @see org.modeshape.search.lucene.IndexRules.Rule#isFullTextSearchable()
+         */
+        @Override
+        public boolean isFullTextSearchable() {
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see org.modeshape.search.lucene.IndexRules.Rule#canBeReference()
          */
         @Override
@@ -134,6 +146,7 @@ public class IndexRules {
     @Immutable
     protected static class TypedRule implements Rule {
         protected final boolean canBeReference;
+        protected final boolean fullTextSearchable;
         protected final FieldType type;
         protected final Field.Store store;
         protected final Field.Index index;
@@ -141,11 +154,13 @@ public class IndexRules {
         protected TypedRule( FieldType type,
                              Field.Store store,
                              Field.Index index,
-                             boolean canBeReference ) {
+                             boolean canBeReference,
+                             boolean fullTextSearchable ) {
             this.type = type;
             this.index = index;
             this.store = store;
             this.canBeReference = canBeReference;
+            this.fullTextSearchable = fullTextSearchable;
             assert this.type != null;
             assert this.index != null;
             assert this.store != null;
@@ -167,6 +182,16 @@ public class IndexRules {
          */
         public boolean isSkipped() {
             return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.search.lucene.IndexRules.Rule#isFullTextSearchable()
+         */
+        @Override
+        public boolean isFullTextSearchable() {
+            return fullTextSearchable;
         }
 
         /**
@@ -218,7 +243,7 @@ public class IndexRules {
                                     Field.Index index,
                                     T minValue,
                                     T maxValue ) {
-            super(type, store, index, false);
+            super(type, store, index, false, false);
             this.minValue = minValue;
             this.maxValue = maxValue;
             assert this.minValue != null;
@@ -332,14 +357,16 @@ public class IndexRules {
          * @param store the storage setting, or null if the field should be {@link Store#YES stored}
          * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
          * @param canBeReference true if this field can contain references; or false if it cannot
+         * @param fullTextSearchable true if this field is full-text searchable, or false otherwise
          * @return this builder for convenience and method chaining; never null
          */
         public Builder defaultTo( Field.Store store,
                                   Field.Index index,
-                                  boolean canBeReference ) {
+                                  boolean canBeReference,
+                                  boolean fullTextSearchable ) {
             if (store == null) store = Field.Store.YES;
             if (index == null) index = Field.Index.NOT_ANALYZED;
-            defaultRule = new TypedRule(FieldType.STRING, store, index, canBeReference);
+            defaultRule = new TypedRule(FieldType.STRING, store, index, canBeReference, fullTextSearchable);
             return this;
         }
 
@@ -350,15 +377,17 @@ public class IndexRules {
          * @param store the storage setting, or null if the field should be {@link Store#YES stored}
          * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
          * @param canBeReference true if this field can contain references; or false if it cannot
+         * @param fullTextSearchable true if this field is full-text searchable, or false otherwise
          * @return this builder for convenience and method chaining; never null
          */
         public Builder stringField( Name name,
                                     Field.Store store,
                                     Field.Index index,
-                                    boolean canBeReference ) {
+                                    boolean canBeReference,
+                                    boolean fullTextSearchable ) {
             if (store == null) store = Field.Store.YES;
             if (index == null) index = Field.Index.NOT_ANALYZED;
-            Rule rule = new TypedRule(FieldType.STRING, store, index, canBeReference);
+            Rule rule = new TypedRule(FieldType.STRING, store, index, canBeReference, fullTextSearchable);
             rulesByName.put(name, rule);
             return this;
         }
@@ -369,14 +398,16 @@ public class IndexRules {
          * @param name the name of the field
          * @param store the storage setting, or null if the field should be {@link Store#YES stored}
          * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @param fullTextSearchable true if this field is full-text searchable, or false otherwise
          * @return this builder for convenience and method chaining; never null
          */
         public Builder binaryField( Name name,
                                     Field.Store store,
-                                    Field.Index index ) {
+                                    Field.Index index,
+                                    boolean fullTextSearchable ) {
             if (store == null) store = Field.Store.YES;
             if (index == null) index = Field.Index.NOT_ANALYZED;
-            Rule rule = new TypedRule(FieldType.BINARY, store, index, false);
+            Rule rule = new TypedRule(FieldType.BINARY, store, index, false, fullTextSearchable);
             rulesByName.put(name, rule);
             return this;
         }
@@ -394,7 +425,7 @@ public class IndexRules {
                                        Field.Index index ) {
             if (store == null) store = Field.Store.YES;
             if (index == null) index = Field.Index.NOT_ANALYZED;
-            Rule rule = new TypedRule(FieldType.REFERENCE, store, index, true);
+            Rule rule = new TypedRule(FieldType.REFERENCE, store, index, true, false);
             rulesByName.put(name, rule);
             return this;
         }
@@ -405,14 +436,16 @@ public class IndexRules {
          * @param name the name of the field
          * @param store the storage setting, or null if the field should be {@link Store#YES stored}
          * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @param fullTextSearchable true if this field is full-text searchable, or false otherwise
          * @return this builder for convenience and method chaining; never null
          */
         public Builder weakReferenceField( Name name,
                                            Field.Store store,
-                                           Field.Index index ) {
+                                           Field.Index index,
+                                           boolean fullTextSearchable ) {
             if (store == null) store = Field.Store.YES;
             if (index == null) index = Field.Index.NOT_ANALYZED;
-            Rule rule = new TypedRule(FieldType.WEAK_REFERENCE, store, index, false);
+            Rule rule = new TypedRule(FieldType.WEAK_REFERENCE, store, index, false, fullTextSearchable);
             rulesByName.put(name, rule);
             return this;
         }
