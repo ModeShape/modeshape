@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
@@ -487,7 +488,9 @@ class JcrQueryManager implements QueryManager {
             final int locationIndex = results.getColumns().getLocationIndex(selectorName);
             for (Object[] tuple : results.getTuples()) {
                 Location location = (Location)tuple[locationIndex];
-                nodes.add(session.getNode(location.getPath()));
+                if (!session.wasRemovedInSession(location)) {
+                    nodes.add(session.getNode(location.getPath()));
+                }
             }
             return new QueryResultNodeIterator(nodes);
         }
@@ -620,7 +623,8 @@ class JcrQueryManager implements QueryManager {
         protected final int scoreIndex;
         protected final JcrSession session;
         private long position = 0L;
-        private final long numRows;
+        private long numRows;
+        private Row nextRow;
 
         protected QueryResultRowIterator( JcrSession session,
                                           Columns columns,
@@ -641,13 +645,21 @@ class JcrQueryManager implements QueryManager {
          * @see javax.jcr.query.RowIterator#nextRow()
          */
         public Row nextRow() {
-            final Object[] tuple = tuples.next();
-            ++position;
-            return createRow(tuple);
+            if (nextRow == null) {
+                // Didn't call 'hasNext()' ...
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+            }
+            assert nextRow != null;
+            Row result = nextRow;
+            nextRow = null;
+            return result;
         }
 
-        protected Row createRow( final Object[] tuple ) {
-            return new QueryResultRow(this, tuple);
+        protected Row createRow( final Node node,
+                                 Object[] tuple ) {
+            return new QueryResultRow(this, node, tuple);
         }
 
         /**
@@ -686,7 +698,26 @@ class JcrQueryManager implements QueryManager {
          * @see java.util.Iterator#hasNext()
          */
         public boolean hasNext() {
-            return tuples.hasNext();
+            if (nextRow != null) {
+                return true;
+            }
+            while (tuples.hasNext()) {
+                final Object[] tuple = tuples.next();
+                ++position;
+                try {
+                    // Get the node ...
+                    Location location = (Location)tuple[locationIndex];
+                    if (!session.wasRemovedInSession(location)) {
+                        Node node = session.getNode(location.getPath());
+                        nextRow = createRow(node, tuple);
+                        return true;
+                    }
+                } catch (RepositoryException e) {
+                    // The node could not be found in this session, so skip it ...
+                }
+                --numRows;
+            }
+            return false;
         }
 
         /**
@@ -710,14 +741,19 @@ class JcrQueryManager implements QueryManager {
 
     protected static class QueryResultRow implements Row {
         protected final QueryResultRowIterator iterator;
+        protected final Node node;
         protected final Object[] tuple;
-        private Node node = null;
         private Value[] values = null;
 
         protected QueryResultRow( QueryResultRowIterator iterator,
+                                  Node node,
                                   Object[] tuple ) {
             this.iterator = iterator;
+            this.node = node;
             this.tuple = tuple;
+            assert this.iterator != null;
+            assert this.node != null;
+            assert this.tuple != null;
         }
 
         /**
@@ -726,7 +762,7 @@ class JcrQueryManager implements QueryManager {
          * @see javax.jcr.query.Row#getValue(java.lang.String)
          */
         public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
-            return node().getProperty(columnName).getValue();
+            return node.getProperty(columnName).getValue();
         }
 
         /**
@@ -743,21 +779,6 @@ class JcrQueryManager implements QueryManager {
                 }
             }
             return values;
-        }
-
-        /**
-         * Load the node. The properties are <i>always</i> fetched from the session to ensure that any modifications to the nodes
-         * within session are always used.
-         * 
-         * @return the node
-         * @throws RepositoryException if the node could not be found
-         */
-        protected final Node node() throws RepositoryException {
-            if (node == null) {
-                Location location = (Location)tuple[iterator.locationIndex];
-                node = iterator.session.getNode(location.getPath());
-            }
-            return node;
         }
     }
 
@@ -812,8 +833,9 @@ class JcrQueryManager implements QueryManager {
         }
 
         @Override
-        protected Row createRow( final Object[] tuple ) {
-            return new XPathQueryResultRow(this, tuple);
+        protected Row createRow( Node node,
+                                 Object[] tuple ) {
+            return new XPathQueryResultRow(this, node, tuple);
         }
 
         protected Value jcrPath( Path path ) {
@@ -827,8 +849,9 @@ class JcrQueryManager implements QueryManager {
 
     protected static class XPathQueryResultRow extends QueryResultRow {
         protected XPathQueryResultRow( XPathQueryResultRowIterator iterator,
+                                       Node node,
                                        Object[] tuple ) {
-            super(iterator, tuple);
+            super(iterator, node, tuple);
         }
 
         /**

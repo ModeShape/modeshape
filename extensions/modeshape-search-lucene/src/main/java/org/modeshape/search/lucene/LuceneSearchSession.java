@@ -1035,7 +1035,7 @@ public class LuceneSearchSession implements WorkspaceSession {
             sb.append("/");
             sb.append(segment);
             if (segment.equals("%") || segment.equals("_")) continue;
-            if (!segment.endsWith("]")) {
+            if (!segment.endsWith("]") && !segment.endsWith("]%")) {
                 sb.append("[1]");
             }
         }

@@ -107,6 +107,7 @@ final class JcrNode extends AbstractJcrNode {
             }
         }
 
+        session().recordRemoval(location); // do this first before we destroy the node!
         editor().destroy();
     }
 }

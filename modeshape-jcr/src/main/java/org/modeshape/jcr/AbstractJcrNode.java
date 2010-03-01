@@ -507,7 +507,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @return true if this node is referenced by at least one other node, or false if there are no references to this node
      * @throws RepositoryException if an error occurs while obtaining the information
      */
-    protected final boolean hasReferencingNodes() throws RepositoryException {
+    protected final boolean hasIncomingReferences() throws RepositoryException {
         return referencingNodes(1).hasNext();
     }
 
@@ -1818,6 +1818,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Item#save()
      */
     public void save() throws RepositoryException {
+        session().checkReferentialIntegrityOfChanges();
         cache.save(nodeId, location.getPath());
     }
 

@@ -25,10 +25,10 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertThat;
 import static org.modeshape.graph.IsNodeWithChildren.hasChild;
 import static org.modeshape.graph.IsNodeWithChildren.hasChildren;
 import static org.modeshape.graph.IsNodeWithProperty.hasProperty;
-import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -39,6 +39,10 @@ import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.nodetype.NodeTypeManager;
+import org.jboss.security.config.IDTrustConfiguration;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Subgraph;
@@ -53,10 +57,6 @@ import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.repository.ModeShapeConfiguration;
 import org.modeshape.repository.ModeShapeLexicon;
 import org.modeshape.repository.ModeShapeConfiguration.ConfigurationDefinition;
-import org.jboss.security.config.IDTrustConfiguration;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 public class JcrConfigurationTest {
 
@@ -235,7 +235,7 @@ public class JcrConfigurationTest {
         assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Source2"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Source2"), hasProperty(ModeShapeLexicon.CLASSNAME,
-                                                                         InMemoryRepositorySource.class.getName()));
+                                                                          InMemoryRepositorySource.class.getName()));
         assertThat(subgraph.getNode("/mode:repositories"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:repositories/JCR Repository"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:repositories/JCR Repository"), hasProperty(ModeShapeLexicon.SOURCE_NAME, "Source2"));
@@ -255,6 +255,7 @@ public class JcrConfigurationTest {
         options.put(Option.QUERY_EXECUTION_ENABLED, DefaultOption.QUERY_EXECUTION_ENABLED);
         options.put(Option.QUERY_INDEX_DIRECTORY, DefaultOption.QUERY_INDEX_DIRECTORY);
         options.put(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY, DefaultOption.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY);
+        options.put(Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS, DefaultOption.PERFORM_REFERENTIAL_INTEGRITY_CHECKS);
         assertThat(repository.getOptions(), is(options));
     }
 
@@ -277,14 +278,14 @@ public class JcrConfigurationTest {
         assertThat(subgraph.getNode("/mode:sources/Cars"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Cars"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, "3"));
         assertThat(subgraph.getNode("/mode:sources/Cars"), hasProperty(ModeShapeLexicon.CLASSNAME,
-                                                                      InMemoryRepositorySource.class.getName()));
+                                                                       InMemoryRepositorySource.class.getName()));
         assertThat(subgraph.getNode("/mode:sources/Aircraft"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Aircraft"), hasProperty("defaultWorkspaceName", "default"));
         assertThat(subgraph.getNode("/mode:sources/Aircraft"), hasProperty(ModeShapeLexicon.CLASSNAME,
-                                                                          InMemoryRepositorySource.class.getName()));
+                                                                           InMemoryRepositorySource.class.getName()));
         assertThat(subgraph.getNode("/mode:sources/Cache"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Cache"), hasProperty(ModeShapeLexicon.CLASSNAME,
-                                                                       InMemoryRepositorySource.class.getName()));
+                                                                        InMemoryRepositorySource.class.getName()));
 
         assertThat(subgraph.getNode("/mode:mimeTypeDetectors").getChildren(), hasChild(segment("Detector")));
         assertThat(subgraph.getNode("/mode:mimeTypeDetectors/Detector"), is(notNullValue()));
@@ -301,7 +302,8 @@ public class JcrConfigurationTest {
         assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:options").getChildren(),
                    hasChild(segment("jaasLoginConfigName")));
         assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:options/jaasLoginConfigName"), is(notNullValue()));
-        assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:descriptors/query.xpath.doc.order"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:descriptors/query.xpath.doc.order"),
+                   is(notNullValue()));
         assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:descriptors/myDescriptor"), is(notNullValue()));
 
         // Initialize IDTrust and a policy file (which defines the "modeshape-jcr" login config name)

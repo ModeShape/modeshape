@@ -38,6 +38,7 @@ import org.apache.jackrabbit.test.api.NodeItemIsNewTest;
 import org.apache.jackrabbit.test.api.NodeOrderableChildNodesTest;
 import org.apache.jackrabbit.test.api.NodeRemoveMixinTest;
 import org.apache.jackrabbit.test.api.NodeTest;
+import org.apache.jackrabbit.test.api.NodeUUIDTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsModifiedTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsNewTest;
 import org.apache.jackrabbit.test.api.PropertyTest;
@@ -45,6 +46,7 @@ import org.apache.jackrabbit.test.api.ReferencesTest;
 import org.apache.jackrabbit.test.api.RepositoryLoginTest;
 import org.apache.jackrabbit.test.api.SerializationTest;
 import org.apache.jackrabbit.test.api.SessionTest;
+import org.apache.jackrabbit.test.api.SessionUUIDTest;
 import org.apache.jackrabbit.test.api.SetPropertyAssumeTypeTest;
 import org.apache.jackrabbit.test.api.SetPropertyBooleanTest;
 import org.apache.jackrabbit.test.api.SetPropertyCalendarTest;
@@ -201,17 +203,15 @@ public class JcrTckTest {
     private static class LevelTwoFeatureTests extends TestSuite {
         protected LevelTwoFeatureTests() {
             super("JCR Level 2 API Tests");
-            // We currently don't pass the tests in those suites that are commented out
-            // See https://jira.jboss.org/jira/browse/ModeShape-285
 
             // level 2 tests
             addTestSuite(AddNodeTest.class);
             addTestSuite(NamespaceRegistryTest.class);
             addTestSuite(ReferencesTest.class);
             addTestSuite(SessionTest.class);
-            // addTestSuite(SessionUUIDTest.class);
+            addTestSuite(SessionUUIDTest.class);
             addTestSuite(NodeTest.class);
-            // addTestSuite(NodeUUIDTest.class);
+            addTestSuite(NodeUUIDTest.class);
             addTestSuite(NodeOrderableChildNodesTest.class);
             addTestSuite(PropertyTest.class);
 

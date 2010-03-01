@@ -2682,12 +2682,19 @@ public class QueryBuilder {
             this.constraintBuilder = constraintBuilder;
         }
 
-        public ConstraintBuilder isIn( Object firstLiteral,
-                                       Object... additionalLiterals ) {
-            CheckArg.isNotNull(firstLiteral, "firstLiteral");
+        public ConstraintBuilder isIn( Object... literals ) {
+            CheckArg.isNotNull(literals, "literals");
             Collection<StaticOperand> right = new ArrayList<StaticOperand>();
-            right.add(firstLiteral instanceof Literal ? (Literal)firstLiteral : new Literal(firstLiteral));
-            for (Object literal : additionalLiterals) {
+            for (Object literal : literals) {
+                right.add(literal instanceof Literal ? (Literal)literal : new Literal(literal));
+            }
+            return this.constraintBuilder.setConstraint(new SetCriteria(left, right));
+        }
+
+        public ConstraintBuilder isIn( Iterable<Object> literals ) {
+            CheckArg.isNotNull(literals, "literals");
+            Collection<StaticOperand> right = new ArrayList<StaticOperand>();
+            for (Object literal : literals) {
                 right.add(literal instanceof Literal ? (Literal)literal : new Literal(literal));
             }
             return this.constraintBuilder.setConstraint(new SetCriteria(left, right));

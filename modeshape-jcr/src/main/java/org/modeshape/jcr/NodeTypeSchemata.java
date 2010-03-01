@@ -272,54 +272,41 @@ class NodeTypeSchemata implements Schemata {
             // The node type is not 'nt:base', which
             viewDefinition.append(" WHERE ");
 
+            int mixinTypeCount = 0;
+            int primaryTypeCount = 0;
+            StringBuilder mixinTypes = new StringBuilder();
+            StringBuilder primaryTypes = new StringBuilder();
             Collection<JcrNodeType> typeAndSubtypes = subtypesByName.get(nodeType);
-            if (nodeType.isMixin()) {
-                // Build the list of mixin types ...
-                StringBuilder mixinTypes = null;
-                int count = 0;
-                for (JcrNodeType thisOrSupertype : typeAndSubtypes) {
-                    if (!thisOrSupertype.isMixin()) continue;
-                    if (mixinTypes == null) {
-                        mixinTypes = new StringBuilder();
-                    } else {
-                        mixinTypes.append(',');
-                    }
+            for (JcrNodeType thisOrSupertype : typeAndSubtypes) {
+                if (thisOrSupertype.isMixin()) {
+                    if (mixinTypeCount > 0) mixinTypes.append(',');
                     assert prefixesByUris.containsKey(thisOrSupertype.getInternalName().getNamespaceUri());
                     String name = thisOrSupertype.getInternalName().getString(registry);
                     mixinTypes.append('[').append(name).append(']');
-                    ++count;
-                }
-                assert mixinTypes != null; // should at least include itself
-                assert count > 0;
-                viewDefinition.append('[').append(JcrLexicon.MIXIN_TYPES.getString(registry)).append(']');
-                if (count == 1) {
-                    viewDefinition.append('=').append(mixinTypes);
+                    ++mixinTypeCount;
                 } else {
-                    viewDefinition.append(" IN (").append(mixinTypes).append(')');
-                }
-            } else {
-                // Build the list of node type names ...
-                StringBuilder primaryTypes = null;
-                int count = 0;
-                for (JcrNodeType thisOrSupertype : typeAndSubtypes) {
-                    if (thisOrSupertype.isMixin()) continue;
-                    if (primaryTypes == null) {
-                        primaryTypes = new StringBuilder();
-                    } else {
-                        primaryTypes.append(',');
-                    }
+                    if (primaryTypeCount > 0) primaryTypes.append(',');
                     assert prefixesByUris.containsKey(thisOrSupertype.getInternalName().getNamespaceUri());
                     String name = thisOrSupertype.getInternalName().getString(registry);
                     primaryTypes.append('[').append(name).append(']');
-                    ++count;
+                    ++primaryTypeCount;
                 }
-                assert primaryTypes != null; // should at least include itself
-                assert count > 0;
+            }
+            if (primaryTypeCount > 0) {
                 viewDefinition.append('[').append(JcrLexicon.PRIMARY_TYPE.getString(registry)).append(']');
-                if (count == 1) {
+                if (primaryTypeCount == 1) {
                     viewDefinition.append('=').append(primaryTypes);
                 } else {
                     viewDefinition.append(" IN (").append(primaryTypes).append(')');
+                }
+            }
+            if (mixinTypeCount > 0) {
+                if (primaryTypeCount > 0) viewDefinition.append(" OR ");
+                viewDefinition.append('[').append(JcrLexicon.MIXIN_TYPES.getString(registry)).append(']');
+                if (mixinTypeCount == 1) {
+                    viewDefinition.append('=').append(mixinTypes);
+                } else {
+                    viewDefinition.append(" IN (").append(mixinTypes).append(')');
                 }
             }
         }

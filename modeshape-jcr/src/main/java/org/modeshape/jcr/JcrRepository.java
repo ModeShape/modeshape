@@ -46,6 +46,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.jcr.Credentials;
 import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -240,7 +241,21 @@ public class JcrRepository implements Repository {
          * The default is value 'false', meaning the updates are performed <i>asynchronously</i>.
          * </p>
          */
-        QUERY_INDEXES_UPDATED_SYNCHRONOUSLY;
+        QUERY_INDEXES_UPDATED_SYNCHRONOUSLY,
+
+        /**
+         * A boolean flag that specifies whether referential integrity checks should be performed upon {@link Session#save()}. By
+         * default, this option is enabled, meaning that referential integrity checks <i>are</i> performed to ensure that nodes
+         * referenced by other nodes cannot be removed.
+         * <p>
+         * If no {@link PropertyType#REFERENCE} properties are used within your content, these referential integrity checks will
+         * never find referring nodes. In these cases, you may be able to improve performance by skipping these checks.
+         * </p>
+         * <p>
+         * The default value is 'true', meaning that these checks are performed.
+         * </p>
+         */
+        PERFORM_REFERENTIAL_INTEGRITY_CHECKS;
 
         /**
          * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
@@ -315,6 +330,11 @@ public class JcrRepository implements Repository {
          */
         public static final String QUERY_INDEX_DIRECTORY = null;
 
+        /**
+         * The default value for the {@link Option#QUERY_INDEX_DIRECTORY} option is {@value} .
+         */
+        public static final String PERFORM_REFERENTIAL_INTEGRITY_CHECKS = Boolean.TRUE.toString();
+
     }
 
     /**
@@ -364,6 +384,7 @@ public class JcrRepository implements Repository {
         defaults.put(Option.QUERY_EXECUTION_ENABLED, DefaultOption.QUERY_EXECUTION_ENABLED);
         defaults.put(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY, DefaultOption.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY);
         defaults.put(Option.QUERY_INDEX_DIRECTORY, DefaultOption.QUERY_INDEX_DIRECTORY);
+        defaults.put(Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS, DefaultOption.PERFORM_REFERENTIAL_INTEGRITY_CHECKS);
         DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
     }
 

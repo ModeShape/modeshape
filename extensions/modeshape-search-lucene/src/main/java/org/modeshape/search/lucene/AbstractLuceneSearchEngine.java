@@ -37,6 +37,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.IndexSearcher;
@@ -377,16 +378,8 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                         if (pushDownQuery == null) {
                             // This must be the first query ...
                             pushDownQuery = constraintQuery;
-                        } else if (pushDownQuery instanceof BooleanQuery) {
-                            // We have to add the constraint query to the existing boolean ...
-                            BooleanQuery booleanQuery = (BooleanQuery)pushDownQuery;
-                            booleanQuery.add(constraintQuery, Occur.MUST);
                         } else {
-                            // This is the second push-down query, so create a BooleanQuery ...
-                            BooleanQuery booleanQuery = new BooleanQuery();
-                            booleanQuery.add(pushDownQuery, Occur.MUST);
-                            booleanQuery.add(constraintQuery, Occur.MUST);
-                            pushDownQuery = booleanQuery;
+                            pushDownQuery = andQueries(pushDownQuery, constraintQuery);
                         }
                     } else {
                         // The AND-ed constraint _cannot_ be represented as a push-down Lucene query ...
@@ -476,6 +469,30 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
             request.setResults(tuples, stats);
         }
 
+        protected Query andQueries( Query first,
+                                    Query second ) {
+            if (first instanceof BooleanQuery) {
+                BooleanQuery booleanQuery = (BooleanQuery)first;
+                boolean canMerge = true;
+                for (BooleanClause clause : booleanQuery.getClauses()) {
+                    if (clause.getOccur() == BooleanClause.Occur.SHOULD) {
+                        canMerge = false;
+                        break;
+                    }
+                }
+                if (canMerge) {
+                    // The boolean query has all MUST occurs, so we can just add another one ...
+                    booleanQuery.add(second, Occur.MUST);
+                    return booleanQuery;
+                }
+            }
+            // This is the second push-down query, so create a BooleanQuery ...
+            BooleanQuery booleanQuery = new BooleanQuery();
+            booleanQuery.add(first, Occur.MUST);
+            booleanQuery.add(second, Occur.MUST);
+            return booleanQuery;
+        }
+
         protected QueryFactory queryFactory( WorkspaceSession session,
                                              Map<String, Object> variables ) {
             return new QueryFactory(session, variables);
@@ -520,6 +537,9 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                     Not not = (Not)constraint;
                     Query notted = createQuery(not.getConstraint());
                     if (notted == null) return new MatchAllDocsQuery();
+                    BooleanQuery query = new BooleanQuery();
+                    query.add(notted, Occur.MUST_NOT);
+                    return query;
                 }
                 if (constraint instanceof SetCriteria) {
                     SetCriteria setCriteria = (SetCriteria)constraint;

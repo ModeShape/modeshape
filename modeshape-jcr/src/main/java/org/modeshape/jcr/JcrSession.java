@@ -27,9 +27,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -40,8 +43,10 @@ import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.NamespaceException;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
+import javax.jcr.ReferentialIntegrityException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -52,6 +57,10 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryResult;
+import javax.jcr.query.Row;
+import javax.jcr.query.RowIterator;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
@@ -65,11 +74,15 @@ import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.ValueFactories;
+import org.modeshape.graph.query.QueryBuilder;
+import org.modeshape.graph.query.model.QueryCommand;
+import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.session.GraphSession;
 import org.modeshape.jcr.JcrContentHandler.EnclosingSAXException;
 import org.modeshape.jcr.JcrContentHandler.SaveMode;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
+import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
 import org.modeshape.jcr.WorkspaceLockManager.ModeShapeLock;
 import org.xml.sax.ContentHandler;
@@ -142,6 +155,16 @@ class JcrSession implements Session {
 
     private boolean isLive;
 
+    private final boolean performReferentialIntegrityChecks;
+    /**
+     * The locations of the nodes that were (transiently) removed in this session and not yet saved.
+     */
+    private Set<Location> removedNodes = null;
+    /**
+     * The UUIDs of the mix:referenceable nodes that were (transiently) removed in this session and not yet saved.
+     */
+    private Set<String> removedReferenceableNodeUuids = null;
+
     JcrSession( JcrRepository repository,
                 JcrWorkspace workspace,
                 ExecutionContext sessionContext,
@@ -167,6 +190,10 @@ class JcrSession implements Session {
         this.cache = new SessionCache(this);
         this.isLive = true;
         this.lockTokens = new HashSet<String>();
+
+        this.performReferentialIntegrityChecks = Boolean.valueOf(repository.getOptions()
+                                                                           .get(Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS))
+                                                        .booleanValue();
 
         assert this.sessionAttributes != null;
         assert this.workspace != null;
@@ -389,13 +416,15 @@ class JcrSession implements Session {
         boolean hasPermission = true;
         for (String action : actions.split(",")) {
             if (JCR_READ_PERMISSION.equals(action)) {
-                hasPermission &= hasRole(ModeShape_READ_PERMISSION, workspaceName) || hasRole(ModeShape_WRITE_PERMISSION, workspaceName)
+                hasPermission &= hasRole(ModeShape_READ_PERMISSION, workspaceName)
+                                 || hasRole(ModeShape_WRITE_PERMISSION, workspaceName)
                                  || hasRole(ModeShape_ADMIN_PERMISSION, workspaceName);
-            } else if (ModeShape_REGISTER_NAMESPACE_PERMISSION.equals(action) || ModeShape_REGISTER_TYPE_PERMISSION.equals(action)
-                       || ModeShape_UNLOCK_ANY_PERMISSION.equals(action)) {
+            } else if (ModeShape_REGISTER_NAMESPACE_PERMISSION.equals(action)
+                       || ModeShape_REGISTER_TYPE_PERMISSION.equals(action) || ModeShape_UNLOCK_ANY_PERMISSION.equals(action)) {
                 hasPermission &= hasRole(ModeShape_ADMIN_PERMISSION, workspaceName);
             } else {
-                hasPermission &= hasRole(ModeShape_ADMIN_PERMISSION, workspaceName) || hasRole(ModeShape_WRITE_PERMISSION, workspaceName);
+                hasPermission &= hasRole(ModeShape_ADMIN_PERMISSION, workspaceName)
+                                 || hasRole(ModeShape_WRITE_PERMISSION, workspaceName);
             }
         }
 
@@ -871,12 +900,133 @@ class JcrSession implements Session {
         lockTokens.remove(lt);
     }
 
+    void recordRemoval( Location location ) throws RepositoryException {
+        if (!performReferentialIntegrityChecks) {
+            return;
+        }
+        if (removedNodes == null) {
+            removedNodes = new HashSet<Location>();
+            removedReferenceableNodeUuids = new HashSet<String>();
+        }
+
+        // Find the UUIDs of all of the mix:referenceable nodes that are below this node being removed ...
+        Path path = location.getPath();
+        org.modeshape.graph.property.ValueFactory<String> stringFactory = executionContext.getValueFactories().getStringFactory();
+        String pathStr = stringFactory.create(path);
+        int sns = path.getLastSegment().getIndex();
+        if (sns == Path.DEFAULT_INDEX) pathStr = pathStr + "[1]";
+
+        TypeSystem typeSystem = executionContext.getValueFactories().getTypeSystem();
+        QueryBuilder builder = new QueryBuilder(typeSystem);
+        QueryCommand query = builder.select("jcr:uuid")
+                                    .from("mix:referenceable AS referenceable")
+                                    .where()
+                                    .path("referenceable")
+                                    .isLike(pathStr + "%")
+                                    .end()
+                                    .query();
+        JcrQueryManager queryManager = workspace().queryManager();
+        Query jcrQuery = queryManager.createQuery(query);
+        QueryResult result = jcrQuery.execute();
+        RowIterator rows = result.getRows();
+        while (rows.hasNext()) {
+            Row row = rows.nextRow();
+            String uuid = row.getValue("jcr:uuid").getString();
+            if (uuid != null) removedReferenceableNodeUuids.add(uuid);
+        }
+
+        // Now record that this location is being removed ...
+        Set<Location> extras = null;
+        for (Location alreadyDeleted : removedNodes) {
+            Path alreadyDeletedPath = alreadyDeleted.getPath();
+            if (alreadyDeletedPath.isAtOrAbove(path)) {
+                // Already covered by the alreadyDeleted location ...
+                return;
+            }
+            if (alreadyDeletedPath.isDecendantOf(path)) {
+                // The path being deleted is above the path that was already deleted, so remove the already-deleted one ...
+                if (extras == null) {
+                    extras = new HashSet<Location>();
+                }
+                extras.add(alreadyDeleted);
+            }
+        }
+        // Not covered by any already-deleted location, so add it ...
+        removedNodes.add(location);
+        if (extras != null) {
+            // Remove the nodes that will be covered by the node being deleted now ...
+            removedNodes.removeAll(extras);
+        }
+    }
+
+    boolean wasRemovedInSession( Location location ) {
+        if (removedNodes == null) return false;
+        if (removedNodes.contains(location)) return true;
+        Path path = location.getPath();
+        for (Location removed : removedNodes) {
+            if (removed.getPath().isAtOrAbove(path)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Determine whether there is at least one other node outside this branch that has a reference to nodes within the branch
+     * rooted by this node.
+     * 
+     * @throws ReferentialIntegrityException if the changes would leave referential integrity problems
+     * @throws RepositoryException if an error occurs while obtaining the information
+     */
+    void checkReferentialIntegrityOfChanges() throws ReferentialIntegrityException, RepositoryException {
+        if (removedNodes == null) return;
+        if (removedReferenceableNodeUuids.isEmpty()) return;
+
+        if (removedNodes.size() == 1 && removedNodes.iterator().next().getPath().isRoot()) {
+            // The root node is being removed, so there will be no referencing nodes remaining ...
+            return;
+        }
+
+        // Build one (or several) queries to find the first reference to any 'mix:referenceable' nodes
+        // that have been (transiently) removed from the session ...
+        int maxBatchSize = 100;
+        List<Object> someUuidsInBranch = new ArrayList<Object>(maxBatchSize);
+        Iterator<String> uuidIter = removedReferenceableNodeUuids.iterator();
+        while (uuidIter.hasNext()) {
+            // Accumulate the next 100 UUIDs of referenceable nodes inside this branch ...
+            while (uuidIter.hasNext() && someUuidsInBranch.size() <= maxBatchSize) {
+                String uuid = uuidIter.next();
+                someUuidsInBranch.add(uuid);
+            }
+            assert !someUuidsInBranch.isEmpty();
+            // Now issue a query to see if any nodes outside this branch references these referenceable nodes ...
+            TypeSystem typeSystem = executionContext.getValueFactories().getTypeSystem();
+            QueryBuilder builder = new QueryBuilder(typeSystem);
+            QueryCommand query = builder.select("jcr:primaryType")
+                                        .fromAllNodesAs("allNodes")
+                                        .where()
+                                        .referenceValue("allNodes")
+                                        .isIn(someUuidsInBranch)
+                                        .end()
+                                        .query();
+            Query jcrQuery = workspace().queryManager().createQuery(query);
+            // The nodes that have been (transiently) deleted will not appear in these results ...
+            QueryResult result = jcrQuery.execute();
+            NodeIterator referencingNodes = result.getNodes();
+            while (referencingNodes.hasNext()) {
+                // There is at least one reference to nodes in this branch, so we can stop here ...
+                throw new ReferentialIntegrityException();
+            }
+            someUuidsInBranch.clear();
+        }
+    }
+
     /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.Session#save()
      */
     public void save() throws RepositoryException {
+        checkReferentialIntegrityOfChanges();
+        removedNodes = null;
         cache.save();
     }
 
