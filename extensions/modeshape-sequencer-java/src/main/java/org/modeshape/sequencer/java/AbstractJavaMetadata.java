@@ -25,6 +25,7 @@ package org.modeshape.sequencer.java;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
@@ -169,12 +170,30 @@ public abstract class AbstractJavaMetadata {
                     // is an interface top level type
                     InterfaceMetadata interfaceMetadata = new InterfaceMetadata();
                     interfaceMetadata.setName(JavaMetadataUtil.getName(typeDeclaration.getName()));
+
+                    // detect the interfaces, if any
+                    for (Type superInterfaceType : (List<Type>)typeDeclaration.superInterfaceTypes()) {
+                        interfaceMetadata.getInterfaceNames().add(getTypeName(superInterfaceType));
+                    }
+
                     metadata.add(interfaceMetadata);
                 } else {
                     // is a class top level type
                     ClassMetadata classMetadata = new ClassMetadata();
                     processModifiersOfTypDeclaration(typeDeclaration, classMetadata);
                     classMetadata.setName(JavaMetadataUtil.getName(typeDeclaration.getName()));
+
+                    // set the superclass, if any
+                    Type superClassType = typeDeclaration.getSuperclassType();
+                    if (superClassType != null) {
+                        classMetadata.setSuperClassName(getTypeName(superClassType));
+                    }
+
+                    // detect the interfaces, if any
+                    for (Type superInterfaceType : (List<Type>)typeDeclaration.superInterfaceTypes()) {
+                        classMetadata.getInterfaceNames().add(getTypeName(superInterfaceType));
+                    }
+
                     // fields of the class top level type
                     FieldDeclaration[] fieldDeclarations = typeDeclaration.getFields();
                     for (FieldDeclaration fieldDeclaration : fieldDeclarations) {
@@ -442,6 +461,10 @@ public abstract class AbstractJavaMetadata {
             SimpleType simpleType = (SimpleType)type;
             return JavaMetadataUtil.getName(simpleType.getName());
         }
+        if (type.isParameterizedType()) {
+            ParameterizedType parameterizedType = (ParameterizedType)type;
+            return getTypeName(parameterizedType.getType());
+        }
         if (type.isArrayType()) {
             ArrayType arrayType = (ArrayType)type;
             // the element type is never an array type
@@ -534,6 +557,7 @@ public abstract class AbstractJavaMetadata {
             arrayTypeFieldMetadata = new ArrayTypeFieldMetadata();
             arrayTypeFieldMetadata.setType(primitiveType.getPrimitiveTypeCode().toString());
             processModifiersAndVariablesOfFieldDeclaration(fieldDeclaration, arrayTypeFieldMetadata);
+            arrayTypeFieldMetadata.setName(getFieldName(fieldDeclaration));
             return arrayTypeFieldMetadata;
 
         }
@@ -543,6 +567,7 @@ public abstract class AbstractJavaMetadata {
             arrayTypeFieldMetadata = new ArrayTypeFieldMetadata();
             arrayTypeFieldMetadata.setType(JavaMetadataUtil.getName(simpleType.getName()));
             processModifiersAndVariablesOfFieldDeclaration(fieldDeclaration, arrayTypeFieldMetadata);
+            arrayTypeFieldMetadata.setName(getFieldName(fieldDeclaration));
             return arrayTypeFieldMetadata;
         }
 
@@ -574,6 +599,8 @@ public abstract class AbstractJavaMetadata {
         // modifiers
         processModifiersOfFieldDeclaration(fieldDeclaration, simpleTypeFieldMetadata);
         processVariablesOfVariableDeclarationFragment(fieldDeclaration, simpleTypeFieldMetadata);
+        simpleTypeFieldMetadata.setName(getFieldName(fieldDeclaration));
+
         return simpleTypeFieldMetadata;
     }
 
@@ -590,8 +617,18 @@ public abstract class AbstractJavaMetadata {
         // modifiers
         processModifiersOfFieldDeclaration(fieldDeclaration, referenceFieldMetadata);
         // variables
+
+        referenceFieldMetadata.setName(getFieldName(fieldDeclaration));
+
         processVariablesOfVariableDeclarationFragment(fieldDeclaration, referenceFieldMetadata);
         return referenceFieldMetadata;
+    }
+
+    protected String getFieldName( FieldDeclaration fieldDeclaration ) {
+        FieldVisitor visitor = new FieldVisitor();
+        fieldDeclaration.accept(visitor);
+
+        return visitor.name;
     }
 
     /**
@@ -604,6 +641,9 @@ public abstract class AbstractJavaMetadata {
         PrimitiveType primitiveType = (PrimitiveType)fieldDeclaration.getType();
         PrimitiveFieldMetadata primitiveFieldMetadata = new PrimitiveFieldMetadata();
         primitiveFieldMetadata.setType(primitiveType.getPrimitiveTypeCode().toString());
+
+        primitiveFieldMetadata.setName(getFieldName(fieldDeclaration));
+
         // modifiers
         processModifiersOfFieldDeclaration(fieldDeclaration, primitiveFieldMetadata);
         // variables
@@ -687,4 +727,17 @@ public abstract class AbstractJavaMetadata {
             fieldMetadata.getVariables().add(new Variable(JavaMetadataUtil.getName(fragment.getName())));
         }
     }
+
+    class FieldVisitor extends ASTVisitor {
+        String name;
+
+        @Override
+        public boolean visit( VariableDeclarationFragment node ) {
+            this.name = node.getName().getFullyQualifiedName();
+
+            return super.visit(node);
+        }
+
+    }
+
 }
