@@ -24,6 +24,7 @@
 package org.modeshape.sequencer.java.metadata;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -34,10 +35,19 @@ public class FieldMetadata {
     /** The type of the field */
     private String type;
 
+    private String name;
+
     /** The variables */
     private List<Variable> variables = new ArrayList<Variable>();
 
     private List<ModifierMetadata> modifierMetadatas = new ArrayList<ModifierMetadata>();
+
+    private List<AnnotationMetadata> annotations = new LinkedList<AnnotationMetadata>();
+    
+    
+    public List<AnnotationMetadata> getAnnotations() {
+        return annotations;
+    }
 
     /**
      * @return variables
@@ -68,6 +78,20 @@ public class FieldMetadata {
     }
 
     /**
+     * @return the name of the field
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * @param name the new name for the field
+     */
+    public void setName( String name ) {
+        this.name = name;
+    }
+
+    /**
      * @return modifierMetadatas
      */
     public List<ModifierMetadata> getModifiers() {
@@ -79,6 +103,21 @@ public class FieldMetadata {
      */
     public void setModifiers( List<ModifierMetadata> modifierMetadatas ) {
         this.modifierMetadatas = modifierMetadatas;
+    }
+
+    /**
+     * @param modifierName the name of the modifier to check for
+     * @return true if the type has a modifier of that name, otherwise false
+     */
+    public boolean hasModifierNamed( String modifierName ) {
+        for (ModifierMetadata modifier : modifierMetadatas) {
+            if (modifierName.equals(modifier.getName())) {
+                return true;
+            }
+        }
+
+        return false;
+
     }
 
     /**

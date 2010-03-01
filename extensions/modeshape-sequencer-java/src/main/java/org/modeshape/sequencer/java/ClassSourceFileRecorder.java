@@ -1,7 +1,9 @@
 package org.modeshape.sequencer.java;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.property.DateTimeFactory;
 import org.modeshape.graph.property.Path;
@@ -12,6 +14,7 @@ import org.modeshape.graph.sequencer.StreamSequencerContext;
 import org.modeshape.sequencer.classfile.ClassFileSequencerLexicon;
 import org.modeshape.sequencer.classfile.metadata.Visibility;
 import org.modeshape.sequencer.java.metadata.AnnotationMetadata;
+import org.modeshape.sequencer.java.metadata.EnumMetadata;
 import org.modeshape.sequencer.java.metadata.FieldMetadata;
 import org.modeshape.sequencer.java.metadata.InterfaceMetadata;
 import org.modeshape.sequencer.java.metadata.JavaMetadata;
@@ -81,6 +84,18 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         + class:fields (class:fields) = class:fields
          */
 
+        int numberOfMethods = cmd.getMethods().size();
+        List<MethodMetadata> methods = new ArrayList<MethodMetadata>(numberOfMethods);
+        List<MethodMetadata> ctors = new ArrayList<MethodMetadata>(numberOfMethods);
+
+        for (MethodMetadata method : cmd.getMethods()) {
+            if (method.isContructor()) {
+                ctors.add(method);
+            } else {
+                methods.add(method);
+            }
+        }
+
         output.setProperty(classPath, ClassFileSequencerLexicon.NAME, cmd.getName());
         output.setProperty(classPath, ClassFileSequencerLexicon.SEQUENCED_DATE, dateFactory.create());
         output.setProperty(classPath, ClassFileSequencerLexicon.SUPER_CLASS_NAME, cmd.getSuperClassName());
@@ -93,22 +108,22 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
 
         Path constructorsPath = pathFactory.create(classPath, ClassFileSequencerLexicon.CONSTRUCTORS);
         output.setProperty(constructorsPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.CONSTRUCTORS);
-        // writeMethods(output, pathFactory, constructorsPath, cmd.getConstructors());
+        writeMethods(output, pathFactory, constructorsPath, ctors);
 
         Path methodsPath = pathFactory.create(classPath, ClassFileSequencerLexicon.METHODS);
         output.setProperty(methodsPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.METHODS);
-        writeMethods(output, pathFactory, methodsPath, cmd.getMethods());
+        writeMethods(output, pathFactory, methodsPath, methods);
 
         writeFieldsNode(output, pathFactory, classPath, cmd.getFields());
         writeAnnotationsNode(output, pathFactory, classPath, cmd.getAnnotations());
 
-        // if (cmd instanceof EnumMetadata) {
-        // output.setProperty(classPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.ENUM);
-        //
-        // output.setProperty(classPath, ClassFileSequencerLexicon.ENUM_VALUES, ((EnumMetadata)cmd).getValues().toArray());
-        // } else {
-        // output.setProperty(classPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.CLASS);
-        // }
+        if (cmd instanceof EnumMetadata) {
+            output.setProperty(classPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.ENUM);
+
+            output.setProperty(classPath, ClassFileSequencerLexicon.ENUM_VALUES, ((EnumMetadata)cmd).getValues().toArray());
+        } else {
+            output.setProperty(classPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.CLASS);
+        }
     }
 
     private Visibility visibilityFor( TypeMetadata cmd ) {
@@ -160,15 +175,16 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
             Path annotationPath = pathFactory.create(parentPath, annotation.getName());
             output.setProperty(annotationPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.ANNOTATION);
 
-            /*
-                         for (Map.Entry<String, String> entry : annotation.getMemberValues().entrySet()) {
-                            Path annotationMemberPath = pathFactory.create(annotationPath, entry.getKey());
-                            output.setProperty(annotationMemberPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.ANNOTATION_MEMBER);
-                            output.setProperty(annotationMemberPath, ClassFileSequencerLexicon.NAME, entry.getKey());
-                            output.setProperty(annotationMemberPath, ClassFileSequencerLexicon.VALUE, entry.getValue());
+            for (Map.Entry<String, String> entry : annotation.getMemberValues().entrySet()) {
+                String key = entry.getKey();
+                if (key == null) key = "default";
+                
+                Path annotationMemberPath = pathFactory.create(annotationPath, key);
+                output.setProperty(annotationMemberPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.ANNOTATION_MEMBER);
+                output.setProperty(annotationMemberPath, ClassFileSequencerLexicon.NAME, entry.getKey());
+                output.setProperty(annotationMemberPath, ClassFileSequencerLexicon.VALUE, entry.getValue());
 
-                        }
-            */
+            }
         }
     }
 
@@ -207,7 +223,7 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
             output.setProperty(classPath, ClassFileSequencerLexicon.TRANSIENT, field.hasModifierNamed("transient"));
             output.setProperty(classPath, ClassFileSequencerLexicon.VOLATILE, field.hasModifierNamed("volatile"));
 
-            // writeAnnotationsNode(output, pathFactory, fieldPath, field.getAnnotations());
+            writeAnnotationsNode(output, pathFactory, fieldPath, field.getAnnotations());
 
         }
     }
@@ -247,7 +263,7 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
             output.setProperty(methodPath, ClassFileSequencerLexicon.SYNCHRONIZED, method.hasModifierNamed("synchronized"));
             output.setProperty(methodPath, ClassFileSequencerLexicon.PARAMETERS, method.getParameters().toArray());
 
-            // writeAnnotationsNode(output, pathFactory, methodPath, method.getAnnotations());
+            writeAnnotationsNode(output, pathFactory, methodPath, method.getAnnotations());
 
         }
 

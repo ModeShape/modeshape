@@ -45,6 +45,7 @@ public class JavaMetadata extends AbstractJavaMetadata {
     private List<TypeMetadata> types;
 
     private JavaMetadata() {
+        // private constructor to enforce static class pattern
     }
 
     /**

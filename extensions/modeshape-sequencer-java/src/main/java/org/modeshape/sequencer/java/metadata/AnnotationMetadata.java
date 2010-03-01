@@ -23,12 +23,18 @@
  */
 package org.modeshape.sequencer.java.metadata;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.eclipse.jdt.core.dom.MemberValuePair;
+
 /**
  * Abstract class for annotations.
  */
 public abstract class AnnotationMetadata {
 
-    private String name;
+    private String annotationClassName;
+    private Map<String, String> memberValues = new HashMap<String, String>();
 
     /**
      * Get the name of the modifier.
@@ -36,14 +42,23 @@ public abstract class AnnotationMetadata {
      * @return name of the modifier.
      */
     public String getName() {
-        return name;
+        return annotationClassName;
     }
 
     /**
      * @param name Sets name to the specified value.
      */
     public void setName( String name ) {
-        this.name = name;
+        this.annotationClassName = name;
     }
 
+    public Map<String, String> getMemberValues() {
+        return memberValues;
+    }
+
+    public void setValues(List<MemberValuePair> values) {
+        for (MemberValuePair value : values) {
+            memberValues.put(value.getName().getIdentifier(), value.getValue().toString());
+        }
+    }
 }

@@ -24,6 +24,7 @@
 package org.modeshape.sequencer.java.metadata;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -40,6 +41,12 @@ public abstract class MethodMetadata {
     private List<ModifierMetadata> modifiers = new ArrayList<ModifierMetadata>();
 
     private List<FieldMetadata> parameters = new ArrayList<FieldMetadata>();
+
+    private List<AnnotationMetadata> annotations = new LinkedList<AnnotationMetadata>();
+    
+    public List<AnnotationMetadata> getAnnotations() {
+        return annotations;
+    }
 
     /**
      * @return name
@@ -70,6 +77,21 @@ public abstract class MethodMetadata {
     }
 
     /**
+     * @param modifierName the name of the modifier to check for
+     * @return true if the type has a modifier of that name, otherwise false
+     */
+    public boolean hasModifierNamed( String modifierName ) {
+        for (ModifierMetadata modifier : modifiers) {
+            if (modifierName.equals(modifier.getName())) {
+                return true;
+            }
+        }
+
+        return false;
+
+    }
+
+    /**
      * @return parameters
      */
     public List<FieldMetadata> getParameters() {
@@ -96,4 +118,33 @@ public abstract class MethodMetadata {
     public void setReturnType( FieldMetadata returnType ) {
         this.returnType = returnType;
     }
+
+    public String getId() {
+        StringBuilder buff = new StringBuilder();
+        buff.append(getName()).append('(');
+
+        boolean first = true;
+        for (FieldMetadata parameter : parameters) {
+            if (first) {
+                first = false;
+            } else {
+                buff.append(", ");
+            }
+            
+            buff.append(shortNameFor(parameter.getName()).replace("[]", " array"));
+        }
+
+        buff.append(')');
+
+        return buff.toString();
+    }
+
+    private String shortNameFor( String type ) {
+        assert type != null;
+        
+        int lastDotPos = type.lastIndexOf('.');
+        if (lastDotPos < 0) return type;
+        return type.substring(lastDotPos + 1);
+    }
+
 }

@@ -44,6 +44,11 @@
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
+	    <dependency>
+	      <groupId>org.modeshape</groupId>
+	      <artifactId>modeshape-sequencer-classfile</artifactId>
+			<version>${project.version}</version>
+	    </dependency>
 		<!-- 
 			Testing (note the scope)
 		-->

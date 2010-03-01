@@ -23,9 +23,9 @@
  */
 package org.modeshape.sequencer.java.metadata;
 
+
 /**
  * Class metadata.
  */
 public class ClassMetadata extends TypeMetadata {
-
 }

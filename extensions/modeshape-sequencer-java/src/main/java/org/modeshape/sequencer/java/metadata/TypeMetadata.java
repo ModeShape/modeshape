@@ -36,6 +36,8 @@ public class TypeMetadata {
     /** The name. */
     private String name;
 
+    private String superClassName;
+
     /** All modifiers of a top level type */
     private List<ModifierMetadata> modifiers = new ArrayList<ModifierMetadata>();
 
@@ -47,6 +49,9 @@ public class TypeMetadata {
 
     /** All methods of a top level type */
     private List<MethodMetadata> methods = new ArrayList<MethodMetadata>();
+
+    /** All superinterfaces of a top level type */
+    private final List<String> interfaceNames = new ArrayList<String>();
 
     /**
      * Get the name.
@@ -64,6 +69,18 @@ public class TypeMetadata {
      */
     public void setName( String name ) {
         this.name = name;
+    }
+
+    public String getSuperClassName() {
+        return superClassName;
+    }
+
+    public void setSuperClassName( String superClassName ) {
+        this.superClassName = superClassName;
+    }
+
+    public List<String> getInterfaceNames() {
+        return interfaceNames;
     }
 
     /**
@@ -92,6 +109,21 @@ public class TypeMetadata {
      */
     public void setModifiers( List<ModifierMetadata> modifiers ) {
         this.modifiers = modifiers;
+    }
+
+    /**
+     * @param modifierName the name of the modifier to check for
+     * @return true if the type has a modifier of that name, otherwise false
+     */
+    public boolean hasModifierNamed( String modifierName ) {
+        for (ModifierMetadata modifier : modifiers) {
+            if (modifierName.equals(modifier.getName())) {
+                return true;
+            }
+        }
+
+        return false;
+
     }
 
     /**
