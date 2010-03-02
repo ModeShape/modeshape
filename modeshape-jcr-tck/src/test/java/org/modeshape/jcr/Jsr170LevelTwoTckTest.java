@@ -123,6 +123,7 @@ public class Jsr170LevelTwoTckTest {
         protected LevelTwoFeatureTests() {
             super("JCR Level 2 API Tests");
 
+            // Make sure we're using a new Repository instance for these tests ...
             addTestSuite(ResetRepositoryInstanceTest.class);
 
             addTestSuite(AddNodeTest.class);
