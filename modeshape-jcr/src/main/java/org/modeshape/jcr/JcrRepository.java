@@ -45,6 +45,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.jcr.Credentials;
+import javax.jcr.LoginException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PropertyType;
 import javax.jcr.Repository;
@@ -981,7 +982,7 @@ public class JcrRepository implements Repository {
         try {
             session.checkPermission(workspaceName, null, JcrSession.JCR_READ_PERMISSION);
         } catch (AccessControlException ace) {
-            throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName));
+            throw new LoginException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName), ace);
         }
 
         synchronized (this.activeSessions) {

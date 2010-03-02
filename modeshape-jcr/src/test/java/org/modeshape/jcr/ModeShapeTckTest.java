@@ -5,7 +5,7 @@ import static org.junit.Assert.assertThat;
 import java.util.Collections;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
-import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.LoginException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -333,7 +333,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
             session = helper.getRepository().login(creds);
             fail("User 'noaccess' with no access to the default workspace should not be able to log into that workspace");
         }
-        catch (NoSuchWorkspaceException le) {
+        catch (LoginException le) {
             // Expected
         }
         
