@@ -96,6 +96,9 @@ import org.apache.jackrabbit.test.api.observation.PropertyAddedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyChangedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
 import org.apache.jackrabbit.test.api.query.ElementTest;
+import org.apache.jackrabbit.test.api.query.GetPersistentQueryPathTest;
+import org.apache.jackrabbit.test.api.query.QueryResultNodeIteratorTest;
+import org.apache.jackrabbit.test.api.query.SaveTest;
 import org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test;
 
 /**
@@ -271,6 +274,9 @@ public class JcrTckTest {
             addTestSuite(SerializationTest.class);
 
             addTestSuite(ValueFactoryTest.class);
+            addTestSuite(GetPersistentQueryPathTest.class);
+            addTestSuite(QueryResultNodeIteratorTest.class);
+            addTestSuite(SaveTest.class);
             addTestSuite(XPathQueryLevel2Test.class);
             addTestSuite(ElementTest.class);
         }

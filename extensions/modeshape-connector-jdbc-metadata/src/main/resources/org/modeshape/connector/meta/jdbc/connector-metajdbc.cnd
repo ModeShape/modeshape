@@ -44,7 +44,7 @@
 
 [mj:table] mixin
 - mj:tableType (string)
-- mj:description (long)  
+- mj:description (string)  
 - mj:typeCatalogName (string)  
 - mj:typeSchemaName (string)  
 - mj:typeName (string)

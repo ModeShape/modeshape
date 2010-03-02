@@ -25,7 +25,6 @@ package org.modeshape.jcr;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import org.apache.jackrabbit.test.JCRTestSuite;
 
 /**
  * Test suite to wrap Apache Jackrabbit JCR technology compatibility kit (TCK) unit tests for Level 1 (L1) compliance. Note that
@@ -43,7 +42,7 @@ public class Jsr170LevelOneTckTest {
     /**
      * Wrapper so that the Jackrabbit TCK test suite gets picked up by the ModeShape Maven test target.
      * 
-     * @return a new instance of {@link JCRTestSuite}.
+     * @return a new instance of {@link Test}.
      */
     public static Test suite() {
         // Uncomment this to execute all tests
@@ -63,8 +62,9 @@ public class Jsr170LevelOneTckTest {
     private static class LevelOneFeatureTests extends TestSuite {
         protected LevelOneFeatureTests() {
             super("JCR Level 1 API Tests");
-            // We currently don't pass the tests in those suites that are commented out
-            // See https://jira.jboss.org/jira/browse/ModeShape-285
+
+            // Make sure we're using a new Repository instance for these tests ...
+            addTestSuite(ResetRepositoryInstanceTest.class);
 
             addTestSuite(org.apache.jackrabbit.test.api.RootNodeTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.NodeReadMethodsTest.class);
@@ -92,18 +92,10 @@ public class Jsr170LevelOneTckTest {
             addTestSuite(org.apache.jackrabbit.test.api.ExportDocViewTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.RepositoryLoginTest.class);
 
-            // These might not all be level one tests
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathPosIndexTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathDocOrderTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathOrderByTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.XPathJcrPathTest.class);
-
-            addTestSuite(org.apache.jackrabbit.test.api.query.QueryResultNodeIteratorTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.XPathDocOrderTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.XPathJcrPathTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.XPathOrderByTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.XPathPosIndexTest.class);
-
             addTestSuite(org.apache.jackrabbit.test.api.query.DerefQueryLevel1Test.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.GetLanguageTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.GetPersistentQueryPathLevel1Test.class);

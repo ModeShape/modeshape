@@ -65,6 +65,9 @@ public class Jsr170OptionalSqlQueryTckTest {
         protected OptionalSqlQueryFeatureTests() {
             super("JCR Optional Feature (JCR-SQL Query) Tests");
 
+            // Make sure we're using a new Repository instance for these tests ...
+            addTestSuite(ResetRepositoryInstanceTest.class);
+
             addTestSuite(org.apache.jackrabbit.test.api.query.OrderByDateTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.OrderByDoubleTest.class);
             addTestSuite(org.apache.jackrabbit.test.api.query.OrderByLongTest.class);

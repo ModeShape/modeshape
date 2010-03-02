@@ -60,6 +60,9 @@ public class Jsr170OptionalLockingTckTest {
         protected OptionalLockingFeatureTests() {
             super("JCR Optional Feature (Locking) Tests");
 
+            // Make sure we're using a new Repository instance for these tests ...
+            addTestSuite(ResetRepositoryInstanceTest.class);
+
             addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
         }
     }

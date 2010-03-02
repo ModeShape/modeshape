@@ -29,8 +29,8 @@ import org.apache.jackrabbit.test.JCRTestSuite;
 
 /**
  * Test suite to wrap Apache Jackrabbit JCR technology compatibility kit (TCK) unit tests for the compliance of the optional
- * observation feature. Note that technically these are not the actual TCK, but these are unit tests that happen to be similar to (or
- * provided the basis for) a subset of the TCK.
+ * observation feature. Note that technically these are not the actual TCK, but these are unit tests that happen to be similar to
+ * (or provided the basis for) a subset of the TCK.
  */
 public class Jsr170OptionalObservationTckTest {
 
@@ -59,6 +59,9 @@ public class Jsr170OptionalObservationTckTest {
     private static class OptionalObservationFeatureTests extends TestSuite {
         protected OptionalObservationFeatureTests() {
             super("JCR Optional Feature (Observation) Tests");
+
+            // Make sure we're using a new Repository instance for these tests ...
+            addTestSuite(ResetRepositoryInstanceTest.class);
 
             addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
         }

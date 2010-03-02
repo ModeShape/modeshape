@@ -60,6 +60,9 @@ public class Jsr170OptionalVersionTckTest {
         protected OptionalVersionFeatureTests() {
             super("JCR Optional Feature (Version) Tests");
 
+            // Make sure we're using a new Repository instance for these tests ...
+            addTestSuite(ResetRepositoryInstanceTest.class);
+
             addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
         }
     }

@@ -12,54 +12,30 @@
   <name>ModeShape JCR Compatibility Unit Tests</name>
   <description>ModeShape unit tests to check compatibility with the JCR 1.0 API. This does NOT use the official TCK.</description>
   <url>http://www.modeshape.org</url>
-  
+
   <!--
   Define the dependencies.  Note that all version and scopes default to those 
   defined in the dependencyManagement section of the parent pom.
   -->
   <dependencies>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-common</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-classloader-maven</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-repository</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-jcr</artifactId>
-		</dependency>
-		<dependency>
+        <!-- This is first so that we load the configuration files from the JCR test classpath first -->
+        <dependency>
             <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-sequencer-ddl</artifactId>
+            <artifactId>modeshape-jcr</artifactId>
             <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr</artifactId>
+        </dependency>
 		<!-- 
-      Testing (note the scope)
-    -->
+        Testing (note the scope)
+        -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-common</artifactId>
-			<version>${project.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-jcr</artifactId>
-			<version>${project.version}</version>
-			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
     <!-- 

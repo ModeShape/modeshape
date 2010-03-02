@@ -44,6 +44,7 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
     private static final String REPOSITORY_SOURCE_NAME = "Test Repository Source";
 
     private static String currentConfigurationName = "default";
+    private static boolean reloadRepositoryInstance = false;
 
     private Properties configProps;
     private String repositoryConfigurationName;
@@ -126,6 +127,10 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
         ModeShapeRepositoryStub.currentConfigurationName = newConfigName;
     }
 
+    public static void reloadRepositoryInstance() {
+        reloadRepositoryInstance = true;
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -133,7 +138,8 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
      */
     @Override
     public JcrRepository getRepository() {
-        if (!currentConfigurationName.equals(repositoryConfigurationName)) {
+        if (!currentConfigurationName.equals(repositoryConfigurationName) || reloadRepositoryInstance) {
+            reloadRepositoryInstance = false;
             configureRepository();
         }
         return repository;

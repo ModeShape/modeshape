@@ -86,6 +86,7 @@ import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
 import org.apache.jackrabbit.test.api.query.ElementTest;
 import org.apache.jackrabbit.test.api.query.GetPersistentQueryPathTest;
+import org.apache.jackrabbit.test.api.query.QueryResultNodeIteratorTest;
 import org.apache.jackrabbit.test.api.query.SaveTest;
 import org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test;
 
@@ -121,6 +122,9 @@ public class Jsr170LevelTwoTckTest {
     private static class LevelTwoFeatureTests extends TestSuite {
         protected LevelTwoFeatureTests() {
             super("JCR Level 2 API Tests");
+
+            addTestSuite(ResetRepositoryInstanceTest.class);
+
             addTestSuite(AddNodeTest.class);
             addTestSuite(NamespaceRegistryTest.class);
             addTestSuite(ReferencesTest.class);
@@ -189,6 +193,7 @@ public class Jsr170LevelTwoTckTest {
             addTestSuite(ValueFactoryTest.class);
 
             addTestSuite(GetPersistentQueryPathTest.class);
+            addTestSuite(QueryResultNodeIteratorTest.class);
             addTestSuite(SaveTest.class);
             addTestSuite(ElementTest.class);
             addTestSuite(XPathQueryLevel2Test.class);
