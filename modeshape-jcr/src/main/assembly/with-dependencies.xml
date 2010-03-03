@@ -11,8 +11,6 @@
 			<excludes>
 				<!-- Cannot ship the JCR 1.0 jar -->
 				<exclude>javax.jcr:jcr</exclude>
-				<!-- No need to include the JCIP annotations -->
-				<exclude>net.jcip:jcip-annotations</exclude>
 			</excludes>
     </dependencySet>
   </dependencySets>
