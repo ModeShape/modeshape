@@ -101,8 +101,8 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <build>
-    <plugins>
+	<build>
+		<plugins>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
@@ -121,6 +121,30 @@
           </execution>
         </executions>
       </plugin>
+			<!--
+				Adding OSGI metadata to the JAR without changing the packaging type.
+			-->
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>bundle-manifest</id>
+						<phase>process-classes</phase>
+						<goals>
+							<goal>manifest</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
     </plugins>
   </build>
 </project>
