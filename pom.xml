@@ -942,7 +942,7 @@
 			<dependency>
 				<groupId>joda-time</groupId>
 				<artifactId>joda-time</artifactId>
-				<version>1.4</version>
+				<version>1.6</version>
 				<scope>compile</scope>
 			</dependency>
 			<!-- Testing (note the scope) -->
