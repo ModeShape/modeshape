@@ -8,17 +8,14 @@ import java.util.HashMap;
 import java.util.Map;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.XmlValueEncoder;
-import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Class that adapts an arbitrary, open {@link OutputStream} to the {@link ContentHandler} interface. SAX events invoked on
- * this object will be translated into their corresponding XML text and written to the output stream.
- * 
- * @see AbstractJcrExporter#exportView(Node, OutputStream, boolean, boolean)
+ * Class that adapts an arbitrary, open {@link OutputStream} to the {@link ContentHandler} interface. SAX events invoked on this
+ * object will be translated into their corresponding XML text and written to the output stream.
  */
 public class StreamingContentHandler extends DefaultHandler {
 

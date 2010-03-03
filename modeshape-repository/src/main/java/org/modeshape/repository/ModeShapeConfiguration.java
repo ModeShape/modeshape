@@ -364,64 +364,61 @@ public class ModeShapeConfiguration {
     }
 
     /**
-     * Store the saved configuration to the file with the given name.
-     * Changes made without calling {@link #save()} will not be written to the file.
-     *
+     * Store the saved configuration to the file with the given name. Changes made without calling {@link #save()} will not be
+     * written to the file.
+     * 
      * @param file the name of the file to which the configuration should be stored
      * @throws SAXException if there is an error saving the configuration
      * @throws IOException if the file cannot be created or if there is an error writing the configuration to the file.
      */
-    public void storeTo(String file) throws SAXException, IOException {
+    public void storeTo( String file ) throws SAXException, IOException {
         storeTo(new File(file));
     }
-    
+
     /**
-     * Store the saved configuration to the given file.
-     * Changes made without calling {@link #save()} will not be written to the file.
-     *
+     * Store the saved configuration to the given file. Changes made without calling {@link #save()} will not be written to the
+     * file.
+     * 
      * @param file the name of the file to which the configuration should be stored
      * @throws SAXException if there is an error saving the configuration
      * @throws IOException if the file cannot be created or if there is an error writing the configuration to the file.
      */
-    public void storeTo(File file) throws SAXException, IOException {
+    public void storeTo( File file ) throws SAXException, IOException {
         OutputStream os = null;
         try {
             os = new FileOutputStream(file);
             storeTo(new StreamingContentHandler(os));
-        }
-        finally {
+        } finally {
             if (os != null) os.close();
         }
     }
 
     /**
-     * Store the saved configuration to the stream.
-     * Changes made without calling {@link #save()} will not be written to the stream.
-     *
-     * @param file the name of the file to which the configuration should be stored
+     * Store the saved configuration to the stream. Changes made without calling {@link #save()} will not be written to the
+     * stream.
+     * 
+     * @param os the name of the file to which the configuration should be stored
      * @throws SAXException if there is an error saving the configuration
      */
-    public void storeTo(OutputStream os) throws SAXException {
+    public void storeTo( OutputStream os ) throws SAXException {
         storeTo(new StreamingContentHandler(os));
     }
-    
+
     /**
-     * Traverse the saved configuration graph treating it as an XML document and calling the corresponding
-     * SAX event on the provided {@link ContentHandler}.
-     *
-     * Changes made without calling {@link #save()} will not be written to the stream.
-     *
+     * Traverse the saved configuration graph treating it as an XML document and calling the corresponding SAX event on the
+     * provided {@link ContentHandler}. Changes made without calling {@link #save()} will not be written to the stream.
+     * 
      * @param handler the content handler that will receive the SAX events
      * @throws SAXException if there is an error saving the configuration
      */
-    public void storeTo(ContentHandler handler) throws SAXException {
+    public void storeTo( ContentHandler handler ) throws SAXException {
         Subgraph allContent = configurationGraph().getSubgraphOfDepth(ReadBranchRequest.NO_MAXIMUM_DEPTH).at("/");
 
         Set<NamespaceRegistry.Namespace> namespaces = this.context.getNamespaceRegistry().getNamespaces();
         Stack<String> mappedNamespacePrefixes = new Stack<String>();
-        
+
         handler.startDocument();
-        
+
         for (NamespaceRegistry.Namespace namespace : namespaces) {
             handler.startPrefixMapping(namespace.getPrefix(), namespace.getNamespaceUri());
             mappedNamespacePrefixes.push(namespace.getPrefix());
@@ -431,61 +428,61 @@ public class ModeShapeConfiguration {
         while (!mappedNamespacePrefixes.isEmpty()) {
             handler.endPrefixMapping(mappedNamespacePrefixes.pop());
         }
-        
+
         handler.endDocument();
     }
-    
-    private void exportNode(ContentHandler handler, Subgraph subgraph, SubgraphNode node) throws SAXException {
+
+    private void exportNode( ContentHandler handler,
+                             Subgraph subgraph,
+                             SubgraphNode node ) throws SAXException {
         // Build the attributes
- 
+
         NamespaceRegistry registry = this.context.getNamespaceRegistry();
         ValueFactory<String> stringFactory = this.context.getValueFactories().getStringFactory();
-        
+
         AttributesImpl atts = new AttributesImpl();
-        
+
         for (Property prop : node.getProperties()) {
             Name name = prop.getName();
-            
+
             StringBuilder buff = new StringBuilder();
             boolean first = true;
-            
+
             for (Object rawValue : prop) {
                 if (first) {
                     first = false;
-                }
-                else {
+                } else {
                     buff.append(",");
                 }
                 buff.append(stringFactory.create(rawValue));
             }
-            
+
             atts.addAttribute(name.getNamespaceUri(), name.getLocalName(), name.getString(registry), "string", buff.toString());
         }
-        
+
         // Start the node
-        Name nodeName ;
+        Name nodeName;
         Path nodePath = node.getLocation().getPath();
-        if ( nodePath.isRoot()) {
-            nodeName = name("configuration");            
-        }
-        else {
+        if (nodePath.isRoot()) {
+            nodeName = name("configuration");
+        } else {
             nodeName = node.getLocation().getPath().getLastSegment().getName();
         }
         String uri = nodeName.getNamespaceUri();
         String localName = nodeName.getLocalName();
         String qName = nodeName.getString(registry);
         handler.startElement(uri, localName, qName, atts);
-        
+
         // Handle the children
         for (Location childLocation : node.getChildren()) {
             exportNode(handler, subgraph, subgraph.getNode(childLocation));
         }
-        
+
         // Finish the node
         handler.endElement(uri, localName, qName);
-        
+
     }
-    
+
     /**
      * Get the immutable representation of the information defining where the configuration content can be found.
      * 
@@ -529,7 +526,7 @@ public class ModeShapeConfiguration {
 
         return graph;
     }
-    
+
     protected Graph.Batch changes() {
         if (changes == null) {
             changes = configurationGraph().batch();

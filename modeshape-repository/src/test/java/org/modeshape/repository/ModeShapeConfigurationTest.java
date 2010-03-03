@@ -49,7 +49,6 @@ import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.request.ReadBranchRequest;
 import org.modeshape.repository.sequencer.MockStreamSequencerA;
 import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -104,16 +103,16 @@ public class ModeShapeConfigurationTest {
         assertThat(subgraph.getNode("/mode:sources/Cars"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Cars"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, "3"));
         assertThat(subgraph.getNode("/mode:sources/Cars"), hasProperty(ModeShapeLexicon.CLASSNAME,
-                                                                      InMemoryRepositorySource.class.getName()));
+                                                                       InMemoryRepositorySource.class.getName()));
 
         assertThat(subgraph.getNode("/mode:sources/Aircraft"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Aircraft"), hasProperty("defaultWorkspaceName", "default"));
         assertThat(subgraph.getNode("/mode:sources/Aircraft"), hasProperty(ModeShapeLexicon.CLASSNAME,
-                                                                          InMemoryRepositorySource.class.getName()));
+                                                                           InMemoryRepositorySource.class.getName()));
         assertThat(subgraph.getNode("/mode:sources/Cache"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Cache"), hasProperty("defaultWorkspaceName", "default"));
         assertThat(subgraph.getNode("/mode:sources/Cache"), hasProperty(ModeShapeLexicon.CLASSNAME,
-                                                                       InMemoryRepositorySource.class.getName()));
+                                                                        InMemoryRepositorySource.class.getName()));
         assertThat(subgraph.getNode("/mode:sources/Cache/cachePolicy"),
                    hasProperty(ModeShapeLexicon.CLASSNAME, InMemoryWorkspaceCache.InMemoryCachePolicy.class.getName()));
 
@@ -127,12 +126,12 @@ public class ModeShapeConfigurationTest {
         assertThat(subgraph.getNode("/mode:sequencers").getChildren(), hasChild(segment("Image Sequencer")));
         assertThat(subgraph.getNode("/mode:sequencers/Image Sequencer"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sequencers/Image Sequencer"), hasProperty(ModeShapeLexicon.DESCRIPTION,
-                                                                                    "Image metadata sequencer"));
+                                                                                     "Image metadata sequencer"));
         assertThat(subgraph.getNode("/mode:sequencers/Image Sequencer"),
                    hasProperty(ModeShapeLexicon.CLASSNAME, "org.modeshape.sequencer.image.ImageMetadataSequencer"));
         assertThat(subgraph.getNode("/mode:sequencers/Image Sequencer"), hasProperty(ModeShapeLexicon.PATH_EXPRESSION,
-                                                                                    "/foo/source => /foo/target",
-                                                                                    "/bar/source => /bar/target"));
+                                                                                     "/foo/source => /foo/target",
+                                                                                     "/bar/source => /bar/target"));
     }
 
     @Test
@@ -236,7 +235,7 @@ public class ModeShapeConfigurationTest {
         assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.DESCRIPTION, "description"));
         assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
         assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
-                                                                         InMemoryRepositorySource.class.getName()));
+                                                                          InMemoryRepositorySource.class.getName()));
     }
 
     @Test
@@ -328,7 +327,7 @@ public class ModeShapeConfigurationTest {
         assertThat(subgraph.getNode("/mode:sources/Source1"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
         assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
-                                                                         InMemoryRepositorySource.class.getName()));
+                                                                          InMemoryRepositorySource.class.getName()));
         assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSPATH, "cp1", "cp2"));
     }
 
@@ -348,7 +347,7 @@ public class ModeShapeConfigurationTest {
         assertThat(subgraph.getNode("/mode:sources/Source1"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
         assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
-                                                                         InMemoryRepositorySource.class.getName()));
+                                                                          InMemoryRepositorySource.class.getName()));
     }
 
     @Test
@@ -365,7 +364,8 @@ public class ModeShapeConfigurationTest {
         Subgraph subgraph = content.graph().getSubgraphOfDepth(3).at("/");
         assertThat(subgraph.getNode("/mode:mimeTypeDetectors").getChildren(), hasChild(segment("detector")));
         assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"), is(notNullValue()));
-        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"), hasProperty(ModeShapeLexicon.DESCRIPTION, "default detector"));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"), hasProperty(ModeShapeLexicon.DESCRIPTION,
+                                                                                     "default detector"));
         assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"),
                    hasProperty(ModeShapeLexicon.CLASSNAME, ExtensionBasedMimeTypeDetector.class.getName()));
     }
@@ -390,11 +390,11 @@ public class ModeShapeConfigurationTest {
         assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.DESCRIPTION, "Mock Sequencer A"));
         assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.CLASSNAME,
-                                                                               MockStreamSequencerA.class.getName()));
+                                                                                MockStreamSequencerA.class.getName()));
         System.out.println(subgraph.getNode("/mode:sequencers/sequencerA").getProperty(ModeShapeLexicon.PATH_EXPRESSION));
         assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.PATH_EXPRESSION,
-                                                                               "/foo/source => /foo/target",
-                                                                               "/bar/source => /bar/target"));
+                                                                                "/foo/source => /foo/target",
+                                                                                "/bar/source => /bar/target"));
     }
 
     @Test
@@ -424,12 +424,13 @@ public class ModeShapeConfigurationTest {
         assertThat(subgraph.getNode("/mode:sources/Source1"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, 5));
         assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
-                                                                         InMemoryRepositorySource.class.getName()));
+                                                                          InMemoryRepositorySource.class.getName()));
         assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSPATH, "cp1", "cp2"));
 
         assertThat(subgraph.getNode("/mode:mimeTypeDetectors").getChildren(), hasChild(segment("detector")));
         assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"), is(notNullValue()));
-        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"), hasProperty(ModeShapeLexicon.DESCRIPTION, "default detector"));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"), hasProperty(ModeShapeLexicon.DESCRIPTION,
+                                                                                     "default detector"));
         assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"),
                    hasProperty(ModeShapeLexicon.CLASSNAME, ExtensionBasedMimeTypeDetector.class.getName()));
 
@@ -437,10 +438,10 @@ public class ModeShapeConfigurationTest {
         assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.DESCRIPTION, "Mock Sequencer A"));
         assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.CLASSNAME,
-                                                                               MockStreamSequencerA.class.getName()));
+                                                                                MockStreamSequencerA.class.getName()));
         assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.PATH_EXPRESSION,
-                                                                               "/foo/source => /foo/target",
-                                                                               "/bar/source => /bar/target"));
+                                                                                "/foo/source => /foo/target",
+                                                                                "/bar/source => /bar/target"));
     }
 
     @Test
@@ -454,7 +455,7 @@ public class ModeShapeConfigurationTest {
                      .save();
 
         GraphHandler handler = new GraphHandler();
-        
+
         configuration.storeTo(handler);
 
         Subgraph subgraph = handler.graph().getSubgraphOfDepth(3).at("/");
@@ -462,19 +463,29 @@ public class ModeShapeConfigurationTest {
         assertThat(subgraph.getNode("/mode:sources/Source1"), is(notNullValue()));
         assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, "5"));
         assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
-                                                                         InMemoryRepositorySource.class.getName()));
-    
+                                                                          InMemoryRepositorySource.class.getName()));
+
     }
 
     @Test
     public void shouldSaveComplexConfigurationToContentHandler() throws Exception {
         // Update the configuration and save it ...
-        configuration.repositorySource("Source1").usingClass(InMemoryRepositorySource.class.getName()).loadedFrom("cp1", "cp2").setProperty("retryLimit",
-                                                                                                                                            5);
-        configuration.mimeTypeDetector("detector").usingClass(ExtensionBasedMimeTypeDetector.class).setDescription("default detector");
-        configuration.sequencer("sequencerA").usingClass(MockStreamSequencerA.class).setDescription("Mock Sequencer A").sequencingFrom("/foo/source").andOutputtingTo("/foo/target").sequencingFrom("/bar/source").andOutputtingTo("/bar/target");
+        configuration.repositorySource("Source1")
+                     .usingClass(InMemoryRepositorySource.class.getName())
+                     .loadedFrom("cp1", "cp2")
+                     .setProperty("retryLimit", 5);
+        configuration.mimeTypeDetector("detector")
+                     .usingClass(ExtensionBasedMimeTypeDetector.class)
+                     .setDescription("default detector");
+        configuration.sequencer("sequencerA")
+                     .usingClass(MockStreamSequencerA.class)
+                     .setDescription("Mock Sequencer A")
+                     .sequencingFrom("/foo/source")
+                     .andOutputtingTo("/foo/target")
+                     .sequencingFrom("/bar/source")
+                     .andOutputtingTo("/bar/target");
         configuration.save();
-                                                                                                                                         
+
         GraphHandler handler = new GraphHandler();
 
         configuration.storeTo(handler);
@@ -505,7 +516,7 @@ public class ModeShapeConfigurationTest {
                                                                                 "/bar/source => /bar/target"));
 
     }
-    
+
     public class GraphHandler extends DefaultHandler {
 
         private PathFactory pathFactory;
@@ -516,6 +527,7 @@ public class ModeShapeConfigurationTest {
         private Graph.Batch batch;
         private Stack<Path> parents;
 
+        @SuppressWarnings( "synthetic-access" )
         public GraphHandler() {
             this.pathFactory = context.getValueFactories().getPathFactory();
             this.nameFactory = context.getValueFactories().getNameFactory();
@@ -557,7 +569,7 @@ public class ModeShapeConfigurationTest {
         public void startElement( String uri,
                                   String localName,
                                   String qName,
-                                  Attributes attributes ) throws SAXException {
+                                  Attributes attributes ) {
             Path nodePath;
 
             if (parents.isEmpty()) {
@@ -568,12 +580,11 @@ public class ModeShapeConfigurationTest {
             }
             parents.push(nodePath);
 
-
             for (int i = 0; i < attributes.getLength(); i++) {
                 String rawValue = attributes.getValue(i);
                 String[] values = rawValue.split(",");
-                
-                Property prop = propFactory.create(name(attributes.getQName(i)), (Object[]) values);
+
+                Property prop = propFactory.create(name(attributes.getQName(i)), (Object[])values);
 
                 batch.set(prop).on(nodePath).and();
             }
@@ -583,7 +594,7 @@ public class ModeShapeConfigurationTest {
         @Override
         public void endElement( String uri,
                                 String localName,
-                                String qName ) throws SAXException {
+                                String qName ) {
             parents.pop();
         }
     }
