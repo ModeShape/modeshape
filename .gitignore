@@ -37,6 +37,7 @@
 /extensions/modeshape-web-jcr-rest/target/
 /extensions/modeshape-web-jcr-rest-war/target/
 
+/web/target/
 /web/modeshape-web-jcr-rest/target/
 /web/modeshape-web-jcr-rest-war/target/
 /web/modeshape-web-jcr-rest-client/target/
