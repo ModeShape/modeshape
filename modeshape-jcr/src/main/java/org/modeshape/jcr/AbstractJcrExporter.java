@@ -37,18 +37,19 @@ import javax.jcr.RepositoryException;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.XmlNameEncoder;
-import org.modeshape.common.text.XmlValueEncoder;
+import org.modeshape.common.xml.StreamingContentHandler;
 import org.modeshape.graph.property.Name;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Superclass of ModeShape JCR exporters, provides basic support for traversing through the nodes recursively (if needed), exception
- * wrapping (since {@link ItemVisitor} does not allow checked exceptions to be thrown from its visit* methods, and the ability to
- * wrap an {@link OutputStream} with a {@link ContentHandler}. <p /> Each exporter is only intended to be used once (by calling
- * <code>exportView</code>) and discarded. This class is <b>NOT</b> thread-safe.
+ * Superclass of ModeShape JCR exporters, provides basic support for traversing through the nodes recursively (if needed),
+ * exception wrapping (since {@link ItemVisitor} does not allow checked exceptions to be thrown from its visit* methods, and the
+ * ability to wrap an {@link OutputStream} with a {@link ContentHandler}.
+ * <p />
+ * Each exporter is only intended to be used once (by calling <code>exportView</code>) and discarded. This class is <b>NOT</b>
+ * thread-safe.
  * 
  * @see JcrSystemViewExporter
  * @see JcrDocumentViewExporter
@@ -62,6 +63,11 @@ abstract class AbstractJcrExporter {
      * @see XmlNameEncoder
      */
     private static final TextEncoder NAME_ENCODER = new XmlNameEncoder();
+
+    /**
+     * The list of XML namespaces that are predefined and should not be exported by the content handler.
+     */
+    private static final List<String> UNEXPORTABLE_NAMESPACES = Arrays.asList(new String[] {"", "xml", "xmlns"});
 
     /**
      * The session in which this exporter was created.
@@ -180,7 +186,7 @@ abstract class AbstractJcrExporter {
                             boolean skipBinary,
                             boolean noRecurse ) throws RepositoryException {
         try {
-            exportView(node, new StreamingContentHandler(os), skipBinary, noRecurse);
+            exportView(node, new StreamingContentHandler(os, UNEXPORTABLE_NAMESPACES), skipBinary, noRecurse);
             os.flush();
         } catch (IOException ioe) {
             throw new RepositoryException(ioe);
@@ -239,152 +245,4 @@ abstract class AbstractJcrExporter {
                                   NAME_ENCODER.encode(name.getLocalName()),
                                   NAME_ENCODER.encode(getPrefixedName(name)));
     }
-
-    /**
-     * Helper class that adapts an arbitrary, open {@link OutputStream} to the {@link ContentHandler} interface. SAX events
-     * invoked on this object will be translated into their corresponding XML text and written to the output stream.
-     * 
-     * @see AbstractJcrExporter#exportView(Node, OutputStream, boolean, boolean)
-     */
-    private class StreamingContentHandler extends DefaultHandler {
-
-        /** Debug setting that allows all output to be written to {@link System#out}. */
-        private static final boolean LOG_TO_CONSOLE = false;
-
-        /**
-         * Encoder to properly escape XML attribute values
-         * 
-         * @see XmlValueEncoder
-         */
-        private final TextEncoder VALUE_ENCODER = new XmlValueEncoder();
-
-        /**
-         * The list of XML namespaces that are predefined and should not be exported by the content handler.
-         */
-        private final List<String> UNEXPORTABLE_NAMESPACES = Arrays.asList(new String[] {"", "xml", "xmlns"});
-
-        /**
-         * The output stream to which the XML will be written
-         */
-        private final OutputStream os;
-
-        /**
-         * The XML namespace prefixes that are currently mapped
-         */
-        private final Map<String, String> mappedPrefixes;
-
-        public StreamingContentHandler( OutputStream os ) {
-            this.os = os;
-            mappedPrefixes = new HashMap<String, String>();
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#characters(char[], int, int)
-         */
-        @Override
-        public void characters( char[] ch,
-                                int start,
-                                int length ) throws SAXException {
-            emit(VALUE_ENCODER.encode(new String(ch, start, length)));
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#startDocument()
-         */
-        @Override
-        public void startDocument() throws SAXException {
-            emit("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#startElement(java.lang.String, java.lang.String, java.lang.String,
-         *      org.xml.sax.Attributes)
-         */
-        @Override
-        public void startElement( String uri,
-                                  String localName,
-                                  String name,
-                                  Attributes attributes ) throws SAXException {
-            emit("<");
-            emit(name);
-
-            for (Map.Entry<String, String> mapping : mappedPrefixes.entrySet()) {
-                emit(" xmlns:");
-                emit(mapping.getKey());
-                emit("=\"");
-                emit(mapping.getValue());
-                emit("\"");
-            }
-
-            mappedPrefixes.clear();
-
-            if (attributes != null) {
-                for (int i = 0; i < attributes.getLength(); i++) {
-                    emit(" ");
-                    emit(attributes.getQName(i));
-                    emit("=\"");
-                    emit(VALUE_ENCODER.encode(attributes.getValue(i)));
-                    emit("\"");
-                }
-            }
-
-            emit(">");
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
-         */
-        @Override
-        public void endElement( String uri,
-                                String localName,
-                                String name ) throws SAXException {
-            emit("</");
-            emit(name);
-            emit(">");
-            if (LOG_TO_CONSOLE) System.out.println();
-
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.xml.sax.helpers.DefaultHandler#startPrefixMapping(java.lang.String, java.lang.String)
-         */
-        @Override
-        public void startPrefixMapping( String prefix,
-                                        String uri ) {
-            if (!UNEXPORTABLE_NAMESPACES.contains(prefix)) {
-                mappedPrefixes.put(prefix, uri);
-            }
-        }
-
-        /**
-         * Writes the given text to the output stream for this {@link StreamingContentHandler}.
-         * 
-         * @param text the text to output
-         * @throws SAXException if there is an error writing to the stream
-         * @see StreamingContentHandler#os
-         */
-        private void emit( String text ) throws SAXException {
-
-            try {
-                if (LOG_TO_CONSOLE) {
-                    System.out.print(text);
-                }
-
-                os.write(text.getBytes());
-            } catch (IOException ioe) {
-                throw new SAXException(ioe);
-            }
-        }
-    }
-
 }

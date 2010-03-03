@@ -25,8 +25,10 @@ package org.modeshape.repository;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.collection.Problems;
@@ -42,24 +45,32 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.component.ClassLoaderFactory;
 import org.modeshape.common.component.StandardClassLoaderFactory;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.xml.StreamingContentHandler;
 import org.modeshape.graph.DnaExecutionContext;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Node;
+import org.modeshape.graph.Subgraph;
+import org.modeshape.graph.SubgraphNode;
 import org.modeshape.graph.Workspace;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.mimetype.MimeTypeDetector;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathExpression;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
+import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.basic.RootPath;
 import org.modeshape.graph.request.InvalidWorkspaceException;
+import org.modeshape.graph.request.ReadBranchRequest;
 import org.modeshape.graph.sequencer.StreamSequencer;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * A configuration builder for a {@link ModeShapeEngine}. This class is an internal domain-specific language (DSL), and is
@@ -353,6 +364,129 @@ public class ModeShapeConfiguration {
     }
 
     /**
+     * Store the saved configuration to the file with the given name.
+     * Changes made without calling {@link #save()} will not be written to the file.
+     *
+     * @param file the name of the file to which the configuration should be stored
+     * @throws SAXException if there is an error saving the configuration
+     * @throws IOException if the file cannot be created or if there is an error writing the configuration to the file.
+     */
+    public void storeTo(String file) throws SAXException, IOException {
+        storeTo(new File(file));
+    }
+    
+    /**
+     * Store the saved configuration to the given file.
+     * Changes made without calling {@link #save()} will not be written to the file.
+     *
+     * @param file the name of the file to which the configuration should be stored
+     * @throws SAXException if there is an error saving the configuration
+     * @throws IOException if the file cannot be created or if there is an error writing the configuration to the file.
+     */
+    public void storeTo(File file) throws SAXException, IOException {
+        OutputStream os = null;
+        try {
+            os = new FileOutputStream(file);
+            storeTo(new StreamingContentHandler(os));
+        }
+        finally {
+            if (os != null) os.close();
+        }
+    }
+
+    /**
+     * Store the saved configuration to the stream.
+     * Changes made without calling {@link #save()} will not be written to the stream.
+     *
+     * @param file the name of the file to which the configuration should be stored
+     * @throws SAXException if there is an error saving the configuration
+     */
+    public void storeTo(OutputStream os) throws SAXException {
+        storeTo(new StreamingContentHandler(os));
+    }
+    
+    /**
+     * Traverse the saved configuration graph treating it as an XML document and calling the corresponding
+     * SAX event on the provided {@link ContentHandler}.
+     *
+     * Changes made without calling {@link #save()} will not be written to the stream.
+     *
+     * @param handler the content handler that will receive the SAX events
+     * @throws SAXException if there is an error saving the configuration
+     */
+    public void storeTo(ContentHandler handler) throws SAXException {
+        Subgraph allContent = configurationGraph().getSubgraphOfDepth(ReadBranchRequest.NO_MAXIMUM_DEPTH).at("/");
+
+        Set<NamespaceRegistry.Namespace> namespaces = this.context.getNamespaceRegistry().getNamespaces();
+        Stack<String> mappedNamespacePrefixes = new Stack<String>();
+        
+        handler.startDocument();
+        
+        for (NamespaceRegistry.Namespace namespace : namespaces) {
+            handler.startPrefixMapping(namespace.getPrefix(), namespace.getNamespaceUri());
+            mappedNamespacePrefixes.push(namespace.getPrefix());
+        }
+
+        exportNode(handler, allContent, allContent.getRoot());
+        while (!mappedNamespacePrefixes.isEmpty()) {
+            handler.endPrefixMapping(mappedNamespacePrefixes.pop());
+        }
+        
+        handler.endDocument();
+    }
+    
+    private void exportNode(ContentHandler handler, Subgraph subgraph, SubgraphNode node) throws SAXException {
+        // Build the attributes
+ 
+        NamespaceRegistry registry = this.context.getNamespaceRegistry();
+        ValueFactory<String> stringFactory = this.context.getValueFactories().getStringFactory();
+        
+        AttributesImpl atts = new AttributesImpl();
+        
+        for (Property prop : node.getProperties()) {
+            Name name = prop.getName();
+            
+            StringBuilder buff = new StringBuilder();
+            boolean first = true;
+            
+            for (Object rawValue : prop) {
+                if (first) {
+                    first = false;
+                }
+                else {
+                    buff.append(",");
+                }
+                buff.append(stringFactory.create(rawValue));
+            }
+            
+            atts.addAttribute(name.getNamespaceUri(), name.getLocalName(), name.getString(registry), "string", buff.toString());
+        }
+        
+        // Start the node
+        Name nodeName ;
+        Path nodePath = node.getLocation().getPath();
+        if ( nodePath.isRoot()) {
+            nodeName = name("configuration");            
+        }
+        else {
+            nodeName = node.getLocation().getPath().getLastSegment().getName();
+        }
+        String uri = nodeName.getNamespaceUri();
+        String localName = nodeName.getLocalName();
+        String qName = nodeName.getString(registry);
+        handler.startElement(uri, localName, qName, atts);
+        
+        // Handle the children
+        for (Location childLocation : node.getChildren()) {
+            exportNode(handler, subgraph, subgraph.getNode(childLocation));
+        }
+        
+        // Finish the node
+        handler.endElement(uri, localName, qName);
+        
+    }
+    
+    /**
      * Get the immutable representation of the information defining where the configuration content can be found.
      * 
      * @return the configuration definition
@@ -386,14 +520,19 @@ public class ModeShapeConfiguration {
         return problems;
     }
 
+    protected Graph configurationGraph() {
+        ConfigurationDefinition content = getConfigurationDefinition();
+        Graph graph = Graph.create(content.getRepositorySource(), content.getContext());
+        if (content.getWorkspace() != null) {
+            graph.useWorkspace(content.getWorkspace());
+        }
+
+        return graph;
+    }
+    
     protected Graph.Batch changes() {
         if (changes == null) {
-            ConfigurationDefinition content = getConfigurationDefinition();
-            Graph graph = Graph.create(content.getRepositorySource(), content.getContext());
-            if (content.getWorkspace() != null) {
-                graph.useWorkspace(content.getWorkspace());
-            }
-            changes = graph.batch();
+            changes = configurationGraph().batch();
         }
         return changes;
     }

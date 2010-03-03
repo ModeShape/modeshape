@@ -31,16 +31,26 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Stack;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.Graph;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.connector.path.cache.InMemoryWorkspaceCache;
 import org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector;
+import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.PathFactory;
+import org.modeshape.graph.property.Property;
+import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.request.ReadBranchRequest;
 import org.modeshape.repository.sequencer.MockStreamSequencerA;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * @author Randall Hauch
@@ -428,9 +438,153 @@ public class ModeShapeConfigurationTest {
         assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.DESCRIPTION, "Mock Sequencer A"));
         assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.CLASSNAME,
                                                                                MockStreamSequencerA.class.getName()));
-        System.out.println(subgraph.getNode("/mode:sequencers/sequencerA").getProperty(ModeShapeLexicon.PATH_EXPRESSION));
         assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.PATH_EXPRESSION,
                                                                                "/foo/source => /foo/target",
                                                                                "/bar/source => /bar/target"));
+    }
+
+    @Test
+    public void shouldSaveSimpleConfigurationToContentHandler() throws Exception {
+        // Update the configuration and save it ...
+        configuration.repositorySource("Source1")
+                     .usingClass(InMemoryRepositorySource.class.getName())
+                     .loadedFromClasspath()
+                     .setProperty("retryLimit", 5)
+                     .and()
+                     .save();
+
+        GraphHandler handler = new GraphHandler();
+        
+        configuration.storeTo(handler);
+
+        Subgraph subgraph = handler.graph().getSubgraphOfDepth(3).at("/");
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, "5"));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
+                                                                         InMemoryRepositorySource.class.getName()));
+    
+    }
+
+    @Test
+    public void shouldSaveComplexConfigurationToContentHandler() throws Exception {
+        // Update the configuration and save it ...
+        configuration.repositorySource("Source1").usingClass(InMemoryRepositorySource.class.getName()).loadedFrom("cp1", "cp2").setProperty("retryLimit",
+                                                                                                                                            5);
+        configuration.mimeTypeDetector("detector").usingClass(ExtensionBasedMimeTypeDetector.class).setDescription("default detector");
+        configuration.sequencer("sequencerA").usingClass(MockStreamSequencerA.class).setDescription("Mock Sequencer A").sequencingFrom("/foo/source").andOutputtingTo("/foo/target").sequencingFrom("/bar/source").andOutputtingTo("/bar/target");
+        configuration.save();
+                                                                                                                                         
+        GraphHandler handler = new GraphHandler();
+
+        configuration.storeTo(handler);
+
+        Subgraph subgraph = handler.graph().getSubgraphOfDepth(3).at("/");
+        assertThat(subgraph.getNode("/mode:sources"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.RETRY_LIMIT, "5"));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSNAME,
+                                                                          InMemoryRepositorySource.class.getName()));
+        assertThat(subgraph.getNode("/mode:sources/Source1"), hasProperty(ModeShapeLexicon.CLASSPATH, "cp1", "cp2"));
+
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors").getChildren(), hasChild(segment("detector")));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"), hasProperty(ModeShapeLexicon.DESCRIPTION,
+                                                                                     "default detector"));
+        assertThat(subgraph.getNode("/mode:mimeTypeDetectors/detector"),
+                   hasProperty(ModeShapeLexicon.CLASSNAME, ExtensionBasedMimeTypeDetector.class.getName()));
+
+        assertThat(subgraph.getNode("/mode:sequencers").getChildren(), hasChild(segment("sequencerA")));
+        assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), is(notNullValue()));
+        assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.DESCRIPTION, "Mock Sequencer A"));
+        assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.CLASSNAME,
+                                                                                MockStreamSequencerA.class.getName()));
+
+        assertThat(subgraph.getNode("/mode:sequencers/sequencerA"), hasProperty(ModeShapeLexicon.PATH_EXPRESSION,
+                                                                                "/foo/source => /foo/target",
+                                                                                "/bar/source => /bar/target"));
+
+    }
+    
+    public class GraphHandler extends DefaultHandler {
+
+        private PathFactory pathFactory;
+        private NameFactory nameFactory;
+        private PropertyFactory propFactory;
+        private Graph graph;
+        private InMemoryRepositorySource source;
+        private Graph.Batch batch;
+        private Stack<Path> parents;
+
+        public GraphHandler() {
+            this.pathFactory = context.getValueFactories().getPathFactory();
+            this.nameFactory = context.getValueFactories().getNameFactory();
+            this.propFactory = context.getPropertyFactory();
+
+            this.parents = new Stack<Path>();
+
+            String name = "Handler Source";
+            source = new InMemoryRepositorySource();
+            source.setName(name);
+
+            this.graph = Graph.create(source, context);
+        }
+
+        public Graph graph() {
+            return graph;
+        }
+
+        private Path path( Path root,
+                           String child ) {
+            return pathFactory.create(root, child);
+        }
+
+        private Name name( String name ) {
+            return nameFactory.create(name);
+        }
+
+        @Override
+        public void startDocument() {
+            batch = graph.batch();
+        }
+
+        @Override
+        public void endDocument() {
+            batch.execute();
+        }
+
+        @Override
+        public void startElement( String uri,
+                                  String localName,
+                                  String qName,
+                                  Attributes attributes ) throws SAXException {
+            Path nodePath;
+
+            if (parents.isEmpty()) {
+                nodePath = pathFactory.createRootPath();
+            } else {
+                nodePath = path(parents.peek(), qName);
+                batch.create(nodePath).and();
+            }
+            parents.push(nodePath);
+
+
+            for (int i = 0; i < attributes.getLength(); i++) {
+                String rawValue = attributes.getValue(i);
+                String[] values = rawValue.split(",");
+                
+                Property prop = propFactory.create(name(attributes.getQName(i)), (Object[]) values);
+
+                batch.set(prop).on(nodePath).and();
+            }
+
+        }
+
+        @Override
+        public void endElement( String uri,
+                                String localName,
+                                String qName ) throws SAXException {
+            parents.pop();
+        }
     }
 }
