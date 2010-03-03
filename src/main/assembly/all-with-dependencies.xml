@@ -1,0 +1,37 @@
+<assembly>
+  <id>all-with-dependencies</id>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <formats>
+    <format>jar</format>
+  </formats>
+  <moduleSets>
+    <moduleSet>
+	  <!--
+		Gather into the distribution the source, jars, and test-jars for all projects
+	  -->
+      <sources>
+				<includeModuleDirectory>false</includeModuleDirectory>
+        <fileSets>
+          <fileSet>
+						<directory>target</directory>
+						<outputDirectory></outputDirectory>
+		    		<includes>
+		      		<include>*-with-dependencies.jar</include>
+		    		</includes>
+          </fileSet>
+        </fileSets>
+      </sources>
+    </moduleSet>
+  </moduleSets>
+  <fileSets>
+    <fileSet>
+      <directory>src/main/resources</directory>
+			<useStrictFiltering>true</useStrictFiltering>
+			<outputDirectory>META-INF</outputDirectory>
+      <includes>
+				<include>AUTHORS.txt</include>
+				<include>COPYRIGHT.txt</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+</assembly>

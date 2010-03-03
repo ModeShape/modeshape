@@ -101,4 +101,26 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <descriptors>
+            <descriptor>${project.basedir}/../../src/main/assembly/classloader-with-dependencies.xml</descriptor>
+            <!--descriptor>src/main/assembly/with-dependencies.xml</descriptor-->
+          </descriptors>
+					<finalName>${project.artifactId}-${project.version}</finalName>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

@@ -28,6 +28,8 @@
 		  <directory></directory>
 		  <outputDirectory></outputDirectory>
 	    <excludes>
+	      <exclude>.git/**</exclude>
+	      <exclude>.metadata/**</exclude>
 	      <exclude>target/**</exclude>
 	      <exclude>**/target/**</exclude>
 	    </excludes>

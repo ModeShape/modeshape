@@ -158,6 +158,7 @@
 		<module>utils/modeshape-jpa-ddl-gen</module> 
 	</modules>
 	<properties>
+		<rootDir>${project.basedir}</rootDir>
 		<!-- Instruct the build to use only UTF-8 encoding for source code -->
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<!-- These are properties used in the database profiles. Must initialize them to be empty so that Maven applies
@@ -275,11 +276,12 @@
 	            <configuration>
 								<finalName>modeshape-${project.version}</finalName>
 			          <descriptors>
-									<descriptor>src/main/resources/assemblies/examples.xml</descriptor>
-									<descriptor>src/main/resources/assemblies/javadoc.xml</descriptor>
-									<descriptor>src/main/resources/assemblies/dist.xml</descriptor>
-									<descriptor>src/main/resources/assemblies/src.xml</descriptor>
-									<descriptor>src/main/resources/assemblies/all.xml</descriptor>
+									<descriptor>src/main/assembly/all-with-dependencies.xml</descriptor>
+									<descriptor>src/main/assembly/examples.xml</descriptor>
+									<descriptor>src/main/assembly/javadoc.xml</descriptor>
+									<descriptor>src/main/assembly/dist.xml</descriptor>
+									<descriptor>src/main/assembly/src.xml</descriptor>
+									<descriptor>src/main/assembly/all.xml</descriptor>
 								</descriptors>
 	            </configuration>
 	          </plugin>
