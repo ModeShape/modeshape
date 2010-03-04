@@ -393,21 +393,22 @@ config.mimeTypeDetector("Extension Detector")
 			<title>Storing Configuration</title>
 			<para>
 				Regardless of how the &JcrConfiguration; is loaded, it can also be stored to a file or stream in an XML format that can then be
-				reloaded in the future to recreate the configuration.
+				reloaded in the future to recreate the configuration. This makes it very easy to programmatically generate a configuration file
+				once while being able to load that same configuration at a later time (or on a different instance).
 			</para>
     		<programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 String pathToFile = ...
 
-// Any changes before this point will be saved to the file
+// Save any changes before this point in the configuration repository ...
 configuration.save();
-// Any changes after the last call to save() will not be added to the file.
+// And now write out the configuration repository to a file ...
 configuration.storeTo(pathToFile);
  ]]></programlisting>
 			<para>
 				This will create a file at <code>pathToFile</code> that contains the current configuration in XML format. Any changes made after 
-				the most recent call to the <code>save()</code> method on the &JcrConfiguration; object will not be stored.  The generated XML will
-				not be formatted to maximize human readability.   
+				the most recent call to the <code>save()</code> method on the &JcrConfiguration; object will not be saved in the configuration
+				repository, and thus will not be in the generated file. The generated XML will not be formatted to maximize human readability.   
 			</para>
 		</sect2>
 	</sect1>

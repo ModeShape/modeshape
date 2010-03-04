@@ -147,13 +147,14 @@ config.repositorySource("SVN Store")
                     mode:repositoryRootUrl="http://anonsvn.jboss.org/repos/modeshape"
                     mode:defaultWorkspaceName="trunk"
                     mode:predefinedWorkspaceNames="trunk"
-                    mode:defaultWorkspaceName="default"
-        >    
-    	    <!-- Specify a cache policy that caches items in memory for 5 minutes (300000 ms) -->  
-            <mode:cachePolicy jcr:name="cachePolicy" 
-            	mode:classname="org.modeshape.graph.connector.path.cache.InMemoryWorkspaceCache$InMemoryCachePolicy"
-            	mode:timeToLiveInMilliseconds="300000"
-             />
+                    mode:defaultWorkspaceName="default" >
+          <!-- 
+          If desired, specify a cache policy that caches items in memory for 5 minutes (300000 ms).
+          This fragment can be left out if the connector should not cache any content.
+          -->
+          <mode:cachePolicy jcr:name="cachePolicy" 
+            mode:classname="org.modeshape.graph.connector.path.cache.InMemoryWorkspaceCache$InMemoryCachePolicy"
+            mode:timeToLiveInMilliseconds="300000" />
         </mode:source>
     </mode:sources>
     

@@ -207,17 +207,21 @@ final &LoginContext; loginContext = ...;
 		<sect2>
 			<title>Optional Features</title>
 			<para>
-				ModeShape also supports the optional JCR locking and observation features (though there still are
-				a few known issues with our implementation of observation).
-				<note>
-					<para>
-						The JCR-SQL optional feature of <ulink url="&JSR170;">JSR-170</ulink> is not planned to be implemented
-						as it has been dropped from the <ulink url="&JSR283;">JSR-283</ulink> specification.
-						Instead, ModeShape already supports its replacement, the JCR-SQL2 query language defined by the 
-						<ulink url="&JSR283;">JSR-283</ulink> specification.
-						For details, see the chapter on <link linkend="jcr-query-and-search">queries and search languages</link>.
-					</para>
-				</note>
+				ModeShape also supports the optional JCR locking and observation features, though the ModeShape behavior
+				with regard to events upon deletion follows the updated behavior outline in the
+				<ulink url="&JSR283;">JSR-283</ulink> specification (namely that when a subgraph is deleted, ModeShape generates
+				only one event for the top-level node in that subgraph).
+			</para>
+			<para>
+				ModeShape does not support the optional SQL query feature as defined by <ulink url="&JSR170;">JSR-170</ulink>
+				and the JCR-SQL query language.
+				Instead, ModeShape already supports its replacement, the <emphasis>JCR-SQL2</emphasis> query language defined by the 
+				<ulink url="&JSR283;">JSR-283</ulink> specification.  JCR-SQL2 is much improved and much more capable.
+				For details, see the chapter on <link linkend="jcr-query-and-search">queries and search languages</link>.
+			</para>
+			<para>
+				ModeShape does not yet support the optional versioning feature of JSR-170, but our goal is to support it
+				in the next release.
 			</para>
 		</sect2>
 		<sect2 id="modeshape_jcr_security">
@@ -304,7 +308,7 @@ final &LoginContext; loginContext = ...;
 				  
 				<note>
 					<para> In this release, ModeShape does not check that the <code>actions</code> parameter passed into 
-						<code>Session.checkPermission(...)</code> contains only valid actions.  This will be corrected prior to the 1.0 release.
+						<code>Session.checkPermission(...)</code> contains only valid actions. This check may be added in a future release.
 					</para>
 				</note> 
 				

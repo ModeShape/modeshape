@@ -174,13 +174,14 @@ config.repositorySource("FS Store")
         	mode:predefinedWorkspaceNames="staging, dev"
         	mode:rootNodeUuid="fd129c12-81a8-42ed-aa4b-820dba49e6f0"
         	mode:creatingWorkspacesAllowed="false"
-        	mode:updatesAllowed="true"
-    	>
-    	    <!-- Specify a cache policy that caches items in memory for 5 minutes (300000 ms) -->
-            <mode:cachePolicy jcr:name="cachePolicy" 
-            	mode:classname="org.modeshape.graph.connector.path.cache.InMemoryWorkspaceCache$InMemoryCachePolicy"
-            	mode:timeToLiveInMilliseconds="300000"
-             />
+        	mode:updatesAllowed="true" >
+      	    <!-- 
+      	    If desired, specify a cache policy that caches items in memory for 5 minutes (300000 ms).
+      	    This fragment can be left out if the connector should not cache any content.
+      	    -->
+      	    <mode:cachePolicy jcr:name="cachePolicy" 
+      	      mode:classname="org.modeshape.graph.connector.path.cache.InMemoryWorkspaceCache$InMemoryCachePolicy"
+      	      mode:timeToLiveInMilliseconds="300000" />
         </mode:source>    
     </mode:sources>
 
