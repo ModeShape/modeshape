@@ -248,7 +248,14 @@ config.repositorySource("Meta Store")
                     mode:classname="org.modeshape.graph.connector.meta.jdbc.JdbcMetadataSource" 
                     mode:description="The database source for our content"
                     mode:dataSourceJndiName="java:/MyDataSource"
-                    mode:defaultworkspaceName="default"/>    
+                    mode:defaultworkspaceName="default">
+         >    
+    	    <!-- Specify a cache policy that caches items in memory for 5 minutes (300000 ms) -->
+            <mode:cachePolicy jcr:name="cachePolicy" 
+            	mode:classname="org.modeshape.graph.connector.path.cache.InMemoryWorkspaceCache$InMemoryCachePolicy"
+            	mode:timeToLiveInMilliseconds="300000"
+             />
+		</mode:source>
     </mode:sources>
     
 	<!-- MIME type detectors and JCR repositories would be defined below --> 

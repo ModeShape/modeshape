@@ -269,7 +269,7 @@ public interface &SequencerOutput; {
     <title>Out-of-the-box Sequencers</title>
     <para>
     	A number of sequencers are already available in ModeShape, and are outlined in detail
-      <link linkend="provied-sequencers-part">later in the document</link>.
+      <link linkend="provided-sequencers-part">later in the document</link>.
 			Note that we do want to build <ulink url="https://jira.jboss.org/jira/secure/IssueNavigator.jspa?reset=true&amp;mode=hide&amp;pid=12310520&amp;sorter/order=DESC&amp;sorter/field=priority&amp;resolution=-1&amp;component=12311441">more sequencers</ulink>
 			in the upcoming releases.
     </para>
@@ -333,14 +333,14 @@ public interface &SequencerOutput; {
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-graph</artifactId>
-  <version>0.7</version>
+  <version>1.0.0.Final</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-common</artifactId>
-  <version>0.7</version>
+  <version>1.0.0.Final</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
@@ -378,7 +378,7 @@ public interface &SequencerOutput; {
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-jcr</artifactId>
-  <version>0.7</version>
+  <version>1.0.0.Final</version>
   <scope>test</scope>
 </dependency>
 <!-- Java Content Repository API -->

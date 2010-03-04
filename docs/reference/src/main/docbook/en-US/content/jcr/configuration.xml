@@ -182,6 +182,24 @@ configuration.loadFrom(file);
 	          <mode:options jcr:primaryType="mode:options">
 	              <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
 	          </mode:options>
+	          <mode:descriptors>
+	            <!-- 
+	            	This adds a JCR Repository descriptor named "myDescriptor" with a value of "foo".
+	            	So this code:
+	            	Repository repo = ...;
+	            	System.out.println(repo.getDescriptor("myDescriptor");
+	
+	            	Will now print out "foo".
+	            -->
+	            <myDescriptor mode:value="foo" />
+	          </mode:descriptors>
+	          <!-- 
+	                Import the custom node types defined in the named resource (a file at a 
+	                classpath-relative path).  If there was more than one file with custom node 
+	                types, we could either add successive <jcr:nodeTypes ... /> elements or just 
+	                add all of the files as a comma-delimited string in the mode:resource property.
+	            -->
+	          <jcr:nodeTypes mode:resource="/tck/tck_test_types.cnd" />
 	      </mode:repository>
 	  </mode:repositories>
     <!-- 
@@ -190,10 +208,10 @@ configuration.loadFrom(file);
     -->
     <mode:sources jcr:primaryType="nt:unstructured">
         <mode:source jcr:name="Cars" 
-	                  mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" 
-	                  mode:retryLimit="3" mode:defaultWorkspaceName="workspace1"/>
+	              mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" 
+	              mode:retryLimit="3" mode:defaultWorkspaceName="workspace1"/>
         <mode:source jcr:name="Aircraft" 
-	                  mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource">
+	              mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource">
             <!-- Define the name of the workspace used by default.  Optional, but convenient. -->
             <defaultWorkspaceName>workspace2</defaultWorkspaceName>
         </mode:source>
@@ -203,7 +221,9 @@ configuration.loadFrom(file);
     -->
     <mode:sequencers>
         <!--mode:sequencer jcr:name="Image Sequencer">
-            <mode:classname>org.modeshape.sequencer.image.ImageMetadataSequencer</mode:classname>
+            <mode:classname>
+            	org.modeshape.sequencer.image.ImageMetadataSequencer
+            </mode:classname>
             <mode:description>Image metadata sequencer</mode:description>        
             <mode:pathExpression>/foo/source => /foo/target</mode:pathExpression>
             <mode:pathExpression>/bar/source => /bar/target</mode:pathExpression>
@@ -368,6 +388,27 @@ config.mimeTypeDetector("Extension Detector")
 					</para>
 				</note>
 			</sect3>
+		</sect2>
+		<sect2 id="storing_configuration">
+			<title>Storing Configuration</title>
+			<para>
+				Regardless of how the &JcrConfiguration; is loaded, it can also be stored to a file or stream in an XML format that can then be
+				reloaded in the future to recreate the configuration.
+			</para>
+    		<programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = ...
+String pathToFile = ...
+
+// Any changes before this point will be saved to the file
+configuration.save();
+// Any changes after the last call to save() will not be added to the file.
+configuration.storeTo(pathToFile);
+ ]]></programlisting>
+			<para>
+				This will create a file at <code>pathToFile</code> that contains the current configuration in XML format. Any changes made after 
+				the most recent call to the <code>save()</code> method on the &JcrConfiguration; object will not be stored.  The generated XML will
+				not be formatted to maximize human readability.   
+			</para>
 		</sect2>
 	</sect1>
 	<sect1 id="modeshape_and_jndi">
@@ -542,7 +583,7 @@ try {
 <programlisting role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-jcr</artifactId>
-  <version>0.7</version>
+  <version>1.0.0.Final</version>
 </dependency>
 ]]></programlisting>
 			<para>
@@ -551,13 +592,13 @@ try {
 <programlisting role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-connector-store-jpa</artifactId>
-  <version>0.7</version>
+  <version>1.0.0.Final</version>
 </dependency>
 ...
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-java</artifactId>
-  <version>0.7</version>
+  <version>1.0.0.Final</version>
 </dependency>
 ]]></programlisting>
 		<para>
@@ -601,7 +642,7 @@ try {
 		</para>
 		<note>
 			<para>
-				None of the third-party dependencies have changed from JBoss DNA 0.7 to ModeShape 1.0.0.Beta1.
+				None of the third-party dependencies have changed from JBoss DNA 0.7 to ModeShape 1.0.0.Final.
 			</para>
 		</note>
 		<para>

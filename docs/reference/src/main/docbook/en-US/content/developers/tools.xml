@@ -100,24 +100,10 @@
 	<sect1 id="jdk">
 		<title>JDK</title>
 		<para>
-			Currently, ModeShape is developed and built using <ulink url="http://java.sun.com/javase/downloads/index_jdk5.jsp">JDK 5</ulink>.
-			So if you're trying to get ModeShape to compile locally, you should make sure you have the JDK 5 installed and are using it.
-			If you're a contributor, you should make sure that you're using JDK 5 before committing any changes.  
+			Currently, ModeShape is developed and built using <ulink url="http://java.sun.com/javase/downloads/widget/jdk6.jsp">JDK 6</ulink>.
+			So if you're trying to get ModeShape to compile locally, you should make sure you have the JDK 6 installed and are using it.
+			If you're a contributor, you should make sure that you're using JDK 6 before committing any changes.  
 		</para>
-		<note>
-			<para>
-				You should be able to use the <ulink url="http://java.sun.com/javase/downloads/index.jsp">latest JDK</ulink>,
-				which is currently JDK 6.  It is possible to build ModeShape using JDK 6 without any code changes, but it's 
-				not our official JDK (yet).
-			</para>
-			<para>
-				Why do we build using JDK 5 and not 6? The main reason is that if we were to use JDK 6, then ModeShape couldn't really be used in any
-				applications or projects that still used JDK 5.  Plus, anybody using JDK 6 can still use ModeShape.
-				However, considering that the end-of-life for Java 5 is 
-				<ulink url="http://java.sun.com/products/archive/eol.policy.html">October 2009</ulink>, we will likely be switching to 
-				Java 6 sometime in 2010.
-			</para>
-		</note>
 		<para>
 			When installing a JDK, simply follow the procedure for your particular platform.  On most platforms, this should set the
 			<code>JAVA_HOME</code> environment variable.  But if you run into any problems, first check that this environment
@@ -134,7 +120,7 @@
 		<para>
 			ModeShape uses <ulink url="&JIRA;">JIRA</ulink> as its bug tracking, issue tracking, and project management tool.
 			This is a browser-based tool, with very good functionality for managing the different tasks.  It also serves as
-			the community's roadmap, since we can define new features and manage them along side the bugs and other issues.
+			the community's roadmap, since we can define new features and manage them alongside of the bugs and other issues.
 			Although most of the issues have been created by community members, we encourage any users to suggest new features,
 			log defects, or identify shortcomings in ModeShape.
 		</para>
@@ -179,11 +165,11 @@
 					</row>
 					<row>
 						<entry>Secure Developer Access URL</entry>
-						<entry><ulink url="&Fisheye;trunk/">&Fisheye;trunk/</ulink></entry>
+						<entry><ulink url="&SecureSubversion;trunk/">&SecureSubversion;trunk/</ulink></entry>
 					</row>
 					<row>
 						<entry>FishEye Code Browser</entry>
-						<entry><ulink url="&SecureSubversion;trunk/">&SecureSubversion;trunk/</ulink></entry>
+						<entry><ulink url="&Fisheye;trunk/">&Fisheye;trunk/</ulink></entry>
 					</row>
 				</tbody>
 			</tgroup>
@@ -191,7 +177,7 @@
 		<para>
 			When committing to SVN, be sure to include in a commit comment that includes the JIRA issue that the commit applies to and a very
 			good and thorough description of what was done.  It only takes a minute or two to be very clear about the change.  And including
-			the JIRA issue (e.g., "ModeShape-123") in the comment allows the JIRA system to track the changes that have been made for each issue.
+			the JIRA issue (e.g., "MODE-123") in the comment allows the JIRA system to track the changes that have been made for each issue.
 		</para>
 		<para>
 			Also, any single SVN commit should apply to one and only one JIRA issue.  Doing this helps ensure that each commit is atomic
@@ -203,9 +189,9 @@
 			applied, please use SVN to create the patch.  To do this, simply do the following in the top of the codebase (e.g., the 
 			<code>trunk</code> directory):
 		</para>
-		<programlisting>$ svn diff . > ~/ModeShape-000.patch</programlisting> 
+		<programlisting>$ svn diff . > ~/MODE-000.patch</programlisting> 
 		<para>
-			where <code>ModeShape-000</code> represents the ModeShape issue number.  Note that the above command places the patch file in your home directory,
+			where <code>MODE-000</code> represents the ModeShape issue number.  Note that the above command places the patch file in your home directory,
 			but you can place the patch file anywhere.  Then, simply use JIRA to attach the patch file to the particular issue, also adding
 			a comment that describes the version number against which the patch was created.
 		</para>
@@ -213,7 +199,7 @@
 			To apply a patch, you usually want to start with a workspace that has no changes.  Download the patch file, then issue the
 			following command (again, from the top-level of the workspace):
 		</para>
-		<programlisting>$ patch -E -p0 &lt; ~/ModeShape-000.patch</programlisting> 
+		<programlisting>$ patch -E -p0 &lt; ~/MODE-000.patch</programlisting> 
 		<para>
 			The "-E" option specifies to delete any files that were made empty by the application of the patch, and the "-p0" option instructs
 			the patch tool to not change any of the paths.  After you run this command, your working area should have the changes defined
@@ -240,7 +226,7 @@
       To use Maven with ModeShape, you'll need to have <link linkend="jdk">JDK 5 or 6</link> and Maven 2.0.9 (or higher).</para>
 		<para>
       Maven can be downloaded from <ulink url="http://maven.apache.org/">http://maven.apache.org/</ulink>, and is installed by unzipping the
-      <code>maven-2.0.9-bin.zip</code> file to a convenient location on your local disk. Simply add <code>$MAVEN_HOME/bin</code>
+      <code>maven-2.0.11-bin.zip</code> file to a convenient location on your local disk. Simply add <code>$MAVEN_HOME/bin</code>
       to your path and add the following profile to your <code>~/.m2/settings.xml</code> file:
 		</para>
 		<programlisting role="XML"><![CDATA[
@@ -293,7 +279,7 @@
 		  and <ulink url="http://snapshots.jboss.org/maven2">releases</ulink>) that contain all of the JARs for ModeShape and all dependent libraries.
 		</para>
 		<para>While you're adding <code>$MAVEN_HOME/bin</code> to your path, you should also set the <code>$MAVEN_OPTS</code> environment variable
-		  to "<code>-Xmx256m</code>".  If you don't do this, you'll likely see an <code>java.lang.OutOfMemoryError</code> sometime during a full
+		  to "<code>-Xmx384m</code>".  If you don't do this, you'll likely see an <code>java.lang.OutOfMemoryError</code> sometime during a full
 		  build.
 		</para>
 		<note>
@@ -404,11 +390,11 @@
 				</thead>
 				<tbody>
 					<row>
-						<entry><ulink url="http://hudson.jboss.org/hudson/job/ModeShape%20continuous%20on%20JDK1.5/">Continuous on JDK 5</ulink></entry>
+						<entry><ulink url="http://hudson.jboss.org/hudson/job/ModeShape%20continuous/">Continuous</ulink></entry>
 						<entry>Continuous build that runs an integration build after changes are committed to SVN.  SVN is polled every 15 minutes.</entry>
 					</row>
 					<row>
-						<entry><ulink url="http://hudson.jboss.org/hudson/job/ModeShape%20nightly%20integration%20on%20JDK1.5/">Nightly on JDK 5</ulink></entry>
+						<entry><ulink url="http://hudson.jboss.org/hudson/job/ModeShape%20nightly%20integration/">Nightly</ulink></entry>
 						<entry>Integration build that runs every night (usually around 2 a.m. EDT), regardless of whether changes have been committed to SVN
 							since the previous night.</entry>
 					</row>

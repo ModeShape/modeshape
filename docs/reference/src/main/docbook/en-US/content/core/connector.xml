@@ -173,7 +173,7 @@
 		<note>
 			<para>
 				Of course, before you develop a connector, you should probably check the
-				<ulink url="http://docs.jboss.org/jbossmodeshape/latest/manuals/reference/html/provied-connectors-part.html">list of connectors</ulink> ModeShape already provides out of the box.
+				<ulink url="http://docs.jboss.org/jbossmodeshape/latest/manuals/reference/html/provided-connectors-part.html">list of connectors</ulink> ModeShape already provides out of the box.
 				With this latest release, ModeShape already includes this JDBC metadata connector!  And we're always interested in new
 				connectors and new contributors, so please consider developing your custom connector as part of ModeShape.
 			</para>
@@ -203,7 +203,7 @@
     <title>Out-of-the-box connectors</title>
     <para>
     	A number of connectors are already available in ModeShape, and are outlined in detail
-      <link linkend="provied-connectors-part">later in the document</link>.
+      <link linkend="provided-connectors-part">later in the document</link>.
 			Note that we do want to build <ulink url="https://jira.jboss.org/jira/secure/IssueNavigator.jspa?reset=true&amp;mode=hide&amp;pid=12310520&amp;sorter/order=DESC&amp;sorter/field=priority&amp;resolution=-1&amp;component=12311441">more connectors</ulink>
 			in the upcoming releases.
     </para>
@@ -292,7 +292,7 @@
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-graph</artifactId>
-  <version>0.7</version>
+  <version>1.0.0.Final</version>
 </dependency>
 	 ]]></programlisting>
 			<para>
@@ -308,14 +308,14 @@
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-graph</artifactId>
-  <version>0.7</version>
+  <version>1.0.0.Final</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-common</artifactId>
-  <version>0.7</version>
+  <version>1.0.0.Final</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
@@ -443,7 +443,7 @@
 				</para>
 				<note>
 					<para>
-						At this time, ModeShape does not yet take advantage of the connector's cache policies. 
+						At this time, not every connector takes advantage of cache policies. 
 						However, it is anticipated that this will change.
 					</para>
 				</note>

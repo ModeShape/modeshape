@@ -35,13 +35,6 @@
 		The output of the sequencer can be customized by using the <code>classFileRecorder</code> or <code>classFileRecorderClassName</code> 
 		properties to provide a custom implementation of the &ClassFileRecorder; interface.  A default implementation (&DefaultClassFileRecorder;) is
 		provided that records all extracted metadata to the output location.  
-		<caution>
-			<para>
-			The Java class file sequencer is being released as a Technology Preview.  It is fully functional, but the output format and node types 
-			associated with the &DefaultClassFileRecorder; may change in future versions to better align with the output of the 
-			&JavaMetadataSequencer;.
-			</para>
-		</caution>
      </para>
 	<para>
 		As noted previously, the &ClassFileSequencer; class provides a pair of JavaBean properties that can be used to specify a custom &ClassFileRecorder; 

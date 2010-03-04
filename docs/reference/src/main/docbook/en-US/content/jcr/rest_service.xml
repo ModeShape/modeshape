@@ -289,7 +289,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 <programlisting role="XML"><![CDATA[
   <!--
     This parameter provides the fully-qualified name of a class that implements
-    the o.j.d.web.jcr.rest.spi.RepositoryProvider interface.  It is required
+    the o.m.web.jcr.rest.spi.RepositoryProvider interface.  It is required
     by the ModeShapeJcrDeployer that controls the lifecycle for the ModeShape REST server.
   -->
   <context-param>
@@ -372,9 +372,9 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		</para>
 <programlisting role="XML"><![CDATA[
   <!-- 
-    The ModeShape REST implementation leverages the HTTP credentials to for authentication and authorization
-    within the JCR repository.  It makes no sense to try to log into the JCR repository without credentials,
-    so this constraint helps lock down the repository.
+    The ModeShape REST implementation leverages the HTTP credentials to for authentication and 
+    authorization within the JCR repository.  It makes no sense to try to log into the JCR 
+    repository without credentials, so this constraint helps lock down the repository.
 		
     This should generally not be modified. 
   -->
@@ -386,9 +386,9 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
     </web-resource-collection>
     <auth-constraint>
 			<!--  
-        A user must be assigned this role to connect to any JCR repository, in addition to needing the READONLY
-        or READWRITE roles to actually read or modify the data.  This is not used internally, so another
-        role could be substituted here.
+        A user must be assigned this role to connect to any JCR repository, in addition to needing the 
+        READONLY or READWRITE roles to actually read or modify the data.  This is not used internally, 
+        so another role could be substituted here.
       -->
       <role-name>connect</role-name>
     </auth-constraint>
@@ -437,7 +437,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	<parent>
 		<artifactId>modeshape</artifactId>
 		<groupId>org.modeshape</groupId>
-		<version>0.7</version>
+		<version>1.0.0.Final</version>
 		<relativePath>../..</relativePath>
 	</parent>
 	<artifactId>modeshape-web-jcr-rest-war</artifactId>
@@ -449,7 +449,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 		<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-web-jcr-rest</artifactId>
-			<version>0.7</version>
+			<version>1.0.0.Final</version>
 		</dependency>
 
 		<dependency>
@@ -485,14 +485,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ commons-codec-1.2.jar
 	|	+ commons-httpclient-3.1.jar
 	|	+ commons-logging-1.0.4.jar
-	|	+ modeshape-cnd-0.7.jar
-	|	+ modeshape-common-0.7.jar
-	|	+ modeshape-graph-0.7.jar
-	|	+ modeshape-jcr-0.7.jar
-	|	+ modeshape-repository-0.7.jar
-	|	+ modeshape-search-lucene-0.7.jar
-	|	+ modeshape-web-jcr-rest-0.7.jar
-	|	+ google-collections-1.0-rc3.jar
+	|	+ google-collections-1.0.0.Final.jar
 	|	+ hamcrest-core-1.1.jar
 	|	+ httpclient-4.0.jar
 	|	+ httpcore-4.0.1.jar
@@ -505,13 +498,20 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ jcl-over-slf4j-1.5.8.jar
 	|	+ jcr-1.0.1.jar
 	|	+ jettison-1.1.jar
-	|	+ joda-time-1.4.jar
+	|	+ joda-time-1.6.jar
 	|	+ jsr250-api-1.0.jar
 	|	+ junit-dep-4.4.jar
 	|	+ lucene-analyzers-3.0.0.jar
 	|	+ lucene-core-3.0.0.jar
 	|	+ lucene-regex-3.0.0.jar
 	|	+ lucene-snowball-3.0.0.jar
+	|	+ modeshape-cnd-1.0.0.Final.jar
+	|	+ modeshape-common-1.0.0.Final.jar
+	|	+ modeshape-graph-1.0.0.Final.jar
+	|	+ modeshape-jcr-1.0.0.Final.jar
+	|	+ modeshape-repository-1.0.0.Final.jar
+	|	+ modeshape-search-lucene-1.0.0.Final.jar
+	|	+ modeshape-web-jcr-rest-1.0.0.Final.jar
 	|	+ resteasy-jaxb-provider-1.2.1-GA.jar
 	|	+ resteasy-jettison-provider-1.2.1-GA.jar
 	|	+ scannotation-1.0.2.jar

@@ -101,7 +101,7 @@
   	<!-- xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/deploying_modeshape_jcr.xml"/ -->
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/rest_service.xml"/>
   </part>
-	<part id="provied-connectors-part">
+	<part id="provided-connectors-part">
 		<title>Connector Library</title>
 		<partintro>
 			<para>
@@ -119,7 +119,7 @@
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/infinispan.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/jdbc_metadata.xml"/>
 	</part>
-	<part id="provied-sequencers-part">
+	<part id="provided-sequencers-part">
 		<title>Sequencer Library</title>
 		<partintro>
 			<para>
@@ -139,7 +139,7 @@
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/ddl.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/text.xml"/>
 	</part>
-	<part id="provied-mime-type-detectors-part">
+	<part id="provided-mime-type-detectors-part">
 		<title>MIME Type Detector Library</title>
 		<partintro>
 			<para>

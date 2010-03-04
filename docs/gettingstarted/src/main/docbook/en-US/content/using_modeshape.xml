@@ -304,13 +304,6 @@ config.repository("repository A")
 					and finally sets the "JAAS_LOGIN_CONFIG_NAME" option to define the name	of the JAAS login configuration that should be used by 
 					the ModeShape repository.
 				</para>
-				<note>
-					<para>Each time <code>repository(String)</code> is called, it will either load the existing definition with the supplied
-					name or will create a new definition if one does not already exist.  To remove a definition, simply call <code>remove()</code>
-					on the result of <code>repository(String)</code>.
-					The set of existing definitions can be accessed with the <code>repositories()</code> method.
-					</para>
-				</note>
 			</sect3>
 			<sect3 id="programmatically_configuring_sequencers">
 				<title>Sequencers</title>
@@ -528,7 +521,7 @@ try {
 <programlisting role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-jcr</artifactId>
-  <version>0.7</version>
+  <version>1.0.0.Final</version>
 </dependency>
 ]]></programlisting>
 			<para>
@@ -543,7 +536,7 @@ try {
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-java</artifactId>
-  <version>0.7</version>
+  <version>1.0.0.Final</version>
 </dependency>
 ]]></programlisting>
 		<para>

@@ -213,6 +213,18 @@
                 <projectNodeTypes jcr:primaryType="mode:option" mode:value="false"/>
                 <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
             </mode:options>
+            <!--  Add any custom JCR descriptors -->
+            <mode:descriptors>
+            	<!-- 
+            		This adds a JCR Repository descriptor named "myCustomDescriptor" with a value of "foo".
+            		So this code:
+            		Repository repo = ...;
+            		System.out.println(repo.getDescriptor("myCustomDescriptor");
+            		
+            		Will now print out "foo".
+            	-->
+            	<myCustomDescriptor mode:value="foo" />
+            </mode:descriptors>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
             <mode:nodeTypes jcr:primaryType="mode:nodeTypes"/>
             <!-- Define any namespaces for this repository, other than those already defined by JCR, ModeShape or by imported content. -->

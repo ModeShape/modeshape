@@ -74,6 +74,12 @@
             <mode:options jcr:primaryType="mode:options">
                 <projectNodeTypes jcr:primaryType="mode:option" mode:value="false"/>
             </mode:options>
+            <!-- 
+            	Import the custom node types defined in the named resource (a file at a classpath-relative
+            	path).  If there was more than one file with custom node types, we could either add successive
+            	<jcr:nodeTypes ... /> elements or just add all of the files as a comma-delimited string in the
+            	mode:resource property.
+             -->
             <jcr:nodeTypes mode:resource="/tck/tck_test_types.cnd" />
             <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape
 -->

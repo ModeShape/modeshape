@@ -239,6 +239,7 @@
 <!ENTITY RepositoryProvider	  				"<ulink url='&API;web/jcr/rest/spi/RepositoryProvider.html'><classname>RepositoryProvider</classname></ulink>">
 
 <!ENTITY JavaMetadataSequencer		  	"<ulink url='&API;sequencer/java/JavaMetadataSequencer.html'><classname>JavaMetadataSequencer</classname></ulink>">
+<!ENTITY SourceFileRecorder		  			"<ulink url='&API;sequencer/java/SourceFileRecorder.html'><classname>SourceFileRecorder</classname></ulink>">
 <!ENTITY ClassFileSequencer		  			"<ulink url='&API;sequencer/classfile/ClassFileSequencer.html'><classname>ClassFileSequencer</classname></ulink>">
 <!ENTITY ClassFileRecorder		  			"<ulink url='&API;sequencer/classfile/ClassFileRecorder.html'><classname>ClassFileRecorder</classname></ulink>">
 <!ENTITY DefaultClassFileRecorder		  "<ulink url='&API;sequencer/classfile/DefaultClassFileRecorder.html'><classname>DefaultClassFileRecorder</classname></ulink>">

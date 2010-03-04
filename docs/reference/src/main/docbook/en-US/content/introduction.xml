@@ -60,7 +60,7 @@
 		and how you can write your own to tailor ModeShape for your needs.
 	</para>
 	<para>
-		So whether your a developer on the project, or you're trying to learn the intricate details of
+		So whether you are a developer on the project, or you're trying to learn the intricate details of
 		how ModeShape works, this document hopefully serves a good reference for developers on the project.
 	</para>
 	<sect1 id="use_cases">
@@ -185,7 +185,7 @@
 	    <ulink url="http://www.jcp.org/en/jsr/detail?id=170">Content Repository for Java technology API</ulink>
 	    provides a standard Java API for working with content repositories. Abbreviated "JCR", this API was developed as part of the
 	    Java Community Process under <ulink url="http://www.jcp.org/en/jsr/detail?id=170">JSR-170</ulink>
-	    and is being revised under <ulink url="http://www.jcp.org/en/jsr/detail?id=283">JSR-283</ulink>.
+	    and has been revised under <ulink url="http://www.jcp.org/en/jsr/detail?id=283">JSR-283</ulink>.
 	  </para>
 	  <para>
 		  The JCR API provides a number of information services that are needed by many applications,
