@@ -23,6 +23,32 @@
  */
 package org.modeshape.maven.spi;
 
+import org.modeshape.common.text.TextDecoder;
+import org.modeshape.common.text.TextEncoder;
+import org.modeshape.common.text.UrlEncoder;
+import org.modeshape.common.util.Logger;
+import org.modeshape.maven.ArtifactType;
+import org.modeshape.maven.MavenI18n;
+import org.modeshape.maven.MavenId;
+import org.modeshape.maven.MavenRepositoryException;
+import org.modeshape.maven.MavenUrl;
+import org.modeshape.maven.SignatureType;
+
+import javax.jcr.Credentials;
+import javax.jcr.ItemExistsException;
+import javax.jcr.LoginException;
+import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
+import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
+import javax.jcr.lock.LockException;
+import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
+import javax.jcr.version.VersionException;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -39,31 +65,6 @@ import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.util.Calendar;
 import java.util.Properties;
-import javax.jcr.Credentials;
-import javax.jcr.ItemExistsException;
-import javax.jcr.LoginException;
-import javax.jcr.NoSuchWorkspaceException;
-import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
-import javax.jcr.Property;
-import javax.jcr.Repository;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
-import javax.jcr.lock.LockException;
-import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NoSuchNodeTypeException;
-import javax.jcr.version.VersionException;
-import org.modeshape.common.text.TextDecoder;
-import org.modeshape.common.text.TextEncoder;
-import org.modeshape.common.text.UrlEncoder;
-import org.modeshape.common.util.Logger;
-import org.modeshape.maven.ArtifactType;
-import org.modeshape.maven.MavenI18n;
-import org.modeshape.maven.MavenId;
-import org.modeshape.maven.MavenRepositoryException;
-import org.modeshape.maven.MavenUrl;
-import org.modeshape.maven.SignatureType;
 
 /**
  * Base class for providers that work against a JCR repository. This class implements all functionality except for creating the
@@ -103,7 +104,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
     private String workspaceName;
     private Credentials credentials;
     private String pathToTopOfRepository = DEFAULT_PATH_TO_TOP_OF_MAVEN_REPOSITORY;
-    private final Logger logger = Logger.getLogger(JcrMavenUrlProvider.class);
+    private static final Logger LOGGER = Logger.getLogger(JcrMavenUrlProvider.class);
 
     /**
      * 
@@ -233,7 +234,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
                     }
                 }
                 session.save();
-                this.logger.trace("Created Maven repository node for {0}", mavenUrl);
+                LOGGER.trace("Created Maven repository node for {0}", mavenUrl);
             } catch (LoginException err) {
                 throw new MavenRepositoryException(
                                                    MavenI18n.unableToOpenSessiontoRepositoryWhenCreatingNode.text(mavenUrl,
@@ -273,7 +274,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
             }
         }
         if (created) {
-            this.logger.debug("Created Maven repository folders {0}", current.getPath());
+            LOGGER.debug("Created Maven repository folders {0}", current.getPath());
         }
         return current;
     }
@@ -482,6 +483,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
         private OutputStream stream;
         private final File file;
         private final MavenUrl mavenUrl;
+        private final Logger LOGGER = Logger.getLogger(MavenOutputStream.class);
 
         protected MavenOutputStream( final MavenUrl mavenUrl,
                                      final File file ) throws FileNotFoundException {
@@ -540,7 +542,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
                         try {
                             inputStream.close();
                         } catch (IOException ioe) {
-                            Logger.getLogger(this.getClass()).error(ioe,
+                            LOGGER.error(ioe,
                                                                     MavenI18n.errorClosingTempFileStreamAfterWritingContent,
                                                                     mavenUrl,
                                                                     ioe.getMessage());

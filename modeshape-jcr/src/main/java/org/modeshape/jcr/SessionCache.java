@@ -2069,6 +2069,8 @@ class SessionCache {
 
     @Immutable
     final class JcrNodeOperations extends GraphSession.NodeOperations<JcrNodePayload, JcrPropertyPayload> {
+        private final Logger LOGGER = Logger.getLogger(JcrNodeOperations.class);
+
         /**
          * {@inheritDoc}
          * 
@@ -2514,7 +2516,7 @@ class SessionCache {
                     multiValuedPropertyNames.add(nameFactory.create(value));
                 } catch (ValueFormatException e) {
                     String msg = "{0} value \"{1}\" on {2} in \"{3}\" workspace is not a valid name and is being ignored";
-                    Logger.getLogger(getClass()).trace(e,
+                    LOGGER.trace(e,
                                                        msg,
                                                        readable(ModeShapeIntLexicon.MULTI_VALUED_PROPERTIES),
                                                        value,

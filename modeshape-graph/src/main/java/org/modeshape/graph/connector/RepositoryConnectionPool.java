@@ -23,6 +23,16 @@
  */
 package org.modeshape.graph.connector;
 
+import net.jcip.annotations.GuardedBy;
+import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.Logger;
+import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.GraphI18n;
+import org.modeshape.graph.cache.CachePolicy;
+import org.modeshape.graph.request.Request;
+
+import javax.transaction.xa.XAResource;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -35,15 +45,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import javax.transaction.xa.XAResource;
-import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.ThreadSafe;
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.Logger;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.GraphI18n;
-import org.modeshape.graph.cache.CachePolicy;
-import org.modeshape.graph.request.Request;
 
 /**
  * A reusable implementation of a managed pool of connections that is optimized for safe concurrent operations.
@@ -158,7 +159,7 @@ public class RepositoryConnectionPool {
 
     private final AtomicLong totalConnectionsUsed = new AtomicLong(0);
 
-    private final Logger logger = Logger.getLogger(this.getClass());
+    private static final Logger LOGGER = Logger.getLogger(RepositoryConnectionPool.class);
 
     /**
      * Create the pool to use the supplied connection factory, which is typically a {@link RepositorySource}. This constructor
@@ -485,7 +486,7 @@ public class RepositoryConnectionPool {
         SecurityManager security = System.getSecurityManager();
         if (security != null) java.security.AccessController.checkPermission(shutdownPerm);
 
-        this.logger.debug("Shutting down repository connection pool for {0}", getSourceName());
+        LOGGER.debug("Shutting down repository connection pool for {0}", getSourceName());
         boolean fullyTerminated = false;
         final ReentrantLock mainLock = this.mainLock;
         try {
@@ -507,10 +508,10 @@ public class RepositoryConnectionPool {
             // If there are no connections being used, trigger full termination now ...
             if (this.inUseConnections.isEmpty()) {
                 fullyTerminated = true;
-                this.logger.trace("Signalling termination of repository connection pool for {0}", getSourceName());
+                LOGGER.trace("Signalling termination of repository connection pool for {0}", getSourceName());
                 runState = TERMINATED;
                 termination.signalAll();
-                this.logger.debug("Terminated repository connection pool for {0}", getSourceName());
+                LOGGER.debug("Terminated repository connection pool for {0}", getSourceName());
             }
             // Otherwise the last connection that is closed will transition the runState to TERMINATED ...
         } finally {
@@ -533,7 +534,7 @@ public class RepositoryConnectionPool {
         SecurityManager security = System.getSecurityManager();
         if (security != null) java.security.AccessController.checkPermission(shutdownPerm);
 
-        this.logger.debug("Shutting down (immediately) repository connection pool for {0}", getSourceName());
+        LOGGER.debug("Shutting down (immediately) repository connection pool for {0}", getSourceName());
         boolean fullyTerminated = false;
         final ReentrantLock mainLock = this.mainLock;
         try {
@@ -555,7 +556,7 @@ public class RepositoryConnectionPool {
             // If there are connections being used, close them now ...
             if (!this.inUseConnections.isEmpty()) {
                 for (ConnectionWrapper connectionInUse : this.inUseConnections) {
-                    this.logger.trace("Closing repository connection to {0}", getSourceName());
+                    LOGGER.trace("Closing repository connection to {0}", getSourceName());
                     connectionInUse.getOriginal().close();
                 }
                 this.poolSize -= this.inUseConnections.size();
@@ -563,10 +564,10 @@ public class RepositoryConnectionPool {
             } else {
                 // There are no connections in use, so trigger full termination now ...
                 fullyTerminated = true;
-                this.logger.trace("Signalling termination of repository connection pool for {0}", getSourceName());
+                LOGGER.trace("Signalling termination of repository connection pool for {0}", getSourceName());
                 runState = TERMINATED;
                 termination.signalAll();
-                this.logger.debug("Terminated repository connection pool for {0}", getSourceName());
+                LOGGER.debug("Terminated repository connection pool for {0}", getSourceName());
             }
 
         } finally {
@@ -638,22 +639,22 @@ public class RepositoryConnectionPool {
      */
     public boolean awaitTermination( long timeout,
                                      TimeUnit unit ) throws InterruptedException {
-        this.logger.trace("Awaiting termination");
+        LOGGER.trace("Awaiting termination");
         long nanos = unit.toNanos(timeout);
         final ReentrantLock mainLock = this.mainLock;
         try {
             mainLock.lock();
             for (;;) {
-                // this.logger.trace("---> Run state = {0}; condition = {1}, {2} open", runState, termination, poolSize);
+                // LOGGER.trace("---> Run state = {0}; condition = {1}, {2} open", runState, termination, poolSize);
                 if (runState == TERMINATED) return true;
                 if (nanos <= 0) return false;
                 nanos = termination.awaitNanos(nanos);
-                // this.logger.trace("---> Done waiting: run state = {0}; condition = {1}, {2} open",runState,termination,poolSize)
+                // LOGGER.trace("---> Done waiting: run state = {0}; condition = {1}, {2} open",runState,termination,poolSize)
                 // ;
             }
         } finally {
             mainLock.unlock();
-            this.logger.trace("Finished awaiting termination");
+            LOGGER.trace("Finished awaiting termination");
         }
     }
 
@@ -710,7 +711,7 @@ public class RepositoryConnectionPool {
                     try {
                         connection = this.availableConnections.take();
                     } catch (InterruptedException e) {
-                        this.logger.trace("Cancelled obtaining a repository connection from pool {0}", getSourceName());
+                        LOGGER.trace("Cancelled obtaining a repository connection from pool {0}", getSourceName());
                         Thread.interrupted();
                         throw new RepositorySourceException(getSourceName(), e);
                     }
@@ -728,11 +729,11 @@ public class RepositoryConnectionPool {
             }
             if (connection == null) {
                 // There are not enough connections, so wait in line for the next available connection ...
-                this.logger.trace("Waiting for a repository connection from pool {0}", getSourceName());
+                LOGGER.trace("Waiting for a repository connection from pool {0}", getSourceName());
                 try {
                     connection = this.availableConnections.take();
                 } catch (InterruptedException e) {
-                    this.logger.trace("Cancelled obtaining a repository connection from pool {0}", getSourceName());
+                    LOGGER.trace("Cancelled obtaining a repository connection from pool {0}", getSourceName());
                     Thread.interrupted();
                     throw new RepositorySourceException(getSourceName(), e);
                 }
@@ -745,13 +746,13 @@ public class RepositoryConnectionPool {
                 } finally {
                     mainLock.unlock();
                 }
-                this.logger.trace("Recieved a repository connection from pool {0}", getSourceName());
+                LOGGER.trace("Recieved a repository connection from pool {0}", getSourceName());
             }
             if (connection != null && this.validateConnectionBeforeUse.get()) {
                 try {
                     connection = validateConnection(connection);
                 } catch (InterruptedException e) {
-                    this.logger.trace("Cancelled validating a repository connection obtained from pool {0}", getSourceName());
+                    LOGGER.trace("Cancelled validating a repository connection obtained from pool {0}", getSourceName());
                     returnConnection(connection);
                     Thread.interrupted();
                     throw new RepositorySourceException(getSourceName(), e);
@@ -863,7 +864,7 @@ public class RepositoryConnectionPool {
         RepositoryConnection original = wrapper.getOriginal();
         assert original != null;
         try {
-            this.logger.debug("Closing repository connection to {0} ({1} open connections remain)", getSourceName(), poolSize);
+            LOGGER.debug("Closing repository connection to {0} ({1} open connections remain)", getSourceName(), poolSize);
             original.close();
         } finally {
             final ReentrantLock mainLock = this.mainLock;
@@ -874,10 +875,10 @@ public class RepositoryConnectionPool {
                 // And if shutting down and this was the last connection being used...
                 if ((runState == SHUTDOWN || runState == STOP) && this.poolSize <= 0) {
                     // then signal anybody that has called "awaitTermination(...)"
-                    this.logger.trace("Signalling termination of repository connection pool for {0}", getSourceName());
+                    LOGGER.trace("Signalling termination of repository connection pool for {0}", getSourceName());
                     this.runState = TERMINATED;
                     this.termination.signalAll();
-                    this.logger.trace("Terminated repository connection pool for {0}", getSourceName());
+                    LOGGER.trace("Terminated repository connection pool for {0}", getSourceName());
 
                     // fall through to call terminate() outside of lock.
                 }
@@ -890,17 +891,17 @@ public class RepositoryConnectionPool {
     @GuardedBy( "mainLock" )
     protected int drainUnusedConnections( int count ) {
         if (count <= 0) return 0;
-        this.logger.trace("Draining up to {0} unused repository connections to {1}", count, getSourceName());
+        LOGGER.trace("Draining up to {0} unused repository connections to {1}", count, getSourceName());
         // Drain the extra connections from those available ...
         Collection<ConnectionWrapper> extraConnections = new LinkedList<ConnectionWrapper>();
         this.availableConnections.drainTo(extraConnections, count);
         for (ConnectionWrapper connection : extraConnections) {
-            this.logger.trace("Closing repository connection to {0}", getSourceName());
+            LOGGER.trace("Closing repository connection to {0}", getSourceName());
             connection.getOriginal().close();
         }
         int numClosed = extraConnections.size();
         this.poolSize -= numClosed;
-        this.logger.trace("Drained {0} unused connections ({1} open connections remain)", numClosed, poolSize);
+        LOGGER.trace("Drained {0} unused connections ({1} open connections remain)", numClosed, poolSize);
         return numClosed;
     }
 
@@ -909,7 +910,7 @@ public class RepositoryConnectionPool {
         // Add connection ...
         if (this.poolSize < this.corePoolSize) {
             this.availableConnections.offer(newWrappedConnection());
-            this.logger.trace("Added connection to {0} in undersized pool", getSourceName());
+            LOGGER.trace("Added connection to {0} in undersized pool", getSourceName());
             return true;
         }
         return false;
@@ -923,7 +924,7 @@ public class RepositoryConnectionPool {
             this.availableConnections.offer(newWrappedConnection());
             ++n;
         }
-        this.logger.trace("Added {0} connection(s) to {1} in undersized pool", n, getSourceName());
+        LOGGER.trace("Added {0} connection(s) to {1} in undersized pool", n, getSourceName());
         return n;
     }
 

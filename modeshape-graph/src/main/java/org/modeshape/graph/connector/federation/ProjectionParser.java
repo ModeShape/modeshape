@@ -23,11 +23,6 @@
  */
 package org.modeshape.graph.connector.federation;
 
-import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.util.CheckArg;
@@ -38,6 +33,12 @@ import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.connector.federation.Projection.Rule;
 import org.modeshape.graph.property.NamespaceRegistry;
 
+import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 /**
  * A parser library for {@link Projection projections} and {@link Projection.Rule projection rules}.
  */
@@ -45,13 +46,15 @@ import org.modeshape.graph.property.NamespaceRegistry;
 public class ProjectionParser {
     private static final ProjectionParser INSTANCE;
 
+    private static final Logger LOGGER = Logger.getLogger(Projection.class);
+
     static {
         INSTANCE = new ProjectionParser();
         try {
             INSTANCE.addRuleParser(Projection.class, "parsePathRule");
             assert INSTANCE.parserMethods.size() == 1;
         } catch (Throwable err) {
-            Logger.getLogger(Projection.class).error(err, GraphI18n.errorAddingProjectionRuleParseMethod);
+            LOGGER.error(err, GraphI18n.errorAddingProjectionRuleParseMethod);
         }
     }
 

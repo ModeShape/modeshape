@@ -23,22 +23,6 @@
  */
 package org.modeshape.jcr;
 
-import static org.modeshape.graph.JcrLexicon.MIXIN_TYPES;
-import static org.modeshape.graph.JcrLexicon.PRIMARY_TYPE;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import javax.jcr.RangeIterator;
-import javax.jcr.RepositoryException;
-import javax.jcr.observation.Event;
-import javax.jcr.observation.EventIterator;
-import javax.jcr.observation.EventListener;
-import javax.jcr.observation.EventListenerIterator;
-import javax.jcr.observation.ObservationManager;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
@@ -58,6 +42,24 @@ import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.graph.request.ChangeRequest;
 import org.modeshape.graph.session.InvalidStateException;
+
+import javax.jcr.RangeIterator;
+import javax.jcr.RepositoryException;
+import javax.jcr.observation.Event;
+import javax.jcr.observation.EventIterator;
+import javax.jcr.observation.EventListener;
+import javax.jcr.observation.EventListenerIterator;
+import javax.jcr.observation.ObservationManager;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.modeshape.graph.JcrLexicon.MIXIN_TYPES;
+import static org.modeshape.graph.JcrLexicon.PRIMARY_TYPE;
 
 /**
  * The implementation of JCR {@link ObservationManager}.

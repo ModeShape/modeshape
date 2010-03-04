@@ -23,14 +23,6 @@
  */
 package org.modeshape.graph.connector.federation;
 
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import javax.transaction.xa.XAResource;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
@@ -42,6 +34,15 @@ import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.request.CompositeRequest;
 import org.modeshape.graph.request.Request;
 import org.modeshape.graph.request.processor.RequestProcessor;
+
+import javax.transaction.xa.XAResource;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This {@link RepositoryConnection} implementation executes {@link Request requests} against the federated repository by
@@ -76,14 +77,13 @@ class FederatedRepositoryConnection implements RepositoryConnection {
 
     private final FederatedRepository repository;
     private final Stopwatch stopwatch;
-    private final Logger logger;
     private final Observer observer;
+    private static final Logger LOGGER = Logger.getLogger(FederatedRepositoryConnection.class);
 
     FederatedRepositoryConnection( FederatedRepository repository,
                                    Observer observer ) {
         this.repository = repository;
-        this.logger = Logger.getLogger(getClass());
-        this.stopwatch = logger.isTraceEnabled() ? new Stopwatch() : null;
+        this.stopwatch = LOGGER.isTraceEnabled() ? new Stopwatch() : null;
         this.observer = observer;
     }
 
@@ -279,7 +279,7 @@ class FederatedRepositoryConnection implements RepositoryConnection {
      */
     public void close() {
         if (stopwatch != null) {
-            logger.trace("Processing federated requests:\n" + stopwatch.getDetailedStatistics());
+            LOGGER.trace("Processing federated requests:\n" + stopwatch.getDetailedStatistics());
         }
         // do nothing else, since we don't currently hold any state
     }

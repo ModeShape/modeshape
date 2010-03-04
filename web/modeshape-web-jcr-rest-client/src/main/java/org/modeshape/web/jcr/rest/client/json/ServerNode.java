@@ -23,15 +23,16 @@
  */
 package org.modeshape.web.jcr.rest.client.json;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
+
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * The <code>ServerNode</code> class is responsible for knowing how to create a URL for a server, create a URL to obtain a
@@ -44,9 +45,9 @@ public final class ServerNode extends JsonNode {
     // ===========================================================================================================================
 
     /**
-     * The logger.
+     * The LOGGER.
      */
-    private final Logger logger = Logger.getLogger(ServerNode.class);
+    private static final Logger LOGGER = Logger.getLogger(ServerNode.class);
 
     /**
      * The server containing ModeShape repositories.
@@ -108,7 +109,7 @@ public final class ServerNode extends JsonNode {
     public Collection<Repository> getRepositories( String jsonResponse ) throws Exception {
         CheckArg.isNotNull(jsonResponse, "jsonResponse");
         Collection<Repository> repositories = new ArrayList<Repository>();
-        this.logger.trace("getRepositories:jsonResponse={0}", jsonResponse);
+        LOGGER.trace("getRepositories:jsonResponse={0}", jsonResponse);
         JSONObject jsonObj = new JSONObject(jsonResponse);
 
         // keys are the repository names
@@ -116,7 +117,7 @@ public final class ServerNode extends JsonNode {
             String name = JsonUtils.decode(itr.next());
             Repository repository = new Repository(name, this.server);
             repositories.add(repository);
-            this.logger.trace("getRepositories: adding repository={0}", repository);
+            LOGGER.trace("getRepositories: adding repository={0}", repository);
         }
 
         return repositories;

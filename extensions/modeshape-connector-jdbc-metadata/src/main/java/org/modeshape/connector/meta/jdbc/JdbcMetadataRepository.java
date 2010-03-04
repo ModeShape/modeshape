@@ -67,7 +67,7 @@ public class JdbcMetadataRepository extends PathRepository {
     public final static String TABLES_SEGMENT_NAME = "tables";
     public final static String PROCEDURES_SEGMENT_NAME = "procedures";
 
-    private final Logger log = Logger.getLogger(JdbcMetadataRepository.class);
+    private static final Logger LOGGER = Logger.getLogger(JdbcMetadataRepository.class);
     private final JdbcMetadataSource source;
     private Map<Name, Property> rootNodeProperties;
     private String databaseProductName;
@@ -140,7 +140,7 @@ public class JdbcMetadataRepository extends PathRepository {
         try {
             connection.close();
         } catch (SQLException se) {
-            log.error(se, JdbcMetadataI18n.errorClosingConnection);
+            LOGGER.error(se, JdbcMetadataI18n.errorClosingConnection);
         }
     }
 

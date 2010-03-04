@@ -21,16 +21,6 @@
  */
 package org.modeshape.repository;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
@@ -63,6 +53,17 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.repository.sequencer.SequencerConfig;
 import org.modeshape.repository.sequencer.SequencingService;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+
 /**
  * A single instance of the ModeShape services, which is obtained after setting up the {@link ModeShapeConfiguration#build() configuration}.
  * 
@@ -82,6 +83,7 @@ public class ModeShapeEngine {
     private final SequencingService sequencingService;
     private final ExecutorService executorService;
     private final MimeTypeDetectors detectors;
+    private static final Logger LOGGER = Logger.getLogger(ModeShapeEngine.class);
 
     protected ModeShapeEngine( ExecutionContext context,
                          ModeShapeConfiguration.ConfigurationDefinition configuration ) {
@@ -261,10 +263,9 @@ public class ModeShapeEngine {
     public void start() {
         if (getProblems().hasErrors()) {
             // First log the messages ...
-            Logger log = Logger.getLogger(getClass());
-            log.error(RepositoryI18n.errorsPreventStarting);
+            LOGGER.error(RepositoryI18n.errorsPreventStarting);
             for (Problem problem : getProblems()) {
-                log.error(problem.getMessage(), problem.getParameters());
+                LOGGER.error(problem.getMessage(), problem.getParameters());
             }
             // Then throw an exception ...
             throw new IllegalStateException(RepositoryI18n.errorsPreventStarting.text());

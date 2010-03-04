@@ -71,7 +71,7 @@ public class JcrEngine extends ModeShapeEngine {
     final static int LOCK_SWEEP_INTERVAL_IN_MILLIS = 30000;
     final static int LOCK_EXTENSION_INTERVAL_IN_MILLIS = LOCK_SWEEP_INTERVAL_IN_MILLIS * 2;
 
-    private final Logger log = Logger.getLogger(ModeShapeEngine.class);
+    private static final Logger log = Logger.getLogger(ModeShapeEngine.class);
 
     private final Map<String, JcrRepository> repositories;
     private final Lock repositoriesLock;

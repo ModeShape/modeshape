@@ -1,11 +1,10 @@
 package org.modeshape.graph;
 
-import java.io.IOException;
-import java.security.Principal;
-import java.security.acl.Group;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
+import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.Logger;
+import org.modeshape.common.util.Reflection;
+
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -16,10 +15,12 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import net.jcip.annotations.NotThreadSafe;
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.Logger;
-import org.modeshape.common.util.Reflection;
+import java.io.IOException;
+import java.security.Principal;
+import java.security.acl.Group;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * JAAS-based {@link SecurityContext security context} that provides authentication and authorization through the JAAS
@@ -28,7 +29,7 @@ import org.modeshape.common.util.Reflection;
 @NotThreadSafe
 public final class JaasSecurityContext implements SecurityContext {
 
-    private final Logger log = Logger.getLogger(getClass());
+    private static final Logger LOGGER = Logger.getLogger(JaasSecurityContext.class);
 
     private final LoginContext loginContext;
     private final String userName;
@@ -146,7 +147,7 @@ public final class JaasSecurityContext implements SecurityContext {
                     }
                 } else {
                     userName = principal.getName();
-                    log.debug("Adding principal user name: " + userName);
+                    LOGGER.debug("Adding principal user name: " + userName);
                 }
             }
         }
@@ -182,7 +183,7 @@ public final class JaasSecurityContext implements SecurityContext {
             loggedIn = false;
             if (loginContext != null) loginContext.logout();
         } catch (LoginException le) {
-            log.info(le, null);
+            LOGGER.info(le, null);
         }
     }
 

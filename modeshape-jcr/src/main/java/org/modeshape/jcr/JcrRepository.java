@@ -53,7 +53,6 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.query.Query;
-import javax.jcr.query.QueryManager;
 import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
@@ -124,7 +123,6 @@ import org.modeshape.jcr.xpath.XPathQueryParser;
 @ThreadSafe
 public class JcrRepository implements Repository {
 
-    private static final Logger log = Logger.getLogger(JcrRepository.class);
 
     /**
      * A flag that controls whether the repository uses a shared repository (or workspace) for the "/jcr:system" content in all of
@@ -143,6 +141,7 @@ public class JcrRepository implements Repository {
      * @see Option#ANONYMOUS_USER_ROLES
      */
     static final String ANONYMOUS_USER_NAME = "<anonymous>";
+    private static final Logger LOGGER = Logger.getLogger(JcrRepository.class);
 
     /**
      * The available options for the {@code JcrRepository}.
@@ -512,18 +511,18 @@ public class JcrRepository implements Repository {
                     }
                 } else {
                     I18n msg = JcrI18n.systemSourceNameOptionValueDoesNotReferenceExistingSource;
-                    Logger.getLogger(getClass()).warn(msg, systemSourceNameValue, systemSourceName);
+                    LOGGER.warn(msg, systemSourceNameValue, systemSourceName);
                 }
             } catch (InvalidWorkspaceException e) {
                 // Bad workspace name ...
                 systemSourceName = null;
                 I18n msg = JcrI18n.systemSourceNameOptionValueDoesNotReferenceValidWorkspace;
-                Logger.getLogger(getClass()).warn(msg, systemSourceNameValue, systemSourceName);
+                LOGGER.warn(msg, systemSourceNameValue, systemSourceName);
             } catch (IllegalArgumentException e) {
                 // Invalid format ...
                 systemSourceName = null;
                 I18n msg = JcrI18n.systemSourceNameOptionValueIsNotFormattedCorrectly;
-                Logger.getLogger(getClass()).warn(msg, systemSourceNameValue);
+                LOGGER.warn(msg, systemSourceNameValue);
             }
         }
         if (systemSourceName == null) {
@@ -1063,8 +1062,8 @@ public class JcrRepository implements Repository {
      * by a session that is no longer active.
      */
     void cleanUpLocks() {
-        if (log.isTraceEnabled()) {
-            log.trace(JcrI18n.cleaningUpLocks.text());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(JcrI18n.cleaningUpLocks.text());
         }
 
         Set<JcrSession> activeSessions = activeSessions();
@@ -1117,8 +1116,8 @@ public class JcrRepository implements Repository {
             }
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace(JcrI18n.cleanedUpLocks.text());
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(JcrI18n.cleanedUpLocks.text());
         }
     }
 

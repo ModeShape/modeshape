@@ -39,7 +39,7 @@ import org.modeshape.graph.query.plan.PlanNode;
 @Immutable
 public class RuleBasedOptimizer implements Optimizer {
 
-    private final Logger logger = Logger.getLogger(getClass());
+    private static final Logger LOGGER = Logger.getLogger(RuleBasedOptimizer.class);
 
     /**
      * {@inheritDoc}
@@ -54,7 +54,7 @@ public class RuleBasedOptimizer implements Optimizer {
         Problems problems = context.getProblems();
         while (rules.peek() != null && !problems.hasErrors()) {
             OptimizerRule nextRule = rules.poll();
-            logger.debug("Running query optimizer rule {0}", nextRule);
+            LOGGER.debug("Running query optimizer rule {0}", nextRule);
             plan = nextRule.execute(context, plan, rules);
         }
 

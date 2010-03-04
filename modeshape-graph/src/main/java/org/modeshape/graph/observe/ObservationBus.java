@@ -34,7 +34,7 @@ import org.modeshape.graph.GraphI18n;
 @ThreadSafe
 public class ObservationBus implements Observable, Observer {
     private final ChangeObservers observers = new ChangeObservers();
-    private final Logger logger = Logger.getLogger(getClass());
+    private static final Logger LOGGER = Logger.getLogger(ObservationBus.class);
 
     public ObservationBus() {
     }
@@ -69,7 +69,7 @@ public class ObservationBus implements Observable, Observer {
             try {
                 observers.broadcast(changes);
             } catch (RuntimeException t) {
-                logger.error(t, GraphI18n.errorNotifyingObserver, t.getLocalizedMessage());
+                LOGGER.error(t, GraphI18n.errorNotifyingObserver, t.getLocalizedMessage());
             }
         }
     }

@@ -65,12 +65,12 @@ import org.modeshape.graph.request.VerifyWorkspaceRequest;
 public class LoggingRequestProcessor extends RequestProcessor {
 
     private final RequestProcessor delegate;
-    private final Logger logger;
+    private static final Logger LOGGER = Logger.getLogger(LoggingRequestProcessor.class);
     private final Logger.Level level;
 
     /**
      * @param delegate the processor to which this processor delegates
-     * @param logger the logger that should be used
+     * @param logger the LOGGER that should be used
      * @param level the level of the log messages; defaults to {@link Logger.Level#TRACE}
      */
     public LoggingRequestProcessor( RequestProcessor delegate,
@@ -79,7 +79,6 @@ public class LoggingRequestProcessor extends RequestProcessor {
         super(delegate.getSourceName(), delegate.getExecutionContext(), null);
         CheckArg.isNotNull(logger, "logger");
         this.delegate = delegate;
-        this.logger = logger;
         this.level = level != null ? level : Logger.Level.TRACE;
     }
 
@@ -90,9 +89,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( VerifyWorkspaceRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        // logger.log(level, GraphI18n.executedRequest, request);
+        // LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -102,9 +101,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( GetWorkspacesRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -114,9 +113,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CreateWorkspaceRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -126,9 +125,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CloneBranchRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -138,9 +137,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CloneWorkspaceRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -150,9 +149,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( DestroyWorkspaceRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -162,9 +161,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CopyBranchRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -174,9 +173,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CreateNodeRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -186,9 +185,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( DeleteBranchRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -198,9 +197,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( DeleteChildrenRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -210,9 +209,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( MoveBranchRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -222,9 +221,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( VerifyNodeExistsRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -234,9 +233,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( ReadAllChildrenRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -246,9 +245,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( ReadAllPropertiesRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -258,9 +257,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( UpdatePropertiesRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -270,9 +269,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( UpdateValuesRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -282,9 +281,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CompositeRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -294,9 +293,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( ReadBlockOfChildrenRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -306,9 +305,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( ReadNextBlockOfChildrenRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -318,9 +317,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( ReadBranchRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -330,9 +329,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( ReadNodeRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -342,9 +341,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( ReadPropertyRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -354,9 +353,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( SetPropertyRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -366,9 +365,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( RemovePropertyRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -378,9 +377,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( RenameNodeRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -390,9 +389,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( LockBranchRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -402,9 +401,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( UnlockBranchRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -414,9 +413,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( AccessQueryRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -426,9 +425,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( FullTextSearchRequest request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -438,9 +437,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( Request request ) {
-        logger.log(level, GraphI18n.executingRequest, request);
+        LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
-        logger.log(level, GraphI18n.executedRequest, request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
     }
 
     /**
@@ -450,9 +449,9 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void close() {
-        logger.log(level, GraphI18n.closingRequestProcessor);
+        LOGGER.log(level, GraphI18n.closingRequestProcessor);
         delegate.close();
-        logger.log(level, GraphI18n.closedRequestProcessor);
+        LOGGER.log(level, GraphI18n.closedRequestProcessor);
     }
 
 }

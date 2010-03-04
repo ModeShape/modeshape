@@ -23,10 +23,11 @@
  */
 package org.modeshape.graph.observe;
 
-import java.lang.ref.WeakReference;
-import java.util.concurrent.CopyOnWriteArraySet;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.util.Logger;
+
+import java.lang.ref.WeakReference;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Abstract class that is used to signal that a change set has occurred. This class is typically subclassed by those that wish to

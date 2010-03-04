@@ -23,12 +23,13 @@
  */
 package org.modeshape.sequencer.msoffice;
 
-import java.util.Date;
 import org.apache.poi.hpsf.PropertySetFactory;
 import org.apache.poi.hpsf.SummaryInformation;
 import org.apache.poi.poifs.eventfilesystem.POIFSReaderEvent;
 import org.apache.poi.poifs.eventfilesystem.POIFSReaderListener;
 import org.modeshape.common.util.Logger;
+
+import java.util.Date;
 
 /**
  * Metadata about an Microsoft Office file.
@@ -52,6 +53,7 @@ public class MSOfficeMetadata implements POIFSReaderListener {
     private int characters;
     private String creatingApplication;
     private byte[] thumbnail;
+    private static final Logger LOGGER = Logger.getLogger(MSOfficeMetadata.class);
 
     public void processPOIFSReaderEvent( POIFSReaderEvent event ) {
         try {
@@ -74,7 +76,7 @@ public class MSOfficeMetadata implements POIFSReaderListener {
             creatingApplication = si.getApplicationName();
             thumbnail = si.getThumbnail();
         } catch (Exception ex) {
-            Logger.getLogger(this.getClass()).debug(ex, "Error processing the metadata for the MS Office document");
+            LOGGER.debug(ex, "Error processing the metadata for the MS Office document");
         }
 
     }

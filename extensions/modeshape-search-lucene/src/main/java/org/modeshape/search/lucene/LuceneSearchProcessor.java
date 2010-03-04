@@ -23,12 +23,6 @@
  */
 package org.modeshape.search.lucene;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.Query;
@@ -57,9 +51,16 @@ import org.modeshape.graph.request.ReadAllPropertiesRequest;
 import org.modeshape.graph.request.UnlockBranchRequest;
 import org.modeshape.graph.request.UpdatePropertiesRequest;
 import org.modeshape.graph.request.VerifyWorkspaceRequest;
-import org.modeshape.graph.search.SearchEngineProcessor;
 import org.modeshape.graph.search.AbstractSearchEngine.Workspaces;
+import org.modeshape.graph.search.SearchEngineProcessor;
 import org.modeshape.search.lucene.AbstractLuceneSearchEngine.AbstractLuceneProcessor;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Abstract {@link SearchEngineProcessor} implementation for the {@link LuceneSearchEngine}.
@@ -68,7 +69,7 @@ import org.modeshape.search.lucene.AbstractLuceneSearchEngine.AbstractLuceneProc
 public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchWorkspace, LuceneSearchSession> {
 
     protected static final Columns FULL_TEXT_RESULT_COLUMNS = new FullTextSearchResultColumns();
-    private final Logger logger = Logger.getLogger(getClass());
+    private static final Logger logger = Logger.getLogger(LuceneSearchProcessor.class);
 
     protected LuceneSearchProcessor( String sourceName,
                                      ExecutionContext context,

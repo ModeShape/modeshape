@@ -23,6 +23,25 @@
  */
 package org.modeshape.maven;
 
+import org.modeshape.common.component.ClassLoaderFactory;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.Logger;
+import org.modeshape.common.xml.SimpleNamespaceContext;
+import org.modeshape.maven.spi.JcrMavenUrlProvider;
+import org.modeshape.maven.spi.MavenUrlProvider;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import javax.jcr.Repository;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -35,24 +54,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import javax.jcr.Repository;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-import org.modeshape.common.component.ClassLoaderFactory;
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.Logger;
-import org.modeshape.common.xml.SimpleNamespaceContext;
-import org.modeshape.maven.spi.JcrMavenUrlProvider;
-import org.modeshape.maven.spi.MavenUrlProvider;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 /**
  * A Maven 2 repository that can be used to store and access artifacts like JARs and source archives within a running application.
@@ -71,14 +72,13 @@ public class MavenRepository implements ClassLoaderFactory {
 
     private final MavenUrlProvider urlProvider;
     private final MavenClassLoaders classLoaders;
-    private final Logger logger;
+    private static final Logger LOGGER = Logger.getLogger(MavenRepository.class);
 
     public MavenRepository( final MavenUrlProvider urlProvider ) {
         CheckArg.isNotNull(urlProvider, "urlProvider");
         this.urlProvider = urlProvider;
         this.classLoaders = new MavenClassLoaders(this);
-        this.logger = Logger.getLogger(this.getClass());
-        assert this.logger != null;
+        assert LOGGER != null;
         assert this.urlProvider != null;
     }
 
@@ -282,7 +282,7 @@ public class MavenRepository implements ClassLoaderFactory {
 
                 // Extract the Maven dependency ...
                 if (depGroupId == null || depArtifactId == null || depVersion == null) {
-                    this.logger.trace("Skipping dependency of {1} due to missing groupId, artifactId or version: {2}",
+                    LOGGER.trace("Skipping dependency of {1} due to missing groupId, artifactId or version: {2}",
                                       mavenId,
                                       dependencyNode);
                     continue; // not enough information, so skip
@@ -303,7 +303,7 @@ public class MavenRepository implements ClassLoaderFactory {
                     String excludedArtifactId = (String)artifactIdExpression.evaluate(exclusionNode, XPathConstants.STRING);
 
                     if (excludedGroupId == null || excludedArtifactId == null) {
-                        this.logger.trace("Skipping exclusion in dependency of {1} due to missing exclusion groupId or artifactId: {2} ",
+                        LOGGER.trace("Skipping exclusion in dependency of {1} due to missing exclusion groupId or artifactId: {2} ",
                                           mavenId,
                                           exclusionNode);
                         continue; // not enough information, so skip
@@ -324,7 +324,7 @@ public class MavenRepository implements ClassLoaderFactory {
             try {
                 pomStream.close();
             } catch (IOException e) {
-                this.logger.error(e, MavenI18n.errorClosingUrlStreamToPom, mavenId);
+                LOGGER.error(e, MavenI18n.errorClosingUrlStreamToPom, mavenId);
             }
         }
         return results;

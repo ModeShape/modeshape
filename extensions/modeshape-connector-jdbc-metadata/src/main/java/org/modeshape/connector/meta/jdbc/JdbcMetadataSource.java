@@ -48,7 +48,7 @@ public class JdbcMetadataSource extends AbstractPathRepositorySource implements 
 
     private static final long serialVersionUID = 1L;
 
-    private final Logger log = Logger.getLogger(JdbcMetadataSource.class);
+    private static final Logger LOGGER = Logger.getLogger(JdbcMetadataSource.class);
 
     protected static final String SOURCE_NAME = "sourceName";
     protected static final String ROOT_NODE_UUID = "rootNodeUuid";
@@ -186,7 +186,7 @@ public class JdbcMetadataSource extends AbstractPathRepositorySource implements 
                 Context context = new InitialContext();
                 dataSource = (DataSource)context.lookup(this.dataSourceJndiName);
             } catch (Throwable t) {
-                log.error(t, JdbcMetadataI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
+                LOGGER.error(t, JdbcMetadataI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
             }
         }
 
@@ -201,7 +201,7 @@ public class JdbcMetadataSource extends AbstractPathRepositorySource implements 
                     }
                 } catch (Throwable t) {
                     I18n msg = JdbcMetadataI18n.errorSettingContextClassLoader;
-                    log.error(t, msg, name, driverClassloaderName);
+                    LOGGER.error(t, msg, name, driverClassloaderName);
                 }
             }
 

@@ -62,12 +62,14 @@ public class Projection implements Comparable<Projection>, Serializable {
      */
     private static final long serialVersionUID = 1L;
     protected static final List<Method> parserMethods;
+    private static final Logger LOGGER = Logger.getLogger(Projection.class);
+
     static {
         parserMethods = new CopyOnWriteArrayList<Method>();
         try {
             parserMethods.add(Projection.class.getDeclaredMethod("parsePathRule", String.class, ExecutionContext.class));
         } catch (Throwable err) {
-            Logger.getLogger(Projection.class).error(err, GraphI18n.errorAddingProjectionRuleParseMethod);
+            LOGGER.error(err, GraphI18n.errorAddingProjectionRuleParseMethod);
         }
     }
 
