@@ -322,7 +322,7 @@ public interface &SequencerOutput; {
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-graph</artifactId>
-  <version>0.7</version>
+  <version>1.0.0.Final</version>
 </dependency>
 	 ]]></programlisting>
 			<para>These are minimum dependencies required for compiling a sequencer.  Of course, you'll have to add
