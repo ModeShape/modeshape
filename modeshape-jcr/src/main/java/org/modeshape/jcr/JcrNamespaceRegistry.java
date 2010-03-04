@@ -279,7 +279,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
                 global = true;
 
                 try {
-                    session.checkPermission((Path)null, JcrSession.ModeShape_REGISTER_NAMESPACE_PERMISSION);
+                    session.checkPermission((Path)null, ModeShapePermissions.REGISTER_NAMESPACE);
                 } catch (AccessControlException ace) {
                     throw new AccessDeniedException(ace);
                 }
@@ -338,7 +338,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
         // Don't need to check permissions for transient registration/unregistration
         if (behavior.equals(Behavior.WORKSPACE)) {
             try {
-                session.checkPermission((Path)null, JcrSession.ModeShape_REGISTER_NAMESPACE_PERMISSION);
+                session.checkPermission((Path)null, ModeShapePermissions.REGISTER_NAMESPACE);
             } catch (AccessControlException ace) {
                 throw new AccessDeniedException(ace);
             }

@@ -979,7 +979,7 @@ public class JcrRepository implements Repository {
 
         // Need to make sure that the user has access to this session
         try {
-            session.checkPermission(workspaceName, null, JcrSession.JCR_READ_PERMISSION);
+            session.checkPermission(workspaceName, null, ModeShapePermissions.READ);
         } catch (AccessControlException ace) {
             throw new LoginException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName), ace);
         }

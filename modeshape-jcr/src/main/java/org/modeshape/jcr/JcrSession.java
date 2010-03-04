@@ -100,19 +100,6 @@ class JcrSession implements Session {
 
     private static final String[] NO_ATTRIBUTES_NAMES = new String[] {};
 
-    public static final String ModeShape_READ_PERMISSION = "readonly";
-    public static final String ModeShape_WRITE_PERMISSION = "readwrite";
-    public static final String ModeShape_ADMIN_PERMISSION = "admin";
-
-    public static final String ModeShape_REGISTER_NAMESPACE_PERMISSION = "register_namespace";
-    public static final String ModeShape_REGISTER_TYPE_PERMISSION = "register_type";
-    public static final String ModeShape_UNLOCK_ANY_PERMISSION = "unlock_any";
-
-    public static final String JCR_ADD_NODE_PERMISSION = "add_node";
-    public static final String JCR_SET_PROPERTY_PERMISSION = "set_property";
-    public static final String JCR_REMOVE_PERMISSION = "remove";
-    public static final String JCR_READ_PERMISSION = "read";
-
     /**
      * The repository that created this session.
      */
@@ -415,16 +402,14 @@ class JcrSession implements Session {
 
         boolean hasPermission = true;
         for (String action : actions.split(",")) {
-            if (JCR_READ_PERMISSION.equals(action)) {
-                hasPermission &= hasRole(ModeShape_READ_PERMISSION, workspaceName)
-                                 || hasRole(ModeShape_WRITE_PERMISSION, workspaceName)
-                                 || hasRole(ModeShape_ADMIN_PERMISSION, workspaceName);
-            } else if (ModeShape_REGISTER_NAMESPACE_PERMISSION.equals(action)
-                       || ModeShape_REGISTER_TYPE_PERMISSION.equals(action) || ModeShape_UNLOCK_ANY_PERMISSION.equals(action)) {
-                hasPermission &= hasRole(ModeShape_ADMIN_PERMISSION, workspaceName);
+            if (ModeShapePermissions.READ.equals(action)) {
+                hasPermission &= hasRole(ModeShapeRoles.READONLY, workspaceName) || hasRole(ModeShapeRoles.READWRITE, workspaceName)
+                                 || hasRole(ModeShapeRoles.ADMIN, workspaceName);
+            } else if (ModeShapePermissions.REGISTER_NAMESPACE.equals(action)
+                       || ModeShapePermissions.REGISTER_TYPE.equals(action) || ModeShapePermissions.UNLOCK_ANY.equals(action)) {
+                hasPermission &= hasRole(ModeShapeRoles.ADMIN, workspaceName);
             } else {
-                hasPermission &= hasRole(ModeShape_ADMIN_PERMISSION, workspaceName)
-                                 || hasRole(ModeShape_WRITE_PERMISSION, workspaceName);
+                hasPermission &= hasRole(ModeShapeRoles.ADMIN, workspaceName) || hasRole(ModeShapeRoles.READWRITE, workspaceName);
             }
         }
 

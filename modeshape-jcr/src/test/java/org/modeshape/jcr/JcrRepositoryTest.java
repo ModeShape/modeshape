@@ -256,7 +256,7 @@ public class JcrRepositoryTest {
     @Test
     public void shouldAllowLoginWithNoCredentialsIfAnonAccessEnabled() throws Exception {
         Map<JcrRepository.Option, String> options = new HashMap<JcrRepository.Option, String>();
-        options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, JcrSession.ModeShape_READ_PERMISSION);
+        options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.READONLY);
         JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
                                                      descriptors, options);
 
@@ -271,9 +271,7 @@ public class JcrRepositoryTest {
     public void shouldAllowLoginWithProperCredentials() throws Exception {
         repository.login(credentials);
         repository.login(new SecurityContextCredentials(
-                                                        new MockSecurityContext(
-                                                                                null,
-                                                                                Collections.singleton(JcrSession.ModeShape_ADMIN_PERMISSION))));
+                                                        new MockSecurityContext(null, Collections.singleton(ModeShapeRoles.ADMIN))));
     }
 
     @Test
@@ -284,7 +282,7 @@ public class JcrRepositoryTest {
         session = repository.login(new SecurityContextCredentials(
                                                                   new MockSecurityContext(
                                                                                           null,
-                                                                                          Collections.singleton(JcrSession.ModeShape_ADMIN_PERMISSION))),
+                                                                                          Collections.singleton(ModeShapeRoles.ADMIN))),
                                    (String)null);
         assertThat(session, notNullValue());
         session.logout();
@@ -495,7 +493,7 @@ public class JcrRepositoryTest {
     public void shouldAllowManySessionLoginsAndLogouts() throws Exception {
         // Use a different repository that supports anonymous logins to make this test cleaner
         Map<Option, String> options = new HashMap<Option, String>();
-        options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, JcrSession.ModeShape_ADMIN_PERMISSION);
+        options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
         JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
                                                      descriptors, options);
 
@@ -521,7 +519,7 @@ public class JcrRepositoryTest {
     public void shouldCleanUpLocksFromDeadSessions() throws Exception {
         // Use a different repository that supports anonymous logins to make this test cleaner
         Map<Option, String> options = new HashMap<Option, String>();
-        options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, JcrSession.ModeShape_ADMIN_PERMISSION);
+        options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
         JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
                                                      descriptors, options);
 

@@ -30,6 +30,11 @@ import java.io.ByteArrayOutputStream;
 import java.util.Collections;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.MockSecurityContext;
 import org.modeshape.graph.SecurityContext;
@@ -38,11 +43,6 @@ import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.observe.MockObservable;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.mockito.MockitoAnnotations;
 
 /**
  * Tests of round-trip importing/exporting of repository content.
@@ -86,8 +86,7 @@ public class ImportExportTest {
 
         repository = new JcrRepository(context, connectionFactory, "unused", new MockObservable(), null, null, null);
 
-        SecurityContext mockSecurityContext = new MockSecurityContext("testuser",
-                                                                      Collections.singleton(JcrSession.ModeShape_WRITE_PERMISSION));
+        SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(ModeShapeRoles.READWRITE));
         session = (JcrSession)repository.login(new SecurityContextCredentials(mockSecurityContext));
     }
 

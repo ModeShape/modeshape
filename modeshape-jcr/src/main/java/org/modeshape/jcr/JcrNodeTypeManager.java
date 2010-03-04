@@ -403,10 +403,10 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * @throws InvalidNodeTypeDefinitionException if the {@code NodeTypeDefinition} is invalid
      * @throws NodeTypeExistsException if {@code allowUpdate} is false and the {@code NodeTypeDefinition} specifies a node type
      *         name that already exists
-     * @throws UnsupportedRepositoryOperationException if {@code allowUpdate} is true; ModeShape does not allow updating node types at
-     *         this time.
-     * @throws AccessDeniedException if the current session does not have the {@link JcrSession#ModeShape_REGISTER_TYPE_PERMISSION
-     *         register type permission}.
+     * @throws UnsupportedRepositoryOperationException if {@code allowUpdate} is true; ModeShape does not allow updating node
+     *         types at this time.
+     * @throws AccessDeniedException if the current session does not have the {@link ModeShapePermissions#REGISTER_TYPE register
+     *         type permission}.
      * @throws RepositoryException if another error occurs
      */
     public NodeType registerNodeType( NodeTypeDefinition template,
@@ -415,7 +415,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         AccessDeniedException, RepositoryException {
 
         try {
-            session.checkPermission((Path)null, JcrSession.ModeShape_REGISTER_TYPE_PERMISSION);
+            session.checkPermission((Path)null, ModeShapePermissions.REGISTER_TYPE);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
@@ -439,10 +439,10 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * @throws InvalidNodeTypeDefinitionException if a {@code NodeTypeDefinition} within the collection is invalid
      * @throws NodeTypeExistsException if {@code allowUpdate} is false and a {@code NodeTypeDefinition} within the collection
      *         specifies a node type name that already exists
-     * @throws UnsupportedRepositoryOperationException if {@code allowUpdate} is true; ModeShape does not allow updating node types at
-     *         this time.
-     * @throws AccessDeniedException if the current session does not have the {@link JcrSession#ModeShape_REGISTER_TYPE_PERMISSION
-     *         register type permission}.
+     * @throws UnsupportedRepositoryOperationException if {@code allowUpdate} is true; ModeShape does not allow updating node
+     *         types at this time.
+     * @throws AccessDeniedException if the current session does not have the {@link ModeShapePermissions#REGISTER_TYPE register
+     *         type permission}.
      * @throws RepositoryException if another error occurs
      */
     public NodeTypeIterator registerNodeTypes( Collection<NodeTypeDefinition> templates,
@@ -451,7 +451,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         AccessDeniedException, RepositoryException {
 
         try {
-            session.checkPermission((Path)null, JcrSession.ModeShape_REGISTER_TYPE_PERMISSION);
+            session.checkPermission((Path)null, ModeShapePermissions.REGISTER_TYPE);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
@@ -474,10 +474,10 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * @throws InvalidNodeTypeDefinitionException if a {@code NodeTypeDefinition} within the collection is invalid
      * @throws NodeTypeExistsException if {@code allowUpdate} is false and a {@code NodeTypeDefinition} within the collection
      *         specifies a node type name that already exists
-     * @throws UnsupportedRepositoryOperationException if {@code allowUpdate} is true; ModeShape does not allow updating node types at
-     *         this time.
-     * @throws AccessDeniedException if the current session does not have the {@link JcrSession#ModeShape_REGISTER_TYPE_PERMISSION
-     *         register type permission}.
+     * @throws UnsupportedRepositoryOperationException if {@code allowUpdate} is true; ModeShape does not allow updating node
+     *         types at this time.
+     * @throws AccessDeniedException if the current session does not have the {@link ModeShapePermissions#REGISTER_TYPE register
+     *         type permission}.
      * @throws RepositoryException if another error occurs
      */
     public NodeTypeIterator registerNodeTypes( JcrNodeTypeSource source )
@@ -485,7 +485,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         AccessDeniedException, RepositoryException {
 
         try {
-            session.checkPermission((Path)null, JcrSession.ModeShape_REGISTER_TYPE_PERMISSION);
+            session.checkPermission((Path)null, ModeShapePermissions.REGISTER_TYPE);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }
@@ -510,6 +510,8 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * @throws InvalidNodeTypeDefinitionException if any of the node types with the given names cannot be unregistered because
      *         they are the supertype, one of the required primary types, or a default primary type of a node type that is not
      *         being unregistered.
+     * @throws AccessDeniedException if the current session does not have the {@link ModeShapePermissions#REGISTER_TYPE register
+     *         type permission}.
      * @throws RepositoryException if any other error occurs
      */
     public void unregisterNodeType( Collection<String> nodeTypeNames )
@@ -517,7 +519,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         NameFactory nameFactory = context().getValueFactories().getNameFactory();
 
         try {
-            session.checkPermission((Path)null, JcrSession.ModeShape_REGISTER_TYPE_PERMISSION);
+            session.checkPermission((Path)null, ModeShapePermissions.REGISTER_TYPE);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
         }

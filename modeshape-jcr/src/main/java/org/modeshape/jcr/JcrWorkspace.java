@@ -243,7 +243,7 @@ class JcrWorkspace implements Workspace {
 
             for (String workspaceName : workspaceNamesFromGraph) {
                 try {
-                    session.checkPermission(workspaceName, null, JcrSession.JCR_READ_PERMISSION);
+                    session.checkPermission(workspaceName, null, ModeShapePermissions.READ);
                     workspaceNames.add(workspaceName);
                 } catch (AccessControlException ace) {
                     // Can happen if user doesn't have the privileges to read from the workspace

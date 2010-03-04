@@ -30,6 +30,9 @@ import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import org.junit.After;
+import org.junit.Before;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.MockSecurityContext;
@@ -40,9 +43,6 @@ import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.observe.MockObservable;
 import org.modeshape.graph.property.PathFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.mockito.MockitoAnnotations;
 
 /**
  * Support class for performance testing of various operations over subtrees of the content graph
@@ -85,8 +85,7 @@ public abstract class AbstractJcrAccessTest {
 
         repository = new JcrRepository(context, connectionFactory, "unused", new MockObservable(), null, null, null);
 
-        SecurityContext mockSecurityContext = new MockSecurityContext("testuser",
-                                                                      Collections.singleton(JcrSession.ModeShape_WRITE_PERMISSION));
+        SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(ModeShapeRoles.READWRITE));
         session = (JcrSession)repository.login(new SecurityContextCredentials(mockSecurityContext));
     }
 

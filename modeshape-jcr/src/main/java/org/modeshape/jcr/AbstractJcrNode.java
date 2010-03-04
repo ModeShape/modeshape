@@ -1473,7 +1473,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (!session().lockTokens().contains(lock.getLockToken())) {
             try {
                 // See if the user has the permission to break someone else's lock
-                session().checkPermission(cache.workspaceName(), null, JcrSession.ModeShape_UNLOCK_ANY_PERMISSION);
+                session().checkPermission(cache.workspaceName(), null, ModeShapePermissions.UNLOCK_ANY);
             } catch (AccessControlException iae) {
                 throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
             }

@@ -2541,16 +2541,16 @@ class SessionCache {
             String jcrAction = null;
             switch (action) {
                 case ADD_NODE:
-                    jcrAction = JcrSession.JCR_ADD_NODE_PERMISSION;
+                    jcrAction = ModeShapePermissions.ADD_NODE;
                     break;
                 case READ:
-                    jcrAction = JcrSession.JCR_READ_PERMISSION;
+                    jcrAction = ModeShapePermissions.READ;
                     break;
                 case REMOVE:
-                    jcrAction = JcrSession.JCR_REMOVE_PERMISSION;
+                    jcrAction = ModeShapePermissions.REMOVE;
                     break;
                 case SET_PROPERTY:
-                    jcrAction = JcrSession.JCR_SET_PROPERTY_PERMISSION;
+                    jcrAction = ModeShapePermissions.SET_PROPERTY;
                     break;
             }
             session().checkPermission(path, jcrAction);

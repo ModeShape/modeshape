@@ -240,8 +240,8 @@ final &LoginContext; loginContext = ...;
 			</para>
 			<para>
 				ModeShape currently defines three roles: <code>readonly</code>, <code>readwrite</code>, and <code>admin</code>.  If the &Credentials; passed into 
-				<code>Session.login(...)</code> (or the &Subject; from the &AccessControlContext;, if one of the no-credential <code>login</code> methods were used) have any of these roles, 
-				the session will have the corresponding access to all workspaces within the repository.  The mapping from the roles to the actions that they allow is provided below.
+				<code>Repository.login(...)</code> (or the &Subject; from the &AccessControlContext;, if one of the no-credential <code>login</code> methods were used) have any of these roles, 
+				the session will have the corresponding access to all workspaces within the repository.  The mapping from the roles to the actions that they allow is provided below,
 				for any values of <code>path</code>.  
 				  
 				<table frame='all'>

@@ -97,8 +97,7 @@ public class JcrQueryManagerTest {
                      .setSource("car-source")
                      .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
                      .addNodeTypes(resourceUrl("cars.cnd"))
-                     .setOption(Option.ANONYMOUS_USER_ROLES,
-                                JcrSession.ModeShape_READ_PERMISSION + "," + JcrSession.ModeShape_WRITE_PERMISSION)
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.READONLY + "," + ModeShapeRoles.READWRITE)
                      .setOption(Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
         engine = configuration.build();
         engine.start();

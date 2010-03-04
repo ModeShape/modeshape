@@ -33,6 +33,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.jcr.RepositoryException;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.MockSecurityContext;
@@ -48,10 +52,6 @@ import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.query.parse.QueryParsers;
 import org.modeshape.jcr.nodetype.NodeTypeTemplate;
 import org.modeshape.jcr.xpath.XPathQueryParser;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 /**
  * Abstract test class that sets up a working JcrSession environment, albeit with a mocked JcrRepository.
@@ -177,8 +177,7 @@ public abstract class AbstractSessionTest {
         sessionAttributes.put("attribute1", "value1");
 
         // Now create the workspace ...
-        SecurityContext mockSecurityContext = new MockSecurityContext(null,
-                                                                      Collections.singleton(JcrSession.ModeShape_WRITE_PERMISSION));
+        SecurityContext mockSecurityContext = new MockSecurityContext(null, Collections.singleton(ModeShapeRoles.READWRITE));
         workspace = new JcrWorkspace(repository, workspaceName, context.with(mockSecurityContext), sessionAttributes);
 
         // Create the session and log in ...
