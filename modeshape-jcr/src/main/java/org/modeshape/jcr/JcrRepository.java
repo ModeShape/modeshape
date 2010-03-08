@@ -123,7 +123,6 @@ import org.modeshape.jcr.xpath.XPathQueryParser;
 @ThreadSafe
 public class JcrRepository implements Repository {
 
-
     /**
      * A flag that controls whether the repository uses a shared repository (or workspace) for the "/jcr:system" content in all of
      * the workspaces. In production, this needs to be "true" for proper JCR functionality, but in some debugging cases it can be
@@ -345,8 +344,8 @@ public class JcrRepository implements Repository {
     /**
      * The set of supported query language string constants.
      * 
-     * @see QueryManager#getSupportedQueryLanguages()
-     * @see QueryManager#createQuery(String, String)
+     * @see javax.jcr.query.QueryManager#getSupportedQueryLanguages()
+     * @see javax.jcr.query.QueryManager#createQuery(String, String)
      */
     public static final class QueryLanguage {
         /**
