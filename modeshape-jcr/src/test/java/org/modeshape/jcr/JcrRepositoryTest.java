@@ -480,10 +480,11 @@ public class JcrRepositoryTest {
         assertThat(repository.getDescriptor(Repository.OPTION_VERSIONING_SUPPORTED), is("false"));
         assertThat(repository.getDescriptor(Repository.QUERY_XPATH_DOC_ORDER), is("false"));
         assertThat(repository.getDescriptor(Repository.QUERY_XPATH_POS_INDEX), is("true"));
-        assertThat(repository.getDescriptor(Repository.REP_NAME_DESC), is(JcrI18n.REP_NAME_DESC.text()));
-        assertThat(repository.getDescriptor(Repository.REP_VENDOR_DESC), is(JcrI18n.REP_VENDOR_DESC.text()));
+        assertThat(repository.getDescriptor(Repository.REP_NAME_DESC), is("ModeShape JCR Repository"));
+        assertThat(repository.getDescriptor(Repository.REP_VENDOR_DESC), is("JBoss, a division of Red Hat"));
         assertThat(repository.getDescriptor(Repository.REP_VENDOR_URL_DESC), is("http://www.modeshape.org"));
-        assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC), is("0.4"));
+        assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC), is(notNullValue()));
+        // assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC), is("1.1-SNAPSHOT"));
         assertThat(repository.getDescriptor(Repository.SPEC_NAME_DESC), is(JcrI18n.SPEC_NAME_DESC.text()));
         assertThat(repository.getDescriptor(Repository.SPEC_VERSION_DESC), is("1.0"));
     }

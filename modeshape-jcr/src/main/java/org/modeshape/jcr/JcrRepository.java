@@ -24,6 +24,7 @@
 package org.modeshape.jcr;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.security.AccessControlContext;
 import java.security.AccessControlException;
@@ -37,6 +38,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,6 +61,7 @@ import javax.security.auth.login.LoginContext;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.collection.UnmodifiableProperties;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.CheckArg;
@@ -141,6 +144,7 @@ public class JcrRepository implements Repository {
      */
     static final String ANONYMOUS_USER_NAME = "<anonymous>";
     private static final Logger LOGGER = Logger.getLogger(JcrRepository.class);
+    private static Properties bundleProperties = null;
 
     /**
      * The available options for the {@code JcrRepository}.
@@ -459,16 +463,16 @@ public class JcrRepository implements Repository {
         }
         // Vendor-specific descriptors (REP_XXX) will only be initialized if not already present, allowing for customer branding.
         if (!modifiableDescriptors.containsKey(Repository.REP_NAME_DESC)) {
-            modifiableDescriptors.put(Repository.REP_NAME_DESC, JcrI18n.REP_NAME_DESC.text());
+            modifiableDescriptors.put(Repository.REP_NAME_DESC, getBundleProperty(Repository.REP_NAME_DESC, true));
         }
         if (!modifiableDescriptors.containsKey(Repository.REP_VENDOR_DESC)) {
-            modifiableDescriptors.put(Repository.REP_VENDOR_DESC, JcrI18n.REP_VENDOR_DESC.text());
+            modifiableDescriptors.put(Repository.REP_VENDOR_DESC, getBundleProperty(Repository.REP_VENDOR_DESC, true));
         }
         if (!modifiableDescriptors.containsKey(Repository.REP_VENDOR_URL_DESC)) {
-            modifiableDescriptors.put(Repository.REP_VENDOR_URL_DESC, "http://www.modeshape.org");
+            modifiableDescriptors.put(Repository.REP_VENDOR_URL_DESC, getBundleProperty(Repository.REP_VENDOR_URL_DESC, true));
         }
         if (!modifiableDescriptors.containsKey(Repository.REP_VERSION_DESC)) {
-            modifiableDescriptors.put(Repository.REP_VERSION_DESC, "0.4");
+            modifiableDescriptors.put(Repository.REP_VERSION_DESC, getBundleProperty(Repository.REP_VERSION_DESC, true));
         }
         modifiableDescriptors.put(Repository.SPEC_NAME_DESC, JcrI18n.SPEC_NAME_DESC.text());
         modifiableDescriptors.put(Repository.SPEC_VERSION_DESC, "1.0");
@@ -1118,6 +1122,41 @@ public class JcrRepository implements Repository {
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(JcrI18n.cleanedUpLocks.text());
         }
+    }
+
+    protected static Properties getBundleProperties() throws RepositoryException {
+        if (bundleProperties == null) {
+            // This is idempotent, so we don't need to lock ...
+            InputStream stream = null;
+            try {
+                stream = JcrRepository.class.getClassLoader().getResourceAsStream("org/modeshape/jcr/repository.properties");
+                assert stream != null;
+                Properties props = new Properties();
+                props.load(stream);
+                bundleProperties = new UnmodifiableProperties(props);
+            } catch (IOException e) {
+                throw new RepositoryException(JcrI18n.failedToReadPropertiesFromManifest.text(e.getLocalizedMessage()), e);
+            } finally {
+                if (stream != null) {
+                    try {
+                        stream.close();
+                    } catch (IOException e) {
+                    } finally {
+                        stream = null;
+                    }
+                }
+            }
+        }
+        return bundleProperties;
+    }
+
+    protected static String getBundleProperty( String propertyName,
+                                               boolean required ) throws RepositoryException {
+        String value = getBundleProperties().getProperty(propertyName);
+        if (value == null && required) {
+            throw new RepositoryException(JcrI18n.failedToReadPropertyFromManifest.text(propertyName));
+        }
+        return value;
     }
 
     protected class FederatedRepositoryContext implements RepositoryContext {

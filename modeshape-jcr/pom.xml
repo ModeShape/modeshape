@@ -9,7 +9,7 @@
   <!-- The groupId and version values are inherited from parent -->
   <artifactId>modeshape-jcr</artifactId>
   <packaging>jar</packaging>
-  <name>ModeShape JCR implementation</name>
+  <name>ModeShape JCR Repository</name>
   <description>ModeShape implementation of the JCR API</description>
   <url>http://www.modeshape.org</url>
   
@@ -146,7 +146,25 @@
 	</dependency>
   </dependencies>
 
-	<build>
+  <build>
+    <resources>
+      <resource>
+           <filtering>false</filtering>
+           <directory>src/main/resources</directory>
+           <includes>
+             <include>*</include>
+             <include>**/*</include>
+           </includes>
+      </resource>
+	    <!-- Apply the properties set in the POM to the resource files -->
+      <resource>
+           <filtering>true</filtering>
+           <directory>src/main/resources</directory>
+           <includes>
+             <include>**/repository.properties</include>
+           </includes>
+      </resource>
+    </resources>
 		<plugins>
 			<!--
 				Adding OSGI metadata to the JAR without changing the packaging type.

@@ -53,6 +53,8 @@ public final class JcrI18n {
     public static I18n sourceInUse;
     public static I18n repositoryDoesNotExist;
     public static I18n fileDoesNotExist;
+    public static I18n failedToReadPropertiesFromManifest;
+    public static I18n failedToReadPropertyFromManifest;
 
     public static I18n rootNodeHasNoParent;
     public static I18n childNodeAlreadyExists;
@@ -132,8 +134,6 @@ public final class JcrI18n {
     public static I18n noNegativeDepth;
     public static I18n tooDeep;
 
-    public static I18n REP_NAME_DESC;
-    public static I18n REP_VENDOR_DESC;
     public static I18n SPEC_NAME_DESC;
 
     // New implementation
