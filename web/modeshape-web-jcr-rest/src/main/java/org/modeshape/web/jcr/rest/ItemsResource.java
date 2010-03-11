@@ -52,7 +52,8 @@ import org.modeshape.common.util.Base64;
  * <th>Description</th>
  * <th>Supported Methods</th>
  * </tr>
- * <!-- <tr>
+ * <!--
+ * <tr>
  * <td>/resources/{repositoryName}/{workspaceName}</td>
  * <td>returns a list of operations within the workspace</td>
  * <td>GET</td>
@@ -116,9 +117,8 @@ import org.modeshape.common.util.Base64;
  */
 
 @Immutable
-@Path("/")
+@Path( "/" )
 public class ItemsResource extends AbstractJcrResource {
-
 
     private static final String BASE64_ENCODING_SUFFIX = "/base64/";
 
@@ -456,13 +456,11 @@ public class ItemsResource extends AbstractJcrResource {
 
             stream = new ByteArrayInputStream(binaryValue);
             return valueFactory.createValue(stream);
-        } 
-        catch (IOException ioe) {
+        } catch (IOException ioe) {
             throw new RepositoryException(ioe);
-        }
-        finally {
+        } finally {
             try {
-                stream.close();
+                if (stream != null) stream.close();
             } catch (IOException e) {
                 // Error accessing the value, so throw this ...
                 throw new RepositoryException(e);
