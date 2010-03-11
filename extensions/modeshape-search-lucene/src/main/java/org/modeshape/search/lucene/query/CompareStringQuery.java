@@ -284,9 +284,9 @@ public class CompareStringQuery extends CompareQuery<String> {
         String result = likeExpression.replaceAll("\\\\(.)", "$1");
         // Escape characters used as metacharacters in regular expressions, including
         // '[', '^', '\', '$', '.', '|', '?', '*', '+', '(', and ')'
-        result = result.replaceAll("([\\[^\\\\$.|?*+()])", "\\$1");
-        // Replace '%'->'[.]+' and '_'->'[.]
-        result = likeExpression.replace("%", ".+").replace("_", ".");
+        result = result.replaceAll("([$.|?*+()\\[\\\\^\\\\\\\\])", "\\\\$1");
+        // Replace '%'->'[.]*' and '_'->'[.]
+        result = result.replace("%", ".*").replace("_", ".");
         return result;
     }
 

@@ -1030,6 +1030,11 @@ public class LuceneSearchSession implements WorkspaceSession {
     protected String likeExpresionForWildcardPath( String path ) {
         if (path.equals("/") || path.equals("%")) return path;
         StringBuilder sb = new StringBuilder();
+        if (path.startsWith("%/")) {
+            sb.append("%");
+            if (path.length() == 2) return sb.toString();
+            path = path.substring(2);
+        }
         for (String segment : path.split("/")) {
             if (segment.length() == 0) continue;
             sb.append("/");

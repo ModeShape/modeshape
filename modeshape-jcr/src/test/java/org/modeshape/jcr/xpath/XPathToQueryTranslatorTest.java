@@ -344,6 +344,12 @@ public class XPathToQueryTranslatorTest {
     }
 
     @Test
+    public void shouldTranslateFromXPathContainingAttributeMatch() {
+        assertThat(xpath("//InfinitiG37[@foo:year='2008']"),
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) LIKE '%/InfinitiG37' AND nodeSet1.[foo:year] = '2008'"));
+    }
+
+    @Test
     public void shouldParseXPathExpressions() {
         xpath("/jcr:root/a/b/c");
         xpath("/jcr:root/a/b/c[*]");
