@@ -30,6 +30,7 @@ import org.modeshape.common.CommonI18n;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.text.TokenStream;
+import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.text.TokenStream.CharacterStream;
 import org.modeshape.common.text.TokenStream.Tokenizer;
 import org.modeshape.common.text.TokenStream.Tokens;
@@ -82,6 +83,7 @@ import org.modeshape.jcr.xpath.XPath.Union;
  */
 public class XPathParser {
     private final TypeSystem typeSystem;
+    private final XmlNameEncoder decoder = new XmlNameEncoder();
 
     public XPathParser( TypeSystem context ) {
         this.typeSystem = context;
@@ -495,9 +497,13 @@ public class XPathParser {
         String firstPart = parseNCName(tokens);
         if (tokens.canConsume(':')) {
             String secondPart = tokens.consume();
-            return new NameTest(firstPart, secondPart);
+            return new NameTest(decode(firstPart), decode(secondPart));
         }
-        return new NameTest(null, firstPart);
+        return new NameTest(null, decode(firstPart));
+    }
+
+    protected String decode( String string ) {
+        return decoder.decode(string);
     }
 
     protected String parseNCName( TokenStream tokens ) {
@@ -515,7 +521,7 @@ public class XPathParser {
                     return new NameTest(null, null);
                 }
                 String localName = tokens.consume();
-                return new NameTest(null, localName);
+                return new NameTest(null, decode(localName));
             }
             return new NameTest(null, null);
         }
@@ -524,7 +530,7 @@ public class XPathParser {
             String prefix = tokens.consume();
             tokens.consume(':');
             tokens.consume('*');
-            return new NameTest(prefix, null);
+            return new NameTest(decode(prefix), null);
         }
         return null;
     }

@@ -31,6 +31,10 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.TokenStream;
 import org.modeshape.common.text.TokenStream.Tokenizer;
@@ -64,10 +68,6 @@ import org.modeshape.jcr.xpath.XPath.SchemaAttributeTest;
 import org.modeshape.jcr.xpath.XPath.SchemaElementTest;
 import org.modeshape.jcr.xpath.XPath.StepExpression;
 import org.modeshape.jcr.xpath.XPath.TextTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 
 /**
  * 
@@ -171,6 +171,13 @@ public class XPathParserTest {
     // ----------------------------------------------------------------------------------------------------------------
     // Path expression
     // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldParsePathExpressionWithSpaceInPath() {
+        assertThat(parser.parsePathExpr(tokenize("/a/b/c_x0020_d")), is(pathExpr(axisStep(nameTest("a")),
+                                                                                 axisStep(nameTest("b")),
+                                                                                 axisStep(nameTest("c d")))));
+    }
 
     @Test
     public void shouldParsePathExpressionWithAbbreviatedDescendantOrSelfWithNameTestAfter() {

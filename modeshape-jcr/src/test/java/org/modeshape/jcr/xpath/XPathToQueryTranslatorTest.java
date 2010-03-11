@@ -332,6 +332,18 @@ public class XPathToQueryTranslatorTest {
     }
 
     @Test
+    public void shouldTranslateFromXPathContainingSpacesInPath() {
+        assertThat(xpath("/jcr:root/Cars/Sports/Infiniti_x0020_G37[@foo:year='2008']"),
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) = '/Cars/Sports/Infiniti G37' AND nodeSet1.[foo:year] = '2008'"));
+    }
+
+    @Test
+    public void shouldTranslateFromXPathContainingPathAndAttributeMatch() {
+        assertThat(xpath("/jcr:root/Cars/Sports/InfinitiG37[@foo:year='2008']"),
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) = '/Cars/Sports/InfinitiG37' AND nodeSet1.[foo:year] = '2008'"));
+    }
+
+    @Test
     public void shouldParseXPathExpressions() {
         xpath("/jcr:root/a/b/c");
         xpath("/jcr:root/a/b/c[*]");
