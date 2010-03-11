@@ -27,6 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import org.junit.Test;
@@ -45,7 +46,7 @@ public class Base64Test {
     // =========================================================================
 
     @Test
-    public void testBasicExamples() {
+    public void testBasicExamples() throws IOException {
         // Make up some source objects
         byte[] originalBytes = {(byte)-2, (byte)-1, (byte)0, (byte)1, (byte)2};
 
@@ -72,7 +73,7 @@ public class Base64Test {
     }
 
     @Test
-    public void shouldEncodeStringValue() throws UnsupportedEncodingException {
+    public void shouldEncodeStringValue() throws UnsupportedEncodingException, IOException {
         String actualValue = "propertyValue";
         String encoded = Base64.encodeBytes(actualValue.getBytes("UTF-8"));
         byte[] decoded = Base64.decode(encoded);
@@ -81,7 +82,7 @@ public class Base64Test {
     }
 
     @Test
-    public void shouldEncodeStreamableValue() {
+    public void shouldEncodeStreamableValue() throws IOException {
         String actualValue = "propertyValue";
         byte[] actualBytes = actualValue.getBytes();
         InputStream actualStream = new ByteArrayInputStream(actualBytes);

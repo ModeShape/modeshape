@@ -450,11 +450,17 @@ public class ItemsResource extends AbstractJcrResource {
 
     private Value decodeValue( String encodedValue,
                                ValueFactory valueFactory ) throws RepositoryException {
-        byte[] binaryValue = Base64.decode(encodedValue);
-        InputStream stream = new ByteArrayInputStream(binaryValue);
+        InputStream stream = null;
         try {
+            byte[] binaryValue = Base64.decode(encodedValue);
+
+            stream = new ByteArrayInputStream(binaryValue);
             return valueFactory.createValue(stream);
-        } finally {
+        } 
+        catch (IOException ioe) {
+            throw new RepositoryException(ioe);
+        }
+        finally {
             try {
                 stream.close();
             } catch (IOException e) {

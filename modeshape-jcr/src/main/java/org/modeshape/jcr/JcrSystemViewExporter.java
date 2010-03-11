@@ -220,8 +220,7 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
                 int len;
 
                 try {
-                    InputStream stream = new Base64.InputStream(value.getStream(), Base64.ENCODE | Base64.URL_SAFE
-                                                                                   | Base64.DONT_BREAK_LINES);
+                    InputStream stream = new Base64.InputStream(value.getStream(), Base64.ENCODE | Base64.URL_SAFE);
 
                     while (-1 != (len = stream.read(bytes))) {
                         contentHandler.characters(new String(bytes, 0, len).toCharArray(), 0, len);
@@ -256,7 +255,12 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
                 valueAtts.addAttribute("xsi", "type", "xsi:type", "STRING", "xsd:base64Binary");
 
                 startElement(contentHandler, JcrSvLexicon.VALUE, valueAtts);
-                chars = Base64.encodeBytes(s.getBytes(), Base64.URL_SAFE).toCharArray();
+                try {
+                    chars = Base64.encodeBytes(s.getBytes(), Base64.URL_SAFE).toCharArray();
+                }
+                catch (IOException ioe) {
+                    throw new RepositoryException(ioe);
+                }
                 contentHandler.characters(chars, 0, chars.length);
                 endElement(contentHandler, JcrSvLexicon.VALUE);
             }

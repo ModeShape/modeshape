@@ -24,6 +24,7 @@
 package org.modeshape.jcr;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -440,6 +441,8 @@ class JcrContentHandler extends DefaultHandler {
                     } else {
                         currentProps.get(currentPropName).add(valueFor(SYSTEM_VIEW_NAME_DECODER.decode(s), currentPropType));
                     }
+                } catch (IOException ioe) {
+                    throw new EnclosingSAXException(ioe);
                 } catch (RepositoryException re) {
                     throw new EnclosingSAXException(re);
                 }
