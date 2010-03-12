@@ -42,11 +42,11 @@ import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.Version;
-import org.modeshape.graph.Graph;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.modeshape.graph.Graph;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 
 /**
  * 
@@ -378,28 +378,28 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
      * and are in MixinTest
      */
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowCancelMerge() throws Exception {
+    @Test( expected = UnsupportedRepositoryOperationException.class )
+    public void shouldNotAllowCancelMergeOfNonVersionableNode() throws Exception {
         hybrid.cancelMerge(null);
     }
 
     @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowCheckin() throws Exception {
+    public void shouldNotAllowCheckinOfNonVersionableNode() throws Exception {
         hybrid.checkin();
     }
 
     @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowCheckout() throws Exception {
+    public void shouldNotAllowCheckoutOfNonVersionableNode() throws Exception {
         hybrid.checkout();
     }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowDoneMerge() throws Exception {
+    @Test( expected = UnsupportedRepositoryOperationException.class )
+    public void shouldNotAllowDoneMergeOfNonVersionableNode() throws Exception {
         hybrid.doneMerge(null);
     }
 
     @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowGetBaseVersion() throws Exception {
+    public void shouldNotAllowGetBaseVersionOfNonVersionableNode() throws Exception {
         hybrid.getBaseVersion();
     }
 
@@ -409,8 +409,8 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
     }
 
     @Test
-    public void shouldNotAllowIsCheckedOut() throws Exception {
-        assertThat(hybrid.isCheckedOut(), is(false));
+    public void shouldTreatNonVersionableNodesAsCheckedOut() throws Exception {
+        assertThat(hybrid.isCheckedOut(), is(true));
     }
 
     @Test
@@ -424,8 +424,8 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
     // hybrid.lock(false, false);
     // }
 
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowMerge() throws Exception {
+    @Test( expected = UnsupportedRepositoryOperationException.class )
+    public void shouldNotAllowMergeOfNonVersionableNode() throws Exception {
         hybrid.merge(null, false);
     }
 

@@ -237,9 +237,10 @@ public class JcrResourcesTest {
         assertThat(properties.getString("jcr:primaryType"), is("mode:system"));
 
         JSONArray namespaces = system.getJSONArray("children");
-        assertThat(namespaces.length(), is(2));
-        assertThat(namespaces.getString(0), is("mode:namespaces"));
-        assertThat(namespaces.getString(1), is("mode:locks"));
+        assertThat(namespaces.length(), is(3));
+        assertThat(namespaces.getString(0), is("jcr:versionStorage"));
+        assertThat(namespaces.getString(1), is("mode:namespaces"));
+        assertThat(namespaces.getString(2), is("mode:locks"));
 
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         connection.disconnect();
@@ -262,12 +263,14 @@ public class JcrResourcesTest {
         assertThat(properties.getString("jcr:primaryType"), is("mode:system"));
 
         JSONObject children = body.getJSONObject("children");
-        assertThat(children.length(), is(2));
+        assertThat(children.length(), is(3));
 
         JSONObject namespaces = children.getJSONObject("mode:namespaces");
         assertThat(namespaces.length(), is(2));
         JSONObject locks = children.getJSONObject("mode:locks");
         assertThat(locks.length(), is(1));
+        JSONObject versionStorage = children.getJSONObject("jcr:versionStorage");
+        assertThat(versionStorage.length(), is(1));
 
         properties = namespaces.getJSONObject("properties");
         assertThat(properties.length(), is(1));

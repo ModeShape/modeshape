@@ -114,6 +114,8 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
                 graph.importXmlFrom(xmlStream).into(destinationPath);
 
                 graph.createWorkspace().named("otherWorkspace");
+                graph.useWorkspace("otherWorkspace");
+                graph.clone("/testroot").fromWorkspace("default").as("testroot").into("/").failingIfAnyUuidsMatch();
             }
         } catch (Exception ex) {
             // The TCK tries to quash this exception. Print it out to be more obvious.

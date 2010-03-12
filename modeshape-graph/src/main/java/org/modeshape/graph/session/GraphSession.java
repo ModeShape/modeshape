@@ -808,6 +808,13 @@ public class GraphSession<Payload, PropertyPayload> {
             }
         });
 
+        root.onChangedNodes(new LoadAllChildrenVisitor() {
+            @Override
+            protected void finishParentAfterLoading( Node<Payload, PropertyPayload> node ) {
+                nodeOperations.compute(operations, node);
+            }
+        });
+
         // Execute the batched operations ...
         try {
             operations.execute();
@@ -896,7 +903,15 @@ public class GraphSession<Payload, PropertyPayload> {
         if (branchRequests.isEmpty()) return;
 
         // Now execute the branch ...
-        Graph.Batch branchBatch = store.batch(new BatchRequestBuilder(branchRequests));
+        final Graph.Batch branchBatch = store.batch(new BatchRequestBuilder(branchRequests));
+
+        node.onChangedNodes(new LoadAllChildrenVisitor() {
+            @Override
+            protected void finishParentAfterLoading( Node<Payload, PropertyPayload> node ) {
+                nodeOperations.compute(branchBatch, node);
+            }
+        });
+
         try {
             branchBatch.execute();
         } catch (org.modeshape.graph.property.PathNotFoundException e) {
@@ -1115,6 +1130,14 @@ public class GraphSession<Payload, PropertyPayload> {
          * @throws ValidationException if there is a problem during validation
          */
         void preSave( Node<NodePayload, PropertyPayload> node ) throws ValidationException;
+
+        /**
+         * Update any computed fields based on the given node
+         * 
+         * @param batch the workspace graph batch in which computed fields should be created
+         * @param node the node form which computed fields will be derived
+         */
+        void compute( Graph.Batch batch, Node<NodePayload, PropertyPayload> node );
     }
 
     @ThreadSafe
@@ -1205,6 +1228,15 @@ public class GraphSession<Payload, PropertyPayload> {
          * @see GraphSession.Operations#preSave(GraphSession.Node)
          */
         public void preSave( Node<Payload, PropertyPayload> node ) throws ValidationException {
+            // do nothing here
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see GraphSession.Operations#compute(Graph.Batch, GraphSession.Node)
+         */
+        public void compute( Graph.Batch batch, Node<Payload, PropertyPayload> node ) {
             // do nothing here
         }
 

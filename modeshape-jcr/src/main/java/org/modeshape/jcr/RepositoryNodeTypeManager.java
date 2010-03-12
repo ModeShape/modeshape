@@ -352,6 +352,8 @@ class RepositoryNodeTypeManager {
                 assert value != null;
                 // We can use the definition if it matches the type and satisfies the constraints ...
                 int type = definition.getRequiredType();
+                // Don't check constraints on reference properties
+                if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
                 if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
             }
 
@@ -360,6 +362,11 @@ class RepositoryNodeTypeManager {
                     for (JcrPropertyDefinition definition : primaryType.allSingleValuePropertyDefinitions(propertyName)) {
                         // See if the definition allows the value ...
                         if (skipProtected && definition.isProtected()) return null;
+                        // Don't check constraints on reference properties
+                        int type = definition.getRequiredType();
+                        if (type == PropertyType.REFERENCE && definition.canCastToType(value)) {
+                            return definition;
+                        }
                         if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
                     }
                 }
@@ -377,6 +384,8 @@ class RepositoryNodeTypeManager {
                         assert value != null;
                         // We can use the definition if it matches the type and satisfies the constraints ...
                         int type = definition.getRequiredType();
+                        // Don't check constraints on reference properties
+                        if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
                         if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
                     }
                     if (value != null) {
@@ -384,6 +393,11 @@ class RepositoryNodeTypeManager {
                             // See if the definition allows the value ...
                             if (skipProtected && definition.isProtected()) return null;
                             assert definition.getRequiredType() != PropertyType.UNDEFINED;
+                            // Don't check constraints on reference properties
+                            int type = definition.getRequiredType();
+                            if (type == PropertyType.REFERENCE && definition.canCastToType(value)) {
+                                return definition;
+                            }
                             if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
                         }
                     }
@@ -412,6 +426,8 @@ class RepositoryNodeTypeManager {
                     assert value != null;
                     // We can use the definition if it matches the type and satisfies the constraints ...
                     int type = definition.getRequiredType();
+                    // Don't check constraints on reference properties
+                    if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
                     if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
                 }
                 if (matchedOnName) {
@@ -420,6 +436,11 @@ class RepositoryNodeTypeManager {
                             // See if the definition allows the value ...
                             if (skipProtected && definition.isProtected()) return null;
                             assert definition.getRequiredType() != PropertyType.UNDEFINED;
+                            // Don't check constraints on reference properties
+                            int type = definition.getRequiredType();
+                            if (type == PropertyType.REFERENCE && definition.canCastToType(value)) {
+                                return definition;
+                            }
                             if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
                         }
                     }
@@ -436,6 +457,8 @@ class RepositoryNodeTypeManager {
                             assert value != null;
                             // We can use the definition if it matches the type and satisfies the constraints ...
                             int type = definition.getRequiredType();
+                            // Don't check constraints on reference properties
+                            if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
                             if ((type == PropertyType.UNDEFINED || type == value.getType())
                                 && definition.satisfiesConstraints(value)) return definition;
                         }
@@ -445,6 +468,11 @@ class RepositoryNodeTypeManager {
                                 // See if the definition allows the value ...
                                 if (skipProtected && definition.isProtected()) return null;
                                 assert definition.getRequiredType() != PropertyType.UNDEFINED;
+                                // Don't check constraints on reference properties
+                                int type = definition.getRequiredType();
+                                if (type == PropertyType.REFERENCE && definition.canCastToType(value)) {
+                                    return definition;
+                                }
                                 if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
 
                             }
@@ -471,6 +499,8 @@ class RepositoryNodeTypeManager {
                     assert value != null;
                     // We can use the definition if it matches the type and satisfies the constraints ...
                     int type = definition.getRequiredType();
+                    // Don't check constraints on reference properties
+                    if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
                     if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
                 }
                 if (value != null) {
@@ -479,6 +509,11 @@ class RepositoryNodeTypeManager {
                         // See if the definition allows the value ...
                         if (skipProtected && definition.isProtected()) return null;
                         assert definition.getRequiredType() != PropertyType.UNDEFINED;
+                        // Don't check constraints on reference properties
+                        int type = definition.getRequiredType();
+                        if (type == PropertyType.REFERENCE && definition.canCastToType(value)) {
+                            return definition;
+                        }
                         if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
                     }
                 }
@@ -504,6 +539,8 @@ class RepositoryNodeTypeManager {
                         assert value != null;
                         // We can use the definition if it matches the type and satisfies the constraints ...
                         int type = definition.getRequiredType();
+                        // Don't check constraints on reference properties
+                        if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
                         if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
                     }
                     if (value != null) {
@@ -512,8 +549,12 @@ class RepositoryNodeTypeManager {
                             // See if the definition allows the value ...
                             if (skipProtected && definition.isProtected()) return null;
                             assert definition.getRequiredType() != PropertyType.UNDEFINED;
+                            // Don't check constraints on reference properties
+                            int type = definition.getRequiredType();
+                            if (type == PropertyType.REFERENCE && definition.canCastToType(value)) {
+                                return definition;
+                            }
                             if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
-
                         }
                     }
                 }
@@ -580,7 +621,7 @@ class RepositoryNodeTypeManager {
                                                   Name propertyName,
                                                   Value[] values,
                                                   boolean skipProtected ) {
-        boolean setToEmpty = values == null || values.length == 0;
+        boolean setToEmpty = values == null;
         int propertyType = values == null || values.length == 0 ? PropertyType.STRING : values[0].getType();
 
         /*
@@ -606,10 +647,12 @@ class RepositoryNodeTypeManager {
                     continue;
                 }
                 assert values != null;
-                assert values.length != 0;
                 // We can use the definition if it matches the type and satisfies the constraints ...
                 int type = definition.getRequiredType();
-                if ((type == PropertyType.UNDEFINED || type == propertyType) && definition.satisfiesConstraints(values)) return definition;
+                boolean typeMatches = values.length == 0 || type == PropertyType.UNDEFINED || type == propertyType; 
+                // Don't check constraints on reference properties
+                if (typeMatches && type == PropertyType.REFERENCE) return definition;
+                if (typeMatches && definition.satisfiesConstraints(values)) return definition;
             }
 
             if (matchedOnName) {
@@ -622,6 +665,8 @@ class RepositoryNodeTypeManager {
                         // See if the definition allows the value ...
                         if (skipProtected && definition.isProtected()) return null;
                         assert definition.getRequiredType() != PropertyType.UNDEFINED;
+                        // Don't check constraints on reference properties
+                        if (definition.getRequiredType() == PropertyType.REFERENCE && definition.canCastToType(values)) return definition;
                         if (definition.canCastToTypeAndSatisfyConstraints(values)) return definition;
                     }
                 }
@@ -648,10 +693,12 @@ class RepositoryNodeTypeManager {
                         continue;
                     }
                     assert values != null;
-                    assert values.length != 0;
                     // We can use the definition if it matches the type and satisfies the constraints ...
                     int type = definition.getRequiredType();
-                    if ((type == PropertyType.UNDEFINED || type == propertyType) && definition.satisfiesConstraints(values)) return definition;
+                    boolean typeMatches = values.length == 0 || type == PropertyType.UNDEFINED || type == propertyType; 
+                    // Don't check constraints on reference properties
+                    if (typeMatches && type == PropertyType.REFERENCE) return definition;
+                    if (typeMatches && definition.satisfiesConstraints(values)) return definition;
                 }
                 if (matchedOnName) {
                     if (values != null && values.length != 0) {
@@ -663,6 +710,8 @@ class RepositoryNodeTypeManager {
                             // See if the definition allows the value ...
                             if (skipProtected && definition.isProtected()) return null;
                             assert definition.getRequiredType() != PropertyType.UNDEFINED;
+                            // Don't check constraints on reference properties
+                            if (definition.getRequiredType() == PropertyType.REFERENCE && definition.canCastToType(values)) return definition;
                             if (definition.canCastToTypeAndSatisfyConstraints(values)) return definition;
                         }
                     }

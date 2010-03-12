@@ -46,5 +46,6 @@ public class ModeShapeLexicon extends org.modeshape.repository.ModeShapeLexicon 
     public static final Name REPOSITORIES = new BasicName(Namespace.URI, "repositories");
     public static final Name SYSTEM = new BasicName(Namespace.URI, "system");
     public static final Name URI = new BasicName(Namespace.URI, "uri");
+    public static final Name VERSION_STORAGE = new BasicName(Namespace.URI, "versionStorage");
     public static final Name WORKSPACE = new BasicName(Namespace.URI, "workspace");    
 }

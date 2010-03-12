@@ -26,3 +26,5 @@
 - prop1 (PATH) copy
 - * (*) copy
 - * (*) multiple copy
+
+[modetest:versionableUnstructured] > nt:unstructured, mix:versionable

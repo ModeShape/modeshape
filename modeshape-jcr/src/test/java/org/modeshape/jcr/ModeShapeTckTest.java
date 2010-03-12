@@ -1,5 +1,6 @@
 package org.modeshape.jcr;
 
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.util.Collections;
@@ -13,6 +14,7 @@ import javax.jcr.Property;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.version.Version;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.jackrabbit.test.AbstractJCRTest;
@@ -460,4 +462,52 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         superuser.logout();
 
     }
+
+    public void testShouldCreateProperVersionHistoryWhenSavingVersionedNode() throws Exception {
+        session = helper.getReadWriteSession();
+        Node node = session.getRootNode().addNode("/test", "nt:unstructured");
+        node.addMixin("mix:versionable");
+        session.save();
+
+        assertThat(node.hasProperty("jcr:isCheckedOut"), is(true));
+        assertThat(node.getProperty("jcr:isCheckedOut").getBoolean(), is(true));
+        
+        assertThat(node.hasProperty("jcr:versionHistory"), is(true));
+        Node history = node.getProperty("jcr:versionHistory").getNode();
+        assertThat(history, is(notNullValue()));
+        
+        assertThat(node.hasProperty("jcr:baseVersion"), is(true));
+        Node version = node.getProperty("jcr:baseVersion").getNode();
+        assertThat(version, is(notNullValue()));
+        
+        assertThat(version.getParent(), is(history));
+        
+        assertThat(node.hasProperty("jcr:uuid"), is(true));
+        assertThat(node.getProperty("jcr:uuid").getString(), is(history.getProperty("jcr:versionableUuid").getString()));
+        
+        assertThat(node.getVersionHistory().getUUID(), is(history.getUUID()));
+        assertThat(node.getVersionHistory().getPath(), is(history.getPath()));
+
+        assertThat(node.getBaseVersion().getUUID(), is(version.getUUID()));
+        assertThat(node.getBaseVersion().getPath(), is(version.getPath()));
+
+        // Subgraph subgraph = graph.getSubgraphOfDepth(Integer.MAX_VALUE).at("/jcr:system/jcr:versionStorage");
+        // System.out.println(subgraph);
+        //        
+        // subgraph = graph.getSubgraphOfDepth(2).at("/test");
+        // System.out.println(subgraph);
+    }
+
+    public void testShouldCreateProperStructureForTheFirstCheckInOfANode() throws Exception {
+        session = helper.getReadWriteSession();
+        Node node = session.getRootNode().addNode("/checkInTest", "nt:unstructured");
+        node.addMixin("mix:versionable");
+        session.save();
+        
+        Version version = node.checkin();
+        
+        assertThat(node.getProperty("jcr:isCheckedOut").getBoolean(), is(false));
+        
+    }
+
 }

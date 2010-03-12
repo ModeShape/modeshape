@@ -45,6 +45,7 @@ import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
+import javax.jcr.version.VersionException;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.collection.Problem;
@@ -288,6 +289,11 @@ class JcrQueryManager implements QueryManager {
             Path parentPath = path.getParent();
 
             Node parentNode = session.getNode(parentPath);
+
+            if (!parentNode.isCheckedOut()) {
+                throw new VersionException(JcrI18n.nodeIsCheckedIn.text(parentNode.getPath()));
+            }
+
             Node queryNode = parentNode.addNode(path.relativeTo(parentPath).getString(namespaces),
                                                 JcrNtLexicon.QUERY.getString(namespaces));
 

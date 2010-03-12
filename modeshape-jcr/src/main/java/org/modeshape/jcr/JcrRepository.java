@@ -455,7 +455,7 @@ public class JcrRepository implements Repository {
         modifiableDescriptors.put(Repository.OPTION_OBSERVATION_SUPPORTED, "true");
         modifiableDescriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, "false"); // not JCR 1.0 SQL
         modifiableDescriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, "false");
-        modifiableDescriptors.put(Repository.OPTION_VERSIONING_SUPPORTED, "false");
+        modifiableDescriptors.put(Repository.OPTION_VERSIONING_SUPPORTED, "true");
         modifiableDescriptors.put(Repository.QUERY_XPATH_DOC_ORDER, "false"); // see MODE-613
         if (!modifiableDescriptors.containsKey(Repository.QUERY_XPATH_POS_INDEX)) {
             // don't override what was supplied ...
@@ -679,6 +679,11 @@ public class JcrRepository implements Repository {
         Property systemPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.SYSTEM);
         systemGraph.create(systemPath, systemPrimaryType).ifAbsent().and();
 
+        // Make sure the required jcr:versionStorage node exists...
+        Path versionPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, JcrLexicon.VERSION_STORAGE);
+        Property versionPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.VERSION_STORAGE);
+        systemGraph.create(versionPath, versionPrimaryType).ifAbsent().and();
+        
         // Right now, the other nodes will be created as needed
     }
 

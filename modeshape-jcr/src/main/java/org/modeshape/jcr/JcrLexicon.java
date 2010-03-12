@@ -62,6 +62,7 @@ public class JcrLexicon extends org.modeshape.graph.JcrLexicon {
     public static final Name VERSIONABLE_UUID = new BasicName(Namespace.URI, "versionableUuid");
     public static final Name VERSION_HISTORY = new BasicName(Namespace.URI, "versionHistory");
     public static final Name VERSION_LABELS = new BasicName(Namespace.URI, "versionLabels");
+    public static final Name VERSION_STORAGE = new BasicName(Namespace.URI, "versionStorage");
     public static final Name XMLTEXT = new BasicName(Namespace.URI, "xmltext");
     public static final Name XMLCHARACTERS = new BasicName(Namespace.URI, "xmlcharacters");
 

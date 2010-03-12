@@ -27,7 +27,8 @@
 <testroot xmlns:jcr="http://www.jcp.org/jcr/1.0" 
           xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
           xmlns:mode="http://www.modeshape.org/1.0"
-          jcr:primaryType="nt:unstructured">
+          jcr:primaryType="nt:unstructured"
+          jcr:mixinTypes="mix:referenceable">
     <nt:unstructured jcr:name="serializationNode" />
     <nt:unstructured jcr:name="node1" prop1="&lt;foo&amp;foo&gt;">
        <!--  

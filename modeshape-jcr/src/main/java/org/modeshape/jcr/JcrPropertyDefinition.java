@@ -31,9 +31,9 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.Immutable;
-import org.modeshape.graph.ModeShapeIntLexicon;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeIntLexicon;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
@@ -46,8 +46,8 @@ import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.graph.property.basic.JodaDateTime;
 
 /**
- * ModeShape implementation of the {@link PropertyDefinition} interface. This implementation is immutable and has all fields initialized
- * through its constructor.
+ * ModeShape implementation of the {@link PropertyDefinition} interface. This implementation is immutable and has all fields
+ * initialized through its constructor.
  */
 @Immutable
 class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinition {
@@ -292,6 +292,40 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             return rangeChecker.getMaximum(); // may still be null
         }
         return null;
+    }
+
+    /**
+     * Returns <code>true</code> if <code>value</code> can be cast to <code>property.getRequiredType()</code> per the type
+     * conversion rules in section 6.2.6 of the JCR 1.0 specification. If the property definition has a required type of
+     * {@link PropertyType#UNDEFINED}, the cast will be considered to have succeeded.
+     * 
+     * @param value the value to be validated
+     * @return <code>true</code> if the value can be cast to the required type for the property definition (if it exists).
+     */
+    boolean canCastToType( Value value ) {
+        try {
+            assert value instanceof JcrValue : "Illegal implementation of Value interface";
+            ((JcrValue)value).asType(getRequiredType()); // throws ValueFormatException if there's a problem
+            return true;
+        } catch (javax.jcr.ValueFormatException vfe) {
+            // Cast failed
+            return false;
+        }
+    }
+
+    /**
+     * Returns <code>true</code> if <code>value</code> can be cast to <code>property.getRequiredType()</code> per the type
+     * conversion rules in section 6.2.6 of the JCR 1.0 specification. If the property definition has a required type of
+     * {@link PropertyType#UNDEFINED}, the cast will be considered to have succeeded.
+     * 
+     * @param values the values to be validated
+     * @return <code>true</code> if the value can be cast to the required type for the property definition (if it exists).
+     */
+    boolean canCastToType( Value[] values ) {
+        for (Value value : values) {
+            if (!canCastToType(value)) return false;
+        }
+        return true;
     }
 
     /**
@@ -735,12 +769,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
             JcrValue jcrValue = (JcrValue)value;
             // Need to use the session execution context to handle the remaps
-            Name name = jcrValue.sessionCache()
-                                .session()
-                                .getExecutionContext()
-                                .getValueFactories()
-                                .getNameFactory()
-                                .create(jcrValue.value());
+            Name name = jcrValue.sessionCache().session().getExecutionContext().getValueFactories().getNameFactory().create(jcrValue.value());
 
             for (int i = 0; i < constraints.length; i++) {
                 if (constraints[i].equals(name)) {

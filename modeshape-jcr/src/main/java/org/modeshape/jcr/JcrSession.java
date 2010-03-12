@@ -61,6 +61,7 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
+import javax.jcr.version.VersionException;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
@@ -568,7 +569,7 @@ class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#getNodeByUUID(java.lang.String)
      */
-    public Node getNodeByUUID( String uuid ) throws ItemNotFoundException, RepositoryException {
+    public AbstractJcrNode getNodeByUUID( String uuid ) throws ItemNotFoundException, RepositoryException {
         return cache.findJcrNode(Location.create(UUID.fromString(uuid)));
     }
 
@@ -755,6 +756,8 @@ class JcrSession implements Session {
                 throw (ItemExistsException)cause;
             } else if (cause instanceof ConstraintViolationException) {
                 throw (ConstraintViolationException)cause;
+            } else if (cause instanceof VersionException) {
+                throw (VersionException)cause;
             }
             throw new RepositoryException(cause);
         } catch (SAXParseException se) {
@@ -826,11 +829,6 @@ class JcrSession implements Session {
         AbstractJcrNode sourceNode = getNode(pathFactory.create(srcAbsPath));
         AbstractJcrNode newParentNode = getNode(destPath.getParent());
 
-        String newNodeNameAsString = newNodeName.getString(executionContext.getNamespaceRegistry());
-        if (newParentNode.hasNode(newNodeName.getString(executionContext.getNamespaceRegistry()))) {
-            throw new ItemExistsException(JcrI18n.childNodeAlreadyExists.text(newNodeNameAsString, newParentNode.getPath()));
-        }
-
         if (sourceNode.isLocked()) {
             javax.jcr.lock.Lock sourceLock = sourceNode.getLock();
             if (sourceLock != null && sourceLock.getLockToken() == null) {
@@ -843,6 +841,19 @@ class JcrSession implements Session {
             if (newParentLock != null && newParentLock.getLockToken() == null) {
                 throw new LockException(JcrI18n.lockTokenNotHeld.text(destAbsPath));
             }
+        }
+
+        if (!sourceNode.isCheckedOut()) {
+            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(sourceNode.getPath()));
+        }
+
+        if (!newParentNode.isCheckedOut()) {
+            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(newParentNode.getPath()));
+        }
+
+        String newNodeNameAsString = newNodeName.getString(executionContext.getNamespaceRegistry());
+        if (newParentNode.hasNode(newNodeName.getString(executionContext.getNamespaceRegistry()))) {
+            throw new ItemExistsException(JcrI18n.childNodeAlreadyExists.text(newNodeNameAsString, newParentNode.getPath()));
         }
 
         newParentNode.editor().moveToBeChild(sourceNode, newNodeName.getName());

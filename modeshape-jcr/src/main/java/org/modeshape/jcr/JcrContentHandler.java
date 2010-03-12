@@ -42,6 +42,7 @@ import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.version.VersionException;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.XmlNameEncoder;
@@ -133,6 +134,11 @@ class JcrContentHandler extends DefaultHandler {
         } catch (ItemNotFoundException e) {
             throw new PathNotFoundException(e.getLocalizedMessage(), e);
         }
+
+        if (!currentNode.isCheckedOut()) {
+            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(currentNode.getPath()));
+        }
+
         this.jcrValueFactory = session.getValueFactory();
         this.nodeTypes = session.nodeTypeManager();
         this.jcrNamespaceRegistry = session.workspace().getNamespaceRegistry();

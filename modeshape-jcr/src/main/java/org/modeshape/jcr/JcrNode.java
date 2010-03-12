@@ -28,6 +28,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
+import javax.jcr.nodetype.ConstraintViolationException;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.session.GraphSession.NodeId;
@@ -38,7 +39,7 @@ import org.modeshape.graph.session.GraphSession.NodeId;
  * @see JcrRootNode
  */
 @NotThreadSafe
-final class JcrNode extends AbstractJcrNode {
+class JcrNode extends AbstractJcrNode {
 
     JcrNode( SessionCache cache,
              NodeId nodeId,
@@ -52,7 +53,7 @@ final class JcrNode extends AbstractJcrNode {
      * @see org.modeshape.jcr.AbstractJcrNode#isRoot()
      */
     @Override
-    boolean isRoot() {
+    final boolean isRoot() {
         return false;
     }
 
@@ -105,6 +106,12 @@ final class JcrNode extends AbstractJcrNode {
             if (parentLock != null && parentLock.getLockToken() == null) {
                 throw new LockException();
             }
+        }
+
+        JcrNodeDefinition nodeDefn = cache.nodeTypes().getNodeDefinition(nodeInfo().getPayload().getDefinitionId());
+
+        if (nodeDefn.isProtected()) {
+            throw new ConstraintViolationException(JcrI18n.cannotRemoveItemWithProtectedDefinition.text(getPath()));
         }
 
         session().recordRemoval(location); // do this first before we destroy the node!

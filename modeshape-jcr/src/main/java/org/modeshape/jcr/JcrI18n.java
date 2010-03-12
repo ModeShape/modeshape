@@ -168,6 +168,7 @@ public final class JcrI18n {
     public static I18n singleValuedPropertyNeedsSingleValuedDefault;
     public static I18n couldNotFindDefinitionOfRequiredPrimaryType;
     public static I18n cannotRedefineChildNodeWithIncompatibleDefinition;
+    public static I18n cannotRemoveItemWithProtectedDefinition;
 
     public static I18n noDefinition;
     public static I18n noSnsDefinition;
@@ -189,6 +190,7 @@ public final class JcrI18n {
     public static I18n notOrderable;
 
     // Lock messages
+    public static I18n nodeNotLockable;
     public static I18n cannotRemoveLockToken;
     public static I18n alreadyLocked;
     public static I18n parentAlreadyLocked;
@@ -201,6 +203,14 @@ public final class JcrI18n {
     public static I18n cannotCreateUuid;
     public static I18n cannotPerformNodeTypeCheck;
     public static I18n sessionIsNotActive;
+
+    // Versioning messages
+    public static I18n nodeIsCheckedIn;
+    public static I18n cannotRemoveMixVersionable;
+    public static I18n pendingMergeConflicts;
+    public static I18n invalidVersion;
+    public static I18n invalidVersionLabel;
+    public static I18n versionLabelAlreadyExists;
 
     static {
         try {

@@ -348,6 +348,10 @@ class JcrWorkspace implements Workspace {
                 }
             }
 
+            if (!parentNode.isCheckedOut()) {
+                throw new VersionException(JcrI18n.nodeIsCheckedIn.text(parentNode.getPath()));
+            }
+
             Node<JcrNodePayload, JcrPropertyPayload> parent = cache.findNode(null, destPath.getParent());
             cache.findBestNodeDefinition(parent, newNodeName, parent.getPayload().getPrimaryTypeName());
 
@@ -503,8 +507,13 @@ class JcrWorkspace implements Workspace {
                 }
             }
 
+            if (!parentNode.isCheckedOut()) {
+                throw new VersionException(JcrI18n.nodeIsCheckedIn.text(parentNode.getPath()));
+            }
+
             Node<JcrNodePayload, JcrPropertyPayload> parent = cache.findNode(null, destPath.getParent());
             cache.findBestNodeDefinition(parent, newNodeName, parent.getPayload().getPrimaryTypeName());
+
 
             // Now perform the clone, using the direct (non-session) method ...
             cache.graphSession().immediateCopy(srcPath, srcWorkspace, destPath);
@@ -629,6 +638,14 @@ class JcrWorkspace implements Workspace {
                 if (newParentLock != null && newParentLock.getLockToken() == null) {
                     throw new LockException(destAbsPath);
                 }
+            }
+
+            if (!sourceNode.isCheckedOut()) {
+                throw new VersionException(JcrI18n.nodeIsCheckedIn.text(sourceNode.getPath()));
+            }
+
+            if (!parentNode.isCheckedOut()) {
+                throw new VersionException(JcrI18n.nodeIsCheckedIn.text(parentNode.getPath()));
             }
 
             // Now perform the clone, using the direct (non-session) method ...

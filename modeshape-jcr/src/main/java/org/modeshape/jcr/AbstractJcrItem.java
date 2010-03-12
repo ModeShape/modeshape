@@ -75,6 +75,10 @@ abstract class AbstractJcrItem implements Item {
         return context().getValueFactories().getPathFactory().createSegment(segment);
     }
 
+    final Path.Segment segmentFrom( Name segment ) {
+        return context().getValueFactories().getPathFactory().createSegment(segment);
+    }
+
     final NamespaceRegistry namespaces() {
         return context().getNamespaceRegistry();
     }

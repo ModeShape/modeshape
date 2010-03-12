@@ -257,8 +257,7 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
                 startElement(contentHandler, JcrSvLexicon.VALUE, valueAtts);
                 try {
                     chars = Base64.encodeBytes(s.getBytes(), Base64.URL_SAFE).toCharArray();
-                }
-                catch (IOException ioe) {
+                } catch (IOException ioe) {
                     throw new RepositoryException(ioe);
                 }
                 contentHandler.characters(chars, 0, chars.length);

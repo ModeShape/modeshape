@@ -68,6 +68,13 @@
 + jcr:propertyDefinition (nt:propertyDefinition) = nt:propertyDefinition multiple version 
 + jcr:childNodeDefinition (nt:childNodeDefinition) = nt:childNodeDefinition multiple version
 
+[mix:versionable] > mix:referenceable mixin
+  - jcr:versionHistory (reference) mandatory protected < 'nt:versionHistory'
+  - jcr:baseVersion (reference) mandatory protected ignore < 'nt:version'
+  - jcr:isCheckedOut (boolean) = 'true' mandatory autocreated protected ignore
+  - jcr:predecessors (reference) mandatory protected multiple < 'nt:version'
+  - jcr:mergeFailed (reference) protected multiple abort
+
 [nt:versionLabels] 
 - * (reference) protected abort < 'nt:version'
 

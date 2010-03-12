@@ -56,10 +56,14 @@
 [dna:locks] > nt:base
 + * (dna:lock) = dna:lock protected ignore
 
+[dna:versionStorage] > nt:base
++ * (nt:versionHistory) = nt:versionHistory protected ignore
+
 [dna:system] > nt:base
-+ dna:namespaces (dna:namespaces) = dna:namespaces autocreated mandatory protected version
-+ dna:locks (dna:locks) = dna:locks autocreated mandatory protected ignore
-+ jcr:nodeTypes (dna:nodeTypes) = dna:nodeTypes autocreated mandatory protected version
++ dna:namespaces (dna:namespaces) = dna:namespaces autocreated mandatory protected abort
++ dna:locks (dna:locks) = dna:locks autocreated mandatory protected abort
++ jcr:nodeTypes (dna:nodeTypes) = dna:nodeTypes autocreated mandatory protected abort
++ jcr:versionStorage (dna:versionStorage) = dna:versionStorage autocreated mandatory protected abort
 
 [dna:root] > nt:base, mix:referenceable orderable
 - * (undefined) multiple version

@@ -50,6 +50,7 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
+import javax.jcr.version.VersionException;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
@@ -57,7 +58,9 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositorySourceException;
+import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
@@ -739,6 +742,10 @@ class SessionCache {
         return isNodeType(node, JcrMixLexicon.REFERENCEABLE);
     }
 
+    public boolean isVersionable( Node<JcrNodePayload, JcrPropertyPayload> node ) throws RepositoryException {
+        return isNodeType(node, JcrMixLexicon.VERSIONABLE);
+    }
+
     /**
      * Obtain an {@link NodeEditor editor} that can be used to manipulate the properties or children on the node identified by the
      * supplied identifier and path. The node must exist prior to this call, either as a node that exists in the workspace or as a
@@ -877,6 +884,25 @@ class SessionCache {
         }
 
         /**
+         * @return if this node (or its nearest versionable ancestor) is checked out.  
+         * @throws RepositoryException if there is an error accessing the repository
+         * 
+         * @see javax.jcr.Node#isCheckedOut()
+         */
+        boolean isCheckedOut() throws RepositoryException {
+            for (Node<JcrNodePayload, JcrPropertyPayload> curr = node; curr.getParent() != null; curr = curr.getParent()) {
+                if (isNodeType(curr, JcrMixLexicon.VERSIONABLE)) {
+                    PropertyInfo<JcrPropertyPayload> prop = curr.getProperty(JcrLexicon.IS_CHECKED_OUT);
+
+                    // This prop can only be null if the node has not been saved since it was made versionable.
+                    return prop == null || prop.getPayload().getJcrProperty().getBoolean();
+                }
+            }
+
+            return true;
+        }
+
+        /**
          * Set the value for the property. If the property does not exist, it will be added. If the property does exist, the
          * existing values will be replaced with the supplied value.
          * 
@@ -906,15 +932,25 @@ class SessionCache {
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
          * @throws AccessDeniedException if the current session does not have the requisite privileges to perform this task
+         * @throws VersionException if this node is not checked out
          * @throws RepositoryException if any other error occurs
          */
         public AbstractJcrProperty setProperty( Name name,
                                                 JcrValue value,
                                                 boolean skipProtected )
-            throws AccessDeniedException, ConstraintViolationException, RepositoryException {
+            throws AccessDeniedException, ConstraintViolationException, VersionException, RepositoryException {
             assert name != null;
             assert value != null;
 
+            /*
+             * Skip this check for protected nodes.  They can't be modified by users and, in some cases (e.g., jcr:isLocked),
+             * may be able to be modified for checked-in nodes.
+             */
+            if (!isCheckedOut() && skipProtected) {
+                String path = node.getLocation().getPath().getString(context().getNamespaceRegistry());
+                throw new VersionException(JcrI18n.nodeIsCheckedIn.text(path));
+            }
+            
             checkCardinalityOfExistingProperty(name, false);
 
             JcrPropertyDefinition definition = null;
@@ -948,13 +984,29 @@ class SessionCache {
                                                                 value,
                                                                 true,
                                                                 skipProtected);
-                if (definition == null) {
+                /*
+                 * findPropertyDefinition checks constraints for all property types except REFERENCE.  To avoid unnecessary loading of nodes,
+                 * REFERENCE constraints are only checked when the property is first set.
+                 */
+                boolean referencePropMissedConstraints = definition != null
+                                                         && definition.getRequiredType() == PropertyType.REFERENCE
+                                                         && !definition.satisfiesConstraints(value);
+                if (definition == null || referencePropMissedConstraints) {
                     throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
                                                                                      readable(name),
                                                                                      readable(node.getPath()),
                                                                                      readable(payload.getPrimaryTypeName()),
                                                                                      readable(payload.getMixinTypeNames())));
                 }
+            }
+            else {
+                // Check that the existing definition isn't protected
+                if (skipProtected && definition.isProtected())
+                    throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
+                                                                                     readable(name),
+                                                                                     readable(node.getPath()),
+                                                                                     readable(payload.getPrimaryTypeName()),
+                                                                                     readable(payload.getMixinTypeNames())));
             }
             // Create the ModeShape property ...
             Object objValue = value.value();
@@ -1036,15 +1088,21 @@ class SessionCache {
          *         definition constraint
          * @throws javax.jcr.ValueFormatException
          * @throws AccessDeniedException if the current session does not have the requisite privileges to perform this task
+         * @throws VersionException if this node is not checked out
          * @throws RepositoryException if any other error occurs
          */
         public AbstractJcrProperty setProperty( Name name,
                                                 Value[] values,
                                                 int valueType,
                                                 boolean skipProtected )
-            throws AccessDeniedException, ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException {
+            throws AccessDeniedException, ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException, VersionException {
             assert name != null;
             assert values != null;
+
+            if (!isCheckedOut()) {
+                String path = node.getLocation().getPath().getString(context().getNamespaceRegistry());
+                throw new VersionException(JcrI18n.nodeIsCheckedIn.text(path));
+            }
 
             checkCardinalityOfExistingProperty(name, true);
 
@@ -1124,7 +1182,20 @@ class SessionCache {
                                                                 name,
                                                                 newValues,
                                                                 skipProtected);
-                if (definition == null) {
+                /*
+                 * findPropertyDefinition checks constraints for all property types except REFERENCE.  To avoid unnecessary loading of nodes,
+                 * REFERENCE constraints are only checked when the property is first set.
+                 */
+                boolean referencePropMissedConstraints = definition != null
+                                                         && definition.getRequiredType() == PropertyType.REFERENCE
+                                                         && !definition.satisfiesConstraints(values);
+                if (definition == null || referencePropMissedConstraints) {
+                    definition = nodeTypes().findPropertyDefinition(payload.getPrimaryTypeName(),
+                                                                    payload.getMixinTypeNames(),
+                                                                    name,
+                                                                    newValues,
+                                                                    skipProtected);
+
                     throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
                                                                                      readable(name),
                                                                                      readable(node.getPath()),
@@ -1132,6 +1203,16 @@ class SessionCache {
                                                                                      readable(payload.getMixinTypeNames())));
                 }
             }
+            else {
+                // Check that the existing definition isn't protected
+                if (skipProtected && definition.isProtected())
+                    throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
+                                                                                     readable(name),
+                                                                                     readable(node.getPath()),
+                                                                                     readable(payload.getPrimaryTypeName()),
+                                                                                     readable(payload.getMixinTypeNames())));
+            }
+
             // Create the ModeShape property ...
             int type = numValues != 0 ? newValues[0].getType() : definition.getRequiredType();
             Object[] objValues = new Object[numValues];
@@ -1259,8 +1340,8 @@ class SessionCache {
                     // The node definition changed, so try to set the property ...
                     NodeEditor newChildEditor = getEditorFor(existingChild);
                     try {
-                        JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, defn.getId()
-                                                                                                               .getString());
+                        JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
+                                                      defn.getId().getString());
                         newChildEditor.setProperty(ModeShapeIntLexicon.NODE_DEFINITON, value);
                     } catch (ConstraintViolationException e) {
                         // We can't set this property on the node (according to the node definition).
@@ -1337,7 +1418,7 @@ class SessionCache {
                     }
                 }
 
-                if (JcrMixLexicon.REFERENCEABLE.equals(mixinCandidateType.getInternalName())) {
+                if (mixinCandidateType.isNodeType(JcrMixLexicon.REFERENCEABLE)) {
                     // This node is now referenceable, so make sure there is a UUID property ...
                     UUID uuid = node.getLocation().getUuid();
                     if (uuid == null) uuid = (UUID)node.getLocation().getIdProperty(JcrLexicon.UUID).getFirstValue();
@@ -1394,12 +1475,12 @@ class SessionCache {
                                                                      true);
                     if (definition != null) {
                         // Only failed because there was no SNS definition - throw ItemExistsException per 7.1.4 of 1.0.1 spec
-                        Path pathForChild = pathFactory.create(node.getPath(), name, numSns + 1);
+                        Path pathForChild = pathFactory.create(node.getPath(), name, numSns);
                         String msg = JcrI18n.noSnsDefinitionForNode.text(pathForChild, workspaceName());
                         throw new ItemExistsException(msg);
                     }
                     // Didn't work for other reasons - throw ConstraintViolationException
-                    Path pathForChild = pathFactory.create(node.getPath(), name, numSns + 1);
+                    Path pathForChild = pathFactory.create(node.getPath(), name, numSns);
                     String msg = JcrI18n.nodeDefinitionCouldNotBeDeterminedForNode.text(pathForChild,
                                                                                         workspaceName(),
                                                                                         sourceName());
@@ -1436,8 +1517,8 @@ class SessionCache {
 
                 // Create the initial properties ...
                 Property primaryTypeProp = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
-                Property nodeDefinitionProp = propertyFactory.create(ModeShapeIntLexicon.NODE_DEFINITON, definition.getId()
-                                                                                                                   .getString());
+                Property nodeDefinitionProp = propertyFactory.create(ModeShapeIntLexicon.NODE_DEFINITON,
+                                                                     definition.getId().getString());
 
                 // Now add the "jcr:uuid" property if and only if referenceable ...
                 Node<JcrNodePayload, JcrPropertyPayload> result = null;
@@ -2211,6 +2292,12 @@ class SessionCache {
             for (Property dnaProp : graphProperties.values()) {
                 Name name = dnaProp.getName();
 
+                /*
+                 * Don't add mode:uuid to the node.  If the node is referenceable, this has already been added as jcr:uuid
+                 * and if the node is not referenceable, the UUID should not be exposed as public API.
+                 */
+                if (ModeShapeLexicon.UUID.equals(name)) continue;
+
                 // Is this is single-valued property?
                 boolean isSingle = dnaProp.isSingle();
                 // Make sure that this isn't a multi-valued property with one value ...
@@ -2454,6 +2541,82 @@ class SessionCache {
             }
         }
 
+        @Override
+        public void compute( Graph.Batch batch,
+                             Node<JcrNodePayload, JcrPropertyPayload> node ) {
+            try {
+                initializeVersionHistoryFor(batch, node);
+            } catch (RepositoryException re) {
+                throw new IllegalStateException(re);
+            }
+        }
+
+        private void initializeVersionHistoryFor( Graph.Batch batch,
+                                                  Node<JcrNodePayload, JcrPropertyPayload> node ) throws RepositoryException {
+            /*
+             * Determine if the node has already had its verison history initialized based on whether the protected property
+             * jcr:isCheckedOut exists.
+             */
+
+            boolean initialized = node.getProperty(JcrLexicon.IS_CHECKED_OUT) != null;
+
+            if (!isVersionable(node) || initialized) return;
+
+            Graph systemGraph = session().repository().createSystemGraph(context());
+
+            JcrNodePayload payload = node.getPayload();
+
+            PropertyInfo<JcrPropertyPayload> jcrUuidProp = node.getProperty(JcrLexicon.UUID);
+
+            UUID jcrUuid = (UUID)jcrUuidProp.getProperty().getFirstValue();
+
+            Name nameSegment = factories().getNameFactory().create(jcrUuid.toString());
+            Path historyPath = pathFactory().createAbsolutePath(JcrLexicon.SYSTEM, JcrLexicon.VERSION_STORAGE, nameSegment);
+
+            Batch systemBatch = systemGraph.batch();
+
+            Name primaryTypeName = payload.getPrimaryTypeName();
+            List<Name> mixinTypeNames = payload.getMixinTypeNames();
+
+            UUID historyUuid = UUID.randomUUID();
+            UUID versionUuid = UUID.randomUUID();
+
+            systemBatch.create(historyPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_HISTORY).and(JcrLexicon.VERSIONABLE_UUID,
+                                                                                                            jcrUuid).and(JcrLexicon.UUID,
+                                                                                                                         historyUuid).and();
+
+            Path versionLabelsPath = pathFactory().create(historyPath, JcrLexicon.VERSION_LABELS);
+            systemBatch.create(versionLabelsPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_LABELS).and();
+
+
+            Path rootVersionPath = pathFactory().create(historyPath, JcrLexicon.ROOT_VERSION);
+            DateTime now = context().getValueFactories().getDateFactory().create();
+            systemBatch.create(rootVersionPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION).and(JcrLexicon.CREATED, now).and(JcrLexicon.UUID,
+                                                                                                                                     versionUuid).and();
+
+            Path frozenVersionPath = pathFactory().create(rootVersionPath, JcrLexicon.FROZEN_NODE);
+            systemBatch.create(frozenVersionPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE).and(JcrLexicon.FROZEN_UUID,
+                                                                                                              jcrUuid).and(JcrLexicon.FROZEN_PRIMARY_TYPE,
+                                                                                                                           primaryTypeName).and(JcrLexicon.FROZEN_MIXIN_TYPES,
+                                                                                                                                                mixinTypeNames).and();
+
+            systemBatch.execute();
+
+            PropertyFactory propFactory = context().getPropertyFactory();
+            Property isCheckedOut = propFactory.create(JcrLexicon.IS_CHECKED_OUT, true);
+            Property versionHistory = propFactory.create(JcrLexicon.VERSION_HISTORY, historyUuid);
+            Property baseVersion = propFactory.create(JcrLexicon.BASE_VERSION, versionUuid);
+            Property predecessors = propFactory.create(JcrLexicon.PREDECESSORS, new Object[] { versionUuid });
+
+            // This batch will get executed as part of the save
+            batch.set(isCheckedOut, versionHistory, baseVersion, predecessors).on(node.getPath()).and();
+
+            Path storagePath = historyPath.getParent();
+            Node<JcrNodePayload, JcrPropertyPayload> storageNode = findNode(null, storagePath);
+
+            refresh(storageNode.getNodeId(), storagePath, false);
+        }
+
         /**
          * {@inheritDoc}
          * 
@@ -2517,11 +2680,11 @@ class SessionCache {
                 } catch (ValueFormatException e) {
                     String msg = "{0} value \"{1}\" on {2} in \"{3}\" workspace is not a valid name and is being ignored";
                     LOGGER.trace(e,
-                                                       msg,
-                                                       readable(ModeShapeIntLexicon.MULTI_VALUED_PROPERTIES),
-                                                       value,
-                                                       readable(location),
-                                                       workspaceName());
+                                 msg,
+                                 readable(ModeShapeIntLexicon.MULTI_VALUED_PROPERTIES),
+                                 value,
+                                 readable(location),
+                                 workspaceName());
                 }
             }
             return multiValuedPropertyNames;
