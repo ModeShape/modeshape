@@ -33,7 +33,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         this.setName(testName);
         this.isReadOnly = true;
     }
-    
+
     public static Test readOnlySuite() {
         TestSuite suite = new TestSuite("ModeShape JCR API tests");
 
@@ -45,7 +45,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         return suite;
     }
-    
+
     @Override
     protected void tearDown() throws Exception {
         try {
@@ -287,7 +287,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         // If the repo only supports one workspace, stop here
         if ("default".equals(this.workspaceName)) return;
-        
+
         session = helper.getRepository().login(creds, this.workspaceName);
         testRead(session);
         try {
@@ -324,21 +324,21 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     /**
-     * Users should not be able to see workspaces to which they don't at least have read access.
-     * User 'noaccess' has no access to the default workspace.
+     * Users should not be able to see workspaces to which they don't at least have read access. User 'noaccess' has no access to
+     * the default workspace.
+     * 
      * @throws Exception
      */
     public void testShouldNotSeeWorkspacesWithoutReadPermission() throws Exception {
         Credentials creds = new SimpleCredentials("noaccess", "noaccess".toCharArray());
-        
+
         try {
             session = helper.getRepository().login(creds);
             fail("User 'noaccess' with no access to the default workspace should not be able to log into that workspace");
-        }
-        catch (LoginException le) {
+        } catch (LoginException le) {
             // Expected
         }
-        
+
         // If the repo only supports one workspace, stop here
         if ("default".equals(this.workspaceName)) return;
 
@@ -348,10 +348,10 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         assertThat(workspaceNames.length, is(1));
         assertThat(workspaceNames[0], is(this.workspaceName));
-        
+
         session.logout();
     }
-    
+
     public void testShouldCopyFromAnotherWorkspace() throws Exception {
         session = helper.getSuperuserSession("otherWorkspace");
         String nodetype1 = this.getProperty("nodetype");
@@ -471,20 +471,20 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         assertThat(node.hasProperty("jcr:isCheckedOut"), is(true));
         assertThat(node.getProperty("jcr:isCheckedOut").getBoolean(), is(true));
-        
+
         assertThat(node.hasProperty("jcr:versionHistory"), is(true));
         Node history = node.getProperty("jcr:versionHistory").getNode();
         assertThat(history, is(notNullValue()));
-        
+
         assertThat(node.hasProperty("jcr:baseVersion"), is(true));
         Node version = node.getProperty("jcr:baseVersion").getNode();
         assertThat(version, is(notNullValue()));
-        
+
         assertThat(version.getParent(), is(history));
-        
+
         assertThat(node.hasProperty("jcr:uuid"), is(true));
         assertThat(node.getProperty("jcr:uuid").getString(), is(history.getProperty("jcr:versionableUuid").getString()));
-        
+
         assertThat(node.getVersionHistory().getUUID(), is(history.getUUID()));
         assertThat(node.getVersionHistory().getPath(), is(history.getPath()));
 
@@ -503,11 +503,12 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         Node node = session.getRootNode().addNode("/checkInTest", "nt:unstructured");
         node.addMixin("mix:versionable");
         session.save();
-        
+
         Version version = node.checkin();
-        
+        assertThat(version, is(notNullValue()));
+
         assertThat(node.getProperty("jcr:isCheckedOut").getBoolean(), is(false));
-        
+
     }
 
 }

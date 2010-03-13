@@ -137,9 +137,9 @@ public class JcrTckTest {
         // Or uncomment the following lines to execute the different sets/suites of tests ...
         TestSuite suite = new TestSuite("JCR 1.0 API tests");
 
-        // suite.addTest(new LevelOneFeatureTests());
-        // suite.addTest(new LevelTwoFeatureTests());
-        // suite.addTest(new OptionalFeatureTests());
+        suite.addTest(new LevelOneFeatureTests());
+        suite.addTest(new LevelTwoFeatureTests());
+        suite.addTest(new OptionalFeatureTests());
         suite.addTest(new VersioningTests()); // remove this and the ObservationTests inner class when all tests pass and
         // uncomment
 
