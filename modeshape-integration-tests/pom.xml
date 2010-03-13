@@ -34,10 +34,10 @@
 			<artifactId>modeshape-jcr</artifactId>
 		</dependency>
 		<dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-sequencer-ddl</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+			<groupId>org.modeshape</groupId>
+			<artifactId>modeshape-sequencer-ddl</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 
 		<!-- 
       Testing (note the scope)
@@ -56,6 +56,10 @@
           <groupId>org.hamcrest</groupId>
           <artifactId>hamcrest-library</artifactId>
         </dependency>
+		<dependency>
+			<groupId>org.hamcrest</groupId>
+			<artifactId>hamcrest-library</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-common</artifactId>
@@ -89,22 +93,22 @@
 			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-connector-svn</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-connector-jdbc-metadata</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
+		<dependency>
+			<groupId>org.modeshape</groupId>
+			<artifactId>modeshape-connector-svn</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.modeshape</groupId>
+			<artifactId>modeshape-connector-jdbc-metadata</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
 
 		<!-- 
-          JPA Connector Dependencies
-          -->
+			JPA Connector Dependencies
+		-->
 		<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-connector-store-jpa</artifactId>
@@ -155,9 +159,9 @@
 			<artifactId>jcr</artifactId>
 			<scope>test</scope>
 		</dependency>
-        <!-- 
+		<!-- 
       JCR TCK unit tests
-    -->
+		-->
 		<dependency>
 			<groupId>org.apache.jackrabbit</groupId>
 			<artifactId>jackrabbit-jcr-tests</artifactId>
