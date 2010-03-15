@@ -1,14 +1,14 @@
 <jcr = "http://www.jcp.org/jcr/1.0">
 <nt  = "http://www.jcp.org/jcr/nt/1.0">
 <mix = "http://www.jcp.org/jcr/mix/1.0">
-<dna = "http://www.modeshape.org/1.0">
-<dnaint = "http://www.modeshape.org/internal/1.0">
+<mode = "http://www.modeshape.org/1.0">
+<modeint = "http://www.modeshape.org/internal/1.0">
 
-[dna:defined] mixin
-- dnaint:nodeDefinition (string) protected initialize
-- dnaint:multiValuedProperties (string) multiple protected initialize
+[mode:defined] mixin
+- modeint:nodeDefinition (string) protected ignore
+- modeint:multiValuedProperties (string) multiple protected ignore
 
-[nt:base] > dna:defined
+[nt:base] > mode:defined
 - jcr:primaryType (name) mandatory protected autocreated compute 
 - jcr:mixinTypes (name) multiple protected compute
 

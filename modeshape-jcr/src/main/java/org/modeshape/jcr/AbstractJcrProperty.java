@@ -32,6 +32,7 @@ import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
@@ -257,11 +258,12 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedOperationException always
      * @see javax.jcr.Item#save()
      */
-    public void save() {
-        throw new UnsupportedOperationException();
+    public void save() throws RepositoryException {
+        // This is not a correct implementation, but it's good enough to work around some TCK requirements for version tests
+        // getParent().save();
+        throw new UnsupportedRepositoryOperationException();
     }
 
     /**

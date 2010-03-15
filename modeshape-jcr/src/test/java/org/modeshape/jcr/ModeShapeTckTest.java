@@ -1,7 +1,7 @@
 package org.modeshape.jcr;
 
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.util.Collections;
 import javax.jcr.AccessDeniedException;
@@ -15,6 +15,7 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.Version;
+import javax.jcr.version.VersionException;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.jackrabbit.test.AbstractJCRTest;
@@ -490,25 +491,187 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         assertThat(node.getBaseVersion().getUUID(), is(version.getUUID()));
         assertThat(node.getBaseVersion().getPath(), is(version.getPath()));
-
-        // Subgraph subgraph = graph.getSubgraphOfDepth(Integer.MAX_VALUE).at("/jcr:system/jcr:versionStorage");
-        // System.out.println(subgraph);
-        //        
-        // subgraph = graph.getSubgraphOfDepth(2).at("/test");
-        // System.out.println(subgraph);
     }
 
-    public void testShouldCreateProperStructureForTheFirstCheckInOfANode() throws Exception {
+    public void testShouldCreateProperStructureForPropertiesOnTheFirstCheckInOfANode() throws Exception {
         session = helper.getReadWriteSession();
-        Node node = session.getRootNode().addNode("/checkInTest", "nt:unstructured");
+        Node node = session.getRootNode().addNode("/checkInTest", "modetest:versionTest");
+        session.getRootNode().save();
+
         node.addMixin("mix:versionable");
-        session.save();
+        node.save();
 
-        Version version = node.checkin();
-        assertThat(version, is(notNullValue()));
+        node.setProperty("abortProp", "abortPropValue");
+        node.setProperty("copyProp", "copyPropValue");
+        node.setProperty("ignoreProp", "ignorePropValue");
+        node.setProperty("versionProp", "versionPropValue");
 
+        node.save();
+
+        try {
+            node.checkin();
+            fail("Should not be able to checkin a node with a property that has an OnParentVersionAction of ABORT");
+        } catch (VersionException ve) {
+            assertThat(node.getProperty("jcr:isCheckedOut").getBoolean(), is(true));
+        }
+
+        node.setProperty("abortProp", (String)null);
+        node.save();
+
+        node.checkin();
         assertThat(node.getProperty("jcr:isCheckedOut").getBoolean(), is(false));
 
+        Version version = node.getBaseVersion();
+        assertThat(version, is(notNullValue()));
+        assertThat(version.getProperty("jcr:frozenNode/copyProp").getString(), is("copyPropValue"));
+        assertThat(version.getProperty("jcr:frozenNode/versionProp").getString(), is("versionPropValue"));
+
+        try {
+            version.getProperty("jcr:frozenNode/ignoreProp");
+            fail("Frozen version should not record a property that has an OnParentVersionAction of IGNORE");
+        } catch (PathNotFoundException pnfe) {
+            // Expected
+        }
+
+        node.checkout();
+
+        node.setProperty("abortProp", "abortPropValueNew");
+        node.setProperty("copyProp", "copyPropValueNew");
+        node.setProperty("ignoreProp", "ignorePropValueNew");
+        node.setProperty("versionProp", "versionPropValueNew");
+
+        version = node.getBaseVersion();
+        assertThat(version, is(notNullValue()));
+        assertThat(version.getProperty("jcr:frozenNode/copyProp").getString(), is("copyPropValue"));
+        assertThat(version.getProperty("jcr:frozenNode/versionProp").getString(), is("versionPropValue"));
+
+        try {
+            version.getProperty("ignoreProp");
+            fail("Frozen version should not record a property that has an OnParentVersionAction of IGNORE");
+        } catch (PathNotFoundException pnfe) {
+            // Expected
+        }
+
+        node.save();
+
     }
 
+    public void testShouldCreateProperHistoryForNodeWithCopySemantics() throws Exception {
+        session = helper.getReadWriteSession();
+        Node node = session.getRootNode().addNode("/checkInTest", "modetest:versionTest");
+        session.getRootNode().save();
+
+        /*
+         * Create /checkinTest/copyNode/AbortNode with copyNode being versionable.  This should be able 
+         * to be checked in, as the ABORT status of abortNode is ignored when copyNode is checked in.
+         */
+
+        Node copyNode = node.addNode("copyNode", "modetest:versionTest");
+        copyNode.addMixin("mix:versionable");
+
+        Node abortNode = copyNode.addNode("abortNode", "modetest:versionTest");
+        abortNode.setProperty("ignoreProp", "ignorePropValue");
+        abortNode.setProperty("copyProp", "copyPropValue");
+
+        /*
+         * Create /checkinTest/copyNode/versionNode with versionNode being versionable as well.  This should
+         * create a copy of versionNode in the version history, due to copyNode (the root of the checkin) having
+         * COPY semantics for the OnParentVersionAction.
+         */
+
+        Node versionNode = copyNode.addNode("versionNode", "modetest:versionTest");
+        versionNode.addMixin("mix:versionable");
+
+        node.save();
+
+        Version version = copyNode.checkin();
+
+        assertThat(version.getProperty("jcr:frozenNode/versionNode/jcr:primaryType").getString(), is("nt:frozenNode"));
+        assertThat(version.getProperty("jcr:frozenNode/versionNode/jcr:frozenPrimaryType").getString(),
+                   is("modetest:versionTest"));
+        assertThat(version.getProperty("jcr:frozenNode/abortNode/copyProp").getString(), is("copyPropValue"));
+        try {
+            version.getProperty("jcr:frozenNode/abortNode/ignoreProp");
+            fail("Property with OnParentVersionAction of IGNORE should not have been copied");
+        } catch (PathNotFoundException pnfe) {
+            // Expected
+        }
+    }
+
+    public void testShouldIgnoreAbortSemanticsOfChildNode() throws Exception {
+        session = helper.getReadWriteSession();
+        Node node = session.getRootNode().addNode("/checkInTest", "modetest:versionTest");
+        session.save();
+
+        /*
+         * Create /checkinTest/versionNode/abortNode with versionNode being versionable.  This should not fail
+         * when versionNode is checked in, as the OnParentVersionAction semantics come from the checked-in node.
+         */
+
+        Node versionNode = node.addNode("versionNode", "modetest:versionTest");
+        versionNode.addMixin("mix:versionable");
+
+        Node abortNode = versionNode.addNode("abortNode", "modetest:versionTest");
+        abortNode.setProperty("ignoreProp", "ignorePropValue");
+        abortNode.setProperty("copyProp", "copyPropValue");
+
+        node.save();
+
+        Version version = versionNode.checkin();
+
+        assertThat(version.getProperty("jcr:frozenNode/abortNode/jcr:primaryType").getString(), is("nt:frozenNode"));
+        assertThat(version.getProperty("jcr:frozenNode/abortNode/jcr:frozenPrimaryType").getString(), is("modetest:versionTest"));
+        assertThat(version.getProperty("jcr:frozenNode/abortNode/copyProp").getString(), is("copyPropValue"));
+        try {
+            version.getProperty("jcr:frozenNode/abortNode/ignoreProp");
+            fail("Property with OnParentVersionAction of IGNORE should not have been copied");
+        } catch (PathNotFoundException pnfe) {
+            // Expected
+        }
+    }
+
+    public void testShouldCreateProperHistoryForVersionableChildOfNodeWithVersionSemantics() throws Exception {
+        session = helper.getReadWriteSession();
+        Node node = session.getRootNode().addNode("/checkInTest", "modetest:versionTest");
+        session.save();
+
+        /*
+         * Create /checkinTest/versionNode/copyNode with versionNode and copyNode being versionable.  This should
+         * create a child of type nt:childVersionedNode under the frozen node.
+         */
+
+        Node versionNode = node.addNode("versionNode", "modetest:versionTest");
+        versionNode.addMixin("mix:versionable");
+
+        Node copyNode = versionNode.addNode("copyNode", "modetest:versionTest");
+        copyNode.addMixin("mix:versionable");
+        copyNode.setProperty("ignoreProp", "ignorePropValue");
+        copyNode.setProperty("copyProp", "copyPropValue");
+
+        node.save();
+
+        Version version = versionNode.checkin();
+
+        assertThat(version.getProperty("jcr:frozenNode/copyNode/jcr:primaryType").getString(), is("nt:versionedChild"));
+        try {
+            version.getProperty("jcr:frozenNode/copyNode/copyProp");
+            fail("Property should not be copied to versionable child of versioned node");
+        } catch (PathNotFoundException pnfe) {
+            // Expected
+        }
+
+        try {
+            version.getProperty("jcr:frozenNode/copyNode/ignoreProp");
+            fail("Property should not be copied to versionable child of versioned node");
+        } catch (PathNotFoundException pnfe) {
+            // Expected
+        }
+
+        String childUuid = version.getProperty("jcr:frozenNode/copyNode/jcr:childVersionHistory").getString();
+        Node childNode = session.getNodeByUUID(childUuid);
+
+        Node rootNode = childNode.getNode("jcr:rootVersion");
+
+        assertThat(rootNode.getProperty("jcr:frozenNode/jcr:frozenPrimaryType").getString(), is("modetest:versionTest"));
+    }
 }

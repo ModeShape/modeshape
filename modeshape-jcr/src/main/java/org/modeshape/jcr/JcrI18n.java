@@ -207,10 +207,16 @@ public final class JcrI18n {
     // Versioning messages
     public static I18n nodeIsCheckedIn;
     public static I18n cannotRemoveMixVersionable;
+    public static I18n cannotRemoveVersion;
     public static I18n pendingMergeConflicts;
     public static I18n invalidVersion;
     public static I18n invalidVersionLabel;
+    public static I18n invalidVersionName;
     public static I18n versionLabelAlreadyExists;
+    public static I18n requiresVersionable;
+    public static I18n cannotRestoreRootVersion;
+    public static I18n cannotCheckinNodeWithAbortProperty;
+    public static I18n cannotCheckinNodeWithAbortChildNode;
 
     static {
         try {

@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import javax.jcr.AccessDeniedException;
+import javax.jcr.InvalidItemStateException;
 import javax.jcr.InvalidSerializedDataException;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
@@ -657,33 +658,27 @@ class JcrWorkspace implements Workspace {
         } catch (org.modeshape.graph.property.PathNotFoundException pnfe) {
             throw new PathNotFoundException(pnfe);
         }
-
-        // /*
-        // * Make sure that the node has a definition at the new location
-        // */
-        // SessionCache cache = this.session.cache();
-        // NodeInfo nodeInfo = cache.findNodeInfo(null, srcPath);
-        // NodeInfo cacheParent = cache.findNodeInfo(null, destPath.getParent());
-        // NodeInfo oldParent = cache.findNodeInfo(null, srcPath.getParent());
-        //
-        // // Skip the cache and load the latest parent info directly from the graph
-        // NodeInfo parent = cache.loadFromGraph(destPath.getParent(), cacheParent.getUuid());
-        // Name newNodeName = destPath.getLastSegment().getName();
-        // String parentPath = destPath.getParent().getString(this.context.getNamespaceRegistry());
-        //
-        // // This will check for a definition and throw a ConstraintViolationException or ItemExistsException if none is found
-        // cache.findBestNodeDefinition(parent, parentPath, newNodeName, nodeInfo.getPrimaryTypeName());
-        //
-        // // Perform the copy operation, but use the "to" form (not the "into", which takes the parent) ...
-        // graph.move(srcPath).as(newNodeName).into(destPath.getParent());
-        // cache.compensateForWorkspaceChildChange(cacheParent.getUuid(), oldParent.getUuid(), nodeInfo.getUuid(), newNodeName);
     }
 
     /**
      * {@inheritDoc}
+     * 
+     * @see Workspace#restore(Version[], boolean)
      */
     public void restore( Version[] versions,
-                         boolean removeExisting ) {
+                         boolean removeExisting ) throws RepositoryException {
+        if (session.hasPendingChanges()) {
+            throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
+        }
+
+        for (int i = 0; i < versions.length; i++) {
+            JcrVersionNode jcrVersion = (JcrVersionNode)versions[i];
+            if (JcrLexicon.ROOT.equals(jcrVersion)) {
+                throw new VersionException(JcrI18n.cannotRestoreRootVersion.text(versions[i].getPath()));
+            }
+
+        }
+
         throw new UnsupportedOperationException();
     }
 

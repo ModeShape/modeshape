@@ -31,11 +31,11 @@ import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
-import org.modeshape.graph.JcrLexicon;
 import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.graph.JcrLexicon;
 
 /**
  * @author jverhaeg
@@ -207,10 +207,5 @@ public class JcrWorkspaceTest extends AbstractSessionTest {
     @Test
     public void shouldAllowMoveFromPathToAnotherPathInSameWorkspace() throws Exception {
         workspace.move("/a/b", "/b/b-copy");
-    }
-
-    @Test( expected = UnsupportedOperationException.class )
-    public void shouldNotAllowRestore() throws Exception {
-        workspace.restore(null, false);
     }
 }

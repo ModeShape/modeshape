@@ -62,9 +62,9 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
+import javax.jcr.version.OnParentVersionAction;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
-import javax.jcr.version.VersionHistory;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.text.Jsr283Encoder;
@@ -804,6 +804,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         CheckArg.isNotNull(mixinName, "mixinName");
         CheckArg.isNotZeroLength(mixinName, "mixinName");
 
+        session().checkPermission(path(), ModeShapePermissions.SET_PROPERTY);
+
         JcrNodeType mixinCandidateType = cache.nodeTypes().getNodeType(mixinName);
 
         if (this.isLocked()) {
@@ -817,10 +819,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (this.getDefinition().isProtected()) {
             return false;
         }
-
-        // TODO: Check access control when that support is added
-        // TODO: Throw VersionException if this node is versionable and checked in or unversionable and the nearest versionable
-        // ancestor is checked in
 
         NodeType primaryType = this.getPrimaryNodeType();
         NodeType[] mixinTypes = this.getMixinNodeTypes();
@@ -1404,8 +1402,23 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     private void checkVersionable() throws UnsupportedRepositoryOperationException, RepositoryException {
         if (!isNodeType(JcrMixLexicon.VERSIONABLE)) {
-            throw new UnsupportedRepositoryOperationException("TODO: Add message");
+            throw new UnsupportedRepositoryOperationException(JcrI18n.requiresVersionable.text());
         }
+    }
+
+    /**
+     * Throw a {@link ConstraintViolationException} if this node is protected (based on the its node definition).
+     * 
+     * @throws ConstraintViolationException if this node's definition indicates that the node is protected
+     * @throws RepositoryException if an error occurs retrieving the definition for this node
+     */
+    private void checkNotProtected() throws ConstraintViolationException, RepositoryException {
+        JcrNodeDefinition nodeDefn = cache.nodeTypes().getNodeDefinition(nodeInfo().getPayload().getDefinitionId());
+        if (nodeDefn.isProtected()) {
+            // TODO: add message
+            throw new ConstraintViolationException(JcrI18n.cannotRemoveItemWithProtectedDefinition.text(getPath()));
+        }
+
     }
 
     /**
@@ -1426,7 +1439,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         checkVersionable();
 
         if (isNew() || isModified()) {
-            throw new InvalidItemStateException();
+            throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
         }
 
         // Check this separately since it throws a different type of exception
@@ -1464,14 +1477,19 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         AbstractJcrProperty predecessorsProp = getProperty(JcrLexicon.PREDECESSORS);
 
         systemBatch.create(versionPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION).and(JcrLexicon.CREATED, now).and(JcrLexicon.UUID,
-                                                                                                                             versionUuid)
-                                                                                                                             .and(predecessorsProp.property())
-                                                                                                                             .and();
+                                                                                                                             versionUuid).and(predecessorsProp.property()).and();
         Path frozenVersionPath = pathFactory.create(versionPath, JcrLexicon.FROZEN_NODE);
         systemBatch.create(frozenVersionPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE).and(JcrLexicon.FROZEN_UUID,
                                                                                                           jcrUuid).and(JcrLexicon.FROZEN_PRIMARY_TYPE,
                                                                                                                        primaryTypeName).and(JcrLexicon.FROZEN_MIXIN_TYPES,
-                                                                                                                                            mixinTypeNames).and();
+                                                                                                                                            mixinTypeNames).and(versionedPropertiesFor(this)).and();
+
+        int onParentVersion = getDefinition().getOnParentVersion();
+        for (NodeIterator childNodes = this.getNodes(); childNodes.hasNext();) {
+            AbstractJcrNode childNode = (AbstractJcrNode)childNodes.nextNode();
+            versionNodeAt(childNode, frozenVersionPath, systemBatch, onParentVersion);
+        }
+
         PropertyFactory propFactory = context().getPropertyFactory();
         UuidFactory uuidFactory = context().getValueFactories().getUuidFactory();
 
@@ -1489,10 +1507,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
             newSuccessors.add(versionUuid);
 
-            org.modeshape.graph.property.Property newSuccessorsProp = propFactory.create(JcrLexicon.SUCCESSORS, newSuccessors.toArray());
+            org.modeshape.graph.property.Property newSuccessorsProp = propFactory.create(JcrLexicon.SUCCESSORS,
+                                                                                         newSuccessors.toArray());
             systemBatch.set(newSuccessorsProp).on(predUuid).and();
         }
-
 
         systemBatch.execute();
         cache.refresh(historyNode.getNodeId(), historyPath, false);
@@ -1500,12 +1518,102 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         AbstractJcrNode newVersion = cache.findJcrNode(Location.create(versionUuid));
 
         NodeEditor editor = editor();
-        editor.setProperty(JcrLexicon.PREDECESSORS, valuesFrom(PropertyType.REFERENCE, EMPTY_OBJECT_ARRAY), PropertyType.REFERENCE, false);
+        editor.setProperty(JcrLexicon.PREDECESSORS,
+                           valuesFrom(PropertyType.REFERENCE, EMPTY_OBJECT_ARRAY),
+                           PropertyType.REFERENCE,
+                           false);
         editor.setProperty(JcrLexicon.BASE_VERSION, valueFrom(newVersion), false);
         editor.setProperty(JcrLexicon.IS_CHECKED_OUT, valueFrom(PropertyType.BOOLEAN, false), false);
         save();
 
         return new JcrVersionNode(newVersion);
+    }
+
+    private void versionNodeAt( AbstractJcrNode node,
+                                Path verisonedParentPath,
+                                Graph.Batch batch,
+                                int onParentVersionAction ) throws RepositoryException {
+
+        Path childPath = context().getValueFactories().getPathFactory().create(verisonedParentPath, node.path().getLastSegment());
+
+        Name primaryTypeName = node.getPrimaryTypeName();
+        List<Name> mixinTypeNames = node.getMixinTypeNames();
+        UUID uuid = UUID.randomUUID();
+        if (node.isReferenceable()) uuid = node.uuid();
+
+        switch (onParentVersionAction) {
+            case OnParentVersionAction.ABORT:
+                throw new VersionException(JcrI18n.cannotCheckinNodeWithAbortChildNode.text(node.getName(),
+                                                                                            node.getParent().getName()));
+            case OnParentVersionAction.VERSION:
+                if (node.isNodeType(JcrMixLexicon.VERSIONABLE)) {
+                    JcrVersionHistoryNode history = node.getVersionHistory();
+                    UUID historyUuid = history.uuid();
+                    batch.create(childPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSIONED_CHILD).with(JcrLexicon.CHILD_VERSION_HISTORY,
+                                                                                                             historyUuid).and();
+
+                    break;
+                }
+
+                // Otherwise, treat it as a copy
+            case OnParentVersionAction.COPY:
+                batch.create(childPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE).and(JcrLexicon.FROZEN_PRIMARY_TYPE,
+                                                                                                    primaryTypeName).and(JcrLexicon.FROZEN_MIXIN_TYPES,
+                                                                                                                         mixinTypeNames).and(JcrLexicon.FROZEN_UUID,
+                                                                                                                                             uuid).and(versionedPropertiesFor(node)).and();
+                break;
+            case OnParentVersionAction.INITIALIZE:
+            case OnParentVersionAction.COMPUTE:
+            case OnParentVersionAction.IGNORE:
+                // Do nothing for these. No built-in types require initialize or compute for child nodes.
+                return;
+            default:
+                throw new IllegalStateException("Unexpected value: " + onParentVersionAction);
+        }
+
+        for (NodeIterator childNodes = node.getNodes(); childNodes.hasNext();) {
+            AbstractJcrNode childNode = (AbstractJcrNode)childNodes.nextNode();
+            versionNodeAt(childNode, childPath, batch, onParentVersionAction);
+        }
+
+    }
+
+    // private Collection<>
+
+    private Collection<org.modeshape.graph.property.Property> versionedPropertiesFor( AbstractJcrNode node )
+        throws RepositoryException {
+
+        Collection<org.modeshape.graph.property.Property> props = new LinkedList<org.modeshape.graph.property.Property>();
+        PropertyFactory propFactory = context().getPropertyFactory();
+
+        for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
+            AbstractJcrProperty property = (AbstractJcrProperty)iter.nextProperty();
+
+            org.modeshape.graph.property.Property prop = property.property();
+            PropertyDefinitionId propDefnId = property.propertyInfo().getPayload().getPropertyDefinitionId();
+            JcrPropertyDefinition propDefn = cache.nodeTypes().getPropertyDefinition(propDefnId);
+
+            switch (propDefn.getOnParentVersion()) {
+                case OnParentVersionAction.ABORT:
+                    I18n msg = JcrI18n.cannotCheckinNodeWithAbortProperty;
+                    throw new VersionException(msg.text(property.getName(), node.getName()));
+                case OnParentVersionAction.COPY:
+                case OnParentVersionAction.VERSION:
+                    props.add(prop);
+                    break;
+                case OnParentVersionAction.INITIALIZE:
+                    Object[] defaultValues = propDefn.getDefaultValues();
+                    if (defaultValues != null && defaultValues.length > 0) {
+                        props.add(propFactory.create(prop.getName(), defaultValues));
+                    }
+                    break;
+                case OnParentVersionAction.COMPUTE:
+                case OnParentVersionAction.IGNORE:
+                    // Do nothing for these
+            }
+        }
+
+        return props;
     }
 
     /**
@@ -1527,9 +1635,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         org.modeshape.graph.property.Property multiValuedProps = mvProp != null ? mvProp.getProperty() : null;
 
         if (multiValuedProps == null) {
-            multiValuedProps = propFactory.create(ModeShapeIntLexicon.MULTI_VALUED_PROPERTIES, JcrLexicon.PREDECESSORS);            
-        }
-        else if (!Arrays.<Object>asList(multiValuedProps.getValues()).contains(JcrLexicon.PREDECESSORS)) {
+            multiValuedProps = propFactory.create(ModeShapeIntLexicon.MULTI_VALUED_PROPERTIES, JcrLexicon.PREDECESSORS);
+        } else if (!Arrays.<Object>asList(multiValuedProps.getValues()).contains(JcrLexicon.PREDECESSORS)) {
             List<Object> values = new LinkedList<Object>();
 
             for (Object value : multiValuedProps) {
@@ -1541,9 +1648,19 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         }
 
         ValueFactory<Reference> refFactory = context().getValueFactories().getReferenceFactory();
+        Object[] oldPreds = EMPTY_OBJECT_ARRAY;
+
+        AbstractJcrProperty oldPredsProperty = getBaseVersion().getProperty(JcrLexicon.PREDECESSORS);
+        if (oldPredsProperty != null) {
+            oldPreds = oldPredsProperty.property().getValuesAsArray();
+        }
+
+        Object[] newPreds = new Object[oldPreds.length + 1];
+        System.arraycopy(oldPreds, 0, newPreds, 0, oldPreds.length);
+        newPreds[oldPreds.length] = refFactory.create(getBaseVersion().uuid());
+
         org.modeshape.graph.property.Property isCheckedOut = propFactory.create(JcrLexicon.IS_CHECKED_OUT, true);
-        org.modeshape.graph.property.Property predecessors = propFactory.create(JcrLexicon.PREDECESSORS,
-                                                                                refFactory.create(getBaseVersion().getUUID()));
+        org.modeshape.graph.property.Property predecessors = propFactory.create(JcrLexicon.PREDECESSORS, newPreds);
 
         Graph graph = session().workspace().graph();
         graph.set(isCheckedOut, predecessors, multiValuedProps).on(path()).and();
@@ -1559,7 +1676,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#merge(java.lang.String, boolean)
      */
     public final NodeIterator merge( String srcWorkspace,
-                                     boolean bestEffort ) throws UnsupportedRepositoryOperationException {
+                                     boolean bestEffort )
+        throws UnsupportedRepositoryOperationException, ConstraintViolationException, RepositoryException {
+        checkNotProtected();
+
         throw new UnsupportedRepositoryOperationException();
     }
 
@@ -1588,7 +1708,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * 
      * @see javax.jcr.Node#getVersionHistory()
      */
-    public final VersionHistory getVersionHistory() throws UnsupportedRepositoryOperationException, RepositoryException {
+    public final JcrVersionHistoryNode getVersionHistory() throws UnsupportedRepositoryOperationException, RepositoryException {
         checkVersionable();
 
         return new JcrVersionHistoryNode(session().getNodeByUUID(getProperty(JcrLexicon.VERSION_HISTORY).getString()));
@@ -1599,7 +1719,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * 
      * @see javax.jcr.Node#getBaseVersion()
      */
-    public final Version getBaseVersion() throws UnsupportedRepositoryOperationException, RepositoryException {
+    public final JcrVersionNode getBaseVersion() throws UnsupportedRepositoryOperationException, RepositoryException {
         checkVersionable();
 
         return new JcrVersionNode(session().getNodeByUUID(getProperty(JcrLexicon.BASE_VERSION).getString()));
@@ -1608,46 +1728,145 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedRepositoryOperationException always
      * @see javax.jcr.Node#restore(java.lang.String, boolean)
      */
     public final void restore( String versionName,
-                               boolean removeExisting ) throws UnsupportedRepositoryOperationException {
-        throw new UnsupportedRepositoryOperationException();
+                               boolean removeExisting ) throws RepositoryException {
+        restore(getVersionHistory().getVersion(versionName), removeExisting);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedRepositoryOperationException always
      * @see javax.jcr.Node#restore(javax.jcr.version.Version, boolean)
      */
     public final void restore( Version version,
-                               boolean removeExisting ) throws UnsupportedRepositoryOperationException {
-        throw new UnsupportedRepositoryOperationException();
+                               boolean removeExisting ) throws RepositoryException {
+        try {
+            checkNotProtected();
+        } catch (ConstraintViolationException cve) {
+            throw new UnsupportedRepositoryOperationException(cve);
+        }
+        restore(version, ".", removeExisting);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedRepositoryOperationException always
      * @see javax.jcr.Node#restore(javax.jcr.version.Version, java.lang.String, boolean)
      */
     public final void restore( Version version,
                                String relPath,
-                               boolean removeExisting ) throws UnsupportedRepositoryOperationException {
-        throw new UnsupportedRepositoryOperationException();
+                               boolean removeExisting ) throws RepositoryException {
+        checkNotProtected();
+
+        if (isLocked() && !holdsLock()) {
+            throw new LockException(JcrI18n.lockTokenNotHeld.text(getPath()));
+        }
+
+        if (session().hasPendingChanges()) {
+            throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
+        }
+
+        JcrVersionNode jcrVersion = (JcrVersionNode)version;
+        JcrVersionHistoryNode versionHistory = getVersionHistory();
+        if (!versionHistory.isSame(jcrVersion.getParent())) {
+            throw new VersionException(JcrI18n.invalidVersion.text(version.getPath(), versionHistory.getPath()));
+        }
+
+        if (jcrVersion.isSame(versionHistory.getRootVersion())) {
+            throw new VersionException(JcrI18n.cannotRestoreRootVersion.text(getPath()));
+        }
+
+        PathFactory pathFactory = context().getValueFactories().getPathFactory();
+        Path relPathAsPath = pathFactory.create(relPath);
+        if (relPathAsPath.isAbsolute()) throw new RepositoryException(JcrI18n.invalidRelativePath.text(relPath));
+
+        Path actualPath = pathFactory.create(path(), relPathAsPath);
+
+        // Ensure that the parent node exists - this will throw a PNFE if no node exists at that path
+        AbstractJcrNode parentNode = cache.findJcrNode(null, actualPath.getParent());
+        AbstractJcrNode existingNode = null;
+
+        try {
+            if (path().equals(actualPath)) {
+                existingNode = this;
+            } else {
+                existingNode = cache.findJcrNode(null, actualPath);
+                if (!versionHistory.isSame(existingNode.getVersionHistory())) {
+                    throw new VersionException(JcrI18n.invalidVersion.text(version.getPath(),
+                                                                           existingNode.getVersionHistory().getPath()));
+                }
+            }
+        } catch (PathNotFoundException pnfe) {
+            // This is allowable, but the node needs to be checked out
+            if (!parentNode.isCheckedOut()) {
+                String path = actualPath.getString(context().getNamespaceRegistry());
+                throw new VersionException(JcrI18n.nodeIsCheckedIn.text(path));
+            }
+        }
+
+        AbstractJcrNode frozenNode = jcrVersion.getNode(string(JcrLexicon.FROZEN_NODE));
+        if (existingNode == null) {
+            restoreFrom(frozenNode, parentNode.editor(), removeExisting);
+        }
+
+        NodeEditor editor = editor();
+        editor.setProperty(JcrLexicon.IS_CHECKED_OUT, valueFrom(PropertyType.BOOLEAN, false), false);
+        editor.setProperty(JcrLexicon.BASE_VERSION, valueFrom(jcrVersion), false);
+
+        session().save();
+    }
+
+    private String string( Name name ) {
+        return name.getString(context().getNamespaceRegistry());
+    }
+
+    private static final Set<Name> FROZEN_PROPERTY_NAMES = new HashSet<Name>(Arrays.asList(new Name[] {
+        JcrLexicon.FROZEN_PRIMARY_TYPE, JcrLexicon.FROZEN_MIXIN_TYPES, JcrLexicon.FROZEN_UUID}));
+
+    private void restoreFrom( AbstractJcrNode storedNode,
+                              NodeEditor parentEditor,
+                              boolean removeExisting ) throws RepositoryException {
+
+        AbstractJcrProperty uuidProp = storedNode.getProperty(JcrLexicon.FROZEN_UUID);
+        UUID uuid = uuidProp == null ? null : (UUID)uuidProp.property().getFirstValue();
+        AbstractJcrProperty primaryTypeProp = storedNode.getProperty(JcrLexicon.FROZEN_PRIMARY_TYPE);
+        Name primaryTypeName = (Name)primaryTypeProp.property().getFirstValue();
+        AbstractJcrProperty mixinTypesProp = storedNode.getProperty(JcrLexicon.FROZEN_MIXIN_TYPES);
+        Name[] mixinTypeNames = mixinTypesProp == null ? new Name[0] : (Name[])mixinTypesProp.property().getValuesAsArray();
+
+        JcrNode child = parentEditor.createChild(storedNode.name(), uuid, primaryTypeName);
+        NodeEditor childEditor = child.editor();
+
+        for (int i = 0; i < mixinTypeNames.length; i++) {
+            JcrNodeType mixinType = session().nodeTypeManager().getNodeType(mixinTypeNames[i]);
+            childEditor.addMixin(mixinType);
+        }
+
+        for (PropertyInfo<JcrPropertyPayload> propInfo : storedNode.nodeInfo().getProperties()) {
+            if (FROZEN_PROPERTY_NAMES.contains(propInfo.getName())) continue;
+
+            AbstractJcrProperty jcrProperty = propInfo.getPayload().getJcrProperty();
+            if (propInfo.isMultiValued()) {
+                JcrValue[] values = (JcrValue[])jcrProperty.getValues();
+                childEditor.setProperty(propInfo.getName(), values, jcrProperty.getType(), false);
+            } else {
+                JcrValue value = (JcrValue)jcrProperty.getValue();
+                childEditor.setProperty(propInfo.getName(), value, false);
+            }
+        }
+
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @throws UnsupportedRepositoryOperationException always
      * @see javax.jcr.Node#restoreByLabel(java.lang.String, boolean)
      */
     public final void restoreByLabel( String versionLabel,
-                                      boolean removeExisting ) throws UnsupportedRepositoryOperationException {
-        throw new UnsupportedRepositoryOperationException();
+                                      boolean removeExisting ) throws RepositoryException {
+        restore(getVersionHistory().getVersionByLabel(versionLabel), removeExisting);
     }
 
     /**
@@ -1837,6 +2056,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (session().hasPendingChanges()) {
             throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
         }
+
+        checkNotProtected();
 
         Path correspondingPath = null;
         try {

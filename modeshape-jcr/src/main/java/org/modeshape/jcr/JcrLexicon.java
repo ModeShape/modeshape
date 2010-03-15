@@ -34,6 +34,7 @@ import org.modeshape.graph.property.basic.BasicName;
 public class JcrLexicon extends org.modeshape.graph.JcrLexicon {
 
     public static final Name BASE_VERSION = new BasicName(Namespace.URI, "baseVersion");
+    public static final Name CHILD_VERSION_HISTORY = new BasicName(Namespace.URI, "childVersionHistory");
     public static final Name CONTENT = new BasicName(Namespace.URI, "content");
     public static final Name CREATED = new BasicName(Namespace.URI, "created");
     public static final Name DATA = new BasicName(Namespace.URI, "data");

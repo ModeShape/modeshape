@@ -107,10 +107,13 @@ import org.apache.jackrabbit.test.api.version.GetCreatedTest;
 import org.apache.jackrabbit.test.api.version.GetPredecessorsTest;
 import org.apache.jackrabbit.test.api.version.GetReferencesNodeTest;
 import org.apache.jackrabbit.test.api.version.GetVersionableUUIDTest;
+import org.apache.jackrabbit.test.api.version.OnParentVersionAbortTest;
+import org.apache.jackrabbit.test.api.version.RemoveVersionTest;
 import org.apache.jackrabbit.test.api.version.SessionMoveVersionExceptionTest;
 import org.apache.jackrabbit.test.api.version.VersionGraphTest;
 import org.apache.jackrabbit.test.api.version.VersionLabelTest;
 import org.apache.jackrabbit.test.api.version.VersionStorageTest;
+import org.apache.jackrabbit.test.api.version.VersionTest;
 import org.apache.jackrabbit.test.api.version.WorkspaceMoveVersionExceptionTest;
 
 /**
@@ -136,11 +139,11 @@ public class JcrTckTest {
 
         // Or uncomment the following lines to execute the different sets/suites of tests ...
         TestSuite suite = new TestSuite("JCR 1.0 API tests");
-
+        //
         suite.addTest(new LevelOneFeatureTests());
         suite.addTest(new LevelTwoFeatureTests());
         suite.addTest(new OptionalFeatureTests());
-        suite.addTest(new VersioningTests()); // remove this and the ObservationTests inner class when all tests pass and
+        // suite.addTest(new VersioningTests()); // remove this and the ObservationTests inner class when all tests pass and
         // uncomment
 
         return suite;
@@ -340,21 +343,24 @@ public class JcrTckTest {
         protected VersioningTests() {
             super("JCR Versioning Tests");
 
-            // addTestSuite(VersionTest.class);
+            addTestSuite(VersionTest.class);
             // addTestSuite(VersionHistoryTest.class);
             addTestSuite(VersionStorageTest.class);
             addTestSuite(VersionLabelTest.class);
             addTestSuite(CheckoutTest.class);
             addTestSuite(CheckinTest.class);
             addTestSuite(VersionGraphTest.class);
-            // addTestSuite(RemoveVersionTest.class);
+            addTestSuite(RemoveVersionTest.class);
+
             // addTestSuite(RestoreTest.class);
             // addTestSuite(WorkspaceRestoreTest.class);
-            // addTestSuite(OnParentVersionAbortTest.class);
+            //
+            addTestSuite(OnParentVersionAbortTest.class);
             // addTestSuite(OnParentVersionComputeTest.class);
             // addTestSuite(OnParentVersionCopyTest.class);
             // addTestSuite(OnParentVersionIgnoreTest.class);
             // addTestSuite(OnParentVersionInitializeTest.class);
+
             addTestSuite(GetReferencesNodeTest.class);
             addTestSuite(GetPredecessorsTest.class);
             addTestSuite(GetCreatedTest.class);
@@ -362,6 +368,7 @@ public class JcrTckTest {
             addTestSuite(GetVersionableUUIDTest.class);
             addTestSuite(SessionMoveVersionExceptionTest.class);
             addTestSuite(WorkspaceMoveVersionExceptionTest.class);
+
             // addTestSuite(MergeCancelMergeTest.class);
             // addTestSuite(MergeCheckedoutSubNodeTest.class);
             // addTestSuite(MergeDoneMergeTest.class);

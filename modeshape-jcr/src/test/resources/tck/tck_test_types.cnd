@@ -28,3 +28,15 @@
 - * (*) multiple copy
 
 [modetest:versionableUnstructured] > nt:unstructured, mix:versionable
+
+[modetest:versionTest]
+- abortProp (STRING) abort
+- computeProp (STRING) compute
+- copyProp (STRING) copy
+- ignoreProp (STRING) ignore
+- initializeProp (STRING) = 'Default' initialize
+- versionProp (STRING) version
++ abortNode (nt:base) = nt:unstructured abort
++ copyNode (nt:base) = nt:unstructured copy
++ ignoreNode (nt:base) = nt:unstructured ignore
++ versionNode (nt:base) = nt:unstructured version

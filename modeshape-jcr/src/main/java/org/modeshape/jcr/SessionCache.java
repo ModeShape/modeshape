@@ -1484,6 +1484,13 @@ class SessionCache {
                     String msg = JcrI18n.nodeDefinitionCouldNotBeDeterminedForNode.text(pathForChild,
                                                                                         workspaceName(),
                                                                                         sourceName());
+
+                    nodeTypes().findChildNodeDefinition(payload.getPrimaryTypeName(),
+                                                        payload.getMixinTypeNames(),
+                                                        name,
+                                                        primaryTypeName,
+                                                        numSns,
+                                                        true);
                     throw new ConstraintViolationException(msg);
                 }
 
