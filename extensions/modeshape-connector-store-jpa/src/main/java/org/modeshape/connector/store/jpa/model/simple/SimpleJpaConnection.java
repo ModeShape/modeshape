@@ -79,7 +79,8 @@ public class SimpleJpaConnection implements RepositoryConnection {
         this.repository = new SimpleJpaRepository(source.getName(), source.getRootUuid(), source.getDefaultWorkspaceName(),
                                                   source.getPredefinedWorkspaceNames(), entityManager,
                                                   source.getRepositoryContext().getExecutionContext(), source.isCompressData(),
-                                                  source.isCreatingWorkspacesAllowed(), source.getLargeValueSizeInBytes());
+                                                  source.isCreatingWorkspacesAllowed(), source.getLargeValueSizeInBytes(),
+                                                  source.getDialect());
 
     }
 

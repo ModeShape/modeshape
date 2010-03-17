@@ -25,6 +25,7 @@ package org.modeshape.connector.store.jpa.model.simple;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
@@ -32,6 +33,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Lob;
+import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Query;
 import javax.persistence.Table;
@@ -47,7 +49,10 @@ import org.modeshape.graph.property.PropertyType;
  */
 @Entity
 @Table( name = "MODE_SIMPLE_LARGE_VALUES" )
-@NamedQuery( name = "LargeValueEntity.deleteUnused", query = "delete LargeValueEntity value where value.hash not in (select values.hash from NodeEntity node join node.largeValues values)" )
+@NamedQueries( {
+    @NamedQuery( name = "LargeValueEntity.selectUnused", query = "select values.hash from NodeEntity node join node.largeValues values" ),
+    @NamedQuery( name = "LargeValueEntity.deleteAllUnused", query = "delete LargeValueEntity value where value.hash not in (select values.hash from NodeEntity node join node.largeValues values)" ),
+    @NamedQuery( name = "LargeValueEntity.deleteIn", query = "delete LargeValueEntity value where value.hash in (:inValues)" )} )
 public class LargeValueEntity {
 
     @Id
@@ -184,12 +189,42 @@ public class LargeValueEntity {
      * Delete all unused large value entities.
      * 
      * @param manager the manager; never null
+     * @param dialect the dialect
      * @return the number of deleted large values
      */
-    public static int deleteUnused( EntityManager manager ) {
+    @SuppressWarnings( "unchecked" )
+    public static int deleteUnused( EntityManager manager,
+                                    String dialect ) {
         assert manager != null;
-        Query delete = manager.createNamedQuery("LargeValueEntity.deleteUnused");
-        int result = delete.executeUpdate();
+
+        int result = 0;
+        if (dialect.toLowerCase().indexOf("mysql") != -1) {
+            // Unfortunately, we cannot delete all the unused large values in a single statement
+            // because of MySQL (see MODE-691). Therefore, we need to do this in multiple steps:
+            // 1) Find the set of hashes that are not used anymore
+            // 2) Delete each of these rows, using bulk deletes with a small number (20) of hashes at a time
+
+            Query select = manager.createNamedQuery("LargeValueEntity.selectUnused");
+            List<String> hashes = select.getResultList();
+            if (hashes.isEmpty()) return 0;
+
+            // Delete the unused large entities, (up to) 20 at a time
+            int endIndex = hashes.size();
+            int fromIndex = 0;
+            do {
+                int toIndex = Math.min(fromIndex + 20, endIndex);
+                Query query = manager.createQuery("LargeValueEntity.deleteIn");
+                query.setParameter("inValues", hashes.subList(fromIndex, toIndex));
+                query.executeUpdate();
+                result += toIndex - fromIndex;
+                fromIndex = toIndex;
+            } while (fromIndex < endIndex);
+        } else {
+            // For all dialects other than MySQL, we can just use the one delete statement ...
+            Query delete = manager.createNamedQuery("LargeValueEntity.deleteAllUnused");
+            result = delete.executeUpdate();
+        }
+
         manager.flush();
         return result;
     }

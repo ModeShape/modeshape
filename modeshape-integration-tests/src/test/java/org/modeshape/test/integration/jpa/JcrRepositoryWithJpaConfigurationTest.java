@@ -36,12 +36,12 @@ import javax.jcr.NodeIterator;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import org.junit.Test;
 import org.modeshape.graph.SecurityContext;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.SecurityContextCredentials;
-import org.junit.Test;
 
 /**
  * 
@@ -197,7 +197,7 @@ public class JcrRepositoryWithJpaConfigurationTest {
         }
     }
 
-    protected static class CustomSecurityContext implements SecurityContext {
+    public static class CustomSecurityContext implements SecurityContext {
         private final String username;
 
         public CustomSecurityContext( String username ) {

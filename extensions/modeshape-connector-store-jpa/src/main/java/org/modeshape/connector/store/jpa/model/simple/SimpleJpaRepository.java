@@ -57,9 +57,9 @@ import org.modeshape.connector.store.jpa.util.Namespaces;
 import org.modeshape.connector.store.jpa.util.Serializer;
 import org.modeshape.connector.store.jpa.util.Workspaces;
 import org.modeshape.connector.store.jpa.util.Serializer.LargeValues;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.connector.LockFailedException;
 import org.modeshape.graph.connector.map.AbstractMapWorkspace;
 import org.modeshape.graph.connector.map.MapNode;
@@ -106,6 +106,7 @@ public class SimpleJpaRepository extends MapRepository {
     protected final boolean compressData;
     protected final boolean creatingWorkspacesAllowed;
     protected final long minimumSizeOfLargeValuesInBytes;
+    protected final String dialect;
 
     public SimpleJpaRepository( String sourceName,
                                 UUID rootNodeUuid,
@@ -115,7 +116,8 @@ public class SimpleJpaRepository extends MapRepository {
                                 ExecutionContext context,
                                 boolean compressData,
                                 boolean creatingWorkspacesAllowed,
-                                long minimumSizeOfLargeValuesInBytes ) {
+                                long minimumSizeOfLargeValuesInBytes,
+                                String dialect ) {
         super(sourceName, rootNodeUuid, defaultWorkspaceName);
 
         this.context = context;
@@ -126,6 +128,7 @@ public class SimpleJpaRepository extends MapRepository {
         this.compressData = compressData;
         this.creatingWorkspacesAllowed = creatingWorkspacesAllowed;
         this.minimumSizeOfLargeValuesInBytes = minimumSizeOfLargeValuesInBytes;
+        this.dialect = dialect;
 
         this.entityManager = entityManager;
         workspaceEntities = new Workspaces(entityManager);
@@ -139,7 +142,8 @@ public class SimpleJpaRepository extends MapRepository {
                                 ExecutionContext context,
                                 boolean compressData,
                                 boolean creatingWorkspacesAllowed,
-                                long minimumSizeOfLargeValuesInBytes ) {
+                                long minimumSizeOfLargeValuesInBytes,
+                                String dialect ) {
         super(sourceName, rootNodeUuid);
 
         this.context = context;
@@ -150,6 +154,7 @@ public class SimpleJpaRepository extends MapRepository {
         this.compressData = compressData;
         this.creatingWorkspacesAllowed = creatingWorkspacesAllowed;
         this.minimumSizeOfLargeValuesInBytes = minimumSizeOfLargeValuesInBytes;
+        this.dialect = dialect;
 
         this.entityManager = entityManager;
         workspaceEntities = new Workspaces(entityManager);
@@ -399,8 +404,12 @@ public class SimpleJpaRepository extends MapRepository {
         @Override
         protected void removeUuidReference( MapNode node ) {
             SubgraphQuery branch = SubgraphQuery.create(entityManager, workspaceId, node.getUuid(), 0);
+            // Delete in bulk except when using MySql ...
             branch.deleteSubgraph(true);
             branch.close();
+
+            // Delete unused large values ...
+            LargeValueEntity.deleteUnused(entityManager, dialect);
         }
 
         /*
@@ -420,6 +429,9 @@ public class SimpleJpaRepository extends MapRepository {
             Query query = entityManager.createQuery("NodeEntity.deleteAllInWorkspace");
             query.setParameter("workspaceId", workspaceId);
             query.executeUpdate();
+
+            // Delete unused large values ...
+            LargeValueEntity.deleteUnused(entityManager, dialect);
         }
 
         /*

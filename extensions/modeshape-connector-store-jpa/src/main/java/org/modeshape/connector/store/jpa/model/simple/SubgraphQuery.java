@@ -162,7 +162,7 @@ public class SubgraphQuery {
      */
     @SuppressWarnings( "unchecked" )
     public List<NodeEntity> getNodes( boolean includeRoot,
-                                       boolean includeChildrenOfMaxDepthNodes ) {
+                                      boolean includeChildrenOfMaxDepthNodes ) {
         if (query == null) throw new IllegalStateException();
         // Now query for all the nodes and put into a list ...
         Query search = manager.createNamedQuery("SubgraphNodeEntity.getChildEntities");
@@ -215,9 +215,6 @@ public class SubgraphQuery {
         delete.setParameter("depth", includeRoot ? 0 : 1);
         delete.setParameter("workspaceId", workspaceId);
         delete.executeUpdate();
-
-        // Delete unused large values ...
-        LargeValueEntity.deleteUnused(manager);
 
         manager.flush();
     }

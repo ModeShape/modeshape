@@ -170,11 +170,11 @@
 		<jpaSource.url />
 		<jpaSource.username />
 		<jpaSource.password />
-		<jpaSource.maximumConnectionsInPool>1</jpaSource.maximumConnectionsInPool>
-		<jpaSource.minimumConnectionsInPool>0</jpaSource.minimumConnectionsInPool>
+		<jpaSource.maximumConnectionsInPool>2</jpaSource.maximumConnectionsInPool>
+		<jpaSource.minimumConnectionsInPool>1</jpaSource.minimumConnectionsInPool>
 		<jpaSource.numberOfConnectionsToAcquireAsNeeded>1</jpaSource.numberOfConnectionsToAcquireAsNeeded>
 		<jpaSource.maximumSizeOfStatementCache>100</jpaSource.maximumSizeOfStatementCache>
-		<jpaSource.maximumConnectionIdleTimeInSeconds>0</jpaSource.maximumConnectionIdleTimeInSeconds>
+		<jpaSource.maximumConnectionIdleTimeInSeconds>10</jpaSource.maximumConnectionIdleTimeInSeconds>
 		<jpaSource.referentialIntegrityEnforced>true</jpaSource.referentialIntegrityEnforced>
 		<jpaSource.largeValueSizeInBytes>150</jpaSource.largeValueSizeInBytes>
 		<jpaSource.autoGenerateSchema>create</jpaSource.autoGenerateSchema>
@@ -184,7 +184,6 @@
 		<jpaSource.defaultWorkspaceName />
 		<jpaSource.predefinedWorkspaceNames />
 		<jpaSource.model />
-		<jpaSource.numberOfConnectionsToAcquireAsNeeded />
 		<jpaSource.referentialIntegrityEnforced>true</jpaSource.referentialIntegrityEnforced>
 		<jpaSource.retryLimit>3</jpaSource.retryLimit>
 		<jpaSource.rootNodeUuid />
@@ -509,7 +508,7 @@
             <dependency>
               <groupId>mysql</groupId>
               <artifactId>mysql-connector-java</artifactId>
-              <version>5.0.5</version>
+              <version>5.1.7</version>
               <scope>test</scope>
             </dependency>
           </dependencies>
@@ -536,7 +535,7 @@
             <dependency>
               <groupId>postgresql</groupId>
               <artifactId>postgresql</artifactId>
-              <version>8.4-701.jdbc3</version>
+              <version>8.3-604.jdbc3</version>
               <scope>test</scope>
             </dependency>
           </dependencies>

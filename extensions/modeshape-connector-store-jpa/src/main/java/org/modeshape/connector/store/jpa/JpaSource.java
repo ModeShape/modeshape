@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -67,6 +68,8 @@ import org.modeshape.graph.connector.RepositorySourceException;
  * features are used.)
  */
 public class JpaSource implements RepositorySource, ObjectFactory {
+
+    private final Logger LOGGER = Logger.getLogger(JpaSource.class);
 
     /**
      * This source is capable of using different database schemas
@@ -230,6 +233,10 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     public String getName() {
         return name;
+    }
+
+    protected Logger getLogger() {
+        return LOGGER;
     }
 
     /**
@@ -992,6 +999,18 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                 setProperty(configurator, "hibernate.show_sql", String.valueOf(this.showSql));
             }
 
+            Logger logger = getLogger();
+            if (logger.isDebugEnabled()) {
+                logger.debug("Properties for Hibernate configuration used for ModeShape JPA Source {0}:", getName());
+                Properties props = configurator.getProperties();
+                for (Map.Entry<Object, Object> entry : props.entrySet()) {
+                    String propName = entry.getKey().toString();
+                    if (propName.startsWith("hibernate")) {
+                        logger.debug("  {0} = {1}", propName, entry.getValue());
+                    }
+                }
+            }
+
             EntityManagerFactory entityManagerFactory = configurator.buildEntityManagerFactory();
             try {
                 // Establish a connection and obtain the store options...
@@ -1073,7 +1092,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         setProperty(configuration, "hibernate.connection.provider_class", "org.hibernate.connection.C3P0ConnectionProvider");
         setProperty(configuration, "hibernate.c3p0.max_size", this.maximumConnectionsInPool);
         setProperty(configuration, "hibernate.c3p0.min_size", this.minimumConnectionsInPool);
-        setProperty(configuration, "hibernate.c3p0.timeout", this.idleTimeInSecondsBeforeTestingConnections);
+        setProperty(configuration, "hibernate.c3p0.timeout", this.maximumConnectionIdleTimeInSeconds);
         setProperty(configuration, "hibernate.c3p0.max_statements", this.maximumSizeOfStatementCache);
         setProperty(configuration, "hibernate.c3p0.idle_test_period", this.idleTimeInSecondsBeforeTestingConnections);
         setProperty(configuration, "hibernate.c3p0.acquire_increment", this.numberOfConnectionsToAcquireAsNeeded);
