@@ -105,7 +105,9 @@ public class JcrRepositoryWithJpaSourceTest {
         Node a = root.addNode("a");
         Node b = a.addNode("b");
         Node c = b.addNode("c");
+        @SuppressWarnings( "unused" )
         Node d1 = c.addNode("d_one");
+        @SuppressWarnings( "unused" )
         Node d2 = c.addNode("d_two");
         session.save();
 
