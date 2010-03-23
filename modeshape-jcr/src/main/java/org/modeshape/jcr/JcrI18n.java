@@ -110,6 +110,7 @@ public final class JcrI18n {
     public static I18n cannotRemoveNodeFromClone;
     public static I18n cannotRemoveNodeFromCloneDueToChangesInSession;
 
+    public static I18n cannotRemoveRootNode;
     public static I18n cannotRemoveParentNodeOfTarget;
     public static I18n invalidPropertyType;
 

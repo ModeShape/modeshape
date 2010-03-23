@@ -884,9 +884,8 @@ class SessionCache {
         }
 
         /**
-         * @return if this node (or its nearest versionable ancestor) is checked out.  
+         * @return if this node (or its nearest versionable ancestor) is checked out.
          * @throws RepositoryException if there is an error accessing the repository
-         * 
          * @see javax.jcr.Node#isCheckedOut()
          */
         boolean isCheckedOut() throws RepositoryException {
@@ -950,7 +949,7 @@ class SessionCache {
                 String path = node.getLocation().getPath().getString(context().getNamespaceRegistry());
                 throw new VersionException(JcrI18n.nodeIsCheckedIn.text(path));
             }
-            
+
             checkCardinalityOfExistingProperty(name, false);
 
             JcrPropertyDefinition definition = null;
@@ -998,15 +997,14 @@ class SessionCache {
                                                                                      readable(payload.getPrimaryTypeName()),
                                                                                      readable(payload.getMixinTypeNames())));
                 }
-            }
-            else {
+            } else {
                 // Check that the existing definition isn't protected
-                if (skipProtected && definition.isProtected())
-                    throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
-                                                                                     readable(name),
-                                                                                     readable(node.getPath()),
-                                                                                     readable(payload.getPrimaryTypeName()),
-                                                                                     readable(payload.getMixinTypeNames())));
+                if (skipProtected && definition.isProtected()) throw new ConstraintViolationException(
+                                                                                                      JcrI18n.noDefinition.text("property",
+                                                                                                                                readable(name),
+                                                                                                                                readable(node.getPath()),
+                                                                                                                                readable(payload.getPrimaryTypeName()),
+                                                                                                                                readable(payload.getMixinTypeNames())));
             }
             // Create the ModeShape property ...
             Object objValue = value.value();
@@ -1095,7 +1093,8 @@ class SessionCache {
                                                 Value[] values,
                                                 int valueType,
                                                 boolean skipProtected )
-            throws AccessDeniedException, ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException, VersionException {
+            throws AccessDeniedException, ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException,
+            VersionException {
             assert name != null;
             assert values != null;
 
@@ -1202,15 +1201,14 @@ class SessionCache {
                                                                                      readable(payload.getPrimaryTypeName()),
                                                                                      readable(payload.getMixinTypeNames())));
                 }
-            }
-            else {
+            } else {
                 // Check that the existing definition isn't protected
-                if (skipProtected && definition.isProtected())
-                    throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
-                                                                                     readable(name),
-                                                                                     readable(node.getPath()),
-                                                                                     readable(payload.getPrimaryTypeName()),
-                                                                                     readable(payload.getMixinTypeNames())));
+                if (skipProtected && definition.isProtected()) throw new ConstraintViolationException(
+                                                                                                      JcrI18n.noDefinition.text("property",
+                                                                                                                                readable(name),
+                                                                                                                                readable(node.getPath()),
+                                                                                                                                readable(payload.getPrimaryTypeName()),
+                                                                                                                                readable(payload.getMixinTypeNames())));
             }
 
             // Create the ModeShape property ...
@@ -1340,8 +1338,8 @@ class SessionCache {
                     // The node definition changed, so try to set the property ...
                     NodeEditor newChildEditor = getEditorFor(existingChild);
                     try {
-                        JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING,
-                                                      defn.getId().getString());
+                        JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, defn.getId()
+                                                                                                               .getString());
                         newChildEditor.setProperty(ModeShapeIntLexicon.NODE_DEFINITON, value);
                     } catch (ConstraintViolationException e) {
                         // We can't set this property on the node (according to the node definition).
@@ -1499,7 +1497,7 @@ class SessionCache {
                 if (primaryTypeName != null) {
                     primaryType = nodeTypes().getNodeType(primaryTypeName);
                     if (primaryType == null) {
-                        Path pathForChild = pathFactory.create(node.getPath(), name, numSns + 1);
+                        Path pathForChild = pathFactory.create(node.getPath(), name, numSns);
                         I18n msg = JcrI18n.unableToCreateNodeWithPrimaryTypeThatDoesNotExist;
                         throw new NoSuchNodeTypeException(msg.text(primaryTypeName, pathForChild, workspaceName()));
                     }
@@ -1507,7 +1505,7 @@ class SessionCache {
                     primaryType = (JcrNodeType)definition.getDefaultPrimaryType();
                     if (primaryType == null) {
                         // There is no default primary type ...
-                        Path pathForChild = pathFactory.create(node.getPath(), name, numSns + 1);
+                        Path pathForChild = pathFactory.create(node.getPath(), name, numSns);
                         I18n msg = JcrI18n.unableToCreateNodeWithNoDefaultPrimaryTypeOnChildNodeDefinition;
                         String nodeTypeName = definition.getDeclaringNodeType().getName();
                         throw new NoSuchNodeTypeException(msg.text(definition.getName(),
@@ -1524,8 +1522,8 @@ class SessionCache {
 
                 // Create the initial properties ...
                 Property primaryTypeProp = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
-                Property nodeDefinitionProp = propertyFactory.create(ModeShapeIntLexicon.NODE_DEFINITON,
-                                                                     definition.getId().getString());
+                Property nodeDefinitionProp = propertyFactory.create(ModeShapeIntLexicon.NODE_DEFINITON, definition.getId()
+                                                                                                                   .getString());
 
                 // Now add the "jcr:uuid" property if and only if referenceable ...
                 Node<JcrNodePayload, JcrPropertyPayload> result = null;
@@ -2588,24 +2586,30 @@ class SessionCache {
             UUID historyUuid = UUID.randomUUID();
             UUID versionUuid = UUID.randomUUID();
 
-            systemBatch.create(historyPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_HISTORY).and(JcrLexicon.VERSIONABLE_UUID,
-                                                                                                            jcrUuid).and(JcrLexicon.UUID,
-                                                                                                                         historyUuid).and();
+            systemBatch.create(historyPath)
+                       .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_HISTORY)
+                       .and(JcrLexicon.VERSIONABLE_UUID, jcrUuid)
+                       .and(JcrLexicon.UUID, historyUuid)
+                       .and();
 
             Path versionLabelsPath = pathFactory().create(historyPath, JcrLexicon.VERSION_LABELS);
             systemBatch.create(versionLabelsPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_LABELS).and();
 
-
             Path rootVersionPath = pathFactory().create(historyPath, JcrLexicon.ROOT_VERSION);
             DateTime now = context().getValueFactories().getDateFactory().create();
-            systemBatch.create(rootVersionPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION).and(JcrLexicon.CREATED, now).and(JcrLexicon.UUID,
-                                                                                                                                     versionUuid).and();
+            systemBatch.create(rootVersionPath)
+                       .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION)
+                       .and(JcrLexicon.CREATED, now)
+                       .and(JcrLexicon.UUID, versionUuid)
+                       .and();
 
             Path frozenVersionPath = pathFactory().create(rootVersionPath, JcrLexicon.FROZEN_NODE);
-            systemBatch.create(frozenVersionPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE).and(JcrLexicon.FROZEN_UUID,
-                                                                                                              jcrUuid).and(JcrLexicon.FROZEN_PRIMARY_TYPE,
-                                                                                                                           primaryTypeName).and(JcrLexicon.FROZEN_MIXIN_TYPES,
-                                                                                                                                                mixinTypeNames).and();
+            systemBatch.create(frozenVersionPath)
+                       .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE)
+                       .and(JcrLexicon.FROZEN_UUID, jcrUuid)
+                       .and(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName)
+                       .and(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames)
+                       .and();
 
             systemBatch.execute();
 
@@ -2613,7 +2617,7 @@ class SessionCache {
             Property isCheckedOut = propFactory.create(JcrLexicon.IS_CHECKED_OUT, true);
             Property versionHistory = propFactory.create(JcrLexicon.VERSION_HISTORY, historyUuid);
             Property baseVersion = propFactory.create(JcrLexicon.BASE_VERSION, versionUuid);
-            Property predecessors = propFactory.create(JcrLexicon.PREDECESSORS, new Object[] { versionUuid });
+            Property predecessors = propFactory.create(JcrLexicon.PREDECESSORS, new Object[] {versionUuid});
 
             // This batch will get executed as part of the save
             batch.set(isCheckedOut, versionHistory, baseVersion, predecessors).on(node.getPath()).and();

@@ -26,6 +26,9 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -33,16 +36,21 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.ImportUUIDBehavior;
+import javax.jcr.ItemExistsException;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.nodetype.NodeType;
 import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.jcr.JcrRepository.Option;
 
 /**
@@ -116,8 +124,12 @@ public class JcrImportExportTest {
         assertThat(session, is(notNullValue()));
     }
 
+    // ----------------------------------------------------------------------------------------------------------------
+    // Import System View with NO 'jcr:root' node and NO uuids
+    // ----------------------------------------------------------------------------------------------------------------
+
     @Test
-    public void shouldImportCarsSystemViewIntoNodeUnderRootWithCreateNewBehavior() throws Exception {
+    public void shouldImportCarsSystemViewWithCreateNewBehaviorWhenImportedContentDoesNotContainJcrRoot() throws Exception {
         assertImport("io/cars-system-view.xml", "/a/b", ImportBehavior.CREATE_NEW);
         assertThat(session, is(notNullValue()));
         assertNode("/a/b/Cars");
@@ -132,8 +144,7 @@ public class JcrImportExportTest {
     }
 
     @Test
-    public void shouldImportCarsSystemViewIntoNodeUnderRootWithRemoveExistingBehaviorWhenThereIsNoExistingAtAll()
-        throws Exception {
+    public void shouldImportCarsSystemViewWithRemoveExistingBehaviorWhenImportedContentDoesNotContainJcrRoot() throws Exception {
         assertImport("io/cars-system-view.xml", "/a/b", ImportBehavior.REMOVE_EXISTING);
         assertThat(session, is(notNullValue()));
         assertNode("/a/b/Cars");
@@ -148,11 +159,36 @@ public class JcrImportExportTest {
     }
 
     @Test
-    public void shouldImportCarsSystemViewIntoNodeUnderRootWithRemoveExistingBehaviorWhenThereIsNoExistingWithSameUuids()
+    public void shouldImportCarsSystemViewWithReplaceExistingBehaviorWhenImportedContentDoesNotContainJcrRoot() throws Exception {
+        assertImport("io/cars-system-view.xml", "/a/b", ImportBehavior.REPLACE_EXISTING);
+        assertThat(session, is(notNullValue()));
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNoNode("/a/b/Cars[2]");
+        assertNoNode("/a/b/Cars/Hybrid[2]");
+        assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
+        assertNoNode("/a/b/Cars/Sports[2]");
+    }
+
+    @Test
+    public void shouldImportCarsSystemViewWithRemoveExistingBehaviorWhenImportedContentDoesNotContainJcrRootOrAnyUuids()
         throws Exception {
         // Set up the repository with existing content ...
         assertImport("io/cars-system-view.xml", "/a/b", ImportBehavior.CREATE_NEW);
-        // Now import and remove ...
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNoNode("/a/b/Cars[2]");
+        assertNoNode("/a/b/Cars/Hybrid[2]");
+        assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
+        assertNoNode("/a/b/Cars/Sports[2]");
+
+        // Now import again to create a second copy ...
         assertImport("io/cars-system-view.xml", "/a/b", ImportBehavior.REMOVE_EXISTING);
         assertThat(session, is(notNullValue()));
         assertNode("/a/b/Cars");
@@ -167,15 +203,229 @@ public class JcrImportExportTest {
         assertNode("/a/b/Cars[2]/Utility/Land Rover LR3");
     }
 
+    // ----------------------------------------------------------------------------------------------------------------
+    // Import System View with NO 'jcr:root' node but WITH uuids
+    // ----------------------------------------------------------------------------------------------------------------
+
     @Test
-    public void shouldStartUp3() {
+    public void shouldImportCarsSystemViewWithCreateNewBehaviorWhenImportedContentDoesNotContainJcrRootButDoesContainUnusedUuids()
+        throws Exception {
+        // Set up the repository with existing content ...
+        assertImport("io/cars-system-view.xml", "/a/b", ImportBehavior.CREATE_NEW);
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNoNode("/a/b/Cars[2]");
+        assertNoNode("/a/b/Cars/Hybrid[2]");
+        assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
+        assertNoNode("/a/b/Cars/Sports[2]");
+
+        // And attempt to reimport the same content (with UUIDs) into the repository that already has that content ...
+        print = true;
+        assertImport("io/cars-system-view-with-uuids.xml", "/a/b", ImportBehavior.REPLACE_EXISTING);
+        print();
+
+        // Verify that the original content has been left untouched ...
         assertThat(session, is(notNullValue()));
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNode("/a/b/Cars[2]");
+        assertNode("/a/b/Cars[2]/Hybrid");
+        assertNode("/a/b/Cars[2]/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars[2]/Sports");
     }
 
     @Test
-    public void shouldImportCarsSystemViewIntoNodeUnderRootWithRemoveExistingBehaviorWhenThereIsExistingWithSameUuids() {
-        // Export then import ...
+    public void shouldImportCarsSystemViewWithCreateNewBehaviorWhenImportedContentDoesNotContainJcrRootButDoesContainAlreadyUsedUuids()
+        throws Exception {
+        // Set up the repository with existing content ...
+        assertImport("io/cars-system-view-with-uuids.xml", "/a/b", ImportBehavior.CREATE_NEW);
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNoNode("/a/b/Cars[2]");
+        assertNoNode("/a/b/Cars/Hybrid[2]");
+        assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
+        assertNoNode("/a/b/Cars/Sports[2]");
+
+        // And attempt to reimport the same content (with UUIDs) into the repository that already has that content ...
+        print = true;
+        assertImport("io/cars-system-view-with-uuids.xml", "/a/b", ImportBehavior.CREATE_NEW);
+        print();
+
+        // Verify that the original content has been left untouched ...
+        assertThat(session, is(notNullValue()));
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNode("/a/b/Cars[2]");
+        assertNode("/a/b/Cars[2]/Hybrid");
+        assertNode("/a/b/Cars[2]/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars[2]/Sports");
     }
+
+    @Test
+    public void shouldImportCarsSystemViewOverExistingContentWhenImportedContentDoesNotContainJcrRootButDoesContainAlreadyUsedUuids()
+        throws Exception {
+        // Set up the repository with existing content ...
+        assertImport("io/cars-system-view-with-uuids.xml", "/a/b", ImportBehavior.CREATE_NEW);
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNoNode("/a/b/Cars[2]");
+        assertNoNode("/a/b/Cars/Hybrid[2]");
+        assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
+        assertNoNode("/a/b/Cars/Sports[2]");
+
+        // And attempt to reimport the same content (with UUIDs) into the repository that already has that content ...
+        print = true;
+        assertImport("io/cars-system-view-with-uuids.xml", "/a/b", ImportBehavior.REMOVE_EXISTING);
+        print();
+
+        // Verify that the original content has been replaced (since the SystemView contained UUIDs) and there is no copy ...
+        assertThat(session, is(notNullValue()));
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNoNode("/a/b/Cars[2]");
+        assertNoNode("/a/b/Cars/Hybrid[2]");
+        assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
+        assertNoNode("/a/b/Cars/Sports[2]");
+
+        // And attempt to reimport the same content (with UUIDs) into the repository that already has that content ...
+        print = true;
+        assertImport("io/cars-system-view-with-uuids.xml", "/a/b", ImportBehavior.REPLACE_EXISTING);
+        print();
+
+        // Verify that the original content has been replaced (since the SystemView contained UUIDs) and there is no copy ...
+        assertThat(session, is(notNullValue()));
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNoNode("/a/b/Cars[2]");
+        assertNoNode("/a/b/Cars/Hybrid[2]");
+        assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
+        assertNoNode("/a/b/Cars/Sports[2]");
+    }
+
+    @Test
+    public void shouldImportCarsSystemViewWhenImportedContentDoesNotContainJcrRootButDoesContainAlreadyUsedUuids()
+        throws Exception {
+        // Set up the repository with existing content ...
+        assertImport("io/cars-system-view-with-uuids.xml", "/a/b", ImportBehavior.CREATE_NEW);
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNoNode("/a/b/Cars[2]");
+        assertNoNode("/a/b/Cars/Hybrid[2]");
+        assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
+        assertNoNode("/a/b/Cars/Sports[2]");
+
+        // And attempt to reimport the same content (with UUIDs) into the repository that already has that content ...
+        print = true;
+        assertImport("io/cars-system-view-with-uuids.xml", "/a/c", ImportBehavior.REPLACE_EXISTING);
+        print();
+
+        // Verify that the original content has been replaced (since the SystemView contained UUIDs) and there is no copy ...
+        assertThat(session, is(notNullValue()));
+        assertNode("/a/b");
+        assertNode("/a/c");
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNoNode("/a/b/Cars[2]");
+        assertNoNode("/a/b/Cars/Hybrid[2]");
+        assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
+        assertNoNode("/a/b/Cars/Sports[2]");
+
+        // And attempt to reimport the same content (with UUIDs) into the repository that already has that content ...
+        print = true;
+        assertImport("io/cars-system-view-with-uuids.xml", "/a/d", ImportBehavior.REMOVE_EXISTING);
+        print();
+
+        // Verify that the original content has been replaced (since the SystemView contained UUIDs) and there is no copy ...
+        assertThat(session, is(notNullValue()));
+        assertNode("/a/b");
+        assertNode("/a/c");
+        assertNode("/a/d/Cars");
+        assertNode("/a/d/Cars/Hybrid");
+        assertNode("/a/d/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/d/Cars/Sports/Infiniti G37");
+        assertNode("/a/d/Cars/Utility/Land Rover LR3");
+        assertNoNode("/a/b/Cars[2]");
+        assertNoNode("/a/b/Cars/Hybrid[2]");
+        assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
+        assertNoNode("/a/b/Cars/Sports[2]");
+    }
+
+    @Test( expected = ItemExistsException.class )
+    public void shouldFailToImportCarsSystemViewWithThrowBehaviorWhenImportedContentDoesNotContainJcrRootButDoesContainAlreadyUsedUuids()
+        throws Exception {
+        // Set up the repository with existing content ...
+        assertImport("io/cars-system-view-with-uuids.xml", "/a/b", ImportBehavior.CREATE_NEW);
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNoNode("/a/b/Cars[2]");
+        assertNoNode("/a/b/Cars/Hybrid[2]");
+        assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
+        assertNoNode("/a/b/Cars/Sports[2]");
+
+        // And attempt to reimport the same content (with UUIDs) into the repository that already has that content ...
+        print = true;
+        assertImport("io/cars-system-view-with-uuids.xml", "/a/c", ImportBehavior.THROW);
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Import System View WITH 'jcr:root' node and NO matching uuids
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldImportSystemViewOfEntireWorkspaceWithNoAlreadyUsedUuids() throws Exception {
+        // Set up the repository ...
+        assertImport("io/full-workspace-system-view-with-uuids.xml", "/", ImportBehavior.THROW); // no matching UUIDs expected
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNoNode("/a/b/Cars[2]");
+        assertNoNode("/a/b/Cars/Hybrid[2]");
+        assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
+        assertNoNode("/a/b/Cars/Sports[2]");
+    }
+
+    @Test
+    public void shouldImportSystemViewOfEntireWorkspaceExportedFromJackrabbit() throws Exception {
+        // Set up the repository ...
+        assertImport("io/full-workspace-system-view.xml", "/", ImportBehavior.THROW); // no matching UUIDs expected
+        assertNode("/page1");
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Import System View WITH 'jcr:root' node and WITH uuids
+    // ----------------------------------------------------------------------------------------------------------------
 
     // ----------------------------------------------------------------------------------------------------------------
     // Utilities
@@ -202,23 +452,58 @@ public class JcrImportExportTest {
         return engine.getExecutionContext().getValueFactories().getPathFactory().create(path);
     }
 
+    protected String relativePath( String path ) {
+        return !path.startsWith("/") ? path : path.substring(1);
+    }
+
     protected String asString( Object value ) {
         return engine.getExecutionContext().getValueFactories().getStringFactory().create(value);
     }
 
     protected void assertNode( String path ) throws RepositoryException {
         // Verify that the parent node does exist now ...
-        assertThat(path.startsWith("/"), is(true));
-        assertThat(session.getRootNode().hasNode(path.substring(1)), is(true));
+        String relativePath = relativePath(path);
+        Node root = session.getRootNode();
+        if (relativePath.trim().length() == 0) {
+            // This is the root path, so of course it exists ...
+            assertThat(root, is(notNullValue()));
+            return;
+        }
+        if (print && !root.hasNode(relativePath)) {
+            Node parent = root;
+            int depth = 0;
+            for (Segment segment : path(path)) {
+                if (!parent.hasNode(asString(segment))) {
+                    System.out.println("Unable to find '" + path + "'; lowest node is '" + parent.getPath() + "'");
+                    break;
+                }
+                parent = parent.getNode(asString(segment));
+                ++depth;
+            }
+        }
+        assertThat(root.hasNode(relativePath), is(true));
     }
 
     protected void assertNoNode( String path ) throws RepositoryException {
         // Verify that the parent node does exist now ...
-        assertThat(path.startsWith("/"), is(true));
-        assertThat(session.getRootNode().hasNode(path.substring(1)), is(false));
+        assertThat(session.getRootNode().hasNode(relativePath(path)), is(false));
     }
 
     protected Node assertImport( String resourceName,
+                                 String pathToParent,
+                                 ImportBehavior behavior ) throws RepositoryException, IOException {
+        InputStream istream = resourceStream(resourceName);
+        return assertImport(istream, pathToParent, behavior);
+    }
+
+    protected Node assertImport( File resource,
+                                 String pathToParent,
+                                 ImportBehavior behavior ) throws RepositoryException, IOException {
+        InputStream istream = new FileInputStream(resource);
+        return assertImport(istream, pathToParent, behavior);
+    }
+
+    protected Node assertImport( InputStream istream,
                                  String pathToParent,
                                  ImportBehavior behavior ) throws RepositoryException, IOException {
         // Make the parent node if it does not exist ...
@@ -246,11 +531,9 @@ public class JcrImportExportTest {
         }
 
         // Verify that the parent node does exist now ...
-        assertThat(pathToParent.startsWith("/"), is(true));
-        assertThat(session.getRootNode().hasNode(pathToParent.substring(1)), is(true));
+        assertNode(pathToParent);
 
         // Now, load the content of the resource being imported ...
-        InputStream istream = resourceStream(resourceName);
         assertThat(istream, is(notNullValue()));
         try {
             session.getWorkspace().importXML(pathToParent, istream, behavior.getJcrValue());
@@ -260,6 +543,81 @@ public class JcrImportExportTest {
 
         session.save();
         return node;
+    }
+
+    protected void addMixinRecursively( String path,
+                                        String... nodeTypes ) throws RepositoryException {
+        Node node = session.getRootNode().getNode(relativePath(path));
+        addMixin(node, true, nodeTypes);
+    }
+
+    protected Node addMixin( String path,
+                             String... nodeTypes ) throws RepositoryException {
+        Node node = session.getRootNode().getNode(relativePath(path));
+        return addMixin(node, false, nodeTypes);
+    }
+
+    protected Node addMixin( Node node,
+                             boolean recursive,
+                             String... nodeTypes ) throws RepositoryException {
+        assertThat(node, is(notNullValue()));
+        for (String nodeType : nodeTypes) {
+            if (!hasMixin(node, nodeType)) {
+                node.addMixin(nodeType);
+            }
+        }
+        if (recursive) {
+            NodeIterator children = node.getNodes();
+            while (children.hasNext()) {
+                addMixin(children.nextNode(), true, nodeTypes);
+            }
+        }
+        return node;
+    }
+
+    protected boolean hasMixin( Node node,
+                                String mixinNodeType ) throws RepositoryException {
+        for (NodeType mixin : node.getMixinNodeTypes()) {
+            if (mixin.getName().equals(mixinNodeType)) return true;
+        }
+        return false;
+    }
+
+    protected void print() throws RepositoryException {
+        print(session.getRootNode(), true);
+    }
+
+    protected void print( String path ) throws RepositoryException {
+        Node node = session.getRootNode().getNode(relativePath(path));
+        print(node, true);
+    }
+
+    protected void print( Node node,
+                          boolean includeSystem ) throws RepositoryException {
+        if (print) {
+            if (!includeSystem && node.getPath().equals("/jcr:system")) return;
+            if (node.getDepth() != 0) {
+                int snsIndex = node.getIndex();
+                String segment = node.getName() + (snsIndex > 1 ? ("[" + snsIndex + "]") : "");
+                System.out.println(StringUtil.createString(' ', 2 * node.getDepth()) + '/' + segment);
+            }
+            NodeIterator children = node.getNodes();
+            while (children.hasNext()) {
+                print(children.nextNode(), includeSystem);
+            }
+        }
+    }
+
+    protected File export( String pathToParent ) throws IOException, RepositoryException {
+        assertNode(pathToParent);
+
+        // Export to a string ...
+        File tmp = File.createTempFile("JcrImportExportText-", "");
+        FileOutputStream ostream = new FileOutputStream(tmp);
+        boolean skipBinary = false;
+        boolean noRecurse = false;
+        session.exportSystemView(pathToParent, ostream, skipBinary, noRecurse);
+        return tmp;
     }
 
     protected static URI resourceUri( String name ) throws URISyntaxException {

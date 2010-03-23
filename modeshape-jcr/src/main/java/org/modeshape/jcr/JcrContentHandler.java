@@ -53,6 +53,10 @@ import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.PathFactory;
+import org.modeshape.graph.session.GraphSession.Node;
+import org.modeshape.jcr.SessionCache.JcrNodePayload;
+import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -81,6 +85,7 @@ class JcrContentHandler extends DefaultHandler {
     protected static final TextDecoder DOCUMENT_VIEW_NAME_DECODER = new JcrDocumentViewExporter.JcrDocumentViewPropertyEncoder();
 
     private final NameFactory nameFactory;
+    private final PathFactory pathFactory;
     private final NamespaceRegistry namespaces;
     private final ValueFactory jcrValueFactory;
     private final JcrNodeTypeManager nodeTypes;
@@ -116,6 +121,7 @@ class JcrContentHandler extends DefaultHandler {
         ExecutionContext context = session.getExecutionContext();
         this.namespaces = context.getNamespaceRegistry();
         this.nameFactory = context.getValueFactories().getNameFactory();
+        this.pathFactory = context.getValueFactories().getPathFactory();
         this.uuidBehavior = uuidBehavior;
 
         this.saveMode = saveMode;
@@ -162,6 +168,15 @@ class JcrContentHandler extends DefaultHandler {
 
     protected final Name nameFor( String name ) {
         return nameFactory.create(name);
+    }
+
+    protected final Path pathFor( Name... names ) {
+        return pathFor(pathFactory.createRootPath(), names);
+    }
+
+    protected final Path pathFor( Path parentPath,
+                                  Name... names ) {
+        return pathFactory.create(parentPath, names);
     }
 
     protected final Value valueFor( String value,
@@ -301,6 +316,8 @@ class JcrContentHandler extends DefaultHandler {
         private StringBuilder valueBuffer;
         private final Map<String, List<Value>> currentProps;
 
+        private int skipElements = 0;
+
         /**
          * @param currentNode
          */
@@ -326,13 +343,14 @@ class JcrContentHandler extends DefaultHandler {
                                   String localName,
                                   String name,
                                   Attributes atts ) throws SAXException {
+            if (skipElements > 0) ++skipElements;
+
             // Always create a new string buffer for the content value, because we're starting a new element ...
             valueBuffer = new StringBuilder();
             if ("node".equals(localName)) {
                 if (currentNodeName != null) {
                     addNodeIfPending();
                 }
-
                 currentNodeName = atts.getValue(SYSTEM_VIEW_NAME_DECODER.decode(svNameName));
             } else if ("property".equals(localName)) {
                 currentPropName = atts.getValue(SYSTEM_VIEW_NAME_DECODER.decode(svNameName));
@@ -346,8 +364,51 @@ class JcrContentHandler extends DefaultHandler {
         private void addNodeIfPending() throws SAXException {
             if (currentNodeName != null) {
                 try {
-                    AbstractJcrNode parentNode = parentStack.peek();
+                    if (skipElements > 0) return;
 
+                    // Handle specific nodes here ...
+                    AbstractJcrNode parentNode = parentStack.peek();
+                    AbstractJcrNode newNode = null;
+                    Name nodeName = nameFor(currentNodeName);
+
+                    if (JcrLexicon.ROOT.equals(nodeName)) {
+                        // This is the root node ...
+                        newNode = cache().findJcrRootNode();
+                        if (!parentNode.equals(newNode)) {
+                            // Importing a system document with a full repository into a node other than the root,
+                            // so per Section 7.3.8 of the JCR 1.0.1 spec ...
+                            switch (uuidBehavior) {
+                                case ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW:
+                                    newNode = null;
+                                    break;
+                                case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING:
+                                    // Remove all existing (non-system) nodes ...
+                                    for (Node<JcrNodePayload, JcrPropertyPayload> child : parentNode.nodeInfo().getChildren()) {
+                                        if (!child.getName().equals(JcrLexicon.SYSTEM)) {
+                                            parentNode.editor().destroyChild(child);
+                                        }
+                                    }
+                                    break;
+                                case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING:
+                                    throw new ConstraintViolationException(JcrI18n.cannotRemoveRootNode.text());
+                                case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:
+                                    throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(newNode.uuid(),
+                                                                                                         cache().session()
+                                                                                                                .workspace()
+                                                                                                                .getName(),
+                                                                                                         newNode.getPath()));
+                            }
+                        }
+                        return;
+                    }
+
+                    if (JcrLexicon.SYSTEM.equals(nodeName)) {
+                        // Skip this branch entirely ...
+                        skipElements = 2; // the current element's parent element is where this node started
+                        return;
+                    }
+
+                    // We need to create a node and set the properties ...
                     UUID uuid = null;
                     List<Value> rawUuid = currentProps.get(uuidName);
 
@@ -391,7 +452,10 @@ class JcrContentHandler extends DefaultHandler {
                     }
 
                     String typeName = currentProps.get(primaryTypeName).get(0).getString();
-                    AbstractJcrNode newNode = parentNode.editor().createChild(nameFor(currentNodeName), uuid, nameFor(typeName));
+                    newNode = parentNode.editor().createChild(nodeName, uuid, nameFor(typeName));
+                    parentStack.push(newNode);
+
+                    // Set the properties on the new node ...
                     SessionCache.NodeEditor newNodeEditor = newNode.editor();
 
                     for (Map.Entry<String, List<Value>> entry : currentProps.entrySet()) {
@@ -422,10 +486,10 @@ class JcrContentHandler extends DefaultHandler {
                         }
                     }
 
-                    parentStack.push(newNode);
-                    currentProps.clear();
                 } catch (RepositoryException re) {
                     throw new EnclosingSAXException(re);
+                } finally {
+                    currentProps.clear();
                 }
             }
         }
@@ -434,6 +498,8 @@ class JcrContentHandler extends DefaultHandler {
         public void endElement( String uri,
                                 String localName,
                                 String name ) throws SAXException {
+            if (skipElements > 0) return;
+
             if ("node".equals(localName)) {
                 addNodeIfPending();
                 currentNodeName = null;
@@ -453,6 +519,7 @@ class JcrContentHandler extends DefaultHandler {
                     throw new EnclosingSAXException(re);
                 }
             }
+            if (skipElements > 0) --skipElements;
         }
 
         /**

@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<sv:node sv:name="jcr:root" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:mgnl="http://www.magnolia.info/jcr/mgnl"
-  xmlns:mix="http://www.jcp.org/jcr/mix/1.0" xmlns:rep="internal" xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
-  xmlns:fn="http://www.w3.org/2005/xpath-functions" 
-  xmlns:fn_old="http://www.w3.org/2004/10/xpath-functions" xmlns:sv="http://www.jcp.org/jcr/sv/1.0" xmlns:jcrfn="http://www.jcp.org/jcr/xpath-functions/1.0">
+<sv:node sv:name="jcr:root" 
+         xmlns:jcr="http://www.jcp.org/jcr/1.0"
+         xmlns:mix="http://www.jcp.org/jcr/mix/1.0"
+         xmlns:mgnl="http://www.magnolia.info/jcr/mgnl"
+         xmlns:rep="internal"
+         xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+         xmlns:fn="http://www.w3.org/2005/xpath-functions" 
+         xmlns:fn_old="http://www.w3.org/2004/10/xpath-functions"
+         xmlns:sv="http://www.jcp.org/jcr/sv/1.0" xmlns:jcrfn="http://www.jcp.org/jcr/xpath-functions/1.0">
   <sv:property sv:name="jcr:primaryType" sv:type="Name">
     <sv:value>rep:root</sv:value>
   </sv:property>
   <sv:node sv:name="page1">
     <sv:property sv:name="jcr:primaryType" sv:type="Name">
-      <sv:value>mgnl:content</sv:value>
+      <sv:value>nt:unstructured</sv:value>
     </sv:property>
     <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
       <sv:value>mix:lockable</sv:value>
@@ -25,7 +30,7 @@
     </sv:property>
     <sv:node sv:name="MetaData">
       <sv:property sv:name="jcr:primaryType" sv:type="Name">
-        <sv:value>mgnl:metaData</sv:value>
+        <sv:value>nt:unstructured</sv:value>
       </sv:property>
       <sv:property sv:name="mgnl:authorid" sv:type="String">
         <sv:value>superuser</sv:value>

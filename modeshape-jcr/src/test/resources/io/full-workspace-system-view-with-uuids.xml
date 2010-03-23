@@ -1,0 +1,608 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sv:node xmlns:car="http://www.modeshape.org/examples/cars/1.0"
+         xmlns:jcr="http://www.jcp.org/jcr/1.0"
+         xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+         xmlns:sv="http://www.jcp.org/jcr/sv/1.0"
+         xmlns:mix="http://www.jcp.org/jcr/mix/1.0"
+         xmlns:modeint="http://www.modeshape.org/internal/1.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns:mode="http://www.modeshape.org/1.0"
+         sv:name="jcr:root">
+	<sv:property sv:name="jcr:primaryType" sv:type="Name">
+		<sv:value>mode:root</sv:value>
+	</sv:property>
+	<sv:property sv:name="jcr:uuid" sv:type="String">
+		<sv:value>7e1bba85-30ee-40a1-8815-f186672df882</sv:value>
+	</sv:property>
+	<sv:node sv:name="a">
+		<sv:property sv:name="jcr:primaryType" sv:type="Name">
+			<sv:value>nt:unstructured</sv:value>
+		</sv:property>
+		<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+			<sv:value>mix:referenceable</sv:value>
+		</sv:property>
+		<sv:property sv:name="jcr:uuid" sv:type="String">
+			<sv:value>fba275bf-a822-4fce-bb2a-2da96a833b21</sv:value>
+		</sv:property>
+		<sv:node sv:name="b">
+			<sv:property sv:name="jcr:primaryType" sv:type="Name">
+				<sv:value>nt:unstructured</sv:value>
+			</sv:property>
+			<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+				<sv:value>mix:referenceable</sv:value>
+			</sv:property>
+			<sv:property sv:name="jcr:uuid" sv:type="String">
+				<sv:value>446561b5-fc94-475c-bb29-0ad1ebdeeccf</sv:value>
+			</sv:property>
+			<sv:node sv:name="Cars">
+				<sv:property sv:name="jcr:primaryType" sv:type="Name">
+					<sv:value>nt:unstructured</sv:value>
+				</sv:property>
+				<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+					<sv:value>mix:referenceable</sv:value>
+				</sv:property>
+				<sv:property sv:name="jcr:uuid" sv:type="String">
+					<sv:value>e41075cb-a09a-4910-87b1-90ce8b4ca9dd</sv:value>
+				</sv:property>
+				<sv:node sv:name="Hybrid">
+					<sv:property sv:name="jcr:primaryType" sv:type="Name">
+						<sv:value>nt:unstructured</sv:value>
+					</sv:property>
+					<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+						<sv:value>mix:referenceable</sv:value>
+					</sv:property>
+					<sv:property sv:name="jcr:uuid" sv:type="String">
+						<sv:value>7e999653-e558-4131-8889-af1e16872f4d</sv:value>
+					</sv:property>
+					<sv:node sv:name="Toyota Prius">
+						<sv:property sv:name="jcr:primaryType" sv:type="Name">
+							<sv:value>car:Car</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+							<sv:value>mix:referenceable</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:uuid" sv:type="String">
+							<sv:value>e92eddc1-d33a-4bd4-ae36-fe0a761b8d89</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:year" sv:type="String">
+							<sv:value>2008</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:msrp" sv:type="String">
+							<sv:value>$21,500</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgHighway" sv:type="Long">
+							<sv:value>45</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:model" sv:type="String">
+							<sv:value>Prius</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:maker" sv:type="String">
+							<sv:value>Toyota</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:valueRating" sv:type="Long">
+							<sv:value>5</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgCity" sv:type="Long">
+							<sv:value>48</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:userRating" sv:type="Long">
+							<sv:value>4</sv:value>
+						</sv:property>
+					</sv:node>
+					<sv:node sv:name="Toyota Highlander">
+						<sv:property sv:name="jcr:primaryType" sv:type="Name">
+							<sv:value>car:Car</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+							<sv:value>mix:referenceable</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:uuid" sv:type="String">
+							<sv:value>f6348fbe-a0ba-43c4-9ae5-3faff5c0f6ec</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:year" sv:type="String">
+							<sv:value>2008</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:msrp" sv:type="String">
+							<sv:value>$34,200</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgHighway" sv:type="Long">
+							<sv:value>25</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:model" sv:type="String">
+							<sv:value>Highlander</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:maker" sv:type="String">
+							<sv:value>Toyota</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:valueRating" sv:type="Long">
+							<sv:value>5</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgCity" sv:type="Long">
+							<sv:value>27</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:userRating" sv:type="Long">
+							<sv:value>4</sv:value>
+						</sv:property>
+					</sv:node>
+					<sv:node sv:name="Nissan Altima">
+						<sv:property sv:name="jcr:primaryType" sv:type="Name">
+							<sv:value>car:Car</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+							<sv:value>mix:referenceable</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:uuid" sv:type="String">
+							<sv:value>b79bd26a-3556-4c40-9c6a-bdcbecae7677</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:maker" sv:type="String">
+							<sv:value>Nissan</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgCity" sv:type="Long">
+							<sv:value>23</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:year" sv:type="String">
+							<sv:value>2008</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:msrp" sv:type="String">
+							<sv:value>$18,260</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgHighway" sv:type="Long">
+							<sv:value>32</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:model" sv:type="String">
+							<sv:value>Altima</sv:value>
+						</sv:property>
+					</sv:node>
+				</sv:node>
+				<sv:node sv:name="Sports">
+					<sv:property sv:name="jcr:primaryType" sv:type="Name">
+						<sv:value>nt:unstructured</sv:value>
+					</sv:property>
+					<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+						<sv:value>mix:referenceable</sv:value>
+					</sv:property>
+					<sv:property sv:name="jcr:uuid" sv:type="String">
+						<sv:value>9145c396-e6d2-46d7-a5c3-654b4094f762</sv:value>
+					</sv:property>
+					<sv:node sv:name="Aston Martin DB9">
+						<sv:property sv:name="jcr:primaryType" sv:type="Name">
+							<sv:value>car:Car</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+							<sv:value>mix:referenceable</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:uuid" sv:type="String">
+							<sv:value>6b595b19-7e89-4df5-954e-b2440b242403</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:engine" sv:type="String">
+							<sv:value>5,935 cc 5.9 liters V 12</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:year" sv:type="String">
+							<sv:value>2008</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:wheelbaseInInches" sv:type="Double">
+							<sv:value>108.0</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:msrp" sv:type="String">
+							<sv:value>$171,600</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgHighway" sv:type="Long">
+							<sv:value>19</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:model" sv:type="String">
+							<sv:value>DB9</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:maker" sv:type="String">
+							<sv:value>Aston Martin</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgCity" sv:type="Long">
+							<sv:value>12</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:userRating" sv:type="Long">
+							<sv:value>5</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:lengthInInches" sv:type="Double">
+							<sv:value>185.5</sv:value>
+						</sv:property>
+					</sv:node>
+					<sv:node sv:name="Infiniti G37">
+						<sv:property sv:name="jcr:primaryType" sv:type="Name">
+							<sv:value>car:Car</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+							<sv:value>mix:referenceable</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:uuid" sv:type="String">
+							<sv:value>24807d85-6789-48f4-9e67-41c59d7d3fae</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:year" sv:type="String">
+							<sv:value>2008</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:msrp" sv:type="String">
+							<sv:value>$34,900</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgHighway" sv:type="Long">
+							<sv:value>24</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:model" sv:type="String">
+							<sv:value>G37</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:maker" sv:type="String">
+							<sv:value>Infiniti</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:valueRating" sv:type="Long">
+							<sv:value>4</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgCity" sv:type="Long">
+							<sv:value>18</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:userRating" sv:type="Long">
+							<sv:value>3</sv:value>
+						</sv:property>
+					</sv:node>
+				</sv:node>
+				<sv:node sv:name="Luxury">
+					<sv:property sv:name="jcr:primaryType" sv:type="Name">
+						<sv:value>nt:unstructured</sv:value>
+					</sv:property>
+					<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+						<sv:value>mix:referenceable</sv:value>
+					</sv:property>
+					<sv:property sv:name="jcr:uuid" sv:type="String">
+						<sv:value>f96fe720-49a9-4bf2-9bc4-39a0dd90e374</sv:value>
+					</sv:property>
+					<sv:node sv:name="Cadillac DTS">
+						<sv:property sv:name="jcr:primaryType" sv:type="Name">
+							<sv:value>car:Car</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+							<sv:value>mix:referenceable</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:uuid" sv:type="String">
+							<sv:value>c91ed7ba-39c5-4fcd-854c-8efbb1567b95</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:maker" sv:type="String">
+							<sv:value>Cadillac</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:engine" sv:type="String">
+							<sv:value>3.6 liter V6</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:year" sv:type="String">
+							<sv:value>2008</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:userRating" sv:type="Long">
+							<sv:value>1</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:model" sv:type="String">
+							<sv:value>DTS</sv:value>
+						</sv:property>
+					</sv:node>
+					<sv:node sv:name="Bentley Continental">
+						<sv:property sv:name="jcr:primaryType" sv:type="Name">
+							<sv:value>car:Car</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+							<sv:value>mix:referenceable</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:uuid" sv:type="String">
+							<sv:value>baa8ad28-6707-4342-9314-bb82dd9067a9</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:maker" sv:type="String">
+							<sv:value>Bentley</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgCity" sv:type="Long">
+							<sv:value>10</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:year" sv:type="String">
+							<sv:value>2008</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:msrp" sv:type="String">
+							<sv:value>$170,990</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgHighway" sv:type="Long">
+							<sv:value>17</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:model" sv:type="String">
+							<sv:value>Continental</sv:value>
+						</sv:property>
+					</sv:node>
+					<sv:node sv:name="Lexus IS350">
+						<sv:property sv:name="jcr:primaryType" sv:type="Name">
+							<sv:value>car:Car</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+							<sv:value>mix:referenceable</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:uuid" sv:type="String">
+							<sv:value>7c513b8e-e77e-40f2-bf4d-147419037a75</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:year" sv:type="String">
+							<sv:value>2008</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:msrp" sv:type="String">
+							<sv:value>$36,305</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgHighway" sv:type="Long">
+							<sv:value>25</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:model" sv:type="String">
+							<sv:value>IS350</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:maker" sv:type="String">
+							<sv:value>Lexus</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:valueRating" sv:type="Long">
+							<sv:value>5</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgCity" sv:type="Long">
+							<sv:value>18</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:userRating" sv:type="Long">
+							<sv:value>4</sv:value>
+						</sv:property>
+					</sv:node>
+				</sv:node>
+				<sv:node sv:name="Utility">
+					<sv:property sv:name="jcr:primaryType" sv:type="Name">
+						<sv:value>nt:unstructured</sv:value>
+					</sv:property>
+					<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+						<sv:value>mix:referenceable</sv:value>
+					</sv:property>
+					<sv:property sv:name="jcr:uuid" sv:type="String">
+						<sv:value>30568ebe-6351-4e74-9502-71b136387142</sv:value>
+					</sv:property>
+					<sv:node sv:name="Land Rover LR2">
+						<sv:property sv:name="jcr:primaryType" sv:type="Name">
+							<sv:value>car:Car</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+							<sv:value>mix:referenceable</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:uuid" sv:type="String">
+							<sv:value>df508fe2-439b-481c-9d29-4d7463471683</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:year" sv:type="String">
+							<sv:value>2008</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:msrp" sv:type="String">
+							<sv:value>$33,985</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgHighway" sv:type="Long">
+							<sv:value>23</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:model" sv:type="String">
+							<sv:value>LR2</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:maker" sv:type="String">
+							<sv:value>Land Rover</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:valueRating" sv:type="Long">
+							<sv:value>5</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgCity" sv:type="Long">
+							<sv:value>16</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:userRating" sv:type="Long">
+							<sv:value>4</sv:value>
+						</sv:property>
+					</sv:node>
+					<sv:node sv:name="Land Rover LR3">
+						<sv:property sv:name="jcr:primaryType" sv:type="Name">
+							<sv:value>car:Car</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+							<sv:value>mix:referenceable</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:uuid" sv:type="String">
+							<sv:value>745a0fa0-c8fb-4920-813f-7f677cb0149e</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:year" sv:type="String">
+							<sv:value>2008</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:msrp" sv:type="String">
+							<sv:value>$48,525</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgHighway" sv:type="Long">
+							<sv:value>17</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:model" sv:type="String">
+							<sv:value>LR3</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:maker" sv:type="String">
+							<sv:value>Land Rover</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:valueRating" sv:type="Long">
+							<sv:value>2</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgCity" sv:type="Long">
+							<sv:value>12</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:userRating" sv:type="Long">
+							<sv:value>5</sv:value>
+						</sv:property>
+					</sv:node>
+					<sv:node sv:name="Hummer H3">
+						<sv:property sv:name="jcr:primaryType" sv:type="Name">
+							<sv:value>car:Car</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+							<sv:value>mix:referenceable</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:uuid" sv:type="String">
+							<sv:value>b7b00901-abbf-4fab-8487-34f3d85f8d61</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:year" sv:type="String">
+							<sv:value>2008</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:msrp" sv:type="String">
+							<sv:value>$30,595</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgHighway" sv:type="Long">
+							<sv:value>16</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:model" sv:type="String">
+							<sv:value>H3</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:maker" sv:type="String">
+							<sv:value>Hummer</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:valueRating" sv:type="Long">
+							<sv:value>4</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgCity" sv:type="Long">
+							<sv:value>13</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:userRating" sv:type="Long">
+							<sv:value>3</sv:value>
+						</sv:property>
+					</sv:node>
+					<sv:node sv:name="Ford F-150">
+						<sv:property sv:name="jcr:primaryType" sv:type="Name">
+							<sv:value>car:Car</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+							<sv:value>mix:referenceable</sv:value>
+						</sv:property>
+						<sv:property sv:name="jcr:uuid" sv:type="String">
+							<sv:value>aea99057-3454-435b-aea5-1253cee1efd4</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:year" sv:type="String">
+							<sv:value>2008</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:msrp" sv:type="String">
+							<sv:value>$23,910</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgHighway" sv:type="Long">
+							<sv:value>20</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:model" sv:type="String">
+							<sv:value>F-150</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:maker" sv:type="String">
+							<sv:value>Ford</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:valueRating" sv:type="Long">
+							<sv:value>1</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:mpgCity" sv:type="Long">
+							<sv:value>14</sv:value>
+						</sv:property>
+						<sv:property sv:name="car:userRating" sv:type="Long">
+							<sv:value>5</sv:value>
+						</sv:property>
+					</sv:node>
+				</sv:node>
+			</sv:node>
+		</sv:node>
+	</sv:node>
+	<sv:node sv:name="jcr:system">
+		<sv:property sv:name="jcr:primaryType" sv:type="Name">
+			<sv:value>mode:system</sv:value>
+		</sv:property>
+		<sv:node sv:name="jcr:versionStorage">
+			<sv:property sv:name="jcr:primaryType" sv:type="Name">
+				<sv:value>mode:versionStorage</sv:value>
+			</sv:property>
+		</sv:node>
+		<sv:node sv:name="mode:namespaces">
+			<sv:property sv:name="jcr:primaryType" sv:type="Name">
+				<sv:value>mode:namespaces</sv:value>
+			</sv:property>
+			<sv:node sv:name="modeint">
+				<sv:property sv:name="jcr:primaryType" sv:type="Name">
+					<sv:value>mode:namespace</sv:value>
+				</sv:property>
+				<sv:property sv:name="mode:uri" sv:type="String">
+					<sv:value>http://www.modeshape.org/internal/1.0</sv:value>
+				</sv:property>
+			</sv:node>
+			<sv:node sv:name="mode">
+				<sv:property sv:name="jcr:primaryType" sv:type="Name">
+					<sv:value>mode:namespace</sv:value>
+				</sv:property>
+				<sv:property sv:name="mode:uri" sv:type="String">
+					<sv:value>http://www.modeshape.org/1.0</sv:value>
+				</sv:property>
+			</sv:node>
+			<sv:node sv:name="jcr">
+				<sv:property sv:name="jcr:primaryType" sv:type="Name">
+					<sv:value>mode:namespace</sv:value>
+				</sv:property>
+				<sv:property sv:name="mode:uri" sv:type="String">
+					<sv:value>http://www.jcp.org/jcr/1.0</sv:value>
+				</sv:property>
+			</sv:node>
+			<sv:node sv:name="mix">
+				<sv:property sv:name="jcr:primaryType" sv:type="Name">
+					<sv:value>mode:namespace</sv:value>
+				</sv:property>
+				<sv:property sv:name="mode:uri" sv:type="String">
+					<sv:value>http://www.jcp.org/jcr/mix/1.0</sv:value>
+				</sv:property>
+			</sv:node>
+			<sv:node sv:name="car">
+				<sv:property sv:name="jcr:primaryType" sv:type="Name">
+					<sv:value>mode:namespace</sv:value>
+				</sv:property>
+				<sv:property sv:name="mode:uri" sv:type="String">
+					<sv:value>http://www.modeshape.org/examples/cars/1.0</sv:value>
+				</sv:property>
+			</sv:node>
+			<sv:node sv:name="nt">
+				<sv:property sv:name="jcr:primaryType" sv:type="Name">
+					<sv:value>mode:namespace</sv:value>
+				</sv:property>
+				<sv:property sv:name="mode:uri" sv:type="String">
+					<sv:value>http://www.jcp.org/jcr/nt/1.0</sv:value>
+				</sv:property>
+			</sv:node>
+			<sv:node sv:name="xsd">
+				<sv:property sv:name="jcr:primaryType" sv:type="Name">
+					<sv:value>mode:namespace</sv:value>
+				</sv:property>
+				<sv:property sv:name="mode:uri" sv:type="String">
+					<sv:value>http://www.w3.org/2001/XMLSchema</sv:value>
+				</sv:property>
+			</sv:node>
+			<sv:node sv:name="sv">
+				<sv:property sv:name="jcr:primaryType" sv:type="Name">
+					<sv:value>mode:namespace</sv:value>
+				</sv:property>
+				<sv:property sv:name="mode:uri" sv:type="String">
+					<sv:value>http://www.jcp.org/jcr/sv/1.0</sv:value>
+				</sv:property>
+			</sv:node>
+			<sv:node sv:name="xml">
+				<sv:property sv:name="jcr:primaryType" sv:type="Name">
+					<sv:value>mode:namespace</sv:value>
+				</sv:property>
+				<sv:property sv:name="mode:uri" sv:type="String">
+					<sv:value>http://www.w3.org/XML/1998/namespace</sv:value>
+				</sv:property>
+			</sv:node>
+			<sv:node sv:name="xmlns">
+				<sv:property sv:name="jcr:primaryType" sv:type="Name">
+					<sv:value>mode:namespace</sv:value>
+				</sv:property>
+				<sv:property sv:name="mode:uri" sv:type="String">
+					<sv:value>http://www.w3.org/2000/xmlns/</sv:value>
+				</sv:property>
+			</sv:node>
+			<sv:node sv:name="xsi">
+				<sv:property sv:name="jcr:primaryType" sv:type="Name">
+					<sv:value>mode:namespace</sv:value>
+				</sv:property>
+				<sv:property sv:name="mode:uri" sv:type="String">
+					<sv:value>http://www.w3.org/2001/XMLSchema-instance</sv:value>
+				</sv:property>
+			</sv:node>
+		</sv:node>
+		<sv:node sv:name="mode:locks">
+			<sv:property sv:name="jcr:primaryType" sv:type="Name">
+				<sv:value>mode:locks</sv:value>
+			</sv:property>
+		</sv:node>
+	</sv:node>
+</sv:node>

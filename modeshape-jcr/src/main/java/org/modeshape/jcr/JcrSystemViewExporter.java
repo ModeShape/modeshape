@@ -87,14 +87,41 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
                             ContentHandler contentHandler,
                             boolean skipBinary,
                             boolean noRecurse ) throws RepositoryException, SAXException {
+        exportNode(node, contentHandler, skipBinary, noRecurse, node.getDepth() == 0);
+    }
+
+    /**
+     * Exports <code>node</code> (or the subtree rooted at <code>node</code>) into an XML document by invoking SAX events on
+     * <code>contentHandler</code>.
+     * 
+     * @param node the node which should be exported. If <code>noRecursion</code> was set to <code>false</code> in the
+     *        constructor, the entire subtree rooted at <code>node</code> will be exported.
+     * @param contentHandler the SAX content handler for which SAX events will be invoked as the XML document is created.
+     * @param skipBinary if <code>true</code>, indicates that binary properties should not be exported
+     * @param noRecurse if<code>true</code>, indicates that only the given node should be exported, otherwise a recursive export
+     *        and not any of its child nodes.
+     * @param isRoot true if the supplied node is the root node (supplied as an efficiency)
+     * @throws SAXException if an exception occurs during generation of the XML document
+     * @throws RepositoryException if an exception occurs accessing the content repository
+     */
+    protected void exportNode( Node node,
+                               ContentHandler contentHandler,
+                               boolean skipBinary,
+                               boolean noRecurse,
+                               boolean isRoot ) throws RepositoryException, SAXException {
 
         // start the sv:node element for this JCR node
         AttributesImpl atts = new AttributesImpl();
+        String nodeName = node.getName();
+        if (isRoot && node.getDepth() == 0) {
+            // This is the root node ...
+            nodeName = "jcr:root";
+        }
         atts.addAttribute(JcrSvLexicon.NAME.getNamespaceUri(),
                           JcrSvLexicon.NAME.getLocalName(),
                           getPrefixedName(JcrSvLexicon.NAME),
                           PropertyType.nameFromValue(PropertyType.STRING),
-                          node.getName());
+                          nodeName);
 
         startElement(contentHandler, JcrSvLexicon.NODE, atts);
 
@@ -115,7 +142,7 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
         if (!noRecurse) {
             NodeIterator nodes = node.getNodes();
             while (nodes.hasNext()) {
-                exportNode(nodes.nextNode(), contentHandler, skipBinary, noRecurse);
+                exportNode(nodes.nextNode(), contentHandler, skipBinary, noRecurse, false);
             }
         }
 
