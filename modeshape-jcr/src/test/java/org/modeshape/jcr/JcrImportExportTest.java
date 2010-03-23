@@ -31,6 +31,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -427,6 +428,21 @@ public class JcrImportExportTest {
     // Import System View WITH 'jcr:root' node and WITH uuids
     // ----------------------------------------------------------------------------------------------------------------
 
+    @Test
+    public void shouldImportDocumentView() throws Exception {
+        // Set up the repository ...
+        assertImport("io/full-workspace-document-view-with-uuids.xml", "/", ImportBehavior.THROW); // no matching UUIDs expected
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNoNode("/a/b/Cars[2]");
+        assertNoNode("/a/b/Cars/Hybrid[2]");
+        assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
+        assertNoNode("/a/b/Cars/Sports[2]");
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Utilities
     // ----------------------------------------------------------------------------------------------------------------
@@ -618,6 +634,17 @@ public class JcrImportExportTest {
         boolean noRecurse = false;
         session.exportSystemView(pathToParent, ostream, skipBinary, noRecurse);
         return tmp;
+    }
+
+    protected void exportDocumentView( String pathToParent,
+                                       OutputStream ostream ) throws RepositoryException, IOException {
+        boolean skipBinary = false;
+        boolean noRecurse = false;
+        try {
+            session.exportDocumentView(pathToParent, ostream, skipBinary, noRecurse);
+        } finally {
+            ostream.close();
+        }
     }
 
     protected static URI resourceUri( String name ) throws URISyntaxException {

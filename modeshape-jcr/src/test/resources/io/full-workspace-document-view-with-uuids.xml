@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:car="http://www.modeshape.org/examples/cars/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:sv="http://www.jcp.org/jcr/sv/1.0" xmlns:mix="http://www.jcp.org/jcr/mix/1.0" xmlns:modeint="http://www.modeshape.org/internal/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mode="http://www.modeshape.org/1.0" jcr:primaryType="mode:root" jcr:uuid="0d0566db-1b07-499b-85cb-f21426b32a6f">
+	<a jcr:primaryType="nt:unstructured" jcr:uuid="fba275bf-a822-4fce-bb2a-2da96a833b21" jcr:mixinTypes="mix:referenceable">
+		<b jcr:primaryType="nt:unstructured" jcr:uuid="446561b5-fc94-475c-bb29-0ad1ebdeeccf" jcr:mixinTypes="mix:referenceable">
+			<Cars jcr:primaryType="nt:unstructured" jcr:uuid="e41075cb-a09a-4910-87b1-90ce8b4ca9dd" jcr:mixinTypes="mix:referenceable">
+				<Hybrid jcr:primaryType="nt:unstructured" jcr:uuid="7e999653-e558-4131-8889-af1e16872f4d" jcr:mixinTypes="mix:referenceable">
+					<Toyota_x0020_Prius jcr:primaryType="car:Car" car:year="2008" car:msrp="$21,500" car:mpgHighway="45" jcr:uuid="e92eddc1-d33a-4bd4-ae36-fe0a761b8d89" car:model="Prius" car:valueRating="5" car:maker="Toyota" car:mpgCity="48" jcr:mixinTypes="mix:referenceable" car:userRating="4"/>
+					<Toyota_x0020_Highlander jcr:primaryType="car:Car" car:year="2008" car:msrp="$34,200" car:mpgHighway="25" jcr:uuid="f6348fbe-a0ba-43c4-9ae5-3faff5c0f6ec" car:model="Highlander" car:valueRating="5" car:maker="Toyota" car:mpgCity="27" jcr:mixinTypes="mix:referenceable" car:userRating="4"/>
+					<Nissan_x0020_Altima jcr:primaryType="car:Car" car:maker="Nissan" car:mpgCity="23" car:year="2008" car:msrp="$18,260" car:mpgHighway="32" jcr:uuid="b79bd26a-3556-4c40-9c6a-bdcbecae7677" jcr:mixinTypes="mix:referenceable" car:model="Altima"/>
+				</Hybrid>
+				<Sports jcr:primaryType="nt:unstructured" jcr:uuid="9145c396-e6d2-46d7-a5c3-654b4094f762" jcr:mixinTypes="mix:referenceable">
+					<Aston_x0020_Martin_x0020_DB9 jcr:primaryType="car:Car" car:engine="5,935_x0020_cc_x0020_5.9_x0020_liters_x0020_V_x0020_12" car:year="2008" car:wheelbaseInInches="108.0" car:msrp="$171,600" car:mpgHighway="19" jcr:uuid="6b595b19-7e89-4df5-954e-b2440b242403" car:model="DB9" car:maker="Aston_x0020_Martin" car:mpgCity="12" jcr:mixinTypes="mix:referenceable" car:userRating="5" car:lengthInInches="185.5"/>
+					<Infiniti_x0020_G37 jcr:primaryType="car:Car" car:year="2008" car:msrp="$34,900" car:mpgHighway="24" jcr:uuid="24807d85-6789-48f4-9e67-41c59d7d3fae" car:model="G37" car:valueRating="4" car:maker="Infiniti" car:mpgCity="18" jcr:mixinTypes="mix:referenceable" car:userRating="3"/>
+				</Sports>
+				<Luxury jcr:primaryType="nt:unstructured" jcr:uuid="f96fe720-49a9-4bf2-9bc4-39a0dd90e374" jcr:mixinTypes="mix:referenceable">
+					<Cadillac_x0020_DTS jcr:primaryType="car:Car" car:maker="Cadillac" car:engine="3.6_x0020_liter_x0020_V6" car:year="2008" jcr:uuid="c91ed7ba-39c5-4fcd-854c-8efbb1567b95" jcr:mixinTypes="mix:referenceable" car:userRating="1" car:model="DTS"/>
+					<Bentley_x0020_Continental jcr:primaryType="car:Car" car:maker="Bentley" car:mpgCity="10" car:year="2008" car:msrp="$170,990" car:mpgHighway="17" jcr:uuid="baa8ad28-6707-4342-9314-bb82dd9067a9" jcr:mixinTypes="mix:referenceable" car:model="Continental"/>
+					<Lexus_x0020_IS350 jcr:primaryType="car:Car" car:year="2008" car:msrp="$36,305" car:mpgHighway="25" jcr:uuid="7c513b8e-e77e-40f2-bf4d-147419037a75" car:model="IS350" car:valueRating="5" car:maker="Lexus" car:mpgCity="18" jcr:mixinTypes="mix:referenceable" car:userRating="4"/>
+				</Luxury>
+				<Utility jcr:primaryType="nt:unstructured" jcr:uuid="30568ebe-6351-4e74-9502-71b136387142" jcr:mixinTypes="mix:referenceable">
+					<Land_x0020_Rover_x0020_LR2 jcr:primaryType="car:Car" car:year="2008" car:msrp="$33,985" car:mpgHighway="23" jcr:uuid="df508fe2-439b-481c-9d29-4d7463471683" car:model="LR2" car:valueRating="5" car:maker="Land_x0020_Rover" car:mpgCity="16" jcr:mixinTypes="mix:referenceable" car:userRating="4"/>
+					<Land_x0020_Rover_x0020_LR3 jcr:primaryType="car:Car" car:year="2008" car:msrp="$48,525" car:mpgHighway="17" jcr:uuid="745a0fa0-c8fb-4920-813f-7f677cb0149e" car:model="LR3" car:valueRating="2" car:maker="Land_x0020_Rover" car:mpgCity="12" jcr:mixinTypes="mix:referenceable" car:userRating="5"/>
+					<Hummer_x0020_H3 jcr:primaryType="car:Car" car:year="2008" car:msrp="$30,595" car:mpgHighway="16" jcr:uuid="b7b00901-abbf-4fab-8487-34f3d85f8d61" car:model="H3" car:valueRating="4" car:maker="Hummer" car:mpgCity="13" jcr:mixinTypes="mix:referenceable" car:userRating="3"/>
+					<Ford_x0020_F-150 jcr:primaryType="car:Car" car:year="2008" car:msrp="$23,910" car:mpgHighway="20" jcr:uuid="aea99057-3454-435b-aea5-1253cee1efd4" car:model="F-150" car:valueRating="1" car:maker="Ford" car:mpgCity="14" jcr:mixinTypes="mix:referenceable" car:userRating="5"/>
+				</Utility>
+			</Cars>
+		</b>
+	</a>
+	<jcr:system jcr:primaryType="mode:system">
+		<jcr:versionStorage jcr:primaryType="mode:versionStorage"/>
+		<mode:namespaces jcr:primaryType="mode:namespaces">
+			<modeint jcr:primaryType="mode:namespace" mode:uri="http://www.modeshape.org/internal/1.0"/>
+			<mode jcr:primaryType="mode:namespace" mode:uri="http://www.modeshape.org/1.0"/>
+			<jcr jcr:primaryType="mode:namespace" mode:uri="http://www.jcp.org/jcr/1.0"/>
+			<mix jcr:primaryType="mode:namespace" mode:uri="http://www.jcp.org/jcr/mix/1.0"/>
+			<car jcr:primaryType="mode:namespace" mode:uri="http://www.modeshape.org/examples/cars/1.0"/>
+			<nt jcr:primaryType="mode:namespace" mode:uri="http://www.jcp.org/jcr/nt/1.0"/>
+			<xsd jcr:primaryType="mode:namespace" mode:uri="http://www.w3.org/2001/XMLSchema"/>
+			<sv jcr:primaryType="mode:namespace" mode:uri="http://www.jcp.org/jcr/sv/1.0"/>
+			<xml jcr:primaryType="mode:namespace" mode:uri="http://www.w3.org/XML/1998/namespace"/>
+			<xmlns jcr:primaryType="mode:namespace" mode:uri="http://www.w3.org/2000/xmlns/"/>
+			<xsi jcr:primaryType="mode:namespace" mode:uri="http://www.w3.org/2001/XMLSchema-instance"/>
+		</mode:namespaces>
+		<mode:locks jcr:primaryType="mode:locks"/>
+	</jcr:system>
+</jcr:root>

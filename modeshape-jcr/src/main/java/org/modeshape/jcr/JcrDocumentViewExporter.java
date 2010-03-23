@@ -86,101 +86,107 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                             boolean noRecurse ) throws RepositoryException, SAXException {
         ExecutionContext executionContext = session.getExecutionContext();
 
-        // If this node is a special xmltext node, output it as raw content (see JCR 1.0 spec - section 6.4.2.3
-        if (node.getParent() != null && isXmlTextNode(node)) {
-
+        // If this node is a special xmltext node, output it as raw content (see JCR 1.0 spec - section 6.4.2.3)
+        if (node.getDepth() > 0 && isXmlTextNode(node)) {
             String xmlCharacters = getXmlCharacters(node);
             contentHandler.characters(xmlCharacters.toCharArray(), 0, xmlCharacters.length());
-
             return;
         }
 
-        ValueFactories valueFactories = executionContext.getValueFactories();
+        // Build the attributes for this node's element, but add the primary type first ...
         AttributesImpl atts = new AttributesImpl();
+        Property primaryType = ((AbstractJcrNode)node).getProperty(JcrLexicon.PRIMARY_TYPE);
+        if (primaryType != null) {
+            addAttribute(atts, primaryType, skipBinary, false);
+        }
 
-        // Build the attributes for this node's element
+        // And add the remaining properties next ...
         PropertyIterator properties = node.getProperties();
         while (properties.hasNext()) {
             Property prop = properties.nextProperty();
-
-            Name propName = ((AbstractJcrProperty)prop).name();
-
-            String localPropName = getPrefixedName(propName);
-
-            if (skipBinary && PropertyType.BINARY == prop.getType()) {
-                atts.addAttribute(propName.getNamespaceUri(),
-                                  propName.getLocalName(),
-                                  localPropName,
-                                  PropertyType.nameFromValue(prop.getType()),
-                                  "");
-                continue;
-            }
-
-            Value value;
-            if (prop instanceof JcrSingleValueProperty) {
-                value = prop.getValue();
-            } else {
-                // Only output the first value of the multi-valued property. This is acceptable as per JCR 1.0 Spec - section
-                // 6.4.2.5
-                value = prop.getValues()[0];
-            }
-
-            String valueAsString;
-            if (PropertyType.BINARY == prop.getType()) {
-                StringBuffer buff = new StringBuffer(ENCODE_BUFFER_SIZE);
-                try {
-                    Base64.InputStream is = new Base64.InputStream(value.getStream(), Base64.ENCODE);
-
-                    byte[] bytes = new byte[ENCODE_BUFFER_SIZE];
-                    int len;
-                    while (-1 != (len = is.read(bytes, 0, ENCODE_BUFFER_SIZE))) {
-                        buff.append(new String(bytes, 0, len));
-                    }
-                } catch (IOException ioe) {
-                    throw new RepositoryException(ioe);
-                }
-                valueAsString = buff.toString();
-            } else {
-                valueAsString = VALUE_ENCODER.encode(value.getString());
-            }
-
-            atts.addAttribute(propName.getNamespaceUri(),
-                              propName.getLocalName(),
-                              localPropName,
-                              PropertyType.nameFromValue(prop.getType()),
-                              valueAsString);
+            addAttribute(atts, prop, skipBinary, true);
         }
 
-        Name name;
-
         // Special case to stub in name for root node as per JCR 1.0 Spec - 6.4.2.2
-        if ("/".equals(node.getPath())) {
+        Name name = null;
+        ValueFactories valueFactories = executionContext.getValueFactories();
+        if (node.getDepth() == 0) {
             name = JcrLexicon.ROOT;
         } else {
             name = valueFactories.getNameFactory().create(node.getName());
         }
 
+        // Write out the element ...
         startElement(contentHandler, name, atts);
-
         if (!noRecurse) {
             NodeIterator nodes = node.getNodes();
             while (nodes.hasNext()) {
                 exportNode(nodes.nextNode(), contentHandler, skipBinary, noRecurse);
             }
         }
-
         endElement(contentHandler, name);
+    }
 
+    protected void addAttribute( AttributesImpl atts,
+                                 Property prop,
+                                 boolean skipBinary,
+                                 boolean skipPrimaryType ) throws RepositoryException {
+
+        Name propName = ((AbstractJcrProperty)prop).name();
+        if (skipPrimaryType && JcrLexicon.PRIMARY_TYPE.equals(propName)) return;
+
+        String localPropName = getPrefixedName(propName);
+
+        if (skipBinary && PropertyType.BINARY == prop.getType()) {
+            atts.addAttribute(propName.getNamespaceUri(),
+                              propName.getLocalName(),
+                              localPropName,
+                              PropertyType.nameFromValue(prop.getType()),
+                              "");
+            return;
+        }
+
+        Value value;
+        if (prop instanceof JcrSingleValueProperty) {
+            value = prop.getValue();
+        } else {
+            // Only output the first value of the multi-valued property.
+            // This is acceptable as per JCR 1.0 Spec (section 6.4.2.5)
+            value = prop.getValues()[0];
+        }
+
+        String valueAsString;
+        if (PropertyType.BINARY == prop.getType()) {
+            StringBuffer buff = new StringBuffer(ENCODE_BUFFER_SIZE);
+            try {
+                Base64.InputStream is = new Base64.InputStream(value.getStream(), Base64.ENCODE);
+
+                byte[] bytes = new byte[ENCODE_BUFFER_SIZE];
+                int len;
+                while (-1 != (len = is.read(bytes, 0, ENCODE_BUFFER_SIZE))) {
+                    buff.append(new String(bytes, 0, len));
+                }
+            } catch (IOException ioe) {
+                throw new RepositoryException(ioe);
+            }
+            valueAsString = buff.toString();
+        } else {
+            valueAsString = VALUE_ENCODER.encode(value.getString());
+        }
+
+        atts.addAttribute(propName.getNamespaceUri(),
+                          propName.getLocalName(),
+                          localPropName,
+                          PropertyType.nameFromValue(prop.getType()),
+                          valueAsString);
     }
 
     /**
      * Indicates whether the current node is an XML text node as per section 6.4.2.3 of the JCR 1.0 specification. XML text nodes
      * are nodes that have the name &quot;jcr:xmltext&quot; and only one property (besides the mandatory
      * &quot;jcr:primaryType&quot;). The property must have a property name of &quot;jcr:xmlcharacters&quot;, a type of
-     * <code>String</code>, and does not have multiple values.
-     * <p/>
-     * In practice, this is handled in ModeShape by making XML text nodes have a type of &quot;dna:xmltext&quot;, which enforces these
-     * property characteristics.
+     * <code>String</code>, and does not have multiple values. <p/> In practice, this is handled in ModeShape by making XML text
+     * nodes have a type of &quot;dna:xmltext&quot;, which enforces these property characteristics.
      * 
      * @param node the node to test
      * @return whether this node is a special xml text node
