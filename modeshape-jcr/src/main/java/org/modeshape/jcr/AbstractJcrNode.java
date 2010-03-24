@@ -509,7 +509,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         // Execute a query that will report all nodes referencing this node ...
         String uuid = getUUID();
         QueryBuilder builder = new QueryBuilder(context().getValueFactories().getTypeSystem());
-        QueryCommand query = builder.select("jcr:primaryType").fromAllNodesAs("allNodes").where().referenceValue("allNodes").isEqualTo(uuid).end().limit(maxNumberOfNodes).query();
+        QueryCommand query = builder.select("jcr:primaryType")
+                                    .fromAllNodesAs("allNodes")
+                                    .where()
+                                    .referenceValue("allNodes")
+                                    .isEqualTo(uuid)
+                                    .end()
+                                    .limit(maxNumberOfNodes)
+                                    .query();
         Query jcrQuery = session().workspace().queryManager().createQuery(query);
         QueryResult result = jcrQuery.execute();
         return result.getNodes();
@@ -1476,13 +1483,20 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         Path versionPath = pathFactory.create(historyPath, nameFrom(NODE_ENCODER.encode(now.getString())));
         AbstractJcrProperty predecessorsProp = getProperty(JcrLexicon.PREDECESSORS);
 
-        systemBatch.create(versionPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION).and(JcrLexicon.CREATED, now).and(JcrLexicon.UUID,
-                                                                                                                             versionUuid).and(predecessorsProp.property()).and();
+        systemBatch.create(versionPath)
+                   .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION)
+                   .and(JcrLexicon.CREATED, now)
+                   .and(JcrLexicon.UUID, versionUuid)
+                   .and(predecessorsProp.property())
+                   .and();
         Path frozenVersionPath = pathFactory.create(versionPath, JcrLexicon.FROZEN_NODE);
-        systemBatch.create(frozenVersionPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE).and(JcrLexicon.FROZEN_UUID,
-                                                                                                          jcrUuid).and(JcrLexicon.FROZEN_PRIMARY_TYPE,
-                                                                                                                       primaryTypeName).and(JcrLexicon.FROZEN_MIXIN_TYPES,
-                                                                                                                                            mixinTypeNames).and(versionedPropertiesFor(this)).and();
+        systemBatch.create(frozenVersionPath)
+                   .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE)
+                   .and(JcrLexicon.FROZEN_UUID, jcrUuid)
+                   .and(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName)
+                   .and(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames)
+                   .and(versionedPropertiesFor(this))
+                   .and();
 
         int onParentVersion = getDefinition().getOnParentVersion();
         for (NodeIterator childNodes = this.getNodes(); childNodes.hasNext();) {
@@ -1496,7 +1510,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         for (Object ob : predecessorsProp.property()) {
             UUID predUuid = uuidFactory.create(ob);
 
-            org.modeshape.graph.property.Property successorsProp = systemGraph.getNodeAt(predUuid).getProperty(JcrLexicon.SUCCESSORS);
+            org.modeshape.graph.property.Property successorsProp = systemGraph.getNodeAt(predUuid)
+                                                                              .getProperty(JcrLexicon.SUCCESSORS);
 
             List<Object> newSuccessors = new LinkedList<Object>();
             if (successorsProp != null) {
@@ -1543,24 +1558,29 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
         switch (onParentVersionAction) {
             case OnParentVersionAction.ABORT:
-                throw new VersionException(JcrI18n.cannotCheckinNodeWithAbortChildNode.text(node.getName(),
-                                                                                            node.getParent().getName()));
+                throw new VersionException(JcrI18n.cannotCheckinNodeWithAbortChildNode.text(node.getName(), node.getParent()
+                                                                                                                .getName()));
             case OnParentVersionAction.VERSION:
                 if (node.isNodeType(JcrMixLexicon.VERSIONABLE)) {
                     JcrVersionHistoryNode history = node.getVersionHistory();
                     UUID historyUuid = history.uuid();
-                    batch.create(childPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSIONED_CHILD).with(JcrLexicon.CHILD_VERSION_HISTORY,
-                                                                                                             historyUuid).and();
+                    batch.create(childPath)
+                         .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSIONED_CHILD)
+                         .with(JcrLexicon.CHILD_VERSION_HISTORY, historyUuid)
+                         .and();
 
                     break;
                 }
 
                 // Otherwise, treat it as a copy
             case OnParentVersionAction.COPY:
-                batch.create(childPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE).and(JcrLexicon.FROZEN_PRIMARY_TYPE,
-                                                                                                    primaryTypeName).and(JcrLexicon.FROZEN_MIXIN_TYPES,
-                                                                                                                         mixinTypeNames).and(JcrLexicon.FROZEN_UUID,
-                                                                                                                                             uuid).and(versionedPropertiesFor(node)).and();
+                batch.create(childPath)
+                     .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE)
+                     .and(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName)
+                     .and(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames)
+                     .and(JcrLexicon.FROZEN_UUID, uuid)
+                     .and(versionedPropertiesFor(node))
+                     .and();
                 break;
             case OnParentVersionAction.INITIALIZE:
             case OnParentVersionAction.COMPUTE:
@@ -1794,8 +1814,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             } else {
                 existingNode = cache.findJcrNode(null, actualPath);
                 if (!versionHistory.isSame(existingNode.getVersionHistory())) {
-                    throw new VersionException(JcrI18n.invalidVersion.text(version.getPath(),
-                                                                           existingNode.getVersionHistory().getPath()));
+                    throw new VersionException(JcrI18n.invalidVersion.text(version.getPath(), existingNode.getVersionHistory()
+                                                                                                          .getPath()));
                 }
             }
         } catch (PathNotFoundException pnfe) {
@@ -2106,8 +2126,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (destChildRelPath != null) {
             Path destPath = pathFactory.create(destChildRelPath);
             if (destPath.isAbsolute() || destPath.size() != 1) {
-                throw new ItemNotFoundException(
-                                                JcrI18n.pathNotFound.text(destPath.getString(cache.context().getNamespaceRegistry()),
+                throw new ItemNotFoundException(JcrI18n.pathNotFound.text(destPath.getString(cache.context()
+                                                                                                  .getNamespaceRegistry()),
                                                                           cache.session().workspace().getName()));
             }
 
@@ -2197,7 +2217,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Item#save()
      */
     public void save() throws RepositoryException {
-        session().checkReferentialIntegrityOfChanges();
+        session().checkReferentialIntegrityOfChanges(this);
         cache.save(nodeId, location.getPath());
     }
 

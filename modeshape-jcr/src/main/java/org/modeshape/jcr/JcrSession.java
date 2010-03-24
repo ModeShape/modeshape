@@ -404,7 +404,8 @@ class JcrSession implements Session {
         boolean hasPermission = true;
         for (String action : actions.split(",")) {
             if (ModeShapePermissions.READ.equals(action)) {
-                hasPermission &= hasRole(ModeShapeRoles.READONLY, workspaceName) || hasRole(ModeShapeRoles.READWRITE, workspaceName)
+                hasPermission &= hasRole(ModeShapeRoles.READONLY, workspaceName)
+                                 || hasRole(ModeShapeRoles.READWRITE, workspaceName)
                                  || hasRole(ModeShapeRoles.ADMIN, workspaceName);
             } else if (ModeShapePermissions.REGISTER_NAMESPACE.equals(action)
                        || ModeShapePermissions.REGISTER_TYPE.equals(action) || ModeShapePermissions.UNLOCK_ANY.equals(action)) {
@@ -965,20 +966,35 @@ class JcrSession implements Session {
         return false;
     }
 
+    boolean wasRemovedInSession( UUID uuid ) {
+        if (removedReferenceableNodeUuids == null) return false;
+        return removedReferenceableNodeUuids.contains(uuid);
+
+    }
+
     /**
      * Determine whether there is at least one other node outside this branch that has a reference to nodes within the branch
      * rooted by this node.
      * 
+     * @param subgraphRoot the root of the subgraph under which the references should be checked, or null if the root node should
+     *        be used (meaning all references in the workspace should be checked)
      * @throws ReferentialIntegrityException if the changes would leave referential integrity problems
      * @throws RepositoryException if an error occurs while obtaining the information
      */
-    void checkReferentialIntegrityOfChanges() throws ReferentialIntegrityException, RepositoryException {
+    void checkReferentialIntegrityOfChanges( AbstractJcrNode subgraphRoot )
+        throws ReferentialIntegrityException, RepositoryException {
         if (removedNodes == null) return;
         if (removedReferenceableNodeUuids.isEmpty()) return;
 
         if (removedNodes.size() == 1 && removedNodes.iterator().next().getPath().isRoot()) {
             // The root node is being removed, so there will be no referencing nodes remaining ...
             return;
+        }
+
+        String subgraphPath = null;
+        if (subgraphRoot != null) {
+            subgraphPath = subgraphRoot.getPath();
+            if (subgraphRoot.getIndex() == Path.DEFAULT_INDEX) subgraphPath = subgraphPath + "[1]";
         }
 
         // Build one (or several) queries to find the first reference to any 'mix:referenceable' nodes
@@ -996,13 +1012,27 @@ class JcrSession implements Session {
             // Now issue a query to see if any nodes outside this branch references these referenceable nodes ...
             TypeSystem typeSystem = executionContext.getValueFactories().getTypeSystem();
             QueryBuilder builder = new QueryBuilder(typeSystem);
-            QueryCommand query = builder.select("jcr:primaryType")
-                                        .fromAllNodesAs("allNodes")
-                                        .where()
-                                        .referenceValue("allNodes")
-                                        .isIn(someUuidsInBranch)
-                                        .end()
-                                        .query();
+            QueryCommand query = null;
+            if (subgraphPath != null) {
+                query = builder.select("jcr:primaryType")
+                               .fromAllNodesAs("allNodes")
+                               .where()
+                               .referenceValue("allNodes")
+                               .isIn(someUuidsInBranch)
+                               .and()
+                               .path("allNodes")
+                               .isLike(subgraphPath + "%")
+                               .end()
+                               .query();
+            } else {
+                query = builder.select("jcr:primaryType")
+                               .fromAllNodesAs("allNodes")
+                               .where()
+                               .referenceValue("allNodes")
+                               .isIn(someUuidsInBranch)
+                               .end()
+                               .query();
+            }
             Query jcrQuery = workspace().queryManager().createQuery(query);
             // The nodes that have been (transiently) deleted will not appear in these results ...
             QueryResult result = jcrQuery.execute();
@@ -1021,7 +1051,7 @@ class JcrSession implements Session {
      * @see javax.jcr.Session#save()
      */
     public void save() throws RepositoryException {
-        checkReferentialIntegrityOfChanges();
+        checkReferentialIntegrityOfChanges(null);
         removedNodes = null;
         cache.save();
     }
