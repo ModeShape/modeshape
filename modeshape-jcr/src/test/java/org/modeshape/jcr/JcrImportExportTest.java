@@ -224,7 +224,7 @@ public class JcrImportExportTest {
         assertNoNode("/a/b/Cars/Sports[2]");
 
         // And attempt to reimport the same content (with UUIDs) into the repository that already has that content ...
-        print = true;
+        // print = true;
         assertImport("io/cars-system-view-with-uuids.xml", "/a/b", ImportBehavior.REPLACE_EXISTING);
         print();
 
@@ -257,7 +257,7 @@ public class JcrImportExportTest {
         assertNoNode("/a/b/Cars/Sports[2]");
 
         // And attempt to reimport the same content (with UUIDs) into the repository that already has that content ...
-        print = true;
+        // print = true;
         assertImport("io/cars-system-view-with-uuids.xml", "/a/b", ImportBehavior.CREATE_NEW);
         print();
 
@@ -290,7 +290,7 @@ public class JcrImportExportTest {
         assertNoNode("/a/b/Cars/Sports[2]");
 
         // And attempt to reimport the same content (with UUIDs) into the repository that already has that content ...
-        print = true;
+        // print = true;
         assertImport("io/cars-system-view-with-uuids.xml", "/a/b", ImportBehavior.REMOVE_EXISTING);
         print();
 
@@ -307,7 +307,7 @@ public class JcrImportExportTest {
         assertNoNode("/a/b/Cars/Sports[2]");
 
         // And attempt to reimport the same content (with UUIDs) into the repository that already has that content ...
-        print = true;
+        // print = true;
         assertImport("io/cars-system-view-with-uuids.xml", "/a/b", ImportBehavior.REPLACE_EXISTING);
         print();
 
@@ -340,7 +340,7 @@ public class JcrImportExportTest {
         assertNoNode("/a/b/Cars/Sports[2]");
 
         // And attempt to reimport the same content (with UUIDs) into the repository that already has that content ...
-        print = true;
+        // print = true;
         assertImport("io/cars-system-view-with-uuids.xml", "/a/c", ImportBehavior.REPLACE_EXISTING);
         print();
 
@@ -359,7 +359,7 @@ public class JcrImportExportTest {
         assertNoNode("/a/b/Cars/Sports[2]");
 
         // And attempt to reimport the same content (with UUIDs) into the repository that already has that content ...
-        print = true;
+        // print = true;
         assertImport("io/cars-system-view-with-uuids.xml", "/a/d", ImportBehavior.REMOVE_EXISTING);
         print();
 
@@ -394,7 +394,7 @@ public class JcrImportExportTest {
         assertNoNode("/a/b/Cars/Sports[2]");
 
         // And attempt to reimport the same content (with UUIDs) into the repository that already has that content ...
-        print = true;
+        // print = true;
         assertImport("io/cars-system-view-with-uuids.xml", "/a/c", ImportBehavior.THROW);
     }
 
