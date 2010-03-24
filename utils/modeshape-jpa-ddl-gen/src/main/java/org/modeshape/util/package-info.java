@@ -22,12 +22,9 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * The components and services that make up ModeShape's lower-level graph engine, which is used within its JCR Engine.
- * To use, first create a {@link ModeShapeConfiguration} to represent the desired
- * configuration, and then use the configuration to {@link ModeShapeConfiguration#build() build} a {@link ModeShapeEngine} instance.
- * This engine must be {@link ModeShapeEngine#start() started}, used to obtain {@link ModeShapeEngine#getGraph(String) graph} instances,
- * and then {@link ModeShapeEngine#shutdown() shutdown} when no longer needed.
+ * Some utilities that are useful for ModeShape, including the {@link SchemaGen DDL generator} 
+ * for the various kinds of databases used by the {@link org.modeshape.connector.store.jpa.JpaSource JPA connector}.
  */
 
-package org.modeshape.repository;
+package org.modeshape.util;
 

@@ -278,6 +278,7 @@
 									<descriptor>src/main/assembly/all-with-dependencies.xml</descriptor>
 									<descriptor>src/main/assembly/examples.xml</descriptor>
 									<descriptor>src/main/assembly/javadoc.xml</descriptor>
+									<descriptor>src/main/assembly/javadoc-public-api.xml</descriptor>
 									<descriptor>src/main/assembly/dist.xml</descriptor>
 									<descriptor>src/main/assembly/src.xml</descriptor>
 									<descriptor>src/main/assembly/all.xml</descriptor>
@@ -289,62 +290,121 @@
 			        <version>2.6.1</version>
 			        <executions>
 			          <execution>
-			            <id>javadoc</id>
+			            <id>javadoc-all</id>
 									<phase>prepare-package</phase>
 			            <goals>
 			              <goal>aggregate</goal>
 			            </goals>
+					        <configuration>
+					          <doclet>org.jboss.apiviz.APIviz</doclet>
+					          <docletArtifact>
+					            <groupId>org.jboss.apiviz</groupId>
+					            <artifactId>apiviz</artifactId>
+					            <version>1.3.0.GA</version>
+					          </docletArtifact>
+					          <attach>false</attach>
+										<!-- JBoss.org stylesheets (see http://community.jboss.org/docs/DOC-14764)-->
+					          <stylesheetfile>${basedir}/src/javadoc/stylesheet.css</stylesheetfile>
+					          <javadocDirectory>${basedir}/src/javadoc</javadocDirectory>
+					          <docfilessubdirs>true</docfilessubdirs>
+										<!-- end JBoss.org stylesheets -->
+					          <useStandardDocletOptions>true</useStandardDocletOptions>
+					          <outputDirectory>${project.build.directory}/api-full</outputDirectory>
+					          <reportOutputDirectory>${project.build.directory}/api-full</reportOutputDirectory>
+					          <destDir>api-full</destDir>
+					          <charset>UTF-8</charset>
+					          <docencoding>UTF-8</docencoding>
+					          <breakiterator>true</breakiterator>
+					          <version>true</version>
+					          <author>true</author>
+					          <keywords>true</keywords>
+					          <overview>${basedir}/src/javadoc/overview.html</overview>
+					          <doctitle>${project.name} Library Reference (${project.version})</doctitle>
+					          <windowtitle>${project.name} Library Reference (${project.version})</windowtitle>
+					          <maxmemory>1024m</maxmemory>
+					          <additionalparam>
+					            -link http://java.sun.com/javase/6/docs/api/
+					            -link http://java.sun.com/products/servlet/2.5/docs/servlet-2_5-mr2/
+					            -link http://www.slf4j.org/apidocs/
+											-link http://www.day.com/maven/javax.jcr/javadocs/jcr-1.0/
+
+					            -group "JCR engine" ${project.groupId}.jcr*
+					            -group "Graph API" ${project.groupId}.graph:${project.groupId}.graph.io*:${project.groupId}.graph.property*:${project.groupId}.graph.request*:${project.groupId}.graph.session*:${project.groupId}.graph.xml*:${project.groupId}.graph.observe
+					            -group "Query and Search" ${project.groupId}.graph.query*:${project.groupId}.graph.search*:${project.groupId}.search*
+					            -group "Connector SPI" ${project.groupId}.graph.cache*:${project.groupId}.graph.connector*
+					            -group "Sequencer SPI" ${project.groupId}.graph.sequencer*
+					            -group "MIME type detector SPI" ${project.groupId}.graph.mimetype*
+					            -group "Web services" ${project.groupId}.web*
+					            -group "Connectors" ${project.groupId}.graph.connector.inmemory:${project.groupId}.graph.connector.federation:${project.groupId}.connector*
+					            -group "Sequencers" ${project.groupId}.sequencer*
+					            -group "MIME type detectors" ${project.groupId}.mimetype*
+					            -group "Classloaders" ${project.groupId}.maven*
+
+					            -nopackagediagram
+					          </additionalparam>
+					          <encoding>UTF-8</encoding>
+					          <locale>en_US</locale>
+					          <excludePackageNames>${project.groupId}.test*:org.modeshape.example*</excludePackageNames>
+					        </configuration>
+			          </execution>
+			          <execution>
+			            <id>javadoc-api</id>
+									<phase>prepare-package</phase>
+			            <goals>
+			              <goal>aggregate</goal>
+			            </goals>
+					        <configuration>
+					          <doclet>org.jboss.apiviz.APIviz</doclet>
+					          <docletArtifact>
+					            <groupId>org.jboss.apiviz</groupId>
+					            <artifactId>apiviz</artifactId>
+					            <version>1.3.0.GA</version>
+					          </docletArtifact>
+					          <attach>false</attach>
+										<!-- JBoss.org stylesheets (see http://community.jboss.org/docs/DOC-14764)-->
+					          <stylesheetfile>${basedir}/src/javadoc/stylesheet.css</stylesheetfile>
+					          <javadocDirectory>${basedir}/src/javadoc</javadocDirectory>
+					          <docfilessubdirs>true</docfilessubdirs>
+										<!-- end JBoss.org stylesheets -->
+					          <useStandardDocletOptions>true</useStandardDocletOptions>
+					          <outputDirectory>${project.build.directory}/api</outputDirectory>
+					          <reportOutputDirectory>${project.build.directory}/api</reportOutputDirectory>
+					          <destDir>api</destDir>
+					          <charset>UTF-8</charset>
+					          <docencoding>UTF-8</docencoding>
+					          <breakiterator>true</breakiterator>
+					          <version>true</version>
+					          <author>true</author>
+					          <keywords>true</keywords>
+					          <overview>${basedir}/src/javadoc/overview.html</overview>
+					          <doctitle>${project.name} Public API Reference (${project.version})</doctitle>
+					          <windowtitle>${project.name} Public API Reference (${project.version})</windowtitle>
+					          <maxmemory>1024m</maxmemory>
+					          <additionalparam>
+					            -link http://java.sun.com/javase/6/docs/api/
+					            -link http://java.sun.com/products/servlet/2.5/docs/servlet-2_5-mr2/
+					            -link http://www.slf4j.org/apidocs/
+											-link http://www.day.com/maven/javax.jcr/javadocs/jcr-1.0/
+
+					            -group "JCR engine" ${project.groupId}.jcr:${project.groupId}.jcr.nodetype
+					            -group "Graph API" ${project.groupId}.graph:${project.groupId}.graph.io:${project.groupId}.graph.property:${project.groupId}.graph.request*:${project.groupId}.graph.session*:${project.groupId}.graph.xml*:${project.groupId}.graph.observe
+					            -group "Query and Search" ${project.groupId}.graph.query*:${project.groupId}.graph.search*
+					            -group "Connector SPI" ${project.groupId}.graph.cache*:${project.groupId}.graph.connector*
+					            -group "Sequencer SPI" ${project.groupId}.graph.sequencer
+					            -group "MIME type detector SPI" ${project.groupId}.graph.mimetype
+					            -group "RESTful web service client" ${project.groupId}.web.jcr.rest.client*
+					            -group "Connectors" ${project.groupId}.graph.connector.inmemory:${project.groupId}.graph.connector.federation:${project.groupId}.connector*
+					            -group "Sequencers" ${project.groupId}.sequencer*
+					            -group "MIME type detectors" ${project.groupId}.mimetype*
+
+					            -nopackagediagram
+					          </additionalparam>
+					          <encoding>UTF-8</encoding>
+					          <locale>en_US</locale>
+					          <excludePackageNames>${project.groupId}.test*:org.modeshape.example*:${project.groupId}.common.math:${project.groupId}.common.statistic:${project.groupId}.web.jcr.rest:${project.groupId}.web.jcr.rest.model:${project.groupId}.web.jcr.rest.spi:${project.groupId}.graph.property.basic:${project.groupId}.jcr.xpath:${project.groupId}.repository.*:${project.groupId}.search.lucene*:${project.groupId}.maven*</excludePackageNames>
+					        </configuration>
 			          </execution>
 			        </executions>
-			        <configuration>
-			          <doclet>org.jboss.apiviz.APIviz</doclet>
-			          <docletArtifact>
-			            <groupId>org.jboss.apiviz</groupId>
-			            <artifactId>apiviz</artifactId>
-			            <version>1.3.0.GA</version>
-			          </docletArtifact>
-			          <attach>false</attach>
-			          <!-- JBoss.org stylesheets (see http://community.jboss.org/docs/DOC-14764)-->
-			          <stylesheetfile>${basedir}/src/javadoc/stylesheet.css</stylesheetfile>
-			          <javadocDirectory>${basedir}/src/javadoc</javadocDirectory>
-			          <docfilessubdirs>true</docfilessubdirs>
-			          <!-- end JBoss.org stylesheets -->
-			          <useStandardDocletOptions>true</useStandardDocletOptions>
-			          <outputDirectory>${project.build.directory}/api</outputDirectory>
-			          <reportOutputDirectory>${project.build.directory}/api</reportOutputDirectory>
-			          <destDir>api</destDir>
-			          <charset>UTF-8</charset>
-			          <docencoding>UTF-8</docencoding>
-			          <breakiterator>true</breakiterator>
-			          <version>true</version>
-			          <author>true</author>
-			          <keywords>true</keywords>
-			          <overview>${basedir}/src/javadoc/overview.html</overview>
-			          <doctitle>${project.name} API Reference (${project.version})</doctitle>
-			          <windowtitle>${project.name} API Reference (${project.version})</windowtitle>
-			          <maxmemory>1024m</maxmemory>
-			          <additionalparam>
-			            -link http://java.sun.com/javase/6/docs/api/
-			            -link http://java.sun.com/products/servlet/2.5/docs/servlet-2_5-mr2/
-			            -link http://www.slf4j.org/apidocs/
-
-			            -group "JCR implementation" ${project.groupId}.jcr*:${project.groupId}.cnd*
-			            -group "Repository engine" ${project.groupId}.repository*
-			            -group "Graph API" ${project.groupId}.graph:${project.groupId}.graph.io*:${project.groupId}.graph.property*:${project.groupId}.graph.request*:${project.groupId}.graph.session*:${project.groupId}.graph.xml*
-			            -group "Query and Search" ${project.groupId}.graph.query*:${project.groupId}.graph.search*:${project.groupId}.search*
-			            -group "Connectors" ${project.groupId}.graph.cache*:${project.groupId}.graph.connector*:${project.groupId}.connector*
-			            -group "Observation" ${project.groupId}.graph.observation*
-			            -group "Sequencers" ${project.groupId}.graph.sequencer*:${project.groupId}.sequencer*
-			            -group "MIME type detectors" ${project.groupId}.graph.mimetype*:${project.groupId}.mimetype*
-			            -group "Web services" ${project.groupId}.web*
-			            -group "Common utilities" ${project.groupId}.common*
-
-			            -nopackagediagram
-			          </additionalparam>
-			          <encoding>UTF-8</encoding>
-			          <locale>en_US</locale>
-			          <excludePackageNames>${project.groupId}.test*:org.modeshape.example*</excludePackageNames>
-			        </configuration>
 			      </plugin>
 			      <plugin>
 			        <artifactId>maven-jxr-plugin</artifactId>

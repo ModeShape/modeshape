@@ -26,8 +26,8 @@
 		  <!--
 			Gather into the distribution the JavaDoc for all projects
 		  -->
-		  <directory>target/api-full</directory>
-		  <outputDirectory>api-full</outputDirectory>
+		  <directory>target/api</directory>
+		  <outputDirectory>api</outputDirectory>
 		</fileSet>
   </fileSets>
 </assembly>

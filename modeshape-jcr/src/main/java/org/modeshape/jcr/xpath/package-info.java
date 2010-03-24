@@ -22,12 +22,8 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * The components and services that make up ModeShape's lower-level graph engine, which is used within its JCR Engine.
- * To use, first create a {@link ModeShapeConfiguration} to represent the desired
- * configuration, and then use the configuration to {@link ModeShapeConfiguration#build() build} a {@link ModeShapeEngine} instance.
- * This engine must be {@link ModeShapeEngine#start() started}, used to obtain {@link ModeShapeEngine#getGraph(String) graph} instances,
- * and then {@link ModeShapeEngine#shutdown() shutdown} when no longer needed.
+ * The components used to parse JCR XPath queries and translate them into equivalent JCR-SQL2 queries.
  */
 
-package org.modeshape.repository;
+package org.modeshape.jcr.xpath;
 
