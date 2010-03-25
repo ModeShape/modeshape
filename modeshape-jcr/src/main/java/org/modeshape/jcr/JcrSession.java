@@ -30,6 +30,7 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -280,6 +281,13 @@ class JcrSession implements Session {
         Set<String> names = sessionAttributes.keySet();
         if (names.isEmpty()) return NO_ATTRIBUTES_NAMES;
         return names.toArray(new String[names.size()]);
+    }
+
+    /**
+     * @return a copy of the session attributes for this session
+     */
+    Map<String, Object> sessionAttributes() {
+        return new HashMap<String, Object>(sessionAttributes);
     }
 
     /**
@@ -571,7 +579,9 @@ class JcrSession implements Session {
      * @see javax.jcr.Session#getNodeByUUID(java.lang.String)
      */
     public AbstractJcrNode getNodeByUUID( String uuid ) throws ItemNotFoundException, RepositoryException {
-        return cache.findJcrNode(Location.create(UUID.fromString(uuid)));
+        AbstractJcrNode node = cache.findJcrNode(Location.create(UUID.fromString(uuid)));
+
+        return node;
     }
 
     /**
@@ -735,6 +745,18 @@ class JcrSession implements Session {
      */
     public Session impersonate( Credentials credentials ) throws RepositoryException {
         return repository.login(credentials, this.workspace.getName());
+    }
+
+    /**
+     * Returns a new {@link JcrSession session} that uses the same security information to create a session that points to the
+     * named workspace.
+     * 
+     * @param workspaceName the name of the workspace to connect to
+     * @return a new session that uses the named workspace
+     * @throws RepositoryException if an error occurs creating the session
+     */
+    JcrSession with( String workspaceName ) throws RepositoryException {
+        return repository.sessionForContext(executionContext, workspaceName, sessionAttributes);
     }
 
     /**

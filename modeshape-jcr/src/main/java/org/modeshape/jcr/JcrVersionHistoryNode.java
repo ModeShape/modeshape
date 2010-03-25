@@ -1,3 +1,26 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ * 
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
 package org.modeshape.jcr;
 
 import java.util.Collection;
@@ -47,17 +70,23 @@ public class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         return nodeInfo().getChild(segment).getPayload().getJcrNode();
     }
 
+    /**
+     * @{inheritDoc
+     */
     @Override
     public VersionIterator getAllVersions() throws RepositoryException {
         return new JcrVersionIterator(getNodes());
     }
 
+    /**
+     * @{inheritDoc
+     */
     @Override
     public Version getRootVersion() throws RepositoryException {
         // Copied from AbstractJcrNode.getNode(String) to avoid double conversion. Needs to be refactored.
         Segment segment = context().getValueFactories().getPathFactory().createSegment(JcrLexicon.ROOT_VERSION);
         try {
-            return new JcrVersionNode(nodeInfo().getChild(segment).getPayload().getJcrNode());
+            return (JcrVersionNode)nodeInfo().getChild(segment).getPayload().getJcrNode();
         } catch (org.modeshape.graph.property.PathNotFoundException e) {
             String msg = JcrI18n.childNotFoundUnderNode.text(segment, getPath(), cache.workspaceName());
             throw new PathNotFoundException(msg);
@@ -66,18 +95,24 @@ public class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         }
     }
 
+    /**
+     * @{inheritDoc
+     */
     @Override
     public JcrVersionNode getVersion( String versionName ) throws VersionException, RepositoryException {
         try {
             AbstractJcrNode version = getNode(versionName);
-            return new JcrVersionNode(version);
+            return (JcrVersionNode)version;
         } catch (PathNotFoundException pnfe) {
             throw new VersionException(JcrI18n.invalidVersionName.text(versionName, getPath()));
         }
     }
 
+    /**
+     * @{inheritDoc
+     */
     @Override
-    public Version getVersionByLabel( String label ) throws VersionException, RepositoryException {
+    public JcrVersionNode getVersionByLabel( String label ) throws VersionException, RepositoryException {
         Property prop = versionLabels().getProperty(label);
         if (prop == null) throw new VersionException(JcrI18n.invalidVersionLabel.text(label, getPath()));
 
@@ -85,9 +120,12 @@ public class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
 
         assert version != null;
 
-        return new JcrVersionNode(version);
+        return (JcrVersionNode)version;
     }
 
+    /**
+     * @{inheritDoc
+     */
     @Override
     public String[] getVersionLabels() throws RepositoryException {
         PropertyIterator iter = versionLabels().getProperties();
@@ -128,21 +166,33 @@ public class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         return labels;
     }
 
+    /**
+     * @{inheritDoc
+     */
     @Override
     public String[] getVersionLabels( Version version ) throws RepositoryException {
         return versionLabelsFor(version).toArray(EMPTY_STRING_ARRAY);
     }
 
+    /**
+     * @{inheritDoc
+     */
     @Override
     public String getVersionableUUID() throws RepositoryException {
         return getProperty(JcrLexicon.VERSIONABLE_UUID).getString();
     }
 
+    /**
+     * @{inheritDoc
+     */
     @Override
     public boolean hasVersionLabel( String label ) throws RepositoryException {
         return versionLabels().hasProperty(label);
     }
 
+    /**
+     * @{inheritDoc
+     */
     @Override
     public boolean hasVersionLabel( Version version,
                                     String label ) throws RepositoryException {
@@ -151,6 +201,9 @@ public class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         return labels.contains(label);
     }
 
+    /**
+     * @{inheritDoc
+     */
     @Override
     public void removeVersion( String versionName )
         throws ReferentialIntegrityException, AccessDeniedException, UnsupportedRepositoryOperationException, VersionException,
@@ -221,6 +274,9 @@ public class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         version.editor().destroy();
     }
 
+    /**
+     * @{inheritDoc
+     */
     @Override
     public void addVersionLabel( String versionName,
                                  String label,
@@ -245,6 +301,9 @@ public class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
 
     }
 
+    /**
+     * @{inheritDoc
+     */
     @Override
     public void removeVersionLabel( String label ) throws VersionException, RepositoryException {
         AbstractJcrNode versionLabels = versionLabels();
@@ -279,6 +338,9 @@ public class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             this.nodeIterator = nodeIterator;
         }
 
+        /**
+         * @{inheritDoc
+         */
         @Override
         public Version nextVersion() {
             Version next = this.next;
@@ -310,18 +372,24 @@ public class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
                 }
 
                 if (!JcrLexicon.VERSION_LABELS.equals(nodeName)) {
-                    return new JcrVersionNode(node);
+                    return (JcrVersionNode)node;
                 }
             }
 
             return null;
         }
 
+        /**
+         * @{inheritDoc
+         */
         @Override
         public long getPosition() {
             return position;
         }
 
+        /**
+         * @{inheritDoc
+         */
         @Override
         public long getSize() {
             // The number of version nodes is the number of child nodes of the version history - 1
@@ -329,6 +397,9 @@ public class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             return nodeIterator.getSize() - 1;
         }
 
+        /**
+         * @{inheritDoc
+         */
         @Override
         public void skip( long count ) {
             // Walk through the list to make sure that we don't accidentally count jcr:rootVersion or jcr:versionLabels as a
@@ -338,6 +409,9 @@ public class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             }
         }
 
+        /**
+         * @{inheritDoc
+         */
         @Override
         public boolean hasNext() {
             if (this.next != null) return true;
@@ -347,11 +421,17 @@ public class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             return this.next != null;
         }
 
+        /**
+         * @{inheritDoc
+         */
         @Override
         public Object next() {
             return nextVersion();
         }
 
+        /**
+         * @{inheritDoc
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();

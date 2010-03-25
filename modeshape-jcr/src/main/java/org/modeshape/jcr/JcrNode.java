@@ -104,7 +104,7 @@ class JcrNode extends AbstractJcrNode {
         if (parentNode.isLocked()) {
             Lock parentLock = parentNode.getLock();
             if (parentLock != null && parentLock.getLockToken() == null) {
-                throw new LockException();
+                throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
             }
         }
 

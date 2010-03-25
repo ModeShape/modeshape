@@ -25,6 +25,7 @@ package org.modeshape.graph.session;
 
 import java.security.AccessControlException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -788,6 +789,7 @@ public class GraphSession<Payload, PropertyPayload> {
             this.root.unload();
             return;
         }
+
         if (!root.isChanged(true)) {
             // Then a bunch of changes could have been made and rolled back manually, so recompute the change state ...
             root.recomputeChangedBelow();
@@ -3002,13 +3004,13 @@ public class GraphSession<Payload, PropertyPayload> {
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append(getName());
-            if (payload != null) sb.append(payload);
+            // if (payload != null) sb.append(payload);
             if (property.isSingle()) {
                 sb.append(" with value ");
             } else {
                 sb.append(" with values ");
             }
-            sb.append(property.getValuesAsArray());
+            sb.append(Arrays.asList(property.getValuesAsArray()));
             return sb.toString();
         }
     }

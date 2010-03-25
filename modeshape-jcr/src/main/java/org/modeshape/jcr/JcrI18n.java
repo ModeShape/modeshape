@@ -180,6 +180,7 @@ public final class JcrI18n {
     public static I18n nodeNotReferenceable;
     public static I18n nodeNotReferenceableUuid;
     public static I18n noPendingChangesAllowed;
+    public static I18n noPendingChangesAllowedForNode;
 
     public static I18n cannotUnregisterSupertype;
     public static I18n cannotUnregisterRequiredPrimaryType;
@@ -218,6 +219,9 @@ public final class JcrI18n {
     public static I18n cannotRestoreRootVersion;
     public static I18n cannotCheckinNodeWithAbortProperty;
     public static I18n cannotCheckinNodeWithAbortChildNode;
+    public static I18n noExistingVersionForRestore;
+    public static I18n versionNotInMergeFailed;
+    public static I18n unrootedVersionsInRestore;
 
     static {
         try {

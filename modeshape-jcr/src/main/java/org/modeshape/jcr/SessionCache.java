@@ -68,6 +68,7 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
+import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
@@ -989,7 +990,7 @@ class SessionCache {
                  */
                 boolean referencePropMissedConstraints = definition != null
                                                          && definition.getRequiredType() == PropertyType.REFERENCE
-                                                         && !definition.satisfiesConstraints(value);
+                                                         && !definition.canCastToTypeAndSatisfyConstraints(value);
                 if (definition == null || referencePropMissedConstraints) {
                     throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
                                                                                      readable(name),
@@ -1098,7 +1099,11 @@ class SessionCache {
             assert name != null;
             assert values != null;
 
-            if (!isCheckedOut()) {
+            /*
+             * Skip this check for protected nodes.  They can't be modified by users and, in some cases (e.g., jcr:isLocked),
+             * may be able to be modified for checked-in nodes.
+             */
+            if (!isCheckedOut() && skipProtected) {
                 String path = node.getLocation().getPath().getString(context().getNamespaceRegistry());
                 throw new VersionException(JcrI18n.nodeIsCheckedIn.text(path));
             }
@@ -1187,14 +1192,8 @@ class SessionCache {
                  */
                 boolean referencePropMissedConstraints = definition != null
                                                          && definition.getRequiredType() == PropertyType.REFERENCE
-                                                         && !definition.satisfiesConstraints(values);
+                                                         && !definition.canCastToTypeAndSatisfyConstraints(newValues);
                 if (definition == null || referencePropMissedConstraints) {
-                    definition = nodeTypes().findPropertyDefinition(payload.getPrimaryTypeName(),
-                                                                    payload.getMixinTypeNames(),
-                                                                    name,
-                                                                    newValues,
-                                                                    skipProtected);
-
                     throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
                                                                                      readable(name),
                                                                                      readable(node.getPath()),
@@ -2573,7 +2572,7 @@ class SessionCache {
 
             PropertyInfo<JcrPropertyPayload> jcrUuidProp = node.getProperty(JcrLexicon.UUID);
 
-            UUID jcrUuid = (UUID)jcrUuidProp.getProperty().getFirstValue();
+            UUID jcrUuid = factories().getUuidFactory().create(jcrUuidProp.getProperty().getFirstValue());
 
             Name nameSegment = factories().getNameFactory().create(jcrUuid.toString());
             Path historyPath = pathFactory().createAbsolutePath(JcrLexicon.SYSTEM, JcrLexicon.VERSION_STORAGE, nameSegment);
@@ -2614,13 +2613,16 @@ class SessionCache {
             systemBatch.execute();
 
             PropertyFactory propFactory = context().getPropertyFactory();
+            ValueFactory<Reference> refFactory = context().getValueFactories().getReferenceFactory();
             Property isCheckedOut = propFactory.create(JcrLexicon.IS_CHECKED_OUT, true);
-            Property versionHistory = propFactory.create(JcrLexicon.VERSION_HISTORY, historyUuid);
-            Property baseVersion = propFactory.create(JcrLexicon.BASE_VERSION, versionUuid);
-            Property predecessors = propFactory.create(JcrLexicon.PREDECESSORS, new Object[] {versionUuid});
+            Property versionHistory = propFactory.create(JcrLexicon.VERSION_HISTORY, refFactory.create(historyUuid));
+            Property baseVersion = propFactory.create(JcrLexicon.BASE_VERSION, refFactory.create(versionUuid));
+            Property predecessors = propFactory.create(JcrLexicon.PREDECESSORS, new Object[] {refFactory.create(versionUuid)});
 
             // This batch will get executed as part of the save
             batch.set(isCheckedOut, versionHistory, baseVersion, predecessors).on(node.getPath()).and();
+
+            System.out.println("Adding " + versionHistory + " to batch for " + node.getPath());
 
             Path storagePath = historyPath.getParent();
             Node<JcrNodePayload, JcrPropertyPayload> storageNode = findNode(null, storagePath);
@@ -2859,6 +2861,14 @@ class SessionCache {
                 }
                 jcrNode = new SoftReference<AbstractJcrNode>(node);
             }
+
+            if (JcrNtLexicon.VERSION.equals(primaryTypeName)) {
+                return new JcrVersionNode(jcrNode.get());
+            }
+            if (JcrNtLexicon.VERSION_HISTORY.equals(primaryTypeName)) {
+                return new JcrVersionHistoryNode(jcrNode.get());
+            }
+
             return jcrNode.get();
         }
 

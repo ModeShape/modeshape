@@ -917,7 +917,24 @@ public class JcrRepository implements Repository {
                 throw new javax.jcr.LoginException(error);
             }
         }
+        return sessionForContext(execContext, workspaceName, sessionAttributes);
+    }
 
+    /**
+     * Creates a new {@link JcrSession session} based on the given {@link ExecutionContext context} and its associated security
+     * context.
+     * 
+     * @param execContext the execution context to use for the new session; may not be null and must have a non-null
+     *        {@link ExecutionContext#getSecurityContext() security context}
+     * @param workspaceName the name of the workspace to connect to; null indicates that the default workspace should be used
+     * @param sessionAttributes the session attributes for this session; may not be null
+     * @return a valid session for the user to access the repository
+     * @throws RepositoryException if an error occurs creating the session
+     */
+    JcrSession sessionForContext( ExecutionContext execContext,
+                                  String workspaceName,
+                                  Map<String, Object> sessionAttributes ) throws RepositoryException {
+        CheckArg.isNotNull(execContext.getSecurityContext(), "execContext.securityContext");
         // Ensure valid workspace name by talking directly to the source ...
         boolean isDefault = false;
         Graph graph = Graph.create(sourceName, connectionFactory, executionContext);

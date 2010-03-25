@@ -128,6 +128,11 @@ class JcrWorkspace implements Workspace {
     private final JcrNodeTypeManager nodeTypeManager;
 
     /**
+     * Reference to the version manager for this workspace.
+     */
+    private final JcrVersionManager versionManager;
+
+    /**
      * Reference to the JCR query manager for this workspace.
      */
     private final JcrQueryManager queryManager;
@@ -170,6 +175,7 @@ class JcrWorkspace implements Workspace {
 
         // This must be initialized after the session
         this.nodeTypeManager = new JcrNodeTypeManager(session, this.repository.getRepositoryTypeManager());
+        this.versionManager = new JcrVersionManager(this.session);
         this.queryManager = new JcrQueryManager(this.session);
         this.observationManager = new JcrObservationManager(this.session, this.repository.getRepositoryObservable());
 
@@ -278,6 +284,10 @@ class JcrWorkspace implements Workspace {
      */
     public final QueryManager getQueryManager() {
         return queryManager;
+    }
+
+    final JcrVersionManager versionManager() {
+        return versionManager;
     }
 
     /**
@@ -671,15 +681,7 @@ class JcrWorkspace implements Workspace {
             throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
         }
 
-        for (int i = 0; i < versions.length; i++) {
-            JcrVersionNode jcrVersion = (JcrVersionNode)versions[i];
-            if (JcrLexicon.ROOT.equals(jcrVersion)) {
-                throw new VersionException(JcrI18n.cannotRestoreRootVersion.text(versions[i].getPath()));
-            }
-
-        }
-
-        throw new UnsupportedOperationException();
+        versionManager().restore(versions, removeExisting);
     }
 
 }

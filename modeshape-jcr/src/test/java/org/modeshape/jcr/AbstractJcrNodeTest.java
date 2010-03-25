@@ -41,7 +41,6 @@ import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.NodeType;
-import javax.jcr.version.Version;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -297,7 +296,7 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowGetNodeWithNoPath() throws Exception {
-        prius.getNode(null);
+        prius.getNode((String)null);
     }
 
     @Test
@@ -418,47 +417,10 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         assertThat(hybrid.isLocked(), is(false));
     }
 
-    // Now tested in TCK
-    // @Test( expected = UnsupportedRepositoryOperationException.class )
-    // public void shouldAllowLock() throws Exception {
-    // hybrid.lock(false, false);
-    // }
-
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowMergeOfNonVersionableNode() throws Exception {
-        hybrid.merge(null, false);
-    }
-
     @Test( expected = NullPointerException.class )
     public void shouldNotAllowOrderBeforeWithNullArgs() throws Exception {
         hybrid.orderBefore(null, null);
     }
-
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowRestoreVersionName() throws Exception {
-        hybrid.restore((String)null, false);
-    }
-
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowRestoreVersion() throws Exception {
-        hybrid.restore((Version)null, false);
-    }
-
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowRestoreVersionAtPath() throws Exception {
-        hybrid.restore(null, null, false);
-    }
-
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowRestoreByLabel() throws Exception {
-        hybrid.restoreByLabel(null, false);
-    }
-
-    // Now tested in TCK
-    // @Test( expected = UnsupportedRepositoryOperationException.class )
-    // public void shouldNotAllowUnlock() throws Exception {
-    // hybrid.unlock();
-    // }
 
     /*
      * Primary-type and -item methods

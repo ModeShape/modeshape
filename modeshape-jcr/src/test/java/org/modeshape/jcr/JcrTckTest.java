@@ -107,14 +107,27 @@ import org.apache.jackrabbit.test.api.version.GetCreatedTest;
 import org.apache.jackrabbit.test.api.version.GetPredecessorsTest;
 import org.apache.jackrabbit.test.api.version.GetReferencesNodeTest;
 import org.apache.jackrabbit.test.api.version.GetVersionableUUIDTest;
+import org.apache.jackrabbit.test.api.version.MergeCancelMergeTest;
+import org.apache.jackrabbit.test.api.version.MergeCheckedoutSubNodeTest;
+import org.apache.jackrabbit.test.api.version.MergeDoneMergeTest;
+import org.apache.jackrabbit.test.api.version.MergeNodeIteratorTest;
+import org.apache.jackrabbit.test.api.version.MergeNodeTest;
+import org.apache.jackrabbit.test.api.version.MergeNonVersionableSubNodeTest;
+import org.apache.jackrabbit.test.api.version.MergeSubNodeTest;
 import org.apache.jackrabbit.test.api.version.OnParentVersionAbortTest;
+import org.apache.jackrabbit.test.api.version.OnParentVersionComputeTest;
+import org.apache.jackrabbit.test.api.version.OnParentVersionCopyTest;
+import org.apache.jackrabbit.test.api.version.OnParentVersionIgnoreTest;
+import org.apache.jackrabbit.test.api.version.OnParentVersionInitializeTest;
 import org.apache.jackrabbit.test.api.version.RemoveVersionTest;
+import org.apache.jackrabbit.test.api.version.RestoreTest;
 import org.apache.jackrabbit.test.api.version.SessionMoveVersionExceptionTest;
 import org.apache.jackrabbit.test.api.version.VersionGraphTest;
 import org.apache.jackrabbit.test.api.version.VersionLabelTest;
 import org.apache.jackrabbit.test.api.version.VersionStorageTest;
 import org.apache.jackrabbit.test.api.version.VersionTest;
 import org.apache.jackrabbit.test.api.version.WorkspaceMoveVersionExceptionTest;
+import org.apache.jackrabbit.test.api.version.WorkspaceRestoreTest;
 
 /**
  * Test suite to wrap Apache Jackrabbit JCR technology compatibility kit (TCK) unit tests. Note that technically these are not the
@@ -139,11 +152,11 @@ public class JcrTckTest {
 
         // Or uncomment the following lines to execute the different sets/suites of tests ...
         TestSuite suite = new TestSuite("JCR 1.0 API tests");
-        //
+
         suite.addTest(new LevelOneFeatureTests());
         suite.addTest(new LevelTwoFeatureTests());
         suite.addTest(new OptionalFeatureTests());
-        // suite.addTest(new VersioningTests()); // remove this and the ObservationTests inner class when all tests pass and
+        suite.addTest(new VersioningTests()); // remove this and the ObservationTests inner class when all tests pass and
         // uncomment
 
         return suite;
@@ -352,14 +365,14 @@ public class JcrTckTest {
             addTestSuite(VersionGraphTest.class);
             addTestSuite(RemoveVersionTest.class);
 
-            // addTestSuite(RestoreTest.class);
-            // addTestSuite(WorkspaceRestoreTest.class);
-            //
+            addTestSuite(RestoreTest.class);
+            addTestSuite(WorkspaceRestoreTest.class);
+
             addTestSuite(OnParentVersionAbortTest.class);
-            // addTestSuite(OnParentVersionComputeTest.class);
-            // addTestSuite(OnParentVersionCopyTest.class);
-            // addTestSuite(OnParentVersionIgnoreTest.class);
-            // addTestSuite(OnParentVersionInitializeTest.class);
+            addTestSuite(OnParentVersionComputeTest.class);
+            addTestSuite(OnParentVersionCopyTest.class);
+            addTestSuite(OnParentVersionIgnoreTest.class);
+            addTestSuite(OnParentVersionInitializeTest.class);
 
             addTestSuite(GetReferencesNodeTest.class);
             addTestSuite(GetPredecessorsTest.class);
@@ -369,14 +382,14 @@ public class JcrTckTest {
             addTestSuite(SessionMoveVersionExceptionTest.class);
             addTestSuite(WorkspaceMoveVersionExceptionTest.class);
 
-            // addTestSuite(MergeCancelMergeTest.class);
-            // addTestSuite(MergeCheckedoutSubNodeTest.class);
-            // addTestSuite(MergeDoneMergeTest.class);
-            // addTestSuite(MergeNodeIteratorTest.class);
-            // addTestSuite(MergeNodeTest.class);
-            // addTestSuite(MergeNonVersionableSubNodeTest.class);
-            // addTestSuite(MergeSubNodeTest.class);
-
+            addTestSuite(MergeCancelMergeTest.class);
+            addTestSuite(MergeCheckedoutSubNodeTest.class);
+            addTestSuite(MergeDoneMergeTest.class);
+            addTestSuite(MergeNodeIteratorTest.class);
+            addTestSuite(MergeNodeTest.class);
+            addTestSuite(MergeNonVersionableSubNodeTest.class);
+            addTestSuite(MergeSubNodeTest.class);
+            //
             // addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
         }
     }

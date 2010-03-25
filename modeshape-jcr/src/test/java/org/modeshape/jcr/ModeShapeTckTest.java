@@ -674,4 +674,50 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         assertThat(rootNode.getProperty("jcr:frozenNode/jcr:frozenPrimaryType").getString(), is("modetest:versionTest"));
     }
+
+    public void testShouldRestorePropertiesOnVersionableNode() throws Exception {
+        session = helper.getReadWriteSession();
+        Node node = session.getRootNode().addNode("/checkInTest", "modetest:versionTest");
+        session.getRootNode().save();
+
+        /*
+         * Create /checkinTest/copyNode with copyNode being versionable.  This should be able 
+         * to be checked in, as the ABORT status of abortNode is ignored when copyNode is checked in.
+         */
+
+        Node copyNode = node.addNode("copyNode", "modetest:versionTest");
+        copyNode.addMixin("mix:versionable");
+        copyNode.setProperty("copyProp", "copyPropValue");
+        copyNode.setProperty("ignoreProp", "ignorePropValue");
+        copyNode.setProperty("computeProp", "computePropValue");
+        node.save();
+
+        Version version = copyNode.checkin();
+
+        /*
+         * Make some changes
+         */
+        copyNode.checkout();
+        copyNode.addMixin("mix:lockable");
+        copyNode.setProperty("copyProp", "copyPropValueNew");
+        copyNode.setProperty("ignoreProp", "ignorePropValueNew");
+        copyNode.setProperty("versionProp", "versionPropValueNew");
+        copyNode.setProperty("computeProp", "computePropValueNew");
+        copyNode.save();
+        copyNode.checkin();
+
+        copyNode.restore(version, false);
+
+        assertThat(copyNode.getProperty("copyProp").getString(), is("copyPropValue"));
+        assertThat(copyNode.getProperty("ignoreProp").getString(), is("ignorePropValueNew"));
+        assertThat(copyNode.getProperty("computeProp").getString(), is("computePropValueNew"));
+
+        try {
+            copyNode.getProperty("versionProp");
+            fail("Property with OnParentVersionAction of VERSION added after version should be removed during restore");
+        } catch (PathNotFoundException pnfe) {
+            // Expected
+        }
+
+    }
 }
