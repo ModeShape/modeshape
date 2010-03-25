@@ -500,6 +500,17 @@ public class LuceneSearchSession implements WorkspaceSession {
                 }
                 continue;
             }
+            if (type == FieldType.BOOLEAN) {
+                ValueFactory<Boolean> booleanFactory = processor.valueFactories.getBooleanFactory();
+                boolean index = rule.getIndexOption() != Field.Index.NO;
+                for (Object value : property) {
+                    if (value == null) continue;
+                    // Add a separate field for each property value ...
+                    int intValue = booleanFactory.create(value).booleanValue() ? 1 : 0;
+                    doc.add(new NumericField(nameString, rule.getStoreOption(), index).setIntValue(intValue));
+                }
+                continue;
+            }
             assert type == FieldType.STRING;
             for (Object value : property) {
                 if (value == null) continue;
