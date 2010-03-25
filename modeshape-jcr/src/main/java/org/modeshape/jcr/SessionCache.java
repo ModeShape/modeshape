@@ -2622,8 +2622,6 @@ class SessionCache {
             // This batch will get executed as part of the save
             batch.set(isCheckedOut, versionHistory, baseVersion, predecessors).on(node.getPath()).and();
 
-            System.out.println("Adding " + versionHistory + " to batch for " + node.getPath());
-
             Path storagePath = historyPath.getParent();
             Node<JcrNodePayload, JcrPropertyPayload> storageNode = findNode(null, storagePath);
 
