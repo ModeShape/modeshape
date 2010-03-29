@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.web.jcr.rest.spi;
+package org.modeshape.web.jcr.spi;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,8 +36,7 @@ import net.jcip.annotations.ThreadSafe;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.SecurityContextCredentials;
-import org.modeshape.web.jcr.rest.ServletSecurityContext;
-import org.jboss.resteasy.spi.NotFoundException;
+import org.modeshape.web.jcr.ServletSecurityContext;
 import org.xml.sax.SAXException;
 
 /**
@@ -54,7 +53,7 @@ import org.xml.sax.SAXException;
 @ThreadSafe
 public class ModeShapeJcrRepositoryProvider implements RepositoryProvider {
 
-    public static final String CONFIG_FILE = "org.modeshape.web.jcr.rest.CONFIG_FILE";
+    public static final String CONFIG_FILE = "org.modeshape.web.jcr.CONFIG_FILE";
 
     private JcrEngine jcrEngine;
 
@@ -108,7 +107,7 @@ public class ModeShapeJcrRepositoryProvider implements RepositoryProvider {
             repository = getRepository(repositoryName);
 
         } catch (RepositoryException re) {
-            throw new NotFoundException(re.getMessage(), re);
+            throw new NoSuchRepositoryException(re.getMessage(), re);
         }
 
         // If there's no authenticated user, try an anonymous login

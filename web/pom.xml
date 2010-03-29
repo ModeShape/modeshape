@@ -2,7 +2,7 @@
   <parent>
     <groupId>org.modeshape</groupId>
     <artifactId>modeshape</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.1-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.modeshape.web</groupId>
@@ -12,8 +12,11 @@
   <url>http://www.modeshape.org</url>
   <description>ModeShape Web Components</description>
   <modules>
+    <module>modeshape-web-jcr</module>
     <module>modeshape-web-jcr-rest</module>
     <module>modeshape-web-jcr-rest-client</module>
     <module>modeshape-web-jcr-rest-war</module>
+    <module>modeshape-web-jcr-webdav</module>
+    <module>modeshape-web-jcr-webdav-war</module>
   </modules>
 </project>

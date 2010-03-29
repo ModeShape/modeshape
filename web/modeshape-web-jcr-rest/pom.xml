@@ -13,6 +13,11 @@
 	<url>http://www.modeshape.org</url>
 	<dependencies>
         <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-web-jcr</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>
             <version>1.2.1.GA</version>

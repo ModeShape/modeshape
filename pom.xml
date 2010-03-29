@@ -152,9 +152,7 @@
 		<module>extensions/modeshape-connector-store-jpa</module>
 		<module>extensions/modeshape-connector-jdbc-metadata</module> 
 		<module>extensions/modeshape-mimetype-detector-aperture</module>
-		<module>web/modeshape-web-jcr-rest</module> 
-		<module>web/modeshape-web-jcr-rest-client</module> 
-		<module>web/modeshape-web-jcr-rest-war</module> 
+		<module>web</module>
 		<module>utils/modeshape-jpa-ddl-gen</module> 
 	</modules>
 	<properties>
@@ -984,6 +982,11 @@
 			<dependency>
 				<groupId>org.modeshape</groupId>
 				<artifactId>modeshape-web-jcr-rest-war</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+			        <groupId>org.modeshape</groupId>
+				<artifactId>modeshape-web-jcr</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<!--

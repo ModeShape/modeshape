@@ -24,22 +24,22 @@
 
 	<!--
 		This parameter provides the fully-qualified name of a class that implements
-		the o.j.d.web.jcr.rest.spi.RepositoryProvider interface.  It is required
-		by the DnaJcrDeployer that controls the lifecycle for the ModeShape REST server.
+		the o.m.w.jcr.spi.RepositoryProvider interface.  It is required
+		by the ModeShapeJcrDeployer that controls the lifecycle for the ModeShape REST server.
 	-->
 	<context-param>
-		<param-name>org.modeshape.web.jcr.rest.REPOSITORY_PROVIDER</param-name>
-		<param-value>org.modeshape.web.jcr.rest.spi.ModeShapeJcrRepositoryProvider</param-value>
+		<param-name>org.modeshape.web.jcr.REPOSITORY_PROVIDER</param-name>
+		<param-value>org.modeshape.web.jcr.spi.ModeShapeJcrRepositoryProvider</param-value>
 	</context-param>
 
 	<!--
-		This parameter, specific to the DnaJcrRepositoryProvider implementation, specifies
+		This parameter, specific to the ModeShapeJcrRepositoryProvider implementation, specifies
 		the name of the configuration file to initialize the repository or repositories.
 		This configuration file must be on the classpath and is given as a classpath-relative
 		directory.
 	-->
 	<context-param>
-		<param-name>org.modeshape.web.jcr.rest.CONFIG_FILE</param-name>
+		<param-name>org.modeshape.web.jcr.CONFIG_FILE</param-name>
 		<param-value>/configRepository.xml</param-value>
 	</context-param>
 
@@ -62,7 +62,7 @@
 
 	<!-- Required parameter for ModeShape REST - should not be modified -->
 	<listener>
-		<listener-class>org.modeshape.web.jcr.rest.ModeShapeJcrDeployer</listener-class>
+		<listener-class>org.modeshape.web.jcr.ModeShapeJcrDeployer</listener-class>
 	</listener>
 
 	<!-- Required parameter for RESTEasy - should not be modified -->

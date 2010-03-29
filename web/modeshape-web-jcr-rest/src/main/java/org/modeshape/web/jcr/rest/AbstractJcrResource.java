@@ -4,6 +4,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.servlet.http.HttpServletRequest;
 import org.modeshape.common.text.UrlEncoder;
+import org.modeshape.web.jcr.RepositoryFactory;
 
 public abstract class AbstractJcrResource {
 

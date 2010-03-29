@@ -38,10 +38,12 @@
 /extensions/modeshape-web-jcr-rest-war/target/
 
 /web/target/
+/web/modeshape-web-jcr/target/
 /web/modeshape-web-jcr-rest/target/
 /web/modeshape-web-jcr-rest-war/target/
 /web/modeshape-web-jcr-rest-client/target/
-
+/web/modeshape-web-jcr-webdav/target
+/web/modeshape-web-jcr-webdav-war/target/
 /utils/modeshape-jpa-ddl-gen/target/
 
 /extensions/modeshape-search-lucene/target

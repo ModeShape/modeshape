@@ -32,6 +32,7 @@ import javax.ws.rs.ext.Provider;
 import net.jcip.annotations.Immutable;
 import org.codehaus.jettison.json.JSONException;
 import org.jboss.resteasy.spi.NotFoundException;
+import org.modeshape.web.jcr.spi.NoSuchRepositoryException;
 
 /**
  * RESTEasy exception handlers for the Modeshape REST server.
@@ -44,6 +45,15 @@ public class JcrResources extends AbstractJcrResource {
     public static class NotFoundExceptionMapper implements ExceptionMapper<NotFoundException> {
 
         public Response toResponse( NotFoundException exception ) {
+            return Response.status(Status.NOT_FOUND).entity(exception.getMessage()).build();
+        }
+
+    }
+
+    @Provider
+    public static class NoSuchRepositoryExceptionMapper implements ExceptionMapper<NoSuchRepositoryException> {
+
+        public Response toResponse( NoSuchRepositoryException exception ) {
             return Response.status(Status.NOT_FOUND).entity(exception.getMessage()).build();
         }
 

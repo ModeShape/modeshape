@@ -4,7 +4,7 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
@@ -21,18 +21,19 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.modeshape.web.jcr.webdav;
+
 /**
- * This package contains the core components for the ModeShape REST server implementation.
+ * Resolves the given URI into a path in a JCR workspace
  * <p>
- * The key classes are:
- * <ul>
- * <li>{@link JcrResources} - the class that handles requests for valid URIs</li>
- * <li>{@link JcrApplication} - the JAX-RS application class that indicates that JcrResources should be used to handle URIs</li>
- * <li>{@link RepositoryFactory} - the interface to the ModeShape JCR SPI</li> 
- * </ul>
+ * Implementations need not be thread-safe.
  * </p>
  */
-package org.modeshape.web.jcr.rest;
+public interface UriResolver {
 
-import org.modeshape.web.jcr.RepositoryFactory;
-
+    /**
+     * @param uri a given URI
+     * @return the JCR path that corresponds to this URI in the current mapping scheme
+     */
+    String resolve( String uri );
+}

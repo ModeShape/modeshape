@@ -22,21 +22,15 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * Service provider interface (SPI) for the JCR implementation that backs the ModeShape JCR REST server.
+ * This package contains the core components for the ModeShape common web library.
  * <p>
- * Service providers must provide a thread-safe implementation of the {@link RepositoryProvider} interface
- * which is then bundled in the server WAR.  The REST server can be configured to use the provider by specifying
- * the fully-qualified name (FQN) of the custom repository provider class in the {@code org.modeshape.web.jcr.rest.REPOSITORY_PROVIDER} context parameter
- * in the web configuration file (web.xml).   
+ * The key classes are:
+ * <ul>
+ * <li>{@link RepositoryFactory} - the class creates JCR sessions based on HTTP requests</li>
+ * <li>{@link ServletSecurityContext} - the bridge from HTTP security to ModeShape JAAS-based security</li>
+ * <li>{@link ModeShapeJcrDeployer} - the servlet context listener that deploys the {@link JcrEngine} and initializes the {@link RepositoryFactory}.</li>
+ * </ul>
  * </p>
- * <p>
- * Custom repository providers for JCR implementations that do not support hosting multiple repositories in the same server
- * can context can ignore the {@code repositoryName} parameter for {@link RepositoryProvider#getSession(javax.servlet.http.HttpServletRequest, String, String)},
- * but must always return a non-empty, non-null set containing some default repository name from {@link RepositoryProvider#getJcrRepositoryNames()}.
- * </p>
- * 
- * @see org.modeshape.web.jcr.rest.RepositoryFactory
- * @see org.modeshape.web.jcr.rest.spi.RepositoryProvider
  */
-package org.modeshape.web.jcr.rest.spi;
+package org.modeshape.web.jcr;
 

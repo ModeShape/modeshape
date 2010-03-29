@@ -22,17 +22,15 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * This package contains the core components for the ModeShape REST server implementation.
+ * This package contains the core components for the ModeShape WebDAV server implementation.
  * <p>
  * The key classes are:
  * <ul>
- * <li>{@link JcrResources} - the class that handles requests for valid URIs</li>
- * <li>{@link JcrApplication} - the JAX-RS application class that indicates that JcrResources should be used to handle URIs</li>
- * <li>{@link RepositoryFactory} - the interface to the ModeShape JCR SPI</li> 
+ * <li>{@link ModeShapeWebdavServlet} - the servlet class that handles requests for WebDAV URIs</li>
+ * <li>{@link ModeShapeWebdavStore} - the implementation class that maps WebDAV operations to JCR operations</li>
+ * <li>{@link RequestResolver} - the contract for mapping an incoming URI to a repository, workspace, and path within the workspace</li>
  * </ul>
  * </p>
  */
-package org.modeshape.web.jcr.rest;
-
-import org.modeshape.web.jcr.RepositoryFactory;
+package org.modeshape.web.jcr.webdav;
 

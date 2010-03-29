@@ -21,12 +21,12 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.web.jcr.rest;
+package org.modeshape.web.jcr;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import net.jcip.annotations.NotThreadSafe;
-import org.modeshape.web.jcr.rest.spi.RepositoryProvider;
+import org.modeshape.web.jcr.spi.RepositoryProvider;
 
 /**
  * Servlet context listener that is responsible for {@link RepositoryFactory#initialize(javax.servlet.ServletContext)

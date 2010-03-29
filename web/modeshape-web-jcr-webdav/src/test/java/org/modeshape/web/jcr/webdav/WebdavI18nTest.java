@@ -21,18 +21,14 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-/**
- * This package contains the core components for the ModeShape REST server implementation.
- * <p>
- * The key classes are:
- * <ul>
- * <li>{@link JcrResources} - the class that handles requests for valid URIs</li>
- * <li>{@link JcrApplication} - the JAX-RS application class that indicates that JcrResources should be used to handle URIs</li>
- * <li>{@link RepositoryFactory} - the interface to the ModeShape JCR SPI</li> 
- * </ul>
- * </p>
- */
-package org.modeshape.web.jcr.rest;
 
-import org.modeshape.web.jcr.RepositoryFactory;
+package org.modeshape.web.jcr.webdav;
 
+import org.modeshape.common.AbstractI18nTest;
+
+public class WebdavI18nTest extends AbstractI18nTest {
+
+    public WebdavI18nTest() {
+        super(WebdavI18n.class);
+    }
+}

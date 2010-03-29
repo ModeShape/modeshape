@@ -4,7 +4,7 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
@@ -21,18 +21,28 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+package org.modeshape.web.jcr.webdav;
+
+import net.jcip.annotations.Immutable;
+import org.modeshape.common.i18n.I18n;
+
 /**
- * This package contains the core components for the ModeShape REST server implementation.
- * <p>
- * The key classes are:
- * <ul>
- * <li>{@link JcrResources} - the class that handles requests for valid URIs</li>
- * <li>{@link JcrApplication} - the JAX-RS application class that indicates that JcrResources should be used to handle URIs</li>
- * <li>{@link RepositoryFactory} - the interface to the ModeShape JCR SPI</li> 
- * </ul>
- * </p>
+ * The internationalized string constants for the <code>org.modeshape.web.jcr.webdav</code> package.
  */
-package org.modeshape.web.jcr.rest;
+@Immutable
+public final class WebdavI18n {
 
-import org.modeshape.web.jcr.RepositoryFactory;
+    public static I18n noStoredRequest;
+    public static I18n uriIsProperty;
 
+    // DefaultRequestResolver messages
+    public static I18n requiredParameterMissing;
+
+    static {
+        try {
+            I18n.initialize(WebdavI18n.class);
+        } catch (final Exception err) {
+            System.err.println(err);
+        }
+    }
+}

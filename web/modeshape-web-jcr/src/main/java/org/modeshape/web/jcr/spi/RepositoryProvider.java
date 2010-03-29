@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.web.jcr.rest.spi;
+package org.modeshape.web.jcr.spi;
 
 import java.util.Set;
 import javax.jcr.RepositoryException;

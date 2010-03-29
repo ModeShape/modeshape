@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.web.jcr.rest;
+package org.modeshape.web.jcr;
 
 import java.util.Collection;
 import javax.jcr.RepositoryException;
@@ -30,7 +30,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.web.jcr.rest.spi.RepositoryProvider;
+import org.modeshape.web.jcr.spi.RepositoryProvider;
 
 /**
  * Factory that provides implementations of the {@link RepositoryProvider repository provider SPI} by wrapping a
@@ -55,7 +55,7 @@ import org.modeshape.web.jcr.rest.spi.RepositoryProvider;
 public class RepositoryFactory {
 
     /** The FQN of the repository provider class. Currently set to {@value} . */
-    public static final String PROVIDER_KEY = "org.modeshape.web.jcr.rest.REPOSITORY_PROVIDER";
+    public static final String PROVIDER_KEY = "org.modeshape.web.jcr.REPOSITORY_PROVIDER";
 
     private static RepositoryProvider provider;
 
