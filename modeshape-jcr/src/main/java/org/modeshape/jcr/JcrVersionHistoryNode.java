@@ -51,7 +51,7 @@ import org.modeshape.graph.property.Path.Segment;
 /**
  * Convenience wrapper around a version history {@link JcrNode node}.
  */
-public class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
+class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 

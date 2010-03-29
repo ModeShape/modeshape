@@ -81,7 +81,7 @@ import org.modeshape.jcr.SessionCache.NodeEditor;
  * Local implementation of version management code, comparable to an implementation of the JSR-283 {@code VersionManager}
  * interface. Valid instances of this class can be obtained by calling {@link JcrWorkspace#versionManager()}.
  */
-public final class JcrVersionManager {
+final class JcrVersionManager {
 
     private static final TextEncoder NODE_ENCODER = new Jsr283Encoder();
 

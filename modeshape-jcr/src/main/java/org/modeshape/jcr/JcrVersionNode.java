@@ -36,7 +36,7 @@ import org.modeshape.graph.property.Name;
 /**
  * Convenience wrapper around a version {@link JcrNode node}.
  */
-public class JcrVersionNode extends JcrNode implements Version {
+class JcrVersionNode extends JcrNode implements Version {
 
     private static final Version[] EMPTY_VERSION_ARRAY = new Version[0];
 
