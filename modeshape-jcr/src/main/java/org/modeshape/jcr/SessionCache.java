@@ -26,6 +26,7 @@ package org.modeshape.jcr;
 import java.lang.ref.SoftReference;
 import java.security.AccessControlException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1539,10 +1540,20 @@ class SessionCache {
                 } else {
                     result = node.createChild(name, primaryTypeProp, nodeDefinitionProp);
                 }
+
+                JcrNode jcrNode = (JcrNode)result.getPayload().getJcrNode();
+
+                // Fix the jcr:created protected property for nt:hierarcyNode (and descendants)
+                boolean isHierarchyNode = primaryType.isNodeType(JcrNtLexicon.HIERARCHY_NODE);
+                if (isHierarchyNode) {
+                    JcrValue value = jcrNode.valueFrom(Calendar.getInstance());
+                    jcrNode.editor().setProperty(JcrLexicon.CREATED, value, false);
+                }
+
                 // The postCreateChild hook impl should populate the payloads
 
                 // Finally, return the jcr node ...
-                return (JcrNode)result.getPayload().getJcrNode();
+                return jcrNode;
             } catch (ValidationException e) {
                 throw new ConstraintViolationException(e.getMessage(), e);
             } catch (RepositorySourceException e) {

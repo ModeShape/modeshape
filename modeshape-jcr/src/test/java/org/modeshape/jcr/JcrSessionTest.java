@@ -56,14 +56,14 @@ import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.NodeType;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.JaasSecurityContext;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.Path;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.JaasSecurityContext;
+import org.modeshape.graph.property.NamespaceRegistry;
+import org.modeshape.graph.property.Path;
 
 /**
  * @author jverhaeg
@@ -422,5 +422,15 @@ public class JcrSessionTest extends AbstractSessionTest {
         } catch (PathNotFoundException e) {
             // Expected
         }
+    }
+
+    @Test
+    public void shouldAddCreatedPropertyForHierarchyNodes() throws Exception {
+        // q.v. MODE-694
+        Node folderNode = session.getRootNode().addNode("folderNode", "nt:folder");
+        assertThat(folderNode.hasProperty("jcr:created"), is(true));
+
+        Node fileNode = folderNode.addNode("fileNode", "nt:file");
+        assertThat(fileNode.hasProperty("jcr:created"), is(true));
     }
 }
