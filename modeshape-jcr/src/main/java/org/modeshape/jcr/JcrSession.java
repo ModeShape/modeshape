@@ -874,11 +874,6 @@ class JcrSession implements Session {
             throw new VersionException(JcrI18n.nodeIsCheckedIn.text(newParentNode.getPath()));
         }
 
-        String newNodeNameAsString = newNodeName.getString(executionContext.getNamespaceRegistry());
-        if (newParentNode.hasNode(newNodeName.getString(executionContext.getNamespaceRegistry()))) {
-            throw new ItemExistsException(JcrI18n.childNodeAlreadyExists.text(newNodeNameAsString, newParentNode.getPath()));
-        }
-
         newParentNode.editor().moveToBeChild(sourceNode, newNodeName.getName());
     }
 
