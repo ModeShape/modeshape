@@ -3,6 +3,8 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.io.ByteArrayInputStream;
+import java.util.Calendar;
 import java.util.Collections;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
@@ -11,6 +13,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.nodetype.ConstraintViolationException;
@@ -719,5 +722,44 @@ public class ModeShapeTckTest extends AbstractJCRTest {
             // Expected
         }
 
+    }
+
+    public void testShouldAllowDeletingNodesWhenLargePropertyIsPresent() throws Exception {
+        // q.v. MODE-693
+        session = helper.getReadWriteSession();
+
+        Node root = session.getRootNode();
+
+        final int SIZE = 2048;
+        byte[] largeArray = new byte[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            largeArray[i] = (byte)'x';
+        }
+
+        Node projectNode = root.addNode("mode693", "nt:unstructured");
+
+        Node fileNode = projectNode.addNode("fileNode", "nt:file");
+        Node contentNode = fileNode.addNode("jcr:content", "nt:resource");
+        contentNode.setProperty("jcr:data", new ByteArrayInputStream(largeArray));
+        contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
+        contentNode.setProperty("jcr:mimeType", "application/octet-stream");
+
+        Node otherNode = projectNode.addNode("otherNode", "nt:unstructured");
+        session.save();
+
+        String pathToNode = projectNode.getName() + "/" + otherNode.getName();
+
+        if (!root.hasNode(pathToNode)) {
+            throw new RepositoryException("Cannot delete node at path=" + pathToNode + " since no node exists at this path");
+        }
+        Node nodeToDelete = root.getNode(pathToNode);
+        nodeToDelete.remove();
+        session.save();
+
+        // Make sure that only one node was deleted
+        assertThat(root.hasNode(projectNode.getName()), is(true));
+        assertThat(projectNode.hasNode(fileNode.getName()), is(true));
+        assertThat(fileNode.hasNode(contentNode.getName()), is(true));
+        assertThat(root.hasNode(pathToNode), is(false));
     }
 }
