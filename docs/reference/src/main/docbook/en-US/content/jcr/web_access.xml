@@ -28,15 +28,385 @@
 <!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
 %CustomDTD;
 ]>
-<chapter id="rest_service">
-  <title>The ModeShape RESTful Web Service</title>
+<chapter id="web_access">
+  <title>Accessing ModeShape Remotely</title>
   <para>
-		ModeShape now provides a RESTful interface to its JCR implementation that allows HTTP-based 
+		ModeShape provides a pair of ways to connect from remote clients: a WebDAV interface and a RESTful interface.
+		This chapter details the capabilities of both as well as the configuration required to use each.		
+  </para>
+  <note>
+  	<para>
+  		Although the WebDAV and REST servers are treated separately here, many of the configuration parameters are 
+  		the same.  This is because both share a fair amount of common code and have been designed to be able to be
+  		deployed simultaneously on the same server or even within the same web archive.
+  	</para>
+  </note>
+  <sect1 id="webdav_server">
+		<title>The ModeShape WebDAV Server</title>
+		<para>
+		ModeShape provides a WebDAV server interface to its JCR implementation to ease integration with client applications.
+		The WebDAV server maps some of the content nodes (by default, nodes with a primary type of <code>nt:file</code>) to
+		WebDAV resources and the other nodes to WebDAV folders.  This allows any WebDAV client to navigate through the
+		content repository to store files in a given location, as well as to create or delete nodes in the repository. 
+		The remainder of this section describes how to configure and deploy the WebDAV server. 
+		</para>
+	<sect2 id="modeshape_webdav_server_configuration">
+		<title>Configuring the ModeShape WebDAV Server</title>
+		<para>
+			The ModeShape WebDAV server is deployed as a WAR and configured mostly through its web configuration file (web.xml).  
+			Here is an example web configuration that is used for integration testing of the ModeShape WebDAV server along with
+			an explanation of its parts.
+		</para>
+<programlisting role="XML"><![CDATA[
+<?xml version="1.0"?>
+<!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+                         "http://java.sun.com/dtd/web-app_2_3.dtd">
+<web-app>
+	<display-name>ModeShape JCR RESTful Interface</display-name>
+]]></programlisting>			 
+		<para>
+		This first section is largely boilerplate and should look familiar to anyone who has deployed a servlet-based
+		application before.  The display-name can be customized, of course.
+		</para>
+		<para>
+			The next stanza configures the <link linkend="jcr_web_spi">repository provider</link>.
+		</para>
+<programlisting role="XML"><![CDATA[
+  <!--
+    This parameter provides the fully-qualified name of a class that implements
+    the o.m.web.jcr.spi.RepositoryProvider interface.  It is required
+    by the ModeShapeJcrDeployer that controls the lifecycle for the ModeShape WebDAV server.
+  -->
+  <context-param>
+    <param-name>org.modeshape.web.jcr.REPOSITORY_PROVIDER</param-name>
+    <param-value>org.modeshape.web.jcr.spi.ModeShapeJcrRepositoryProvider</param-value>
+  </context-param>
+]]></programlisting>			 
+		<para>
+		As noted above, this parameter informs the &ModeShapeJcrDeployer; of the specific repository provider in use.
+		Unless you are using the ModeShape WebDAV server to connect to a different JCR implementation, this should
+		never change.  The ModeShape REST server also uses the &ModeShapeJcrDeployer; to get access to the JCR
+		repository, so the two servlets can be deployed in the same WAR.
+		</para>
+
+		<para>
+			Next we configure the ModeShape &JcrEngine; itself.
+		</para>
+<programlisting role="XML"><![CDATA[
+  <!--
+    This parameter, specific to the ModeShapeJcrRepositoryProvider implementation, specifies
+    the name of the configuration file to initialize the repository or repositories.
+    This configuration file must be on the classpath and is given as a classpath-relative
+    directory.
+  -->
+  <context-param>
+    <param-name>org.modeshape.web.jcr.CONFIG_FILE</param-name>
+    <param-value>/configRepository.xml</param-value>
+  </context-param>
+]]></programlisting>			 
+		<para>
+		If you are not familiar with the file format for a &JcrEngine; configuration file, you can build one 
+		programatically with the &JcrConfiguration; class and call <code>save(...)</code> instead of <code>build()</code>
+		to output the configuration file that equates to the configuration.
+		</para>
+
+		<para>
+			This is followed by some additional WebDAV configuration that controls the mapping between
+			JCR node types and WebDAV files and resources.  You can omit this section entirely to use the
+			default values.
+		</para>
+<programlisting role="XML"><![CDATA[
+<!--
+	Nodes with any of the primary node types in this comma-delimited list will be treated by the 
+	WebDAV implementation as content nodes.  The value below is the default value for this 
+	parameter.  That is, if this init parameter is omitted, the value below will be used by default.
+-->
+<context-param>
+	<param-name>org.modeshape.web.jcr.webdav.CONTENT_PRIMARY_TYPE_NAMES</param-name>
+	<param-value>nt:resource, mode:resource</param-value>
+</context-param>
+
+<!--
+	Nodes with any of the primary node types in this comma-delimited list will be treated by the 
+	WebDAV implementation as resource (file) nodes.  The value below is the default value for this 
+	parameter.  That is, if this init parameter is omitted, the value below will be used by default.
+-->
+<context-param>
+	<param-name>org.modeshape.web.jcr.webdav.RESOURCE_PRIMARY_TYPE_NAMES</param-name>
+	<param-value>nt:file</param-value>
+</context-param>
+
+<!--
+	Each folder created through the WebDAV servlet will be created as a node with the primary node 
+	type below.  The value below is the default value for this parameter.  That is, if this init 
+	parameter is omitted, the value below will be used by default.
+-->
+<context-param>
+	<param-name>org.modeshape.web.jcr.webdav.NEW_FOLDER_PRIMARY_TYPE_NAME</param-name>
+	<param-value>nt:folder</param-value>
+</context-param>
+
+<!--
+	Each resource (file created through the WebDAV servlet will be created as a node with the primary 
+	node type below.  The value below is the default value for this parameter.  That is, if this init 
+	parameter is omitted, the value below will be used by default.
+-->
+<context-param>
+	<param-name>
+		org.modeshape.web.jcr.webdav.NEW_RESOURCE_PRIMARY_TYPE_NAME
+	</param-name>
+	<param-value>nt:file</param-value>
+</context-param>
+
+<!--
+	Content created through the WebDAV servlet will be created as a node with the primary node 
+	type below.  The value below is the default value for this parameter.  That is, if this init 
+	parameter is omitted, the value below will be used by default.
+-->
+<context-param>
+	<param-name>
+		org.modeshape.web.jcr.webdav.NEW_CONTENT_PRIMARY_TYPE_NAME
+	</param-name>
+	<param-value>mode:resource</param-value>
+</context-param>
+
+]]></programlisting>			 
+		<para>
+		In general, this part of the web configuration file should not be modified.
+		</para>
+		<para>
+			Next, the &RequestResolver; must be configured.  The &RequestResolver; converts the incoming 
+			URI into a repository name, workspace name, and path within the repository.  It is possible 
+			(and easy) to develop a custom implementation of this interface, but a default resolver is 
+			provided that maps all URIs directly into a repository and workspace.
+		</para>
+<programlisting role="XML"><![CDATA[
+<!--
+	This optional parameter provides the name of the o.m.w.j.webdav.RequestResolver
+	implementation class.  The provided value must be the name of a class that 
+	implements the RequestResolver interface and has a public, no-arg constructor.
+	If no value is provided, o.m.w.j.webdav.DefaultRequestResolver will be used.
+-->
+<context-param>
+	<param-name>org.modeshape.web.jcr.webdav.REQUEST_RESOLVER_CLASS_NAME</param-name>
+	<param-value>org.modeshape.web.jcr.webdav.DefaultRequestResolver</param-value>
+</context-param>
+
+<!--
+	This parameter is required if (and only if) the DefaultRequestResolver is used.
+	It provides the name of the JCR repository that will be accessed.  An exception
+	will be thrown if no value is provided for this parameter.
+-->
+<context-param>
+	<param-name>
+		org.modeshape.web.jcr.webdav.DEFAULT_RESOLVER_REPOSITORY_NAME
+	</param-name>
+	<param-value>mode:repository</param-value>
+</context-param>
+
+<!--
+	This parameter is required if (and only if) the DefaultRequestResolver is used.
+	It provides the name of the JCR workspace that will be accessed.  An exception
+	will be thrown if no value is provided for this parameter.
+-->
+<context-param>
+	<param-name>
+		org.modeshape.web.jcr.webdav.DEFAULT_RESOLVER_WORKSPACE_NAME
+	</param-name>
+	<param-value>default</param-value>
+</context-param>
+
+]]></programlisting>			 
+		<para>
+			Another brief section of boilerplate ensues.
+		</para>
+<programlisting role="XML"><![CDATA[
+<!-- Required parameter for ModeShape WebDAV - should not be modified -->
+<listener>
+	<listener-class>org.modeshape.web.jcr.ModeShapeJcrDeployer</listener-class>
+</listener>
+
+<!-- Required WebDAV servlet - should not be modified -->
+<servlet>
+	<servlet-name>WebDAV</servlet-name>
+	<servlet-class>org.modeshape.web.jcr.webdav.ModeShapeWebdavServlet</servlet-class>
+	
+	<!--
+		The webdav library requires this parameter to be present, but does not use it.
+	-->
+	<init-param>
+		<param-name>rootpath</param-name>
+		<param-value>.</param-value>
+	</init-param>
+</servlet>
+
+<!-- Required parameter for ModeShape WebDAV - should not be modified -->
+<servlet-mapping>
+	<servlet-name>WebDAV</servlet-name>
+	<url-pattern>/*</url-pattern>
+</servlet-mapping>
+
+]]></programlisting>			 
+		
+		<para>
+			Finally, security must be configured for the WebDAV server.
+		</para>
+<programlisting role="XML"><![CDATA[
+	<!-- 
+		The ModeShape WebDAV implementation leverages the HTTP credentials to for authentication 
+		and authorization within the JCR repository.  Unless the repository provides for anonymous 
+		access, it makes no sense to try to log into the JCR repository without credentials, so 
+		this constraint helps lock down the repository.
+		
+		This should generally not be modified. 
+	-->
+	<security-constraint>
+		<display-name>ModeShape WebDAV</display-name>
+		<web-resource-collection>
+			<web-resource-name>WebDAV</web-resource-name>
+			<url-pattern>/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<!--  
+				A user must be assigned this role to connect to any JCR repository, in addition to 
+				needing the READONLY or READWRITE roles to actually read or modify the data.  This 
+				is not used internally, so another role could be substituted here.
+			-->
+			<role-name>connect</role-name>
+		</auth-constraint>
+	</security-constraint>
+
+	<!--  
+		Any auth-method will work for ModeShape.  BASIC is used this example for simplicity.
+	 -->
+	<login-config>
+		<auth-method>BASIC</auth-method>
+	</login-config>
+
+	<!-- 
+		This must match the role-name in the auth-constraint above. 
+	 -->
+	<security-role>
+		<role-name>connect</role-name>
+	</security-role>
+</web-app>
+
+]]></programlisting>			 
+		<para>
+		As noted above, the WebDAV server will not function properly unless security is configured.  All authorization
+		methods supported by the Servlet specification are supported by ModeShape and can be used interchangeable, as
+		long as authenticated users have the connect role listed above. 
+		</para>	
+		
+	</sect2>
+	<sect2 id="modeshape_webdav_server_deployment">
+		<title>Deploying the ModeShape WebDAV Server</title>
+		<para>
+			Deploying the ModeShape WebDAV server only requires three steps: <link linkend="modeshape_webdav_server_configuration">
+			preparing the web configuration</link>, configuring the users and their roles in your web container 
+			(outside the scope of this document), and assembling the WAR.  This section describes the requirements 
+			for assembling the WAR.
+	  </para>
+	  <para>
+	  		If you are using Maven to build your projects, the WAR can be built from a POM.  Here is a portion of the 
+	  		POM used to build the ModeShape WebDAV Server integration subproject.
+		</para>
+<programlisting role='XML'><![CDATA[
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<artifactId>modeshape</artifactId>
+		<groupId>org.modeshape</groupId>
+		<version>1.1</version>
+		<relativePath>../..</relativePath>
+	</parent>
+	<artifactId>modeshape-web-jcr-webdav-war</artifactId>
+	<packaging>war</packaging>
+	<name>ModeShape JCR WebDAV Servlet</name>
+	<description>ModeShape servlet that provides WebDAV access to JCR items</description>
+	<url>http://www.modeshape.org</url>
+	<dependencies>
+		<dependency>
+			<groupId>org.modeshape</groupId>
+			<artifactId>modeshape-web-jcr-webdav</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>1.5.8</version>
+			<scope>runtime</scope>
+		</dependency>
+	</dependencies>
+</project>
+
+]]></programlisting> 
+	  <para>
+		If you use this approach, make sure that web configuration file is in the <code>/src/main/webapp/WEB-INF</code>
+		directory.
+	  </para>
+	  <para>
+	  	Of course, the JBoss WebDAV Server WAR can still be built if you are not using Maven.  Simply construct a WAR with
+	  	the following contents:
+<programlisting>
++ /WEB-INF
+	+ /classes
+	|	+ configRepository.xml
+	|	+ log4j.properties (Optional)
+	+ /lib
+	|	+ activation-1.1.jar
+	|	+ aperture-1.1.0.Beta1.jar
+	|	+ google-collections-1.0.jar
+	|	+ hamcrest-core-1.1.jar
+	|	+ jakarta-regexp-1.4.jar
+	|	+ jaxb-api-2.1.jar
+	|	+ jaxb-impl-2.1.12.jar
+	|	+ jcip-annotations-1.0.jar
+	|	+ jcr-1.0.1.jar
+	|	+ joda-time-1.6.jar
+	|	+ junit-dep-4.4.jar
+	|	+ lucene-analyzers-3.0.0.jar
+	|	+ lucene-core-3.0.0.jar
+	|	+ lucene-regex-3.0.0.jar
+	|	+ lucene-snowball-3.0.0.jar
+	|	+ modeshape-cnd-1.1.jar
+	|	+ modeshape-common-1.1.jar
+	|	+ modeshape-graph-1.1.jar
+	|	+ modeshape-jcr-1.1.jar
+	|	+ modeshape-mimetype-detector-aperture-1.1.jar
+	|	+ modeshape-repository-1.1.jar
+	|	+ modeshape-search-lucene-1.1.jar
+	|	+ modeshape-web-jcr-1.1.jar
+	|	+ modeshape-web-jcr-webdav-1.1.jar
+	|	+ rdf2go.api-4.6.2.jar
+	|	+ slf4j-api-1.5.8.jar
+	|	+ slf4j-log4j12-1.5.8.jar
+	|	+ stax-api-1.0-2.jar
+	|	+ webdav-servlet-2.0.jar
+	+ web.xml
+			
+</programlisting>	  	
+	  	If you are using sequencers or any connectors other than the in-memory or federated connector, you will also have
+	  	to add the JARs for those dependencies into the <code>WEB-INF/lib</code> directory as well.  You will also have to 
+	  	change the version numbers on the JARs to reflect the current version of ModeShape. 
+	  </para>
+	  <para>
+	  	This WAR can be deployed into your servlet container.
+	  </para>
+	</sect2>
+  </sect1>
+  <sect1 id="rest_server">
+		<title>The ModeShape REST Server</title>
+		<para>
+		ModeShape provides a RESTful interface to its JCR implementation that allows HTTP-based 
 		access and updating of content.  Although the initial version of this REST server only supports the ModeShape
 		JCR implementation, it has been designed to make integration with other JCR implementors easy.  This
-		chapter describes how to configure and deploy the REST server. 
-  </para>
-	<sect1 id="supported_rest_resources">
+		section describes how to configure and deploy the REST server. 
+		</para>
+	<sect2 id="supported_rest_resources">
 		<title>Supported Resources and Methods</title>
 		<para>
 			The REST Server currently supports the URIs and HTTP methods described below.  The URI patterns assume
@@ -73,7 +443,7 @@
 						<entry>Returns a list of available operations within the workspace</entry>
 						<entry>GET</entry>
 					</row>
-					<row>`
+					<row>
 						<entry>/resources/{repositoryName}/{workspaceName}/item/{path}</entry>
 						<entry>Accesses the item (node or property) at the path</entry>
 						<entry>ALL</entry>
@@ -232,7 +602,7 @@ PUT http://www.example.com/resources/modeshape%3arepository/default/items/newNod
 			</para>
 		</note>
 		</para>
-		<sect2 id="binary_properties_in_rest_representations">
+		<sect3 id="binary_properties_in_rest_representations">
 			<title>Binary properties</title>
 			<para>
 		    Binary property values are included in any of the the responses or requests, but are represented 
@@ -263,9 +633,9 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 	      If there are multiple values, then they will be separated by commas and will appear within '[' and ']' 
 	      characters (just like other properties).
 			</para>
-		</sect2>
-	</sect1>
-	<sect1 id="modeshape_rest_server_configuration">
+		</sect3>
+	</sect2>
+	<sect2 id="modeshape_rest_server_configuration">
 		<title>Configuring the ModeShape REST Server</title>
 		<para>
 			The ModeShape REST server is deployed as a WAR and configured mostly through its web configuration file (web.xml).  
@@ -284,17 +654,17 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		application before.  The display-name can be customized, of course.
 		</para>
 		<para>
-			The next stanza configures the <link linkend="jcr_rest_spi">repository provider</link>.
+			The next stanza configures the <link linkend="jcr_web_spi">repository provider</link>.
 		</para>
 <programlisting role="XML"><![CDATA[
   <!--
     This parameter provides the fully-qualified name of a class that implements
-    the o.m.web.jcr.rest.spi.RepositoryProvider interface.  It is required
+    the o.m.web.jcr.spi.RepositoryProvider interface.  It is required
     by the ModeShapeJcrDeployer that controls the lifecycle for the ModeShape REST server.
   -->
   <context-param>
-    <param-name>org.modeshape.web.jcr.rest.REPOSITORY_PROVIDER</param-name>
-    <param-value>org.modeshape.web.jcr.rest.spi.ModeShapeJcrRepositoryProvider</param-value>
+    <param-name>org.modeshape.web.jcr.REPOSITORY_PROVIDER</param-name>
+    <param-value>org.modeshape.web.jcr.spi.ModeShapeJcrRepositoryProvider</param-value>
   </context-param>
 ]]></programlisting>			 
 		<para>
@@ -314,7 +684,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
     directory.
   -->
   <context-param>
-    <param-name>org.modeshape.web.jcr.rest.CONFIG_FILE</param-name>
+    <param-name>org.modeshape.web.jcr.CONFIG_FILE</param-name>
     <param-value>/configRepository.xml</param-value>
   </context-param>
 ]]></programlisting>			 
@@ -347,7 +717,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 
   <!-- Required parameter for ModeShape REST - should not be modified -->
   <listener>
-    <listener-class>org.modeshape.web.jcr.rest.ModeShapeJcrDeployer</listener-class>
+    <listener-class>org.modeshape.web.jcr.ModeShapeJcrDeployer</listener-class>
   </listener>
 
   <!-- Required parameter for RESTEasy - should not be modified -->
@@ -416,11 +786,11 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		long as authenticated users have the connect role listed above. 
 		</para>	
 		
-	</sect1>
-	<sect1 id="modeshape_rest_server_deployment">
+	</sect2>
+	<sect2 id="modeshape_rest_server_deployment">
 		<title>Deploying the ModeShape REST Server</title>
 		<para>
-			Deploying the ModeShape REST server only requires three steps: <link linkend="modeshape_rest_server_configuration">
+			Just as with the ModeShape WebDAV server, deploying the ModeShape REST server only requires three steps: <link linkend="modeshape_rest_server_configuration">
 			preparing the web configuration</link>, configuring the users and their roles in your web container 
 			(outside the scope of this document), and assembling the WAR.  This section describes the requirements 
 			for assembling the WAR.
@@ -437,7 +807,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	<parent>
 		<artifactId>modeshape</artifactId>
 		<groupId>org.modeshape</groupId>
-		<version>1.0.0.Final</version>
+		<version>1.1</version>
 		<relativePath>../..</relativePath>
 	</parent>
 	<artifactId>modeshape-web-jcr-rest-war</artifactId>
@@ -449,7 +819,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 		<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-web-jcr-rest</artifactId>
-			<version>1.0.0.Final</version>
+			<version>1.1</version>
 		</dependency>
 
 		<dependency>
@@ -484,8 +854,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ activation-1.1.jar
 	|	+ commons-codec-1.2.jar
 	|	+ commons-httpclient-3.1.jar
-	|	+ commons-logging-1.0.4.jar
-	|	+ google-collections-1.0.0.Final.jar
+	|	+ google-collections-1.0.jar
 	|	+ hamcrest-core-1.1.jar
 	|	+ httpclient-4.0.jar
 	|	+ httpcore-4.0.1.jar
@@ -493,7 +862,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ javassist-3.6.0.GA.jar
 	|	+ jaxb-api-2.1.jar
 	|	+ jaxb-impl-2.1.12.jar
-	|	+ jaxrs-api-1.2.1-GA.jar
+	|	+ jaxrs-api-1.2.1.GA.jar
 	|	+ jcip-annotations-1.0.jar
 	|	+ jcl-over-slf4j-1.5.8.jar
 	|	+ jcr-1.0.1.jar
@@ -505,17 +874,18 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ lucene-core-3.0.0.jar
 	|	+ lucene-regex-3.0.0.jar
 	|	+ lucene-snowball-3.0.0.jar
-	|	+ modeshape-cnd-1.0.0.Final.jar
-	|	+ modeshape-common-1.0.0.Final.jar
-	|	+ modeshape-graph-1.0.0.Final.jar
-	|	+ modeshape-jcr-1.0.0.Final.jar
-	|	+ modeshape-repository-1.0.0.Final.jar
-	|	+ modeshape-search-lucene-1.0.0.Final.jar
-	|	+ modeshape-web-jcr-rest-1.0.0.Final.jar
-	|	+ resteasy-jaxb-provider-1.2.1-GA.jar
-	|	+ resteasy-jettison-provider-1.2.1-GA.jar
+	|	+ modeshape-cnd-1.1.jar
+	|	+ modeshape-common-1.1.jar
+	|	+ modeshape-graph-1.1.jar
+	|	+ modeshape-jcr-1.1.jar
+	|	+ modeshape-repository-1.1.jar
+	|	+ modeshape-search-lucene-1.1.jar
+	|	+ modeshape-web-jcr-1.1.jar
+	|	+ modeshape-web-jcr-rest-1.1.jar
+	|	+ resteasy-jaxb-provider-1.2.1.GA.jar
+	|	+ resteasy-jaxrs-1.2.1.GA.jar
+	|	+ resteasy-jettison-provider-1.2.1.GA.jar
 	|	+ scannotation-1.0.2.jar
-	|	+ servlet-api-2.5.jar
 	|	+ sjsxp-1.0.1.jar
 	|	+ slf4j-api-1.5.8.jar
 	|	+ slf4j-log4j12-1.5.8.jar
@@ -531,70 +901,9 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	  <para>
 	  	This WAR can be deployed into your servlet container.
 	  </para>
-	</sect1>
-	<sect1 id="jcr_rest_spi">
-		<title>Repository Providers</title>
-		<para>
-			The ModeShape REST server can also be used as an interface to to other JCR repositories by creating
-			an implementation of the &RepositoryProvider; interface that connects to the other repository.			
-		</para>
-		<para>
-			The &RepositoryProvider; only has a few methods that must be implemented.  When the &ModeShapeJcrDeployer; starts
-			up, it will dynamically load the &RepositoryProvider; implementation (as noted above) and call the <code>
-			startup(ServletContext)</code> method on the provider.  The provider can use this method to load any
-			required configuration parameters from the web configuration (web.xml) and initialize the repository.
-		</para>
-		<para> 
-			As an example, here's the ModeShape JCR provider implementation of this method with exception handling omitted for brevity.
-<programlisting><![CDATA[
-public void startup( ServletContext context ) {
-    String configFile = context.getInitParameter(CONFIG_FILE);
+	</sect2>
 
-     InputStream configFileInputStream = getClass().getResourceAsStream(configFile);
-     jcrEngine = new JcrConfiguration().loadFrom(configFileInputStream).build();
-     jcrEngine.start();
-}
-]]></programlisting>
-			As you can see, the name of configuration file for the &JcrEngine; is read from the servlet context and used
-			to initialize the engine. 
-			Once the repository has been started, it is now ready to accept the main methods that provide the interface
-			to the repository.		
-		</para>			 
-		<para>
-  			The first method returns the set of repository names supported by this REST server.
-<programlisting><![CDATA[
-public Set<String> getJcrRepositoryNames() {
-    return new HashSet<String>(jcrEngine.getRepositoryNames());
-}
-]]></programlisting> 
-			The ModeShape JCR repository does support multiple repositories on the same server.  Other JCR implementations
-			that don't support multiple repositories are free to return a singleton set containing any string from this method.
-		</para>
-		<para>
-			The other required method returns an open JCR &Session; for the user from the current request in a given repository
-			and workspace.  The provider can use the &HttpServletRequest; to get the authentication credentials for the 
-			HTTP user.
-<programlisting><![CDATA[
-public Session getSession( HttpServletRequest request,
-                           String repositoryName,
-                           String workspaceName ) throws RepositoryException {
-    Repository repository = getRepository(repositoryName);
-
-	SecurityContext context = new ServletSecurityContext(request);
-	Credentials credentials = new SecurityContextCredentials(context);
-    return repository.login(credentials, workspaceName);
-}
-]]></programlisting>
-			The <code>getSession(...)</code> method is used by most of the REST server methods to access the JCR 
-			repository and return results as needed.			
-		</para>
-		<para>
-			Finally, the <code>shutdown()</code> method signals that the web context is being undeployed and the JCR
-			repository should shutdown and clean up any resources that are in use.
-		</para>
-	</sect1>
-
-    <sect1 id="modeshape_rest_client_api">
+    <sect2 id="modeshape_rest_client_api">
         <title>ModeShape REST Client API</title>
         <para>
             The ModeShape REST Client API provides a POJO way of using the ModeShape REST web service to publish (upload) and 
@@ -653,6 +962,77 @@ if (status.isError() {
             workspace path (if the folder didn't already exist). Also, a JCR file node (a node with primary type <code>nt:file</code>) is 
             created or updated under the last folder node and the file contents are encoded and uploaded into a child node of that file node.
         </para>
+        </sect2>
     </sect1>
+	<sect1 id="jcr_web_spi">
+		<title>Repository Providers</title>
+		<para>
+			Both the ModeShape REST server and the ModeShape WebDAV server can also be used as an interface to to other JCR repositories by creating
+			an implementation of the &RepositoryProvider; interface that connects to the other repository.			
+		</para>
+		<para>
+			The &RepositoryProvider; only has a few methods that must be implemented.  When the &ModeShapeJcrDeployer; starts
+			up, it will dynamically load the &RepositoryProvider; implementation (as noted above) and call the <code>
+			startup(ServletContext)</code> method on the provider.  The provider can use this method to load any
+			required configuration parameters from the web configuration (web.xml) and initialize the repository.
+		</para>
+		<para> 
+			As an example, here's the ModeShape JCR provider implementation of this method with exception handling omitted for brevity.
+<programlisting><![CDATA[
+public void startup( ServletContext context ) {
+    String configFile = context.getInitParameter(CONFIG_FILE);
+
+     InputStream configFileInputStream = getClass().getResourceAsStream(configFile);
+     jcrEngine = new JcrConfiguration().loadFrom(configFileInputStream).build();
+     jcrEngine.start();
+}
+]]></programlisting>
+			As you can see, the name of configuration file for the &JcrEngine; is read from the servlet context and used
+			to initialize the engine. 
+			Once the repository has been started, it is now ready to accept the main methods that provide the interface
+			to the repository.		
+		</para>			 
+		<para>
+  			The first method returns the set of repository names supported by this repository.
+<programlisting><![CDATA[
+public Set<String> getJcrRepositoryNames() {
+    return new HashSet<String>(jcrEngine.getRepositoryNames());
+}
+]]></programlisting> 
+			The ModeShape JCR repository does support multiple repositories on the same server.  Other JCR implementations
+			that don't support multiple repositories are free to return a singleton set containing any string from this method.
+		</para>
+		<para>
+			The other required method returns an open JCR &Session; for the user from the current request in a given repository
+			and workspace.  The provider can use the &HttpServletRequest; to get the authentication credentials for the 
+			HTTP user.
+<programlisting><![CDATA[
+public Session getSession( HttpServletRequest request,
+                           String repositoryName,
+                           String workspaceName ) throws RepositoryException {
+    Repository repository = getRepository(repositoryName);
+
+	SecurityContext context = new ServletSecurityContext(request);
+	Credentials credentials = new SecurityContextCredentials(context);
+    return repository.login(credentials, workspaceName);
+}
+]]></programlisting>
+			The <code>getSession(...)</code> method is used by most of the REST server methods to access the JCR 
+			repository and return results as needed.			
+		</para>
+		<para>
+			Finally, the <code>shutdown()</code> method signals that the web context is being undeployed and the JCR
+			repository should shutdown and clean up any resources that are in use.
+		</para>
+	</sect1>
+	<sect1>
+		<title>Summary</title>
+		<para>
+			This chapter has described two ways to access a ModeShape JCR repository remotely through HTTP-based protocols.  In the 
+			<link linkend="provided-connectors-part">next chapter</link>,
+			the different repository connectors will be described so that you can start to use ModeShape to store new data, connect
+			to existing data through JCR, or both.
+		</para>
+	</sect1>	
 </chapter>
 

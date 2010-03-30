@@ -24,8 +24,8 @@
 
 	<!--
 		This parameter provides the fully-qualified name of a class that implements
-		the o.m.w.jcr.rest.spi.RepositoryProvider interface.  It is required
-		by the ModeShapeJcrDeployer that controls the lifecycle for the ModeShape REST server.
+		the o.m.w.jcr.spi.RepositoryProvider interface.  It is required
+		by the ModeShapeJcrDeployer that controls the lifecycle for the ModeShape WebDAV server.
 	-->
 	<context-param>
 		<param-name>org.modeshape.web.jcr.REPOSITORY_PROVIDER</param-name>
@@ -142,16 +142,17 @@
 		</init-param>
 	</servlet>
 
-	<!-- Required parameter for ModeShape REST - should not be modified -->
+	<!-- Required parameter for ModeShape WebDAV - should not be modified -->
 	<servlet-mapping>
 		<servlet-name>WebDAV</servlet-name>
 		<url-pattern>/*</url-pattern>
 	</servlet-mapping>
 
 	<!-- 
-		The ModeShape WebDAV implementation leverages the HTTP credentials to for authentication and authorization
-		within the JCR repository.  Unless the repository provides for anonymous access, it makes no sense to try 
-		to log into the JCR repository without credentials, so this constraint helps lock down the repository.
+		The ModeShape WebDAV implementation leverages the HTTP credentials to for authentication 
+		and authorization within the JCR repository.  Unless the repository provides for anonymous 
+		access, it makes no sense to try to log into the JCR repository without credentials, so 
+		this constraint helps lock down the repository.
 		
 		This should generally not be modified. 
 	-->
@@ -163,9 +164,9 @@
 		</web-resource-collection>
 		<auth-constraint>
 			<!--  
-				A user must be assigned this role to connect to any JCR repository, in addition to needing the READONLY
-				or READWRITE roles to actually read or modify the data.  This is not used internally, so another
-				role could be substituted here.
+				A user must be assigned this role to connect to any JCR repository, in addition to 
+				needing the READONLY or READWRITE roles to actually read or modify the data.  This 
+				is not used internally, so another role could be substituted here.
 			-->
 			<role-name>connect</role-name>
 		</auth-constraint>

@@ -207,10 +207,10 @@ final &LoginContext; loginContext = ...;
 		<sect2>
 			<title>Optional Features</title>
 			<para>
-				ModeShape also supports the optional JCR locking and observation features, though the ModeShape behavior
-				with regard to events upon deletion follows the updated behavior outline in the
-				<ulink url="&JSR283;">JSR-283</ulink> specification (namely that when a subgraph is deleted, ModeShape generates
-				only one event for the top-level node in that subgraph).
+				ModeShape also supports the optional JCR locking, observation, and versioning features, 
+				though the ModeShape behavior with regard to events upon deletion follows the updated behavior 
+				outline in the <ulink url="&JSR283;">JSR-283</ulink> specification (namely that when a subgraph 
+				is deleted, ModeShape generates only one event for the top-level node in that subgraph).
 			</para>
 			<para>
 				ModeShape does not support the optional SQL query feature as defined by <ulink url="&JSR170;">JSR-170</ulink>
@@ -218,10 +218,6 @@ final &LoginContext; loginContext = ...;
 				Instead, ModeShape already supports its replacement, the <emphasis>JCR-SQL2</emphasis> query language defined by the 
 				<ulink url="&JSR283;">JSR-283</ulink> specification.  JCR-SQL2 is much improved and much more capable.
 				For details, see the chapter on <link linkend="jcr-query-and-search">queries and search languages</link>.
-			</para>
-			<para>
-				ModeShape does not yet support the optional versioning feature of JSR-170, but our goal is to support it
-				in the next release.
 			</para>
 		</sect2>
 		<sect2 id="modeshape_jcr_security">
@@ -473,8 +469,7 @@ nodeTypeManager.unregisterNodeType(Collections.singleton(unusedNodeTypeName));
 		<para>
 			In this chapter, we covered how to use JCR with ModeShape and learned about how it implements the JCR specification.  
 			Now that you know how ModeShape repositories work and how to use JCR to work with ModeShape repositories, we'll move on in 
-			the <link linkend="rest_service">next chapter</link> to show how you can use the RESTful web service to
-			provide access to the content in a JCR repository to clients.
+			the <link linkend="jcr-query-and-search">next chapter</link> to show how you can use ModeShape to query and search your JCR data.
 		</para>
 	</sect1>
 </chapter>

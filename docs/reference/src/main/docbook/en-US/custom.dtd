@@ -235,8 +235,9 @@
 <!ENTITY ImageMetadata						  	"<ulink url='&API;sequencer/image/ImageMetadata.html'><classname>ImageMetadata</classname></ulink>">
 <!ENTITY ImageSequencerI18n				  	"<ulink url='&API;sequencer/image/ImageSequencerI18n.html'><classname>ImageSequencerI18n</classname></ulink>">
 <!ENTITY ApertureMimeTypeDetector	  	"<ulink url='&API;mimetype/aperture/ApertureMimeTypeDetector.html'><classname>ApertureMimeTypeDetector</classname></ulink>">
-<!ENTITY ModeShapeJcrDeployer	  			"<ulink url='&API;web/jcr/rest/ModeShapeJcrDeployer.html'><classname>ModeShapeJcrDeployer</classname></ulink>">
-<!ENTITY RepositoryProvider	  				"<ulink url='&API;web/jcr/rest/spi/RepositoryProvider.html'><classname>RepositoryProvider</classname></ulink>">
+<!ENTITY ModeShapeJcrDeployer	  			"<ulink url='&API;web/jcr/ModeShapeJcrDeployer.html'><classname>ModeShapeJcrDeployer</classname></ulink>">
+<!ENTITY RepositoryProvider	  				"<ulink url='&API;web/jcr/spi/RepositoryProvider.html'><classname>RepositoryProvider</classname></ulink>">
+<!ENTITY RequestResolver	  				"<ulink url='&API;web/jcr/webdav/RequestResolver.html'><classname>RequestResolver</classname></ulink>">
 
 <!ENTITY JavaMetadataSequencer		  	"<ulink url='&API;sequencer/java/JavaMetadataSequencer.html'><classname>JavaMetadataSequencer</classname></ulink>">
 <!ENTITY SourceFileRecorder		  			"<ulink url='&API;sequencer/java/SourceFileRecorder.html'><classname>SourceFileRecorder</classname></ulink>">
