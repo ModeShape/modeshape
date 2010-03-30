@@ -215,7 +215,6 @@ public class LargeValueEntity {
             do {
                 int toIndex = Math.min(fromIndex + 20, endIndex);
                 Query query = manager.createNamedQuery("LargeValueEntity.deleteIn");
-                System.out.println(hashes.subList(fromIndex, toIndex));
                 query.setParameter("inValues", hashes.subList(fromIndex, toIndex));
                 query.executeUpdate();
                 result += toIndex - fromIndex;
