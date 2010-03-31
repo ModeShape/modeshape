@@ -555,6 +555,21 @@ public class JcrRequestProcessor extends RequestProcessor {
                         return factories.getReferenceFactory().create(value.getString());
                     case javax.jcr.PropertyType.STRING:
                         return factories.getStringFactory().create(value.getString());
+                    case javax.jcr.PropertyType.UNDEFINED:
+                        // We don't know what type of values these are, but we need to convert any value
+                        // that depends on namespaces (e.g., names and paths) into Graph objects.
+                        try {
+                            // So first try a name ...
+                            return factories.getNameFactory().create(value.getString());
+                        } catch (ValueFormatException e) {
+                            // Wasn't a name, so try a path ...
+                            try {
+                                return factories.getPathFactory().create(value.getString());
+                            } catch (ValueFormatException e2) {
+                                // Wasn't a path, so finally treat as a string ...
+                                return factories.getStringFactory().create(value.getString());
+                            }
+                        }
                 }
             } catch (ValueFormatException e) {
                 // There was an error converting the JCR value into the appropriate graph value
