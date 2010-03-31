@@ -23,16 +23,23 @@
  */
 package org.modeshape.connector.jcr;
 
+import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import org.modeshape.common.collection.Collections;
 import org.modeshape.graph.connector.RepositorySourceException;
+import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
+import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.basic.BasicNamespace;
 import org.modeshape.graph.property.basic.SimpleNamespaceRegistry;
 
 /**
- * 
+ * This represents the {@link NamespaceRegistry} implementation mirroring a supplied JCR Session. This registry is used by a
+ * custom context to create Name and Path objects from JCR Session values, and it ensures that any namespace used is also in the
+ * connector's normal NamespaceRegistry.
  */
 public class JcrNamespaceRegistry implements NamespaceRegistry {
 
@@ -41,12 +48,15 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
     private final NamespaceRegistry cache;
     private final Session session;
     private final javax.jcr.NamespaceRegistry jcrRegistry;
+    private final NamespaceRegistry connectorRegistry;
 
     JcrNamespaceRegistry( String sourceName,
-                          Session session ) throws RepositoryException {
+                          Session session,
+                          NamespaceRegistry connectorRegistry ) throws RepositoryException {
         this.sourceName = sourceName;
         this.session = session;
         this.jcrRegistry = this.session.getWorkspace().getNamespaceRegistry();
+        this.connectorRegistry = connectorRegistry;
         this.cache = new SimpleNamespaceRegistry();
         assert this.session != null;
         assert this.cache != null;
@@ -67,6 +77,10 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * This method is most commonly used in this connector, because it is called to create {@link Name} and {@link Path} objects
+     * given the string representation returned by the remote JCR session.
+     * </p>
      * 
      * @see org.modeshape.graph.property.NamespaceRegistry#getNamespaceForPrefix(java.lang.String)
      */
@@ -76,6 +90,8 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
         if (uri == null) {
             try {
                 uri = this.jcrRegistry.getURI(prefix);
+                // Make sure this is in the connector's registry ...
+                ensureRegisteredInConnector(prefix, uri);
             } catch (NamespaceException e) {
                 // namespace is not known, so return null ...
             } catch (RepositoryException e) {
@@ -85,6 +101,18 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
         return uri;
     }
 
+    protected void ensureRegisteredInConnector( String prefix,
+                                                String uri ) {
+        if (!connectorRegistry.isRegisteredNamespaceUri(uri)) {
+            int index = 0;
+            while (connectorRegistry.getNamespaceForPrefix(prefix) != null) {
+                // The prefix is already used, so let it determine the best one ...
+                prefix = prefix + (++index);
+            }
+            connectorRegistry.register(prefix, uri);
+        }
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -92,7 +120,17 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
      */
     @Override
     public Set<Namespace> getNamespaces() {
-        return null;
+        // Always delegate to the session's registry ...
+        Set<Namespace> namespaces = new HashSet<Namespace>();
+        try {
+            for (String prefix : this.jcrRegistry.getPrefixes()) {
+                String uri = this.jcrRegistry.getURI(prefix);
+                namespaces.add(new BasicNamespace(prefix, uri));
+            }
+        } catch (RepositoryException e) {
+            throw new RepositorySourceException(sourceName, e);
+        }
+        return namespaces;
     }
 
     /**
@@ -103,7 +141,20 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
     @Override
     public String getPrefixForNamespaceUri( String namespaceUri,
                                             boolean generateIfMissing ) {
-        return null;
+        String prefix = cache.getPrefixForNamespaceUri(namespaceUri, false);
+        if (prefix == null) {
+            try {
+                // Check the session ...
+                prefix = this.jcrRegistry.getPrefix(namespaceUri);
+                // Make sure this is in the connector's registry ...
+                ensureRegisteredInConnector(prefix, namespaceUri);
+            } catch (NamespaceException e) {
+                // namespace is not known, so return null ...
+            } catch (RepositoryException e) {
+                throw new RepositorySourceException(sourceName, e);
+            }
+        }
+        return prefix;
     }
 
     /**
@@ -113,7 +164,12 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
      */
     @Override
     public Set<String> getRegisteredNamespaceUris() {
-        return null;
+        // Always delegate to the session's registry ...
+        try {
+            return Collections.unmodifiableSet(this.jcrRegistry.getURIs());
+        } catch (RepositoryException e) {
+            throw new RepositorySourceException(sourceName, e);
+        }
     }
 
     /**
@@ -123,7 +179,16 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
      */
     @Override
     public boolean isRegisteredNamespaceUri( String namespaceUri ) {
-        return false;
+        // Always delegate to the session's registry ...
+        try {
+            this.jcrRegistry.getPrefix(namespaceUri);
+            return true;
+        } catch (NamespaceException e) {
+            // namespace is not known, so return false ...
+            return false;
+        } catch (RepositoryException e) {
+            throw new RepositorySourceException(sourceName, e);
+        }
     }
 
     /**
@@ -134,7 +199,7 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
     @Override
     public String register( String prefix,
                             String namespaceUri ) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -144,6 +209,6 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
      */
     @Override
     public boolean unregister( String namespaceUri ) {
-        return false;
+        throw new UnsupportedOperationException();
     }
 }

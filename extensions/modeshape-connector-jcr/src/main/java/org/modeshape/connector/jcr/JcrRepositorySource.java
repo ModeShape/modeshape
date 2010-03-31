@@ -94,7 +94,7 @@ public class JcrRepositorySource implements RepositorySource, ObjectFactory {
     /**
      * This source does not support creating new workspaces, since the JCR API does not provide a way of doing so.
      */
-    protected static final boolean SUPPORTS_CREATING_WORKSPACES = true;
+    protected static final boolean SUPPORTS_CREATING_WORKSPACES = false;
     /**
      * This source supports creating references.
      */

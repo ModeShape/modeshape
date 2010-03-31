@@ -23,19 +23,75 @@
  */
 package org.modeshape.connector.jcr;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import javax.jcr.Repository;
+import javax.naming.Context;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.test.AbstractConnectorTest;
+import org.modeshape.jcr.JcrEngine;
 
 public class JcrConnectorWritableTest extends AbstractConnectorTest {
 
     public static final String ARBITRARY_PROPERTIES_NOT_SUPPORTED = "This connector does not support setting arbitrary properties";
 
+    private static JcrEngine engine;
+    private static Context jndiContext;
+
     @Override
     protected RepositorySource setUpSource() throws Exception {
+        final String carRepositoryJndiName = "cars repository in jndi";
+        final String aircraftRepositoryJndiName = "aircraft repository in jndi";
+
+        if (engine == null) {
+            // Set up the JCR engine that the connector will use ...
+            engine = JcrConnectorTestUtil.loadEngine();
+            Repository carsRepository = engine.getRepository(JcrConnectorTestUtil.CARS_REPOSITORY_NAME);
+            Repository aircraftRepository = engine.getRepository(JcrConnectorTestUtil.AIRCRAFT_REPOSITORY_NAME);
+
+            // Set up the mock JNDI context and 'register' the two JCR Repository objects ...
+            jndiContext = mock(Context.class);
+            when(jndiContext.lookup(carRepositoryJndiName)).thenReturn(carsRepository);
+            when(jndiContext.lookup(aircraftRepositoryJndiName)).thenReturn(aircraftRepository);
+        }
+
+        // Now create the connector instance ...
         JcrRepositorySource source = new JcrRepositorySource();
         source.setName("Test Repository");
+        source.setRepositoryJndiName(carRepositoryJndiName);
+        source.setUsername("superuser");
+        source.setPassword("superuser");
+        // For our tests, use the mock JNDI context ...
+        source.setContext(jndiContext);
+
         return source;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.test.AbstractConnectorTest#shutdownRepository()
+     */
+    @Override
+    public void shutdownRepository() throws Exception {
+        super.shutdownRepository();
+        // Now that the RepositorySource has been closed, shut down the engine ...
+        try {
+            engine.shutdown();
+        } finally {
+            engine = null;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.test.AbstractConnectorTest#cleanUpSourceResources()
+     */
+    @Override
+    protected void cleanUpSourceResources() throws Exception {
+        super.cleanUpSourceResources();
     }
 
     @Override
@@ -45,7 +101,6 @@ public class JcrConnectorWritableTest extends AbstractConnectorTest {
 
     @Override
     public void afterEach() throws Exception {
-
         super.afterEach();
     }
 }

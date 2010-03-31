@@ -24,7 +24,7 @@
 package org.modeshape.connector.jcr;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.naming.Context;
@@ -59,8 +59,8 @@ public class JcrConnectorReadableTest extends ReadableConnectorTest {
 
             // Set up the mock JNDI context and 'register' the two JCR Repository objects ...
             jndiContext = mock(Context.class);
-            stub(jndiContext.lookup(carRepositoryJndiName)).toReturn(carsRepository);
-            stub(jndiContext.lookup(aircraftRepositoryJndiName)).toReturn(aircraftRepository);
+            when(jndiContext.lookup(carRepositoryJndiName)).thenReturn(carsRepository);
+            when(jndiContext.lookup(aircraftRepositoryJndiName)).thenReturn(aircraftRepository);
         }
 
         // Now create the connector instance ...

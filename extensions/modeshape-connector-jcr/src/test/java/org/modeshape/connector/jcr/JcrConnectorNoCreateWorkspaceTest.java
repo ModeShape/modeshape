@@ -23,18 +23,22 @@
  */
 package org.modeshape.connector.jcr;
 
-import java.io.File;
-import org.modeshape.connector.jcr.JcrRepositorySource;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import javax.jcr.Repository;
+import javax.naming.Context;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.test.WorkspaceConnectorTest;
+import org.modeshape.jcr.JcrEngine;
 
 /**
  * These tests verify that the file system connector behaves correctly.
  */
 public class JcrConnectorNoCreateWorkspaceTest extends WorkspaceConnectorTest {
 
-    private String pathToRepositories;
+    private static JcrEngine engine;
+    private static Context jndiContext;
 
     /**
      * {@inheritDoc}
@@ -43,10 +47,31 @@ public class JcrConnectorNoCreateWorkspaceTest extends WorkspaceConnectorTest {
      */
     @Override
     protected RepositorySource setUpSource() throws Exception {
-        // Set the connection properties to be use the content of "./src/test/resources/repositories" as a repository ...
-        pathToRepositories = new File(".").getAbsolutePath() + "/src/test/resources/repositories/";
+
+        final String carRepositoryJndiName = "cars repository in jndi";
+        final String aircraftRepositoryJndiName = "aircraft repository in jndi";
+
+        if (engine == null) {
+            // Set up the JCR engine that the connector will use ...
+            engine = JcrConnectorTestUtil.loadEngine();
+            Repository carsRepository = engine.getRepository(JcrConnectorTestUtil.CARS_REPOSITORY_NAME);
+            Repository aircraftRepository = engine.getRepository(JcrConnectorTestUtil.AIRCRAFT_REPOSITORY_NAME);
+
+            // Set up the mock JNDI context and 'register' the two JCR Repository objects ...
+            jndiContext = mock(Context.class);
+            when(jndiContext.lookup(carRepositoryJndiName)).thenReturn(carsRepository);
+            when(jndiContext.lookup(aircraftRepositoryJndiName)).thenReturn(aircraftRepository);
+        }
+
+        // Now create the connector instance ...
         JcrRepositorySource source = new JcrRepositorySource();
         source.setName("Test Repository");
+        source.setRepositoryJndiName(carRepositoryJndiName);
+        source.setUsername("superuser");
+        source.setPassword("superuser");
+        // For our tests, use the mock JNDI context ...
+        source.setContext(jndiContext);
+
         return source;
     }
 
@@ -67,7 +92,7 @@ public class JcrConnectorNoCreateWorkspaceTest extends WorkspaceConnectorTest {
      */
     @Override
     protected String[] generateInvalidNamesForNewWorkspaces() {
-        return null; // nothing is considered invalid
+        return new String[] {"trains", "ships"};
     }
 
     /**
@@ -77,6 +102,6 @@ public class JcrConnectorNoCreateWorkspaceTest extends WorkspaceConnectorTest {
      */
     @Override
     protected String[] generateValidNamesForNewWorkspaces() {
-        return new String[] {pathToRepositories + "trains"};
+        return new String[] {}; // nothing is considered valid
     }
 }

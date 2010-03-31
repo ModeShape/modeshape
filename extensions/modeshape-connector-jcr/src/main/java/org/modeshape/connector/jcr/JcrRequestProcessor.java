@@ -23,8 +23,6 @@
  */
 package org.modeshape.connector.jcr;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -32,6 +30,7 @@ import java.util.Set;
 import java.util.UUID;
 import javax.jcr.Credentials;
 import javax.jcr.ItemNotFoundException;
+import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PropertyIterator;
@@ -42,12 +41,9 @@ import javax.jcr.Value;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
-import org.modeshape.graph.ModeShapeIntLexicon;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NamespaceException;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathNotFoundException;
@@ -55,6 +51,7 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
+import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.graph.request.CloneBranchRequest;
 import org.modeshape.graph.request.CloneWorkspaceRequest;
 import org.modeshape.graph.request.CopyBranchRequest;
@@ -63,6 +60,7 @@ import org.modeshape.graph.request.CreateWorkspaceRequest;
 import org.modeshape.graph.request.DeleteBranchRequest;
 import org.modeshape.graph.request.DestroyWorkspaceRequest;
 import org.modeshape.graph.request.GetWorkspacesRequest;
+import org.modeshape.graph.request.InvalidRequestException;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.MoveBranchRequest;
 import org.modeshape.graph.request.ReadAllChildrenRequest;
@@ -80,20 +78,10 @@ import org.modeshape.graph.request.processor.RequestProcessor;
 @NotThreadSafe
 public class JcrRequestProcessor extends RequestProcessor {
 
-    private static final Set<String> NON_MAPPABLE_NAMESPACE_PREFIXES = Collections.unmodifiableSet(new HashSet<String>(
-                                                                                                                       Arrays.asList(new String[] {
-                                                                                                                           "jcr",
-                                                                                                                           "nt",
-                                                                                                                           "mix",
-                                                                                                                           ModeShapeLexicon.Namespace.PREFIX,
-                                                                                                                           ModeShapeIntLexicon.Namespace.PREFIX})));
-
-    private final Map<String, Session> workspaces = new HashMap<String, Session>();
+    private final Map<String, Workspace> workspaces = new HashMap<String, Workspace>();
 
     private final Repository repository;
     private final Credentials credentials;
-    private final ValueFactories factories;
-    private final PropertyFactory propertyFactory;
 
     /**
      * @param sourceName
@@ -112,8 +100,6 @@ public class JcrRequestProcessor extends RequestProcessor {
         super(sourceName, context, observer, null, defaultCachePolicy);
         this.repository = repository;
         this.credentials = credentials;
-        this.factories = context.getValueFactories();
-        this.propertyFactory = context.getPropertyFactory();
     }
 
     /**
@@ -128,12 +114,14 @@ public class JcrRequestProcessor extends RequestProcessor {
      * @param workspaceName the name of the workspace for which a Session is to be found, or null if a session to the default
      *        workspace should be returned
      * @return the Session to the workspace, or null if there was an error
+     * @throws NoSuchWorkspaceException if the named workspace does not exist
      * @throws RepositoryException if there is an error creating a Session
      */
-    protected Session sessionFor( String workspaceName ) throws RepositoryException {
-        Session session = workspaces.get(workspaceName);
-        if (session == null) {
-            if (workspaceName != null) {
+    protected Workspace workspaceFor( String workspaceName ) throws RepositoryException {
+        Workspace workspace = workspaces.get(workspaceName);
+        if (workspace == null) {
+            Session session = null;
+            try {
                 // A workspace was specified, so use it to obtain the session ...
                 if (credentials != null) {
                     // Try to create the session using the credentials ...
@@ -142,36 +130,30 @@ public class JcrRequestProcessor extends RequestProcessor {
                     // No credentials ...
                     session = repository.login(workspaceName);
                 }
-            } else {
-                // No workspace name was given, so obtain a session using the default ...
-                if (credentials != null) {
-                    // Try to create the session using the credentials ...
-                    session = repository.login(credentials);
-                } else {
-                    // No credentials, and no workspace name ...
-                    session = repository.login();
-                }
-                // Use the real workspace name ...
-                workspaceName = session.getWorkspace().getName();
-                // But also record this session for the null workspace name ...
-                workspaces.put(null, session);
+            } catch (NoSuchWorkspaceException e) {
+                throw new InvalidWorkspaceException(e.getLocalizedMessage());
             }
             assert session != null;
-            workspaces.put(workspaceName, session);
+            workspace = new Workspace(session);
+            workspaces.put(workspaceName, workspace);
+            if (workspaceName == null) {
+                // This is the default workspace, so record the session for the null workspace name, too...
+                workspaces.put(null, workspace);
+            }
         }
-        return session;
+        return workspace;
     }
 
     /**
-     * Use the first session that's available, or if none is available establish one for the default workspace.
+     * Use the first workspace that's available, or if none is available establish one for the default workspace.
      * 
-     * @return the Session to the workspace, or null if there was an error
+     * @return the workspace, or null if there was an error
      * @throws RepositoryException if there is an error creating a Session
      */
-    protected Session session() throws RepositoryException {
+    protected Workspace workspace() throws RepositoryException {
         if (workspaces.isEmpty()) {
             // No sessions yet, so create a default one ...
-            return sessionFor(null);
+            return workspaceFor(null);
         }
         // Grab any of the sessions ...
         return workspaces.values().iterator().next();
@@ -186,170 +168,11 @@ public class JcrRequestProcessor extends RequestProcessor {
      */
     protected boolean workspaceExistsNamed( String workspaceName ) throws RepositoryException {
         if (workspaces.containsKey(workspaceName)) return true;
-        for (String actualName : session().getWorkspace().getAccessibleWorkspaceNames()) {
+        for (String actualName : workspace().session().getWorkspace().getAccessibleWorkspaceNames()) {
             if (actualName == null) continue;
             if (actualName.equals(workspaceName)) return true;
         }
         return false;
-    }
-
-    /**
-     * Obtain the actual location for the supplied node.
-     * 
-     * @param node the existing node; may not be null
-     * @return the actual location, with UUID if the node is "mix:referenceable"
-     * @throws RepositoryException if there is an error
-     */
-    protected Location locationFor( Node node ) throws RepositoryException {
-        // Get the path to the node ...
-        String pathStr = node.getPath();
-        Path path = factories.getPathFactory().create(pathStr);
-
-        // Does the node have a UUID ...
-        if (node.isNodeType("mix:referenceable")) {
-            String uuidStr = node.getUUID();
-            if (uuidStr != null) {
-                UUID uuid = UUID.fromString(uuidStr);
-                return Location.create(path, uuid);
-            }
-        }
-        return Location.create(path);
-    }
-
-    /**
-     * Find the existing node given the location.
-     * 
-     * @param session the session that should be used; may not be null
-     * @param location the location of the node, which must have a {@link Location#getPath() path} and/or
-     *        {@link Location#getUuid() UUID}
-     * @return the existing node; never null
-     * @throws RepositoryException if there is an error working with the session
-     * @throws PathNotFoundException if the node could not be found by its path
-     */
-    protected Node node( Session session,
-                         Location location ) throws RepositoryException {
-        Node root = session.getRootNode();
-        UUID uuid = location.getUuid();
-        if (uuid != null) {
-            try {
-                return session.getNodeByUUID(uuid.toString());
-            } catch (ItemNotFoundException e) {
-                if (!location.hasPath()) {
-                    String msg = JcrConnectorI18n.unableToFindNodeWithUuid.text(getSourceName(), uuid);
-                    throw new PathNotFoundException(location, factories.getPathFactory().createRootPath(), msg);
-                }
-                // Otherwise, try to find it by its path ...
-            }
-        }
-        if (location.hasPath()) {
-            Path relativePath = location.getPath().relativeToRoot();
-            ValueFactory<String> stringFactory = factories.getStringFactory();
-            String relativePathStr = stringFactory.create(relativePath);
-            try {
-                return root.getNode(relativePathStr);
-            } catch (javax.jcr.PathNotFoundException e) {
-                // Figure out the lowest existing path ...
-                Node node = root;
-                for (Path.Segment segment : relativePath) {
-                    try {
-                        node = node.getNode(stringFactory.create(segment));
-                    } catch (javax.jcr.PathNotFoundException e2) {
-                        String pathStr = stringFactory.create(location.getPath());
-                        Path lowestPath = factories.getPathFactory().create(node.getPath());
-                        throw new PathNotFoundException(location, lowestPath,
-                                                        JcrConnectorI18n.nodeDoesNotExist.text(getSourceName(),
-                                                                                               session.getWorkspace().getName(),
-                                                                                               pathStr));
-                    }
-                }
-            }
-        }
-        // Otherwise, we can't find the node ...
-        String msg = JcrConnectorI18n.unableToFindNodeWithoutPathOrUuid.text(getSourceName(), location);
-        throw new IllegalArgumentException(msg);
-    }
-
-    /**
-     * Get the graph {@link Property property} for the supplied JCR property representation.
-     * 
-     * @param jcrProperty the JCR property; may not be null
-     * @return the graph property
-     * @throws RepositoryException if there is an error working with the session
-     */
-    protected Property propertyFor( javax.jcr.Property jcrProperty ) throws RepositoryException {
-        // Get the values ...
-        Object[] values = null;
-        if (jcrProperty.getDefinition().isMultiple()) {
-            Value[] jcrValues = jcrProperty.getValues();
-            values = new Object[jcrValues.length];
-            for (int i = 0; i < jcrValues.length; i++) {
-                values[i] = convert(jcrValues[i], jcrProperty);
-            }
-        } else {
-            values = new Object[] {convert(jcrProperty.getValue(), jcrProperty)};
-        }
-        // Get the name, and then create the property ...
-        Name name = factories.getNameFactory().create(jcrProperty.getName());
-        return propertyFactory.create(name, values);
-    }
-
-    /**
-     * Utility method used to convert a JCR {@link Value} object into a valid graph property value.
-     * 
-     * @param value the JCR value; may be null
-     * @param jcrProperty the JCR property, used to access the session (if needed)
-     * @return the graph representation of the value
-     * @throws RepositoryException if there is an error working with the session
-     */
-    protected Object convert( Value value,
-                              javax.jcr.Property jcrProperty ) throws RepositoryException {
-        if (value == null) return null;
-        switch (value.getType()) {
-            case javax.jcr.PropertyType.BINARY:
-                return factories.getBinaryFactory().create(value.getStream(), 0);
-            case javax.jcr.PropertyType.BOOLEAN:
-                return factories.getBooleanFactory().create(value.getBoolean());
-            case javax.jcr.PropertyType.DATE:
-                return factories.getDateFactory().create(value.getDate());
-            case javax.jcr.PropertyType.DOUBLE:
-                return factories.getDoubleFactory().create(value.getDouble());
-            case javax.jcr.PropertyType.LONG:
-                return factories.getLongFactory().create(value.getLong());
-            case javax.jcr.PropertyType.NAME:
-                try {
-                    return factories.getNameFactory().create(value.getString());
-                } catch (ValueFormatException e) {
-                    registerAllNamespaces(jcrProperty.getSession());
-                    return factories.getNameFactory().create(value.getString());
-                }
-            case javax.jcr.PropertyType.PATH:
-                try {
-                    return factories.getPathFactory().create(value.getString());
-                } catch (NamespaceException e) {
-                    registerAllNamespaces(jcrProperty.getSession());
-                    return factories.getPathFactory().create(value.getString());
-                }
-            case javax.jcr.PropertyType.REFERENCE:
-                return factories.getReferenceFactory().create(value.getString());
-            case javax.jcr.PropertyType.STRING:
-                return factories.getStringFactory().create(value.getString());
-        }
-        return null;
-    }
-
-    /**
-     * Utility method that extracts from the session all namespaces.
-     * 
-     * @param session the JCR session; may not be null
-     * @throws RepositoryException if there is an error working with the session
-     */
-    protected void registerAllNamespaces( Session session ) throws RepositoryException {
-        NamespaceRegistry registry = getExecutionContext().getNamespaceRegistry();
-        for (String nsPrefix : session.getNamespacePrefixes()) {
-            if (NON_MAPPABLE_NAMESPACE_PREFIXES.contains(nsPrefix)) continue;
-            String nsUri = session.getNamespaceURI(nsPrefix);
-            registry.register(nsPrefix, nsUri);
-        }
     }
 
     /**
@@ -358,9 +181,9 @@ public class JcrRequestProcessor extends RequestProcessor {
      * @throws RepositoryException if there is a problem committing any changes
      */
     public void commit() throws RepositoryException {
-        for (Session session : workspaces.values()) {
+        for (Workspace workspace : workspaces.values()) {
             // Save the changes in this workspace, or throw an error.
-            session.save();
+            workspace.session().save();
             // Note that this does not really behave like a distributed transaction, because
             // the first may succeed while the second fails (and all subsequent will not be saved).
         }
@@ -384,9 +207,9 @@ public class JcrRequestProcessor extends RequestProcessor {
     public void close() {
         try {
             RuntimeException problem = null;
-            for (Session session : workspaces.values()) {
+            for (Workspace workspace : workspaces.values()) {
                 try {
-                    session.logout();
+                    workspace.session().logout();
                 } catch (RuntimeException e) {
                     if (problem == null) problem = e;
                 }
@@ -410,10 +233,9 @@ public class JcrRequestProcessor extends RequestProcessor {
     public void process( VerifyWorkspaceRequest request ) {
         if (request == null) return;
         try {
-            Session session = sessionFor(request.workspaceName());
-            Location actualLocation = locationFor(session.getRootNode());
-            request.setActualWorkspaceName(session.getWorkspace().getName());
-            request.setActualRootLocation(actualLocation);
+            Workspace workspace = workspaceFor(request.workspaceName());
+            request.setActualWorkspaceName(workspace.name());
+            request.setActualRootLocation(workspace.locationForRootNode());
         } catch (Throwable e) {
             request.setError(e);
         }
@@ -429,7 +251,7 @@ public class JcrRequestProcessor extends RequestProcessor {
         if (request == null) return;
         try {
             Set<String> workspaceNames = new HashSet<String>();
-            for (String workspaceName : session().getWorkspace().getAccessibleWorkspaceNames()) {
+            for (String workspaceName : workspace().session().getWorkspace().getAccessibleWorkspaceNames()) {
                 workspaceNames.add(workspaceName);
             }
             request.setAvailableWorkspaceNames(workspaceNames);
@@ -456,7 +278,7 @@ public class JcrRequestProcessor extends RequestProcessor {
             } else {
                 // The workspace does not yet exist, but JCR doesn't let us create it ...
                 String msg = JcrConnectorI18n.unableToCreateWorkspaceInRepository.text(desiredName, getSourceName());
-                request.setError(new UnsupportedRequestException(msg));
+                request.setError(new InvalidRequestException(msg));
             }
         } catch (Throwable e) {
             request.setError(e);
@@ -483,10 +305,10 @@ public class JcrRequestProcessor extends RequestProcessor {
                         break;
                     case SKIP_CLONE:
                         // Perform the clone ...
-                        Session session = sessionFor(desiredName);
-                        session.getWorkspace().clone(request.nameOfWorkspaceToBeCloned(), "/", "/", true);
-                        Location actualLocation = locationFor(session.getRootNode());
-                        request.setActualWorkspaceName(session.getWorkspace().getName());
+                        Workspace workspace = workspaceFor(desiredName);
+                        workspace.session().getWorkspace().clone(request.nameOfWorkspaceToBeCloned(), "/", "/", true);
+                        Location actualLocation = workspace.locationForRootNode();
+                        request.setActualWorkspaceName(workspace.name());
                         request.setActualRootLocation(actualLocation);
                         break;
                 }
@@ -494,7 +316,7 @@ public class JcrRequestProcessor extends RequestProcessor {
             }
             // Otherwise, the workspace doesn't exist and JCR doesn't let us create one ...
             String msg = JcrConnectorI18n.unableToCreateWorkspaceInRepository.text(desiredName, getSourceName());
-            request.setError(new UnsupportedRequestException(msg));
+            request.setError(new InvalidRequestException(msg));
         } catch (Throwable e) {
             request.setError(e);
         }
@@ -521,15 +343,16 @@ public class JcrRequestProcessor extends RequestProcessor {
     public void process( ReadNodeRequest request ) {
         if (request == null) return;
         try {
-            Node node = node(sessionFor(request.inWorkspace()), request.at());
-            request.setActualLocationOfNode(locationFor(node));
+            Workspace workspace = workspaceFor(request.inWorkspace());
+            Node node = workspace.node(request.at());
+            request.setActualLocationOfNode(workspace.locationFor(node));
             // Read the children ...
             for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
-                request.addChild(locationFor(iter.nextNode()));
+                request.addChild(workspace.locationFor(iter.nextNode()));
             }
             // Read the properties ...
             for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
-                request.addProperty(propertyFor(iter.nextProperty()));
+                request.addProperty(workspace.propertyFor(iter.nextProperty()));
             }
             setCacheableInfo(request);
         } catch (Throwable e) {
@@ -546,10 +369,11 @@ public class JcrRequestProcessor extends RequestProcessor {
     public void process( ReadAllChildrenRequest request ) {
         if (request == null) return;
         try {
-            Node parent = node(sessionFor(request.inWorkspace()), request.of());
-            request.setActualLocationOfNode(locationFor(parent));
+            Workspace workspace = workspaceFor(request.inWorkspace());
+            Node parent = workspace.node(request.of());
+            request.setActualLocationOfNode(workspace.locationFor(parent));
             for (NodeIterator iter = parent.getNodes(); iter.hasNext();) {
-                request.addChild(locationFor(iter.nextNode()));
+                request.addChild(workspace.locationFor(iter.nextNode()));
             }
             setCacheableInfo(request);
         } catch (Throwable e) {
@@ -566,11 +390,12 @@ public class JcrRequestProcessor extends RequestProcessor {
     public void process( ReadAllPropertiesRequest request ) {
         if (request == null) return;
         try {
-            Node node = node(sessionFor(request.inWorkspace()), request.at());
-            request.setActualLocationOfNode(locationFor(node));
+            Workspace workspace = workspaceFor(request.inWorkspace());
+            Node node = workspace.node(request.at());
+            request.setActualLocationOfNode(workspace.locationFor(node));
             // Read the properties ...
             for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
-                request.addProperty(propertyFor(iter.nextProperty()));
+                request.addProperty(workspace.propertyFor(iter.nextProperty()));
             }
             // Get the number of children ...
             NodeIterator childIter = node.getNodes();
@@ -643,4 +468,179 @@ public class JcrRequestProcessor extends RequestProcessor {
     public void process( UpdatePropertiesRequest request ) {
     }
 
+    /**
+     * An encapsulation of a remote JCR Session, with an ExecutionContext that contains a namespace registry which mirrors the
+     * session's registry, and with factories that convert the JCR-specific values, paths, and names into their graph-equivalents.
+     */
+    protected class Workspace {
+        private final Session session;
+        /** The context used to transform the JCR session values into graph values */
+        private final ExecutionContext context;
+        /** The value factories for graph values */
+        private final ValueFactories factories;
+        /** The value factories for graph values */
+        private final PropertyFactory propertyFactory;
+        private final String name;
+
+        protected Workspace( Session jcrSession ) throws RepositoryException {
+            this.session = jcrSession;
+            this.name = this.session.getWorkspace().getName();
+            ExecutionContext connectorContext = getExecutionContext();
+            NamespaceRegistry connectorRegistry = connectorContext.getNamespaceRegistry();
+            this.context = connectorContext.with(new JcrNamespaceRegistry(getSourceName(), this.session, connectorRegistry));
+            this.factories = context.getValueFactories();
+            this.propertyFactory = context.getPropertyFactory();
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public Session session() {
+            return session;
+        }
+
+        /**
+         * Get the graph {@link Property property} for the supplied JCR property representation.
+         * 
+         * @param jcrProperty the JCR property; may not be null
+         * @return the graph property
+         * @throws RepositoryException if there is an error working with the session
+         */
+        public Property propertyFor( javax.jcr.Property jcrProperty ) throws RepositoryException {
+            // Get the values ...
+            Object[] values = null;
+            if (jcrProperty.getDefinition().isMultiple()) {
+                Value[] jcrValues = jcrProperty.getValues();
+                values = new Object[jcrValues.length];
+                for (int i = 0; i < jcrValues.length; i++) {
+                    values[i] = convert(jcrValues[i], jcrProperty);
+                }
+            } else {
+                values = new Object[] {convert(jcrProperty.getValue(), jcrProperty)};
+            }
+            // Get the name, and then create the property ...
+            Name name = factories.getNameFactory().create(jcrProperty.getName());
+            return propertyFactory.create(name, values);
+        }
+
+        /**
+         * Utility method used to convert a JCR {@link Value} object into a valid graph property value.
+         * 
+         * @param value the JCR value; may be null
+         * @param jcrProperty the JCR property, used to access the session (if needed)
+         * @return the graph representation of the value
+         * @throws RepositoryException if there is an error working with the session
+         */
+        public Object convert( Value value,
+                               javax.jcr.Property jcrProperty ) throws RepositoryException {
+            if (value == null) return null;
+            try {
+                switch (value.getType()) {
+                    case javax.jcr.PropertyType.BINARY:
+                        return factories.getBinaryFactory().create(value.getStream(), 0);
+                    case javax.jcr.PropertyType.BOOLEAN:
+                        return factories.getBooleanFactory().create(value.getBoolean());
+                    case javax.jcr.PropertyType.DATE:
+                        return factories.getDateFactory().create(value.getDate());
+                    case javax.jcr.PropertyType.DOUBLE:
+                        return factories.getDoubleFactory().create(value.getDouble());
+                    case javax.jcr.PropertyType.LONG:
+                        return factories.getLongFactory().create(value.getLong());
+                    case javax.jcr.PropertyType.NAME:
+                        return factories.getNameFactory().create(value.getString());
+                    case javax.jcr.PropertyType.PATH:
+                        return factories.getPathFactory().create(value.getString());
+                    case javax.jcr.PropertyType.REFERENCE:
+                        return factories.getReferenceFactory().create(value.getString());
+                    case javax.jcr.PropertyType.STRING:
+                        return factories.getStringFactory().create(value.getString());
+                }
+            } catch (ValueFormatException e) {
+                // There was an error converting the JCR value into the appropriate graph value
+                String typeName = javax.jcr.PropertyType.nameFromValue(value.getType());
+                throw new RepositoryException(JcrConnectorI18n.errorConvertingJcrValueOfType.text(value.getString(), typeName));
+            }
+            return null;
+        }
+
+        /**
+         * Obtain the actual location for the supplied node.
+         * 
+         * @param node the existing node; may not be null
+         * @return the actual location, with UUID if the node is "mix:referenceable"
+         * @throws RepositoryException if there is an error
+         */
+        public Location locationFor( Node node ) throws RepositoryException {
+            // Get the path to the node ...
+            String pathStr = node.getPath();
+            Path path = factories.getPathFactory().create(pathStr);
+
+            // Does the node have a UUID ...
+            if (node.isNodeType("mix:referenceable")) {
+                String uuidStr = node.getUUID();
+                if (uuidStr != null) {
+                    UUID uuid = UUID.fromString(uuidStr);
+                    return Location.create(path, uuid);
+                }
+            }
+            return Location.create(path);
+        }
+
+        public Location locationForRootNode() throws RepositoryException {
+            return locationFor(session.getRootNode());
+        }
+
+        /**
+         * Find the existing node given the location.
+         * 
+         * @param location the location of the node, which must have a {@link Location#getPath() path} and/or
+         *        {@link Location#getUuid() UUID}
+         * @return the existing node; never null
+         * @throws RepositoryException if there is an error working with the session
+         * @throws PathNotFoundException if the node could not be found by its path
+         */
+        public Node node( Location location ) throws RepositoryException {
+            Node root = session.getRootNode();
+            UUID uuid = location.getUuid();
+            if (uuid != null) {
+                try {
+                    return session.getNodeByUUID(uuid.toString());
+                } catch (ItemNotFoundException e) {
+                    if (!location.hasPath()) {
+                        String msg = JcrConnectorI18n.unableToFindNodeWithUuid.text(getSourceName(), uuid);
+                        throw new PathNotFoundException(location, factories.getPathFactory().createRootPath(), msg);
+                    }
+                    // Otherwise, try to find it by its path ...
+                }
+            }
+            if (location.hasPath()) {
+                Path relativePath = location.getPath().relativeToRoot();
+                ValueFactory<String> stringFactory = factories.getStringFactory();
+                String relativePathStr = stringFactory.create(relativePath);
+                try {
+                    return root.getNode(relativePathStr);
+                } catch (javax.jcr.PathNotFoundException e) {
+                    // Figure out the lowest existing path ...
+                    Node node = root;
+                    for (Path.Segment segment : relativePath) {
+                        try {
+                            node = node.getNode(stringFactory.create(segment));
+                        } catch (javax.jcr.PathNotFoundException e2) {
+                            String pathStr = stringFactory.create(location.getPath());
+                            Path lowestPath = factories.getPathFactory().create(node.getPath());
+                            throw new PathNotFoundException(location, lowestPath,
+                                                            JcrConnectorI18n.nodeDoesNotExist.text(getSourceName(),
+                                                                                                   session.getWorkspace()
+                                                                                                          .getName(),
+                                                                                                   pathStr));
+                        }
+                    }
+                }
+            }
+            // Otherwise, we can't find the node ...
+            String msg = JcrConnectorI18n.unableToFindNodeWithoutPathOrUuid.text(getSourceName(), location);
+            throw new IllegalArgumentException(msg);
+        }
+    }
 }

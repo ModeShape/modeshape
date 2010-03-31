@@ -27,7 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.stub;
+import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 import javax.jcr.Repository;
@@ -35,8 +35,8 @@ import javax.naming.Context;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.MockitoAnnotations.Mock;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.connector.RepositoryConnection;
@@ -62,7 +62,7 @@ public class JcrRepositorySourceTest {
 
         // Set up the fake JNDI context ...
         validRepositoryJndiName = "repository jndi name";
-        stub(jndiContext.lookup(validRepositoryJndiName)).toReturn(repository);
+        when(jndiContext.lookup(validRepositoryJndiName)).thenReturn(repository);
 
         this.source = new JcrRepositorySource();
         // Set the mandatory properties ...

@@ -34,6 +34,7 @@ public final class JcrConnectorI18n {
 
     public static I18n connectorName;
     public static I18n errorSerializingObjectUsedInSource;
+    public static I18n errorConvertingJcrValueOfType;
     public static I18n objectFoundInJndiWasNotRepository;
     public static I18n repositoryObjectNotFoundInJndi;
     public static I18n propertyIsRequired;

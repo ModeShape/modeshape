@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 
+ * A set of utilities for more easily creating various kinds of collections.
  */
 public class Collections {
 
