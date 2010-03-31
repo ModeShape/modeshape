@@ -148,7 +148,8 @@
 			<code>modeshape-jcr-tck</code> project.
 		</para>
 		<para>
-		  The 1.0.0.Final release passes all of the JCR TCK tests, but still needs to be certified before being considered fully compliant with JCR 1.0.
+		  The &versionNumber; release passes all of the JCR Level 1, Level2, versioning, and locking TCK tests (and almost all of them for observation), 
+		  but still needs to be certified before being considered fully compliant with JCR 1.0.
 		  The ModeShape project plans to focus on attaining this certification in the very near future.
 		</para>
   </sect1>

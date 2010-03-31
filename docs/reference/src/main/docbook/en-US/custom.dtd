@@ -1,4 +1,4 @@
-<!ENTITY versionNumber "1.0.0.Final">
+<!ENTITY versionNumber "1.1.0.Final">
 <!ENTITY copyrightYears "2008-2010">
 <!ENTITY copyrightHolder "Red Hat, Inc.">
 
@@ -12,6 +12,7 @@
 <!ENTITY MailingLists					"http://www.jboss.org/modeshape/mailinglists.html">
 <!ENTITY DocHome    					"http://docs.jboss.org/modeshape">
 <!ENTITY API        					"&DocHome;/&versionNumber;/api/org/modeshape/">
+<!ENTITY ReleaseNotes					"&DocHome;/&versionNumber;/release.html">
 <!ENTITY JIRA       					"http://jira.jboss.org/jira/browse/MODE">
 <!ENTITY Roadmap       				"&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">
 <!ENTITY Subversion  					"http://anonsvn.jboss.org/repos/modeshape/">
@@ -27,8 +28,8 @@
 
 <!ENTITY Git									"http://git-scm.com/">
 
-<!ENTITY Java									"http://java.sun.com/j2se/1.5.0/docs/api/">
-<!ENTITY JavaEE               "http://java.sun.com/javaee/5/docs/api/">
+<!ENTITY Java									"http://java.sun.com/javase/6/docs/api/">
+<!ENTITY JavaEE               "http://java.sun.com/javaee/6/docs/api/">
 
 <!ENTITY GettingStarted           		"<ulink url='&DocHome;/&versionNumber;/manuals/gettingstarted/html/index.html'>Getting Started</ulink>">
 <!ENTITY ReferenceGuide           		"<ulink url='&DocHome;/&versionNumber;/manuals/reference/html/index.html'>Reference Guide</ulink>">

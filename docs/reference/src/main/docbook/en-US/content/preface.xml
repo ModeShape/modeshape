@@ -31,14 +31,19 @@
 <preface id="preface">
   <title>Target audience</title>
   <para>
-    This reference guide is for the developers of ModeShape and those users that want to have a better understanding of how ModeShape
-    works or how to extend the functionality. For a higher-level introduction to ModeShape, see the &GettingStarted; document.
+    This reference guide is for developers using ModeShape in their applications that want a better understanding of how 
+		ModeShape works, how to take advantage of its advanced features, and how to extend the functionality. This document
+		is also very valuable for community developers because it covers the design and implementation of most of the
+		components that make up ModeShape.
+	</para>
+	<para>
+		For a higher-level introduction to ModeShape, see the &GettingStarted; document.
   </para>
   <para>
-    If you have any questions or comments, please feel free to contact ModeShape's
-    <ulink url="&MailTo;">user mailing list</ulink> or use the
-    <ulink url="&Forums;">user forums</ulink>. 
-    If you'd like to get involved on the project, join the <ulink url="&Home;lists.html">mailing lists</ulink>,
+    If you have any questions or comments, please feel free to use ModeShape's
+    <ulink url="&MailTo;">user mailing list</ulink> or the
+    <ulink url="&Forums;">user forums</ulink>.
+    We welcome all who want to get involved, so if you do please join the <ulink url="&Home;lists.html">mailing lists</ulink>,
     <ulink url="&Home;subversion.html">download the code</ulink> and get it building, and visit our
     <ulink url="&JIRA;">JIRA issue management system</ulink>.
     If there's something in particular you're interested in, talk with the community - there may be others interested in the

@@ -460,6 +460,22 @@
       <itemizedlist>
         <listitem>
           <para>
+            <emphasis role="strong">modeshape-web-jcr-webdav</emphasis>
+            provides a WebDAV server for Java Content Repositories.  This project provides integration with ModeShape's 
+						JCR implementation (of course) but also contains a service provider interface (SPI) that can be 
+            used to integrate other JCR implementations with these WebDAV services in the future.  
+						For ease of packaging, these classes are provided as a JAR that can be placed in the WEB-INF/lib of a deployed WebDAV server WAR.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">modeshape-web-jcr-webdav-war</emphasis>
+            wraps the WebDAV services from the modeshape-web-jcr-webdav JAR into a WAR and provides in-container integration tests.  This project
+            can be consulted as a template for how to deploy the WebDAV services in a custom implementation. 
+          </para>
+        </listitem>
+        <listitem>
+          <para>
             <emphasis role="strong">modeshape-web-jcr-rest</emphasis>
             provides a set of JSR-311 (JAX-RS) objects that form the basis of a RESTful server for Java Content Repositories.  This project 
             provides integration with ModeShape's JCR implementation (of course) but also contains a service provider interface (SPI) that can be 
@@ -480,6 +496,13 @@
             is a library that uses POJOs to access the REST web service. This module eliminates the need for applications to know how
             to create HTTP request URLs and payloads, and how to parse the JSON responses. It can be used to publish (upload) 
             and unpublish (delete) files from ModeShape repositories. 
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">modeshape-web-jcr</emphasis>
+            provides a reusable library for web applications using JCR, and is used by the <code>modeshape-web-jcr-rest</code>
+						and <code>modeshape-web-jcr-webdav</code> modules.
           </para>
         </listitem>
       </itemizedlist>
@@ -546,50 +569,19 @@
   <sect1 id="whats_new">
     <title>What's new?</title>
 	  <para>
-			With version &versionNumber;, ModeShape introduces support for JCR <link linkend="jcr-query-and-search">query and search</link> 
-			with a number of query languages, including the <link linkend="jcr-xpath-query-language">JCR XPath language</link> 
-			(required by the 1.0 specification), the <link linkend="jcr-sql2-query-language">JCR-SQL2 dialect</link>
-			defined by the JCR 2.0 specification, and a <link linkend="fulltext-search-query-language">full-text search language</link>.  
-			This release also adds support for JCR locking and observation.
+			With version &versionNumber;, ModeShape adds support for <link linkend="jcr-spec-support">JCR versioning</link>
+			and introduces a new <link linkend="jcr-connector">JCR connector</link>. 
 		</para>
 		<para>This means that <emphasis role="strong">ModeShape now implements all of the JCR Level 1 and Level 2 features, 
-			along with the optional locking and observation features</emphasis>. 
-			The only optional feature not implemented is versioning, and that will be coming soon.
-		  This version passes more than 95% of the JCR TCK tests, and all of the failures are because of a handful of known issues.
-		  Fortunately, most of these are either less-frequently-used features of JCR or issues that can be worked around.
+			along with the optional locking, versioning, and observation features</emphasis>.
+			Of all of the JCR TCK tests, the only failures are two from observation (see <ulink url="&JIRA;-563"></ulink>)
+			and those from the optional JCR-SQL query language that ModeShape does not support 
+			(see <link linkend="jcr-query-and-search">supported query languages</link>).
 		</para>
 		<para>
-			This release also introduces a number of new and improved connectors.  Both the <link linkend="file-system-connector">file system connector</link>
-			and <link linkend="subversion-connector">SVN connector</link> were reworked to support reads and updates, and they 
-			both offer a preview of an optional caching system.  The <link linkend="jdbc-storage-connector">JPA storage connector</link>
-			was dramatically improved and is significantly faster, more capable, and more efficient.
-			The new <link linkend="jdbc-metadata-connector">JDBC metadata connector</link> provides read-only access to the schema 
-			information of relational databases through JDBC.
+		  This release also brings several <ulink url="&ReleaseNotes;">bug fixes and improvements</ulink>, including
+			several issues with using MySQL as a content store.
+			The release also upgrades all third-party dependencies to the latest versions available at the time of release.
 		</para>
-		<para>
-			ModeShape &versionNumber; includes a number of new and improved sequencers. The new <link linkend="text-sequencer">text sequencer</link>
-			is able to extract structured data from comma-separated or fixed-width text files. The new <link linkend="ddl-file-sequencer">DDL sequencer</link>
-			is capable of parsing a number of DDL dialects to extract the more important DDL statements. The <link linkend="cnd-sequencer">CND sequencer</link>
-			was rewritten and dramatically simplified to perform better, fix a number of known issues, and eliminate a dependency on a third-party library.
-			There is also a new <link linkend="java-class-sequencer">Java class file sequencer</link> that operates on Java class
-			files and produces output that is comparable to the <link linkend="java-source-sequencer">Java source file sequencer</link>,
-			and that can be used in conjunction with the <link linkend="zip-file-sequencer">ZIP file sequencer</link> to extract the Java metadata
-			from JARs, WARs, and EAR files.
-		</para>
-		<para>
-		  This release also brings numerous bug fixes and improvements, and upgrades all third-party dependencies to the latest
-		  versions available at the time of release. The build system now supports 
-			<ulink url="http://jbossmodeshape.blogspot.com/2009/09/running-tests-against-different-dbmses.html">running all of the tests against a variety
-		  of databases</ulink>, making it very easy to test against DBMSes that ModeShape doesn't directly test against.
-			A new DDL generation utility was also introduced that produces the DDL for the database used by the JPA connector.
-			And JCR repositories now support the use of <link linkend="jcr-guess-access">anonymous users</link> - this is 
-			enabled by default but can easily be changed for production purposes.
-		</para>
-		<note>
-			<para>
-				If you're migrating from JBoss DNA 0.7, please see the <link linkend="migrating_from_dna">migration</link> section
-				for a straightforward recipe.
-			</para>
-		</note>
   </sect1>
 </chapter>

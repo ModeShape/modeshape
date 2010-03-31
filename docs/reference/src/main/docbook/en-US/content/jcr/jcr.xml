@@ -187,7 +187,7 @@ final &LoginContext; loginContext = ...;
 		</para>
 	</sect2>
 	</sect1>
-	<sect1>
+	<sect1 id="jcr-spec-support">
 		<title>JCR Specification Support</title>
 		<para>
 		We believe that ModeShape JCR implementation is JCR-compliant, but we are awaiting final certification of compliance.

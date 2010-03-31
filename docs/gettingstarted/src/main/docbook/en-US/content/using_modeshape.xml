@@ -521,7 +521,7 @@ try {
 <programlisting role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-jcr</artifactId>
-  <version>1.0.0.Final</version>
+  <version>1.1.0.Final</version>
 </dependency>
 ]]></programlisting>
 			<para>
@@ -530,13 +530,13 @@ try {
 <programlisting role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-connector-store-jpa</artifactId>
-  <version>1.0.0.Final</version>
+  <version>1.1.0.Final</version>
 </dependency>
 ...
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-java</artifactId>
-  <version>1.0.0.Final</version>
+  <version>1.1.0.Final</version>
 </dependency>
 ]]></programlisting>
 		<para>

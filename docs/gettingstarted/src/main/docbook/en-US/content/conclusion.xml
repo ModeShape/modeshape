@@ -53,12 +53,13 @@
 	<sect1 id="future">
 		<title>Future directions</title>
 		<para>
-			What's next for ModeShape?  We're very close to passing all of the JCR Technology Compatibility Kit (TCK) Level 1, Level 2
-			tests, plus the tests for the optional features including observation and locking.  (In fact, there are just a few outstanding
-			bugs that are preventing us from passing all of these test and becoming fully JCR compliant.)  We will soon be implementing
-			versioning, which is the last optional feature of JCR. 
-			We will also be adding support for clustering multiple ModeShape engines spread across multiple JVM processes.
-			And each release we continue to introduce more
+			At this point, ModeShape passes all of the JCR Technology Compatibility Kit (TCK) tests 
+			for Level 1, Level 2, and the optional locking and versioning features (plus almost all of the tests for the
+			optional observation feature). We'll soon begin the process of attaining JCR certification for ModeShape.
+		</para>
+		<para>
+			We also plan to add support for clustering multiple ModeShape engines spread across multiple JVM processes.
+			And each expect to introduce more 
 			<link linkend="repository-connectors">connectors</link> and <link linkend="sequencers">sequencers</link> to our library.
 			Other items on our long-term roadmap include a web user interface, Seam integration, and integration with even more kinds of
 			information systems and repositories.
