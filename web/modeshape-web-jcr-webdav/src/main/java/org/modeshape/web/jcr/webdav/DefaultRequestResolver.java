@@ -23,7 +23,6 @@
  */
 package org.modeshape.web.jcr.webdav;
 
-import javax.jcr.RepositoryException;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import org.modeshape.common.i18n.I18n;
@@ -56,7 +55,7 @@ public class DefaultRequestResolver implements RequestResolver {
     }
 
     @Override
-    public ResolvedRequest resolve( HttpServletRequest request ) throws RepositoryException {
+    public ResolvedRequest resolve( HttpServletRequest request ) {
         return new ResolvedRequest(repositoryName, workspaceName, uriResolver);
     }
 

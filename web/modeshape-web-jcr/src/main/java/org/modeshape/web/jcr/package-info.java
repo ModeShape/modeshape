@@ -28,7 +28,7 @@
  * <ul>
  * <li>{@link RepositoryFactory} - the class creates JCR sessions based on HTTP requests</li>
  * <li>{@link ServletSecurityContext} - the bridge from HTTP security to ModeShape JAAS-based security</li>
- * <li>{@link ModeShapeJcrDeployer} - the servlet context listener that deploys the {@link JcrEngine} and initializes the {@link RepositoryFactory}.</li>
+ * <li>{@link ModeShapeJcrDeployer} - the servlet context listener that deploys the {@link org.modeshape.jcr.JcrEngine} and initializes the {@link RepositoryFactory}.</li>
  * </ul>
  * </p>
  */

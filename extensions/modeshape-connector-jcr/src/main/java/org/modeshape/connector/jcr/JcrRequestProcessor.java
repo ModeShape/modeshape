@@ -23,6 +23,8 @@
  */
 package org.modeshape.connector.jcr;
 
+import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -41,14 +43,18 @@ import javax.jcr.Value;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeIntLexicon;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.observe.Observer;
+import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
+import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
@@ -71,6 +77,8 @@ import org.modeshape.graph.request.UnsupportedRequestException;
 import org.modeshape.graph.request.UpdatePropertiesRequest;
 import org.modeshape.graph.request.VerifyWorkspaceRequest;
 import org.modeshape.graph.request.processor.RequestProcessor;
+import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.ModeShapeLexicon;
 
 /**
  * A {@link RequestProcessor} that processes {@link Request}s by operating against the JCR {@link Repository}.
@@ -345,7 +353,8 @@ public class JcrRequestProcessor extends RequestProcessor {
         try {
             Workspace workspace = workspaceFor(request.inWorkspace());
             Node node = workspace.node(request.at());
-            request.setActualLocationOfNode(workspace.locationFor(node));
+            Location actualLocation = workspace.locationFor(node);
+            request.setActualLocationOfNode(actualLocation);
             // Read the children ...
             for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
                 request.addChild(workspace.locationFor(iter.nextNode()));
@@ -353,6 +362,10 @@ public class JcrRequestProcessor extends RequestProcessor {
             // Read the properties ...
             for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
                 request.addProperty(workspace.propertyFor(iter.nextProperty()));
+            }
+            // Add in the 'jcr:uuid' property ...
+            if (actualLocation.hasIdProperties()) {
+                request.addProperty(workspace.propertyFor(ModeShapeLexicon.UUID, actualLocation.getUuid()));
             }
             setCacheableInfo(request);
         } catch (Throwable e) {
@@ -392,10 +405,15 @@ public class JcrRequestProcessor extends RequestProcessor {
         try {
             Workspace workspace = workspaceFor(request.inWorkspace());
             Node node = workspace.node(request.at());
-            request.setActualLocationOfNode(workspace.locationFor(node));
+            Location actualLocation = workspace.locationFor(node);
+            request.setActualLocationOfNode(actualLocation);
             // Read the properties ...
             for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
                 request.addProperty(workspace.propertyFor(iter.nextProperty()));
+            }
+            // Add in the 'jcr:uuid' property ...
+            if (actualLocation.hasIdProperties()) {
+                request.addProperty(workspace.propertyFor(ModeShapeLexicon.UUID, actualLocation.getUuid()));
             }
             // Get the number of children ...
             NodeIterator childIter = node.getNodes();
@@ -421,6 +439,38 @@ public class JcrRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CreateNodeRequest request ) {
+        if (request == null) return;
+        try {
+            Workspace workspace = workspaceFor(request.inWorkspace());
+            Node parent = workspace.node(request.under());
+            String childName = workspace.stringFor(request.named());
+
+            // Look for the primary type, if it was set on the request ...
+            String primaryTypeName = null;
+            for (Property property : request.properties()) {
+                if (property.getName().equals(JcrLexicon.PRIMARY_TYPE)) {
+                    primaryTypeName = workspace.stringFor(property.getFirstValue());
+                    break;
+                }
+            }
+
+            // Create the child node ...
+            Node child = null;
+            if (primaryTypeName != null) {
+                child = parent.addNode(childName, primaryTypeName);
+            } else {
+                child = parent.addNode(childName);
+            }
+            assert child != null;
+
+            // And set all of the properties on the new node ...
+            workspace.setProperties(child, request);
+
+            // Set up the actual results on the request ...
+            request.setActualLocationOfNode(workspace.locationFor(child));
+        } catch (Throwable e) {
+            request.setError(e);
+        }
     }
 
     /**
@@ -430,6 +480,37 @@ public class JcrRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CloneBranchRequest request ) {
+        if (request == null) return;
+        try {
+            String fromWorkspaceName = request.fromWorkspace();
+            String intoWorkspaceName = request.intoWorkspace();
+            boolean sameWorkspace = fromWorkspaceName.equals(intoWorkspaceName);
+            Workspace fromWorkspace = workspaceFor(fromWorkspaceName);
+            Workspace intoWorkspace = sameWorkspace ? fromWorkspace : workspaceFor(intoWorkspaceName);
+            Node sourceNode = fromWorkspace.node(request.from());
+            Node targetNode = fromWorkspace.node(request.into());
+            Location fromLocation = fromWorkspace.locationFor(sourceNode);
+
+            // Calculate the source and destination paths ...
+            String srcAbsPath = sourceNode.getPath();
+            String destAbsPath = targetNode.getPath();
+            String copyName = request.desiredName() != null ? intoWorkspace.stringFor(request.desiredName()) : sourceNode.getName();
+            destAbsPath += '/' + copyName;
+
+            // Perform the clone ...
+            javax.jcr.Workspace workspace = intoWorkspace.session().getWorkspace();
+            workspace.clone(fromWorkspaceName, srcAbsPath, destAbsPath, request.removeExisting());
+
+            // Find the actual location of the result of the node ...
+            Node last = null;
+            for (NodeIterator iter = targetNode.getNodes(copyName); iter.hasNext();) {
+                last = iter.nextNode();
+            }
+            Location intoLocation = intoWorkspace.locationFor(last);
+            request.setActualLocations(fromLocation, intoLocation);
+        } catch (Throwable e) {
+            request.setError(e);
+        }
     }
 
     /**
@@ -439,6 +520,41 @@ public class JcrRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( CopyBranchRequest request ) {
+        if (request == null) return;
+        try {
+            String fromWorkspaceName = request.fromWorkspace();
+            String intoWorkspaceName = request.intoWorkspace();
+            boolean sameWorkspace = fromWorkspaceName.equals(intoWorkspaceName);
+            Workspace fromWorkspace = workspaceFor(fromWorkspaceName);
+            Workspace intoWorkspace = sameWorkspace ? fromWorkspace : workspaceFor(intoWorkspaceName);
+            Node sourceNode = fromWorkspace.node(request.from());
+            Node targetNode = fromWorkspace.node(request.into());
+            Location fromLocation = fromWorkspace.locationFor(sourceNode);
+
+            // Calculate the source and destination paths ...
+            String srcAbsPath = sourceNode.getPath();
+            String destAbsPath = targetNode.getPath();
+            String copyName = request.desiredName() != null ? intoWorkspace.stringFor(request.desiredName()) : sourceNode.getName();
+            destAbsPath += '/' + copyName;
+
+            // Perform the copy ...
+            javax.jcr.Workspace workspace = intoWorkspace.session().getWorkspace();
+            if (sameWorkspace) {
+                workspace.copy(srcAbsPath, destAbsPath);
+            } else {
+                workspace.copy(fromWorkspaceName, srcAbsPath, destAbsPath);
+            }
+
+            // Find the actual location of the result of the node ...
+            Node last = null;
+            for (NodeIterator iter = targetNode.getNodes(copyName); iter.hasNext();) {
+                last = iter.nextNode();
+            }
+            Location intoLocation = intoWorkspace.locationFor(last);
+            request.setActualLocations(fromLocation, intoLocation);
+        } catch (Throwable e) {
+            request.setError(e);
+        }
     }
 
     /**
@@ -448,6 +564,16 @@ public class JcrRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( DeleteBranchRequest request ) {
+        if (request == null) return;
+        try {
+            Workspace workspace = workspaceFor(request.inWorkspace());
+            Node node = workspace.node(request.at());
+            Location actual = workspace.locationFor(node);
+            node.remove();
+            request.setActualLocationOfNode(actual);
+        } catch (Throwable e) {
+            request.setError(e);
+        }
     }
 
     /**
@@ -457,6 +583,18 @@ public class JcrRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( MoveBranchRequest request ) {
+        if (request == null) return;
+        try {
+            Workspace workspace = workspaceFor(request.inWorkspace());
+            Node orig = workspace.node(request.from());
+            Node into = request.into() != null ? workspace.node(request.into()) : null;
+            Node before = request.before() != null ? workspace.node(request.before()) : null;
+            Location originalLocation = workspace.locationFor(orig);
+            Location newLocation = workspace.move(orig, into, request.desiredName(), before);
+            request.setActualLocations(originalLocation, newLocation);
+        } catch (Throwable e) {
+            request.setError(e);
+        }
     }
 
     /**
@@ -466,6 +604,63 @@ public class JcrRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( UpdatePropertiesRequest request ) {
+        if (request == null) return;
+        try {
+            Workspace workspace = workspaceFor(request.inWorkspace());
+            Node node = workspace.node(request.on());
+            Set<Name> newProperties = new HashSet<Name>();
+            for (Map.Entry<Name, Property> entry : request.properties().entrySet()) {
+                Name propertyName = entry.getKey();
+                String name = workspace.stringFor(propertyName);
+                Property property = entry.getValue();
+
+                // We need to remove the existing property (if there is one) in case the
+                // old property has a different cardinality than the new property ...
+                javax.jcr.Property existing = node.hasProperty(name) ? node.getProperty(name) : null;
+                if (existing != null && (property == null || existing.getDefinition().isMultiple() == property.isSingle())) {
+                    // Remove the property ...
+                    if (!existing.getDefinition().isProtected()) {
+                        existing.remove();
+                    }
+                }
+                if (property != null) {
+                    if (property.size() == 1) {
+                        // Try setting as a single-valued property ...
+                        try {
+                            workspace.setProperty(node, property, false);
+                        } catch (ValueFormatException e) {
+                            workspace.setProperty(node, property, true);
+                        }
+                    } else {
+                        // Set as a multi-valued property ...
+                        workspace.setProperty(node, property, true);
+                    }
+                    if (existing == null) newProperties.add(propertyName);
+                }
+            }
+
+            if (request.removeOtherProperties()) {
+                Set<String> stringNames = new HashSet<String>();
+                for (Name name : request.properties().keySet()) {
+                    stringNames.add(workspace.stringFor(name));
+                }
+                stringNames.add(workspace.stringFor(JcrLexicon.PRIMARY_TYPE));
+                stringNames.add(workspace.stringFor(JcrLexicon.MIXIN_TYPES));
+                PropertyIterator propertyIter = node.getProperties();
+                while (propertyIter.hasNext()) {
+                    javax.jcr.Property property = propertyIter.nextProperty();
+                    if (!stringNames.contains(property.getName()) && !property.getDefinition().isProtected()) {
+                        property.remove();
+                    }
+                }
+            }
+
+            // Set up the actual results on the request ...
+            request.setActualLocationOfNode(workspace.locationFor(node));
+            request.setNewProperties(newProperties);
+        } catch (Throwable e) {
+            request.setError(e);
+        }
     }
 
     /**
@@ -476,11 +671,14 @@ public class JcrRequestProcessor extends RequestProcessor {
         private final Session session;
         /** The context used to transform the JCR session values into graph values */
         private final ExecutionContext context;
-        /** The value factories for graph values */
+        /** The factories for creating graph property values from JCR values */
         private final ValueFactories factories;
-        /** The value factories for graph values */
+        /** The factory for creating graph properties from JCR values */
         private final PropertyFactory propertyFactory;
+        private final NameFactory nameFactory;
+        private final ValueFactory<String> stringFactory;
         private final String name;
+        private final javax.jcr.ValueFactory jcrValueFactory;
 
         protected Workspace( Session jcrSession ) throws RepositoryException {
             this.session = jcrSession;
@@ -490,6 +688,36 @@ public class JcrRequestProcessor extends RequestProcessor {
             this.context = connectorContext.with(new JcrNamespaceRegistry(getSourceName(), this.session, connectorRegistry));
             this.factories = context.getValueFactories();
             this.propertyFactory = context.getPropertyFactory();
+            this.nameFactory = this.factories.getNameFactory();
+            this.stringFactory = this.factories.getStringFactory();
+            this.jcrValueFactory = this.session.getValueFactory();
+        }
+
+        public Location move( Node original,
+                              Node newParent,
+                              Name newName,
+                              Node beforeSibling ) throws RepositoryException {
+            // Determine whether the node needs to move ...
+            if (newParent == null && beforeSibling != null) {
+                newParent = beforeSibling.getParent();
+            }
+
+            if (newName != null || (newParent != null && !original.getParent().equals(newParent))) {
+                // This is not just a reorder, so we definitely have to move first ...
+                String destAbsPath = newParent != null ? newParent.getPath() : original.getParent().getPath();
+                assert !destAbsPath.endsWith("/");
+                String newNameStr = newName != null ? stringFor(newName) : original.getName();
+                destAbsPath += '/' + newNameStr;
+                session.move(original.getPath(), destAbsPath);
+            }
+
+            if (beforeSibling != null) {
+                // Even if moved, the 'orginal' node should still point to the node we just moved ...
+                String siblingName = nameFor(beforeSibling);
+                String originalName = nameFor(original);
+                original.getParent().orderBefore(originalName, siblingName);
+            }
+            return locationFor(original);
         }
 
         public String name() {
@@ -498,6 +726,21 @@ public class JcrRequestProcessor extends RequestProcessor {
 
         public Session session() {
             return session;
+        }
+
+        protected String stringFor( Object value ) {
+            return stringFactory.create(value);
+        }
+
+        protected String nameFor( Node node ) throws RepositoryException {
+            String name = node.getName();
+            int snsIndex = node.getIndex();
+            return snsIndex == 1 ? name : name + '[' + snsIndex + ']';
+        }
+
+        public Property propertyFor( Name name,
+                                     Object... values ) {
+            return propertyFactory.create(name, values);
         }
 
         /**
@@ -520,7 +763,7 @@ public class JcrRequestProcessor extends RequestProcessor {
                 values = new Object[] {convert(jcrProperty.getValue(), jcrProperty)};
             }
             // Get the name, and then create the property ...
-            Name name = factories.getNameFactory().create(jcrProperty.getName());
+            Name name = nameFactory.create(jcrProperty.getName());
             return propertyFactory.create(name, values);
         }
 
@@ -656,6 +899,112 @@ public class JcrRequestProcessor extends RequestProcessor {
             // Otherwise, we can't find the node ...
             String msg = JcrConnectorI18n.unableToFindNodeWithoutPathOrUuid.text(getSourceName(), location);
             throw new IllegalArgumentException(msg);
+        }
+
+        public void setProperties( Node node,
+                                   Iterable<Property> properties ) throws RepositoryException {
+            // Look for the internal property that ModeShape uses to track which properties are multi-valued w/r/t JCR ...
+            Set<Name> multiValued = null;
+            for (Property property : properties) {
+                if (property.getName().equals(ModeShapeIntLexicon.MULTI_VALUED_PROPERTIES)) {
+                    // Go through the properties and see which properties are multi-valued ...
+                    multiValued = getMultiValuedProperties(property);
+                    break;
+                }
+            }
+            if (multiValued == null) multiValued = Collections.emptySet();
+
+            // Now set each of the properties ...
+            for (Property property : properties) {
+                setProperty(node, property, multiValued.contains(property.getName()));
+            }
+        }
+
+        protected Set<Name> getMultiValuedProperties( Property multiValuedProperty ) {
+            // Go through the properties and see which properties are multi-valued ...
+            Set<Name> multiValued = new HashSet<Name>();
+            for (Object value : multiValuedProperty) {
+                Name multiValuedPropertyName = nameFactory.create(value);
+                if (multiValuedPropertyName != null) {
+                    multiValued.add(multiValuedPropertyName);
+                }
+            }
+            return multiValued;
+        }
+
+        protected void setProperty( Node node,
+                                    Property property,
+                                    boolean isMultiValued ) throws RepositoryException {
+            Name name = property.getName();
+            if (name.equals(JcrLexicon.PRIMARY_TYPE)) return;
+            if (name.equals(ModeShapeIntLexicon.NODE_DEFINITON)) return;
+            if (name.equals(ModeShapeIntLexicon.MULTI_VALUED_PROPERTIES)) return;
+            if (name.equals(JcrLexicon.MIXIN_TYPES)) {
+                for (Object mixinVvalue : property.getValuesAsArray()) {
+                    String mixinTypeName = stringFor(mixinVvalue);
+                    node.addMixin(mixinTypeName);
+                }
+                return;
+            }
+
+            // Otherwise, just set the normal property. First determine the expected type ...
+            String propertyName = stringFor(name);
+            if (isMultiValued) {
+                Value[] values = new Value[property.size()];
+                int index = 0;
+                PropertyType propertyType = null;
+                for (Object value : property) {
+                    if (value == null) continue;
+                    if (propertyType == null) propertyType = PropertyType.discoverType(value);
+                    values[index] = convertToJcrValue(propertyType, value);
+                    ++index;
+                }
+                node.setProperty(propertyName, values);
+            } else {
+                Object firstValue = property.getFirstValue();
+                PropertyType propertyType = PropertyType.discoverType(firstValue);
+                Value value = convertToJcrValue(propertyType, firstValue);
+                node.setProperty(propertyName, value);
+            }
+        }
+
+        protected Value convertToJcrValue( PropertyType graphType,
+                                           Object graphValue ) {
+            if (graphValue == null) return null;
+            switch (graphType) {
+                case DECIMAL:
+                case NAME:
+                case PATH:
+                case REFERENCE:
+                case UUID:
+                case URI:
+                case STRING:
+                case OBJECT:
+                    String stringValue = factories.getStringFactory().create(graphValue);
+                    return jcrValueFactory.createValue(stringValue);
+                case BOOLEAN:
+                    Boolean booleanValue = factories.getBooleanFactory().create(graphValue);
+                    return jcrValueFactory.createValue(booleanValue.booleanValue());
+                case DOUBLE:
+                    Double doubleValue = factories.getDoubleFactory().create(graphValue);
+                    return jcrValueFactory.createValue(doubleValue);
+                case LONG:
+                    Long longValue = factories.getLongFactory().create(graphValue);
+                    return jcrValueFactory.createValue(longValue);
+                case DATE:
+                    Calendar calValue = factories.getDateFactory().create(graphValue).toCalendar();
+                    return jcrValueFactory.createValue(calValue);
+                case BINARY:
+                    Binary binary = factories.getBinaryFactory().create(graphValue);
+                    try {
+                        binary.acquire();
+                        return jcrValueFactory.createValue(binary.getStream());
+                    } finally {
+                        binary.release();
+                    }
+            }
+            assert false;
+            return null;
         }
     }
 }

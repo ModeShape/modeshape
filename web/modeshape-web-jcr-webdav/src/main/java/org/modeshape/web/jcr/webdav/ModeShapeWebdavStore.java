@@ -100,14 +100,14 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                                  String newFolderPrimaryType,
                                  String newResourcePrimaryType,
                                  String newContentPrimaryType,
-                                 RequestResolver uriResolver) {
+                                 RequestResolver uriResolver ) {
         super();
         this.contentPrimaryTypes = split(contentPrimaryTypes != null ? contentPrimaryTypes : DEFAULT_CONTENT_PRIMARY_TYPES);
         this.filePrimaryTypes = split(filePrimaryTypes != null ? filePrimaryTypes : DEFAULT_RESOURCE_PRIMARY_TYPES);
         this.newFolderPrimaryType = newFolderPrimaryType != null ? newFolderPrimaryType : DEFAULT_NEW_FOLDER_PRIMARY_TYPE;
         this.newResourcePrimaryType = newResourcePrimaryType != null ? newResourcePrimaryType : DEFAULT_NEW_RESOURCE_PRIMARY_TYPE;
         this.newContentPrimaryType = newContentPrimaryType != null ? newContentPrimaryType : DEFAULT_NEW_CONTENT_PRIMARY_TYPE;
-        
+
         this.uriResolver = uriResolver;
     }
 
@@ -340,8 +340,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                 Date createDate;
                 if (node.hasProperty(CREATED_PROP_NAME)) {
                     createDate = node.getProperty(CREATED_PROP_NAME).getDate().getTime();
-                }
-                else {
+                } else {
                     createDate = new Date();
                 }
                 ob.setCreationDate(createDate);
@@ -494,6 +493,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
         private final Session session;
         private final UriResolver uriResolver;
 
+        @SuppressWarnings( "synthetic-access" )
         JcrSessionTransaction( Principal principal ) {
             super();
             this.principal = principal;
@@ -534,6 +534,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
             return (Node)item;
 
         }
+
         /**
          * {@inheritDoc}
          */

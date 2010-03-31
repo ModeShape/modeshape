@@ -24,13 +24,10 @@
 package org.modeshape.jcr;
 
 import net.jcip.annotations.Immutable;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.basic.BasicName;
 
 /**
  * A lexicon of internal and implementation-specific information
  */
 @Immutable
 public class ModeShapeIntLexicon extends org.modeshape.graph.ModeShapeIntLexicon {
-    public static final Name MULTI_VALUED_PROPERTIES = new BasicName(Namespace.URI, "multiValuedProperties");
 }

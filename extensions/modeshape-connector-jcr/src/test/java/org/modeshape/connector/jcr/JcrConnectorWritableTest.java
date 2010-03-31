@@ -29,10 +29,10 @@ import javax.jcr.Repository;
 import javax.naming.Context;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.graph.connector.test.AbstractConnectorTest;
+import org.modeshape.graph.connector.test.WritableConnectorTest;
 import org.modeshape.jcr.JcrEngine;
 
-public class JcrConnectorWritableTest extends AbstractConnectorTest {
+public class JcrConnectorWritableTest extends WritableConnectorTest /* extends AbstractConnectorTest */{
 
     public static final String ARBITRARY_PROPERTIES_NOT_SUPPORTED = "This connector does not support setting arbitrary properties";
 

@@ -39,5 +39,6 @@ public class ModeShapeIntLexicon {
     }
 
     public static final Name NODE_DEFINITON = new BasicName(Namespace.URI, "nodeDefinition");
+    public static final Name MULTI_VALUED_PROPERTIES = new BasicName(Namespace.URI, "multiValuedProperties");
 
 }
