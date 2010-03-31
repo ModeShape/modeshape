@@ -222,6 +222,7 @@
 
 <!-- Types in extensions/ -->
 
+<!ENTITY JcrRepositorySource  				"<ulink url='&API;connector/jcr/JcrRepositorySource.html'><classname>JcrRepositorySource</classname></ulink>">
 <!ENTITY FileSystemSource  						"<ulink url='&API;connector/filesystem/FileSystemSource.html'><classname>FileSystemSource</classname></ulink>">
 <!ENTITY CustomPropertiesFactory  		"<ulink url='&API;connector/filesystem/CustomPropertiesFactory'><classname>CustomPropertiesFactory</classname></ulink>">
 <!ENTITY JpaSource  									"<ulink url='&API;connector/store/jpa/JpaSource.html'><classname>JpaSource</classname></ulink>">

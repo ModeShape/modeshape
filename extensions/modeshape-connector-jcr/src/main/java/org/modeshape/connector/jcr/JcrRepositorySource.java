@@ -440,8 +440,9 @@ public class JcrRepositorySource implements RepositorySource, ObjectFactory {
 
         // Create the appropriate credentials ...
         Credentials credentials = getCredentials();
-        if (credentials == null && (username != null || password != null)) {
-            credentials = new SimpleCredentials(username, password.toCharArray());
+        if (credentials == null || (username != null || password != null)) {
+            char[] passwd = this.password != null ? password.toCharArray() : new char[] {};
+            credentials = new SimpleCredentials(username, passwd);
         }
 
         // Create the repositor connection ...

@@ -326,6 +326,17 @@
         </listitem>
         <listitem>
           <para>
+            <emphasis role="strong">modeshape-connector-jcr</emphasis>
+            is a ModeShape repository connector that accesses and stores content in an external JCR repository. This allows
+            ModeShape to integrate with other JCR implementations and even federate multiple JCR repositories into 
+            a single unified repository. Any differences in namespaces are automatically handled, although node types used by
+            the content in the external JCR repository must also be registered into the ModeShape repository using the connector.
+            <emphasis>Note that this connector is currently a technical preview, and we're seeking feedback and assistance in
+	          identifying the required functionality.</emphasis>
+          </para>
+        </listitem>
+        <listitem>
+          <para>
             <emphasis role="strong">modeshape-connector-filesystem</emphasis>
             is a ModeShape repository connector that accesses the files and folders on (a part of) the local file system, providing that
   					content in the form of <code>nt:file</code> and <code>nt:folder</code> nodes. This connector <emphasis>does</emphasis>

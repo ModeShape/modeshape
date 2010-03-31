@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"	[
+<!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
+%CustomDTD;
+]>
+<chapter id="jcr-connector">
+  <title>JCR Connector</title>
+  <para>
+		This connector enables ModeShape to access and store content in another separate JCR repository instance.
+		With it, ModeShape can integrate with other JCR implementations and even federate multiple JCR repositories into 
+    a single unified repository.
+  </para>
+	<note>
+		<para>
+			This connector is currently a technical preview, and we're seeking feedback and assistance in
+    	identifying bugs and specifying the required functionality.
+		</para>
+  </note>
+  <para>
+	  The connector is designed to find the external JCR Repository instance in JNDI, though the location in JNDI
+	  can be easily configured with the "repositoryJndiName" property.
+	</para>
+	<para>
+		The connector also has several ways to
+		authenticate and obtain a &Session;. First of all, if a fixed &Credentials; are set via the properties,
+		then the &Session; will always be obtained using these credentials.  If a username and password are set
+		via the properties (and no &Credentials; is set), then the connector will create a &SimpleCredentials;
+		and use it to obtain a &Session;.  In all other cases, the connector will use the <code>login</code>
+		methods on &Repository; that do not require a &Credentials;.
+	</para>
+	<para>
+		This means that when JAAS is used by both the ModeShape repository using the JCR connector and a ModeShape
+		repository accessed by the connector, the connector will obtain a &Session; to the underlying repository
+		using the same &Subject; used in the incoming request.
+	</para>
+	<para>
+		The connector automatically handles any differences in namespaces between the underlying JCR repository and
+		the ModeShape system. However, at this time it is a requirement that node types used by the content in the underlying
+		JCR repository must also be registered into the ModeShape repository (or repositories) using the connector.
+	</para>
+	<para>
+		The &JcrRepositorySource; class provides a number of JavaBean properties that control its behavior:
+	</para>
+	<table frame='all'>
+		<title>&JcrRepositorySource; properties</title>
+		<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+      <colspec colname='c1' colwidth="1*"/>
+      <colspec colname='c2' colwidth="1*"/>
+			<thead>
+				<row>
+		  		<entry>Property</entry>
+		  		<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>defaultCachePolicy</entry>
+					<entry>Optional property that, if used, defines the default cache policy for this repository source.  When not used, this source will not define a specific
+						duration for caching information.</entry>
+				</row>
+				<row>
+					<entry>repositoryJndiName</entry>
+					<entry>Property that defines where in JNDI the connector can find the <code>javax.jcr.Repository</code> instance.
+					</entry>
+				</row>
+				<row>
+					<entry>username</entry>
+					<entry>Optional property that defines the username that should be used when logging into the Repository to obtain a &Session;.
+						When used, the connector creates a &SimpleCredentials; instance. Should not be used if the "credentials" properties is to be used.
+					</entry>
+				</row>
+				<row>
+					<entry>password</entry>
+					<entry>Optional property that defines the password that should be used when logging into the Repository to obtain a &Session;.
+						When used, the connector creates a &SimpleCredentials; instance. Should not be used if the "credentials" properties is to be used.
+					</entry>
+				</row>
+				<row>
+					<entry>name</entry>
+					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
+				</row>
+				<row>
+					<entry>credentials</entry>
+					<entry>Optional property that, if used, defines &Credentials; instance that should be used when logging into the Repository to
+						obtain a &Session;. Should be used only if the "username" and "password" properties are not set.
+					</entry>
+				</row>
+				<row>
+					<entry>retryLimit</entry>
+					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
+						following a communication failure. The default value is '0'.</entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+	<para>
+		One way to configure the JCR connector is to create &JcrConfiguration; instance with a repository source that uses the &JcrRepositorySource; class.
+		For example:
+	</para>
+  <programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = ...
+config.repositorySource("Repository Source")
+      .usingClass(FileSystemSource.class)
+      .setDescription("The repository for our content")
+      .setProperty("repositoryJndiName", "java:/myRepository")
+      .setProperty("username", "jsmith")
+      .setProperty("password", "secret");
+ ]]></programlisting>
+	<para>
+		Another way to configure the JCR connector is to create &JcrConfiguration; instance and load an XML configuration file that contains a repository source that 
+		uses the &JcrRepositorySource; class.
+		For example, here's a file named configRepository.xml that represents the same configuration as above:
+	</para>
+	
+  <programlisting role="XML"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!-- 
+    Define the sources for the content.  These sources are directly accessible using the 
+    ModeShape-specific Graph API. In fact, this is how the ModeShape JCR implementation works.  You can 
+    think of these as being similar to JDBC DataSource objects, except that they expose graph 
+    content via the Graph API instead of records via SQL or JDBC. 
+    -->
+    <mode:sources jcr:primaryType="nt:unstructured">
+        <!-- 
+        The 'Repository Source' repository is a JCR source.
+        -->
+        <mode:source jcr:name="Repository Source" 
+        	mode:classname="org.modeshape.connector.jcr.JcrRepositorySource"
+        	mode:description="The repository for our content"
+        	mode:repositoryJndiName="java:/myRepository"
+        	mode:username="jsmith"
+        	mode:password="secret">
+      	    <!-- 
+      	    If desired, specify a cache policy that caches items in memory for 5 minutes (300000 ms).
+      	    This fragment can be left out if the connector should not cache any content.
+      	    -->
+      	    <mode:cachePolicy jcr:name="cachePolicy" 
+      	      mode:classname="org.modeshape.graph.connector.path.cache.InMemoryWorkspaceCache$InMemoryCachePolicy"
+      	      mode:timeToLiveInMilliseconds="300000" />
+        </mode:source>    
+    </mode:sources>
+
+	<!-- MIME type detectors and JCR repositories would be defined below --> 
+</configuration>
+ ]]></programlisting>
+	<para>
+		The configuration can then be loaded from Java like this:
+	</para>
+	
+	<programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml");
+ ]]></programlisting>
+ </chapter>
+

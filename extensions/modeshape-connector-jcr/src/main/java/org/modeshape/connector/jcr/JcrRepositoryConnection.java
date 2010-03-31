@@ -98,7 +98,7 @@ public class JcrRepositoryConnection implements RepositoryConnection {
      * @see org.modeshape.graph.connector.RepositoryConnection#execute(org.modeshape.graph.ExecutionContext,
      *      org.modeshape.graph.request.Request)
      */
-    public void execute( ExecutionContext context,
+    public void execute( final ExecutionContext context,
                          Request request ) throws RepositorySourceException {
         Logger logger = context.getLogger(getClass());
         Stopwatch sw = null;

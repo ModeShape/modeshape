@@ -42,8 +42,10 @@ import javax.jcr.Session;
 import javax.jcr.Value;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.ModeShapeIntLexicon;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.property.Binary;
@@ -77,8 +79,6 @@ import org.modeshape.graph.request.UnsupportedRequestException;
 import org.modeshape.graph.request.UpdatePropertiesRequest;
 import org.modeshape.graph.request.VerifyWorkspaceRequest;
 import org.modeshape.graph.request.processor.RequestProcessor;
-import org.modeshape.jcr.JcrLexicon;
-import org.modeshape.jcr.ModeShapeLexicon;
 
 /**
  * A {@link RequestProcessor} that processes {@link Request}s by operating against the JCR {@link Repository}.

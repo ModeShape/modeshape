@@ -113,6 +113,7 @@
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/in_memory.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/file_system.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/jdbc_storage.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/jcr.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/federation.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/subversion.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/connectors/jboss_cache.xml"/>

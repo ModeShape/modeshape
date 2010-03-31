@@ -149,6 +149,7 @@
 		<module>extensions/modeshape-connector-infinispan</module>
 		<module>extensions/modeshape-connector-jbosscache</module>
 		<module>extensions/modeshape-connector-svn</module>
+		<module>extensions/modeshape-connector-jcr</module>
 		<module>extensions/modeshape-connector-store-jpa</module>
 		<module>extensions/modeshape-connector-jdbc-metadata</module> 
 		<module>extensions/modeshape-mimetype-detector-aperture</module>

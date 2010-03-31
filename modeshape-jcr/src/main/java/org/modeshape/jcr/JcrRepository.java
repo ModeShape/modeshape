@@ -681,9 +681,10 @@ public class JcrRepository implements Repository {
 
         // Make sure the required jcr:versionStorage node exists...
         Path versionPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, JcrLexicon.VERSION_STORAGE);
-        Property versionPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.VERSION_STORAGE);
+        Property versionPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE,
+                                                                          ModeShapeLexicon.VERSION_STORAGE);
         systemGraph.create(versionPath, versionPrimaryType).ifAbsent().and();
-        
+
         // Right now, the other nodes will be created as needed
     }
 
