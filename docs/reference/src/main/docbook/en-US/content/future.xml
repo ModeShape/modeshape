@@ -31,19 +31,23 @@
 <chapter id="future">
 	<title>Looking to the future</title>
 	<para>
-		ModeShape &version; adds a lot of new features and capabilities.  It introduced an initial RESTful server that makes
-		JCR repositories accessible over HTTP to clients.  The JCR implementation was enhanced to support more features,
-		including the ability to define and register node types using the Compact Node Definition (CND) format.
-		A new configuration system was added, making it very easy to configure and manage the ModeShape JCR engine.
-		An observation framework was added to the graph API. The federation connector was rewritten to improve performance
-		and correct several issues.  And quite a few issues were fixed.
+		ModeShape &versionNumber; provides a very capable JCR implementation with powerful and unique features not matched
+		by other implementations.  This release adds several key features, such as JCR versioning and a JCR connector,
+		and includes fixes and improvements. 
 	</para>
 	<para>
-		What's next for ModeShape?  Passing all of the JCR API compatibility tests for Level 1 and Level 2,
-		plus some of the optional features, is the primary focus for the next release.  Of course, there are a handful of
-		improvements we'd like to make under the covers, and a few outstanding issues that we'll address.
-		Farther out on our <ulink url="&Roadmap;">roadmap</ulink> are the development of additional connectors and sequencers,
-		some Eclipse tooling for publishing artifacts to a repository, and quite a few other interesting features.
+		At this point, ModeShape passes all of the JCR Technology Compatibility Kit (TCK) tests 
+		for Level 1, Level 2, and the optional locking and versioning features (plus almost all of the tests for the
+		optional observation feature). We'll soon begin the process of attaining JCR certification for ModeShape.
+	</para>
+	<para>
+		What's next for ModeShape? 
+		We also plan to add support for clustering multiple ModeShape engines spread across multiple JVM processes.
+		And each expect to introduce more 
+		<link linkend="repository-connectors">connectors</link> and <link linkend="sequencers">sequencers</link> to our library.
+		Other items on our <ulink url="&Roadmap;">roadmap</ulink> include a JDBC driver for ModeShape, 
+		a web user interface, Seam integration, and integration with even more kinds of
+		information systems and repositories.
 	</para>
 	<para>
     We're always looking for suggestions and contributors.  If you'd like to get involved on ModeShape, the first

@@ -201,7 +201,6 @@ final &LoginContext; loginContext = ...;
 			<para>
 				ModeShape currently supports all Level 1 and Level 2 features defined by the 
 				<ulink url="&JSR170;">JSR-170</ulink> specification.
-				This release adds support for referential integrity for <code>REFERENCE</code> properties.  
 			</para>
 		</sect2>
 		<sect2>

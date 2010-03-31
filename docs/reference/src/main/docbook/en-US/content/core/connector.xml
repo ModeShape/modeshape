@@ -86,6 +86,9 @@
 				<para>a repository that accesses a file system to present its files and directory structure as (updatable) repository content</para>
 			</listitem>
 			<listitem>
+				<para>a repository that accesses the content in another JCR repository</para>
+			</listitem>
+			<listitem>
 				<para>a repository that accesses an SVN repository to present the files and directory structure as (updatable) repository content</para>
 			</listitem>
 			<listitem>
@@ -102,9 +105,8 @@
 			Along with a good library of connectors, which is what we're planning to create.
 		</para>
 		<para>
-			For instance, we want to build a connector to <ulink url="&JIRA;-39">other JCR repositories</ulink>, and
-			another to access <ulink url="&JIRA;-199">existing databases</ulink> so that some or all of the existing data (in whatever structure)
-	    can be accessed through JCR.  For more information, check out our
+			For instance, we want to build a connector to access <ulink url="&JIRA;-282">existing relational databases</ulink> so that some
+			or all of the existing data (in whatever structure) can be accessed through JCR.  For more information, check out our
 			<ulink url="&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">roadmap</ulink>.
 			Of course, if we don't have a connector to suit your needs, you can <link linkend="custom-connectors">write your own</link>.
 			<figure id="modeshape-connectors-future">
@@ -173,9 +175,8 @@
 		<note>
 			<para>
 				Of course, before you develop a connector, you should probably check the
-				<ulink url="http://docs.jboss.org/jbossmodeshape/latest/manuals/reference/html/provided-connectors-part.html">list of connectors</ulink> ModeShape already provides out of the box.
-				With this latest release, ModeShape already includes this JDBC metadata connector!  And we're always interested in new
-				connectors and new contributors, so please consider developing your custom connector as part of ModeShape.
+				<ulink url="http://docs.jboss.org/jbossmodeshape/latest/manuals/reference/html/provided-connectors-part.html">list of connectors</ulink> 
+				ModeShape already provides out of the box. And we've been adding new connectors with almost every release.
 			</para>
 		</note>
 		<para>
