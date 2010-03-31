@@ -53,6 +53,7 @@
 /extensions/modeshape-connector-filesystem/target
 /extensions/modeshape-connector-inmemory/target
 /extensions/modeshape-connector-jbosscache/target
+/extensions/modeshape-connector-jcr/target
 /extensions/modeshape-connector-infinispan/target
 /extensions/modeshape-connector-jdbc-metadata/target
 /extensions/modeshape-connector-store-jpa/target

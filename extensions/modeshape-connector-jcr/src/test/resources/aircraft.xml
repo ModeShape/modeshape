@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<Aircraft xmlns:jcr="http://www.jcp.org/jcr/1.0" 
+          xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+          xmlns:air="http://www.modeshape.org/examples/aircraft/1.0" jcr:primaryType="nt:unstructured">
+    <Business jcr:primaryType="nt:unstructured">
+        <air:Aircraft jcr:name="Gulfstream V" maker="Gulfstream" model="G-V" introduced="1995" range="5800nm" cruiseSpeed="488kt" crew="2" emptyWeight="46200lb" url="http://en.wikipedia.org/wiki/Gulfstream_V"/>
+        <air:Aircraft jcr:name="Learjet 45" maker="Learjet" model="LJ45" introduced="1995" numberBuilt="264+" crew="2" emptyWeight="13695lb" range="2120nm" cruiseSpeed="457kt" url="http://en.wikipedia.org/wiki/Learjet_45"/>
+    </Business>
+    <Commercial jcr:primaryType="nt:unstructured">
+        <air:Aircraft jcr:name="Boeing 777" maker="Boeing" model="777-200LR" introduced="1995" numberBuilt="731+" maxRange="7500nm" emptyWeight="326000lb" cruiseSpeed="560mph" url="http://en.wikipedia.org/wiki/Boeing_777"/>
+        <air:Aircraft jcr:name="Boeing 767" maker="Boeing" model="767-200" introduced="1982" numberBuilt="966+" maxRange="3950nm" emptyWeight="176650lb" cruiseSpeed="530mph"  url="http://en.wikipedia.org/wiki/Boeing_767"/>
+        <air:Aircraft jcr:name="Boeing 787" maker="Boeing" model="787-3" introduced="2009" range="3050nm" emptyWeight="223000lb" cruiseSpeed="561mph" url="http://en.wikipedia.org/wiki/Boeing_787"/>
+        <air:Aircraft jcr:name="Boeing 757" maker="Boeing" model="757-200" introduced="1983" numberBuilt="1050" range="3900nm" maxWeight="255000lb" cruiseSpeed="530mph" url="http://en.wikipedia.org/wiki/Boeing_757"/>
+        <air:Aircraft jcr:name="Airbus A380" maker="Airbus" model="A380-800" introduced="2007" numberBuilt="18" range="8200nm" maxWeight="1235000lb" cruiseSpeed="647mph" url="http://en.wikipedia.org/wiki/Airbus_a380"/>
+        <air:Aircraft jcr:name="Airbus A340" maker="Airbus" model="A340-200" introduced="1993" numberBuilt="354" range="8000nm" maxWeight="606300lb" cruiseSpeed="557mph" url="http://en.wikipedia.org/wiki/Airbus_A-340"/>
+        <air:Aircraft jcr:name="Airbus A310" maker="Airbus" model="A310-200" introduced="1983" numberBuilt="255" cruiseSpeed="850km/h" emptyWeight="176312lb" range="3670nm" url="http://en.wikipedia.org/wiki/Airbus_A-310"/>
+        <air:Aircraft jcr:name="Embraer RJ-175" maker="Embraer" model="ERJ170-200" introduced="2004" range="3334km" cruiseSpeed="481kt" emptyWeight="21810kg" url="http://en.wikipedia.org/wiki/EMBRAER_170"/>
+    </Commercial>
+    <Vintage jcr:primaryType="nt:unstructured">
+        <air:Aircraft jcr:name="Fokker Trimotor" maker="Fokker" model="F.VII" introduced="1925" cruiseSpeed="170km/h" emptyWeight="3050kg" crew="2" url="http://en.wikipedia.org/wiki/Fokker_trimotor"/>
+        <air:Aircraft jcr:name="P-38 Lightning" maker="Lockheed" model="P-38" designedBy="Kelly Johnson" introduced="1941" numberBuilt="10037" rateOfClimb="4750ft/min" range="1300mi" emptyWeight="12780lb" crew="1" url="http://en.wikipedia.org/wiki/P-38_Lightning"/>
+        <air:Aircraft jcr:name="A6M Zero" maker="Mitsubishi" model="A6M" designedBy="Jiro Horikoshi" introduced="1940" numberBuilt="11000" crew="1" emptyWeight="3704lb" serviceCeiling="33000ft" maxSpeed="331mph" range="1929mi" rateOfClimb="3100ft/min" url="http://en.wikipedia.org/wiki/A6M_Zero"/>
+        <air:Aircraft jcr:name="Bf 109" maker="Messerschmitt" model="Bf 109" introduced="1937" url="http://en.wikipedia.org/wiki/BF_109"/>
+        <air:Aircraft jcr:name="Wright Flyer" maker="Wright Brothers" introduced="1903" range="852ft" maxSpeed="30mph" emptyWeight="605lb" crew="1"/>
+    </Vintage>
+    <Homebuilt jcr:primaryType="nt:unstructured">
+        <air:Aircraft jcr:name="Long-EZ" maker="Rutan Aircraft Factory" model="61" emptyWeight="760lb" fuelCapacity="200L" maxSpeed="185kt" since="1976" range="1200nm" url="http://en.wikipedia.org/wiki/Rutan_Long-EZ"/>
+        <air:Aircraft jcr:name="Cirrus VK-30" maker="Cirrus Design" model="VK-30" emptyWeight="2400lb" maxLoad="1200lb" maxSpeed="250mph" rateOfClimb="1500ft/min" range="1300mi" url="http://en.wikipedia.org/wiki/Cirrus_VK-30"/>
+        <air:Aircraft jcr:name="Van's RV-4" maker="Van's Aircraft" model="RV-4" introduced="1980" emptyWeight="905lb" maxLoad="500lb" maxSpeed="200mph" rateOfClimb="2450ft/min" range="725mi" url="http://en.wikipedia.org/wiki/Van%27s_Aircraft_RV-4"/>
+    </Homebuilt>
+</Aircraft>
