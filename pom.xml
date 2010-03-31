@@ -158,6 +158,7 @@
 	</modules>
 	<properties>
 		<rootDir>${project.basedir}</rootDir>
+		<jcr.repository.vendor>${project.organization.name}</jcr.repository.vendor>
 		<!-- Instruct the build to use only UTF-8 encoding for source code -->
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<!-- These are properties used in the database profiles. Must initialize them to be empty so that Maven applies
