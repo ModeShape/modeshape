@@ -34,18 +34,25 @@ import static org.mockito.Mockito.when;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
+import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
+import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeType;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.nodetype.NodeDefinitionTemplate;
+import org.modeshape.jcr.nodetype.NodeTypeTemplate;
+import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
 
 /**
  * 
@@ -634,4 +641,56 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
     public void shouldFailToAddNodeWhenIntermediateNodesDoNotExist() throws Exception {
         rootNode.addNode("Cars/nonExistant/CreateThis", "nt:unstructured");
     }
+
+    private void registerTestNodeType() throws Exception {
+        try {
+            nodeTypes.getNodeType("autocreateTest");
+            return;
+        } catch (NoSuchNodeTypeException nsnte) {
+        }
+
+        NodeTypeTemplate ntt = nodeTypes.createNodeTypeTemplate();
+        PropertyDefinitionTemplate pdt = nodeTypes.createPropertyDefinitionTemplate();
+        NodeDefinitionTemplate ndt = nodeTypes.createNodeDefinitionTemplate();
+
+        pdt.setName("autoProp");
+        pdt.setRequiredType(PropertyType.STRING);
+        pdt.setDefaultValues(new String[] {"default"});
+        pdt.setAutoCreated(true);
+
+        ndt.setName("autoChild");
+        ndt.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        ndt.setDefaultPrimaryType("nt:unstructured");
+        ndt.setAutoCreated(true);
+
+        ntt.setName("autocreateTest");
+        ntt.getNodeDefinitionTemplates().add(ndt);
+        ntt.getPropertyDefinitionTemplates().add(pdt);
+
+        nodeTypes.registerNodeType(ntt, false);
+
+    }
+
+    @Test
+    public void shouldAddAutocreatedPropertiesForNode() throws Exception {
+        registerTestNodeType();
+
+        Node testNode = rootNode.addNode("autoPropTest", "autocreateTest");
+        assertThat(testNode.hasProperty("autoProp"), is(true));
+
+        Property autoProp = testNode.getProperty("autoProp");
+        assertThat(autoProp.getString(), is("default"));
+    }
+
+    @Test
+    public void shouldAddAutocreatedChildNodesForNode() throws Exception {
+        registerTestNodeType();
+
+        Node testNode = rootNode.addNode("autoChildTest", "autocreateTest");
+        assertThat(testNode.hasNode("autoChild"), is(true));
+
+        Node autoProp = testNode.getNode("autoChild");
+        assertThat(autoProp.getPrimaryNodeType().getName(), is("nt:unstructured"));
+    }
+
 }

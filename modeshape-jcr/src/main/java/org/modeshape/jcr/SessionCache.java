@@ -1384,37 +1384,7 @@ class SessionCache {
                 // ------------------------------------------------------------------------------
                 // Create any auto-created properties/nodes from new type
                 // ------------------------------------------------------------------------------
-
-                for (JcrPropertyDefinition propertyDefinition : mixinCandidateType.propertyDefinitions()) {
-                    if (propertyDefinition.isAutoCreated() && !propertyDefinition.isProtected()) {
-                        PropertyInfo<JcrPropertyPayload> autoCreatedProp = node.getProperty(propertyDefinition.getInternalName());
-                        if (autoCreatedProp == null) {
-                            // We have to 'auto-create' the property ...
-                            assert propertyDefinition.getDefaultValues() != null;
-                            if (propertyDefinition.isMultiple()) {
-                                setProperty(propertyDefinition.getInternalName(),
-                                            propertyDefinition.getDefaultValues(),
-                                            propertyDefinition.getRequiredType());
-                            } else {
-                                assert propertyDefinition.getDefaultValues().length == 1;
-                                setProperty(propertyDefinition.getInternalName(),
-                                            (JcrValue)propertyDefinition.getDefaultValues()[0]);
-                            }
-                        }
-                    }
-                }
-
-                for (JcrNodeDefinition nodeDefinition : mixinCandidateType.childNodeDefinitions()) {
-                    if (nodeDefinition.isAutoCreated() && !nodeDefinition.isProtected()) {
-                        Name nodeName = nodeDefinition.getInternalName();
-                        if (node.getChildrenCount(nodeName) == 0) {
-                            assert nodeDefinition.getDefaultPrimaryType() != null;
-                            createChild(nodeName,
-                                        (UUID)null,
-                                        ((JcrNodeType)nodeDefinition.getDefaultPrimaryType()).getInternalName());
-                        }
-                    }
-                }
+                addAutoCreatedItems(this, mixinCandidateType);
 
                 if (mixinCandidateType.isNodeType(JcrMixLexicon.REFERENCEABLE)) {
                     // This node is now referenceable, so make sure there is a UUID property ...
@@ -1429,6 +1399,43 @@ class SessionCache {
             } catch (AccessControlException e) {
                 throw new AccessDeniedException(e.getMessage(), e);
             }
+        }
+
+        private void addAutoCreatedItems( NodeEditor editor,
+                                          JcrNodeType nodeType )
+            throws InvalidItemStateException, ConstraintViolationException, AccessDeniedException, RepositoryException {
+
+            for (JcrPropertyDefinition propertyDefinition : nodeType.propertyDefinitions()) {
+                if (propertyDefinition.isAutoCreated() && !propertyDefinition.isProtected()) {
+                    PropertyInfo<JcrPropertyPayload> autoCreatedProp = node.getProperty(propertyDefinition.getInternalName());
+                    if (autoCreatedProp == null) {
+                        // We have to 'auto-create' the property ...
+                        assert propertyDefinition.getDefaultValues() != null;
+                        if (propertyDefinition.isMultiple()) {
+                            editor.setProperty(propertyDefinition.getInternalName(),
+                                               propertyDefinition.getDefaultValues(),
+                                               propertyDefinition.getRequiredType());
+                        } else {
+                            assert propertyDefinition.getDefaultValues().length == 1;
+                            editor.setProperty(propertyDefinition.getInternalName(),
+                                               (JcrValue)propertyDefinition.getDefaultValues()[0]);
+                        }
+                    }
+                }
+            }
+
+            for (JcrNodeDefinition nodeDefinition : nodeType.childNodeDefinitions()) {
+                if (nodeDefinition.isAutoCreated() && !nodeDefinition.isProtected()) {
+                    Name nodeName = nodeDefinition.getInternalName();
+                    if (node.getChildrenCount(nodeName) == 0) {
+                        assert nodeDefinition.getDefaultPrimaryType() != null;
+                        editor.createChild(nodeName,
+                                           (UUID)null,
+                                           ((JcrNodeType)nodeDefinition.getDefaultPrimaryType()).getInternalName());
+                    }
+                }
+            }
+
         }
 
         /**
@@ -1551,6 +1558,7 @@ class SessionCache {
                 }
 
                 // The postCreateChild hook impl should populate the payloads
+                addAutoCreatedItems(jcrNode.editor(), primaryType);
 
                 // Finally, return the jcr node ...
                 return jcrNode;
