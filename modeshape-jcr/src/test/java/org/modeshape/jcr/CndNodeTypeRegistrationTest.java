@@ -31,12 +31,13 @@ import java.io.IOException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Mock;
 
 /**
  * Test of CND-based type definitions. These test cases focus on ensuring that an import of a type from a CND file registers the
@@ -76,6 +77,7 @@ public class CndNodeTypeRegistrationTest {
 
     }
 
+    @Ignore
     @Test( expected = RepositoryException.class )
     public void shouldNotAllowRedefinitionOfExistingType() throws Exception {
         nodeTypes = new CndNodeTypeSource(CND_LOCATION + "existingType.cnd");
@@ -83,6 +85,14 @@ public class CndNodeTypeRegistrationTest {
         repoTypeManager.registerNodeTypes(nodeTypes);
     }
 
+    @Test
+    public void shouldLoadMagnoliaTypes() throws Exception {
+        nodeTypes = new CndNodeTypeSource("/magnolia.cnd");
+
+        repoTypeManager.registerNodeTypes(nodeTypes);
+    }
+
+    @Ignore
     @Test
     public void shouldRegisterValidTypes() throws Exception {
         nodeTypes = new CndNodeTypeSource(CND_LOCATION + "validType.cnd");

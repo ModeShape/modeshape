@@ -2079,7 +2079,7 @@ class RepositoryNodeTypeManager {
     private void validate( JcrNodeDefinition node,
                            List<Name> supertypes,
                            List<JcrNodeType> pendingTypes ) throws RepositoryException {
-        if (node.isAutoCreated() && !node.isProtected() && node.getDefaultPrimaryType() == null) {
+        if (node.isAutoCreated() && !node.isProtected() && node.defaultPrimaryTypeName() == null) {
             throw new InvalidNodeTypeDefinitionException(JcrI18n.autocreatedNodesNeedDefaults.text(node.getName()));
         }
         if (node.isMandatory() && JcrNodeType.RESIDUAL_ITEM_NAME.equals(node.getName())) {
@@ -2127,7 +2127,9 @@ class RepositoryNodeTypeManager {
                         break;
                     }
                 }
-                if (!found) {
+
+                // Allow side-by-side definitions of residual child nodes per JCR 1.0.1 spec 6.7.8
+                if (!found && !JcrNodeType.RESIDUAL_NAME.equals(node.name)) {
                     I18n msg = JcrI18n.cannotRedefineChildNodeWithIncompatibleDefinition;
                     throw new InvalidNodeTypeDefinitionException(msg.text(nodeName, apt.getName(), node.getDeclaringNodeType()));
 

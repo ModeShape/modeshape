@@ -139,6 +139,13 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
     }
 
     /**
+     * @return the name of the default primary type for this definition; may be null
+     */
+    final Name defaultPrimaryTypeName() {
+        return defaultPrimaryTypeName;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.nodetype.NodeDefinition#getDefaultPrimaryType()

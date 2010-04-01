@@ -23,21 +23,25 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import javax.jcr.Credentials;
+import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import junit.framework.TestSuite;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.jcr.JcrRepository.Option;
 import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.JcrRepository.Option;
 
 /**
  * The {@link JcrNodeTypeManager} test class.
@@ -179,4 +183,27 @@ public final class JcrNodeTypeManagerTest extends TestSuite {
         assertFalse(this.nodeTypeMgr.isDerivedFrom(SUBTYPES, NO_MATCH_TYPE, MIXINS));
     }
 
+    @Test
+    public void shouldAllowDisjunctiveResidualChildNodeDefinitions() throws Exception {
+        // This is an extended test of the MODE-698 fix
+        nodeTypeMgr.registerNodeTypes(new CndNodeTypeSource("/magnolia.cnd"));
+        session.getWorkspace().getNamespaceRegistry().registerNamespace("mgnl", "http://www.magnolia.info/jcr/mgnl");
+
+        assertThat(nodeTypeMgr.getNodeType("mgnl:content"), is(notNullValue()));
+
+        Node rootNode = session.getRootNode();
+        Node branchNode = rootNode.addNode("disjunctiveTest", "nt:unstructured");
+        Node testNode = branchNode.addNode("testNode", "mgnl:content");
+
+        assertTrue(testNode.hasNode("MetaData"));
+        session.save();
+
+        // This residual definition comes from the ancestor - nt:hierarchyNode
+        testNode.addNode("hierarchyNode", "nt:folder");
+
+        // This residual definition comes from mgnl:content
+        testNode.addNode("baseNode", "nt:base");
+
+        session.save();
+    }
 }
