@@ -3,12 +3,12 @@
 	<parent>
 		<groupId>org.modeshape</groupId>
 		<artifactId>modeshape</artifactId>
-		<version>1.1-SNAPSHOT</version>
+		<version>1.1.0.Final</version>
 		<relativePath>../..</relativePath>
 	</parent>
 	<artifactId>modeshape-sequencer-jbpm-jpdl</artifactId>
 	<packaging>jar</packaging>
-	<version>1.1-SNAPSHOT</version>
+	<version>1.1.0.Final</version>
 	<name>ModeShape jBPM jPDL Sequencer</name>
 	<description>
 		ModeShape Sequencer that processes jPDL XML document
