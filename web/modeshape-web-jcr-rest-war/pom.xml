@@ -3,7 +3,7 @@
 	<parent>
 		<artifactId>modeshape</artifactId>
 		<groupId>org.modeshape</groupId>
-		<version>1.1-SNAPSHOT</version>
+		<version>1.1.0.Final</version>
 		<relativePath>../..</relativePath>
 	</parent>
 	<artifactId>modeshape-web-jcr-rest-war</artifactId>
