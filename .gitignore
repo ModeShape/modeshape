@@ -21,6 +21,9 @@
 /modeshape-jcr/.settings
 /modeshape-jcr/target
 
+/modeshape-jcr-api/.settings
+/modeshape-jcr-api/target
+
 /modeshape-jcr-tck/.settings
 /modeshape-jcr-tck/target
 

@@ -59,6 +59,7 @@ import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
 import org.modeshape.jcr.JcrRepository.Option;
+import org.modeshape.jcr.api.Repositories;
 import org.modeshape.repository.ModeShapeConfiguration;
 import org.modeshape.repository.ModeShapeEngine;
 
@@ -66,7 +67,7 @@ import org.modeshape.repository.ModeShapeEngine;
  * The basic component that encapsulates the ModeShape services, including the {@link Repository} instances.
  */
 @ThreadSafe
-public class JcrEngine extends ModeShapeEngine {
+public class JcrEngine extends ModeShapeEngine implements Repositories {
 
     final static int LOCK_SWEEP_INTERVAL_IN_MILLIS = 30000;
     final static int LOCK_EXTENSION_INTERVAL_IN_MILLIS = LOCK_SWEEP_INTERVAL_IN_MILLIS * 2;
@@ -311,7 +312,7 @@ public class JcrEngine extends ModeShapeEngine {
             }
 
             repository.getRepositoryTypeManager().registerNodeTypes(nodeTypesSubgraph, nodeTypesNode.getLocation());// throws
-                                                                                                                    // exception
+            // exception
         }
 
         return repository;

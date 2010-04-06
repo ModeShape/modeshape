@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.modeshape</groupId>
+    <artifactId>modeshape</artifactId>
+    <version>1.2-SNAPSHOT</version>
+  </parent>
+  <!-- The groupId and version values are inherited from parent -->
+  <artifactId>modeshape-jcr-api</artifactId>
+  <packaging>jar</packaging>
+  <name>ModeShape JCR Repository API</name>
+  <description>ModeShape JCR Repository API</description>
+  <url>http://www.modeshape.org</url>
+  
+  <!--
+  Define the dependencies.  Note that all version and scopes default to those 
+  defined in the dependencyManagement section of the parent pom.
+  -->
+  <dependencies>
+    <!-- 
+      Java Content Repository API 
+    -->
+    <dependency>
+      <groupId>javax.jcr</groupId>
+      <artifactId>jcr</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+	<plugins>
+	  <!--
+	Adding OSGI metadata to the JAR without changing the packaging type.
+			-->
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>bundle-manifest</id>
+						<phase>process-classes</phase>
+						<goals>
+							<goal>manifest</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <descriptors>
+            <descriptor>src/main/assembly/with-dependencies.xml</descriptor>
+          </descriptors>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

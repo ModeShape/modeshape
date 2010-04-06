@@ -131,6 +131,7 @@
 		<module>modeshape-repository</module>
 		<module>modeshape-cnd</module>
 		<module>extensions/modeshape-search-lucene</module>
+		<module>modeshape-jcr-api</module>
 		<module>modeshape-jcr</module>
 		<module>extensions/modeshape-classloader-maven</module>
 		<module>extensions/modeshape-sequencer-images</module>
@@ -904,6 +905,11 @@
 			<dependency>
 				<groupId>org.modeshape</groupId>
 				<artifactId>modeshape-jcr</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+			        <groupId>org.modeshape</groupId>
+				<artifactId>modeshape-jcr-api</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
