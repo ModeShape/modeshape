@@ -68,7 +68,7 @@ import org.modeshape.graph.property.PathFactory;
  * </p>
  */
 @Immutable
-class CndNodeTypeSource implements JcrNodeTypeSource {
+public class CndNodeTypeSource implements JcrNodeTypeSource {
 
     private final Graph graph;
     private final Problems problems;
