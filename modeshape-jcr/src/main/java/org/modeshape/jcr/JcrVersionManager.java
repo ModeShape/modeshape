@@ -422,6 +422,14 @@ final class JcrVersionManager {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(node.getPath()));
         }
 
+        /*
+         * This happens when we've added mix:versionable, but not saved it to create the base
+         * version (and the rest of the version storage graph).  See MODE-704.
+         */
+        if (!node.hasProperty(JcrLexicon.BASE_VERSION)) {
+            return;
+        }
+
         PropertyFactory propFactory = propertyFactory();
 
         PropertyInfo<JcrPropertyPayload> mvProp = node.nodeInfo().getProperty(ModeShapeIntLexicon.MULTI_VALUED_PROPERTIES);

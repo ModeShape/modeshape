@@ -1520,6 +1520,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final JcrVersionNode getBaseVersion() throws RepositoryException {
         checkVersionable();
 
+        // This can happen if the versionable type was added to the node, but it hasn't been saved yet
+        if (!hasProperty(JcrLexicon.BASE_VERSION)) {
+            throw new UnsupportedRepositoryOperationException(JcrI18n.requiresVersionable.text());
+        }
+
         return (JcrVersionNode)session().getNodeByUUID(getProperty(JcrLexicon.BASE_VERSION).getString());
     }
 

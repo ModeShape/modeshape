@@ -762,4 +762,24 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         assertThat(fileNode.hasNode(contentNode.getName()), is(true));
         assertThat(root.hasNode(pathToNode), is(false));
     }
+
+    public void testShouldReturnSilentlyWhenCheckingOutACheckedOutNode() throws Exception {
+        // q.v., MODE-704
+        session = helper.getReadWriteSession();
+
+        Node root = session.getRootNode();
+
+        Node testNode = root.addNode("checkedOutNodeTest", "nt:unstructured");
+        session.save();
+
+        // Add the mixin, but don't save it
+        testNode.addMixin("mix:versionable");
+        testNode.checkout();
+
+        testNode.save();
+
+        // Now check that it still returns silently on a saved node that was never checked in.
+        testNode.checkout();
+
+    }
 }
