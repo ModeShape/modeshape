@@ -866,7 +866,7 @@ class JcrSession implements Session {
             }
         }
 
-        if (!sourceNode.isCheckedOut()) {
+        if (!sourceNode.getParent().isCheckedOut()) {
             throw new VersionException(JcrI18n.nodeIsCheckedIn.text(sourceNode.getPath()));
         }
 
