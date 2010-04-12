@@ -31,6 +31,7 @@ import java.io.ObjectOutputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -45,6 +46,7 @@ import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.GuardedBy;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
@@ -54,6 +56,7 @@ import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.map.MapRepositoryConnection;
 import org.modeshape.graph.connector.map.MapRepositorySource;
+import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
  * A {@link RepositorySource} for an in-memory repository. Each {@link InMemoryRepositorySource} instance contains its own
@@ -81,6 +84,7 @@ public class InMemoryRepositorySource implements MapRepositorySource, ObjectFact
 
     protected static final String ROOT_NODE_UUID_ATTR = "rootNodeUuid";
     protected static final String SOURCE_NAME_ATTR = "sourceName";
+    protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
     protected static final String DEFAULT_WORKSPACE_NAME_ATTR = "defaultWorkspaceName";
     protected static final String DEFAULT_CACHE_POLICY_ATTR = "defaultCachePolicy";
     protected static final String JNDI_NAME_ATTR = "jndiName";
@@ -93,6 +97,7 @@ public class InMemoryRepositorySource implements MapRepositorySource, ObjectFact
     private String defaultWorkspaceName = DEFAULT_WORKSPACE_NAME;
     private UUID rootNodeUuid = UUID.randomUUID();
     private CachePolicy defaultCachePolicy;
+    private volatile String[] predefinedWorkspaces = new String[] {};
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
     private transient InMemoryRepository repository;
     private transient RepositoryContext repositoryContext;
@@ -257,6 +262,11 @@ public class InMemoryRepositorySource implements MapRepositorySource, ObjectFact
     public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
         if (repository == null) {
             repository = new InMemoryRepository(name, rootNodeUuid, defaultWorkspaceName);
+
+            // Create the set of initial workspaces ...
+            for (String initialName : getPredefinedWorkspaceNames())
+                repository.createWorkspace(null, initialName, CreateConflictBehavior.DO_NOT_CREATE);
+
         }
         return new MapRepositoryConnection(this, repository);
     }
@@ -290,6 +300,10 @@ public class InMemoryRepositorySource implements MapRepositorySource, ObjectFact
         }
         if (getDefaultWorkspaceName() != null) {
             ref.add(new StringRefAddr(DEFAULT_WORKSPACE_NAME_ATTR, getDefaultWorkspaceName()));
+        }
+        String[] workspaceNames = getPredefinedWorkspaceNames();
+        if (workspaceNames != null && workspaceNames.length != 0) {
+            ref.add(new StringRefAddr(PREDEFINED_WORKSPACE_NAMES, StringUtil.combineLines(workspaceNames)));
         }
         if (getDefaultCachePolicy() != null) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -343,6 +357,13 @@ public class InMemoryRepositorySource implements MapRepositorySource, ObjectFact
             Object defaultCachePolicy = values.get(DEFAULT_CACHE_POLICY_ATTR);
             String retryLimit = (String)values.get(RETRY_LIMIT_ATTR);
 
+            String combinedWorkspaceNames = (String)values.get(PREDEFINED_WORKSPACE_NAMES);
+            String[] workspaceNames = null;
+            if (combinedWorkspaceNames != null) {
+                List<String> paths = StringUtil.splitLines(combinedWorkspaceNames);
+                workspaceNames = paths.toArray(new String[paths.size()]);
+            }
+
             // Create the source instance ...
             InMemoryRepositorySource source = new InMemoryRepositorySource();
             if (sourceName != null) source.setName(sourceName);
@@ -352,10 +373,36 @@ public class InMemoryRepositorySource implements MapRepositorySource, ObjectFact
             if (defaultCachePolicy instanceof CachePolicy) {
                 source.setDefaultCachePolicy((CachePolicy)defaultCachePolicy);
             }
+            if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
             return source;
         }
         return null;
+    }
+
+    /**
+     * Gets the names of the workspaces that are available when this source is created.
+     * 
+     * @return the names of the workspaces that this source starts with, or null if there are no such workspaces
+     * @see #setPredefinedWorkspaceNames(String[])
+     * @see #setCreatingWorkspacesAllowed(boolean)
+     */
+    public synchronized String[] getPredefinedWorkspaceNames() {
+        String[] copy = new String[predefinedWorkspaces.length];
+        System.arraycopy(predefinedWorkspaces, 0, copy, 0, predefinedWorkspaces.length);
+        return copy;
+    }
+
+    /**
+     * Sets the names of the workspaces that are available when this source is created.
+     * 
+     * @param predefinedWorkspaceNames the names of the workspaces that this source should start with, or null if there are no
+     *        such workspaces
+     * @see #setCreatingWorkspacesAllowed(boolean)
+     * @see #getPredefinedWorkspaceNames()
+     */
+    public synchronized void setPredefinedWorkspaceNames( String[] predefinedWorkspaceNames ) {
+        this.predefinedWorkspaces = predefinedWorkspaceNames;
     }
 
     /**
