@@ -457,8 +457,8 @@ final class JcrVersionManager {
         }
 
         Object[] newPreds = new Object[oldPreds.length + 1];
-        System.arraycopy(oldPreds, 0, newPreds, 0, oldPreds.length);
-        newPreds[oldPreds.length] = refFactory.create(node.getBaseVersion().uuid());
+        newPreds[0] = refFactory.create(node.getBaseVersion().uuid());
+        System.arraycopy(oldPreds, 0, newPreds, 1, oldPreds.length);
 
         org.modeshape.graph.property.Property isCheckedOut = propFactory.create(JcrLexicon.IS_CHECKED_OUT, true);
         org.modeshape.graph.property.Property predecessors = propFactory.create(JcrLexicon.PREDECESSORS, newPreds);
