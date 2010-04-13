@@ -142,7 +142,7 @@ config.repositorySource("SVN Store")
         be defined).
         -->
         <mode:source jcr:name="SVN Store" 
-                    mode:classname="org.modeshape.graph.connector.svn.SVNRepositorySource" 
+                    mode:classname="org.modeshape.connector.svn.SVNRepositorySource" 
                     mode:description="The ModeShape SVN repository (anonymous access)"
                     mode:repositoryRootUrl="http://anonsvn.jboss.org/repos/modeshape"
                     mode:defaultWorkspaceName="trunk"

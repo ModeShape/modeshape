@@ -351,11 +351,8 @@ final &LoginContext; loginContext = ...;
 		</sect2>
 		<sect2>
 			<title>Built-In Node Types</title>
-			<para>ModeShape supports all of the built-in node types described in the JSR-170 specification.  However, several of these node types
-			(mix:versionable, nt:version, nt:versionLabels, nt:versionHistory, and nt:frozenNode) are semantically meaningless
-			as ModeShape does not yet support the versioning optional feature.
-			</para>
-			<para>Although ModeShape does define some custom node types in the <code>modeshape</code> namespace, none of these
+			<para>ModeShape supports all of the built-in node types described in the JSR-170 specification.
+			ModeShape also defines some custom node types in the <code>modeshape</code> namespace, but none of these
 			node types except for <code>mode:resource</code> are intended to be used by developers integrating with ModeShape and may be changed or removed
 			at any time.
 			</para>

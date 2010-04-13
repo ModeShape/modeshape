@@ -245,7 +245,7 @@ config.repositorySource("Meta Store")
         workspace (though others could be created, too).
         -->
         <mode:source jcr:name="Meta Store" 
-                    mode:classname="org.modeshape.graph.connector.meta.jdbc.JdbcMetadataSource" 
+                    mode:classname="org.modeshape.connector.meta.jdbc.JdbcMetadataSource" 
                     mode:description="The database source for our content"
                     mode:dataSourceJndiName="java:/MyDataSource"
                     mode:defaultworkspaceName="default" >

@@ -133,7 +133,7 @@ config.repositorySource("Infinispan Store")
         workspace (though others could be created, too).
         -->
         <mode:source jcr:name="Infinispan Store" 
-                    mode:classname="org.modeshape.graph.connector.infinispan.InfinispanSource" 
+                    mode:classname="org.modeshape.connector.infinispan.InfinispanSource" 
                     mode:description="The repository for our content"
                     mode:defaultworkspaceName="prod"
                     mode:rootNodeUuid="84b73fc8-81a8-42ed-aa4b-3905094966f0"
