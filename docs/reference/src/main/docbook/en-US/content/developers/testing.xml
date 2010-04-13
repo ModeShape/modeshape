@@ -138,9 +138,8 @@
 			behavior.
 	  </para>
 	  <para>
-		  ModeShape has implemented all of the JCR Level 1 and Level 2 features, along with the optional locking and observation
+		  ModeShape has implemented all of the JCR Level 1 and Level 2 features, along with the optional locking, versioning, and observation
 		  features. The JCR-SQL optional feature has already been deprecated for <ulink url="&JSR283;">JSR-283</ulink> and will not be implemented.
-		  The only optional feature left to be implemented is versioning, and that will be coming soon.
 		</para>
 		<para>
 			The ModeShape project also frequently runs the JCR TCK unit tests from the reference implementation.  (Those these tests are not

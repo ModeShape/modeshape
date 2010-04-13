@@ -352,7 +352,7 @@ final &LoginContext; loginContext = ...;
 		<sect2>
 			<title>Built-In Node Types</title>
 			<para>ModeShape supports all of the built-in node types described in the JSR-170 specification.
-			ModeShape also defines some custom node types in the <code>modeshape</code> namespace, but none of these
+			ModeShape also defines some custom node types in the <code>mode</code> namespace, but none of these
 			node types except for <code>mode:resource</code> are intended to be used by developers integrating with ModeShape and may be changed or removed
 			at any time.
 			</para>
