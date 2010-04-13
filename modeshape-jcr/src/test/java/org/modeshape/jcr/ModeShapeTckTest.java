@@ -782,4 +782,35 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         testNode.checkout();
 
     }
+
+    public void testShouldCreateVersionStorageForWhenVersionableNodesCopied() throws Exception {
+        // q.v., MODE-709
+
+        session = helper.getReadWriteSession();
+
+        Node root = session.getRootNode();
+
+        Node parentNode = root.addNode("versionableNodeForCopy", "nt:unstructured");
+        parentNode.addMixin("mix:versionable");
+
+        Node childNode = parentNode.addNode("versionableChild", "nt:unstructured");
+        childNode.addMixin("mix:versionable");
+
+        Node targetNode = root.addNode("destForCopy", "nt:unstructured");
+
+        session.save();
+
+        String newParentPath = targetNode.getPath() + "/" + parentNode.getName();
+        session.getWorkspace().copy(parentNode.getPath(), newParentPath);
+
+        parentNode = (Node)session.getItem(newParentPath);
+        childNode = parentNode.getNode("versionableChild");
+
+        parentNode.checkout();
+        parentNode.checkin();
+
+        childNode.checkout();
+        childNode.checkin();
+
+    }
 }

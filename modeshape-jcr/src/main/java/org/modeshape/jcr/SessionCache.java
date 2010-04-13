@@ -59,9 +59,7 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
-import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
@@ -69,7 +67,6 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
-import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
@@ -2568,84 +2565,17 @@ class SessionCache {
         public void compute( Graph.Batch batch,
                              Node<JcrNodePayload, JcrPropertyPayload> node ) {
             try {
-                initializeVersionHistoryFor(batch, node);
+                JcrWorkspace workspace = session.workspace();
+
+                // Some tests don't set this up.
+                if (workspace != null) {
+                    workspace.versionManager().initializeVersionHistoryFor(batch, node, false);
+                }
             } catch (RepositoryException re) {
                 throw new IllegalStateException(re);
             }
         }
 
-        private void initializeVersionHistoryFor( Graph.Batch batch,
-                                                  Node<JcrNodePayload, JcrPropertyPayload> node ) throws RepositoryException {
-            /*
-             * Determine if the node has already had its verison history initialized based on whether the protected property
-             * jcr:isCheckedOut exists.
-             */
-
-            boolean initialized = node.getProperty(JcrLexicon.IS_CHECKED_OUT) != null;
-
-            if (!isVersionable(node) || initialized) return;
-
-            Graph systemGraph = session().repository().createSystemGraph(context());
-
-            JcrNodePayload payload = node.getPayload();
-
-            PropertyInfo<JcrPropertyPayload> jcrUuidProp = node.getProperty(JcrLexicon.UUID);
-
-            UUID jcrUuid = factories().getUuidFactory().create(jcrUuidProp.getProperty().getFirstValue());
-
-            Name nameSegment = factories().getNameFactory().create(jcrUuid.toString());
-            Path historyPath = pathFactory().createAbsolutePath(JcrLexicon.SYSTEM, JcrLexicon.VERSION_STORAGE, nameSegment);
-
-            Batch systemBatch = systemGraph.batch();
-
-            Name primaryTypeName = payload.getPrimaryTypeName();
-            List<Name> mixinTypeNames = payload.getMixinTypeNames();
-
-            UUID historyUuid = UUID.randomUUID();
-            UUID versionUuid = UUID.randomUUID();
-
-            systemBatch.create(historyPath)
-                       .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_HISTORY)
-                       .and(JcrLexicon.VERSIONABLE_UUID, jcrUuid)
-                       .and(JcrLexicon.UUID, historyUuid)
-                       .and();
-
-            Path versionLabelsPath = pathFactory().create(historyPath, JcrLexicon.VERSION_LABELS);
-            systemBatch.create(versionLabelsPath).with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_LABELS).and();
-
-            Path rootVersionPath = pathFactory().create(historyPath, JcrLexicon.ROOT_VERSION);
-            DateTime now = context().getValueFactories().getDateFactory().create();
-            systemBatch.create(rootVersionPath)
-                       .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION)
-                       .and(JcrLexicon.CREATED, now)
-                       .and(JcrLexicon.UUID, versionUuid)
-                       .and();
-
-            Path frozenVersionPath = pathFactory().create(rootVersionPath, JcrLexicon.FROZEN_NODE);
-            systemBatch.create(frozenVersionPath)
-                       .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FROZEN_NODE)
-                       .and(JcrLexicon.FROZEN_UUID, jcrUuid)
-                       .and(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName)
-                       .and(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames)
-                       .and();
-
-            systemBatch.execute();
-
-            PropertyFactory propFactory = context().getPropertyFactory();
-            ValueFactory<Reference> refFactory = context().getValueFactories().getReferenceFactory();
-            Property isCheckedOut = propFactory.create(JcrLexicon.IS_CHECKED_OUT, true);
-            Property versionHistory = propFactory.create(JcrLexicon.VERSION_HISTORY, refFactory.create(historyUuid));
-            Property baseVersion = propFactory.create(JcrLexicon.BASE_VERSION, refFactory.create(versionUuid));
-            Property predecessors = propFactory.create(JcrLexicon.PREDECESSORS, new Object[] {refFactory.create(versionUuid)});
-
-            // This batch will get executed as part of the save
-            batch.set(isCheckedOut, versionHistory, baseVersion, predecessors).on(node.getPath()).and();
-
-            Path storagePath = historyPath.getParent();
-            Node<JcrNodePayload, JcrPropertyPayload> storageNode = findNode(null, storagePath);
-
-            refresh(storageNode.getNodeId(), storagePath, false);
-        }
 
         /**
          * {@inheritDoc}

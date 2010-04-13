@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessControlException;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -36,6 +38,7 @@ import javax.jcr.InvalidSerializedDataException;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -509,6 +512,12 @@ class JcrWorkspace implements Workspace {
                 }
             }
 
+            /*
+             * Next, find the primary type for the source node.  
+             */
+            Property primaryTypeProp = sourceNode.getProperty(JcrLexicon.PRIMARY_TYPE);
+            Name primaryTypeName = this.context.getValueFactories().getNameFactory().create(primaryTypeProp.getFirstValue());
+
             AbstractJcrNode parentNode = cache.findJcrNode(Location.create(destPath.getParent()));
 
             if (parentNode.isLocked()) {
@@ -522,12 +531,25 @@ class JcrWorkspace implements Workspace {
                 throw new VersionException(JcrI18n.nodeIsCheckedIn.text(parentNode.getPath()));
             }
 
-            Node<JcrNodePayload, JcrPropertyPayload> parent = cache.findNode(null, destPath.getParent());
-            cache.findBestNodeDefinition(parent, newNodeName, parent.getPayload().getPrimaryTypeName());
-
+            cache.findBestNodeDefinition(parentNode.nodeInfo(), newNodeName, primaryTypeName);
 
             // Now perform the clone, using the direct (non-session) method ...
             cache.graphSession().immediateCopy(srcPath, srcWorkspace, destPath);
+
+            List<AbstractJcrNode> nodesToCheck = new LinkedList<AbstractJcrNode>();
+            nodesToCheck.add(cache.findJcrNode(Location.create(destPath)));
+
+            while (!nodesToCheck.isEmpty()) {
+                AbstractJcrNode node = nodesToCheck.remove(0);
+
+                // This returns silently if the node is not versionable
+                versionManager.initializeVersionHistoryFor(node);
+
+                for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
+                    nodesToCheck.add((AbstractJcrNode)iter.nextNode());
+                }
+            }
+
         } catch (ItemNotFoundException e) {
             // The destination path was not found ...
             throw new PathNotFoundException(e.getLocalizedMessage(), e);

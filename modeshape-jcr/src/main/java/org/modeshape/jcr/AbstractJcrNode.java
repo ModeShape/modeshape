@@ -1509,7 +1509,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final JcrVersionHistoryNode getVersionHistory() throws RepositoryException {
         checkVersionable();
 
-        return versionManager().getVersionHistory(uuid());
+        return versionManager().getVersionHistory(this);
     }
 
     /**

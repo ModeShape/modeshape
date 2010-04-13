@@ -222,6 +222,7 @@ public final class JcrI18n {
     public static I18n noExistingVersionForRestore;
     public static I18n versionNotInMergeFailed;
     public static I18n unrootedVersionsInRestore;
+    public static I18n repairedVersionStorage;
 
     static {
         try {
