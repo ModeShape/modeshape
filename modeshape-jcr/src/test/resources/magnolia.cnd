@@ -32,6 +32,8 @@
 
 [mgnl:content] > nt:hierarchyNode, mix:referenceable orderable
 + MetaData (mgnl:metaData) = mgnl:metaData autocreated mandatory copy
+- * (undefined) copy
+- * (undefined) multiple copy
 + * (nt:base) copy
 + * (nt:base) multiple copy
 
