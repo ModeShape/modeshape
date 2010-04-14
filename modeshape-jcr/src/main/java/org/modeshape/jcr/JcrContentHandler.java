@@ -451,7 +451,10 @@ class JcrContentHandler extends DefaultHandler {
                         values.add(valueFor(is));
                     } else {
                         if (decoder != null) value = decoder.decode(value);
-                        if (value != null && value.length() > 0) {
+                        if (value != null && propertyType == PropertyType.STRING) {
+                            // Strings and binaries can be empty -- other data types cannot
+                            values.add(valueFor(value, propertyType));
+                        } else if (value != null && value.length() > 0) {
                             values.add(valueFor(value, propertyType));
                         }
                     }
