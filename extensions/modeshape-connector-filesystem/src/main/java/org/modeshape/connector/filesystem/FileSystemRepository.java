@@ -66,12 +66,13 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.request.InvalidRequestException;
+import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.Request;
 
 /**
  * Implementation of {@code WritablePathRepository} that provides access to an underlying file system. This repository only
  * natively supports nodes of primary types {@link JcrNtLexicon#FOLDER nt:folder}, {@link JcrNtLexicon#FILE nt:file}, and
- * {@link ModeShapeLexicon#RESOURCE dna:resource}, although the {@link CustomPropertiesFactory} allows for the addition of mixin
+ * {@link ModeShapeLexicon#RESOURCE mode:resource}, although the {@link CustomPropertiesFactory} allows for the addition of mixin
  * types to any and all primary types.
  */
 public class FileSystemRepository extends WritablePathRepository {
@@ -141,14 +142,35 @@ public class FileSystemRepository extends WritablePathRepository {
      */
     private WritablePathWorkspace doCreateWorkspace( ExecutionContext context,
                                                      String name ) {
-        // This doesn't create the directory representing the workspace (it must already exist), but it will add
-        // the workspace name to the available names ...
         File directory = getWorkspaceDirectory(name);
+
         FileSystemWorkspace workspace = new FileSystemWorkspace(name, context, directory);
 
         workspaces.putIfAbsent(name, workspace);
         return (WritablePathWorkspace)workspaces.get(name);
 
+    }
+
+    /**
+     * Creates directory and any missing parent directories
+     * 
+     * @param directory the directory to create
+     * @throws RepositorySourceException if the directory or one of its parents cannot be created
+     */
+    private void createDirectory( File directory ) {
+        File parent = directory.getParentFile();
+        
+        if (!parent.exists()) {
+            createDirectory(parent);
+        } else if (parent.isFile()) {
+            I18n msg = FileSystemI18n.ancestorInPathIsFile;
+            throw new InvalidWorkspaceException(msg.text(source.getName(), parent.getPath()));
+        }
+
+        if (!directory.mkdir()) {
+            I18n msg = FileSystemI18n.couldNotCreateDirectory;
+            throw new InvalidWorkspaceException(msg.text(source.getName(), directory.getPath()));
+        }
     }
 
     @Override
@@ -171,8 +193,21 @@ public class FileSystemRepository extends WritablePathRepository {
         if (workspaceName == null) workspaceName = source.getDefaultWorkspaceName();
 
         File directory = this.repositoryRoot == null ? new File(workspaceName) : new File(repositoryRoot, workspaceName);
-        if (directory.exists() && directory.isDirectory() && directory.canRead()) return directory;
-        return null;
+        if (!directory.exists()) {
+            createDirectory(directory.getAbsoluteFile());
+        }
+
+        if (!directory.canRead()) {
+            I18n msg = FileSystemI18n.pathForWorkspaceCannotBeRead;
+            throw new InvalidWorkspaceException(msg.text(getSourceName(), directory.getAbsolutePath(), workspaceName));
+        }
+
+        if (!directory.isDirectory()) {
+            I18n msg = FileSystemI18n.pathForWorkspaceIsNotDirectory;
+            throw new InvalidWorkspaceException(msg.text(getSourceName(), directory.getAbsolutePath(), workspaceName));
+        }
+
+        return directory;
     }
 
     /**

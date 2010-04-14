@@ -34,8 +34,8 @@
 		This connector exposes an area of the local file system as a graph of "nt:file" and "nt:folder" nodes. 
 		The connector can be configured so that the workspace name is either a path to the directory on the file system that represents the root of that
 		workspace <emphasis>or</emphasis> the name of subdirectory within a root directory (see the <code>workspaceRootPath</code> property below). Each 
-		connector can define whether it allows new workspaces to be created, but if so the names of the new workspaces
-		must represent valid paths to existing directories.
+		connector can define whether it allows new workspaces to be created.  <emphasis>If the directory for a workspace does not exist, this connector
+		will attempt to create the directory (and any missing parent directories).</emphasis>
 		<note>
 			<para>
 			The file nodes returned by this connector will have a primary type of <code>nt:file</code> and a child node named <code>jcr:content</code>.

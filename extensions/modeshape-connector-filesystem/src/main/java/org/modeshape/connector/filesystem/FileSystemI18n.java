@@ -34,12 +34,6 @@ public final class FileSystemI18n {
 
     public static I18n connectorName;
     public static I18n workspaceDoesNotExist;
-    public static I18n pathForDefaultWorkspaceDoesNotExist;
-    public static I18n pathForDefaultWorkspaceIsNotDirectory;
-    public static I18n pathForDefaultWorkspaceCannotBeRead;
-    public static I18n pathForPredefinedWorkspaceDoesNotExist;
-    public static I18n pathForPredefinedWorkspaceIsNotDirectory;
-    public static I18n pathForPredefinedWorkspaceCannotBeRead;
     public static I18n pathForWorkspaceRootDoesNotExist;
     public static I18n pathForWorkspaceRootIsNotDirectory;
     public static I18n pathForWorkspaceRootCannotBeRead;
@@ -52,6 +46,10 @@ public final class FileSystemI18n {
     public static I18n pathIsReadOnly;
     public static I18n unableToCreateWorkspaces;
     public static I18n errorSerializingCustomPropertiesFactory;
+    public static I18n couldNotCreateDirectory;
+    public static I18n ancestorInPathIsFile;
+    public static I18n pathForWorkspaceCannotBeRead;
+    public static I18n pathForWorkspaceIsNotDirectory;
 
     // Writable messages
     public static I18n parentIsReadOnly;

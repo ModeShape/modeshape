@@ -29,6 +29,9 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.connector.RepositoryConnection;
@@ -36,9 +39,6 @@ import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.observe.Observer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author Randall Hauch
@@ -54,6 +54,7 @@ public class FileSystemSourceTest {
         this.source = new FileSystemSource();
         // Set the mandatory properties ...
         this.source.setName("Test Repository");
+        this.source.setWorkspaceRootPath("target");
         this.source.initialize(new RepositoryContext() {
 
             public Subgraph getConfiguration( int depth ) {
