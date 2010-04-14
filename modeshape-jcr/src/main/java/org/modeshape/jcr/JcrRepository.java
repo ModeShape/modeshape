@@ -628,12 +628,12 @@ public class JcrRepository implements Repository {
             // We can query the federated source if it supports queries and searches
             // AND the original source supports queries and searches ...
             if (canQuerySource && canQueryFederated) {
-                this.queryManager = new PushDown(this.sourceName, executionContext, connectionFactory);
+                this.queryManager = new PushDown(this.sourceName, this.executionContext, connectionFactory);
             } else {
                 // Otherwise create a repository query manager that maintains its own search engine ...
                 String indexDirectory = this.options.get(Option.QUERY_INDEX_DIRECTORY);
                 boolean updateIndexesSynchronously = Boolean.valueOf(this.options.get(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY));
-                this.queryManager = new RepositoryQueryManager.SelfContained(executionContext, this.sourceName,
+                this.queryManager = new RepositoryQueryManager.SelfContained(this.executionContext, this.sourceName,
                                                                              connectionFactory, repositoryObservable,
                                                                              repositoryTypeManager, indexDirectory,
                                                                              updateIndexesSynchronously);

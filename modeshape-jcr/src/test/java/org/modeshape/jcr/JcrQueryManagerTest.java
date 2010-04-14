@@ -97,7 +97,8 @@ public class JcrQueryManagerTest {
                      .setSource("car-source")
                      .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
                      .addNodeTypes(resourceUrl("cars.cnd"))
-                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.READONLY + "," + ModeShapeRoles.READWRITE)
+                     // Added ADMIN privilege to allow permanent namespace registration in one of the tests
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.READONLY + "," + ModeShapeRoles.READWRITE + "," + ModeShapeRoles.ADMIN)
                      .setOption(Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
         engine = configuration.build();
         engine.start();
@@ -620,5 +621,16 @@ public class JcrQueryManagerTest {
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+    }
+
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithNewlyRegisteredNamespace() throws RepositoryException {
+        session.getWorkspace().getNamespaceRegistry().registerNamespace("newPrefix", "newUri");
+
+        // We don't have any elements that use this yet, but let's at least verify that it can execute.
+        Query query = session.getWorkspace().getQueryManager().createQuery("//*[@newPrefix:someColumn = 'someValue']",
+                                                                           Query.XPATH);
+        query.execute();
+
     }
 }
