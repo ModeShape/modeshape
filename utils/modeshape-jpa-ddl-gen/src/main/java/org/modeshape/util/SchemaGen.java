@@ -9,6 +9,7 @@ import org.hibernate.ejb.Ejb3Configuration;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.modeshape.connector.store.jpa.JpaSource;
 import org.modeshape.connector.store.jpa.Model;
+import org.modeshape.connector.store.jpa.util.StoreOptionEntity;
 
 /**
  * Main class to generate DDL that can be used to build the schema for the {@link JpaSource JPA connector}. The class is intended
@@ -77,6 +78,8 @@ public class SchemaGen {
         Ejb3Configuration configurator = new Ejb3Configuration();
         configurator.setProperty(Environment.DIALECT, dialect.toString());
         model.configure(configurator);
+        configurator.addAnnotatedClass(StoreOptionEntity.class);
+
         // cfg.setProperties(properties);
         SchemaExport export = new SchemaExport(configurator.getHibernateConfiguration());
         export.setOutputFile(new File(outputPath, CREATE_FILE_NAME).getCanonicalPath());
@@ -87,7 +90,7 @@ public class SchemaGen {
     }
 
     public static final String USAGE = "java -jar <jar_name> -dialect <dialect name> -model <model_name> [-out <path to output directory>]\n"
-                                       + "\tExample: java -jar dna-jpa-ddl-gen-0.7-jar-with-dependencies.jar -dialect HSQL -model Basic -out /tmp";
+                                       + "\tExample: java -jar modeshape-jpa-ddl-gen-1.2-jar-with-dependencies.jar -dialect HSQL -model Basic -out /tmp";
 
     public static void main( String[] args ) throws IOException {
         String modelName = null;
