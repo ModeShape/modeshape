@@ -35,6 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import net.jcip.annotations.ThreadSafe;
@@ -45,6 +46,7 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.GraphI18n;
+import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Results;
 import org.modeshape.graph.Subgraph;
@@ -241,11 +243,34 @@ public class GraphSession<Payload, PropertyPayload> {
      */
     public Node<Payload, PropertyPayload> findNodeWith( Location location ) throws PathNotFoundException, AccessControlException {
         if (!location.hasPath()) {
+            UUID uuid = location.getUuid();
+            if (uuid != null) {
+
+                // Try to find the node in the cache
+                for (Node<Payload, PropertyPayload> node : nodes.values()) {
+                    UUID nodeUuid = uuidFor(node.getLocation());
+
+                    if (uuid.equals(nodeUuid)) {
+                        return node;
+                    }
+                }
+            }
+
             // Query for the actual location ...
             location = store.getNodeAt(location).getLocation();
         }
         assert location.hasPath();
         return findNodeWith(null, location.getPath());
+    }
+
+    private UUID uuidFor( Location location ) {
+        UUID uuid = location.getUuid();
+        if (uuid != null) return uuid;
+
+        Property idProp = location.getIdProperty(JcrLexicon.UUID);
+        if (idProp == null) return null;
+
+        return (UUID)idProp.getFirstValue();
     }
 
     /**
@@ -2455,6 +2480,9 @@ public class GraphSession<Payload, PropertyPayload> {
                 this.changedBelow = changedBelowBefore;
                 throw e;
             }
+
+            cache.nodes.put(child.getNodeId(), child);
+
             return child;
         }
 

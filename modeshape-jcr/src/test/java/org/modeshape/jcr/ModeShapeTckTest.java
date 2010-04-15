@@ -13,6 +13,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
@@ -23,6 +24,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.modeshape.jcr.nodetype.NodeTypeTemplate;
+import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
 
 /**
  * Additional ModeShape tests that check for JCR compliance.
@@ -812,5 +814,44 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         childNode.checkout();
         childNode.checkin();
 
+    }
+
+    public void testShouldBeAbleToReferToUnsavedReferenceNode() throws Exception {
+        // q.v., MODE-720
+
+        session = helper.getSuperuserSession();
+
+        JcrNodeTypeManager nodeTypes = (JcrNodeTypeManager)session.getWorkspace().getNodeTypeManager();
+
+        /*
+         * Register a one-off node type with a reference property that has a constraint on it
+         */
+        NodeTypeTemplate ntt = nodeTypes.createNodeTypeTemplate();
+        ntt.setName("modetest:constrainedPropType");
+
+        PropertyDefinitionTemplate pdt = nodeTypes.createPropertyDefinitionTemplate();
+        pdt.setName("modetest:constrainedProp");
+        pdt.setRequiredType(PropertyType.REFERENCE);
+        pdt.setValueConstraints(new String[] {"nt:unstructured"});
+        ntt.getPropertyDefinitionTemplates().add(pdt);
+
+        nodeTypes.registerNodeType(ntt, false);
+
+        /*
+         * Add a node that would satisfy the constraint
+         */
+        Node root = session.getRootNode();
+
+        Node parentNode = root.addNode("constrainedNodeTest", "nt:unstructured");
+        Node targetNode = parentNode.addNode("target", "nt:unstructured");
+        targetNode.addMixin("mix:referenceable");
+
+        /*
+         * Now add a node with the one-off type.
+         */
+        Node referringNode = parentNode.addNode("referer", "modetest:constrainedPropType");
+        referringNode.setProperty("modetest:constrainedProp", targetNode);
+
+        session.save();
     }
 }
