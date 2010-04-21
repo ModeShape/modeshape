@@ -4,10 +4,12 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Collections;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
+import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.LoginException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -853,5 +855,27 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         referringNode.setProperty("modetest:constrainedProp", targetNode);
 
         session.save();
+    }
+
+    public void testShouldBeAbleToImportAutocreatedChildNodeWithoutDuplication() throws Exception {
+        // q.v., MODE-701
+
+        session = helper.getSuperuserSession();
+
+        /*
+         * Add a node that would satisfy the constraint
+         */
+        Node root = session.getRootNode();
+
+        Node parentNode = root.addNode("autocreatedChildRoot", "nt:unstructured");
+        session.save();
+
+        Node targetNode = parentNode.addNode("nodeWithAutocreatedChild", "modetest:nodeWithAutocreatedChild");
+        assertThat(targetNode.getNode("modetest:autocreatedChild"), is(notNullValue()));
+        // Don't save this yet
+        session.refresh(false);
+
+        InputStream in = getClass().getResourceAsStream("/io/autocreated-node-test.xml");
+        session.importXML("/autocreatedChildRoot", in, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
     }
 }

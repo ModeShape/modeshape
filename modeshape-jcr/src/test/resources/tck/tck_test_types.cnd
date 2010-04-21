@@ -17,6 +17,9 @@
 [modetest:nodeWithMandatoryChild] > nt:unstructured, mix:referenceable
 + modetest:mandatoryChild (nt:base) = nt:unstructured mandatory version
 
+[modetest:nodeWithAutocreatedChild] > nt:unstructured
++ modetest:autocreatedChild (nt:base) = nt:unstructured autocreated mandatory
+
 [modetest:unorderableUnstructured] 
 - * (*) copy
 - * (*) multiple copy

@@ -512,10 +512,19 @@ class JcrContentHandler extends DefaultHandler {
 
                 }
 
+                // See if the node was already autocreated by the parent
+                AbstractJcrNode existingNode = parent.getNode(nodeName);
+                boolean nodeAlreadyExists = existingNode != null && existingNode.getDefinition().isAutoCreated();
+
                 // Create the new node ...
-                List<Value> primaryTypeValueList = properties.get(JcrLexicon.PRIMARY_TYPE);
-                String typeName = primaryTypeValueList != null ? primaryTypeValueList.get(0).getString() : null;
-                AbstractJcrNode child = parent.editor().createChild(nodeName, uuid, nameFor(typeName));
+                AbstractJcrNode child;
+                if (!nodeAlreadyExists) {
+                    List<Value> primaryTypeValueList = properties.get(JcrLexicon.PRIMARY_TYPE);
+                    String typeName = primaryTypeValueList != null ? primaryTypeValueList.get(0).getString() : null;
+                    child = parent.editor().createChild(nodeName, uuid, nameFor(typeName));
+                } else {
+                    child = existingNode;
+                }
 
                 // Set the properties on the new node ...
                 SessionCache.NodeEditor newNodeEditor = child.editor();

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sv:node xmlns:jcr="http://www.jcp.org/jcr/1.0" 
+         xmlns:nt="http://www.jcp.org/jcr/nt/1.0" 
+         xmlns:sv="http://www.jcp.org/jcr/sv/1.0"
+         xmlns:car="http://www.modeshape.org/examples/cars/1.0"
+         sv:name="nodeWithAutocreatedChild">
+  <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>modetest:nodeWithAutocreatedChild</sv:value></sv:property>
+  <sv:node sv:name="modetest:autocreatedChild">
+    <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>nt:unstructured</sv:value></sv:property>
+  </sv:node>
+</sv:node>

@@ -674,6 +674,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         try {
             Path childPath = context().getValueFactories().getPathFactory().createRelativePath(childNodeName);
             return cache.findJcrNode(nodeId, location.getPath(), childPath);
+        } catch (PathNotFoundException infe) {
+            return null;
         } catch (ItemNotFoundException infe) {
             return null;
         }
