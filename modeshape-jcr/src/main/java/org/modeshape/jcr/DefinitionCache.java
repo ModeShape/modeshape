@@ -128,9 +128,13 @@ final class DefinitionCache {
             /*
              * If the child node was already defined in the type hierarchy at some other level, ignore the definition 
              * - it was overridden by the previous definition.  This relies on the fact that TypeA.getTypeAndSupertypes()
-             * always returns TypeX before TypeY if TypeX is closer to TypeA on the inheritance graph than TypeY is.
+             * always returns TypeX before TypeY if TypeX is closer to TypeA on the inheritance graph than TypeY is...
+             * 
+             * ...UNLESS this is a residual definition, in which case side-by-side definitions must be allowed per 6.7.8 
+             * of the 1.0.1 specification.
              */
-            if (allChildNodeDefinitions.containsKey(name) && !namesFromThisType.contains(name)) {
+            if (allChildNodeDefinitions.containsKey(name) && !namesFromThisType.contains(name)
+                && !JcrNodeType.RESIDUAL_NAME.equals(name)) {
                 continue;
             }
 
@@ -150,9 +154,13 @@ final class DefinitionCache {
             /*
              * If the property was already defined in the type hierarchy at some other level, ignore the definition 
              * - it was overridden by the previous definition.  This relies on the fact that TypeA.getTypeAndSupertypes()
-             * always returns TypeX before TypeY if TypeX is closer to TypeA on the inheritance graph than TypeY is.
+             * always returns TypeX before TypeY if TypeX is closer to TypeA on the inheritance graph than TypeY is...
+             * 
+             * ...UNLESS this is a residual definition, in which case side-by-side definitions must be allowed per 6.7.8 
+             * of the 1.0.1 specification.
              */
-            if (allPropertyDefinitions.containsKey(name) && !namesFromThisType.contains(name)) {
+            if (allPropertyDefinitions.containsKey(name) && !namesFromThisType.contains(name)
+                && !JcrNodeType.RESIDUAL_NAME.equals(name)) {
                 continue;
             }
             if (definition.isMultiple()) {
