@@ -24,11 +24,8 @@
 
 package org.modeshape.connector.filesystem;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
@@ -48,10 +44,10 @@ import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.graph.ModeShapeIntLexicon;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeIntLexicon;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
@@ -358,6 +354,32 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
     }
 
     /**
+     * Set the factory that is used to create custom properties on "nt:folder", "nt:file", and "nt:resource" nodes by specifying
+     * the name of a class that implements the {@code CustomPropertiesFactory} interface and has a public, no-argument
+     * constructor.
+     * 
+     * @param customPropertiesFactoryClassName the class name of the factory implementation or null if no custom properties will
+     *        be created
+     * @throws ClassNotFoundException if the the class for the {@code CustomPropertiesFactory} implementation cannot be located
+     * @throws IllegalAccessException if the custom properties factory class or its nullary constructor is not accessible.
+     * @throws InstantiationException if the custom properties factory represents an abstract class, an interface, an array class,
+     *         a primitive type, or void; or if the class has no nullary constructor; or if the instantiation fails for some other
+     *         reason.
+     * @throws ClassCastException if the class named by {@code customPropertiesFactoryClassName} does not implement the {@code
+     *         CustomPropertiesFactory} interface
+     */
+    public synchronized void setCustomPropertiesFactory( String customPropertiesFactoryClassName )
+        throws ClassCastException, ClassNotFoundException, IllegalAccessException, InstantiationException {
+        if (customPropertiesFactoryClassName == null) {
+            this.customPropertiesFactory = null;
+            return;
+        }
+
+        Class<?> customPropertiesFactoryClass = Class.forName(customPropertiesFactoryClassName);
+        this.customPropertiesFactory = (CustomPropertiesFactory)customPropertiesFactoryClass.newInstance();
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see javax.naming.Referenceable#getReference()
@@ -379,16 +401,7 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
             ref.add(new StringRefAddr(PREDEFINED_WORKSPACE_NAMES, StringUtil.combineLines(workspaceNames)));
         }
         if (getCustomPropertiesFactory() != null) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            CustomPropertiesFactory factory = getCustomPropertiesFactory();
-            try {
-                ObjectOutputStream oos = new ObjectOutputStream(baos);
-                oos.writeObject(factory);
-                ref.add(new BinaryRefAddr(CUSTOM_PROPERTY_FACTORY, baos.toByteArray()));
-            } catch (IOException e) {
-                I18n msg = FileSystemI18n.errorSerializingCustomPropertiesFactory;
-                throw new RepositorySourceException(getName(), msg.text(factory.getClass().getName(), getName()), e);
-            }
+            ref.add(new StringRefAddr(CUSTOM_PROPERTY_FACTORY, getCustomPropertiesFactory().getClass().getName()));
         }
         return ref;
     }
@@ -408,7 +421,7 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
             String createWorkspaces = (String)values.get(ALLOW_CREATING_WORKSPACES);
             String exclusionPattern = (String)values.get(EXCLUSION_PATTERN);
             String maxPathLength = (String)values.get(DEFAULT_MAX_PATH_LENGTH);
-            Object customPropertiesFactory = values.get(CUSTOM_PROPERTY_FACTORY);
+            String customPropertiesFactoryClassName = (String)values.get(CUSTOM_PROPERTY_FACTORY);
 
             String combinedWorkspaceNames = (String)values.get(PREDEFINED_WORKSPACE_NAMES);
             String[] workspaceNames = null;
@@ -425,7 +438,7 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             if (exclusionPattern != null) source.setExclusionPattern(exclusionPattern);
             if (maxPathLength != null) source.setMaxPathLength(Integer.valueOf(maxPathLength));
-            if (customPropertiesFactory != null) source.setCustomPropertiesFactory((CustomPropertiesFactory)customPropertiesFactory);
+            if (customPropertiesFactoryClassName != null) source.setCustomPropertiesFactory(customPropertiesFactoryClassName);
             return source;
         }
         return null;
@@ -446,7 +459,6 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
         if (repository == null) repository = new FileSystemRepository(this);
         return new PathRepositoryConnection(this, repository);
     }
-
 
     protected static class StandardPropertiesFactory implements CustomPropertiesFactory {
         private static final long serialVersionUID = 1L;
