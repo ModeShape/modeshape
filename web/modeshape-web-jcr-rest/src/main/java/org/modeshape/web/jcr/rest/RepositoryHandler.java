@@ -6,34 +6,14 @@ import java.util.Map;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import net.jcip.annotations.Immutable;
 import org.modeshape.web.jcr.rest.model.WorkspaceEntry;
 
 /**
- * RESTEasy handler to provide the JCR repository at the URI below. Please note that the URI assumes a context of {@code
- * /resources} for the web application.
- * <table border="1">
- * <tr>
- * <th>URI Pattern</th>
- * <th>Description</th>
- * <th>Supported Methods</th>
- * </tr>
- * <tr>
- * <td>/resources/{repositoryName}</td>
- * <td>returns a list of accessible workspaces within that repository</td>
- * <td>GET</td>
- * </tr>
- * </table>
+ * Resource handler that implements REST methods for repositories and workspaces.
  */
 @Immutable
-@Path("/")
-public class RepositoryResource extends AbstractJcrResource {
-
+class RepositoryHandler extends AbstractHandler {
 
     /**
      * Returns the list of workspaces available to this user within the named repository.
@@ -45,12 +25,8 @@ public class RepositoryResource extends AbstractJcrResource {
      *         code to the response.
      * @throws RepositoryException if there is any other error accessing the list of available workspaces for the repository
      */
-    @GET
-    @Path( "/{repositoryName}" )
-    @Produces( "application/json" )
-    public Map<String, WorkspaceEntry> getWorkspaces( @Context HttpServletRequest request,
-                                                      @PathParam( "repositoryName" ) String rawRepositoryName )
-        throws RepositoryException, IOException {
+    public Map<String, WorkspaceEntry> getWorkspaces( HttpServletRequest request,
+                                                      String rawRepositoryName ) throws RepositoryException, IOException {
 
         assert request != null;
         assert rawRepositoryName != null;
@@ -70,5 +46,5 @@ public class RepositoryResource extends AbstractJcrResource {
 
         return workspaces;
     }
-    
+
 }

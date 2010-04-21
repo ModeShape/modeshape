@@ -43,9 +43,6 @@ public class JcrApplication extends Application {
     @Override
     public Set<Class<?>> getClasses() {
         return new HashSet<Class<?>>(Arrays.asList(new Class<?>[] {
-            ServerResource.class,
-            RepositoryResource.class,
-            ItemsResource.class,
             JcrResources.class,
             JcrResources.JSONExceptionMapper.class,
             JcrResources.NotFoundExceptionMapper.class,

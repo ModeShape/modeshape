@@ -6,7 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.modeshape.common.text.UrlEncoder;
 import org.modeshape.web.jcr.RepositoryFactory;
 
-public abstract class AbstractJcrResource {
+abstract class AbstractHandler {
 
     protected static final UrlEncoder URL_ENCODER = new UrlEncoder();
 
