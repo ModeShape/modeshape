@@ -45,7 +45,7 @@ import org.modeshape.connector.store.jpa.Model;
 public class StoreOptionEntity {
 
     @Id
-    @Column( name = "NAME", nullable = false, length = 512 )
+    @Column( name = "NAME", nullable = false, length = 128 )
     private String name;
 
     @Column( name = "VALUE", nullable = false, length = 512 )
