@@ -51,8 +51,8 @@ import org.modeshape.graph.property.PropertyType;
 @Table( name = "MODE_SIMPLE_LARGE_VALUES" )
 @NamedQueries( {
     @NamedQuery( name = "LargeValueEntity.selectUnused", query = "select largeValue.hash from LargeValueEntity largeValue where largeValue.hash not in (select values.hash from NodeEntity node join node.largeValues values)" ),
-    @NamedQuery( name = "LargeValueEntity.deleteAllUnused", query = "delete LargeValueEntity value where value.hash not in (select values.hash from NodeEntity node join node.largeValues values)" ),
-    @NamedQuery( name = "LargeValueEntity.deleteIn", query = "delete LargeValueEntity value where value.hash in (:inValues)" )
+    @NamedQuery( name = "LargeValueEntity.deleteAllUnused", query = "delete LargeValueEntity lve where lve.hash not in (select values.hash from NodeEntity node join node.largeValues values)" ),
+    @NamedQuery( name = "LargeValueEntity.deleteIn", query = "delete LargeValueEntity lve where lve.hash in (:inValues)" )
     } )
 public class LargeValueEntity {
 
