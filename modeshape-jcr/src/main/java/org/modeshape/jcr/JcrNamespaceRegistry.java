@@ -69,7 +69,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
     static final String XMLNS_NAMESPACE_PREFIX = XMLConstants.XMLNS_ATTRIBUTE;
     static final String XMLNS_NAMESPACE_URI = XMLConstants.XMLNS_ATTRIBUTE_NS_URI;
 
-    static final String XML_SCHEMA_NAMESPACE_PREFIX = "xsd";
+    static final String XML_SCHEMA_NAMESPACE_PREFIX = "xs";
     static final String XML_SCHEMA_NAMESPACE_URI = "http://www.w3.org/2001/XMLSchema";
     static final String XML_SCHEMA_INSTANCE_NAMESPACE_PREFIX = "xsi";
     static final String XML_SCHEMA_INSTANCE_NAMESPACE_URI = "http://www.w3.org/2001/XMLSchema-instance";

@@ -83,6 +83,7 @@ class JcrContentHandler extends DefaultHandler {
 
     protected static final TextDecoder DOCUMENT_VIEW_NAME_DECODER = new JcrDocumentViewExporter.JcrDocumentViewPropertyEncoder();
 
+    private static final String ALT_XML_SCHEMA_NAMESPACE_PREFIX = "xsd";
     private final NameFactory nameFactory;
     private final PathFactory pathFactory;
     private final org.modeshape.graph.property.ValueFactory<String> stringFactory;
@@ -275,6 +276,10 @@ class JcrContentHandler extends DefaultHandler {
     public void startPrefixMapping( String prefix,
                                     String uri ) throws SAXException {
         try {
+            if (ALT_XML_SCHEMA_NAMESPACE_PREFIX.equals(prefix) && uri.equals(JcrNamespaceRegistry.XML_SCHEMA_NAMESPACE_URI)) {
+                prefix = JcrNamespaceRegistry.XML_SCHEMA_NAMESPACE_PREFIX;
+            }
+
             // Read from the workspace's ModeShape registry, as its semantics are more friendly
             String existingUri = namespaces.getNamespaceForPrefix(prefix);
 
