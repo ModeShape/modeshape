@@ -75,9 +75,51 @@
 					</entry>
 				</row>
 				<row>
+					<entry>customPropertiesFactory</entry>
+					<entry>
+						Specifies the &CustomPropertiesFactory; implementation that should be used to augment the default properties 
+						available on each node.  This property can be set either from an object that implements the &CustomPropertiesFactory;
+						interface or from the name of a class with a public, no-argument constructor that implements the &CustomPropertiesFactory;
+						interface.  In the latter case, a the named class will be instantiated and used as the custom properties factory implementation.
+					</entry>
+				</row>
+				<row>
 					<entry>defaultWorkspaceName</entry>
 					<entry>Optional property that is initialized to <code>"default"</code> and which defines the name for the workspace that will be used by default
 						if none is specified.</entry>
+				</row>
+				<row>
+					<entry>exclusionPattern</entry>
+					<entry>
+						<para>
+						Specifies a regular expression that is used to determine which files and folders in the underlying file system should be exposed through
+						this connector.  Files and folders with a name that matches the provided regular expression will <emphasis>not</emphasis> be exposed by this source. 
+						Setting this property to <code>null</code> has the effect of removing the exclusion pattern.
+						</para>
+						<para>
+						This property is mutually incompatible with the <code>filenameFilter</code> property.  Setting this property to a non-null value
+						will automatically set the <code>filenameFilter</code> property to <code>null</code>.
+						</para>
+					</entry>
+				</row>
+				<row>
+					<entry>filenameFilter</entry>
+					<entry>
+						<para>
+						Specifies the &FilenameFilter; that is used to determine which files and folders in the underlying file system should be exposed through
+						this connector.  Only files and folders that the filter accepts will be accessible through this source.
+						</para>
+						<para>
+						This property can be set either from an object that implements the &FilenameFilter;
+						interface or from the name of a class with a public, no-argument constructor that implements the &FilenameFilter;
+						interface.  In the latter case, a the named class will be instantiated and used as the filename filter implementation.
+						Setting this property to null has the effect of clearing the filter.
+						</para>
+						<para>
+						This property is mutually incompatible with the <code>exclusionPattern</code> property.  Setting this property to a non-null value
+						will automatically set the <code>exclusionPattern</code> property to <code>null</code>.
+						</para>
+					</entry>
 				</row>
 				<row>
 					<entry>name</entry>
@@ -119,13 +161,6 @@
 					</para>
 					</entry>
 				</row>	
-				<row>
-					<entry>customPropertiesFactory</entry>
-					<entry>
-						Specifies the &CustomPropertiesFactory; implementation that should be used to augment the default properties 
-						available on each node.
-					</entry>
-				</row>
 				
 			</tbody>
 		</tgroup>

@@ -40,6 +40,7 @@
 
 <!ENTITY String							      		"<ulink url='&Java;java/lang/String.html'><interface>String</interface></ulink>">
 <!ENTITY File  							      		"<ulink url='&Java;java/io/File.html'><classname>File</classname></ulink>">
+<!ENTITY FilenameFilter  							      		"<ulink url='&Java;java/io/FilenameFilter.html'><classname>FilenameFilter</classname></ulink>">
 <!ENTITY BufferedReader					      "<ulink url='&Java;java/io/BufferedReader.html'><classname>BufferedReader</classname></ulink>">
 <!ENTITY URL  							      		"<ulink url='&Java;java/net/URL.html'><classname>URL</classname></ulink>">
 <!ENTITY URI  							      		"<ulink url='&Java;java/net/URL.html'><classname>URI</classname></ulink>">
