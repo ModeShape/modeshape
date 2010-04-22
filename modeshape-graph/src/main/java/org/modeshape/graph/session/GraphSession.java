@@ -67,6 +67,7 @@ import org.modeshape.graph.request.CopyBranchRequest;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.MoveBranchRequest;
 import org.modeshape.graph.request.Request;
+import org.modeshape.graph.request.RequestException;
 import org.modeshape.graph.session.GraphSession.Authorizer.Action;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -463,6 +464,40 @@ public class GraphSession<Payload, PropertyPayload> {
                             previousPath = path;
                         }
                     }
+                } catch (RequestException re) {
+                    // This can happen if there are multiple segments in the relative path and one of
+                    // segment does not exist. Try to resubmit the requests one at a time.
+                    try {
+                        // Walk down the path ...
+                        Iterator<Path.Segment> redoIter = relativePath.iterator();
+                        Node<Payload, PropertyPayload> redoNode = startingPoint;
+                        while (redoIter.hasNext()) {
+                            Path.Segment redoSegment = redoIter.next();
+                            if (redoSegment.isSelfReference()) continue;
+                            if (redoSegment.isParentReference()) {
+                                redoNode = redoNode.getParent();
+                                assert redoNode != null; // since the relative path is well-formed
+                                continue;
+                            }
+                            Path firstPath = redoNode.getPath();
+
+                            if (redoNode.isLoaded()) {
+                                // The child is the next node we need to process ...
+                                redoNode = redoNode.getChild(redoSegment);
+                            } else {
+                                Path nextPath = firstPath;
+
+                                while (redoIter.hasNext()) {
+                                    nextPath = pathFactory.create(nextPath, redoSegment);
+                                    store.getNodeAt(nextPath);
+                                }
+                            }
+                        }
+                    } catch (PathNotFoundException e) {
+                        // Use the correct desired path ...
+                        throw new PathNotFoundException(Location.create(relativePath), e.getLowestAncestorThatDoesExist());
+                    }
+
                 } catch (PathNotFoundException e) {
                     // Use the correct desired path ...
                     throw new PathNotFoundException(Location.create(relativePath), e.getLowestAncestorThatDoesExist());

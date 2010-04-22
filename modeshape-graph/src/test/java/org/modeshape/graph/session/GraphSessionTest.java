@@ -32,6 +32,9 @@ import static org.junit.Assert.fail;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
@@ -45,12 +48,10 @@ import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
+import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.session.GraphSession.Node;
 import org.modeshape.graph.session.GraphSession.Operations;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 
@@ -737,6 +738,11 @@ public class GraphSessionTest {
         }
         assertThat(expectedIter.hasNext(), is(false));
         assertThat(actualIter.hasNext(), is(false));
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldThrowPathNotFoundExceptionWhenFailingToFindDeepMissingNode() throws Exception {
+        this.cache.findNodeRelativeTo(cache.getRoot(), path("Cars/some/node/that/does/not/exist"), true);
     }
 
     protected Name name( String name ) {
