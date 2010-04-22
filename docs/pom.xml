@@ -15,7 +15,7 @@
     <module>gettingstarted</module>
     <module>reference</module>
   </modules>
-	<repositories>
+	<!--repositories>
 	<repository>
       <id>apiviz.release</id>
       <name>APIviz releases</name>
@@ -37,13 +37,13 @@
 			<id>jboss-snapshot</id>
 			<url>http://snapshots.jboss.org/maven2</url>
 		</repository>
-	</repositories>
-	<distributionManagement>
-		<repository>
+	</repositories-->
+	<!--distributionManagement>
+		<repository-->
 			<!-- Copy the distribution jar file to a local checkout of the maven repository 
  			  -  This variable can be set in $MAVEN_HOME/conf/settings.xml -->
-			<id>repository.jboss.org</id>
+			<!--id>repository.jboss.org</id>
 			<url>file://${jboss.repository.root}</url>
 		</repository>
-	</distributionManagement>
+	</distributionManagement-->
 </project>

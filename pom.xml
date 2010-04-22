@@ -1107,18 +1107,12 @@
 	    </plugins>
 	</reporting>
 
-	<repositories>
-		<repository>
-			<id>jboss</id>
-      <url>https://repository.jboss.org/nexus/content/groups/developer/</url>
-		</repository>
-	</repositories>
-	<distributionManagement>
-		<repository>
+	<!--distributionManagement>
+		<repository-->
 			<!-- Copy the distribution jar file to a local checkout of the maven repository 
  			  -  This variable can be set in $MAVEN_HOME/conf/settings.xml -->
-			<id>repository.jboss.org</id>
+			<!--id>repository.jboss.org</id>
 			<url>file://${jboss.repository.root}</url>
 		</repository>
-	</distributionManagement>
+	</distributionManagement-->
 </project>
