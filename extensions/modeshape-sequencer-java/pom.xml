@@ -90,43 +90,26 @@
 			Eclipse Java Development Tools (JDT) parser and its (many) required libraries
 		-->
     <dependency>
-      <groupId>org.eclipse</groupId>
-      <artifactId>osgi</artifactId>
-      <version>3.4.3.R34x_v20081215-1030</version>
-    </dependency>
-    <dependency>
       <groupId>org.eclipse.jdt</groupId>
       <artifactId>core</artifactId>
-      <version>3.4.2.v_883_R34x</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.core</groupId>
-      <artifactId>resources</artifactId>
-      <version>[3.2.0,4.0.0)</version>
+      <version>3.3.0-v_771</version>
       <exclusions>
-        <exclusion>
+	      <exclusion>
 			    <groupId>org.eclipse.core.runtime.compatibility</groupId>
 			    <artifactId>auth</artifactId>
-        </exclusion>
-        <exclusion>
+	      </exclusion>
+	      <exclusion>
 			    <groupId>org.eclipse.equinox</groupId>
 			    <artifactId>app</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.core</groupId>
-      <artifactId>runtime</artifactId>
-      <version>[3.2.0,4.0.0)</version>
-      <exclusions>
-        <exclusion>
-			    <groupId>org.eclipse.core.runtime.compatibility</groupId>
-			    <artifactId>auth</artifactId>
-        </exclusion>
-        <exclusion>
-			    <groupId>org.eclipse.equinox</groupId>
-			    <artifactId>app</artifactId>
-        </exclusion>
+	      </exclusion>
+	      <exclusion>
+			    <groupId>org.eclipse</groupId>
+			    <artifactId>text</artifactId>
+	      </exclusion>
+	      <exclusion>
+			    <groupId>org.eclipse.core</groupId>
+			    <artifactId>filesystem</artifactId>
+	      </exclusion>
       </exclusions>
     </dependency>
 	</dependencies>
