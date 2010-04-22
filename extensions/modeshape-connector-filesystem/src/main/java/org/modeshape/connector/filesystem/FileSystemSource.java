@@ -89,6 +89,7 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
     protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
     protected static final String MAX_PATH_LENGTH = "maxPathLength";
     protected static final String EXCLUSION_PATTERN = "exclusionPattern";
+    protected static final String FILENAME_FILTER = "filenameFilter";
     protected static final String CUSTOM_PROPERTY_FACTORY = "customPropertyFactory";
 
     /**
@@ -115,12 +116,14 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
 
     public static final int DEFAULT_MAX_PATH_LENGTH = 255; // 255 for windows users
     public static final String DEFAULT_EXCLUSION_PATTERN = null;
+    public static final FilenameFilter DEFAULT_FILENAME_FILTER = null;
 
     private volatile String defaultWorkspaceName = DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
     private volatile String workspaceRootPath;
     private volatile String[] predefinedWorkspaces = new String[] {};
     private volatile int maxPathLength = DEFAULT_MAX_PATH_LENGTH;
     private volatile String exclusionPattern = DEFAULT_EXCLUSION_PATTERN;
+    private volatile FilenameFilter filenameFilter = DEFAULT_FILENAME_FILTER;
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
                                                                                                   SUPPORTS_SAME_NAME_SIBLINGS,
                                                                                                   DEFAULT_SUPPORTS_UPDATES,
@@ -177,7 +180,8 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
     /**
      * Get the regular expression that, if matched by a file or folder, indicates that the file or folder should be ignored
      * 
-     * @return the regular expression that, if matched by a file or folder, indicates that the file or folder should be ignored
+     * @return the regular expression that, if matched by a file or folder, indicates that the file or folder should be ignored;
+     *         may be null
      */
     public String getExclusionPattern() {
         return exclusionPattern;
@@ -185,15 +189,75 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
 
     /**
      * Sets the regular expression that, if matched by a file or folder, indicates that the file or folder should be ignored
+     * <p>
+     * Only one of the {@code exclusionPattern} and {@code filenameFilter} properties may be non-null at any one time. Calling
+     * this method automatically sets the {@code filenameFilter} property to {@code null}.
+     * </p>
      * 
      * @param exclusionPattern the regular expression that, if matched by a file or folder, indicates that the file or folder
      *        should be ignored. If this pattern is {@code null}, no files will be excluded.
      */
     public synchronized void setExclusionPattern( String exclusionPattern ) {
         this.exclusionPattern = exclusionPattern;
+        this.filenameFilter = null;
+    }
+
+    /**
+     * @return the {@FilenameFilter filename filter} (if any) that is used to restrict which content can be
+     *         accessed by this connector; may be null
+     */
+    public FilenameFilter getFilenameFilter() {
+        return this.filenameFilter;
+    }
+
+    /**
+     * Sets the filename filter that is used to restrict which content can be accessed by this connector
+     * <p>
+     * Only one of the {@code exclusionPattern} and {@code filenameFilter} properties may be non-null at any one time. Calling
+     * this method automatically sets the {@code exclusionPattern} property to {@code null}.
+     * </p>
+     * 
+     * @param filenameFilter the filename filter that is used to restrict which content can be accessed by this connector. If this
+     *        parameter is {@code null}, no files will be excluded.
+     */
+    public synchronized void setFilenameFilter( FilenameFilter filenameFilter ) {
+        this.filenameFilter = filenameFilter;
+        this.exclusionPattern = null;
+    }
+
+    /**
+     * Sets the filename filter that is used to restrict which content can be accessed by this connector by specifying the name of
+     * a class that implements the {@code FilenameFilter} interface and has a public, no-argument constructor.
+     * <p>
+     * Only one of the {@code exclusionPattern} and {@code filenameFilter} properties may be non-null at any one time. Calling
+     * this method automatically sets the {@code exclusionPattern} property to {@code null}.
+     * </p>
+     * 
+     * @param filenameFilterClassName the class name of the filter implementation or null if no filename filter should be used
+     * @throws ClassNotFoundException if the the class for the {@code FilenameFilter} implementation cannot be located
+     * @throws IllegalAccessException if the filename filter class or its nullary constructor is not accessible.
+     * @throws InstantiationException if the filename filter represents an abstract class, an interface, an array class, a
+     *         primitive type, or void; or if the class has no nullary constructor; or if the instantiation fails for some other
+     *         reason.
+     * @throws ClassCastException if the class named by {@code filenameFilterClassName} does not implement the {@code
+     *         FilenameFilter} interface
+     */
+    public synchronized void setFilenameFilter( String filenameFilterClassName )
+        throws ClassCastException, ClassNotFoundException, IllegalAccessException, InstantiationException {
+        if (filenameFilterClassName == null) {
+            this.filenameFilter = null;
+            return;
+        }
+
+        Class<?> filenameFilterClass = Class.forName(filenameFilterClassName);
+
+        this.filenameFilter = (FilenameFilter)filenameFilterClass.newInstance();
+        this.exclusionPattern = null;
     }
 
     FilenameFilter filenameFilter() {
+        if (this.filenameFilter != null) return this.filenameFilter;
+
         FilenameFilter filenameFilter = null;
         final String filterPattern = exclusionPattern;
         if (filterPattern != null) {
@@ -394,7 +458,6 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
         }
         ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDefaultWorkspaceName()));
         ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
-        ref.add(new StringRefAddr(EXCLUSION_PATTERN, exclusionPattern));
         ref.add(new StringRefAddr(MAX_PATH_LENGTH, String.valueOf(maxPathLength)));
         String[] workspaceNames = getPredefinedWorkspaceNames();
         if (workspaceNames != null && workspaceNames.length != 0) {
@@ -402,6 +465,12 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
         }
         if (getCustomPropertiesFactory() != null) {
             ref.add(new StringRefAddr(CUSTOM_PROPERTY_FACTORY, getCustomPropertiesFactory().getClass().getName()));
+        }
+        if (exclusionPattern != null) {
+            ref.add(new StringRefAddr(EXCLUSION_PATTERN, exclusionPattern));
+        }
+        if (filenameFilter != null) {
+            ref.add(new StringRefAddr(FILENAME_FILTER, filenameFilter.getClass().getName()));
         }
         return ref;
     }
@@ -420,6 +489,7 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
             String defaultWorkspace = (String)values.get(DEFAULT_WORKSPACE);
             String createWorkspaces = (String)values.get(ALLOW_CREATING_WORKSPACES);
             String exclusionPattern = (String)values.get(EXCLUSION_PATTERN);
+            String filenameFilterClassName = (String)values.get(FILENAME_FILTER);
             String maxPathLength = (String)values.get(DEFAULT_MAX_PATH_LENGTH);
             String customPropertiesFactoryClassName = (String)values.get(CUSTOM_PROPERTY_FACTORY);
 
@@ -437,6 +507,7 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             if (exclusionPattern != null) source.setExclusionPattern(exclusionPattern);
+            if (filenameFilterClassName != null) source.setFilenameFilter(filenameFilterClassName);
             if (maxPathLength != null) source.setMaxPathLength(Integer.valueOf(maxPathLength));
             if (customPropertiesFactoryClassName != null) source.setCustomPropertiesFactory(customPropertiesFactoryClassName);
             return source;
