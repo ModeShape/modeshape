@@ -164,7 +164,7 @@
 									<cargo.servlet.users>
 										dnauser:password:connect,readwrite|unauthorized:password:bogus
 									</cargo.servlet.users>
-									<cargo.servlet.port>8080</cargo.servlet.port>
+									<cargo.servlet.port>8090</cargo.servlet.port>
 								</properties>
 
 								<deployables>
