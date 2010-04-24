@@ -67,6 +67,7 @@
 						<properties>
 							<cargo.logging>low</cargo.logging>
 							<cargo.servlet.users>dnauser:password:connect,readwrite|unauthorized:password:bogus</cargo.servlet.users>
+                                                        <cargo.servlet.port>8090</cargo.servlet.port>
 						</properties>
 					</configuration>
 					<wait>false</wait>

@@ -51,7 +51,7 @@ import org.modeshape.common.util.Base64;
 public class JcrResourcesTest {
 
     private static final String SERVER_CONTEXT = "/resources";
-    private static final String SERVER_URL = "http://localhost:8080" + SERVER_CONTEXT;
+    private static final String SERVER_URL = "http://localhost:8090" + SERVER_CONTEXT;
 
     @Before
     public void beforeEach() {
@@ -284,7 +284,7 @@ public class JcrResourcesTest {
             prefixes.add(namespace.getString(i));
         }
 
-        String[] expectedNamespaces = new String[] {"mode", "jcr", "nt", "mix", "sv", "xml", "modeint", "xmlns", "xsi", "xsd"};
+        String[] expectedNamespaces = new String[] {"mode", "jcr", "nt", "mix", "sv", "xml", "modeint", "xmlns", "xsi", "xs"};
         for (int i = 0; i < expectedNamespaces.length; i++) {
             assertTrue(prefixes.contains(expectedNamespaces[i]));
         }
