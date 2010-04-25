@@ -137,6 +137,7 @@ public final class GraphI18n {
     public static I18n nodeHasAlreadyBeenRemovedFromThisSession;
     public static I18n unableToMoveNodeToBeChildOfDecendent;
     public static I18n childNotFound;
+    public static I18n unableToRefreshPropertiesBecauseNodeIsModified;
 
     /* Query */
     public static I18n unknownQueryLanguage;

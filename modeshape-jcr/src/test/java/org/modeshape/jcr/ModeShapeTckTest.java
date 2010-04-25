@@ -878,4 +878,22 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         InputStream in = getClass().getResourceAsStream("/io/autocreated-node-test.xml");
         session.importXML("/autocreatedChildRoot", in, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
     }
+
+    public void testShouldAllowCheckoutAfterMove() throws Exception {
+        // q.v., MODE-???
+
+        session = helper.getReadWriteSession();
+
+        Node root = session.getRootNode();
+        Node sourceNode = root.addNode("versionableSource", "nt:unstructured");
+        sourceNode.addMixin("mix:versionable");
+
+        Node targetNode = root.addNode("versionableTarget", "nt:unstructured");
+        session.save();
+
+        String sourceName = sourceNode.getName();
+        session.move(sourceNode.getPath(), targetNode.getPath() + "/" + sourceName);
+        sourceNode = targetNode.getNode(sourceName);
+        sourceNode.checkout();
+    }
 }

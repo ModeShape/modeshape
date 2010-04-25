@@ -305,6 +305,28 @@ class SessionCache {
     }
 
     /**
+     * Refreshes the properties for the node with the given UUID.
+     * 
+     * @param location the location of the node that is to be refreshed; may not be null
+     * @throws InvalidItemStateException if the node being refreshed no longer exists
+     * @throws RepositoryException if any error resulting while saving the changes to the repository
+     */
+    public void refreshProperties( Location location ) throws InvalidItemStateException, RepositoryException {
+        assert location != null;
+        try {
+            Node<JcrNodePayload, JcrPropertyPayload> node = graphSession.findNodeWith(location);
+
+            graphSession.refreshProperties(node);
+        } catch (InvalidStateException e) {
+            throw new InvalidItemStateException(e.getLocalizedMessage());
+        } catch (org.modeshape.graph.property.PathNotFoundException e) {
+            throw new InvalidItemStateException(e.getLocalizedMessage());
+        } catch (RepositorySourceException e) {
+            throw new RepositoryException(e.getLocalizedMessage());
+        }
+    }
+
+    /**
      * Find the best definition for the child node with the given name on the node with the given UUID.
      * 
      * @param parent the parent node; may not be null
@@ -2167,126 +2189,31 @@ class SessionCache {
     final class JcrNodeOperations extends GraphSession.NodeOperations<JcrNodePayload, JcrPropertyPayload> {
         private final Logger LOGGER = Logger.getLogger(JcrNodeOperations.class);
 
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.session.GraphSession.Operations#materialize(org.modeshape.graph.Node,
-         *      org.modeshape.graph.session.GraphSession.Node)
-         */
-        @Override
-        public void materialize( org.modeshape.graph.Node persistentNode,
-                                 Node<JcrNodePayload, JcrPropertyPayload> node ) {
-            // Now get the ModeShape node's UUID and find the ModeShape property containing the UUID ...
-            Location location = node.getLocation();
-            UUID uuid = location.getUuid();
-            org.modeshape.graph.property.Property uuidProperty = null;
-            if (uuid != null) {
-                // Check for an identification property ...
-                uuidProperty = location.getIdProperty(JcrLexicon.UUID);
-                if (uuidProperty == null) {
-                    uuidProperty = propertyFactory.create(JcrLexicon.UUID, uuid);
-                }
-            }
-            if (uuid != null && uuidProperty == null) uuidProperty = propertyFactory.create(JcrLexicon.UUID, uuid);
+        
+        private Map<Name, PropertyInfo<JcrPropertyPayload>> buildProperties( org.modeshape.graph.Node persistentNode,
+                                                                             Node<JcrNodePayload, JcrPropertyPayload> node,
+                                                                             JcrNodePayload nodePayload,
+                                                                             boolean referenceable
+                                 ) {
+            
+            AbstractJcrNode jcrNode = nodePayload.getJcrNode();
+            Name primaryTypeName = nodePayload.getPrimaryTypeName();
+            List<Name> mixinTypeNames = nodePayload.getMixinTypeNames();
 
-            // Look for the primary type of the node ...
+            Location location = persistentNode.getLocation();
             Map<Name, Property> graphProperties = persistentNode.getPropertiesByName();
-            final boolean isRoot = location.getPath().isRoot();
-            Name primaryTypeName = null;
-            org.modeshape.graph.property.Property primaryTypeProperty = graphProperties.get(JcrLexicon.PRIMARY_TYPE);
-            if (primaryTypeProperty != null && !primaryTypeProperty.isEmpty()) {
-                try {
-                    primaryTypeName = factories.getNameFactory().create(primaryTypeProperty.getFirstValue());
-                } catch (ValueFormatException e) {
-                    // use the default ...
-                }
-            }
-            if (primaryTypeName == null) {
+
+            if (!graphProperties.containsKey(JcrLexicon.PRIMARY_TYPE)) {
+                Property primaryTypeProperty;
                 // We have to have a primary type, so use the default ...
-                if (isRoot) {
-                    primaryTypeName = ModeShapeLexicon.ROOT;
+                if (location.getPath().isRoot()) {
                     primaryTypeProperty = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
                 } else {
-                    primaryTypeName = defaultPrimaryTypeName;
                     primaryTypeProperty = defaultPrimaryTypeProperty;
                 }
                 // We have to add this property to the graph node...
                 graphProperties = new HashMap<Name, Property>(graphProperties);
                 graphProperties.put(primaryTypeProperty.getName(), primaryTypeProperty);
-            }
-            assert primaryTypeProperty != null;
-            assert primaryTypeProperty.isEmpty() == false;
-
-            // Look for a node definition stored on the node ...
-            JcrNodeDefinition definition = null;
-            org.modeshape.graph.property.Property nodeDefnProperty = graphProperties.get(ModeShapeIntLexicon.NODE_DEFINITON);
-            if (nodeDefnProperty != null && !nodeDefnProperty.isEmpty()) {
-                String nodeDefinitionString = stringFactory.create(nodeDefnProperty.getFirstValue());
-                NodeDefinitionId id = NodeDefinitionId.fromString(nodeDefinitionString, nameFactory);
-                definition = nodeTypes().getNodeDefinition(id);
-            }
-            // Figure out the node definition for this node ...
-            if (definition == null) {
-                if (isRoot) {
-                    try {
-                        definition = nodeTypes().getRootNodeDefinition();
-                    } catch (RepositoryException e) {
-                        // Shouldn't really happen ...
-                        throw new ValidationException(e.getMessage(), e);
-                    }
-                } else {
-                    Name childName = node.getName();
-                    Node<JcrNodePayload, JcrPropertyPayload> parent = node.getParent();
-                    JcrNodePayload parentInfo = parent.getPayload();
-                    int numExistingChildrenWithSameName = parent.getChildrenCount(childName);
-                    // The children include this node, so we need to subtract one from the count so that the
-                    // number of existing children is either 0 (if there are no other SNS nodes) or 1+
-                    // (if there are at least 2 SNS nodes)
-                    --numExistingChildrenWithSameName;
-                    definition = nodeTypes().findChildNodeDefinition(parentInfo.getPrimaryTypeName(),
-                                                                     parentInfo.getMixinTypeNames(),
-                                                                     childName,
-                                                                     primaryTypeName,
-                                                                     numExistingChildrenWithSameName,
-                                                                     false);
-                }
-            }
-            if (definition == null) {
-                String msg = JcrI18n.nodeDefinitionCouldNotBeDeterminedForNode.text(readable(node.getPath()),
-                                                                                    workspaceName(),
-                                                                                    sourceName());
-                throw new ValidationException(msg);
-            }
-
-            // ------------------------------------------------------
-            // Set the node's properties ...
-            // ------------------------------------------------------
-            boolean referenceable = false;
-
-            // Start with the primary type ...
-            JcrNodeType primaryType = nodeTypes().getNodeType(primaryTypeName);
-            if (primaryType == null) {
-                Path path = location.getPath();
-                String msg = JcrI18n.missingNodeTypeForExistingNode.text(readable(primaryTypeName),
-                                                                         readable(path),
-                                                                         workspaceName(),
-                                                                         sourceName());
-                throw new ValidationException(msg);
-            }
-            if (primaryType.isNodeType(JcrMixLexicon.REFERENCEABLE)) referenceable = true;
-
-            // The process the mixin types ...
-            Property mixinTypesProperty = graphProperties.get(JcrLexicon.MIXIN_TYPES);
-            List<Name> mixinTypeNames = null;
-            if (mixinTypesProperty != null && !mixinTypesProperty.isEmpty()) {
-                for (Object mixinTypeValue : mixinTypesProperty) {
-                    Name mixinTypeName = nameFactory.create(mixinTypeValue);
-                    if (mixinTypeNames == null) mixinTypeNames = new LinkedList<Name>();
-                    mixinTypeNames.add(mixinTypeName);
-                    JcrNodeType mixinType = nodeTypes().getNodeType(mixinTypeName);
-                    if (mixinType == null) continue;
-                    if (!referenceable && mixinType.isNodeType(JcrMixLexicon.REFERENCEABLE)) referenceable = true;
-                }
             }
 
             // Create the set of multi-valued property names ...
@@ -2297,10 +2224,16 @@ class SessionCache {
                 multiValuedPropertyNames = getSingleMultiPropertyNames(multiValuedPropNamesProp, location);
             }
 
-            // Create the JCR Node payload object ...
-            JcrNodePayload nodePayload = new JcrNodePayload(SessionCache.this, node, primaryTypeName, mixinTypeNames,
-                                                            definition.getId());
-            AbstractJcrNode jcrNode = nodePayload.getJcrNode();
+            UUID uuid = location.getUuid();
+            org.modeshape.graph.property.Property uuidProperty = null;
+            if (uuid != null) {
+                // Check for an identification property ...
+                uuidProperty = location.getIdProperty(JcrLexicon.UUID);
+                if (uuidProperty == null) {
+                    uuidProperty = propertyFactory.create(JcrLexicon.UUID, uuid);
+                }
+            }
+            if (uuid != null && uuidProperty == null) uuidProperty = propertyFactory.create(JcrLexicon.UUID, uuid);
 
             // Now create the JCR property object wrappers around the other properties ...
             Map<Name, GraphSession.PropertyInfo<JcrPropertyPayload>> props = new HashMap<Name, GraphSession.PropertyInfo<JcrPropertyPayload>>();
@@ -2378,6 +2311,7 @@ class SessionCache {
 
             // Now add the "jcr:uuid" property if and only if referenceable ...
             if (referenceable) {
+
                 // We know that this property is single-valued
                 JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, uuid);
                 JcrPropertyDefinition propDefn = nodeTypes().findPropertyDefinition(primaryTypeName,
@@ -2407,6 +2341,148 @@ class SessionCache {
                 props.put(info.getName(), info);
             }
 
+            return props;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.session.GraphSession.Operations#materializeProperties(org.modeshape.graph.Node,
+         *      org.modeshape.graph.session.GraphSession.Node)
+         */
+        @Override
+        public void materializeProperties( org.modeshape.graph.Node persistentNode,
+                                           Node<JcrNodePayload, JcrPropertyPayload> node ) {
+
+            JcrNodePayload nodePayload = node.getPayload();
+            boolean referenceable = false;
+
+            try {
+                referenceable = isReferenceable(node);
+            } catch (RepositoryException re) {
+                throw new IllegalStateException(re);
+            }
+
+            Map<Name, PropertyInfo<JcrPropertyPayload>> props = buildProperties(persistentNode, node, nodePayload, referenceable);
+            // Set the information on the node ...
+            node.loadedWith(props);
+
+        }
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.session.GraphSession.Operations#materialize(org.modeshape.graph.Node,
+         *      org.modeshape.graph.session.GraphSession.Node)
+         */
+        @Override
+        public void materialize( org.modeshape.graph.Node persistentNode,
+                                 Node<JcrNodePayload, JcrPropertyPayload> node ) {
+            // Now get the ModeShape node's UUID and find the ModeShape property containing the UUID ...
+            Location location = node.getLocation();
+
+            // Look for the primary type of the node ...
+            Map<Name, Property> graphProperties = persistentNode.getPropertiesByName();
+            final boolean isRoot = location.getPath().isRoot();
+            Name primaryTypeName = null;
+            org.modeshape.graph.property.Property primaryTypeProperty = graphProperties.get(JcrLexicon.PRIMARY_TYPE);
+            if (primaryTypeProperty != null && !primaryTypeProperty.isEmpty()) {
+                try {
+                    primaryTypeName = factories.getNameFactory().create(primaryTypeProperty.getFirstValue());
+                } catch (ValueFormatException e) {
+                    // use the default ...
+                }
+            }
+            if (primaryTypeName == null) {
+                // We have to have a primary type, so use the default ...
+                if (isRoot) {
+                    primaryTypeName = ModeShapeLexicon.ROOT;
+                    primaryTypeProperty = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, primaryTypeName);
+                } else {
+                    primaryTypeName = defaultPrimaryTypeName;
+                    primaryTypeProperty = defaultPrimaryTypeProperty;
+                }
+            }
+            assert primaryTypeProperty != null;
+            assert primaryTypeProperty.isEmpty() == false;
+
+            // Look for a node definition stored on the node ...
+            JcrNodeDefinition definition = null;
+            org.modeshape.graph.property.Property nodeDefnProperty = graphProperties.get(ModeShapeIntLexicon.NODE_DEFINITON);
+            if (nodeDefnProperty != null && !nodeDefnProperty.isEmpty()) {
+                String nodeDefinitionString = stringFactory.create(nodeDefnProperty.getFirstValue());
+                NodeDefinitionId id = NodeDefinitionId.fromString(nodeDefinitionString, nameFactory);
+                definition = nodeTypes().getNodeDefinition(id);
+            }
+            // Figure out the node definition for this node ...
+            if (definition == null) {
+                if (isRoot) {
+                    try {
+                        definition = nodeTypes().getRootNodeDefinition();
+                    } catch (RepositoryException e) {
+                        // Shouldn't really happen ...
+                        throw new ValidationException(e.getMessage(), e);
+                    }
+                } else {
+                    Name childName = node.getName();
+                    Node<JcrNodePayload, JcrPropertyPayload> parent = node.getParent();
+                    JcrNodePayload parentInfo = parent.getPayload();
+                    int numExistingChildrenWithSameName = parent.getChildrenCount(childName);
+                    // The children include this node, so we need to subtract one from the count so that the
+                    // number of existing children is either 0 (if there are no other SNS nodes) or 1+
+                    // (if there are at least 2 SNS nodes)
+                    --numExistingChildrenWithSameName;
+                    definition = nodeTypes().findChildNodeDefinition(parentInfo.getPrimaryTypeName(),
+                                                                     parentInfo.getMixinTypeNames(),
+                                                                     childName,
+                                                                     primaryTypeName,
+                                                                     numExistingChildrenWithSameName,
+                                                                     false);
+                }
+            }
+            if (definition == null) {
+                String msg = JcrI18n.nodeDefinitionCouldNotBeDeterminedForNode.text(readable(node.getPath()),
+                                                                                    workspaceName(),
+                                                                                    sourceName());
+                throw new ValidationException(msg);
+            }
+
+            // ------------------------------------------------------
+            // Set the node's properties ...
+            // ------------------------------------------------------
+            boolean referenceable = false;
+
+            // Start with the primary type ...
+            JcrNodeType primaryType = nodeTypes().getNodeType(primaryTypeName);
+            if (primaryType == null) {
+                Path path = location.getPath();
+                String msg = JcrI18n.missingNodeTypeForExistingNode.text(readable(primaryTypeName),
+                                                                         readable(path),
+                                                                         workspaceName(),
+                                                                         sourceName());
+                throw new ValidationException(msg);
+            }
+            if (primaryType.isNodeType(JcrMixLexicon.REFERENCEABLE)) referenceable = true;
+
+            // The process the mixin types ...
+            Property mixinTypesProperty = graphProperties.get(JcrLexicon.MIXIN_TYPES);
+            List<Name> mixinTypeNames = null;
+            if (mixinTypesProperty != null && !mixinTypesProperty.isEmpty()) {
+                for (Object mixinTypeValue : mixinTypesProperty) {
+                    Name mixinTypeName = nameFactory.create(mixinTypeValue);
+                    if (mixinTypeNames == null) mixinTypeNames = new LinkedList<Name>();
+                    mixinTypeNames.add(mixinTypeName);
+                    JcrNodeType mixinType = nodeTypes().getNodeType(mixinTypeName);
+                    if (mixinType == null) continue;
+                    if (!referenceable && mixinType.isNodeType(JcrMixLexicon.REFERENCEABLE)) referenceable = true;
+                }
+            }
+
+            // Create the JCR Node payload object ...
+            JcrNodePayload nodePayload = new JcrNodePayload(SessionCache.this, node, primaryTypeName, mixinTypeNames,
+                                                            definition.getId());
+            
+            Map<Name, PropertyInfo<JcrPropertyPayload>> props = buildProperties(persistentNode, node, nodePayload, referenceable);
+            
             // Set the information on the node ...
             node.loadedWith(persistentNode.getChildren(), props, persistentNode.getExpirationTime());
             node.setPayload(nodePayload);

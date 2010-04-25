@@ -466,9 +466,11 @@ final class JcrVersionManager {
         org.modeshape.graph.property.Property predecessors = propFactory.create(JcrLexicon.PREDECESSORS, newPreds);
 
         Graph graph = workspace().graph();
-        graph.set(isCheckedOut, predecessors, multiValuedProps).on(node.uuid()).and();
+        Location location = Location.create(node.uuid());
+        graph.set(isCheckedOut, predecessors, multiValuedProps).on(location).and();
 
-        node.refresh(true);
+        cache().refreshProperties(location);
+        // node.refresh(true);
 
     }
 

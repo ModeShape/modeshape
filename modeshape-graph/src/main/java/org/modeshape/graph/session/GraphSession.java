@@ -836,6 +836,34 @@ public class GraphSession<Payload, PropertyPayload> {
     }
 
     /**
+     * Refreshes all properties for the given node only. This refresh always discards changed properties.
+     * <p>
+     * This method is not recursive and will not modify or access any descendants of the given node.
+     * </p>
+     * <p>
+     * <b>NOTE: Calling this method on a node that already has modified properties can result in the enqueued property changes
+     * overwriting the current properties on a save() call. This method should be used with great care to avoid this
+     * situation.</b>
+     * </p>
+     * 
+     * @param node the node for which the properties are to be refreshed; may not be null
+     * @throws InvalidStateException if the node is new
+     * @throws RepositorySourceException if any error resulting while reading information from the repository
+     */
+    public void refreshProperties( Node<Payload, PropertyPayload> node ) throws InvalidStateException, RepositorySourceException {
+        assert node != null;
+
+        if (node.isNew()) {
+            I18n msg = GraphI18n.unableToRefreshPropertiesBecauseNodeIsModified;
+            String path = node.getPath().getString(context.getNamespaceRegistry());
+            throw new InvalidStateException(msg.text(path, workspaceName));
+        }
+
+        org.modeshape.graph.Node persistentNode = store.getNodeAt(node.getLocation());
+        nodeOperations.materializeProperties(persistentNode, node);
+    }
+
+    /**
      * Save any changes that have been accumulated by this session.
      * 
      * @throws PathNotFoundException if the state of this session is invalid and is attempting to change a node that doesn't exist
@@ -1060,13 +1088,22 @@ public class GraphSession<Payload, PropertyPayload> {
     public static interface Operations<NodePayload, PropertyPayload> {
 
         /**
-         * Update the node with the information from the persistent store.
+         * Update the children and properties for the node with the information from the persistent store.
          * 
          * @param persistentNode the persistent node that should be converted into a node info; never null
          * @param node the session's node representation that is to be updated; never null
          */
         void materialize( org.modeshape.graph.Node persistentNode,
                           Node<NodePayload, PropertyPayload> node );
+
+        /**
+         * Update the properties ONLY for the node with the information from the persistent store.
+         * 
+         * @param persistentNode the persistent node that should be converted into a node info; never null
+         * @param node the session's node representation that is to be updated; never null
+         */
+        void materializeProperties( org.modeshape.graph.Node persistentNode,
+                                    Node<NodePayload, PropertyPayload> node );
 
         /**
          * Signal that the node's {@link GraphSession.Node#getLocation() location} has been changed
@@ -1272,6 +1309,25 @@ public class GraphSession<Payload, PropertyPayload> {
             }
             // Set only the children ...
             node.loadedWith(persistentNode.getChildren(), properties, persistentNode.getExpirationTime());
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see GraphSession.Operations#materializeProperties(org.modeshape.graph.Node, GraphSession.Node)
+         */
+        public void materializeProperties( org.modeshape.graph.Node persistentNode,
+                                           Node<Payload, PropertyPayload> node ) {
+            // Create the map of property info objects ...
+            Map<Name, PropertyInfo<PropertyPayload>> properties = new HashMap<Name, PropertyInfo<PropertyPayload>>();
+            for (Property property : persistentNode.getProperties()) {
+                Name propertyName = property.getName();
+                PropertyInfo<PropertyPayload> info = new PropertyInfo<PropertyPayload>(property, property.isMultiple(),
+                                                                                       Status.UNCHANGED, null);
+                properties.put(propertyName, info);
+            }
+            // Set only the children ...
+            node.loadedWith(properties);
         }
 
         /**
@@ -1729,17 +1785,27 @@ public class GraphSession<Payload, PropertyPayload> {
                     child.updateLocation(segment);
                 }
             }
+
+            loadedWith(properties);
+
+            // Set the expiration time ...
+            this.expirationTime = expirationTime != null ? expirationTime.getMilliseconds() : Long.MAX_VALUE;
+        }
+
+        /**
+         * Define the persistent property information that this node is to be populated with. This method does not cause the
+         * node's information to be read from the store.
+         * 
+         * @param properties the properties for this node; may not be null
+         */
+        public void loadedWith( Map<Name, PropertyInfo<PropertyPayload>> properties ) {
             // Load the properties ...
             if (properties.isEmpty()) {
                 this.properties = cache.NO_PROPERTIES;
             } else {
                 this.properties = new HashMap<Name, PropertyInfo<PropertyPayload>>(properties);
             }
-
-            // Set the expiration time ...
-            this.expirationTime = expirationTime != null ? expirationTime.getMilliseconds() : Long.MAX_VALUE;
         }
-
         /**
          * Reconstruct the location object for this node, given the information at the parent.
          * 
