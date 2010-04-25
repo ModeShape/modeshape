@@ -2224,17 +2224,6 @@ class SessionCache {
                 multiValuedPropertyNames = getSingleMultiPropertyNames(multiValuedPropNamesProp, location);
             }
 
-            UUID uuid = location.getUuid();
-            org.modeshape.graph.property.Property uuidProperty = null;
-            if (uuid != null) {
-                // Check for an identification property ...
-                uuidProperty = location.getIdProperty(JcrLexicon.UUID);
-                if (uuidProperty == null) {
-                    uuidProperty = propertyFactory.create(JcrLexicon.UUID, uuid);
-                }
-            }
-            if (uuid != null && uuidProperty == null) uuidProperty = propertyFactory.create(JcrLexicon.UUID, uuid);
-
             // Now create the JCR property object wrappers around the other properties ...
             Map<Name, GraphSession.PropertyInfo<JcrPropertyPayload>> props = new HashMap<Name, GraphSession.PropertyInfo<JcrPropertyPayload>>();
             for (Property dnaProp : graphProperties.values()) {
@@ -2311,6 +2300,28 @@ class SessionCache {
 
             // Now add the "jcr:uuid" property if and only if referenceable ...
             if (referenceable) {
+                UUID uuid = location.getUuid();
+                org.modeshape.graph.property.Property uuidProperty = null;
+                if (uuid != null) {
+                    // Check for an identification property ...
+                    uuidProperty = location.getIdProperty(JcrLexicon.UUID);
+                    if (uuidProperty == null) {
+                        uuidProperty = propertyFactory.create(JcrLexicon.UUID, uuid);
+                    }
+                } else {
+                    uuidProperty = location.getIdProperty(JcrLexicon.UUID);
+                    // The Basic model on the JPA connector sometimes returns locations with no UUID for referenceable nodes.
+                    if (uuidProperty != null) {
+                        uuid = factories().getUuidFactory().create(uuidProperty.getFirstValue());
+                    } else {
+                        uuidProperty = graphProperties.get(ModeShapeLexicon.UUID);
+                        uuid = factories().getUuidFactory().create(uuidProperty.getFirstValue());
+                        // Recreate the property below as jcr:uuid
+                        uuidProperty = null;
+                    }
+                }
+
+                if (uuid != null && uuidProperty == null) uuidProperty = propertyFactory.create(JcrLexicon.UUID, uuid);
 
                 // We know that this property is single-valued
                 JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, uuid);
