@@ -100,6 +100,8 @@ import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
 import org.modeshape.graph.query.parse.QueryParsers;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.jcr.RepositoryQueryManager.PushDown;
+import org.modeshape.jcr.sql.JcrSql2QueryParser;
+import org.modeshape.jcr.sql.JcrSqlQueryParser;
 import org.modeshape.jcr.xpath.XPathQueryParser;
 
 /**
@@ -358,11 +360,19 @@ public class JcrRepository implements Repository {
         public static final String XPATH = Query.XPATH;
 
         /**
-         * The SQL dialect that is based upon an enhanced version of the JCR 2.0 SQL query language.
+         * The SQL dialect that is based upon an enhanced version of the JCR-SQL query language defined by the JCR 1.0.1
+         * specification.
+         */
+        public static final String JCR_SQL = Query.SQL;
+
+        /**
+         * The SQL dialect that is based upon an enhanced version of the JCR-SQL2 query language defined by the JCR 2.0
+         * specification.
          */
         public static final String JCR_SQL2 = JcrSql2QueryParser.LANGUAGE;
         /**
-         * The SQL dialect that is based upon an enhanced version of the JCR 2.0 SQL query language.
+         * The SQL dialect that is based upon an enhanced version of the JCR-SQL2 query language defined by the JCR 2.0
+         * specification.
          * 
          * @deprecated use {@link #JCR_SQL2} instead
          */
@@ -542,7 +552,8 @@ public class JcrRepository implements Repository {
         }
 
         // Set up the query parsers, which we have to have even though queries might be disabled ...
-        this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(), new FullTextSearchParser());
+        this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(), new FullTextSearchParser(),
+                                             new JcrSqlQueryParser());
         assert this.queryParsers.getParserFor(Query.XPATH) != null;
 
         this.systemWorkspaceName = systemWorkspaceName;

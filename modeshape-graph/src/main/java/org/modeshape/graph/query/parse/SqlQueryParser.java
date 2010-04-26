@@ -587,15 +587,15 @@ public class SqlQueryParser implements QueryParser {
         List<ColumnExpression> columns = new ArrayList<ColumnExpression>();
         do {
             Position position = tokens.nextPosition();
-            String propertyName = removeBracketsAndQuotes(tokens.consume());
+            String propertyName = parseName(tokens, typeSystem);
             SelectorName selectorName = null;
             if (tokens.canConsume('.')) {
                 // We actually read the selector name, so now read the property name ...
                 selectorName = new SelectorName(propertyName);
-                propertyName = removeBracketsAndQuotes(tokens.consume());
+                propertyName = parseName(tokens, typeSystem);
             }
             String alias = propertyName;
-            if (tokens.canConsume("AS")) alias = removeBracketsAndQuotes(tokens.consume());
+            if (tokens.canConsume("AS")) alias = parseName(tokens, typeSystem);
             columns.add(new ColumnExpression(selectorName, propertyName, alias, position));
         } while (tokens.canConsume(','));
         return columns;
@@ -605,7 +605,7 @@ public class SqlQueryParser implements QueryParser {
                                 TypeSystem typeSystem ) {
         Source source = null;
         tokens.consume("FROM");
-        source = parseNamedSelector(tokens);
+        source = parseNamedSelector(tokens, typeSystem);
         while (tokens.hasNext()) {
             JoinType joinType = null;
             if (tokens.canConsume("JOIN") || tokens.canConsume("INNER", "JOIN")) {
@@ -622,7 +622,7 @@ public class SqlQueryParser implements QueryParser {
             }
             if (joinType == null) break;
             // Read the name of the selector on the right side of the join ...
-            NamedSelector right = parseNamedSelector(tokens);
+            NamedSelector right = parseNamedSelector(tokens, typeSystem);
             // Read the join condition ...
             JoinCondition joinCondition = parseJoinCondition(tokens, typeSystem);
             // Create the join ...
@@ -635,9 +635,9 @@ public class SqlQueryParser implements QueryParser {
                                                 TypeSystem typeSystem ) {
         tokens.consume("ON");
         if (tokens.canConsume("ISSAMENODE", "(")) {
-            SelectorName selector1Name = parseSelectorName(tokens);
+            SelectorName selector1Name = parseSelectorName(tokens, typeSystem);
             tokens.consume(',');
-            SelectorName selector2Name = parseSelectorName(tokens);
+            SelectorName selector2Name = parseSelectorName(tokens, typeSystem);
             if (tokens.canConsume('.')) {
                 String path = parsePath(tokens, typeSystem);
                 tokens.consume(')');
@@ -647,24 +647,24 @@ public class SqlQueryParser implements QueryParser {
             return new SameNodeJoinCondition(selector1Name, selector2Name);
         }
         if (tokens.canConsume("ISCHILDNODE", "(")) {
-            SelectorName child = parseSelectorName(tokens);
+            SelectorName child = parseSelectorName(tokens, typeSystem);
             tokens.consume(',');
-            SelectorName parent = parseSelectorName(tokens);
+            SelectorName parent = parseSelectorName(tokens, typeSystem);
             tokens.consume(')');
             return new ChildNodeJoinCondition(parent, child);
         }
         if (tokens.canConsume("ISDESCENDANTNODE", "(")) {
-            SelectorName descendant = parseSelectorName(tokens);
+            SelectorName descendant = parseSelectorName(tokens, typeSystem);
             tokens.consume(',');
-            SelectorName ancestor = parseSelectorName(tokens);
+            SelectorName ancestor = parseSelectorName(tokens, typeSystem);
             tokens.consume(')');
             return new DescendantNodeJoinCondition(ancestor, descendant);
         }
-        SelectorName selector1 = parseSelectorName(tokens);
+        SelectorName selector1 = parseSelectorName(tokens, typeSystem);
         tokens.consume('.');
         String property1 = parseName(tokens, typeSystem);
         tokens.consume('=');
-        SelectorName selector2 = parseSelectorName(tokens);
+        SelectorName selector2 = parseSelectorName(tokens, typeSystem);
         tokens.consume('.');
         String property2 = parseName(tokens, typeSystem);
         return new EquiJoinCondition(selector1, property1, selector2, property2);
@@ -725,7 +725,7 @@ public class SqlQueryParser implements QueryParser {
                 }
                 selectorName = ((Selector)source).getName();
             } else {
-                selectorName = parseSelectorName(tokens);
+                selectorName = parseSelectorName(tokens, typeSystem);
                 tokens.consume(',');
             }
             String path = parsePath(tokens, typeSystem);
@@ -740,7 +740,7 @@ public class SqlQueryParser implements QueryParser {
                 }
                 selectorName = ((Selector)source).getName();
             } else {
-                selectorName = parseSelectorName(tokens);
+                selectorName = parseSelectorName(tokens, typeSystem);
                 tokens.consume(',');
             }
             String path = parsePath(tokens, typeSystem);
@@ -755,7 +755,7 @@ public class SqlQueryParser implements QueryParser {
                 }
                 selectorName = ((Selector)source).getName();
             } else {
-                selectorName = parseSelectorName(tokens);
+                selectorName = parseSelectorName(tokens, typeSystem);
                 tokens.consume(',');
             }
             String path = parsePath(tokens, typeSystem);
@@ -1081,7 +1081,7 @@ public class SqlQueryParser implements QueryParser {
                 String msg = GraphI18n.functionIsAmbiguous.text("NAME()", pos.getLine(), pos.getColumn());
                 throw new ParsingException(pos, msg);
             }
-            result = new NodeName(parseSelectorName(tokens));
+            result = new NodeName(parseSelectorName(tokens, typeSystem));
             tokens.consume(")");
         } else if (tokens.canConsume("LOCALNAME", "(")) {
             if (tokens.canConsume(")")) {
@@ -1091,7 +1091,7 @@ public class SqlQueryParser implements QueryParser {
                 String msg = GraphI18n.functionIsAmbiguous.text("LOCALNAME()", pos.getLine(), pos.getColumn());
                 throw new ParsingException(pos, msg);
             }
-            result = new NodeLocalName(parseSelectorName(tokens));
+            result = new NodeLocalName(parseSelectorName(tokens, typeSystem));
             tokens.consume(")");
         } else if (tokens.canConsume("SCORE", "(")) {
             if (tokens.canConsume(")")) {
@@ -1101,7 +1101,7 @@ public class SqlQueryParser implements QueryParser {
                 String msg = GraphI18n.functionIsAmbiguous.text("SCORE()", pos.getLine(), pos.getColumn());
                 throw new ParsingException(pos, msg);
             }
-            result = new FullTextSearchScore(parseSelectorName(tokens));
+            result = new FullTextSearchScore(parseSelectorName(tokens, typeSystem));
             tokens.consume(")");
         } else if (tokens.canConsume("DEPTH", "(")) {
             if (tokens.canConsume(")")) {
@@ -1111,7 +1111,7 @@ public class SqlQueryParser implements QueryParser {
                 String msg = GraphI18n.functionIsAmbiguous.text("DEPTH()", pos.getLine(), pos.getColumn());
                 throw new ParsingException(pos, msg);
             }
-            result = new NodeDepth(parseSelectorName(tokens));
+            result = new NodeDepth(parseSelectorName(tokens, typeSystem));
             tokens.consume(")");
         } else if (tokens.canConsume("PATH", "(")) {
             if (tokens.canConsume(")")) {
@@ -1121,7 +1121,7 @@ public class SqlQueryParser implements QueryParser {
                 String msg = GraphI18n.functionIsAmbiguous.text("PATH()", pos.getLine(), pos.getColumn());
                 throw new ParsingException(pos, msg);
             }
-            result = new NodePath(parseSelectorName(tokens));
+            result = new NodePath(parseSelectorName(tokens, typeSystem));
             tokens.consume(")");
         } else if (tokens.canConsume("REFERENCE", "(")) {
             result = parseReferenceValue(tokens, typeSystem, source);
@@ -1173,7 +1173,7 @@ public class SqlQueryParser implements QueryParser {
                                                 TypeSystem typeSystem,
                                                 Source source ) {
         Position pos = tokens.nextPosition();
-        String firstWord = removeBracketsAndQuotes(tokens.consume());
+        String firstWord = parseName(tokens, typeSystem);
         SelectorName selectorName = null;
         if (tokens.canConsume('.')) {
             // We actually read the selector name, so now read the property name ...
@@ -1205,7 +1205,7 @@ public class SqlQueryParser implements QueryParser {
             throw new ParsingException(pos, msg);
         }
         // Otherwise, there is at least one word inside the parentheses ...
-        String firstWord = removeBracketsAndQuotes(tokens.consume());
+        String firstWord = parseName(tokens, typeSystem);
         if (tokens.canConsume('.')) {
             // We actually read the selector name, so now read the property name ...
             selectorName = new SelectorName(firstWord);
@@ -1281,15 +1281,17 @@ public class SqlQueryParser implements QueryParser {
         return text;
     }
 
-    protected NamedSelector parseNamedSelector( TokenStream tokens ) {
-        SelectorName name = parseSelectorName(tokens);
+    protected NamedSelector parseNamedSelector( TokenStream tokens,
+                                                TypeSystem typeSystem ) {
+        SelectorName name = parseSelectorName(tokens, typeSystem);
         SelectorName alias = null;
-        if (tokens.canConsume("AS")) alias = parseSelectorName(tokens);
+        if (tokens.canConsume("AS")) alias = parseSelectorName(tokens, typeSystem);
         return new NamedSelector(name, alias);
     }
 
-    protected SelectorName parseSelectorName( TokenStream tokens ) {
-        return new SelectorName(removeBracketsAndQuotes(tokens.consume()));
+    protected SelectorName parseSelectorName( TokenStream tokens,
+                                              TypeSystem typeSystem ) {
+        return new SelectorName(parseName(tokens, typeSystem));
     }
 
     protected String parsePath( TokenStream tokens,

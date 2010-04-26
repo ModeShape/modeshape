@@ -1926,7 +1926,7 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseNamedSelectorFromUnquotedNameWithNoAlias() {
-        NamedSelector selector = parser.parseNamedSelector(tokens("name"));
+        NamedSelector selector = parser.parseNamedSelector(tokens("name"), typeSystem);
         assertThat(selector.getName(), is(selectorName("name")));
         assertThat(selector.getAlias(), is(nullValue()));
         assertThat(selector.getAliasOrName(), is(selectorName("name")));
@@ -1934,7 +1934,7 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseNamedSelectorFromUnquotedNameWithUnquotedAlias() {
-        NamedSelector selector = parser.parseNamedSelector(tokens("name AS alias"));
+        NamedSelector selector = parser.parseNamedSelector(tokens("name AS alias"), typeSystem);
         assertThat(selector.getName(), is(selectorName("name")));
         assertThat(selector.getAlias(), is(selectorName("alias")));
         assertThat(selector.getAliasOrName(), is(selectorName("alias")));
@@ -1942,7 +1942,7 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseNamedSelectorFromQuotedNameWithUnquotedAlias() {
-        NamedSelector selector = parser.parseNamedSelector(tokens("'name' AS alias"));
+        NamedSelector selector = parser.parseNamedSelector(tokens("'name' AS alias"), typeSystem);
         assertThat(selector.getName(), is(selectorName("name")));
         assertThat(selector.getAlias(), is(selectorName("alias")));
         assertThat(selector.getAliasOrName(), is(selectorName("alias")));
@@ -1950,7 +1950,7 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseNamedSelectorFromQuotedNameWithQuotedAlias() {
-        NamedSelector selector = parser.parseNamedSelector(tokens("'name' AS [alias]"));
+        NamedSelector selector = parser.parseNamedSelector(tokens("'name' AS [alias]"), typeSystem);
         assertThat(selector.getName(), is(selectorName("name")));
         assertThat(selector.getAlias(), is(selectorName("alias")));
         assertThat(selector.getAliasOrName(), is(selectorName("alias")));
@@ -1958,7 +1958,7 @@ public class SqlQueryParserTest {
 
     @Test( expected = ParsingException.class )
     public void shouldFailInParseNamedSelectorIfNoMoreTokens() {
-        parser.parseNamedSelector(tokens("  "));
+        parser.parseNamedSelector(tokens("  "), typeSystem);
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -1967,17 +1967,17 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseSelectorNameFromUnquotedString() {
-        assertThat(parser.parseSelectorName(tokens("name")), is(selectorName("name")));
+        assertThat(parser.parseSelectorName(tokens("name"), typeSystem), is(selectorName("name")));
     }
 
     @Test
     public void shouldParseSelectorNameFromQuotedString() {
-        assertThat(parser.parseSelectorName(tokens("'name'")), is(selectorName("name")));
+        assertThat(parser.parseSelectorName(tokens("'name'"), typeSystem), is(selectorName("name")));
     }
 
     @Test( expected = ParsingException.class )
     public void shouldFailInParseSelectorNameIfNoMoreTokens() {
-        parser.parseSelectorName(tokens("  "));
+        parser.parseSelectorName(tokens("  "), typeSystem);
     }
 
     // ----------------------------------------------------------------------------------------------------------------

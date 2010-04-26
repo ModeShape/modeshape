@@ -21,16 +21,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr;
+package org.modeshape.jcr.sql;
 
 import org.modeshape.graph.query.parse.SqlQueryParser;
 
 /**
  * An specialization of the {@link SqlQueryParser} that uses a different language name that matches the JCR 2.0 specification.
  */
-class JcrSql2QueryParser extends SqlQueryParser {
+public class JcrSql2QueryParser extends SqlQueryParser {
 
     public static final String LANGUAGE = "JCR-SQL2";
+
+    public JcrSql2QueryParser() {
+        super();
+    }
 
     /**
      * {@inheritDoc}
