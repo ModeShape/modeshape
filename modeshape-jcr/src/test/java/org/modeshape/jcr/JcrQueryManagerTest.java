@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
@@ -98,7 +99,8 @@ public class JcrQueryManagerTest {
                      .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
                      .addNodeTypes(resourceUrl("cars.cnd"))
                      // Added ADMIN privilege to allow permanent namespace registration in one of the tests
-                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.READONLY + "," + ModeShapeRoles.READWRITE + "," + ModeShapeRoles.ADMIN)
+                     .setOption(Option.ANONYMOUS_USER_ROLES,
+                                ModeShapeRoles.READONLY + "," + ModeShapeRoles.READWRITE + "," + ModeShapeRoles.ADMIN)
                      .setOption(Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
         engine = configuration.build();
         engine.start();
@@ -354,7 +356,7 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root/Cars//*[@car:year]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 16);
+        assertResults(query, result, 12);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
@@ -366,7 +368,7 @@ public class JcrQueryManagerTest {
                              .createQuery(" /jcr:root/Cars//*[@car:year] order by @car:year ascending", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 16);
+        assertResults(query, result, 12);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "car:year", "jcr:path", "jcr:score");
     }
@@ -632,5 +634,32 @@ public class JcrQueryManagerTest {
                                                                            Query.XPATH);
         query.execute();
 
+    }
+
+    @Test
+    public void shouldNotReturnNodesWithNoPropertyForPropertyCriterion() throws Exception {
+        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Cars//*[@car:wheelbaseInInches]",
+                                                                           Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+
+        for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
+            assertThat(iter.nextNode().hasProperty("car:wheelbaseInInches"), is(true));
+        }
+    }
+
+    @Test
+    public void shouldNotReturnNodesWithNoPropertyForLikeCriterion() throws Exception {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root/Cars//*[jcr:like(@car:wheelbaseInInches, '%')]", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+
+        for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
+            assertThat(iter.nextNode().hasProperty("car:wheelbaseInInches"), is(true));
+        }
     }
 }

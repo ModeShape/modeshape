@@ -1269,6 +1269,7 @@ public class QueryBuilder {
         private Constraint left;
         private boolean and;
         private boolean negateConstraint;
+        private boolean implicitParentheses = true;
 
         protected ConstraintBuilder( ConstraintBuilder parent ) {
             this.parent = parent;
@@ -1308,6 +1309,7 @@ public class QueryBuilder {
                 throw new IllegalStateException(GraphI18n.unexpectedClosingParenthesis.text());
             }
             buildLogicalConstraint();
+            parent.implicitParentheses = false;
             return parent.setConstraint(constraint);
         }
 
@@ -1357,7 +1359,7 @@ public class QueryBuilder {
             if (left != null && constraint != null) {
                 if (and) {
                     // If the left constraint is an OR, we need to rearrange things since AND is higher precedence ...
-                    if (left instanceof Or) {
+                    if (left instanceof Or && implicitParentheses) {
                         Or previous = (Or)left;
                         constraint = new Or(previous.getLeft(), new And(previous.getRight(), constraint));
                     } else {

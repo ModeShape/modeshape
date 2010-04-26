@@ -26,11 +26,11 @@ package org.modeshape.graph.query;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import org.hamcrest.Matcher;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.Visitors;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 
@@ -421,7 +421,7 @@ public class QueryBuilderTest {
     }
 
     @Test
-    public void shouldBuildQueryWithMixureOfLogicalWithExplicitParenthesesWithHasPropertyConstraint() {
+    public void shouldBuildQueryWithMixtureOfLogicalWithExplicitParenthesesWithHasPropertyConstraint() {
         query = builder.selectStar()
                        .from("table AS nodes")
                        .where()
@@ -438,6 +438,46 @@ public class QueryBuilderTest {
                                 "WHERE (nodes.col1 IS NOT NULL " + //
                                 "AND (nodes.col2 IS NOT NULL " + //
                                 "AND nodes.col3 IS NOT NULL))"));
+    }
+
+    @Test
+    public void shouldBuildQueryWithCorrectPrecedenceWithExplicitParentheses() {
+        query = builder.selectStar()
+                       .from("table AS nodes")
+                       .where()
+                       .openParen()
+                       .hasProperty("nodes", "col1")
+                       .or()
+                       .hasProperty("nodes", "col2")
+                       .closeParen()
+                       .and()
+                       .hasProperty("nodes", "col3")
+                       .end()
+                       .query();
+        assertThatSql(query, is("SELECT * FROM table AS nodes " + //
+                                "WHERE ((nodes.col1 IS NOT NULL " + //
+                                "OR nodes.col2 IS NOT NULL) " + //
+                                "AND nodes.col3 IS NOT NULL)"));
+    }
+
+    @Test
+    public void shouldBuildQueryWithCorrectPrecedenceWithExplicitParenthesesWithAndFirst() {
+        query = builder.selectStar()
+                       .from("table AS nodes")
+                       .where()
+                       .hasProperty("nodes", "col1")
+                       .and()
+                       .openParen()
+                       .hasProperty("nodes", "col2")
+                       .or()
+                       .hasProperty("nodes", "col3")
+                       .closeParen()
+                       .end()
+                       .query();
+        assertThatSql(query, is("SELECT * FROM table AS nodes " + //
+                                "WHERE (nodes.col1 IS NOT NULL " + //
+                                "AND (nodes.col2 IS NOT NULL " + //
+                                "OR nodes.col3 IS NOT NULL))"));
     }
 
     @Test
