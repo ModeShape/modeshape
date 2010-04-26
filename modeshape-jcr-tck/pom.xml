@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.modeshape</groupId>
     <artifactId>modeshape</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.2-SNAPSHOT</version>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
   <artifactId>modeshape-jcr-tck</artifactId>
