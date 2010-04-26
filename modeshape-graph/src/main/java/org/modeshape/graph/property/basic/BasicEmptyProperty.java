@@ -34,7 +34,7 @@ import org.modeshape.graph.property.Name;
  */
 @Immutable
 public class BasicEmptyProperty extends BasicProperty {
-
+    private static final long serialVersionUID = 1L;
     private static final Iterator<Object> SHARED_ITERATOR = new EmptyIterator<Object>();
 
     /**

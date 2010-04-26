@@ -39,6 +39,7 @@ import org.modeshape.graph.property.ValueComparators;
  */
 @Immutable
 public abstract class BasicProperty implements Property {
+    private static final long serialVersionUID = 1L;
 
     private final Name name;
 

@@ -34,6 +34,7 @@ import org.modeshape.graph.property.Name;
  */
 @Immutable
 public class BasicSingleValueProperty extends BasicProperty {
+    private static final long serialVersionUID = 1L;
 
     protected final Object value;
 

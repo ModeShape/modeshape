@@ -2189,13 +2189,11 @@ class SessionCache {
     final class JcrNodeOperations extends GraphSession.NodeOperations<JcrNodePayload, JcrPropertyPayload> {
         private final Logger LOGGER = Logger.getLogger(JcrNodeOperations.class);
 
-        
         private Map<Name, PropertyInfo<JcrPropertyPayload>> buildProperties( org.modeshape.graph.Node persistentNode,
                                                                              Node<JcrNodePayload, JcrPropertyPayload> node,
                                                                              JcrNodePayload nodePayload,
-                                                                             boolean referenceable
-                                 ) {
-            
+                                                                             boolean referenceable ) {
+
             AbstractJcrNode jcrNode = nodePayload.getJcrNode();
             Name primaryTypeName = nodePayload.getPrimaryTypeName();
             List<Name> mixinTypeNames = nodePayload.getMixinTypeNames();
@@ -2379,6 +2377,7 @@ class SessionCache {
             node.loadedWith(props);
 
         }
+
         /**
          * {@inheritDoc}
          * 
@@ -2491,9 +2490,9 @@ class SessionCache {
             // Create the JCR Node payload object ...
             JcrNodePayload nodePayload = new JcrNodePayload(SessionCache.this, node, primaryTypeName, mixinTypeNames,
                                                             definition.getId());
-            
+
             Map<Name, PropertyInfo<JcrPropertyPayload>> props = buildProperties(persistentNode, node, nodePayload, referenceable);
-            
+
             // Set the information on the node ...
             node.loadedWith(persistentNode.getChildren(), props, persistentNode.getExpirationTime());
             node.setPayload(nodePayload);
@@ -2647,7 +2646,7 @@ class SessionCache {
         public void compute( Graph.Batch batch,
                              Node<JcrNodePayload, JcrPropertyPayload> node ) {
             try {
-                JcrWorkspace workspace = session.workspace();
+                JcrWorkspace workspace = session().workspace();
 
                 // Some tests don't set this up.
                 if (workspace != null) {
@@ -2657,7 +2656,6 @@ class SessionCache {
                 throw new IllegalStateException(re);
             }
         }
-
 
         /**
          * {@inheritDoc}

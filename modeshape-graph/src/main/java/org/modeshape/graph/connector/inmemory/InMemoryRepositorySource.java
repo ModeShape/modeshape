@@ -385,7 +385,6 @@ public class InMemoryRepositorySource implements MapRepositorySource, ObjectFact
      * 
      * @return the names of the workspaces that this source starts with, or null if there are no such workspaces
      * @see #setPredefinedWorkspaceNames(String[])
-     * @see #setCreatingWorkspacesAllowed(boolean)
      */
     public synchronized String[] getPredefinedWorkspaceNames() {
         String[] copy = new String[predefinedWorkspaces.length];
@@ -398,7 +397,6 @@ public class InMemoryRepositorySource implements MapRepositorySource, ObjectFact
      * 
      * @param predefinedWorkspaceNames the names of the workspaces that this source should start with, or null if there are no
      *        such workspaces
-     * @see #setCreatingWorkspacesAllowed(boolean)
      * @see #getPredefinedWorkspaceNames()
      */
     public synchronized void setPredefinedWorkspaceNames( String[] predefinedWorkspaceNames ) {
