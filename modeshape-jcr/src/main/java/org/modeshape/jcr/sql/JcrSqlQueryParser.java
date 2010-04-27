@@ -29,11 +29,13 @@ import org.modeshape.common.text.Position;
 import org.modeshape.common.text.TokenStream;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.property.ValueFormatException;
+import org.modeshape.graph.query.model.And;
 import org.modeshape.graph.query.model.Comparison;
 import org.modeshape.graph.query.model.Constraint;
 import org.modeshape.graph.query.model.DynamicOperand;
 import org.modeshape.graph.query.model.FullTextSearchScore;
 import org.modeshape.graph.query.model.NodePath;
+import org.modeshape.graph.query.model.Or;
 import org.modeshape.graph.query.model.PropertyValue;
 import org.modeshape.graph.query.model.Source;
 import org.modeshape.graph.query.model.TypeSystem;
@@ -419,6 +421,11 @@ public class JcrSqlQueryParser extends SqlQueryParser {
                                           TypeSystem typeSystem,
                                           Source source ) {
         Constraint constraint = super.parseConstraint(tokens, typeSystem, source);
+        constraint = rewriteConstraint(constraint);
+        return constraint;
+    }
+
+    protected Constraint rewriteConstraint( Constraint constraint ) {
         if (constraint instanceof Comparison) {
             Comparison comparison = (Comparison)constraint;
             DynamicOperand left = comparison.getOperand1();
@@ -435,8 +442,13 @@ public class JcrSqlQueryParser extends SqlQueryParser {
                     return new Comparison(score, comparison.getOperator(), comparison.getOperand2());
                 }
             }
+        } else if (constraint instanceof And) {
+            And and = (And)constraint;
+            constraint = new And(rewriteConstraint(and.getLeft()), rewriteConstraint(and.getRight()));
+        } else if (constraint instanceof Or) {
+            Or or = (Or)constraint;
+            constraint = new Or(rewriteConstraint(or.getLeft()), rewriteConstraint(or.getRight()));
         }
-
         return constraint;
     }
 

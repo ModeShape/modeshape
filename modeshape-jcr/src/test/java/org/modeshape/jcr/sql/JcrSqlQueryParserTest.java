@@ -35,12 +35,14 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PropertyType;
+import org.modeshape.graph.query.model.And;
 import org.modeshape.graph.query.model.Comparison;
 import org.modeshape.graph.query.model.Constraint;
 import org.modeshape.graph.query.model.DynamicOperand;
 import org.modeshape.graph.query.model.Literal;
 import org.modeshape.graph.query.model.NamedSelector;
 import org.modeshape.graph.query.model.NodePath;
+import org.modeshape.graph.query.model.Or;
 import org.modeshape.graph.query.model.Query;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.SelectorName;
@@ -115,7 +117,7 @@ public class JcrSqlQueryParserTest {
     }
 
     @Test
-    public void shouldParseSelectStarFromSingleSourceWherePathLikeValue() {
+    public void shouldParseSelectStarFromSingleSourceWhereContainsPathLikeConstraint() {
         query = parse("SELECT * FROM mgnl:content WHERE jcr:path LIKE '/modules/%/templates'");
         assertThat(query.getSource(), is(instanceOf(NamedSelector.class)));
         // SELECT * ...
@@ -131,9 +133,40 @@ public class JcrSqlQueryParserTest {
         assertThat(comparison.getOperand2(), is((StaticOperand)literal("/modules/%/templates")));
     }
 
+    @Test
+    public void shouldParseSelectStarFromSingleSourceWhereContainsTwoPathLikeConstraints() {
+        query = parse("SELECT * FROM mgnl:content WHERE jcr:path LIKE '/modules/%/templates' or jcr:path like '/modules/%/other'");
+        assertThat(query.getSource(), is(instanceOf(NamedSelector.class)));
+        // SELECT * ...
+        assertThat(query.getColumns().isEmpty(), is(true));
+        // FROM ...
+        NamedSelector selector = (NamedSelector)query.getSource();
+        assertThat(selector.getName(), is(selectorName("mgnl:content")));
+        assertThat(selector.getAliasOrName(), is(selectorName("mgnl:content")));
+        assertThat(selector.getAlias(), is(nullValue()));
+        // WHERE ...
+        Or and = isOr(query.getConstraint());
+        Comparison comparison1 = isComparison(and.getLeft());
+        assertThat(comparison1.getOperand1(), is((DynamicOperand)nodePath(selectorName("mgnl:content"))));
+        assertThat(comparison1.getOperand2(), is((StaticOperand)literal("/modules/%/templates")));
+        Comparison comparison2 = isComparison(and.getRight());
+        assertThat(comparison2.getOperand1(), is((DynamicOperand)nodePath(selectorName("mgnl:content"))));
+        assertThat(comparison2.getOperand2(), is((StaticOperand)literal("/modules/%/other")));
+    }
+
     protected Comparison isComparison( Constraint constraint ) {
         assertThat(constraint, is(instanceOf(Comparison.class)));
         return (Comparison)constraint;
+    }
+
+    protected And isAnd( Constraint constraint ) {
+        assertThat(constraint, is(instanceOf(And.class)));
+        return (And)constraint;
+    }
+
+    protected Or isOr( Constraint constraint ) {
+        assertThat(constraint, is(instanceOf(Or.class)));
+        return (Or)constraint;
     }
 
     protected NodePath nodePath( SelectorName name ) {
