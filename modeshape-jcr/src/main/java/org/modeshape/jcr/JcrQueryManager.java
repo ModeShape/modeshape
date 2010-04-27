@@ -25,12 +25,14 @@ package org.modeshape.jcr;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -60,12 +62,14 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.QueryResults.Columns;
+import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.model.Visitors;
 import org.modeshape.graph.query.parse.QueryParser;
 import org.modeshape.graph.query.plan.PlanHints;
 import org.modeshape.graph.query.validate.Schemata;
+import org.modeshape.graph.query.validate.Schemata.Table;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
 
 /**
@@ -377,9 +381,9 @@ class JcrQueryManager implements QueryManager {
                                                                             variables);
             checkForProblems(result.getProblems());
             if (Query.XPATH.equals(language)) {
-                return new XPathQueryResult(session, result);
+                return new XPathQueryResult(session, statement, result, schemata);
             }
-            return new JcrQueryResult(session, result);
+            return new JcrQueryResult(session, statement, result, schemata);
         }
 
         /**
@@ -422,12 +426,13 @@ class JcrQueryManager implements QueryManager {
          */
         public QueryResult execute() throws RepositoryException {
             // Submit immediately to the workspace graph ...
+            Schemata schemata = session.workspace().nodeTypeManager().schemata();
             QueryResults result = session.repository().queryManager().search(session.workspace().getName(),
                                                                              statement,
                                                                              MAXIMUM_RESULTS_FOR_FULL_TEXT_SEARCH_QUERIES,
                                                                              0);
             checkForProblems(result.getProblems());
-            return new JcrQueryResult(session, result);
+            return new JcrQueryResult(session, statement, result, schemata);
         }
 
         /**
@@ -449,16 +454,26 @@ class JcrQueryManager implements QueryManager {
      * the results of a query never change, the objects returned by the iterators may vary if the session information changes.
      */
     @NotThreadSafe
-    protected static class JcrQueryResult implements QueryResult {
+    public static class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.QueryResult {
         protected final JcrSession session;
         protected final QueryResults results;
+        protected final Schemata schemata;
+        protected final String queryStatement;
+        private List<String> columnTypes;
+        private List<String> columnTables;
 
         protected JcrQueryResult( JcrSession session,
-                                  QueryResults graphResults ) {
+                                  String query,
+                                  QueryResults graphResults,
+                                  Schemata schemata ) {
             this.session = session;
             this.results = graphResults;
+            this.schemata = schemata;
+            this.queryStatement = query;
             assert this.session != null;
             assert this.results != null;
+            assert this.schemata != null;
+            assert this.queryStatement != null;
         }
 
         protected QueryResults results() {
@@ -477,6 +492,57 @@ class JcrQueryManager implements QueryManager {
         public String[] getColumnNames() /*throws RepositoryException*/{
             List<String> names = getColumnNameList();
             return names.toArray(new String[names.size()]); // make a defensive copy ...
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jcr.api.query.QueryResult#getColumnTypes()
+         */
+        @Override
+        public String[] getColumnTypes() {
+            if (columnTypes == null) {
+                // Discover the types ...
+                Columns columns = results.getColumns();
+                List<String> types = new ArrayList<String>(columns.getColumnCount());
+                for (Column column : columns) {
+                    String typeName = null;
+                    Table table = schemata.getTable(column.getSelectorName());
+                    if (table != null) {
+                        Schemata.Column typedColumn = table.getColumn(column.getPropertyName());
+                        typeName = typedColumn.getPropertyType();
+                    }
+                    if (typeName == null) {
+                        // Might be fabricated column, so just assume string ...
+                        typeName = PropertyType.nameFromValue(PropertyType.STRING);
+                    }
+                    types.add(typeName);
+                }
+                columnTypes = types;
+            }
+            return columnTypes.toArray(new String[columnTypes.size()]);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jcr.api.query.QueryResult#getSelectorNames()
+         */
+        @Override
+        public String[] getSelectorNames() {
+            if (columnTables == null) {
+                // Discover the types ...
+                Columns columns = results.getColumns();
+                List<String> tables = new ArrayList<String>(columns.getColumnCount());
+                for (Column column : columns) {
+                    String tableName = "";
+                    Table table = schemata.getTable(column.getSelectorName());
+                    if (table != null) tableName = table.getName().getName();
+                    tables.add(tableName);
+                }
+                columnTables = tables;
+            }
+            return columnTables.toArray(new String[columnTables.size()]);
         }
 
         /**
@@ -511,7 +577,10 @@ class JcrQueryManager implements QueryManager {
             // We can actually delay the loading of the nodes until the rows are accessed ...
             final int numRows = results.getRowCount();
             final List<Object[]> tuples = results.getTuples();
-            return new QueryResultRowIterator(session, results.getColumns(), tuples.iterator(), numRows);
+            if (results.getColumns().getLocationCount() == 1) {
+                return new SingleSelectorQueryResultRowIterator(session, queryStatement, results, tuples.iterator(), numRows);
+            }
+            return new QueryResultRowIterator(session, queryStatement, results, tuples.iterator(), numRows);
         }
 
         /**
@@ -626,24 +695,36 @@ class JcrQueryManager implements QueryManager {
     protected static class QueryResultRowIterator implements RowIterator {
         protected final List<String> columnNames;
         private final Iterator<Object[]> tuples;
-        protected final int locationIndex;
-        protected final int scoreIndex;
+        private final Set<String> selectorNames;
         protected final JcrSession session;
+        protected final Columns columns;
+        protected final String query;
+        private int[] locationIndexes;
         private long position = 0L;
         private long numRows;
         private Row nextRow;
 
         protected QueryResultRowIterator( JcrSession session,
-                                          Columns columns,
+                                          String query,
+                                          QueryResults results,
                                           Iterator<Object[]> tuples,
                                           long numRows ) {
             this.tuples = tuples;
-            this.columnNames = columns.getColumnNames();
-            String selectorName = columns.getSelectorNames().get(0);
-            this.locationIndex = columns.getLocationIndex(selectorName);
-            this.scoreIndex = columns.getFullTextSearchScoreIndexFor(selectorName);
+            this.query = query;
+            this.columns = results.getColumns();
+            this.columnNames = this.columns.getColumnNames();
             this.session = session;
             this.numRows = numRows;
+            this.selectorNames = new HashSet<String>(columns.getSelectorNames());
+            int i = 0;
+            locationIndexes = new int[selectorNames.size()];
+            for (String selectorName : selectorNames) {
+                locationIndexes[i++] = columns.getLocationIndex(selectorName);
+            }
+        }
+
+        public boolean hasSelector( String selectorName ) {
+            return this.selectorNames.contains(selectorName);
         }
 
         /**
@@ -662,11 +743,6 @@ class JcrQueryManager implements QueryManager {
             Row result = nextRow;
             nextRow = null;
             return result;
-        }
-
-        protected Row createRow( final Node node,
-                                 Object[] tuple ) {
-            return new QueryResultRow(this, node, tuple);
         }
 
         /**
@@ -712,19 +788,35 @@ class JcrQueryManager implements QueryManager {
                 final Object[] tuple = tuples.next();
                 ++position;
                 try {
-                    // Get the node ...
-                    Location location = (Location)tuple[locationIndex];
-                    if (!session.wasRemovedInSession(location)) {
-                        Node node = session.getNode(location.getPath());
-                        nextRow = createRow(node, tuple);
-                        return true;
-                    }
+                    // Get the next row ...
+                    nextRow = getNextRow(tuple);
+                    if (nextRow != null) return true;
                 } catch (RepositoryException e) {
                     // The node could not be found in this session, so skip it ...
                 }
                 --numRows;
             }
             return false;
+        }
+
+        protected Row getNextRow( Object[] tuple ) throws RepositoryException {
+            // Make sure that each node referenced by the tuple exists and is accessible ...
+            Node[] nodes = new Node[locationIndexes.length];
+            int index = 0;
+            for (int locationIndex : locationIndexes) {
+                Location location = (Location)tuple[locationIndex];
+                if (session.wasRemovedInSession(location)) {
+                    // Skip this record because one of the nodes no longer exists ...
+                    return null;
+                }
+                try {
+                    nodes[index++] = session.getNode(location.getPath());
+                } catch (AccessDeniedException e) {
+                    // No access to this node, so skip the record ...
+                    return null;
+                }
+            }
+            return new MultiSelectorQueryResultRow(this, nodes, locationIndexes, tuple);
         }
 
         /**
@@ -746,21 +838,76 @@ class JcrQueryManager implements QueryManager {
         }
     }
 
-    protected static class QueryResultRow implements Row {
-        protected final QueryResultRowIterator iterator;
+    /**
+     * The {@link RowIterator} implementation returned by the {@link JcrQueryResult}.
+     * 
+     * @see JcrQueryResult#getRows()
+     */
+    @NotThreadSafe
+    protected static class SingleSelectorQueryResultRowIterator extends QueryResultRowIterator {
+        protected final int locationIndex;
+        protected final int scoreIndex;
+
+        protected SingleSelectorQueryResultRowIterator( JcrSession session,
+                                                        String query,
+                                                        QueryResults results,
+                                                        Iterator<Object[]> tuples,
+                                                        long numRows ) {
+            super(session, query, results, tuples, numRows);
+            String selectorName = columns.getSelectorNames().get(0);
+            locationIndex = columns.getLocationIndex(selectorName);
+            scoreIndex = columns.getFullTextSearchScoreIndexFor(selectorName);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jcr.JcrQueryManager.QueryResultRowIterator#getNextRow(java.lang.Object[])
+         */
+        @Override
+        protected Row getNextRow( Object[] tuple ) throws RepositoryException {
+            Location location = (Location)tuple[locationIndex];
+            if (!session.wasRemovedInSession(location)) {
+                Node node = session.getNode(location.getPath());
+                return createRow(node, tuple);
+            }
+            return null;
+        }
+
+        protected Row createRow( Node node,
+                                 Object[] tuple ) {
+            return new SingleSelectorQueryResultRow(this, node, tuple);
+        }
+    }
+
+    protected static class SingleSelectorQueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
+        protected final SingleSelectorQueryResultRowIterator iterator;
         protected final Node node;
         protected final Object[] tuple;
         private Value[] values = null;
 
-        protected QueryResultRow( QueryResultRowIterator iterator,
-                                  Node node,
-                                  Object[] tuple ) {
+        protected SingleSelectorQueryResultRow( SingleSelectorQueryResultRowIterator iterator,
+                                                Node node,
+                                                Object[] tuple ) {
             this.iterator = iterator;
             this.node = node;
             this.tuple = tuple;
             assert this.iterator != null;
             assert this.node != null;
             assert this.tuple != null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jcr.api.query.Row#getNode(java.lang.String)
+         */
+        @Override
+        public Node getNode( String selectorName ) throws RepositoryException {
+            if (iterator.hasSelector(selectorName)) {
+                throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));
+            }
+            return node;
         }
 
         /**
@@ -789,12 +936,92 @@ class JcrQueryManager implements QueryManager {
         }
     }
 
+    protected static class MultiSelectorQueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
+        protected final QueryResultRowIterator iterator;
+        protected final Object[] tuple;
+        private Value[] values = null;
+        private Node[] nodes;
+        private int[] locationIndexes;
+
+        protected MultiSelectorQueryResultRow( QueryResultRowIterator iterator,
+                                               Node[] nodes,
+                                               int[] locationIndexes,
+                                               Object[] tuple ) {
+            this.iterator = iterator;
+            this.tuple = tuple;
+            this.nodes = nodes;
+            this.locationIndexes = locationIndexes;
+            assert this.iterator != null;
+            assert this.tuple != null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jcr.api.query.Row#getNode(java.lang.String)
+         */
+        @Override
+        public Node getNode( String selectorName ) throws RepositoryException {
+            try {
+                int locationIndex = iterator.columns.getLocationIndex(selectorName);
+                for (int i = 0; i != this.locationIndexes.length; ++i) {
+                    if (this.locationIndexes[i] == locationIndex) {
+                        return nodes[i];
+                    }
+                }
+            } catch (NoSuchElementException e) {
+                throw new RepositoryException(e.getLocalizedMessage(), e);
+            }
+            assert false;
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.query.Row#getValue(java.lang.String)
+         */
+        public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
+            try {
+                int locationIndex = iterator.columns.getLocationIndexForColumn(columnName);
+                for (int i = 0; i != this.locationIndexes.length; ++i) {
+                    if (this.locationIndexes[i] == locationIndex) {
+                        Node node = nodes[i];
+                        return node != null ? node.getProperty(columnName).getValue() : null;
+                    }
+                }
+            } catch (NoSuchElementException e) {
+                throw new RepositoryException(e.getLocalizedMessage(), e);
+            }
+            assert false;
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.query.Row#getValues()
+         */
+        public Value[] getValues() throws RepositoryException {
+            if (values == null) {
+                int i = 0;
+                values = new Value[iterator.columnNames.size()];
+                for (String columnName : iterator.columnNames) {
+                    values[i++] = getValue(columnName);
+                }
+            }
+            return values;
+        }
+    }
+
     protected static class XPathQueryResult extends JcrQueryResult {
         private final List<String> columnNames;
 
         protected XPathQueryResult( JcrSession session,
-                                    QueryResults graphResults ) {
-            super(session, graphResults);
+                                    String query,
+                                    QueryResults graphResults,
+                                    Schemata schemata ) {
+            super(session, query, graphResults, schemata);
             List<String> columnNames = new LinkedList<String>(graphResults.getColumns().getColumnNames());
             if (graphResults.getColumns().hasFullTextSearchScores() && !columnNames.contains(JCR_SCORE_COLUMN_NAME)) {
                 columnNames.add(0, JCR_SCORE_COLUMN_NAME);
@@ -822,19 +1049,20 @@ class JcrQueryManager implements QueryManager {
         public RowIterator getRows() {
             final int numRows = results.getRowCount();
             final List<Object[]> tuples = results.getTuples();
-            return new XPathQueryResultRowIterator(session, results.getColumns(), tuples.iterator(), numRows);
+            return new XPathQueryResultRowIterator(session, queryStatement, results, tuples.iterator(), numRows);
         }
     }
 
-    protected static class XPathQueryResultRowIterator extends QueryResultRowIterator {
+    protected static class XPathQueryResultRowIterator extends SingleSelectorQueryResultRowIterator {
         private final ValueFactories factories;
         private final SessionCache cache;
 
         protected XPathQueryResultRowIterator( JcrSession session,
-                                               Columns columns,
+                                               String query,
+                                               QueryResults results,
                                                Iterator<Object[]> tuples,
                                                long numRows ) {
-            super(session, columns, tuples, numRows);
+            super(session, query, results, tuples, numRows);
             factories = session.executionContext.getValueFactories();
             cache = session.cache();
         }
@@ -854,8 +1082,8 @@ class JcrQueryManager implements QueryManager {
         }
     }
 
-    protected static class XPathQueryResultRow extends QueryResultRow {
-        protected XPathQueryResultRow( XPathQueryResultRowIterator iterator,
+    protected static class XPathQueryResultRow extends SingleSelectorQueryResultRow {
+        protected XPathQueryResultRow( SingleSelectorQueryResultRowIterator iterator,
                                        Node node,
                                        Object[] tuple ) {
             super(iterator, node, tuple);

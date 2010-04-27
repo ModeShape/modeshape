@@ -178,7 +178,7 @@ public interface QueryResults extends Serializable {
      * the tuples.
      */
     @Immutable
-    public interface Columns extends Serializable {
+    public interface Columns extends Serializable, Iterable<Column> {
         /**
          * Get the columns.
          * 

@@ -48,7 +48,7 @@ import org.modeshape.graph.property.ValueFactories;
  * ModeShape implementation of a {@link Value JCR Value}.
  */
 @NotThreadSafe
-final class JcrValue implements Value {
+final class JcrValue implements Value, org.modeshape.jcr.api.Value {
 
     static final JcrValue[] EMPTY_ARRAY = new JcrValue[] {};
 
@@ -194,6 +194,21 @@ final class JcrValue implements Value {
                 state = State.INPUT_STREAM_CONSUMED;
             }
             return asStream;
+        } catch (RuntimeException error) {
+            throw createValueFormatException(InputStream.class);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.api.Value#getBinary()
+     */
+    @Override
+    public org.modeshape.jcr.api.Binary getBinary() throws RepositoryException {
+        try {
+            Binary binary = valueFactories.getBinaryFactory().create(value);
+            return new JcrBinary(binary);
         } catch (RuntimeException error) {
             throw createValueFormatException(InputStream.class);
         }

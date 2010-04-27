@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,13 +21,22 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr;
+package org.modeshape.jcr.api;
 
-import org.modeshape.common.AbstractI18nTest;
+import javax.jcr.RepositoryException;
 
-public class JcrI18nTest extends AbstractI18nTest {
+/**
+ * Replicates JCR 2.0's javax.jcr.Value interface with the ability to return a Binary representation.
+ */
+public interface Value extends javax.jcr.Value {
 
-    public JcrI18nTest() {
-        super(JcrI18n.class);
-    }
+    /**
+     * Returns a Binary representation of this value. The Binary object in turn provides methods to access the binary data itself.
+     * Uses the standard conversion to binary (see JCR specification).
+     * 
+     * @return a Binary representation of this value.
+     * @throws RepositoryException if an error occurs
+     */
+    Binary getBinary() throws RepositoryException;
+
 }

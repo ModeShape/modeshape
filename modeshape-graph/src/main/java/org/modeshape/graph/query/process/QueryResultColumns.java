@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -258,6 +259,15 @@ public class QueryResultColumns implements Columns {
      */
     public List<Column> getColumns() {
         return columns;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Iterable#iterator()
+     */
+    public Iterator<Column> iterator() {
+        return getColumns().iterator();
     }
 
     /**

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.modeshape</groupId>
@@ -12,10 +13,9 @@
   <name>ModeShape JCR Repository</name>
   <description>ModeShape implementation of the JCR API</description>
   <url>http://www.modeshape.org</url>
-  
   <!--
-  Define the dependencies.  Note that all version and scopes default to those 
-  defined in the dependencyManagement section of the parent pom.
+    Define the dependencies. Note that all version and scopes default to those defined in the dependencyManagement section of the
+    parent pom.
   -->
   <dependencies>
     <dependency>
@@ -57,8 +57,8 @@
       <artifactId>modeshape-search-lucene</artifactId>
     </dependency>
     <dependency>
-       <groupId>com.google.collections</groupId>
-       <artifactId>google-collections</artifactId>
+      <groupId>com.google.collections</groupId>
+      <artifactId>google-collections</artifactId>
     </dependency>
     <!-- 
     Testing (note the scope)
@@ -95,10 +95,10 @@
     <!-- 
     Java Concurrency in Practice annotations
     -->
-  <dependency>
-    <groupId>net.jcip</groupId>
-    <artifactId>jcip-annotations</artifactId>
-  </dependency>
+    <dependency>
+      <groupId>net.jcip</groupId>
+      <artifactId>jcip-annotations</artifactId>
+    </dependency>
     <!-- 
       Apache JCR API unit tests (for any JCR implementation), which is a subset of the official TCK
     -->
@@ -106,87 +106,84 @@
       <groupId>org.apache.jackrabbit</groupId>
       <artifactId>jackrabbit-jcr-tests</artifactId>
     </dependency>
-	  <dependency>
-         <groupId>com.google.collections</groupId>
-         <artifactId>google-collections</artifactId>
-		 <version>1.0-rc3</version>
-      </dependency>
-
-	<dependency>
-		<groupId>org.jboss.security</groupId>
-		<artifactId>jboss-idtrust</artifactId>
-		<version>2.0.2.CR1</version>
+    <dependency>
+      <groupId>com.google.collections</groupId>
+      <artifactId>google-collections</artifactId>
+      <version>1.0-rc3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.security</groupId>
+      <artifactId>jboss-idtrust</artifactId>
+      <version>2.0.2.CR1</version>
       <scope>test</scope>
-	</dependency>
-
-	<dependency>
-		<groupId>org.jboss.security</groupId>
-		<artifactId>jboss-security-spi-bare</artifactId>
-		<version>2.0.2.SP6</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.security</groupId>
+      <artifactId>jboss-security-spi-bare</artifactId>
+      <version>2.0.2.SP6</version>
       <scope>test</scope>
-	</dependency>
-	<dependency>
-		<groupId>org.jboss.security</groupId>
-		<artifactId>jbosssx-bare</artifactId>
-		<version>2.0.2.SP6</version>
-		<exclusions>
-			<exclusion>
-				<groupId>apache-xalan</groupId>
-				<artifactId>xalan</artifactId>
-		 	</exclusion>
-			<exclusion>
-				<groupId>apache-xalan</groupId>
-				<artifactId>serializer</artifactId>
-			</exclusion>
-		</exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.security</groupId>
+      <artifactId>jbosssx-bare</artifactId>
+      <version>2.0.2.SP6</version>
+      <exclusions>
+        <exclusion>
+          <groupId>apache-xalan</groupId>
+          <artifactId>xalan</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>apache-xalan</groupId>
+          <artifactId>serializer</artifactId>
+        </exclusion>
+      </exclusions>
       <scope>test</scope>
-	</dependency>
+    </dependency>
   </dependencies>
-
   <build>
     <resources>
       <resource>
-           <filtering>false</filtering>
-           <directory>src/main/resources</directory>
-           <includes>
-             <include>*</include>
-             <include>**/*</include>
-           </includes>
+        <filtering>false</filtering>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>*</include>
+          <include>**/*</include>
+        </includes>
       </resource>
 	    <!-- Apply the properties set in the POM to the resource files -->
       <resource>
-           <filtering>true</filtering>
-           <directory>src/main/resources</directory>
-           <includes>
-             <include>**/repository.properties</include>
-           </includes>
+        <filtering>true</filtering>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>**/repository.properties</include>
+        </includes>
       </resource>
     </resources>
-		<plugins>
-			<!--
-				Adding OSGI metadata to the JAR without changing the packaging type.
-			-->
-			<plugin>
-				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-					</archive>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.felix</groupId>
-				<artifactId>maven-bundle-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>bundle-manifest</id>
-						<phase>process-classes</phase>
-						<goals>
-							<goal>manifest</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+    <plugins>
+      <!--
+    	Adding OSGI metadata to the JAR without changing the packaging type.
+      -->
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>bundle-manifest</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>manifest</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
