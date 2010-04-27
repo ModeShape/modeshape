@@ -26,7 +26,6 @@ package org.modeshape.connector.store.jpa.model.basic;
 import java.util.Collection;
 import java.util.HashSet;
 import javax.persistence.Column;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.FetchType;
@@ -76,7 +75,7 @@ public class PropertiesEntity {
     @Column( name = "ENFORCEREFINTEG", nullable = false )
     private boolean referentialIntegrityEnforced = true;
 
-    @ElementCollection( fetch = FetchType.LAZY )
+    @org.hibernate.annotations.CollectionOfElements( fetch = FetchType.LAZY )
     @JoinTable( name = "ModeShape_LARGEVALUE_USAGES", joinColumns = {@JoinColumn( name = "WORKSPACE_ID" ),
         @JoinColumn( name = "NODE_UUID" )} )
     private Collection<LargeValueId> largeValues = new HashSet<LargeValueId>();
