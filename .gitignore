@@ -47,6 +47,7 @@
 /web/modeshape-web-jcr-rest-client/target/
 /web/modeshape-web-jcr-webdav/target
 /web/modeshape-web-jcr-webdav-war/target/
+/utils/modeshape-jdbc/target/
 /utils/modeshape-jpa-ddl-gen/target/
 
 /extensions/modeshape-search-lucene/target
