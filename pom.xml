@@ -155,7 +155,7 @@
 		<module>extensions/modeshape-connector-jdbc-metadata</module> 
 		<module>extensions/modeshape-mimetype-detector-aperture</module>
 		<module>web</module>
-		<module>utils/modeshape-jdbc</module> 
+		<!--module>utils/modeshape-jdbc</module--> 
 		<module>utils/modeshape-jpa-ddl-gen</module> 
 	</modules>
 	<properties>
