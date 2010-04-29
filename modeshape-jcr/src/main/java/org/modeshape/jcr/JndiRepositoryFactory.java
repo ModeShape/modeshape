@@ -1,6 +1,8 @@
 package org.modeshape.jcr;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
@@ -39,9 +41,9 @@ import org.xml.sax.SAXException;
  *   &lt;/GlobalNamingResources&gt;
  * </pre>
  * 
- * This will create a repository loaded from the resource &quot;/tck/default/configRepository.xml&quot; (which must be accessible
- * through the classpath) and return the JCR repository named &quot;Test Repository Source&quot;. The name of the repository is
- * important as a single configuration file may contain configuration information for many JCR repositories.
+ * This will create a repository loaded from the or file &quot;/tck/default/configRepository.xml&quot; and return the JCR
+ * repository named &quot;Test Repository Source&quot;. The name of the repository is important as a single configuration file may
+ * contain configuration information for many JCR repositories.
  * </p>
  */
 public class JndiRepositoryFactory implements ObjectFactory {
@@ -56,15 +58,16 @@ public class JndiRepositoryFactory implements ObjectFactory {
      * {@link JcrConfiguration#loadFrom(java.io.InputStream) Initializes} and {@link JcrEngine#start() starts} the {@code
      * JcrEngine} managed by this factory.
      * 
-     * @param configResourceName the fully-qualified name of the resource containing the configuration information for the {@code
-     *        JcrEngine}
+     * @param configFileName the name of the file containing the configuration information for the {@code JcrEngine}; may not be
+     *        null. This method will first attempt to load this file as a resource from the classpath. If no resource with the
+     *        given name exists, the name will be treated as a file name and loaded from the file system.
      * @throws IOException if there is an error or problem reading the configuration resource at the supplied path
      * @throws SAXException if the contents of the configuration resource are not valid XML
      * @throws RepositoryException if the {@link JcrEngine#start() JcrEngine could not be started}
      * @see JcrConfiguration#loadFrom(java.io.InputStream)
      * @see Class#getResourceAsStream(String)
      */
-    private static synchronized void initializeEngine( String configResourceName )
+    private static synchronized void initializeEngine( String configFileName )
         throws IOException, SAXException, RepositoryException {
         if (engine != null) return;
 
@@ -72,7 +75,17 @@ public class JndiRepositoryFactory implements ObjectFactory {
         long start = System.currentTimeMillis();
 
         JcrConfiguration config = new JcrConfiguration();
-        engine = config.loadFrom(JndiRepositoryFactory.class.getResourceAsStream(configResourceName)).build();
+        InputStream configStream = JndiRepositoryFactory.class.getResourceAsStream(configFileName);
+
+        if (configStream == null) {
+            try {
+                configStream = new FileInputStream(configFileName);
+            } catch (IOException ioe) {
+                throw new RepositoryException(ioe);
+            }
+        }
+
+        engine = config.loadFrom(configStream).build();
         engine.start();
 
         Problems problems = engine.getProblems();
@@ -101,7 +114,7 @@ public class JndiRepositoryFactory implements ObjectFactory {
      * <p>
      * This method first attempts to convert the {@code obj} parameter into a {@link Reference reference to JNDI configuration
      * information}. If that is successful, a {@link JcrEngine} will be created (if not previously created by a call to this
-     * method) and it will be configured from the resource at the location specified by the {@code configFile} key in the
+     * method) and it will be configured from the resource or file at the location specified by the {@code configFile} key in the
      * reference. After the configuration is successful, the {@link JcrEngine#getRepository(String) JcrEngine will be queried} for
      * the repository with the name specified by the value of the @{code repositoryName} key in the reference.
      * </p>

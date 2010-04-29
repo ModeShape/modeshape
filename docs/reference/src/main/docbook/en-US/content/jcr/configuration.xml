@@ -468,7 +468,9 @@ try {
 					<listitem>
 						<para>
 							<emphasis role="strong"><code>configFile</code></emphasis> is the path to the 
-							<link linkend="loading_from_file">configuration file</link> resource, which must be available on the classpath
+							<link linkend="loading_from_file">configuration file</link>.  ModeShape will first treat the value of this
+							property as a resource name and attempt to load it from the classpath.  If no resource can be found with that name, 
+							ModeShape will assume that it is supposed to be a filename (with or without a path) and load it from the filesystem.
 						</para>
 					</listitem>
 					<listitem>
