@@ -406,7 +406,35 @@ class JcrSession implements Session {
     void checkPermission( String workspaceName,
                           Path path,
                           String actions ) {
+        if (hasPermission(workspaceName, path, actions)) return;
 
+        String pathAsString = path != null ? path.getString(this.namespaces()) : "<unknown>";
+        throw new AccessControlException(JcrI18n.permissionDenied.text(pathAsString, actions));
+
+    }
+
+    /**
+     * A companion method to {@link #checkPermission(String, String)} that returns false (instead of throwing an exception) if the
+     * current session doesn't have sufficient privileges to perform the given list of actions at the given path.
+     * 
+     * @param path the path at which the privileges are to be checked
+     * @param actions a comma-delimited list of actions to check
+     * @return true if the current session has sufficient privileges to perform all of the actions on the the given path; false
+     *         otherwise
+     * @see javax.jcr.Session#checkPermission(java.lang.String, java.lang.String)
+     */
+    public boolean hasPermission( String path,
+                                  String actions ) {
+        CheckArg.isNotEmpty(path, "path");
+
+        return hasPermission(this.workspace().getName(),
+                             executionContext.getValueFactories().getPathFactory().create(path),
+                             actions);
+    }
+
+    private boolean hasPermission( String workspaceName,
+                                   Path path,
+                                   String actions ) {
         CheckArg.isNotEmpty(actions, "actions");
 
         boolean hasPermission = true;
@@ -423,11 +451,7 @@ class JcrSession implements Session {
             }
         }
 
-        if (hasPermission) return;
-
-        String pathAsString = path != null ? path.getString(this.namespaces()) : "<unknown>";
-        throw new AccessControlException(JcrI18n.permissionDenied.text(pathAsString, actions));
-
+        return hasPermission;
     }
 
     /**
