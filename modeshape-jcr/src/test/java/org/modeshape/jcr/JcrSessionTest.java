@@ -237,6 +237,40 @@ public class JcrSessionTest extends AbstractSessionTest {
     public void shouldProvidePropertiesByPath() throws Exception {
         Item item = session.getItem("/a/b/booleanProperty");
         assertThat(item, instanceOf(Property.class));
+
+        Property property = session.getProperty("/a/b/booleanProperty");
+        assertThat(property, instanceOf(Property.class));
+    }
+
+    @Test
+    public void shouldProvideNodesByPath() throws Exception {
+        Node node = session.getNode("/a");
+        assertThat(node, instanceOf(Node.class));
+        node = session.getNode("/a/b");
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldNotReturnPropertyAsNode() throws Exception {
+        assertThat(session.nodeExists("/a/b/booleanProperty"), is(false));
+        session.getNode("/a/b/booleanProperty");
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldNotReturnNonExistantNode() throws Exception {
+        assertThat(session.nodeExists("/a/b/argleBargle"), is(false));
+        session.getNode("/a/b/argleBargle");
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldNotReturnNodeAsProperty() throws Exception {
+        assertThat(session.propertyExists("/a/b"), is(false));
+        session.getProperty("/a/b");
+    }
+
+    @Test( expected = PathNotFoundException.class )
+    public void shouldNotReturnNonExistantProperty() throws Exception {
+        assertThat(session.propertyExists("/a/b/argleBargle"), is(false));
+        session.getProperty("/a/b/argleBargle");
     }
 
     @Test

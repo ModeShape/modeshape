@@ -251,6 +251,18 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      * @see javax.jcr.Item#remove()
      */
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
+        Node parentNode = getParent();
+        if (parentNode.isLocked()) {
+            Lock parentLock = parentNode.getLock();
+            if (parentLock != null && parentLock.getLockToken() == null) {
+                throw new LockException(JcrI18n.lockTokenNotHeld.text(getPath()));
+            }
+        }
+
+        if (!parentNode.isCheckedOut()) {
+            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(getPath()));
+        }
+
         editor().removeProperty(name);
     }
 

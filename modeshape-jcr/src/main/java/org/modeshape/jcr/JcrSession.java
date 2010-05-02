@@ -68,6 +68,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.SecurityContext;
 import org.modeshape.graph.property.Binary;
@@ -76,6 +77,7 @@ import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.ValueFactories;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.query.QueryBuilder;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.TypeSystem;
@@ -572,6 +574,107 @@ class JcrSession implements Session {
     }
 
     /**
+     * 
+     * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
+     * @see javax.jcr.Session#getItem(java.lang.String)
+     */
+    public AbstractJcrNode getNode( String absolutePath ) throws PathNotFoundException, RepositoryException {
+        CheckArg.isNotEmpty(absolutePath, "absolutePath");
+        // Return root node if path is "/"
+        Path path = executionContext.getValueFactories().getPathFactory().create(absolutePath);
+        if (path.isRoot()) {
+            return getRootNode();
+        }
+        return getNode(path);
+    }
+
+    /**
+     * Returns true if a node exists at the given path and is accessible to the current user.
+     * 
+     * @param absolutePath the absolute path to the node
+     * @return true if a node exists at absolute path and is accessible to the current user.
+     * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
+     */
+    public boolean nodeExists( String absolutePath ) throws PathNotFoundException, RepositoryException {
+        CheckArg.isNotEmpty(absolutePath, "absolutePath");
+        // Return root node if path is "/"
+        Path path = executionContext.getValueFactories().getPathFactory().create(absolutePath);
+        if (path.isRoot()) {
+            return true;
+        }
+
+        try {
+            cache.findJcrNode(null, path);
+            return true;
+        } catch (ItemNotFoundException e) {
+            return false;
+        }
+    }
+
+    /**
+     * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
+     * @see javax.jcr.Session#getItem(java.lang.String)
+     */
+    public AbstractJcrProperty getProperty( String absolutePath ) throws PathNotFoundException, RepositoryException {
+        CheckArg.isNotEmpty(absolutePath, "absolutePath");
+        // Return root node if path is "/"
+        Path path = executionContext.getValueFactories().getPathFactory().create(absolutePath);
+        if (path.isRoot()) {
+            throw new PathNotFoundException(JcrI18n.rootNodeIsNotProperty.text());
+        }
+
+        Segment lastSegment = path.getLastSegment();
+        if (lastSegment.hasIndex()) {
+            throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(absolutePath));
+        }
+
+        // This will throw a PNFE if the parent path does not exist
+        AbstractJcrNode parentNode = getNode(path.getParent());
+        AbstractJcrProperty property = parentNode.getProperty(lastSegment.getName());
+
+        if (property == null) {
+            throw new PathNotFoundException(GraphI18n.pathNotFoundExceptionLowestExistingLocationFound.text(absolutePath,
+                                                                                                            parentNode.getPath()));
+        }
+        return property;
+    }
+
+    /**
+     * Returns true if a property exists at the given path and is accessible to the current user.
+     * 
+     * @param absolutePath the absolute path to the property
+     * @return true if a property exists at absolute path and is accessible to the current user.
+     * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
+     */
+    public boolean propertyExists( String absolutePath ) throws RepositoryException {
+        CheckArg.isNotEmpty(absolutePath, "absolutePath");
+        // Return root node if path is "/"
+        Path path = executionContext.getValueFactories().getPathFactory().create(absolutePath);
+        if (path.isRoot()) {
+            return false;
+        }
+
+        Segment lastSegment = path.getLastSegment();
+        if (lastSegment.hasIndex()) {
+            throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(absolutePath));
+        }
+
+        try {
+            // This will throw a PNFE if the parent path does not exist
+            AbstractJcrNode parentNode = getNode(path.getParent());
+            return parentNode.hasProperty(lastSegment.getName());
+        } catch (PathNotFoundException pnfe) {
+            return false;
+        }
+    }
+
+    public void removeItem( String absolutePath ) throws RepositoryException {
+        Item item = getItem(absolutePath);
+
+        item.remove();
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.Session#getLockTokens()
@@ -613,7 +716,7 @@ class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#getRootNode()
      */
-    public Node getRootNode() throws RepositoryException {
+    public AbstractJcrNode getRootNode() throws RepositoryException {
         return cache.findJcrRootNode();
     }
 

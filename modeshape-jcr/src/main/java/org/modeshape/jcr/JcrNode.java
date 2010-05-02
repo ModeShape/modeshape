@@ -29,6 +29,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.version.VersionException;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.session.GraphSession.NodeId;
@@ -106,6 +107,10 @@ class JcrNode extends AbstractJcrNode {
             if (parentLock != null && parentLock.getLockToken() == null) {
                 throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
             }
+        }
+
+        if (!parentNode.isCheckedOut()) {
+            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(parentNode.getPath()));
         }
 
         JcrNodeDefinition nodeDefn = cache.nodeTypes().getNodeDefinition(nodeInfo().getPayload().getDefinitionId());

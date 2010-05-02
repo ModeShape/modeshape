@@ -816,5 +816,4 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         Node autoProp = testNode.getNode("autoChild");
         assertThat(autoProp.getPrimaryNodeType().getName(), is("nt:unstructured"));
     }
-
 }

@@ -57,6 +57,7 @@ public final class JcrI18n {
     public static I18n failedToReadPropertyFromManifest;
 
     public static I18n rootNodeHasNoParent;
+    public static I18n rootNodeIsNotProperty;
     public static I18n childNodeAlreadyExists;
 
     public static I18n noNamespaceWithPrefix;

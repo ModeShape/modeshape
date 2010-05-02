@@ -123,8 +123,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     }
 
     final Node<JcrNodePayload, JcrPropertyPayload> nodeInfo()
-        throws ItemNotFoundException, AccessDeniedException, RepositoryException {
-        return cache.findNode(nodeId, location.getPath());
+        throws InvalidItemStateException, AccessDeniedException, RepositoryException {
+        try {
+            return cache.findNode(nodeId, location.getPath());
+        } catch (ItemNotFoundException infe) {
+            throw new InvalidItemStateException(infe.getMessage());
+        }
     }
 
     final NodeEditor editorForParent() throws RepositoryException {

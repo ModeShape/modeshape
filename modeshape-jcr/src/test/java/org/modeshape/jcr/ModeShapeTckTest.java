@@ -10,6 +10,7 @@ import java.util.Collections;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.ImportUUIDBehavior;
+import javax.jcr.InvalidItemStateException;
 import javax.jcr.LoginException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -19,6 +20,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
@@ -895,5 +897,125 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         session.move(sourceNode.getPath(), targetNode.getPath() + "/" + sourceName);
         sourceNode = targetNode.getNode(sourceName);
         sourceNode.checkout();
+    }
+
+    public void testShouldNotAllowLockedNodeToBeRemoved() throws Exception {
+        session = helper.getReadWriteSession();
+
+        Node root = session.getRootNode();
+        Node parentNode = root.addNode("lockedParent");
+        parentNode.addMixin("mix:lockable");
+
+        Node targetNode = parentNode.addNode("lockedTarget");
+        session.save();
+
+        parentNode.lock(true, true);
+
+        Session session2 = helper.getReadWriteSession();
+        Node targetNode2 = (Node)session2.getItem("/lockedParent/lockedTarget");
+
+        try {
+            targetNode2.remove();
+            fail("Locked nodes should not be able to be removed");
+        } catch (LockException le) {
+            // Success
+        }
+
+        targetNode.remove();
+        session.save();
+    }
+
+    public void testShouldNotAllowPropertyOfLockedNodeToBeRemoved() throws Exception {
+        session = helper.getReadWriteSession();
+
+        Node root = session.getRootNode();
+        Node parentNode = root.addNode("lockedPropParent");
+        parentNode.addMixin("mix:lockable");
+
+        Node targetNode = parentNode.addNode("lockedTarget");
+        targetNode.setProperty("foo", "bar");
+        session.save();
+
+        parentNode.lock(true, true);
+
+        Session session2 = helper.getReadWriteSession();
+        Property targetProp2 = (Property)session2.getItem("/lockedPropParent/lockedTarget/foo");
+
+        try {
+            targetProp2.remove();
+            fail("Properties of locked nodes should not be able to be removed");
+        } catch (LockException le) {
+            // Success
+        }
+
+        targetNode.getProperty("foo").remove();
+        session.save();
+    }
+
+    public void testShouldNotAllowCheckedInNodeToBeRemoved() throws Exception {
+        session = helper.getReadWriteSession();
+
+        Node root = session.getRootNode();
+        Node parentNode = root.addNode("checkedInParent");
+        parentNode.addMixin("mix:versionable");
+
+        Node targetNode = parentNode.addNode("checkedInTarget");
+        session.save();
+
+        parentNode.checkin();
+
+        try {
+            targetNode.remove();
+            fail("Checked in nodes should not be able to be removed");
+        } catch (VersionException ve) {
+            // Success
+        }
+
+        parentNode.checkout();
+        targetNode.remove();
+        session.save();
+    }
+
+    public void testShouldNotAllowPropertyOfCheckedInNodeToBeRemoved() throws Exception {
+        session = helper.getReadWriteSession();
+
+        Node root = session.getRootNode();
+        Node parentNode = root.addNode("checkedInPropParent");
+        parentNode.addMixin("mix:versionable");
+
+        Node targetNode = parentNode.addNode("checkedInTarget");
+        Property targetProp = targetNode.setProperty("foo", "bar");
+        session.save();
+
+        parentNode.checkin();
+
+        try {
+            targetProp.remove();
+            fail("Properties of checked in nodes should not be able to be removed");
+        } catch (VersionException ve) {
+            // Success
+        }
+
+        parentNode.checkout();
+        targetProp.remove();
+        session.save();
+    }
+
+    public void testGetPathOnRemovedNodeShouldThrowException() throws Exception {
+        session = helper.getReadWriteSession();
+
+        Node root = session.getRootNode();
+        Node parentNode = root.addNode("invalidItemStateTest");
+        session.save();
+
+        parentNode.remove();
+
+        try {
+            parentNode.getPath();
+            fail("getPath on removed node should throw InvalidItemStateException per section 7.1.3.3 of 1.0.1 spec");
+        } catch (InvalidItemStateException iise) {
+            // Success
+        }
+
     }
 }
