@@ -275,6 +275,25 @@ class RepositoryNodeTypeManager {
     }
 
     /**
+     * Tests if the named node type is registered.
+     * <p>
+     * The return value of this method is equivalent to {@code getNodeType(nodeTypeName) != null}, although the implementation is
+     * marginally more efficient that this approach.
+     * </p>
+     * 
+     * @param nodeTypeName the name of the node type to check
+     * @return true if a node type with the given name is registered, false otherwise
+     */
+    boolean hasNodeType( Name nodeTypeName ) {
+        try {
+            nodeTypeManagerLock.readLock().lock();
+            return nodeTypes.containsKey(nodeTypeName);
+        } finally {
+            nodeTypeManagerLock.readLock().unlock();
+        }
+    }
+    
+    /**
      * Searches the supplied primary node type and the mixin node types for a property definition that is the best match for the
      * given property name, property type, and value.
      * <p>

@@ -206,4 +206,18 @@ public final class JcrNodeTypeManagerTest extends TestSuite {
 
         session.save();
     }
+
+    @Test
+    public void shouldReturnTrueForHasNodeTypeWithExistingNodeTypeName() throws Exception {
+        assertTrue(nodeTypeMgr.hasNodeType("nt:base"));
+        assertTrue(nodeTypeMgr.hasNodeType(HIERARCHY_NODE_TYPE));
+        assertTrue(nodeTypeMgr.hasNodeType(MIXIN1));
+
+    }
+
+    @Test
+    public void shouldReturnFalseForHasNodeTypeWithNonexistantNodeTypeName() throws Exception {
+        assertFalse(nodeTypeMgr.hasNodeType("someArgleBargle"));
+        assertFalse(nodeTypeMgr.hasNodeType(HIERARCHY_NODE_TYPE + "x"));
+    }
 }

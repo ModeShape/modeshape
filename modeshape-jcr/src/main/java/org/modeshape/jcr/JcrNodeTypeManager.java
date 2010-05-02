@@ -148,6 +148,29 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     }
 
     /**
+     * Returns true if and only if the node type with the given name exists.
+     * <p>
+     * This is equivalent to the following code:
+     * 
+     * <pre>
+     * try {
+     *     getNodeType(nodeTypeName);
+     *     return true;
+     * } catch (NoSuchNodeTypeException nsnte) {
+     *     return false;
+     * }
+     * </pre>
+     * However, the implementation is slightly more efficient that the approach listed above.
+     * </p>
+     * 
+     * @see RepositoryNodeTypeManager#hasNodeType(Name)
+     */
+    public boolean hasNodeType( String nodeTypeName ) {
+        Name ntName = context().getValueFactories().getNameFactory().create(nodeTypeName);
+        return repositoryTypeManager.hasNodeType(ntName);
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.nodetype.NodeTypeManager#getPrimaryNodeTypes()
