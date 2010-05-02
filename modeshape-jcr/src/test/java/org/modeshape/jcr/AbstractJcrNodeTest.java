@@ -31,6 +31,8 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import java.util.HashMap;
+import java.util.Map;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
@@ -38,6 +40,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -315,6 +318,127 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         assertThat(iter.next(), is((Object)highlander));
         assertThat(iter.next(), is((Object)altima));
         assertThat(iter.hasNext(), is(false));
+    }
+
+    @Test
+    public void shouldProvideFilteredNodeIteratorForPattern() throws Exception {
+        NodeIterator iter = hybrid.getNodes(" Toyota P*|*lander ");
+        assertThat(iter, notNullValue());
+        assertThat(iter.getSize(), is(2L));
+        assertThat(iter.next(), is((Object)prius));
+        assertThat(iter.next(), is((Object)highlander));
+        assertThat(iter.hasNext(), is(false));
+    }
+
+    @Test
+    public void shouldProvideFilteredNodeIteratorForPatternArray() throws Exception {
+        NodeIterator iter = hybrid.getNodes(new String[] {" Toyota P*", "*lander"});
+        assertThat(iter, notNullValue());
+        assertThat(iter.getSize(), is(2L));
+        assertThat(iter.next(), is((Object)prius));
+        assertThat(iter.next(), is((Object)highlander));
+        assertThat(iter.hasNext(), is(false));
+    }
+
+    @Test
+    public void shouldReturnEmptyIteratorForEmptyPattern() throws Exception {
+        NodeIterator iter = hybrid.getNodes("");
+        assertThat(iter, notNullValue());
+        assertThat(iter.getSize(), is(0L));
+        assertThat(iter.hasNext(), is(false));
+    }
+
+    @Test
+    public void shouldReturnEmptyIteratorForEmptyPatternArray() throws Exception {
+        NodeIterator iter = hybrid.getNodes(new String[] {""});
+        assertThat(iter, notNullValue());
+        assertThat(iter.getSize(), is(0L));
+        assertThat(iter.hasNext(), is(false));
+    }
+
+    @Test
+    public void shouldProvidePropertyIterator() throws Exception {
+        assertThat(prius.getProperties(), notNullValue());
+
+        Map<String, Property> properties = new HashMap<String, Property>();
+        for (PropertyIterator iter = prius.getProperties(); iter.hasNext(); ) {
+            Property prop = iter.nextProperty();
+            properties.put(prop.getName(), prop);
+        }
+
+        assertThat(properties.size(), is(9));
+        assertThat(properties.get("vehix:maker").getString(), is("Toyota"));
+        assertThat(properties.get("vehix:model").getString(), is("Prius"));
+        assertThat(properties.get("vehix:year").getString(), is("2008"));
+        assertThat(properties.get("vehix:msrp").getString(), is("$21,500"));
+        assertThat(properties.get("vehix:userRating").getString(), is("4.2"));
+        assertThat(properties.get("vehix:valueRating").getString(), is("5"));
+        assertThat(properties.get("vehix:mpgCity").getString(), is("48"));
+        assertThat(properties.get("vehix:mpgHighway").getString(), is("45"));
+        assertThat(properties.get("jcr:primaryType").getString(), is("vehix:car"));
+        assertThat(prius.isNodeType(JcrMixLexicon.REFERENCEABLE), is(false));
+        // If the node was referenceable, the UUID below should be returned
+        // assertThat(properties.get("jcr:uuid").getString(), is("3b9e4a2f-040e-4d65-9778-abe70ae48324"));
+    }
+
+    @Test
+    public void shouldProvidePropertyIteratorForPattern() throws Exception {
+        String pattern = "vehix:ma*|vehix:mo*";
+        assertThat(prius.getProperties(pattern), notNullValue());
+
+        Map<String, Property> properties = new HashMap<String, Property>();
+        for (PropertyIterator iter = prius.getProperties(pattern); iter.hasNext();) {
+            Property prop = iter.nextProperty();
+            properties.put(prop.getName(), prop);
+        }
+
+        assertThat(properties.size(), is(2));
+        assertThat(properties.get("vehix:maker").getString(), is("Toyota"));
+        assertThat(properties.get("vehix:model").getString(), is("Prius"));
+    }
+
+    @Test
+    public void shouldProvideEmptyPropertyIteratorForEmptyPattern() throws Exception {
+        String pattern = "";
+        assertThat(prius.getProperties(pattern), notNullValue());
+
+        Map<String, Property> properties = new HashMap<String, Property>();
+        for (PropertyIterator iter = prius.getProperties(pattern); iter.hasNext();) {
+            Property prop = iter.nextProperty();
+            properties.put(prop.getName(), prop);
+        }
+
+        assertThat(properties.size(), is(0));
+    }
+
+    @Test
+    public void shouldProvidePropertyIteratorForPatternArray() throws Exception {
+        String[] pattern = new String[] {"vehix:ma*", "vehix:mo*"};
+        assertThat(prius.getProperties(pattern), notNullValue());
+
+        Map<String, Property> properties = new HashMap<String, Property>();
+        for (PropertyIterator iter = prius.getProperties(pattern); iter.hasNext();) {
+            Property prop = iter.nextProperty();
+            properties.put(prop.getName(), prop);
+        }
+
+        assertThat(properties.size(), is(2));
+        assertThat(properties.get("vehix:maker").getString(), is("Toyota"));
+        assertThat(properties.get("vehix:model").getString(), is("Prius"));
+    }
+
+    @Test
+    public void shouldProvideEmptyPropertyIteratorForEmptyPatternArray() throws Exception {
+        String[] pattern = new String[] {""};
+        assertThat(prius.getProperties(pattern), notNullValue());
+
+        Map<String, Property> properties = new HashMap<String, Property>();
+        for (PropertyIterator iter = prius.getProperties(pattern); iter.hasNext();) {
+            Property prop = iter.nextProperty();
+            properties.put(prop.getName(), prop);
+        }
+
+        assertThat(properties.size(), is(0));
     }
 
     @Test

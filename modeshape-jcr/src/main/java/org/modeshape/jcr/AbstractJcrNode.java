@@ -446,35 +446,47 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         CheckArg.isNotNull(namePattern, "namePattern");
         namePattern = namePattern.trim();
         if (namePattern.length() == 0) return new JcrEmptyPropertyIterator();
+        if ("*".equals(namePattern)) {
+            Collection<AbstractJcrProperty> properties = cache.findJcrPropertiesFor(nodeId, location.getPath());
+            return new JcrPropertyIterator(properties);
+        }
+
+        return getProperties(namePattern.split("[|]"));
+    }
+
+    public PropertyIterator getProperties( String[] nameGlobs ) throws RepositoryException {
+        CheckArg.isNotNull(nameGlobs, "nameGlobs");
+        if (nameGlobs.length == 0) return new JcrEmptyPropertyIterator();
         Collection<AbstractJcrProperty> properties = cache.findJcrPropertiesFor(nodeId, location.getPath());
-        if ("*".equals(namePattern)) return new JcrPropertyIterator(properties);
 
         // Figure out the patterns for each of the different disjunctions in the supplied pattern ...
-        List<Object> patterns = createPatternsFor(namePattern);
+        List<Object> patterns = createPatternsFor(nameGlobs);
 
-        // Go through the properties and remove any property that doesn't match a pattern ...
-        boolean foundMatch = true;
+        boolean foundMatch = false;
         Collection<AbstractJcrProperty> matchingProperties = new LinkedList<AbstractJcrProperty>();
         Iterator<AbstractJcrProperty> iter = properties.iterator();
         while (iter.hasNext()) {
             AbstractJcrProperty property = iter.next();
             String propName = property.getName();
-            assert foundMatch == true;
+            assert foundMatch == false;
             for (Object patternOrMatch : patterns) {
                 if (patternOrMatch instanceof Pattern) {
                     Pattern pattern = (Pattern)patternOrMatch;
-                    if (pattern.matcher(propName).matches()) break;
+                    if (pattern.matcher(propName).matches()) {
+                        foundMatch = true;
+                        break;
+                    }
                 } else {
                     String match = (String)patternOrMatch;
-                    if (propName.equals(match)) break;
+                    if (propName.equals(match)) {
+                        foundMatch = true;
+                        break;
+                    }
                 }
-                // No pattern matched ...
-                foundMatch = false;
             }
             if (foundMatch) {
                 matchingProperties.add(property);
-            } else {
-                foundMatch = true; // for the next iteration ..
+                foundMatch = false; // for the next iteration ..
             }
         }
         return new JcrPropertyIterator(matchingProperties);
@@ -755,9 +767,16 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         namePattern = namePattern.trim();
         if (namePattern.length() == 0) return new JcrEmptyNodeIterator();
         if ("*".equals(namePattern)) return getNodes();
-        List<Object> patterns = createPatternsFor(namePattern);
 
-        // Implementing exact-matching only for now to prototype types as properties
+        return getNodes(namePattern.split("[|]"));
+    }
+
+    public NodeIterator getNodes( String[] nameGlobs ) throws RepositoryException {
+        CheckArg.isNotNull(nameGlobs, "nameGlobs");
+        if (nameGlobs.length == 0) return new JcrEmptyNodeIterator();
+
+        List<Object> patterns = createPatternsFor(nameGlobs);
+
         List<AbstractJcrNode> matchingChildren = new LinkedList<AbstractJcrNode>();
         NamespaceRegistry registry = namespaces();
         boolean foundMatch = false;
@@ -1839,9 +1858,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         this.editor().orderChildBefore(sourceSegment, destSegment);
     }
 
-    protected static List<Object> createPatternsFor( String namePattern ) throws RepositoryException {
+    protected static List<Object> createPatternsFor( String[] namePatterns ) throws RepositoryException {
         List<Object> patterns = new LinkedList<Object>();
-        for (String stringPattern : namePattern.split("[|]")) {
+        for (String stringPattern : namePatterns) {
             stringPattern = stringPattern.trim();
             int length = stringPattern.length();
             if (length == 0) continue;
@@ -1864,7 +1883,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                         case '\t':
                         case '\n':
                         case '\r':
-                            String msg = JcrI18n.invalidNamePattern.text(c, namePattern);
+                            String msg = JcrI18n.invalidNamePattern.text(c, stringPattern);
                             throw new RepositoryException(msg);
                             // The following characters must be escaped when used in regular expressions ...
                         case '?':
