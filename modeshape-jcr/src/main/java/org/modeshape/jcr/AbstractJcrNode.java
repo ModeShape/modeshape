@@ -1213,6 +1213,61 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         return editor.createChild(childName, desiredUuid, childPrimaryTypeName);
     }
 
+    /**
+     * Performs a "best effort" check on whether a node can be added at the given relative path from this node with the given
+     * primary node type (if one is specified).
+     * <p>
+     * Note that a result of {@code true} from this method does not guarantee that a call to {@code #addNode(String, String)} with
+     * the same arguments will succeed, but a result of {@code false} guarantees that it would fail (assuming that the current
+     * repository state does not change).
+     * </p>
+     * 
+     * @param relPath the relative path at which the node would be added; may not be null
+     * @param primaryNodeTypeName the primary type that would be used for the node; null indicates that a default primary type
+     *        should be used if possible
+     * @return false if the node could not be added for any reason; true if the node <i>might</i> be able to be added
+     * @throws RepositoryException if an error occurs accessing the repository
+     */
+    final boolean canAddNode( String relPath,
+                              String primaryNodeTypeName ) throws RepositoryException {
+        CheckArg.isNotEmpty(relPath, relPath);
+
+        if (isLocked() && !holdsLock()) {
+            return false;
+        }
+
+        // Determine the path ...
+        Path path = null;
+        try {
+            path = cache.pathFactory().create(relPath);
+        } catch (org.modeshape.graph.property.ValueFormatException e) {
+            return false;
+        }
+        if (path.size() == 0) {
+            return false;
+        }
+        if (path.getLastSegment().getIndex() > 1 || relPath.endsWith("]")) {
+            return false;
+        }
+        if (path.size() > 1) {
+            // The only segment in the path is the child name ...
+            Path parentPath = path.getParent();
+            try {
+                // Find the parent node ...
+                cache.findNode(nodeId, location.getPath(), parentPath);
+            } catch (RepositoryException e) {
+                return false;
+            }
+        }
+
+        // Determine the name for the primary node type
+        if (primaryNodeTypeName != null) {
+            if (!session().nodeTypeManager().hasNodeType(primaryNodeTypeName)) return false;
+        }
+
+        return true;
+    }
+
     protected final Property removeExistingValuedProperty( String name ) throws ConstraintViolationException, RepositoryException {
         AbstractJcrProperty property = cache.findJcrProperty(nodeId, location.getPath(), nameFrom(name));
         if (property != null) {

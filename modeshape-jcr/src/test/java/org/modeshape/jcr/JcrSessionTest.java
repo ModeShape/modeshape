@@ -467,4 +467,17 @@ public class JcrSessionTest extends AbstractSessionTest {
         Node fileNode = folderNode.addNode("fileNode", "nt:file");
         assertThat(fileNode.hasProperty("jcr:created"), is(true));
     }
+
+    @Test
+    public void shouldHaveCapabilityToPerformValidAddNode() throws Exception {
+        assertTrue(session.hasCapability("addNode", session.getRootNode(), new String[] {"someNewNode"}));
+        assertTrue(session.hasCapability("addNode", session.getRootNode(), new String[] {"someNewNode", "nt:unstructured"}));
+    }
+
+    @Test
+    public void shouldNotHaveCapabilityToPerformInvalidAddNode() throws Exception {
+        assertTrue(!session.hasCapability("addNode", session.getRootNode(), new String[] {"someNewNode[2]"}));
+        assertTrue(!session.hasCapability("addNode", session.getRootNode(), new String[] {"someNewNode", "nt:invalidType"}));
+    }
+
 }

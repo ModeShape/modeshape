@@ -457,6 +457,45 @@ class JcrSession implements Session {
     }
 
     /**
+     * Makes a "best effort" determination of whether the given method can be successfully called on the given target with the
+     * given arguments. A return value of {@code false} indicates that the method would not succeed. A return value of {@code
+     * true} indicates that the method <i>might</i> succeed.
+     * 
+     * @param methodName the method to invoke; may not be null
+     * @param target the object on which to invoke it; may not be null
+     * @param arguments the arguments to pass to the method; varies depending on the method
+     * @return
+     * @throws IllegalArgumentException
+     * @throws RepositoryException
+     */
+    public boolean hasCapability( String methodName,
+                                  Object target,
+                                  Object[] arguments ) throws IllegalArgumentException, RepositoryException {
+        CheckArg.isNotEmpty(methodName, "methodName");
+        CheckArg.isNotNull(target, "target");
+
+        if (target instanceof AbstractJcrNode) {
+            AbstractJcrNode node = (AbstractJcrNode)target;
+            if ("addNode".equals(methodName)) {
+                CheckArg.hasSizeOfAtLeast(arguments, 1, "arguments");
+                CheckArg.hasSizeOfAtMost(arguments, 2, "arguments");
+                CheckArg.isInstanceOf(arguments[0], String.class, "arguments[0]");
+
+                String relPath = (String) arguments[0];
+                String primaryNodeTypeName = null;
+                if (arguments.length > 1) {
+                    CheckArg.isInstanceOf(arguments[1], String.class, "arguments[1]");
+                    primaryNodeTypeName = (String) arguments[1];
+                }
+
+                return node.canAddNode(relPath, primaryNodeTypeName);
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.Session#exportDocumentView(java.lang.String, org.xml.sax.ContentHandler, boolean, boolean)
