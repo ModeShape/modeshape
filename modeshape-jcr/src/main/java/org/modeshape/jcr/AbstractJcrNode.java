@@ -542,6 +542,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#getReferences()
      */
     public final PropertyIterator getReferences() throws RepositoryException {
+        return getReferences(null);
+    }
+
+    /**
+     * Returns all references to this node from properties with the given name.
+     * 
+     * @see javax.jcr.Node#getReferences()
+     */
+    public final PropertyIterator getReferences( String propertyName ) throws RepositoryException {
         if (!this.isReferenceable()) {
             // This node is not referenceable, so it cannot have any references to it ...
             return new JcrEmptyPropertyIterator();
@@ -554,6 +563,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         List<Property> references = new LinkedList<Property>();
         while (iter.hasNext()) {
             javax.jcr.Node node = iter.nextNode();
+
             // Go through the properties and look for reference properties that have a value of this node's UUID ...
             PropertyIterator propIter = node.getProperties();
             while (propIter.hasNext()) {
@@ -561,6 +571,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                 // Look at the definition's required type ...
                 int propType = prop.getDefinition().getRequiredType();
                 if (propType == PropertyType.REFERENCE || propType == PropertyType.UNDEFINED || propType == PropertyType.STRING) {
+                    if (propertyName != null && !propertyName.equals(prop.getName())) continue;
                     if (prop.getDefinition().isMultiple()) {
                         for (Value value : prop.getValues()) {
                             if (uuid.equals(value.getString())) {
