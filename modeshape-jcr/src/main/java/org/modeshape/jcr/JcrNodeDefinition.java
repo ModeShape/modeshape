@@ -94,6 +94,13 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
         this.requiredPrimaryTypeNames = requiredPrimaryTypeNames;
     }
 
+    private final String string( Name name ) {
+        if (name == null) return null;
+        if (this.context == null) return name.getString();
+
+        return name.getString(context.getNamespaceRegistry());
+    }
+
     /**
      * Checks that the fields derived from requiredPrimaryTypeNames are initialized.
      * <p>
@@ -189,9 +196,29 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
      * 
      * @return the required primary type names
      */
-    Set<Name> getRequiredPrimaryTypeNames() {
+    Set<Name> requiredPrimaryTypeNameSet() {
         ensureRequiredPrimaryTypesLoaded();
         return requiredPrimaryTypesByName.keySet();
+    }
+
+    /**
+     * @return the names of the required primary types for this child node definition; never null
+     */
+    public String[] getRequiredPrimaryTypeNames() {
+        if (requiredPrimaryTypeNames == null) return new String[0];
+
+        String[] rptNames = new String[requiredPrimaryTypeNames.length];
+        for (int i = 0; i < requiredPrimaryTypeNames.length; i++) {
+            rptNames[i] = string(requiredPrimaryTypeNames[i]);
+        }
+        return rptNames;
+    }
+
+    /**
+     * @return the name of the default primary type for this child node definition; may be null
+     */
+    public String getDefaultPrimaryTypeName() {
+        return string(this.defaultPrimaryTypeName);
     }
 
     /**

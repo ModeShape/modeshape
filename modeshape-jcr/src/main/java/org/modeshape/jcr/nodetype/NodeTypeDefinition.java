@@ -56,6 +56,13 @@ public interface NodeTypeDefinition {
     public boolean isAbstract();
 
     /**
+     * Get whether this node type is abstract.
+     * 
+     * @return true if this node type is abstract, or false if it is concrete
+     */
+    public boolean isQueryable();
+
+    /**
      * Get whether this node type is a mixin.
      * 
      * @return true if this node type is a mixin, or false if it is concrete

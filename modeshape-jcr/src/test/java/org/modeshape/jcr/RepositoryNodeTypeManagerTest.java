@@ -216,7 +216,7 @@ public class RepositoryNodeTypeManagerTest extends AbstractSessionTest {
             assertThat(nodeDef.getName(), is(JcrNodeType.RESIDUAL_ITEM_NAME));
         }
 
-        Set<Name> requiredPrimaryTypeNames = nodeDef.getRequiredPrimaryTypeNames();
+        Set<Name> requiredPrimaryTypeNames = nodeDef.requiredPrimaryTypeNameSet();
         try {
             Value[] requiredPrimaryTypes = childNodeNode.getProperty(JcrLexicon.REQUIRED_PRIMARY_TYPES.getString(registry))
                                                         .getValues();

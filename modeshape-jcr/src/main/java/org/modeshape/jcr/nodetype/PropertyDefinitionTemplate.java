@@ -24,6 +24,8 @@
 package org.modeshape.jcr.nodetype;
 
 import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
 import net.jcip.annotations.NotThreadSafe;
@@ -99,9 +101,58 @@ public interface PropertyDefinitionTemplate extends PropertyDefinition {
     public void setDefaultValues( String[] defaultValues );
 
     /**
+     * Set the default values for the property, using their {link Value} representation. See
+     * {@link PropertyDefinition#getDefaultValues()} for more details.
+     * 
+     * @param defaultValues the value representation of the default values, or null or an empty array if there are no default
+     *        values
+     */
+    public void setDefaultValues( Value[] values ) throws RepositoryException;
+
+    /**
      * Set whether the properties described by this definition may have multiple values.
      * 
      * @param multiple true if the properties may have multiple values, or false if they are limited to one value each
      */
     public void setMultiple( boolean multiple );
+
+    /**
+     * @return whether the properties described by this definition should be searchable in a full-text search
+     */
+    public boolean isFullTextSearchable();
+
+    /**
+     * Set whether the properties described by this definition should be searchable in a full-text search
+     * 
+     * @param fullTextSearchable whether the properties described by this definition should be searchable in a full-text search
+     */
+    public void setFullTextSearchable( boolean fullTextSearchable );
+
+    /**
+     * @return whether the query results containing properties described by this definition should be able to be ordered by those
+     *         properties.
+     */
+    public boolean isQueryOrderable();
+
+    /**
+     * Set whether the query results containing properties described by this definition should be able to be ordered by those
+     * properties.
+     * 
+     * @param queryOrderable whether the query results containing properties described by this definition should be able to be
+     *        ordered by those properties.
+     */
+    public void setQueryOrderable( boolean queryOrderable );
+
+    /**
+     * @return the available operators for use in property constraints that reference properties described by this definition.
+     */
+    public String[] getAvailableQueryOperators();
+
+    /**
+     * Sets the available operators for use in property constraints that reference properties described by this definition.
+     * 
+     * @param queryOperators the available operators for use in property constraints that reference properties described by this
+     *        definition.
+     */
+    public void setAvailableQueryOperators( String[] queryOperators );
 }

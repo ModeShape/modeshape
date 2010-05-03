@@ -24,6 +24,7 @@
 package org.modeshape.jcr;
 
 import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
@@ -38,6 +39,9 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
     private String[] defaultValues;
     private int requiredType = PropertyType.STRING;
     private String[] valueConstraints = new String[0];
+    private boolean fullTextSearchable = true;
+    private boolean queryOrderable = true;
+    private String[] availableQueryOperators;
 
     JcrPropertyDefinitionTemplate( ExecutionContext context ) {
         super(context);
@@ -51,6 +55,24 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
     public void setDefaultValues( String[] defaultValues ) {
         CheckArg.isNotNull(defaultValues, "defaultValues");
         this.defaultValues = defaultValues;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.nodetype.PropertyDefinitionTemplate#setDefaultValues(Value[])
+     */
+    public void setDefaultValues( Value[] defaultValues ) {
+        CheckArg.isNotNull(defaultValues, "defaultValues");
+        this.defaultValues = new String[defaultValues.length];
+
+        try {
+            for (int i = 0; i < defaultValues.length; i++) {
+                this.defaultValues[i] = defaultValues[i].getString();
+            }
+        } catch (RepositoryException re) {
+            throw new IllegalStateException(re);
+        }
     }
 
     /**
@@ -125,4 +147,42 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
         return multiple;
     }
 
+    public boolean isFullTextSearchable() {
+        return this.fullTextSearchable;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see PropertyDefinitionTemplate#setFullTextSearchable(boolean)
+     */
+    public void setFullTextSearchable( boolean fullTextSearchable ) {
+        this.fullTextSearchable = fullTextSearchable;
+    }
+
+    public String[] getAvailableQueryOperators() {
+        return this.availableQueryOperators;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see PropertyDefinitionTemplate#setAvailableQueryOperators(String[])
+     */
+    public void setAvailableQueryOperators( String[] queryOperators ) {
+        this.availableQueryOperators = queryOperators;
+    }
+
+    public boolean isQueryOrderable() {
+        return this.queryOrderable;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see PropertyDefinitionTemplate#setQueryOrderable(boolean)
+     */
+    public void setQueryOrderable( boolean queryOrderable ) {
+        this.queryOrderable = queryOrderable;
+    }
 }

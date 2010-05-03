@@ -1150,6 +1150,8 @@ class RepositoryNodeTypeManager {
         List<Property> propsList = new ArrayList<Property>();
         propsList.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.NODE_TYPE));
         propsList.add(propertyFactory.create(JcrLexicon.IS_MIXIN, nodeType.isMixin()));
+        propsList.add(propertyFactory.create(JcrLexicon.IS_ABSTRACT, nodeType.isAbstract()));
+        propsList.add(propertyFactory.create(JcrLexicon.IS_QUERYABLE, nodeType.isQueryable()));
 
         if (nodeType.getPrimaryItemName() != null) {
             propsList.add(propertyFactory.create(JcrLexicon.PRIMARY_ITEM_NAME, nodeType.getPrimaryItemName()));
@@ -1274,7 +1276,7 @@ class RepositoryNodeTypeManager {
             propsList.add(propertyFactory.create(JcrLexicon.DEFAULT_PRIMARY_TYPE, jcrNodeDef.getDefaultPrimaryType().getName()));
         }
 
-        propsList.add(propertyFactory.create(JcrLexicon.REQUIRED_PRIMARY_TYPES, jcrNodeDef.getRequiredPrimaryTypeNames()));
+        propsList.add(propertyFactory.create(JcrLexicon.REQUIRED_PRIMARY_TYPES, jcrNodeDef.requiredPrimaryTypeNameSet()));
         propsList.add(propertyFactory.create(JcrLexicon.SAME_NAME_SIBLINGS, jcrNodeDef.allowsSameNameSiblings()));
         propsList.add(propertyFactory.create(JcrLexicon.ON_PARENT_VERSION,
                                              OnParentVersionAction.nameFromValue(jcrNodeDef.getOnParentVersion())));
@@ -1347,7 +1349,7 @@ class RepositoryNodeTypeManager {
                                                                                                                          nodeType.getName(),
                                                                                                                          childNode.getName()));
                         }
-                        if (childNode.getRequiredPrimaryTypeNames().contains(nodeTypeName)) {
+                        if (childNode.requiredPrimaryTypeNameSet().contains(nodeTypeName)) {
                             throw new InvalidNodeTypeDefinitionException(
                                                                          JcrI18n.cannotUnregisterRequiredPrimaryType.text(name,
                                                                                                                           nodeType.getName(),
@@ -1719,7 +1721,8 @@ class RepositoryNodeTypeManager {
                 // Create a new node type that also has the correct property and child node definitions associated
                 JcrNodeType newNodeType = new JcrNodeType(this.context, this, nodeType.getInternalName(), supertypes,
                                                           nodeType.getInternalPrimaryItemName(), nodeDefs, propertyDefs,
-                                                          nodeType.isMixin(), nodeType.hasOrderableChildNodes());
+                                                          nodeType.isMixin(), nodeType.isAbstract(), nodeType.isQueryable(),
+                                                          nodeType.hasOrderableChildNodes());
                 typesPendingRegistration.add(newNodeType);
             }
 
@@ -1796,9 +1799,12 @@ class RepositoryNodeTypeManager {
         Name name = nameFactory.create(getFirstPropertyValue(nodeProperties.get(JcrLexicon.NODE_TYPE_NAME)));
         Name primaryItemName = nameFactory.create(getFirstPropertyValue(nodeProperties.get(JcrLexicon.PRIMARY_ITEM_NAME)));
         boolean mixin = booleanFactory.create(getFirstPropertyValue(nodeProperties.get(JcrLexicon.IS_MIXIN)));
+        boolean isAbstract = booleanFactory.create(getFirstPropertyValue(nodeProperties.get(JcrLexicon.IS_ABSTRACT)));
+        boolean queryable = booleanFactory.create(getFirstPropertyValue(nodeProperties.get(JcrLexicon.IS_QUERYABLE)));
         boolean orderableChildNodes = booleanFactory.create(getFirstPropertyValue(nodeProperties.get(JcrLexicon.HAS_ORDERABLE_CHILD_NODES)));
 
-        return new JcrNodeType(this.context, this, name, supertypes, primaryItemName, childNodes, properties, mixin,
+        return new JcrNodeType(this.context, this, name, supertypes, primaryItemName, childNodes, properties, mixin, isAbstract,
+                               queryable,
                                orderableChildNodes);
     }
 
@@ -1821,6 +1827,8 @@ class RepositoryNodeTypeManager {
         boolean isProtected = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.PROTECTED)));
         Boolean ftsObj = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.IS_FULL_TEXT_SEARCHABLE)));
         boolean fullTextSearchable = ftsObj != null ? ftsObj.booleanValue() : false;
+        Boolean qoObj = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.IS_QUERY_ORDERABLE)));
+        boolean queryOrderable = qoObj != null ? qoObj.booleanValue() : false;
 
         Value[] defaultValues;
         Property defaultValuesProperty = properties.get(JcrLexicon.DEFAULT_VALUES);
@@ -1848,8 +1856,21 @@ class RepositoryNodeTypeManager {
             valueConstraints = new String[0];
         }
 
+        String[] queryOperators;
+        Property operatorsProperty = properties.get(JcrLexicon.QUERY_OPERATORS);
+        if (operatorsProperty != null) {
+            List<String> operators = new ArrayList<String>();
+
+            for (Object value : operatorsProperty) {
+                operators.add((String)value);
+            }
+            queryOperators = operators.toArray(new String[operators.size()]);
+        } else {
+            queryOperators = new String[0];
+        }
         return new JcrPropertyDefinition(this.context, null, propertyName, onParentVersionBehavior, autoCreated, mandatory,
-                                         isProtected, defaultValues, requiredType, valueConstraints, multiple, fullTextSearchable);
+                                         isProtected, defaultValues, requiredType, valueConstraints, multiple,
+                                         fullTextSearchable, queryOrderable, queryOperators);
     }
 
     private JcrNodeDefinition childNodeDefinitionFrom( Subgraph nodeTypeGraph,
@@ -1953,6 +1974,57 @@ class RepositoryNodeTypeManager {
         }
 
         return supertypes;
+    }
+
+    /**
+     * Returns the list of subtypes for the given node.
+     * 
+     * @param nodeType the node type for which subtypes should be returned; may not be null
+     * @return the subtypes for the node
+     */
+    final Collection<JcrNodeType> subtypesFor( JcrNodeType nodeType ) {
+        CheckArg.isNotNull(nodeType, "nodeType");
+
+        try {
+            nodeTypeManagerLock.readLock().lock();
+
+            List<JcrNodeType> subtypes = new LinkedList<JcrNodeType>();
+            for (JcrNodeType type : this.nodeTypes.values()) {
+                if (type.supertypes().contains(nodeType)) {
+                    subtypes.add(type);
+                }
+            }
+
+            return subtypes;
+        } finally {
+            nodeTypeManagerLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Returns the list of declared subtypes for the given node.
+     * 
+     * @param nodeType the node type for which declared subtypes should be returned; may not be null
+     * @return the subtypes for the node
+     */
+    final Collection<JcrNodeType> declaredSubtypesFor( JcrNodeType nodeType ) {
+        CheckArg.isNotNull(nodeType, "nodeType");
+
+        try {
+            nodeTypeManagerLock.readLock().lock();
+
+            String nodeTypeName = nodeType.getName();
+            List<JcrNodeType> subtypes = new LinkedList<JcrNodeType>();
+            for (JcrNodeType type : this.nodeTypes.values()) {
+                if (Arrays.asList(type.getDeclaredSupertypeNames()).contains(nodeTypeName)) {
+                    subtypes.add(type);
+                }
+            }
+
+            return subtypes;
+        } finally {
+            nodeTypeManagerLock.readLock().unlock();
+        }
     }
 
     /**

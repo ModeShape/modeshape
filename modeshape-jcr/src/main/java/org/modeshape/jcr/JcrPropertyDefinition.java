@@ -58,6 +58,9 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
     private final boolean multiple;
     private final boolean fullTextSearchable;
     private final boolean isPrivate;
+    private final boolean queryOrderable;
+    private final String[] queryOperators;
+
     private PropertyDefinitionId id;
     private ConstraintChecker checker = null;
 
@@ -72,13 +75,17 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                            int requiredType,
                            String[] valueConstraints,
                            boolean multiple,
-                           boolean fullTextSearchable ) {
+                           boolean fullTextSearchable,
+                           boolean queryOrderable,
+                           String[] queryOperators ) {
         super(context, declaringNodeType, name, onParentVersion, autoCreated, mandatory, protectedItem);
         this.defaultValues = defaultValues;
         this.requiredType = requiredType;
         this.valueConstraints = valueConstraints;
         this.multiple = multiple;
         this.fullTextSearchable = fullTextSearchable;
+        this.queryOrderable = queryOrderable;
+        this.queryOperators = queryOperators;
         this.isPrivate = name.getNamespaceUri().equals(ModeShapeIntLexicon.Namespace.URI);
     }
 
@@ -144,6 +151,14 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         return fullTextSearchable;
     }
 
+    public boolean isQueryOrderable() {
+        return queryOrderable;
+    }
+
+    public String[] getQueryOperators() {
+        return queryOperators;
+    }
+
     /**
      * Creates a new <code>JcrPropertyDefinition</code> that is identical to the current object, but with the given
      * <code>declaringNodeType</code>. Provided to support immutable pattern for this class.
@@ -156,7 +171,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         return new JcrPropertyDefinition(this.context, declaringNodeType, this.name, this.getOnParentVersion(),
                                          this.isAutoCreated(), this.isMandatory(), this.isProtected(), this.getDefaultValues(),
                                          this.getRequiredType(), this.getValueConstraints(), this.isMultiple(),
-                                         this.isFullTextSearchable());
+                                         this.isFullTextSearchable(), this.isQueryOrderable(), this.getQueryOperators());
     }
 
     /**
@@ -171,7 +186,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         return new JcrPropertyDefinition(context, this.declaringNodeType, this.name, this.getOnParentVersion(),
                                          this.isAutoCreated(), this.isMandatory(), this.isProtected(), this.getDefaultValues(),
                                          this.getRequiredType(), this.getValueConstraints(), this.isMultiple(),
-                                         this.isFullTextSearchable());
+                                         this.isFullTextSearchable(), this.isQueryOrderable(), this.getQueryOperators());
     }
 
     /**

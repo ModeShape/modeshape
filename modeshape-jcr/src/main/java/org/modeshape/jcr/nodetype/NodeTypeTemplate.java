@@ -56,6 +56,13 @@ public interface NodeTypeTemplate extends NodeTypeDefinition {
     public void setAbstract( boolean isAbstract );
 
     /**
+     * Sets whether this node is queryable
+     * 
+     * @param queryable true if the node should be included in query results; false otherwise
+     */
+    public void setQueryable( boolean queryable );
+
+    /**
      * Set whether this node type is a mixin.
      * 
      * @param mixin true if this node type is a mixin, or false otherwise

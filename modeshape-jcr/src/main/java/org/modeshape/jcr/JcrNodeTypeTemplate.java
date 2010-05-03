@@ -44,6 +44,7 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
     private final List<NodeDefinitionTemplate> nodeDefinitionTemplates = new ArrayList<NodeDefinitionTemplate>();
     private final List<PropertyDefinitionTemplate> propertyDefinitionTemplates = new ArrayList<PropertyDefinitionTemplate>();
     private boolean isAbstract;
+    private boolean queryable = true;
     private boolean mixin;
     private boolean orderableChildNodes;
     private String[] declaredSupertypeNames;
@@ -204,6 +205,24 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
      */
     public boolean isMixin() {
         return mixin;
+    }
+
+    /**
+     * Get whether this node is queryable
+     * 
+     * @return true if the node is queryable; false otherwise
+     */
+    public boolean isQueryable() {
+        return queryable;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.nodetype.NodeTypeTemplate#setQueryable(boolean)
+     */
+    public void setQueryable( boolean queryable ) {
+        this.queryable = queryable;
     }
 
 }

@@ -36,8 +36,9 @@ import java.util.Set;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeIterator;
 import javax.jcr.nodetype.PropertyDefinition;
-import net.jcip.annotations.Immutable;
+import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
@@ -46,7 +47,7 @@ import org.modeshape.graph.property.basic.BasicName;
 /**
  * ModeShape implementation of JCR {@link NodeType}s.
  */
-@Immutable
+@ThreadSafe
 class JcrNodeType implements NodeType {
 
     public static final String RESIDUAL_ITEM_NAME = "*";
@@ -74,9 +75,15 @@ class JcrNodeType implements NodeType {
     private final Set<Name> thisAndAllSupertypesNames;
 
     /** Indicates whether this node type is a mixin type (as opposed to a primary type). */
-    private boolean mixin;
+    private final boolean mixin;
     /** Indicates whether the child nodes of nodes of this type can be ordered. */
-    private boolean orderableChildNodes;
+    private final boolean orderableChildNodes;
+
+    /** Indicates whether this node type is abstract */
+    private final boolean isAbstract;
+
+    /** Indicates whether this node is queryable (i.e., should be included in query results) */
+    private final boolean queryable;
 
     /**
      * The child node definitions that are defined on this node type.
@@ -112,6 +119,8 @@ class JcrNodeType implements NodeType {
                  Collection<JcrNodeDefinition> childNodeDefinitions,
                  Collection<JcrPropertyDefinition> propertyDefinitions,
                  boolean mixin,
+                 boolean isAbstract,
+                 boolean queryable,
                  boolean orderableChildNodes ) {
         assert context != null;
 
@@ -121,6 +130,8 @@ class JcrNodeType implements NodeType {
         this.primaryItemName = primaryItemName;
         this.declaredSupertypes = declaredSupertypes != null ? declaredSupertypes : Collections.<JcrNodeType>emptyList();
         this.mixin = mixin;
+        this.queryable = queryable;
+        this.isAbstract = isAbstract;
         this.orderableChildNodes = orderableChildNodes;
         this.propertyDefinitions = new ArrayList<JcrPropertyDefinition>(propertyDefinitions.size());
         for (JcrPropertyDefinition property : propertyDefinitions) {
@@ -212,8 +223,8 @@ class JcrNodeType implements NodeType {
     JcrNodeDefinition childNodeDefinition( NodeDefinitionId nodeDefnId ) {
         List<Name> requiredPrimaryTypeNames = Arrays.asList(nodeDefnId.getRequiredPrimaryTypes());
         for (JcrNodeDefinition nodeDefn : allChildNodeDefinitions(nodeDefnId.getChildDefinitionName())) {
-            if (nodeDefn.getRequiredPrimaryTypeNames().size() == requiredPrimaryTypeNames.size()
-                && nodeDefn.getRequiredPrimaryTypeNames().containsAll(requiredPrimaryTypeNames)) {
+            if (nodeDefn.requiredPrimaryTypeNameSet().size() == requiredPrimaryTypeNames.size()
+                && nodeDefn.requiredPrimaryTypeNameSet().containsAll(requiredPrimaryTypeNames)) {
                 return nodeDefn;
             }
         }
@@ -397,6 +408,27 @@ class JcrNodeType implements NodeType {
     }
 
     /**
+     * @return the array of names of supertypes declared for this node; possibly empty, never null
+     */
+    public String[] getDeclaredSupertypeNames() {
+        List<String> supertypeNames = new ArrayList<String>(declaredSupertypes.size());
+
+        for (JcrNodeType declaredSupertype : declaredSupertypes) {
+            supertypeNames.add(declaredSupertype.getName());
+        }
+
+        // Always have to make a copy to prevent changes ...
+        return supertypeNames.toArray(new String[supertypeNames.size()]);
+    }
+
+    public NodeTypeIterator getSubtypes() {
+        return new JcrNodeTypeIterator(nodeTypeManager.subtypesFor(this));
+    }
+
+    public NodeTypeIterator getDeclaredSubtypes() {
+        return new JcrNodeTypeIterator(nodeTypeManager.declaredSubtypesFor(this));
+    }
+    /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.nodetype.NodeType#getName()
@@ -476,6 +508,14 @@ class JcrNodeType implements NodeType {
         return mixin;
     }
 
+    public boolean isAbstract() {
+        return isAbstract;
+    }
+
+    public boolean isQueryable() {
+        return queryable;
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -536,7 +576,8 @@ class JcrNodeType implements NodeType {
      */
     final JcrNodeType with( RepositoryNodeTypeManager nodeTypeManager ) {
         return new JcrNodeType(this.context, nodeTypeManager, this.name, this.declaredSupertypes, this.primaryItemName,
-                               this.childNodeDefinitions, this.propertyDefinitions, this.mixin, this.orderableChildNodes);
+                               this.childNodeDefinitions, this.propertyDefinitions, this.mixin, this.isAbstract, this.queryable,
+                               this.orderableChildNodes);
     }
 
     /**
@@ -548,7 +589,8 @@ class JcrNodeType implements NodeType {
      */
     final JcrNodeType with( ExecutionContext context ) {
         return new JcrNodeType(context, this.nodeTypeManager, this.name, this.declaredSupertypes, this.primaryItemName,
-                               this.childNodeDefinitions, this.propertyDefinitions, this.mixin, this.orderableChildNodes);
+                               this.childNodeDefinitions, this.propertyDefinitions, this.mixin, this.isAbstract, this.queryable,
+                               this.orderableChildNodes);
     }
 
     final RepositoryNodeTypeManager nodeTypeManager() {
