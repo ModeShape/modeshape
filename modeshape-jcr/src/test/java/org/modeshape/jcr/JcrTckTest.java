@@ -95,10 +95,24 @@ import org.apache.jackrabbit.test.api.observation.NodeReorderTest;
 import org.apache.jackrabbit.test.api.observation.PropertyAddedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyChangedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
+import org.apache.jackrabbit.test.api.query.DerefQueryLevel1Test;
 import org.apache.jackrabbit.test.api.query.ElementTest;
+import org.apache.jackrabbit.test.api.query.GetLanguageTest;
+import org.apache.jackrabbit.test.api.query.GetPersistentQueryPathLevel1Test;
 import org.apache.jackrabbit.test.api.query.GetPersistentQueryPathTest;
+import org.apache.jackrabbit.test.api.query.GetPropertyNamesTest;
+import org.apache.jackrabbit.test.api.query.GetStatementTest;
+import org.apache.jackrabbit.test.api.query.GetSupportedQueryLanguagesTest;
+import org.apache.jackrabbit.test.api.query.OrderByDateTest;
+import org.apache.jackrabbit.test.api.query.OrderByDoubleTest;
+import org.apache.jackrabbit.test.api.query.OrderByLongTest;
+import org.apache.jackrabbit.test.api.query.PredicatesTest;
 import org.apache.jackrabbit.test.api.query.QueryResultNodeIteratorTest;
+import org.apache.jackrabbit.test.api.query.SQLJcrPathTest;
 import org.apache.jackrabbit.test.api.query.SaveTest;
+import org.apache.jackrabbit.test.api.query.SimpleSelectionTest;
+import org.apache.jackrabbit.test.api.query.XPathJcrPathTest;
+import org.apache.jackrabbit.test.api.query.XPathPosIndexTest;
 import org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test;
 
 /**
@@ -128,7 +142,6 @@ public class JcrTckTest {
         suite.addTest(new LevelOneFeatureTests());
         suite.addTest(new LevelTwoFeatureTests());
         suite.addTest(new OptionalFeatureTests());
-        // uncomment
 
         return suite;
     }
@@ -292,13 +305,54 @@ public class JcrTckTest {
             // We currently don't pass the tests in those suites that are commented out
             // See https://jira.jboss.org/jira/browse/ModeShape-285
 
-            addTest(new ObservationTests()); // remove this and the ObservationTests inner class when all tests pass and uncomment
-            // observation.TestAll
+            addTest(new QueryTests());
+
+            addTest(new ObservationTests()); // remove this and the ObservationTests inner class when all tests pass and
+            // uncomment observation.TestAll
             // addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
             addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
             addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
             addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
             // addTest(org.apache.jackrabbit.test.api.query.TestAll.suite());
+        }
+    }
+
+    private static class QueryTests extends TestSuite {
+        protected QueryTests() {
+            super("JCR Query Tests");
+
+            // these are the tests included in observation.TestAll.suite()
+            addTestSuite(SaveTest.class);
+            // addTestSuite(SQLOrderByTest.class);
+            // addTestSuite(SQLQueryLevel2Test.class);
+            // addTestSuite(SQLJoinTest.class);
+            addTestSuite(SQLJcrPathTest.class);
+            // addTestSuite(SQLPathTest.class);
+            addTestSuite(XPathPosIndexTest.class);
+            // addTestSuite(XPathDocOrderTest.class);
+            // addTestSuite(XPathOrderByTest.class);
+            addTestSuite(XPathQueryLevel2Test.class);
+            addTestSuite(XPathJcrPathTest.class);
+
+            addTestSuite(DerefQueryLevel1Test.class);
+            addTestSuite(ElementTest.class);
+            // addTestSuite(TextNodeTest.class);
+            addTestSuite(GetLanguageTest.class);
+            addTestSuite(GetPersistentQueryPathLevel1Test.class);
+            addTestSuite(GetPersistentQueryPathTest.class);
+            addTestSuite(GetStatementTest.class);
+            addTestSuite(GetSupportedQueryLanguagesTest.class);
+
+            addTestSuite(QueryResultNodeIteratorTest.class);
+            addTestSuite(GetPropertyNamesTest.class);
+            addTestSuite(PredicatesTest.class);
+            addTestSuite(SimpleSelectionTest.class);
+
+            addTestSuite(OrderByDateTest.class);
+            addTestSuite(OrderByDoubleTest.class);
+            addTestSuite(OrderByLongTest.class);
+            // addTestSuite(OrderByMultiTypeTest.class);
+            // addTestSuite(OrderByStringTest.class);
         }
     }
 

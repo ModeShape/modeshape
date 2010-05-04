@@ -45,8 +45,10 @@ import org.modeshape.graph.query.model.JoinType;
 import org.modeshape.graph.query.model.Literal;
 import org.modeshape.graph.query.model.NamedSelector;
 import org.modeshape.graph.query.model.NodePath;
+import org.modeshape.graph.query.model.Not;
 import org.modeshape.graph.query.model.Operator;
 import org.modeshape.graph.query.model.Or;
+import org.modeshape.graph.query.model.PropertyExistence;
 import org.modeshape.graph.query.model.PropertyValue;
 import org.modeshape.graph.query.model.Query;
 import org.modeshape.graph.query.model.SameNodeJoinCondition;
@@ -491,7 +493,8 @@ public class JcrSqlQueryParser extends SqlQueryParser {
             StaticOperand right = parseStaticOperand(tokens, typeSystem);
             constraint = rewriteConstraint(new Comparison(value, operator, right));
         } else if (tokens.matches(ANY_VALUE, "IN")) {
-            // This is a "... 'value' IN prop ..." pattern used in the JCR TCK tests but not in the JCR 1.0.1 specification ...
+            // This is a "... 'value' IN prop ..." pattern used in the JCR TCK tests but not in the JCR 1.0.1 specification
+            // ...
             Literal value = parseLiteral(tokens, typeSystem);
             tokens.consume("IN");
             PropertyValue propertyValue = parsePropertyValue(tokens, typeSystem, source);
@@ -541,6 +544,46 @@ public class JcrSqlQueryParser extends SqlQueryParser {
         constraint = super.parseConstraint(tokens, typeSystem, source);
         constraint = rewriteConstraint(constraint);
         return constraint;
+    }
+
+    @Override
+    protected Constraint parsePropertyExistance( TokenStream tokens,
+                                                 TypeSystem typeSystem,
+                                                 Source source ) {
+        if (tokens.matches(ANY_VALUE, "IS", "NOT", "NULL") || tokens.matches(ANY_VALUE, "IS", "NULL")
+            || tokens.matches(ANY_VALUE, ".", ANY_VALUE, "IS", "NOT", "NULL")
+            || tokens.matches(ANY_VALUE, ".", ANY_VALUE, ":", ANY_VALUE, "IS", "NOT", "NULL")
+            || tokens.matches(ANY_VALUE, ".", ANY_VALUE, "IS", "NULL")
+            || tokens.matches(ANY_VALUE, ".", ANY_VALUE, ":", ANY_VALUE, "IS", "NULL")
+            || tokens.matches(ANY_VALUE, ":", ANY_VALUE, "IS", "NOT", "NULL")
+            || tokens.matches(ANY_VALUE, ":", ANY_VALUE, ".", ANY_VALUE, "IS", "NOT", "NULL")
+            || tokens.matches(ANY_VALUE, ":", ANY_VALUE, ".", ANY_VALUE, ":", ANY_VALUE, "IS", "NOT", "NULL")
+            || tokens.matches(ANY_VALUE, ":", ANY_VALUE, ".", ANY_VALUE, "IS", "NULL")
+            || tokens.matches(ANY_VALUE, ":", ANY_VALUE, ".", ANY_VALUE, ":", ANY_VALUE, "IS", "NULL")) {
+            Position pos = tokens.nextPosition();
+            String firstWord = parseName(tokens, typeSystem);
+            SelectorName selectorName = null;
+            String propertyName = null;
+            if (tokens.canConsume('.')) {
+                // We actually read the selector name, so now read the property name ...
+                selectorName = new SelectorName(firstWord);
+                propertyName = parseName(tokens, typeSystem);
+            } else {
+                // Otherwise the source should be a single named selector
+                if (!(source instanceof Selector)) {
+                    String msg = GraphI18n.mustBeScopedAtLineAndColumn.text(firstWord, pos.getLine(), pos.getColumn());
+                    throw new ParsingException(pos, msg);
+                }
+                selectorName = ((Selector)source).getName();
+                propertyName = firstWord;
+            }
+            if (tokens.canConsume("IS", "NOT", "NULL")) {
+                return new PropertyExistence(selectorName, propertyName);
+            }
+            tokens.consume("IS", "NULL");
+            return new Not(new PropertyExistence(selectorName, propertyName));
+        }
+        return null;
     }
 
     protected SelectorName getSelectorNameFor( Source source ) {

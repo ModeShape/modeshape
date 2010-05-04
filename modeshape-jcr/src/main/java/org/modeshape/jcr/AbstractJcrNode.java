@@ -546,8 +546,27 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     }
 
     /**
-     * Returns all references to this node from properties with the given name.
+     * This method returns all REFERENCE properties that refer to this node, have the specified name and that are accessible
+     * through the current Session. If the name parameter is null then all referring REFERENCES are returned regardless of name.
+     * <p>
+     * Some implementations may only return properties that have been persisted. Some may return both properties that have been
+     * persisted and those that have been dispatched but not persisted (for example, those saved within a transaction but not yet
+     * committed) while others implementations may return these two categories of property as well as properties that are still
+     * pending and not yet dispatched.
+     * </p>
+     * <p>
+     * In implementations that support versioning, this method does not return properties that are part of the frozen state of a
+     * version in version storage.
+     * </p>
+     * <p>
+     * If this node has no referring REFERENCE properties with the specified name, an empty iterator is returned. This includes
+     * the case where this node is not referenceable.
+     * </p>
      * 
+     * @param propertyName - name of referring REFERENCE properties to be returned; if null then all referring REFERENCEs are
+     *        returned.
+     * @return A PropertyIterator.
+     * @throws RepositoryException if an error occurs
      * @see javax.jcr.Node#getReferences()
      */
     public final PropertyIterator getReferences( String propertyName ) throws RepositoryException {

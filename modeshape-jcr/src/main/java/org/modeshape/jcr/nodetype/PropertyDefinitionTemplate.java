@@ -24,7 +24,6 @@
 package org.modeshape.jcr.nodetype;
 
 import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
@@ -104,10 +103,9 @@ public interface PropertyDefinitionTemplate extends PropertyDefinition {
      * Set the default values for the property, using their {link Value} representation. See
      * {@link PropertyDefinition#getDefaultValues()} for more details.
      * 
-     * @param defaultValues the value representation of the default values, or null or an empty array if there are no default
-     *        values
+     * @param values the value representation of the default values, or null or an empty array if there are no default values
      */
-    public void setDefaultValues( Value[] values ) throws RepositoryException;
+    public void setDefaultValues( Value[] values );
 
     /**
      * Set whether the properties described by this definition may have multiple values.

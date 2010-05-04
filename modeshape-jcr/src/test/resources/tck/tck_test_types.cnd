@@ -47,3 +47,6 @@
 [modetest:queryable] > nt:unstructured
 - selectableProp1 (STRING)
 - selectableProp2 (STRING)
+- dateProp (DATE)
+- doubleProp (DOUBLE)
+- longProp (LONG)

@@ -160,9 +160,12 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      *     return false;
      * }
      * </pre>
-     * However, the implementation is slightly more efficient that the approach listed above.
+     * 
+     * However, the implementation is more efficient that the approach listed above and does not rely upon exceptions.
      * </p>
      * 
+     * @param nodeTypeName the name of the node type
+     * @return true if the named node type does exist, or false otherwise
      * @see RepositoryNodeTypeManager#hasNodeType(Name)
      */
     public boolean hasNodeType( String nodeTypeName ) {

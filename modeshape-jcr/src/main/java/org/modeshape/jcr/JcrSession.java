@@ -464,7 +464,7 @@ class JcrSession implements Session {
      * @param methodName the method to invoke; may not be null
      * @param target the object on which to invoke it; may not be null
      * @param arguments the arguments to pass to the method; varies depending on the method
-     * @return
+     * @return true if the given method can be determined to be supported, or false otherwise
      * @throws IllegalArgumentException
      * @throws RepositoryException
      */
@@ -481,11 +481,11 @@ class JcrSession implements Session {
                 CheckArg.hasSizeOfAtMost(arguments, 2, "arguments");
                 CheckArg.isInstanceOf(arguments[0], String.class, "arguments[0]");
 
-                String relPath = (String) arguments[0];
+                String relPath = (String)arguments[0];
                 String primaryNodeTypeName = null;
                 if (arguments.length > 1) {
                     CheckArg.isInstanceOf(arguments[1], String.class, "arguments[1]");
-                    primaryNodeTypeName = (String) arguments[1];
+                    primaryNodeTypeName = (String)arguments[1];
                 }
 
                 return node.canAddNode(relPath, primaryNodeTypeName);
@@ -613,8 +613,11 @@ class JcrSession implements Session {
     }
 
     /**
-     * 
+     * @param absolutePath an absolute path
+     * @return the specified node
      * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
+     * @throws PathNotFoundException If no accessible node is found at the specifed path
+     * @throws RepositoryException if another error occurs
      * @see javax.jcr.Session#getItem(java.lang.String)
      */
     public AbstractJcrNode getNode( String absolutePath ) throws PathNotFoundException, RepositoryException {
@@ -633,6 +636,8 @@ class JcrSession implements Session {
      * @param absolutePath the absolute path to the node
      * @return true if a node exists at absolute path and is accessible to the current user.
      * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
+     * @throws PathNotFoundException If no accessible node is found at the specifed path
+     * @throws RepositoryException if another error occurs
      */
     public boolean nodeExists( String absolutePath ) throws PathNotFoundException, RepositoryException {
         CheckArg.isNotEmpty(absolutePath, "absolutePath");
@@ -651,7 +656,11 @@ class JcrSession implements Session {
     }
 
     /**
+     * @param absolutePath an absolute path
+     * @return the specified node
      * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
+     * @throws PathNotFoundException If no accessible node is found at the specifed path
+     * @throws RepositoryException if another error occurs
      * @see javax.jcr.Session#getItem(java.lang.String)
      */
     public AbstractJcrProperty getProperty( String absolutePath ) throws PathNotFoundException, RepositoryException {
@@ -684,6 +693,7 @@ class JcrSession implements Session {
      * @param absolutePath the absolute path to the property
      * @return true if a property exists at absolute path and is accessible to the current user.
      * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
+     * @throws RepositoryException if another error occurs
      */
     public boolean propertyExists( String absolutePath ) throws RepositoryException {
         CheckArg.isNotEmpty(absolutePath, "absolutePath");

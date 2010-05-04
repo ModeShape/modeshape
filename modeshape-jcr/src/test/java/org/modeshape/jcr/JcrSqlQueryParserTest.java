@@ -46,6 +46,10 @@ import org.modeshape.graph.query.model.Literal;
 import org.modeshape.graph.query.model.NamedSelector;
 import org.modeshape.graph.query.model.NodePath;
 import org.modeshape.graph.query.model.Or;
+import org.modeshape.graph.query.model.Order;
+import org.modeshape.graph.query.model.Ordering;
+import org.modeshape.graph.query.model.PropertyExistence;
+import org.modeshape.graph.query.model.PropertyValue;
 import org.modeshape.graph.query.model.Query;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.SameNodeJoinCondition;
@@ -213,9 +217,38 @@ public class JcrSqlQueryParserTest {
         assertThat(query.getConstraint(), is(nullValue()));
     }
 
+    @Test
+    public void shouldParseSelectWithOrderByClause() {
+        query = parse("SELECT car:model FROM car:Car WHERE car:model IS NOT NULL ORDER BY car:model ASC");
+        // SELECT * ...
+        assertThat(query.getColumns().size(), is(1));
+        assertThat(query.getColumns().get(0).getSelectorName(), is(selectorName("car:Car")));
+        assertThat(query.getColumns().get(0).getColumnName(), is("car:model"));
+        assertThat(query.getColumns().get(0).getPropertyName(), is("car:model"));
+        // FROM ...
+        NamedSelector selector = (NamedSelector)query.getSource();
+        assertThat(selector.getName(), is(selectorName("car:Car")));
+        assertThat(selector.getAliasOrName(), is(selectorName("car:Car")));
+        assertThat(selector.getAlias(), is(nullValue()));
+        // WHERE ...
+        PropertyExistence constraint = isPropertyExistence(query.getConstraint());
+        assertThat(constraint.getPropertyName(), is("car:model"));
+        assertThat(constraint.getSelectorName(), is(selectorName("car:Car")));
+        // ORDER BY ...
+        assertThat(query.getOrderings().size(), is(1));
+        Ordering ordering = query.getOrderings().get(0);
+        assertThat(ordering.getOrder(), is(Order.ASCENDING));
+        assertThat(ordering.getOperand(), is((DynamicOperand)propertyValue(selectorName("car:Car"), "car:model")));
+    }
+
     protected Join isJoin( Source source ) {
         assertThat(source, is(instanceOf(Join.class)));
         return (Join)source;
+    }
+
+    protected PropertyExistence isPropertyExistence( Constraint constraint ) {
+        assertThat(constraint, is(instanceOf(PropertyExistence.class)));
+        return (PropertyExistence)constraint;
     }
 
     protected Comparison isComparison( Constraint constraint ) {
@@ -240,6 +273,11 @@ public class JcrSqlQueryParserTest {
 
     protected NodePath nodePath( SelectorName name ) {
         return new NodePath(name);
+    }
+
+    protected PropertyValue propertyValue( SelectorName selectorName,
+                                           String propertyName ) {
+        return new PropertyValue(selectorName, propertyName);
     }
 
     protected Literal literal( Object value ) {

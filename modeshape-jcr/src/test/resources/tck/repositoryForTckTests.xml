@@ -73,4 +73,5 @@
     <modetest:queryable jcr:name="someQueryableNodeA" selectableProp1="This is the first property" />
     <modetest:queryable jcr:name="someQueryableNodeB" selectableProp1="This is the second property" />
     <modetest:queryable jcr:name="someQueryableNodeC" selectableProp1="This is the third property" />
+    <modetest:queryable jcr:name="someQueryableNodeD" selectableProp1="This is the fourth property" />
 </testroot>

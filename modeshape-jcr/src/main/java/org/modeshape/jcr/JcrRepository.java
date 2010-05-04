@@ -461,7 +461,7 @@ public class JcrRepository implements Repository {
         modifiableDescriptors.put(Repository.LEVEL_2_SUPPORTED, "true");
         modifiableDescriptors.put(Repository.OPTION_LOCKING_SUPPORTED, "true");
         modifiableDescriptors.put(Repository.OPTION_OBSERVATION_SUPPORTED, "true");
-        modifiableDescriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, "false"); // not JCR 1.0 SQL
+        modifiableDescriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, "true");
         modifiableDescriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, "false");
         modifiableDescriptors.put(Repository.OPTION_VERSIONING_SUPPORTED, "true");
         modifiableDescriptors.put(Repository.QUERY_XPATH_DOC_ORDER, "false"); // see MODE-613

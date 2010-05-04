@@ -292,7 +292,7 @@ public class JcrQueryManagerTest {
     }
 
     // ----------------------------------------------------------------------------------------------------------------
-    // JCR2-SQL Queries
+    // JCR-SQL2 Queries
     // ----------------------------------------------------------------------------------------------------------------
 
     @Test
@@ -368,7 +368,6 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        print = true;
         assertResults(query, result, 12);
         assertResultsHaveColumns(result, carColumnNames());
     }
@@ -378,6 +377,24 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:unstructured]",
                                                                            QueryLanguage.JCR_SQL2);
         assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 22);
+        assertResultsHaveColumns(result, "jcr:primaryType");
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // JCR-SQL Queries
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithOrderByClause() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT car:model FROM car:Car WHERE car:model IS NOT NULL ORDER BY car:model ASC",
+                                          QueryLanguage.JCR_SQL);
+        assertThat(query, is(notNullValue()));
+        print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 22);
