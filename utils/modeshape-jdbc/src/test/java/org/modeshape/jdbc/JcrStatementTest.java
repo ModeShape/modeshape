@@ -153,88 +153,56 @@ public class JcrStatementTest {
     }
       
     @Test
-    /**
-     * Because updates are not supported, this test should throw an
-     * exception.
-     */
-    public void shouldExcute()  {
-	try {
-	    stmt.execute(TestResultSetMetaData.SQL_SELECT);
-	    
-	} catch (SQLException sqle) {
-	    assertFalse(true);
-	}
+    public void shouldExcute() throws SQLException {
+	stmt.execute(TestResultSetMetaData.SQL_SELECT);
+
     }
     
-    @Test
-    /**
-     * Because updates are not supported, this test should throw an
-     * exception.
-     */
-    public void shouldExcuteQuery()  {
-	try {
-	    stmt.executeQuery(TestResultSetMetaData.SQL_SELECT);
-	    
-	} catch (SQLException sqle) {
-	    assertFalse(true);
-	}
+    public void shouldExcuteQuery() throws SQLException {
+	stmt.executeQuery(TestResultSetMetaData.SQL_SELECT);
     }
     
-    @Test
     /**
      * Because updates are not supported, this test should throw an
      * exception.
+     * @throws SQLException 
      */
-    public void shouldThrowExceptionForAddBatch()  {
-	try {
-	    stmt.addBatch("Update sql");
-	    assertTrue(false);
-	} catch (SQLException sqle) {
-	    
-	}
+    @Test(expected= SQLException.class)
+    public void shouldThrowExceptionForAddBatch() throws SQLException  {
+	stmt.addBatch("Update sql");
+
     }
     
-    @Test
     /**
      * Because updates are not supported, this test should throw an
      * exception.
+     * @throws SQLException 
      */
-    public void shouldThrowExceptionForExcuteBatch()  {
-	try {
-	    stmt.executeBatch();
-	    assertTrue(false);
-	} catch (SQLException sqle) {
-	    
-	}
+    @Test(expected= SQLException.class)
+    public void shouldThrowExceptionForExcuteBatch() throws SQLException {
+	stmt.executeBatch();
     }
     
     
-    @Test
     /**
      * Because updates are not supported, this test should throw an
      * exception.
+    * @throws SQLException 
      */
-    public void shouldThrowExceptionForUpdate()  {
-	try {
-	    stmt.executeUpdate("Update sql");
-	    assertTrue(false);
-	} catch (SQLException sqle) {
-	    
-	}
+    @Test(expected= SQLException.class)
+    public void shouldThrowExceptionForUpdate() throws SQLException  {
+	stmt.executeUpdate("Update sql");
     }
     
-    @Test
+
     /**
      * Because updates are not supported, this test should throw an
      * exception.
+     * @throws SQLException 
      */
-    public void shouldThrowExceptionForClearBatch()  {
-	try {
-	    stmt.clearBatch();
-	    assertTrue(false);
-	} catch (SQLException sqle) {
-	    
-	}
+    @Test(expected= SQLException.class)
+    public void shouldThrowExceptionForClearBatch() throws SQLException  {
+	stmt.clearBatch();
     }
     
     
@@ -268,15 +236,14 @@ public class JcrStatementTest {
 	assertNull(stmt.getWarnings());
     }
      
+    /**
+     * Because updates are not supported, this test should throw an
+     * exception.
+     * @throws SQLException
+     */
     @Test
-    public void shouldSupportCancel()  {
-	try {
-	    stmt.cancel();
-	    
-	} catch (SQLException sqle) {
-	    sqle.printStackTrace();
-	    assertTrue(false);
-	}
+    public void shouldSupportCancel() throws SQLException  {
+	    stmt.cancel();	    
     }
     
     @Test
@@ -298,9 +265,7 @@ public class JcrStatementTest {
        
     @Test
     public void shouldBeAbleToClose() {
-
 	stmt.close();
-
     }
     
 }
