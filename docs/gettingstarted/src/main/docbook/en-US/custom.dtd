@@ -11,6 +11,7 @@
 <!ENTITY SourceCode  					"http://www.jboss.org/modeshape/sourcecode.html">
 <!ENTITY MailingLists					"http://www.jboss.org/modeshape/mailinglists.html">
 <!ENTITY DocHome    					"http://docs.jboss.org/modeshape">
+<!ENTITY DownloadHome					"http://downloads.jboss.org/modeshape/&versionNumber;">
 <!ENTITY API        					"&DocHome;/&versionNumber;/api/org/modeshape/">
 <!ENTITY JIRA       					"http://jira.jboss.org/jira/browse/MODE">
 <!ENTITY Roadmap       				"&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">
