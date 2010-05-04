@@ -45,11 +45,14 @@ import javax.jcr.SimpleCredentials;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
+import javax.jcr.query.Row;
+import javax.jcr.query.RowIterator;
 import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.property.Name;
@@ -80,6 +83,11 @@ public class JcrQueryManagerTest {
 
     protected static InputStream resourceStream( String name ) {
         return JcrQueryManagerTest.class.getClassLoader().getResourceAsStream(name);
+    }
+
+    protected static String[] carColumnNames() {
+        return new String[] {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine", "car:mpgHighway",
+            "car:valueRating", "jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model", "car:msrp"};
     }
 
     private static JcrConfiguration configuration;
@@ -220,6 +228,47 @@ public class JcrQueryManagerTest {
         assertThat(actualNames, is(expectedNames));
     }
 
+    public class RowResult {
+        private final Row row;
+
+        public RowResult( Row row ) {
+            this.row = row;
+        }
+
+        public RowResult has( String columnName,
+                              String value ) throws RepositoryException {
+            assertThat(row.getValue(columnName).getString(), is(value));
+            return this;
+        }
+
+        public RowResult has( String columnName,
+                              long value ) throws RepositoryException {
+            assertThat(row.getValue(columnName).getLong(), is(value));
+            return this;
+        }
+
+        public RowResult and( String columnName,
+                              String value ) throws RepositoryException {
+            return has(columnName, value);
+        }
+
+        public RowResult and( String columnName,
+                              long value ) throws RepositoryException {
+            return has(columnName, value);
+        }
+    }
+
+    protected RowResult assertRow( QueryResult result,
+                                   int rowNumber ) throws RepositoryException {
+        RowIterator rowIter = result.getRows();
+        Row row = null;
+        for (int i = 0; i != rowNumber; ++i) {
+            row = rowIter.nextRow();
+        }
+        assertThat(row, is(notNullValue()));
+        return new RowResult(row);
+    }
+
     @Test
     public void shouldStartUp() {
         assertThat(engine.getRepositoryService(), is(notNullValue()));
@@ -247,12 +296,91 @@ public class JcrQueryManagerTest {
     // ----------------------------------------------------------------------------------------------------------------
 
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQuery() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllNodes() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", QueryLanguage.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 23);
+        assertResultsHaveColumns(result, "jcr:primaryType");
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllCarNodes() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [car:Car]", QueryLanguage.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 12);
+        assertResultsHaveColumns(result, carColumnNames());
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllCarNodesOrderedByYear() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [car:Car] ORDER BY [car:year]",
+                                                                           QueryLanguage.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 12);
+        assertResultsHaveColumns(result, carColumnNames());
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllCarNodesOrderedByMsrp() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [car:Car] ORDER BY [car:msrp] DESC",
+                                                                           QueryLanguage.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 12);
+        assertResultsHaveColumns(result, carColumnNames());
+        // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
+        assertRow(result, 1).has("car:model", "LR3").and("car:msrp", "$48,525").and("car:mpgCity", 12);
+        assertRow(result, 2).has("car:model", "IS350").and("car:msrp", "$36,305").and("car:mpgCity", 18);
+        assertRow(result, 10).has("car:model", "DB9").and("car:msrp", "$171,600").and("car:mpgCity", 12);
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllCarsUnderHybrid() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%'",
+                                          QueryLanguage.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        print = true;
+        assertResults(query, result, 3L);
+        assertResultsHaveColumns(result, "car:maker", "car:model", "car:year", "car:msrp");
+        assertRow(result, 1).has("car:model", "Altima").and("car:msrp", "$18,260").and("car:year", 2008);
+        assertRow(result, 2).has("car:model", "Prius").and("car:msrp", "$21,500").and("car:year", 2008);
+        assertRow(result, 3).has("car:model", "Highlander").and("car:msrp", "$34,200").and("car:year", 2008);
+    }
+
+    @Ignore
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryUsingJoinToFindAllCarsUnderHybrid() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid'",
+                                          QueryLanguage.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        print = true;
+        assertResults(query, result, 12);
+        assertResultsHaveColumns(result, carColumnNames());
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllUnstructuredNodes() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:unstructured]",
+                                                                           QueryLanguage.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 22);
         assertResultsHaveColumns(result, "jcr:primaryType");
     }
 

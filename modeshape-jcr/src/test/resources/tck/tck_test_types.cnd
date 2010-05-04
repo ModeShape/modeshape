@@ -43,3 +43,7 @@
 + copyNode (nt:base) = nt:unstructured copy
 + ignoreNode (nt:base) = nt:unstructured ignore
 + versionNode (nt:base) = nt:unstructured version
+
+[modetest:queryable] > nt:unstructured
+- selectableProp1 (STRING)
+- selectableProp2 (STRING)

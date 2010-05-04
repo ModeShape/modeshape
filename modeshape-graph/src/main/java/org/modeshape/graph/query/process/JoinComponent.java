@@ -126,6 +126,7 @@ public abstract class JoinComponent extends ProcessingComponent {
 
     protected static Columns computeJoinedColumns( Columns leftColumns,
                                                    Columns rightColumns ) {
+        if (leftColumns == rightColumns) return leftColumns;
         List<Column> columns = new ArrayList<Column>(leftColumns.getColumnCount() + rightColumns.getColumnCount());
         columns.addAll(leftColumns.getColumns());
         columns.addAll(rightColumns.getColumns());

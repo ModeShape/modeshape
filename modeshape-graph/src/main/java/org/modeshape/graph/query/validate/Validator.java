@@ -174,7 +174,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( Column obj ) {
-        verify(obj.getSelectorName(), obj.getPropertyName(), true); // don't care about the alias
+        verify(obj.getSelectorName(), obj.getPropertyName(), this.validateColumnExistence); // don't care about the alias
     }
 
     /**
@@ -205,8 +205,8 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( EquiJoinCondition obj ) {
-        verify(obj.getSelector1Name(), obj.getProperty1Name(), true);
-        verify(obj.getSelector2Name(), obj.getProperty2Name(), true);
+        verify(obj.getSelector1Name(), obj.getProperty1Name(), this.validateColumnExistence);
+        verify(obj.getSelector2Name(), obj.getProperty2Name(), this.validateColumnExistence);
     }
 
     /**

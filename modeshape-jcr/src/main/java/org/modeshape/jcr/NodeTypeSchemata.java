@@ -99,11 +99,15 @@ class NodeTypeSchemata implements Schemata {
 
         // Build the fast-search for type names based upon PropertyType values ...
         types = new HashMap<Integer, String>();
-        for (String typeName : typeSystem.getTypeNames()) {
-            org.modeshape.graph.property.PropertyType dnaType = org.modeshape.graph.property.PropertyType.valueOf(typeName);
-            int jcrType = PropertyTypeUtil.jcrPropertyTypeFor(dnaType);
-            types.put(jcrType, typeName);
-        }
+        types.put(PropertyType.BINARY, typeSystem.getBinaryFactory().getTypeName());
+        types.put(PropertyType.BOOLEAN, typeSystem.getBooleanFactory().getTypeName());
+        types.put(PropertyType.DATE, typeSystem.getDateTimeFactory().getTypeName());
+        types.put(PropertyType.DOUBLE, typeSystem.getDoubleFactory().getTypeName());
+        types.put(PropertyType.LONG, typeSystem.getLongFactory().getTypeName());
+        types.put(PropertyType.PATH, typeSystem.getPathFactory().getTypeName());
+        types.put(PropertyType.REFERENCE, typeSystem.getReferenceFactory().getTypeName());
+        types.put(PropertyType.STRING, typeSystem.getStringFactory().getTypeName());
+        types.put(PropertyType.NAME, typeSystem.getStringFactory().getTypeName());
 
         // Create the "ALLNODES" table, which will contain all possible properties ...
         IndexRules.Builder indexRulesBuilder = IndexRules.createBuilder(LuceneSearchEngine.DEFAULT_RULES);

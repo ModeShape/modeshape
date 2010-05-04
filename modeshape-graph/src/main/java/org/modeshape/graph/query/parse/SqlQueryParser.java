@@ -805,10 +805,12 @@ public class SqlQueryParser implements QueryParser {
         }
         // AND has higher precedence than OR, so we need to evaluate it first ...
         while (tokens.canConsume("AND")) {
-            constraint = new And(constraint, parseConstraint(tokens, typeSystem, source));
+            Constraint rhs = parseConstraint(tokens, typeSystem, source);
+            if (rhs != null) constraint = new And(constraint, rhs);
         }
         while (tokens.canConsume("OR")) {
-            constraint = new Or(constraint, parseConstraint(tokens, typeSystem, source));
+            Constraint rhs = parseConstraint(tokens, typeSystem, source);
+            if (rhs != null) constraint = new Or(constraint, rhs);
         }
         return constraint;
     }

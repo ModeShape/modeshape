@@ -21,9 +21,15 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.sql;
+package org.modeshape.jcr;
 
-import javax.jcr.query.Query;
+import static org.modeshape.common.text.TokenStream.ANY_VALUE;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.text.TokenStream;
@@ -34,11 +40,23 @@ import org.modeshape.graph.query.model.Comparison;
 import org.modeshape.graph.query.model.Constraint;
 import org.modeshape.graph.query.model.DynamicOperand;
 import org.modeshape.graph.query.model.FullTextSearchScore;
+import org.modeshape.graph.query.model.Join;
+import org.modeshape.graph.query.model.JoinType;
+import org.modeshape.graph.query.model.Literal;
+import org.modeshape.graph.query.model.NamedSelector;
 import org.modeshape.graph.query.model.NodePath;
+import org.modeshape.graph.query.model.Operator;
 import org.modeshape.graph.query.model.Or;
 import org.modeshape.graph.query.model.PropertyValue;
+import org.modeshape.graph.query.model.Query;
+import org.modeshape.graph.query.model.SameNodeJoinCondition;
+import org.modeshape.graph.query.model.Selector;
+import org.modeshape.graph.query.model.SelectorName;
+import org.modeshape.graph.query.model.SetCriteria;
 import org.modeshape.graph.query.model.Source;
+import org.modeshape.graph.query.model.StaticOperand;
 import org.modeshape.graph.query.model.TypeSystem;
+import org.modeshape.graph.query.model.Visitor;
 import org.modeshape.graph.query.model.TypeSystem.TypeFactory;
 import org.modeshape.graph.query.parse.FullTextSearchParser;
 import org.modeshape.graph.query.parse.SqlQueryParser;
@@ -390,7 +408,7 @@ import org.modeshape.graph.query.parse.SqlQueryParser;
  */
 public class JcrSqlQueryParser extends SqlQueryParser {
 
-    public static final String LANGUAGE = Query.SQL;
+    public static final String LANGUAGE = javax.jcr.query.Query.SQL;
 
     /**
      * 
@@ -409,6 +427,50 @@ public class JcrSqlQueryParser extends SqlQueryParser {
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.parse.SqlQueryParser#parseQuery(org.modeshape.common.text.TokenStream,
+     *      org.modeshape.graph.query.model.TypeSystem)
+     */
+    @Override
+    protected Query parseQuery( TokenStream tokens,
+                                TypeSystem typeSystem ) {
+        Query query = super.parseQuery(tokens, typeSystem);
+        // See if we have to rewrite the JCR-SQL-style join ...
+        if (query.getSource() instanceof JoinableSources) {
+            JoinableSources joinableSources = (JoinableSources)query.getSource();
+            // Rewrite the joins ...
+            Source newSource = rewrite(joinableSources);
+            query = new Query(newSource, query.getConstraint(), query.getOrderings(), query.getColumns(), query.getLimits(),
+                              query.isDistinct());
+        }
+        return query;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.parse.SqlQueryParser#parseFrom(org.modeshape.common.text.TokenStream,
+     *      org.modeshape.graph.query.model.TypeSystem)
+     */
+    @Override
+    protected Source parseFrom( TokenStream tokens,
+                                TypeSystem typeSystem ) {
+        Source source = super.parseFrom(tokens, typeSystem);
+        if (tokens.matches(',') && source instanceof NamedSelector) {
+            NamedSelector selector = (NamedSelector)source;
+            JoinableSources joinedSources = new JoinableSources(selector);
+            while (tokens.canConsume(',')) {
+                // This is a JCR-SQL-style JOIN ...
+                NamedSelector nextSource = parseNamedSelector(tokens, typeSystem);
+                joinedSources.add(nextSource);
+            }
+            source = joinedSources;
+        }
+        return source;
+    }
+
+    /**
      * Parse a constraint clause. This method inherits all of the functionality from JCR-SQL2, except that JCR-SQL allows
      * constraints that use "<code>jcr:path</code>" and "<code>jcr:score</code>" pseudo-columns. In these special cases, the
      * resulting {@link Comparison comparison} will have a {@link NodePath} or {@link FullTextSearchScore} dynamic operand.
@@ -420,9 +482,77 @@ public class JcrSqlQueryParser extends SqlQueryParser {
     protected Constraint parseConstraint( TokenStream tokens,
                                           TypeSystem typeSystem,
                                           Source source ) {
-        Constraint constraint = super.parseConstraint(tokens, typeSystem, source);
+        Constraint constraint = null;
+        if (tokens.canConsume("JCR", ":", "PATH")) {
+            // It is a property constraint on "jcr:path" ...
+            SelectorName selector = getSelectorNameFor(source);
+            PropertyValue value = new PropertyValue(selector, "jcr:path");
+            Operator operator = parseComparisonOperator(tokens);
+            StaticOperand right = parseStaticOperand(tokens, typeSystem);
+            constraint = rewriteConstraint(new Comparison(value, operator, right));
+        } else if (tokens.matches(ANY_VALUE, "IN")) {
+            // This is a "... 'value' IN prop ..." pattern used in the JCR TCK tests but not in the JCR 1.0.1 specification ...
+            Literal value = parseLiteral(tokens, typeSystem);
+            tokens.consume("IN");
+            PropertyValue propertyValue = parsePropertyValue(tokens, typeSystem, source);
+            constraint = new SetCriteria(propertyValue, value);
+        } else if (source instanceof JoinableSources
+                   && !(tokens.matches("(") || tokens.matches("NOT") || tokens.matches("CONTAINS", "(")
+                        || tokens.matches("ISSAMENODE", "(") || tokens.matches("ISCHILDNODE", "(") || tokens.matches("ISDESCENDANTNODE",
+                                                                                                                     "("))) {
+            JoinableSources joinableSources = (JoinableSources)source;
+            // See if this is a join condition ...
+            if (tokens.matches(ANY_VALUE, ":", ANY_VALUE, ".", "JCR", ":", "PATH", "=")
+                || tokens.matches(ANY_VALUE, ".", "JCR", ":", "PATH", "=")) {
+                SelectorName selector1 = parseSelectorName(tokens, typeSystem);
+                tokens.consume('.');
+                parseName(tokens, typeSystem); // jcr:path
+                tokens.consume('=');
+                SelectorName selector2 = parseSelectorName(tokens, typeSystem);
+                tokens.consume('.');
+                parseName(tokens, typeSystem); // jcr:path
+                joinableSources.add(new SameNodeJoinCondition(selector1, selector2));
+
+                // AND has higher precedence than OR, so we need to evaluate it first ...
+                while (tokens.canConsume("AND")) {
+                    Constraint rhs = parseConstraint(tokens, typeSystem, source);
+                    if (rhs != null) constraint = constraint != null ? new And(constraint, rhs) : rhs;
+                }
+                while (tokens.canConsume("OR")) {
+                    Constraint rhs = parseConstraint(tokens, typeSystem, source);
+                    if (rhs != null) constraint = constraint != null ? new And(constraint, rhs) : rhs;
+                }
+                return constraint;
+            }
+        }
+        if (constraint != null) {
+            // AND has higher precedence than OR, so we need to evaluate it first ...
+            while (tokens.canConsume("AND")) {
+                Constraint rhs = parseConstraint(tokens, typeSystem, source);
+                if (rhs != null) constraint = new And(constraint, rhs);
+            }
+            while (tokens.canConsume("OR")) {
+                Constraint rhs = parseConstraint(tokens, typeSystem, source);
+                if (rhs != null) constraint = new Or(constraint, rhs);
+            }
+            return constraint;
+        }
+
+        constraint = super.parseConstraint(tokens, typeSystem, source);
         constraint = rewriteConstraint(constraint);
         return constraint;
+    }
+
+    protected SelectorName getSelectorNameFor( Source source ) {
+        // Since JCR-SQL only allows ISSAMENODE join constraints, it doesn't matter which source we select ...
+        if (source instanceof JoinableSources) {
+            return ((JoinableSources)source).getSelectors().values().iterator().next().getAliasOrName();
+        }
+        if (source instanceof Selector) {
+            return ((Selector)source).getAliasOrName();
+        }
+        assert false;
+        return null;
     }
 
     protected Constraint rewriteConstraint( Constraint constraint ) {
@@ -519,5 +649,102 @@ public class JcrSqlQueryParser extends SqlQueryParser {
             }
         }
         return text;
+    }
+
+    protected Source rewrite( JoinableSources joinableSources ) {
+        // Find the order of the joins ...
+        List<Join> joins = new LinkedList<Join>();
+        for (SameNodeJoinCondition joinCondition : joinableSources.getJoinConditions()) {
+            SelectorName selector1 = joinCondition.getSelector1Name();
+            SelectorName selector2 = joinCondition.getSelector2Name();
+            boolean found = false;
+            ListIterator<Join> iter = joins.listIterator();
+            while (iter.hasNext()) {
+                Join next = iter.next();
+                Join replacement = null;
+                if (usesSelector(next, selector1)) {
+                    Source right = joinableSources.getSelectors().get(selector2.getName());
+                    replacement = new Join(next, JoinType.INNER, right, joinCondition);
+                } else if (usesSelector(next, selector2)) {
+                    Source left = joinableSources.getSelectors().get(selector1.getName());
+                    replacement = new Join(left, JoinType.INNER, next, joinCondition);
+                }
+                if (replacement != null) {
+                    iter.previous();
+                    iter.remove();
+                    joins.add(replacement);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                // Nothing matched, so add a new join ...
+                Source left = joinableSources.getSelectors().get(selector1.getName());
+                Source right = joinableSources.getSelectors().get(selector2.getName());
+                joins.add(new Join(left, JoinType.INNER, right, joinCondition));
+            }
+        }
+        if (joins.size() == 1) {
+            return joins.get(0);
+        }
+        // Otherwise the join conditions were not sufficient
+        return null;
+    }
+
+    protected boolean usesSelector( Join join,
+                                    SelectorName selector ) {
+        Source left = join.getLeft();
+        if (left instanceof Selector && selector.equals(((Selector)left).getAliasOrName())) return true;
+        if (left instanceof Join && usesSelector((Join)left, selector)) return true;
+        Source right = join.getRight();
+        if (right instanceof Selector && selector.equals(((Selector)right).getAliasOrName())) return true;
+        if (right instanceof Join && usesSelector((Join)right, selector)) return true;
+        return false;
+    }
+
+    protected static class JoinableSources extends Source {
+        private static final long serialVersionUID = 1L;
+        private transient Map<String, Selector> selectors = new LinkedHashMap<String, Selector>();
+        private transient List<SameNodeJoinCondition> joinConditions = new ArrayList<SameNodeJoinCondition>();
+
+        protected JoinableSources( Selector firstSelector ) {
+            add(firstSelector);
+        }
+
+        public void add( Selector selector ) {
+            selectors.put(selector.getAliasOrName().getName(), selector);
+        }
+
+        public void add( SameNodeJoinCondition joinCondition ) {
+            joinConditions.add(joinCondition);
+        }
+
+        public Iterable<String> selectorNames() {
+            return selectors.keySet();
+        }
+
+        /**
+         * @return joinConditions
+         */
+        public List<SameNodeJoinCondition> getJoinConditions() {
+            return joinConditions;
+        }
+
+        /**
+         * @return selectors
+         */
+        public Map<String, Selector> getSelectors() {
+            return selectors;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.query.model.Visitable#accept(org.modeshape.graph.query.model.Visitor)
+         */
+        @Override
+        public void accept( Visitor visitor ) {
+        }
+
     }
 }

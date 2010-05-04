@@ -43,6 +43,7 @@ import org.modeshape.graph.query.model.Visitors;
 import org.modeshape.graph.query.parse.InvalidQueryException;
 import org.modeshape.graph.query.parse.SqlQueryParser;
 import org.modeshape.graph.query.plan.CanonicalPlanner;
+import org.modeshape.graph.query.plan.PlanHints;
 import org.modeshape.graph.query.plan.PlanNode;
 import org.modeshape.graph.query.plan.PlanNode.Property;
 import org.modeshape.graph.query.plan.PlanNode.Type;
@@ -305,7 +306,9 @@ public class ImmutableSchemata implements Schemata {
                 for (SelectorName name : viewNames) {
                     QueryCommand command = definitions.get(name);
                     // Create the canonical plan for the definition ...
-                    QueryContext queryContext = new QueryContext(schemata, typeSystem);
+                    PlanHints hints = new PlanHints();
+                    hints.validateColumnExistance = false;
+                    QueryContext queryContext = new QueryContext(schemata, typeSystem, hints);
                     CanonicalPlanner planner = new CanonicalPlanner();
                     PlanNode plan = planner.createPlan(queryContext, command);
                     if (queryContext.getProblems().hasErrors()) {

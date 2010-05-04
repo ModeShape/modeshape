@@ -100,8 +100,6 @@ import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
 import org.modeshape.graph.query.parse.QueryParsers;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.jcr.RepositoryQueryManager.PushDown;
-import org.modeshape.jcr.sql.JcrSql2QueryParser;
-import org.modeshape.jcr.sql.JcrSqlQueryParser;
 import org.modeshape.jcr.xpath.XPathQueryParser;
 
 /**

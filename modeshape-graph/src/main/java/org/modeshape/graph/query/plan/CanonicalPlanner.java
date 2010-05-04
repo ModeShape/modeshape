@@ -421,7 +421,7 @@ public class CanonicalPlanner implements Planner {
                     // Make sure that the column is in the table ...
                     String columnName = column.getPropertyName();
                     String name = columnName;
-                    if (table.getColumn(name) == null) {
+                    if (table.getColumn(name) == null && context.getHints().validateColumnExistance) {
                         context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable, name, tableName);
                     }
                 }

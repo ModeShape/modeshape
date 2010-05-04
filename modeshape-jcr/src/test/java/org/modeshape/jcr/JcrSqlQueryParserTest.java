@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr.sql;
+package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -39,13 +39,18 @@ import org.modeshape.graph.query.model.And;
 import org.modeshape.graph.query.model.Comparison;
 import org.modeshape.graph.query.model.Constraint;
 import org.modeshape.graph.query.model.DynamicOperand;
+import org.modeshape.graph.query.model.Join;
+import org.modeshape.graph.query.model.JoinCondition;
+import org.modeshape.graph.query.model.JoinType;
 import org.modeshape.graph.query.model.Literal;
 import org.modeshape.graph.query.model.NamedSelector;
 import org.modeshape.graph.query.model.NodePath;
 import org.modeshape.graph.query.model.Or;
 import org.modeshape.graph.query.model.Query;
 import org.modeshape.graph.query.model.QueryCommand;
+import org.modeshape.graph.query.model.SameNodeJoinCondition;
 import org.modeshape.graph.query.model.SelectorName;
+import org.modeshape.graph.query.model.Source;
 import org.modeshape.graph.query.model.StaticOperand;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.parse.SqlQueryParser;
@@ -117,7 +122,16 @@ public class JcrSqlQueryParserTest {
     }
 
     @Test
-    public void shouldParseSelectStarFromSingleSourceWhereContainsPathLikeConstraint() {
+    public void shouldParseQueriesUsedInJcrTckTests() {
+        parse("SELECT * FROM nt:unstructured, mix:referenceable WHERE nt:unstructured.jcr:path = mix:referenceable.jcr:path AND jcr:path LIKE '/testroot/%'");
+        parse("SELECT * FROM nt:unstructured, nt:base WHERE nt:unstructured.jcr:path = nt:base.jcr:path AND jcr:path LIKE '/testroot/%'");
+        parse("SELECT * FROM nt:base, mix:referenceable WHERE nt:base.jcr:path = mix:referenceable.jcr:path AND jcr:path LIKE '/testroot/%'");
+        parse("SELECT * FROM nt:unstructured, mix:referenceable WHERE nt:unstructured.jcr:path = mix:referenceable.jcr:path AND jcr:path LIKE '/testroot/%'");
+        parse("SELECT prop1 FROM nt:unstructured WHERE 'two' IN prop2 AND 'existence' IN prop1 AND jcr:path LIKE '/testroot/%'");
+    }
+
+    @Test
+    public void shouldParseSelectStarFromSingleSourceWithWhereContainingPathLikeConstraint() {
         query = parse("SELECT * FROM mgnl:content WHERE jcr:path LIKE '/modules/%/templates'");
         assertThat(query.getSource(), is(instanceOf(NamedSelector.class)));
         // SELECT * ...
@@ -134,7 +148,7 @@ public class JcrSqlQueryParserTest {
     }
 
     @Test
-    public void shouldParseSelectStarFromSingleSourceWhereContainsTwoPathLikeConstraints() {
+    public void shouldParseSelectStarFromSingleSourceWithWhereContainingTwoPathLikeConstraints() {
         query = parse("SELECT * FROM mgnl:content WHERE jcr:path LIKE '/modules/%/templates' or jcr:path like '/modules/%/other'");
         assertThat(query.getSource(), is(instanceOf(NamedSelector.class)));
         // SELECT * ...
@@ -154,9 +168,64 @@ public class JcrSqlQueryParserTest {
         assertThat(comparison2.getOperand2(), is((StaticOperand)literal("/modules/%/other")));
     }
 
+    @Test
+    public void shouldParseSelectStarFromTwoJoinedSourcesWithWhereContainingJoinCriteria() {
+        query = parse("SELECT * FROM mgnl:content, acme:stuff WHERE mgnl:content.jcr:path = acme:stuff.jcr:path");
+        // SELECT * ...
+        assertThat(query.getColumns().isEmpty(), is(true));
+        // FROM ...
+        Join join = isJoin(query.getSource());
+        assertThat(join.getLeft(), is((Source)namedSelector(selectorName("mgnl:content"))));
+        assertThat(join.getRight(), is((Source)namedSelector(selectorName("acme:stuff"))));
+        assertThat(join.getType(), is(JoinType.INNER));
+        SameNodeJoinCondition joinCondition = isSameNodeJoinCondition(join.getJoinCondition());
+        assertThat(joinCondition.getSelector1Name(), is(selectorName("mgnl:content")));
+        assertThat(joinCondition.getSelector2Name(), is(selectorName("acme:stuff")));
+        assertThat(joinCondition.getSelector2Path(), is(nullValue()));
+        // WHERE ...
+        assertThat(query.getConstraint(), is(nullValue()));
+    }
+
+    @Test
+    public void shouldParseSelectStarFromThreeJoinedSourcesWithWhereContainingJoinCriteria() {
+        query = parse("SELECT * FROM mgnl:content, acme:stuff, foo:bar WHERE mgnl:content.jcr:path = acme:stuff.jcr:path AND mgnl:content.jcr:path = foo:bar.jcr:path");
+        // SELECT * ...
+        assertThat(query.getColumns().isEmpty(), is(true));
+        // FROM ...
+        Join join = isJoin(query.getSource());
+        Join join2 = isJoin(join.getLeft());
+        assertThat(join2.getLeft(), is((Source)namedSelector(selectorName("mgnl:content"))));
+        assertThat(join2.getRight(), is((Source)namedSelector(selectorName("acme:stuff"))));
+        assertThat(join2.getType(), is(JoinType.INNER));
+        SameNodeJoinCondition joinCondition2 = isSameNodeJoinCondition(join2.getJoinCondition());
+        assertThat(joinCondition2.getSelector1Name(), is(selectorName("mgnl:content")));
+        assertThat(joinCondition2.getSelector2Name(), is(selectorName("acme:stuff")));
+        assertThat(joinCondition2.getSelector2Path(), is(nullValue()));
+
+        assertThat(join.getRight(), is((Source)namedSelector(selectorName("foo:bar"))));
+        assertThat(join.getType(), is(JoinType.INNER));
+        SameNodeJoinCondition joinCondition = isSameNodeJoinCondition(join.getJoinCondition());
+        assertThat(joinCondition.getSelector1Name(), is(selectorName("mgnl:content")));
+        assertThat(joinCondition.getSelector2Name(), is(selectorName("foo:bar")));
+        assertThat(joinCondition.getSelector2Path(), is(nullValue()));
+
+        // WHERE ...
+        assertThat(query.getConstraint(), is(nullValue()));
+    }
+
+    protected Join isJoin( Source source ) {
+        assertThat(source, is(instanceOf(Join.class)));
+        return (Join)source;
+    }
+
     protected Comparison isComparison( Constraint constraint ) {
         assertThat(constraint, is(instanceOf(Comparison.class)));
         return (Comparison)constraint;
+    }
+
+    protected SameNodeJoinCondition isSameNodeJoinCondition( JoinCondition condition ) {
+        assertThat(condition, is(instanceOf(SameNodeJoinCondition.class)));
+        return (SameNodeJoinCondition)condition;
     }
 
     protected And isAnd( Constraint constraint ) {
@@ -175,6 +244,15 @@ public class JcrSqlQueryParserTest {
 
     protected Literal literal( Object value ) {
         return new Literal(value);
+    }
+
+    protected NamedSelector namedSelector( SelectorName selectorName ) {
+        return new NamedSelector(selectorName);
+    }
+
+    protected NamedSelector namedSelector( SelectorName selectorName,
+                                           SelectorName alias ) {
+        return new NamedSelector(selectorName, alias);
     }
 
     // ----------------------------------------------------------------------------------------------------------------

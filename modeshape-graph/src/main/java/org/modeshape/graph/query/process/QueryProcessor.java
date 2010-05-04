@@ -241,8 +241,10 @@ public abstract class QueryProcessor implements Processor {
                 }
                 // For each Constraint object applied to the JOIN, simply create a SelectComponent on top ...
                 List<Constraint> constraints = node.getPropertyAsList(Property.JOIN_CONSTRAINTS, Constraint.class);
-                for (Constraint constraint : constraints) {
-                    component = new SelectComponent(component, constraint, context.getVariables());
+                if (constraints != null) {
+                    for (Constraint constraint : constraints) {
+                        component = new SelectComponent(component, constraint, context.getVariables());
+                    }
                 }
                 break;
             case LIMIT:

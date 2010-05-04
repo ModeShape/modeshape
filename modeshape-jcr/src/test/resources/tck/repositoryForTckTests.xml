@@ -28,7 +28,8 @@
           xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
           xmlns:mode="http://www.modeshape.org/1.0"
           jcr:primaryType="nt:unstructured"
-          jcr:mixinTypes="mix:referenceable">
+          jcr:mixinTypes="mix:referenceable"
+          xmlns:modetest="http://www.modeshape.org/test/1.0">
     <nt:unstructured jcr:name="serializationNode" />
     <nt:unstructured jcr:name="node1" prop1="&lt;foo&amp;foo&gt;">
        <!--  
@@ -66,4 +67,10 @@
     <nt:unstructured jcr:name="anotherNodeForOrderBy" prop1="propValue1">
        <nt:unstructured jcr:name="aNestedNodeForOrderBy" prop1="propValue2"/>
     </nt:unstructured>
+    <!-- 
+        Query tests require some nodes with non-residual properties that can be queried
+    -->
+    <modetest:queryable jcr:name="someQueryableNodeA" selectableProp1="This is the first property" />
+    <modetest:queryable jcr:name="someQueryableNodeB" selectableProp1="This is the second property" />
+    <modetest:queryable jcr:name="someQueryableNodeC" selectableProp1="This is the third property" />
 </testroot>

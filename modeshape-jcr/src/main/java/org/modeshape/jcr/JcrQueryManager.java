@@ -134,8 +134,8 @@ class JcrQueryManager implements QueryManager {
             hints.showPlan = true;
             // We want to allow use of residual properties (not in the schemata) for criteria ...
             hints.validateColumnExistance = false;
-            // If using XPath, we need to add a few hints ...
-            if (Query.XPATH.equals(language)) {
+            // If using XPath or JCR-SQL, we need to include the 'jcr:score' column ...
+            if (Query.XPATH.equals(language) || Query.SQL.equals(language)) {
                 hints.hasFullTextSearch = true; // requires 'jcr:score' to exist
             }
             return new JcrQuery(this.session, expression, parser.getLanguage(), command, hints, storedAtPath);
@@ -170,6 +170,8 @@ class JcrQueryManager implements QueryManager {
             // Parsing must be done now ...
             PlanHints hints = new PlanHints();
             hints.showPlan = true;
+            // We want to allow use of residual properties (not in the schemata) for criteria ...
+            hints.validateColumnExistance = false;
             return new JcrQuery(this.session, expression, QueryLanguage.JCR_SQL2, command, hints, null);
         } catch (org.modeshape.graph.query.parse.InvalidQueryException e) {
             // The query was parsed, but there is an error in the query
@@ -382,6 +384,8 @@ class JcrQueryManager implements QueryManager {
             checkForProblems(result.getProblems());
             if (Query.XPATH.equals(language)) {
                 return new XPathQueryResult(session, statement, result, schemata);
+            } else if (Query.SQL.equals(language)) {
+                return new JcrSqlQueryResult(session, statement, result, schemata);
             }
             return new JcrQueryResult(session, statement, result, schemata);
         }
@@ -1103,6 +1107,98 @@ class JcrQueryManager implements QueryManager {
             if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {
                 Float score = (Float)tuple[iterator.scoreIndex];
                 return ((XPathQueryResultRowIterator)iterator).jcrScore(score);
+            }
+            return super.getValue(columnName);
+        }
+    }
+
+    protected static class JcrSqlQueryResult extends JcrQueryResult {
+        private final List<String> columnNames;
+
+        protected JcrSqlQueryResult( JcrSession session,
+                                     String query,
+                                     QueryResults graphResults,
+                                     Schemata schemata ) {
+            super(session, query, graphResults, schemata);
+            List<String> columnNames = new LinkedList<String>(graphResults.getColumns().getColumnNames());
+            if (!columnNames.contains(JCR_SCORE_COLUMN_NAME)) columnNames.add(0, JCR_SCORE_COLUMN_NAME);
+            if (!columnNames.contains(JCR_PATH_COLUMN_NAME)) columnNames.add(0, JCR_PATH_COLUMN_NAME);
+            this.columnNames = Collections.unmodifiableList(columnNames);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jcr.JcrQueryManager.JcrQueryResult#getColumnNameList()
+         */
+        @Override
+        public List<String> getColumnNameList() {
+            return columnNames;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jcr.JcrQueryManager.JcrQueryResult#getRows()
+         */
+        @Override
+        public RowIterator getRows() {
+            final int numRows = results.getRowCount();
+            final List<Object[]> tuples = results.getTuples();
+            return new JcrSqlQueryResultRowIterator(session, queryStatement, results, tuples.iterator(), numRows);
+        }
+    }
+
+    protected static class JcrSqlQueryResultRowIterator extends SingleSelectorQueryResultRowIterator {
+        private final ValueFactories factories;
+        private final SessionCache cache;
+
+        protected JcrSqlQueryResultRowIterator( JcrSession session,
+                                                String query,
+                                                QueryResults results,
+                                                Iterator<Object[]> tuples,
+                                                long numRows ) {
+            super(session, query, results, tuples, numRows);
+            factories = session.executionContext.getValueFactories();
+            cache = session.cache();
+        }
+
+        @Override
+        protected Row createRow( Node node,
+                                 Object[] tuple ) {
+            return new JcrSqlQueryResultRow(this, node, tuple);
+        }
+
+        protected Value jcrPath( Path path ) {
+            return new JcrValue(factories, cache, PropertyType.PATH, path);
+        }
+
+        protected Value jcrScore( Float score ) {
+            return new JcrValue(factories, cache, PropertyType.DOUBLE, score);
+        }
+    }
+
+    protected static class JcrSqlQueryResultRow extends SingleSelectorQueryResultRow {
+        protected JcrSqlQueryResultRow( SingleSelectorQueryResultRowIterator iterator,
+                                        Node node,
+                                        Object[] tuple ) {
+            super(iterator, node, tuple);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.query.Row#getValue(java.lang.String)
+         */
+        @Override
+        public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
+            if (JCR_PATH_COLUMN_NAME.equals(columnName)) {
+                Location location = (Location)tuple[iterator.locationIndex];
+                return ((JcrSqlQueryResultRowIterator)iterator).jcrPath(location.getPath());
+            }
+            if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {
+                Float score = (Float)tuple[iterator.scoreIndex];
+                return ((JcrSqlQueryResultRowIterator)iterator).jcrScore(score);
             }
             return super.getValue(columnName);
         }
