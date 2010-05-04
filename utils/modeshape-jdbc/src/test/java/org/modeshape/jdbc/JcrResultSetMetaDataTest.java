@@ -48,11 +48,11 @@ import org.modeshape.jdbc.JcrDriver.ConnectionInfo;
  */
 public class JcrResultSetMetaDataTest {
 
-    public static final String STRING = PropertyType.nameFromValue(PropertyType.STRING);
-    public static final String DOUBLE = PropertyType.nameFromValue(PropertyType.DOUBLE);
-    public static final String LONG = PropertyType.nameFromValue(PropertyType.LONG);
-    public static final String PATH = PropertyType.nameFromValue(PropertyType.PATH);
-    public static final String REFERENCE = PropertyType.nameFromValue(PropertyType.REFERENCE);
+    public static final String STRING = TestResultSetMetaData.STRING;
+    public static final String DOUBLE = TestResultSetMetaData.DOUBLE;
+    public static final String LONG = TestResultSetMetaData.LONG;
+    public static final String PATH = TestResultSetMetaData.PATH;
+    public static final String REFERENCE = TestResultSetMetaData.REFERENCE;
 
     public static final Class<?> STRING_CLASS = JcrType.builtInTypeMap().get(STRING).getRepresentationClass();
 
@@ -64,18 +64,15 @@ public class JcrResultSetMetaDataTest {
     private QueryResult results;
     @Mock
     private org.modeshape.jcr.api.query.QueryResult extendedResults;
-    private String[] columnNames;
-    private String[] tableNames;
-    private String[] typeNames;
+    private String[] columnNames = TestResultSetMetaData.COLUMN_NAMES;
+    private String[] tableNames = TestResultSetMetaData.TABLE_NAMES;
+    private String[] typeNames = TestResultSetMetaData.TYPE_NAMES;
     @Mock
     private ConnectionInfo info;
 
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        columnNames = new String[] {"propA", "propB", "propC", "propD", "propE"};
-        tableNames = new String[] {"typeA", "typeB", "typeA", "", "typeA"};
-        typeNames = new String[] {STRING, LONG, PATH, REFERENCE, DOUBLE};
         when(results.getColumnNames()).thenReturn(columnNames);
         when(extendedResults.getColumnNames()).thenReturn(columnNames);
         when(extendedResults.getSelectorNames()).thenReturn(tableNames);

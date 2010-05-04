@@ -103,6 +103,8 @@ public class JcrConnection implements Connection {
             } catch (RepositoryException e) {
                 throw new SQLException(e.getLocalizedMessage());
             }
+            // this shouldn't happen, but in testing it did occur only because of the repository not being setup correctly
+            assert session != null;
         }
         return session;
     }
@@ -516,8 +518,8 @@ public class JcrConnection implements Connection {
      * @see java.sql.Connection#createStatement()
      */
     @Override
-    public Statement createStatement() throws SQLException {
-        return null;
+    public Statement createStatement() throws SQLException{
+	return new JcrStatement(this, this.session());
     }
 
     /**

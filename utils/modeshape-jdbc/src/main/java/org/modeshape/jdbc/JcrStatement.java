@@ -157,7 +157,10 @@ class JcrStatement implements Statement {
     @Override
     public int getMaxRows() throws SQLException {
         notClosed();
-        return rowLimit;
+        // need to map ModeShapes -1 rowLimit to 0
+        // because the jdbc spec indicate maxRows must be >= 0 
+        // or an exception should be thrown.
+        return (rowLimit == -1 ? 0 : rowLimit);
     }
 
     /**
@@ -490,7 +493,9 @@ class JcrStatement implements Statement {
      */
     @Override
     public ResultSet getGeneratedKeys() throws SQLException {
-        return null;
+    // TODO:  if and when ModeShape supports providing key information
+    //		then a result set containing the metadata will need to be created.
+        return new JcrResultSet();
     }
 
     /**

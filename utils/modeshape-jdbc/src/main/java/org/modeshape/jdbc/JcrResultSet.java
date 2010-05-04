@@ -85,6 +85,16 @@ public class JcrResultSet implements ResultSet {
 
         beforeFirst();
     }
+    
+    /**
+     * no-arg CTOR is used to create an empty result set 
+     * @see JcrStatement#getGeneratedKeys()
+     */
+    protected JcrResultSet() {
+	closed = true;
+	columnIndexesByName = Collections.emptyMap();
+	
+    }
 
     /**
      * {@inheritDoc}
