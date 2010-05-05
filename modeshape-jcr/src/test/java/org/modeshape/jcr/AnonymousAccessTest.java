@@ -45,9 +45,8 @@ public class AnonymousAccessTest {
     public void beforeEach() throws Exception {
         JcrConfiguration config = new JcrConfiguration();
         config.repositorySource("source").usingClass(InMemoryRepositorySource.class);
-        config.repository("repo")
-              .setSource("source")
-              .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN)
+        config.repository("repo").setSource("source")
+        // .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN)
               .setOption(Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr-non-existant"); // ensure no use of JAAS
         engine = config.build();
         engine.start();

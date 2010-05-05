@@ -310,7 +310,7 @@ public class JcrRepository implements Repository {
         /**
          * The default value for the {@link Option#ANONYMOUS_USER_ROLES} option is {@value} .
          */
-        public static final String ANONYMOUS_USER_ROLES = "admin";
+        public static final String ANONYMOUS_USER_ROLES = ModeShapeRoles.ADMIN;
 
         /**
          * The default value for the {@link Option#PROJECT_NODE_TYPES} option is {@value} .
@@ -654,7 +654,7 @@ public class JcrRepository implements Repository {
          * Set up the anonymous role, if appropriate
          */
         SecurityContext anonymousUserContext = null;
-        String rawAnonRoles = options != null ? options.get(Option.ANONYMOUS_USER_ROLES) : null;
+        String rawAnonRoles = this.options.get(Option.ANONYMOUS_USER_ROLES);
         if (rawAnonRoles != null) {
             final Set<String> roles = new HashSet<String>();
             for (String role : rawAnonRoles.split("\\s*,\\s*")) {
