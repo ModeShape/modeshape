@@ -889,9 +889,16 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         NodeType primaryType = this.getPrimaryNodeType();
         NodeType[] mixinTypes = this.getMixinNodeTypes();
 
+        if (mixinCandidateType.isAbstract()) {
+            return false;
+        }
+
         if (!mixinCandidateType.isMixin()) {
             return false;
         }
+
+        /* MODE FLAG - Needs to be uncommented for JCR 2 */
+        // if (isNodeType(mixinCandidateType.getInternalName())) return true;
 
         if (mixinCandidateType.conflictsWith(primaryType, mixinTypes)) {
             return false;
@@ -978,6 +985,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             throw new ConstraintViolationException(JcrI18n.cannotAddMixin.text(mixinName));
         }
 
+        if (isNodeType(mixinName)) return;
+
         this.editor().addMixin(mixinCandidateType);
     }
 
@@ -1007,17 +1016,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             throw new VersionException(JcrI18n.nodeIsCheckedIn.text(getPath()));
         }
 
-        /*
-         * This is a special workaround for o.a.j.test.api.version.VersionText.testRemoveMixin().
-         * This test tries to remove the mix:versionable mixin from a node with the primary type
-         * nt:version and no mixin types.  It expects a ConstraintViolationException (because nt:version nodes
-         * are protected) instead of a NoSuchNodeTypeException (because the node doesn't have that mixin).
-         * 
-         * Interestingly, o.a.j.test.api.version.VersionHistoryTest.testRemoveMixin tries to remove
-         * mix:versionable from a nt:versionHistory node, but accepts either a CVE or a NSNTE.
-         */
-        if (JcrMixLexicon.VERSIONABLE.getString(context().getNamespaceRegistry()).equals(mixinName)) {
-            throw new ConstraintViolationException(JcrI18n.cannotRemoveMixVersionable.text(getPath()));
+        if (getDefinition().isProtected()) {
+            throw new ConstraintViolationException(JcrI18n.cannotRemoveFromProtectedNode.text(getPath()));
         }
 
         Property existingMixinProperty = getProperty(JcrLexicon.MIXIN_TYPES);
@@ -1121,6 +1121,39 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         editor().setProperty(JcrLexicon.MIXIN_TYPES, newMixinValues, PropertyType.NAME, false);
     }
 
+    /**
+     * Attempts to change the primary type of this node. Not yet supported, but some error checking is added.
+     * 
+     * @param nodeTypeName the name of the new primary type for this node
+     * @throws NoSuchNodeTypeException if no node with the given name exists
+     * @throws VersionException if this node is versionable and checked-in or is non-versionable but its nearest versionable
+     *         ancestor is checked-in.
+     * @throws ConstraintViolationException if existing child nodes or properties (or the lack of sufficient child nodes or
+     *         properties) prevent this node from satisfying the definition of the new primary type
+     * @throws LockException if a lock prevents the modification of the primary type
+     * @throws RepositoryException if any other error occurs
+     */
+    public void setPrimaryType( String nodeTypeName )
+        throws NoSuchNodeTypeException, VersionException, ConstraintViolationException, LockException, RepositoryException {
+
+        if (this.isLocked() && !holdsLock()) {
+            throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
+        }
+
+        if (!isCheckedOut()) {
+            throw new VersionException(JcrI18n.nodeIsCheckedIn.text(getPath()));
+        }
+
+        JcrNodeType nodeType = session().nodeTypeManager().getNodeType(nodeTypeName);
+
+        if (nodeType.equals(getPrimaryNodeType())) return;
+
+        if (nodeType.isMixin()) {
+            throw new ConstraintViolationException(JcrI18n.cannotUseMixinTypeAsPrimaryType.text(nodeTypeName));
+        }
+
+        throw new ConstraintViolationException(JcrI18n.setPrimaryTypeNotSupported.text());
+    }
     /**
      * {@inheritDoc}
      * 
@@ -1293,6 +1326,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         // Determine the name for the primary node type
         if (primaryNodeTypeName != null) {
             if (!session().nodeTypeManager().hasNodeType(primaryNodeTypeName)) return false;
+
+            JcrNodeType nodeType = session().nodeTypeManager().getNodeType(primaryNodeTypeName);
+            if (nodeType.isAbstract()) return false;
+            if (nodeType.isMixin()) return false;
         }
 
         return true;

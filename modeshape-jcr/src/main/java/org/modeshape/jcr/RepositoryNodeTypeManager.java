@@ -1948,28 +1948,40 @@ class RepositoryNodeTypeManager {
         assert nodeType != null;
 
         Property supertypesProperty = nodeType.getProperty(JcrLexicon.SUPERTYPES);
+        Object[] supertypesArray;
 
         // If no supertypes are provided, assume nt:base as a supertype
         if (supertypesProperty == null || supertypesProperty.size() == 0) {
-            Property isMixinProperty = nodeType.getProperty(JcrLexicon.IS_MIXIN);
-            boolean isMixin = isMixinProperty != null && Boolean.valueOf(isMixinProperty.getFirstValue().toString());
-            JcrNodeType supertype = findTypeInMapOrList(JcrNtLexicon.BASE, pendingTypes);
-            // We register nt:base at startup now instead of just injecting it
-            if (supertype == null || isMixin) {
-                return Collections.emptyList();
-            }
-            return Collections.<JcrNodeType>singletonList(supertype);
+            supertypesArray = new Object[0];
+        } else {
+            supertypesArray = supertypesProperty.getValuesAsArray();
         }
+        List<JcrNodeType> supertypes = new LinkedList<JcrNodeType>();
 
-        Object[] supertypesArray = supertypesProperty.getValuesAsArray();
-        List<JcrNodeType> supertypes = new ArrayList<JcrNodeType>(supertypesArray.length);
+        Property isMixinProperty = nodeType.getProperty(JcrLexicon.IS_MIXIN);
+        boolean isMixin = isMixinProperty != null && Boolean.valueOf(isMixinProperty.getFirstValue().toString());
+        boolean needsPrimaryAncestor = !isMixin;
 
         for (int i = 0; i < supertypesArray.length; i++) {
-            supertypes.add(findTypeInMapOrList((Name)supertypesArray[i], pendingTypes));
-
-            if (supertypes.get(i) == null) {
+            JcrNodeType supertype = findTypeInMapOrList((Name)supertypesArray[i], pendingTypes);
+            if (supertype == null) {
                 Name nodeTypeName = nodeType.getLocation().getPath().getLastSegment().getName();
                 throw new InvalidNodeTypeDefinitionException(JcrI18n.invalidSupertypeName.text(supertypesArray[i], nodeTypeName));
+            }
+
+            needsPrimaryAncestor &= supertype.isMixin();
+            supertypes.add(supertype);
+        }
+
+        // primary types (other than nt:base) always have at least one ancestor that's a primary type - nt:base
+        if (needsPrimaryAncestor) {
+            Property nameProperty = nodeType.getProperty(JcrLexicon.NODE_TYPE_NAME);
+            Name nodeName = context.getValueFactories().getNameFactory().create(nameProperty.getFirstValue());
+
+            if (!JcrNtLexicon.BASE.equals(nodeName)) {
+                JcrNodeType ntBase = findTypeInMapOrList(JcrNtLexicon.BASE, pendingTypes);
+                assert ntBase != null;
+                supertypes.add(0, ntBase);
             }
         }
 

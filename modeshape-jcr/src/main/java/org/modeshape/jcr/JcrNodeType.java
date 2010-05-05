@@ -254,6 +254,13 @@ class JcrNodeType implements NodeType {
         CheckArg.isNotNull(primaryNodeTypeName, "primaryNodeTypeName");
         Name childName = context.getValueFactories().getNameFactory().create(childNodeName);
         Name childPrimaryTypeName = context.getValueFactories().getNameFactory().create(primaryNodeTypeName);
+
+        if (primaryNodeTypeName != null) {
+            JcrNodeType childType = this.nodeTypeManager().getNodeType(childPrimaryTypeName);
+            if (childType.isAbstract() || childType.isMixin()) return false;
+
+        }
+
         return nodeTypeManager().findChildNodeDefinition(this.name, null, childName, childPrimaryTypeName, 0, true) != null;
     }
 

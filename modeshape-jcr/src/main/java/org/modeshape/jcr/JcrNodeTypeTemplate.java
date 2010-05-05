@@ -92,8 +92,18 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
      * {@inheritDoc}
      * 
      * @see org.modeshape.jcr.nodetype.NodeTypeTemplate#setDeclaredSupertypeNames(java.lang.String[])
+     * @deprecated Use {@link #setDeclaredSuperTypeNames(String[])} instead
      */
     public void setDeclaredSupertypeNames( String[] names ) {
+        setDeclaredSuperTypeNames(names);
+    }
+
+    /**
+     * Set the direct supertypes for this node type.
+     * 
+     * @param names the names of the direct supertypes, or empty or null if there are none.
+     */
+    public void setDeclaredSuperTypeNames( String[] names ) {
         CheckArg.isNotNull(names, "names");
         this.declaredSupertypeNames = names;
     }
@@ -141,7 +151,12 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
      * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getDeclaredNodeDefinitions()
      */
     public NodeDefinition[] getDeclaredNodeDefinitions() {
-        return null; // per JSR-283 specification (section 4.7.10)
+        return getDeclaredChildNodeDefinitions();
+    }
+
+    public NodeDefinition[] getDeclaredChildNodeDefinitions() {
+        if (this.nodeDefinitionTemplates == null) return null;
+        return nodeDefinitionTemplates.toArray(new NodeDefinition[nodeDefinitionTemplates.size()]);
     }
 
     /**
@@ -150,15 +165,26 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
      * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getDeclaredPropertyDefinitions()
      */
     public PropertyDefinition[] getDeclaredPropertyDefinitions() {
-        return null; // per JSR-283 specification (section 4.7.10)
+        if (this.propertyDefinitionTemplates == null) return null;
+        return propertyDefinitionTemplates.toArray(new PropertyDefinition[propertyDefinitionTemplates.size()]);
     }
 
     /**
      * {@inheritDoc}
      * 
      * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getDeclaredSupertypes()
+     * @deprecated Use {@link #getDeclaredSuperTypeNames()} instead
      */
     public String[] getDeclaredSupertypes() {
+        return getDeclaredSuperTypeNames();
+    }
+
+    /**
+     * Get the direct supertypes for this node type.
+     * 
+     * @return the names of the direct supertypes, or an empty array if there are none
+     */
+    public String[] getDeclaredSuperTypeNames() {
         return declaredSupertypeNames;
     }
 
@@ -224,5 +250,6 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
     public void setQueryable( boolean queryable ) {
         this.queryable = queryable;
     }
+
 
 }

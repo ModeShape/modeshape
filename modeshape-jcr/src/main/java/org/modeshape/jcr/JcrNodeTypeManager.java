@@ -26,6 +26,7 @@ package org.modeshape.jcr;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.PropertyType;
@@ -524,12 +525,25 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     }
 
     /**
+     * Unregisters the named node type if it is not referenced by other node types as a supertype, a default primary type of a
+     * child node (or nodes), or a required primary type of a child node (or nodes).
+     * 
+     * @param nodeTypeName
+     * @throws NoSuchNodeTypeException if node type name does not correspond to a registered node type
+     * @throws InvalidNodeTypeDefinitionException if the node type with the given name cannot be unregistered because it is the
+     *         supertype, one of the required primary types, or a default primary type of another node type
+     * @throws AccessDeniedException if the current session does not have the {@link ModeShapePermissions#REGISTER_TYPE register
+     *         type permission}.
+     * @throws RepositoryException if any other error occurs
+     */
+    public void unregisterNodeType( String nodeTypeName )
+        throws NoSuchNodeTypeException, InvalidNodeTypeDefinitionException, RepositoryException {
+        unregisterNodeType(Collections.singleton(nodeTypeName));
+    }
+
+    /**
      * Allows the collection of node types to be unregistered if they are not referenced by other node types as supertypes,
      * default primary types of child nodes, or required primary types of child nodes.
-     * <p>
-     * <b>NOTE: This method does not check to see if any of the node types are currently being used. Unregistering a node type
-     * that is being used will cause the system to become unstable</b>
-     * </p>
      * 
      * @param nodeTypeNames the names of the node types to be unregistered
      * @throws NoSuchNodeTypeException if any of the node type names do not correspond to a registered node type

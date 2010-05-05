@@ -1504,12 +1504,6 @@ class SessionCache {
                                                                                         workspaceName(),
                                                                                         sourceName());
 
-                    nodeTypes().findChildNodeDefinition(payload.getPrimaryTypeName(),
-                                                        payload.getMixinTypeNames(),
-                                                        name,
-                                                        primaryTypeName,
-                                                        numSns,
-                                                        true);
                     throw new ConstraintViolationException(msg);
                 }
 
@@ -1522,6 +1516,17 @@ class SessionCache {
                         I18n msg = JcrI18n.unableToCreateNodeWithPrimaryTypeThatDoesNotExist;
                         throw new NoSuchNodeTypeException(msg.text(primaryTypeName, pathForChild, workspaceName()));
                     }
+
+                    if (primaryType.isMixin()) {
+                        I18n msg = JcrI18n.cannotUseMixinTypeAsPrimaryType;
+                        throw new ConstraintViolationException(msg.text(primaryType.getName()));
+                    }
+
+                    if (primaryType.isAbstract()) {
+                        I18n msg = JcrI18n.primaryTypeCannotBeAbstract;
+                        throw new ConstraintViolationException(msg.text(primaryType.getName()));
+                    }
+
                 } else {
                     primaryType = (JcrNodeType)definition.getDefaultPrimaryType();
                     if (primaryType == null) {

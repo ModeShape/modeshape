@@ -192,6 +192,9 @@ public final class JcrI18n {
     public static I18n cannotAddMixin;
     public static I18n invalidMixinTypeForNode;
     public static I18n notOrderable;
+    public static I18n cannotUseMixinTypeAsPrimaryType;
+    public static I18n primaryTypeCannotBeAbstract;
+    public static I18n setPrimaryTypeNotSupported;
 
     // Lock messages
     public static I18n nodeNotLockable;
@@ -210,7 +213,7 @@ public final class JcrI18n {
 
     // Versioning messages
     public static I18n nodeIsCheckedIn;
-    public static I18n cannotRemoveMixVersionable;
+    public static I18n cannotRemoveFromProtectedNode;
     public static I18n cannotRemoveVersion;
     public static I18n pendingMergeConflicts;
     public static I18n invalidVersion;
