@@ -350,7 +350,6 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        print = true;
         assertResults(query, result, 3L);
         assertResultsHaveColumns(result, "car:maker", "car:model", "car:year", "car:msrp");
         assertRow(result, 1).has("car:model", "Altima").and("car:msrp", "$18,260").and("car:year", 2008);
@@ -394,11 +393,10 @@ public class JcrQueryManagerTest {
                              .createQuery("SELECT car:model FROM car:Car WHERE car:model IS NOT NULL ORDER BY car:model ASC",
                                           QueryLanguage.JCR_SQL);
         assertThat(query, is(notNullValue()));
-        print = true;
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 22);
-        assertResultsHaveColumns(result, "jcr:primaryType");
+        assertResults(query, result, 12);
+        assertResultsHaveColumns(result, "jcr:path", "jcr:score", "car:model");
     }
 
     // ----------------------------------------------------------------------------------------------------------------
