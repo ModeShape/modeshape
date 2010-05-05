@@ -262,4 +262,8 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
         return "read properties of " + at() + " in the \"" + workspaceName + "\" workspace";
     }
 
+    @Override
+    public RequestType getType() {
+        return RequestType.READ_ALL_PROPERTIES;
+    }
 }

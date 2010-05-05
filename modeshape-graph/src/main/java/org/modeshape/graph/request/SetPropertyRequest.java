@@ -249,4 +249,9 @@ public class SetPropertyRequest extends ChangeRequest {
         request.setNewProperty(actualCreation);
         return request;
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.SET_PROPERTY;
+    }
 }

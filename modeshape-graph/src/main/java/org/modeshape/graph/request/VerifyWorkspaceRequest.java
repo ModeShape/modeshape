@@ -154,4 +154,9 @@ public final class VerifyWorkspaceRequest extends Request {
     public String toString() {
         return "verify workspace \"" + workspaceName() + "\"";
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.VERIFY_WORKSPACE;
+    }
 }

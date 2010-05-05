@@ -388,4 +388,9 @@ public class MoveBranchRequest extends ChangeRequest {
         request.setActualLocations(actualOldLocation, actualNewLocation);
         return request;
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.MOVE_BRANCH;
+    }
 }

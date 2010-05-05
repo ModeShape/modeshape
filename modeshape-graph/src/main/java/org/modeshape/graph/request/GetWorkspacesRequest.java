@@ -116,4 +116,9 @@ public class GetWorkspacesRequest extends CacheableRequest {
         return "request workspaces";
     }
 
+    @Override
+    public RequestType getType() {
+        return RequestType.GET_WORKSPACES;
+    }
+
 }

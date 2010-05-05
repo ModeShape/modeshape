@@ -51,11 +51,10 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.basic.JodaDateTime;
 import org.modeshape.graph.request.ChangeRequest;
-import org.modeshape.graph.request.CloneWorkspaceRequest;
 import org.modeshape.graph.request.CreateNodeRequest;
-import org.modeshape.graph.request.CreateWorkspaceRequest;
 import org.modeshape.graph.request.DestroyWorkspaceRequest;
 import org.modeshape.graph.request.RemovePropertyRequest;
+import org.modeshape.graph.request.RequestType;
 import org.modeshape.graph.request.SetPropertyRequest;
 import org.modeshape.graph.request.UpdatePropertiesRequest;
 import org.modeshape.graph.request.UpdateValuesRequest;
@@ -329,16 +328,19 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
         protected boolean add( ChangeRequest change ) {
             assert !indexAllContent;
             assert !deleteWorkspace;
-            if (change instanceof CloneWorkspaceRequest || change instanceof CreateWorkspaceRequest) {
-                requestByPath.clear();
-                indexAllContent = true;
-                return false;
+
+            switch (change.getType()) {
+                case CLONE_WORKSPACE:
+                case CREATE_WORKSPACE:
+                    requestByPath.clear();
+                    indexAllContent = true;
+                    return false;
+                case DESTROY_WORKSPACE:
+                    requestByPath.clear();
+                    deleteWorkspace = true;
+                    return false;
             }
-            if (change instanceof DestroyWorkspaceRequest) {
-                requestByPath.clear();
-                deleteWorkspace = true;
-                return false;
-            }
+
             Location changedLocation = change.changedLocation();
             assert changedLocation.hasPath();
             if (isCoveredByExistingCrawl(changedLocation.getPath())) {
@@ -346,41 +348,40 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
                 return true;
             }
 
-            if (change instanceof UpdatePropertiesRequest) {
-                // Try merging this onto any existing work ...
-                if (mergeWithExistingWork(changedLocation, change)) return true;
+            switch (change.getType()) {
+                case UPDATE_PROPERTIES:
+                    // Try merging this onto any existing work ...
+                    if (mergeWithExistingWork(changedLocation, change)) return true;
 
-                // See if this request removed all existing properties ...
-                UpdatePropertiesRequest update = (UpdatePropertiesRequest)change;
-                if (update.removeOtherProperties()) {
-                    // This request specified all of the properties, so we can just forward it on ...
-                    forward(changedLocation, update);
+                    // See if this request removed all existing properties ...
+                    UpdatePropertiesRequest update = (UpdatePropertiesRequest)change;
+                    if (update.removeOtherProperties()) {
+                        // This request specified all of the properties, so we can just forward it on ...
+                        forward(changedLocation, update);
+                        return true;
+                    }
+                    // This changed an existing property, and we don't know what that value is ...
+                    crawl(update.changedLocation(), 1);
                     return true;
-                }
-                // This changed an existing property, and we don't know what that value is ...
-                crawl(update.changedLocation(), 1);
-                return true;
-            }
-            if (change instanceof SetPropertyRequest) {
-                // Try merging this onto any existing work ...
-                if (mergeWithExistingWork(changedLocation, change)) return true;
+                case SET_PROPERTY:
+                    // Try merging this onto any existing work ...
+                    if (mergeWithExistingWork(changedLocation, change)) return true;
 
-                // We can't ADD to a document in the index, so we have to scan it all ..
-                crawl(changedLocation, 1);
-                return true;
-            }
-            if (change instanceof UpdateValuesRequest) {
-                // Try merging this onto any existing work ...
-                if (mergeWithExistingWork(changedLocation, change)) return true;
+                    // We can't ADD to a document in the index, so we have to scan it all ..
+                    crawl(changedLocation, 1);
+                    return true;
+                case UPDATE_VALUES:
+                    // Try merging this onto any existing work ...
+                    if (mergeWithExistingWork(changedLocation, change)) return true;
 
-                // We can't ADD to a document in the index, so we have to scan it all ..
-                crawl(changedLocation, 1);
-                return true;
+                    // We can't ADD to a document in the index, so we have to scan it all ..
+                    crawl(changedLocation, 1);
+                    return true;
+                case CREATE_NODE:
+                    forward(changedLocation, change);
+                    return true;
             }
-            if (change instanceof CreateNodeRequest) {
-                forward(changedLocation, change);
-                return true;
-            }
+
             // Otherwise just index the whole friggin' workspace ...
             requestByPath.clear();
             indexAllContent = true;
@@ -466,120 +467,124 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
                                           ChangeRequest change ) {
         assert !original.hasError();
         assert !change.hasError();
-        if (original instanceof CreateNodeRequest) {
+        if (RequestType.CREATE_NODE == original.getType()) {
             CreateNodeRequest create = (CreateNodeRequest)original;
-            if (change instanceof SetPropertyRequest) {
-                SetPropertyRequest set = (SetPropertyRequest)change;
-                Name newPropertyName = set.property().getName();
-                List<Property> newProperties = new LinkedList<Property>();
-                for (Property property : create.properties()) {
-                    if (property.getName().equals(newPropertyName)) continue;
-                    newProperties.add(property);
-                }
-                newProperties.add(set.property());
-                CreateNodeRequest newRequest = new CreateNodeRequest(create.under(), create.inWorkspace(), create.named(),
-                                                                     create.conflictBehavior(), newProperties);
-                newRequest.setActualLocationOfNode(create.getActualLocationOfNode());
-                return newRequest;
-            }
-            if (change instanceof UpdatePropertiesRequest) {
-                UpdatePropertiesRequest update = (UpdatePropertiesRequest)change;
-                Map<Name, Property> newProperties = new HashMap<Name, Property>();
-                for (Property property : create.properties()) {
-                    newProperties.put(property.getName(), property);
-                }
-                newProperties.putAll(update.properties());
-                CreateNodeRequest newRequest = new CreateNodeRequest(create.under(), create.inWorkspace(), create.named(),
-                                                                     create.conflictBehavior(), newProperties.values());
-                newRequest.setActualLocationOfNode(create.getActualLocationOfNode());
-                return newRequest;
-            }
-            if (change instanceof RemovePropertyRequest) {
-                RemovePropertyRequest remove = (RemovePropertyRequest)change;
-                Map<Name, Property> newProperties = new HashMap<Name, Property>();
-                for (Property property : create.properties()) {
-                    newProperties.put(property.getName(), property);
-                }
-                newProperties.remove(remove.propertyName());
-                CreateNodeRequest newRequest = new CreateNodeRequest(create.under(), create.inWorkspace(), create.named(),
-                                                                     create.conflictBehavior(), newProperties.values());
-                newRequest.setActualLocationOfNode(create.getActualLocationOfNode());
-                return newRequest;
-            }
-            if (change instanceof UpdateValuesRequest) {
-                UpdateValuesRequest update = (UpdateValuesRequest)change;
-                Map<Name, Property> newProperties = new HashMap<Name, Property>();
-                for (Property property : create.properties()) {
-                    newProperties.put(property.getName(), property);
-                }
-                Property updated = newProperties.get(update.property());
-                if (updated != null) {
-                    // Changing an existing property ...
-                    List<Object> newValues = new LinkedList<Object>();
-                    for (Object existingValue : updated) {
-                        newValues.add(existingValue);
+            
+            Map<Name, Property> newProperties;
+            CreateNodeRequest newRequest;
+
+            switch (change.getType()) {
+                case CREATE_NODE:
+                    SetPropertyRequest set = (SetPropertyRequest)change;
+                    Name newPropertyName = set.property().getName();
+                    List<Property> newPropertiesList = new LinkedList<Property>();
+                    for (Property property : create.properties()) {
+                        if (property.getName().equals(newPropertyName)) continue;
+                        newPropertiesList.add(property);
                     }
-                    newValues.removeAll(update.removedValues());
-                    newValues.addAll(update.addedValues());
-                    updated = context.getPropertyFactory().create(update.property(), newValues);
-                } else {
-                    // The property doesn't exist ...
-                    updated = context.getPropertyFactory().create(update.property(), update.addedValues());
-                }
-                newProperties.put(updated.getName(), updated);
-                CreateNodeRequest newRequest = new CreateNodeRequest(create.under(), create.inWorkspace(), create.named(),
-                                                                     create.conflictBehavior(), newProperties.values());
-                newRequest.setActualLocationOfNode(create.getActualLocationOfNode());
-                return newRequest;
+                    newPropertiesList.add(set.property());
+                    newRequest = new CreateNodeRequest(create.under(), create.inWorkspace(), create.named(),
+                                                       create.conflictBehavior(), newPropertiesList);
+                    newRequest.setActualLocationOfNode(create.getActualLocationOfNode());
+                    return newRequest;
+            
+                case UPDATE_PROPERTIES:
+                    UpdatePropertiesRequest update = (UpdatePropertiesRequest)change;
+                    newProperties = new HashMap<Name, Property>();
+                    for (Property property : create.properties()) {
+                        newProperties.put(property.getName(), property);
+                    }
+                    newProperties.putAll(update.properties());
+                    newRequest = new CreateNodeRequest(create.under(), create.inWorkspace(), create.named(),
+                                                       create.conflictBehavior(), newProperties.values());
+                    newRequest.setActualLocationOfNode(create.getActualLocationOfNode());
+                    return newRequest;
+
+                case REMOVE_PROPERTY:
+                    RemovePropertyRequest remove = (RemovePropertyRequest)change;
+                    newProperties = new HashMap<Name, Property>();
+                    for (Property property : create.properties()) {
+                        newProperties.put(property.getName(), property);
+                    }
+                    newProperties.remove(remove.propertyName());
+                    newRequest = new CreateNodeRequest(create.under(), create.inWorkspace(), create.named(),
+                                                       create.conflictBehavior(), newProperties.values());
+                    newRequest.setActualLocationOfNode(create.getActualLocationOfNode());
+                    return newRequest;
+
+                case UPDATE_VALUES:
+                    UpdateValuesRequest updateRequest = (UpdateValuesRequest)change;
+                    newProperties = new HashMap<Name, Property>();
+                    for (Property property : create.properties()) {
+                        newProperties.put(property.getName(), property);
+                    }
+                    Property updated = newProperties.get(updateRequest.property());
+                    if (updated != null) {
+                        // Changing an existing property ...
+                        List<Object> newValues = new LinkedList<Object>();
+                        for (Object existingValue : updated) {
+                            newValues.add(existingValue);
+                        }
+                        newValues.removeAll(updateRequest.removedValues());
+                        newValues.addAll(updateRequest.addedValues());
+                        updated = context.getPropertyFactory().create(updateRequest.property(), newValues);
+                    } else {
+                        // The property doesn't exist ...
+                        updated = context.getPropertyFactory().create(updateRequest.property(), updateRequest.addedValues());
+                    }
+                    newProperties.put(updated.getName(), updated);
+                    newRequest = new CreateNodeRequest(create.under(), create.inWorkspace(), create.named(),
+                                                       create.conflictBehavior(), newProperties.values());
+                    newRequest.setActualLocationOfNode(create.getActualLocationOfNode());
+                    return newRequest;
             }
         }
-        if (original instanceof UpdatePropertiesRequest) {
+        if (RequestType.UPDATE_PROPERTIES == original.getType()) {
             UpdatePropertiesRequest update = (UpdatePropertiesRequest)original;
-            if (change instanceof SetPropertyRequest) {
-                SetPropertyRequest set = (SetPropertyRequest)change;
-                Property newProperty = set.property();
-                Name newPropertyName = newProperty.getName();
-                Map<Name, Property> newProperties = new HashMap<Name, Property>(update.properties());
-                newProperties.put(newPropertyName, newProperty);
-                UpdatePropertiesRequest newRequest = new UpdatePropertiesRequest(update.getActualLocationOfNode(),
-                                                                                 update.inWorkspace(), newProperties,
-                                                                                 update.removeOtherProperties());
-                newRequest.setActualLocationOfNode(update.getActualLocationOfNode());
-                return newRequest;
-            }
-            if (change instanceof RemovePropertyRequest) {
-                RemovePropertyRequest remove = (RemovePropertyRequest)change;
-                Map<Name, Property> newProperties = new HashMap<Name, Property>(update.properties());
-                newProperties.remove(remove.propertyName());
-                UpdatePropertiesRequest newRequest = new UpdatePropertiesRequest(update.getActualLocationOfNode(),
-                                                                                 update.inWorkspace(), newProperties,
-                                                                                 update.removeOtherProperties());
-                newRequest.setActualLocationOfNode(update.getActualLocationOfNode());
-                return newRequest;
-            }
-            if (change instanceof UpdateValuesRequest) {
-                UpdateValuesRequest updateValues = (UpdateValuesRequest)change;
-                Map<Name, Property> newProperties = new HashMap<Name, Property>(update.properties());
-                Property updated = newProperties.get(updateValues.property());
-                if (updated != null) {
-                    // Changing an existing property ...
-                    List<Object> newValues = new LinkedList<Object>();
-                    for (Object existingValue : updated) {
-                        newValues.add(existingValue);
+            UpdatePropertiesRequest newRequest;
+            Map<Name, Property> newProperties;
+
+            switch (change.getType()) {
+                case SET_PROPERTY:
+                    SetPropertyRequest set = (SetPropertyRequest)change;
+                    Property newProperty = set.property();
+                    Name newPropertyName = newProperty.getName();
+                    newProperties = new HashMap<Name, Property>(update.properties());
+                    newProperties.put(newPropertyName, newProperty);
+                    newRequest = new UpdatePropertiesRequest(update.getActualLocationOfNode(), update.inWorkspace(),
+                                                             newProperties, update.removeOtherProperties());
+                    newRequest.setActualLocationOfNode(update.getActualLocationOfNode());
+                    return newRequest;
+                case REMOVE_PROPERTY:
+                    RemovePropertyRequest remove = (RemovePropertyRequest)change;
+                    newProperties = new HashMap<Name, Property>(update.properties());
+                    newProperties.remove(remove.propertyName());
+                    newRequest = new UpdatePropertiesRequest(update.getActualLocationOfNode(), update.inWorkspace(),
+                                                             newProperties, update.removeOtherProperties());
+                    newRequest.setActualLocationOfNode(update.getActualLocationOfNode());
+                    return newRequest;
+                case UPDATE_VALUES:
+                    UpdateValuesRequest updateValues = (UpdateValuesRequest)change;
+                    newProperties = new HashMap<Name, Property>(update.properties());
+                    Property updated = newProperties.get(updateValues.property());
+                    if (updated != null) {
+                        // Changing an existing property ...
+                        List<Object> newValues = new LinkedList<Object>();
+                        for (Object existingValue : updated) {
+                            newValues.add(existingValue);
+                        }
+                        newValues.removeAll(updateValues.removedValues());
+                        newValues.addAll(updateValues.addedValues());
+                        updated = context.getPropertyFactory().create(updateValues.property(), newValues);
+                    } else {
+                        // The property doesn't exist ...
+                        updated = context.getPropertyFactory().create(updateValues.property(), updateValues.addedValues());
                     }
-                    newValues.removeAll(updateValues.removedValues());
-                    newValues.addAll(updateValues.addedValues());
-                    updated = context.getPropertyFactory().create(updateValues.property(), newValues);
-                } else {
-                    // The property doesn't exist ...
-                    updated = context.getPropertyFactory().create(updateValues.property(), updateValues.addedValues());
-                }
-                newProperties.put(updated.getName(), updated);
-                UpdatePropertiesRequest newRequest = new UpdatePropertiesRequest(update.getActualLocationOfNode(),
-                                                                                 update.inWorkspace(), newProperties,
-                                                                                 update.removeOtherProperties());
-                newRequest.setActualLocationOfNode(update.getActualLocationOfNode());
-                return newRequest;
+                    newProperties.put(updated.getName(), updated);
+                    newRequest = new UpdatePropertiesRequest(update.getActualLocationOfNode(), update.inWorkspace(),
+                                                             newProperties, update.removeOtherProperties());
+                    newRequest.setActualLocationOfNode(update.getActualLocationOfNode());
+                    return newRequest;
             }
         }
         return null;

@@ -224,4 +224,9 @@ public class RemovePropertyRequest extends ChangeRequest {
         request.setActualLocationOfNode(actualLocation);
         return request;
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.REMOVE_PROPERTY;
+    }
 }

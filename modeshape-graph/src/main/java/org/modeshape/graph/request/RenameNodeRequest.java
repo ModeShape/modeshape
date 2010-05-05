@@ -259,4 +259,8 @@ public class RenameNodeRequest extends ChangeRequest {
         return request;
     }
 
+    @Override
+    public RequestType getType() {
+        return RequestType.RENAME_NODE;
+    }
 }

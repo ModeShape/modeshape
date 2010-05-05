@@ -35,14 +35,14 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.MockRepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Mock;
 
 /**
  * 
@@ -89,6 +89,13 @@ public class CompositeRequestChannelTest {
         public boolean isReadOnly() {
             return false;
         }
+
+        @Override
+        public RequestType getType() {
+            return RequestType.INVALID;
+        }
+        
+        
     }
 
     @Test

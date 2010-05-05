@@ -203,4 +203,8 @@ public class ReadPropertyRequest extends CacheableRequest {
         return "read " + named() + " property on " + on() + " in the \"" + workspaceName + "\" workspace";
     }
 
+    @Override
+    public RequestType getType() {
+        return RequestType.READ_PROPERTY;
+    }
 }

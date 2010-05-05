@@ -206,4 +206,9 @@ public class UnlockBranchRequest extends ChangeRequest {
         request.setActualLocation(actualLocation);
         return request;
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.UNLOCK_BRANCH;
+    }
 }

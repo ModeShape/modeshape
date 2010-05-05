@@ -239,4 +239,9 @@ public final class CreateWorkspaceRequest extends ChangeRequest {
         request.setActualRootLocation(actualLocationOfRoot);
         return request;
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.CREATE_WORKSPACE;
+    }
 }

@@ -402,4 +402,9 @@ public class CreateNodeRequest extends ChangeRequest implements Iterable<Propert
         request.setActualLocationOfNode(actualLocation);
         return request;
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.CREATE_NODE;
+    }
 }

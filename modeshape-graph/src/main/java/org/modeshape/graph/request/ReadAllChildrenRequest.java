@@ -260,4 +260,9 @@ public class ReadAllChildrenRequest extends CacheableRequest implements Iterable
         String workspaceName = this.workspaceName != null ? "\"" + this.workspaceName + "\"" : "default";
         return "read children of " + of() + " in the \"" + workspaceName + "\" workspace";
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.READ_ALL_CHILDREN;
+    }
 }

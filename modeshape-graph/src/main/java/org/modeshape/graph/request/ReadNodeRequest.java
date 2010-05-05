@@ -328,4 +328,8 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
         return "read node at " + at() + " in the \"" + workspaceName + "\" workspace";
     }
 
+    @Override
+    public RequestType getType() {
+        return RequestType.READ_NODE;
+    }
 }

@@ -171,4 +171,9 @@ public class VerifyNodeExistsRequest extends CacheableRequest {
     public String toString() {
         return "verify node exists at " + at() + " in the \"" + workspaceName + "\" workspace";
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.VERIFY_NODE_EXISTS;
+    }
 }

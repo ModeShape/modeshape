@@ -316,4 +316,8 @@ public class ReadBlockOfChildrenRequest extends CacheableRequest {
                + "\" workspace";
     }
 
+    @Override
+    public RequestType getType() {
+        return RequestType.READ_BLOCK_OF_CHILDREN;
+    }
 }

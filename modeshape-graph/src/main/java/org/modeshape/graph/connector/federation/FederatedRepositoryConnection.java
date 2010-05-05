@@ -23,6 +23,14 @@
  */
 package org.modeshape.graph.connector.federation;
 
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import javax.transaction.xa.XAResource;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
@@ -33,16 +41,8 @@ import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.request.CompositeRequest;
 import org.modeshape.graph.request.Request;
+import org.modeshape.graph.request.RequestType;
 import org.modeshape.graph.request.processor.RequestProcessor;
-
-import javax.transaction.xa.XAResource;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 /**
  * This {@link RepositoryConnection} implementation executes {@link Request requests} against the federated repository by
@@ -134,7 +134,7 @@ class FederatedRepositoryConnection implements RepositoryConnection {
     }
 
     protected boolean shouldProcessSynchronously( Request request ) {
-        if (request instanceof CompositeRequest) {
+        if (RequestType.COMPOSITE == request.getType()) {
             CompositeRequest composite = (CompositeRequest)request;
             if (composite.size() == 1) return true;
             // There is more than one request, and the JoinRequestProcessor needs to be able to run even if
@@ -237,7 +237,7 @@ class FederatedRepositoryConnection implements RepositoryConnection {
                 join.close();
                 processorWithEvents = join;
             }
-            if (request instanceof CompositeRequest) {
+            if (RequestType.COMPOSITE == request.getType()) {
                 // The composite request will not have any errors set, since the fork/join approach puts the
                 // contained requests into a separate CompositeRequest object for processing.
                 // So, look at the requests for any errors

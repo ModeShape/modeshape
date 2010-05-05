@@ -206,4 +206,9 @@ public class DeleteBranchRequest extends ChangeRequest {
         request.setActualLocationOfNode(actualLocation);
         return request;
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.DELETE_BRANCH;
+    }
 }

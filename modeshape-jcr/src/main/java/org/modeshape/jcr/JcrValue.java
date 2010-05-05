@@ -204,7 +204,6 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
      * 
      * @see org.modeshape.jcr.api.Value#getBinary()
      */
-    @Override
     public org.modeshape.jcr.api.Binary getBinary() throws RepositoryException {
         try {
             Binary binary = valueFactories.getBinaryFactory().create(value);

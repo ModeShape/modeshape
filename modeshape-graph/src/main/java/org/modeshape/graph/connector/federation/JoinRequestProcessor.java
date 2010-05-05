@@ -70,6 +70,7 @@ import org.modeshape.graph.request.ReadPropertyRequest;
 import org.modeshape.graph.request.RemovePropertyRequest;
 import org.modeshape.graph.request.RenameNodeRequest;
 import org.modeshape.graph.request.Request;
+import org.modeshape.graph.request.RequestType;
 import org.modeshape.graph.request.SetPropertyRequest;
 import org.modeshape.graph.request.UpdatePropertiesRequest;
 import org.modeshape.graph.request.VerifyNodeExistsRequest;
@@ -274,7 +275,7 @@ class JoinRequestProcessor extends RequestProcessor {
             }
 
             Projection projection = projectedRequest.getProjection();
-            if (sourceRequest instanceof VerifyNodeExistsRequest) {
+            if (RequestType.VERIFY_NODE_EXISTS == sourceRequest.getType()) {
                 // We needed to verify the existance of a child node ...
                 VerifyNodeExistsRequest verify = (VerifyNodeExistsRequest)sourceRequest;
                 Location childInSource = verify.getActualLocationOfNode();
@@ -425,7 +426,7 @@ class JoinRequestProcessor extends RequestProcessor {
             }
 
             Projection projection = projectedRequest.getProjection();
-            if (sourceRequest instanceof VerifyNodeExistsRequest) {
+            if (RequestType.VERIFY_NODE_EXISTS == sourceRequest.getType()) {
                 // We needed to verify the existance of a child node ...
                 VerifyNodeExistsRequest verify = (VerifyNodeExistsRequest)sourceRequest;
                 Location childInSource = verify.getActualLocationOfNode();
@@ -660,7 +661,7 @@ class JoinRequestProcessor extends RequestProcessor {
             }
 
             Projection projection = projectedRequest.getProjection();
-            if (fromSource instanceof ReadBranchRequest) {
+            if (RequestType.READ_BRANCH == fromSource.getType()) {
                 ReadBranchRequest readFromSource = (ReadBranchRequest)fromSource;
                 for (Location parent : readFromSource) {
                     List<Location> children = readFromSource.getChildren(parent);
@@ -681,7 +682,7 @@ class JoinRequestProcessor extends RequestProcessor {
         while (projectedRequest != null) {
             CacheableRequest fromSource = (CacheableRequest)projectedRequest.getRequest();
             Projection projection = projectedRequest.getProjection();
-            if (fromSource instanceof ReadNodeRequest) {
+            if (RequestType.READ_NODE == fromSource.getType()) {
                 ReadNodeRequest readFromSource = (ReadNodeRequest)fromSource;
                 Location parent = readFromSource.getActualLocationOfNode();
                 List<Location> children = readFromSource.getChildren();
@@ -860,10 +861,10 @@ class JoinRequestProcessor extends RequestProcessor {
 
         // No error, so project the results back to the federated repository ...
         Location sourceLocation = null;
-        if (projectedRequest instanceof CreateNodeRequest) {
+        if (RequestType.CREATE_NODE == projectedRequest.getType()) {
             CreateNodeRequest source = (CreateNodeRequest)projectedRequest;
             sourceLocation = source.getActualLocationOfNode();
-        } else if (projectedRequest instanceof ReadNodeRequest) {
+        } else if (RequestType.READ_NODE == projectedRequest.getType()) {
             // In this case, the original request was to create the node only if it was missing,
             // but we knew it already exists because the parent was a placeholder and the child
             // mapped to an existing proxy node. Therefore, record the location...
@@ -950,7 +951,7 @@ class JoinRequestProcessor extends RequestProcessor {
             // other cases)...
             Location actual = null;
             Request sourceRequest = projected.getRequest();
-            if (sourceRequest instanceof DeleteBranchRequest) {
+            if (RequestType.DELETE_BRANCH == sourceRequest.getType()) {
                 DeleteBranchRequest source = (DeleteBranchRequest)projected.getRequest();
                 actual = source.getActualLocationOfNode();
             } else {

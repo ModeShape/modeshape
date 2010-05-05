@@ -66,7 +66,7 @@ public class CompositeRequest extends Request implements Iterable<Request> {
         List<Request> list = new ArrayList<Request>(requests.length);
         for (Request request : requests) {
             if (request == null) continue;
-            if (request instanceof CompositeRequest) {
+            if (RequestType.COMPOSITE == request.getType()) {
                 CompositeRequest composite = (CompositeRequest)request;
                 list.addAll(composite.getRequests());
                 if (!composite.isReadOnly()) readOnly = false;
@@ -93,7 +93,7 @@ public class CompositeRequest extends Request implements Iterable<Request> {
         while (requests.hasNext()) {
             Request request = requests.next();
             if (request == null) continue;
-            if (request instanceof CompositeRequest) {
+            if (RequestType.COMPOSITE == request.getType()) {
                 CompositeRequest composite = (CompositeRequest)request;
                 list.addAll(composite.getRequests());
                 if (!composite.isReadOnly()) readOnly = false;
@@ -147,7 +147,7 @@ public class CompositeRequest extends Request implements Iterable<Request> {
         if (composite.size() != 0) list.addAll(composite.getRequests());
         for (Request request : requests) {
             if (request == null) continue;
-            if (request instanceof CompositeRequest) {
+            if (RequestType.COMPOSITE == request.getType()) {
                 CompositeRequest compositeRequest = (CompositeRequest)request;
                 list.addAll(compositeRequest.getRequests());
                 if (!compositeRequest.isReadOnly()) readOnly = false;
@@ -177,7 +177,7 @@ public class CompositeRequest extends Request implements Iterable<Request> {
         while (requests.hasNext()) {
             Request request = requests.next();
             if (request == null) continue;
-            if (request instanceof CompositeRequest) {
+            if (RequestType.COMPOSITE == request.getType()) {
                 CompositeRequest compositeRequest = (CompositeRequest)request;
                 list.addAll(compositeRequest.getRequests());
                 if (!compositeRequest.isReadOnly()) readOnly = false;
@@ -338,5 +338,10 @@ public class CompositeRequest extends Request implements Iterable<Request> {
 
         buff.append("]");
         return buff.toString();
+    }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.COMPOSITE;
     }
 }

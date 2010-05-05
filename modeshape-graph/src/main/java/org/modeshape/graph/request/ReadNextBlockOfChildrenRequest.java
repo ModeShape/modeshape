@@ -281,4 +281,8 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
         return "read the next " + count() + " children after " + startingAfter() + " in the \"" + workspaceName + "\" workspace";
     }
 
+    @Override
+    public RequestType getType() {
+        return RequestType.READ_NEXT_BLOCK_OF_CHILDREN;
+    }
 }

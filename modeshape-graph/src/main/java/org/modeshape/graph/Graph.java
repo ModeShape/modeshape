@@ -96,12 +96,12 @@ import org.modeshape.graph.request.InvalidRequestException;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.ReadAllChildrenRequest;
 import org.modeshape.graph.request.ReadAllPropertiesRequest;
-import org.modeshape.graph.request.ReadBlockOfChildrenRequest;
 import org.modeshape.graph.request.ReadBranchRequest;
 import org.modeshape.graph.request.ReadNodeRequest;
 import org.modeshape.graph.request.ReadPropertyRequest;
 import org.modeshape.graph.request.Request;
 import org.modeshape.graph.request.RequestBuilder;
+import org.modeshape.graph.request.RequestType;
 import org.modeshape.graph.request.UnsupportedRequestException;
 import org.modeshape.graph.request.VerifyWorkspaceRequest;
 import org.modeshape.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
@@ -4597,7 +4597,7 @@ public class Graph {
                 return new BatchResults();
             }
             Graph.this.execute(request);
-            if (request instanceof CompositeRequest) {
+            if (RequestType.COMPOSITE == request.getType()) {
                 CompositeRequest composite = (CompositeRequest)request;
                 return new BatchResults(composite.getRequests());
             }
@@ -6612,34 +6612,43 @@ public class Graph {
             this.requests = Collections.unmodifiableList(requests);
             // Now create the results ...
             for (Request request : requests) {
-                if (request instanceof ReadAllPropertiesRequest) {
-                    ReadAllPropertiesRequest read = (ReadAllPropertiesRequest)request;
-                    DateTime expires = computeExpirationTime(read);
-                    getOrCreateNode(read.getActualLocationOfNode(), expires).setProperties(read.getPropertiesByName());
-                } else if (request instanceof ReadPropertyRequest) {
-                    ReadPropertyRequest read = (ReadPropertyRequest)request;
-                    DateTime expires = computeExpirationTime(read);
-                    getOrCreateNode(read.getActualLocationOfNode(), expires).addProperty(read.getProperty());
-                } else if (request instanceof ReadNodeRequest) {
-                    ReadNodeRequest read = (ReadNodeRequest)request;
-                    DateTime expires = computeExpirationTime(read);
-                    BatchResultsNode node = getOrCreateNode(read.getActualLocationOfNode(), expires);
-                    node.setProperties(read.getPropertiesByName());
-                    node.setChildren(read.getChildren());
-                } else if (request instanceof ReadBlockOfChildrenRequest) {
-                    throw new IllegalStateException();
-                } else if (request instanceof ReadAllChildrenRequest) {
-                    ReadAllChildrenRequest read = (ReadAllChildrenRequest)request;
-                    DateTime expires = computeExpirationTime(read);
-                    getOrCreateNode(read.getActualLocationOfNode(), expires).setChildren(read.getChildren());
-                } else if (request instanceof ReadBranchRequest) {
-                    ReadBranchRequest read = (ReadBranchRequest)request;
-                    DateTime expires = computeExpirationTime(read);
-                    for (Location location : read) {
-                        BatchResultsNode node = getOrCreateNode(location, expires);
-                        node.setProperties(read.getPropertiesFor(location));
-                        node.setChildren(read.getChildren(location));
-                    }
+                DateTime expires;
+                BatchResultsNode node;
+
+                switch (request.getType()) {
+                    case READ_ALL_PROPERTIES:
+                        ReadAllPropertiesRequest readAll = (ReadAllPropertiesRequest)request;
+                        expires = computeExpirationTime(readAll);
+                        getOrCreateNode(readAll.getActualLocationOfNode(), expires).setProperties(readAll.getPropertiesByName());
+                        break;
+                    case READ_PROPERTY:
+                        ReadPropertyRequest read = (ReadPropertyRequest)request;
+                        expires = computeExpirationTime(read);
+                        getOrCreateNode(read.getActualLocationOfNode(), expires).addProperty(read.getProperty());
+                        break;
+                    case READ_NODE:
+                        ReadNodeRequest readNode = (ReadNodeRequest)request;
+                        expires = computeExpirationTime(readNode);
+                        node = getOrCreateNode(readNode.getActualLocationOfNode(), expires);
+                        node.setProperties(readNode.getPropertiesByName());
+                        node.setChildren(readNode.getChildren());
+                        break;
+                    case READ_BLOCK_OF_CHILDREN:
+                        throw new IllegalStateException();
+                    case READ_ALL_CHILDREN:
+                        ReadAllChildrenRequest readAllChildren = (ReadAllChildrenRequest)request;
+                        expires = computeExpirationTime(readAllChildren);
+                        getOrCreateNode(readAllChildren.getActualLocationOfNode(), expires).setChildren(readAllChildren.getChildren());
+                        break;
+                    case READ_BRANCH:
+                        ReadBranchRequest readBranch = (ReadBranchRequest)request;
+                        expires = computeExpirationTime(readBranch);
+                        for (Location location : readBranch) {
+                            node = getOrCreateNode(location, expires);
+                            node.setProperties(readBranch.getPropertiesFor(location));
+                            node.setChildren(readBranch.getChildren(location));
+                        }
+                        break;
                 }
             }
             for (Map.Entry<Path, BatchResultsNode> entry : nodes.entrySet()) {
@@ -6650,34 +6659,43 @@ public class Graph {
         /*package*/BatchResults( Request request ) {
             this.requests = Collections.singletonList(request);
             // Now create the results ...
-            if (request instanceof ReadAllPropertiesRequest) {
-                ReadAllPropertiesRequest read = (ReadAllPropertiesRequest)request;
-                DateTime expires = computeExpirationTime(read);
-                getOrCreateNode(read.getActualLocationOfNode(), expires).setProperties(read.getPropertiesByName());
-            } else if (request instanceof ReadPropertyRequest) {
-                ReadPropertyRequest read = (ReadPropertyRequest)request;
-                DateTime expires = computeExpirationTime(read);
-                getOrCreateNode(read.getActualLocationOfNode(), expires).addProperty(read.getProperty());
-            } else if (request instanceof ReadNodeRequest) {
-                ReadNodeRequest read = (ReadNodeRequest)request;
-                DateTime expires = computeExpirationTime(read);
-                BatchResultsNode node = getOrCreateNode(read.getActualLocationOfNode(), expires);
-                node.setProperties(read.getPropertiesByName());
-                node.setChildren(read.getChildren());
-            } else if (request instanceof ReadBlockOfChildrenRequest) {
-                throw new IllegalStateException();
-            } else if (request instanceof ReadAllChildrenRequest) {
-                ReadAllChildrenRequest read = (ReadAllChildrenRequest)request;
-                DateTime expires = computeExpirationTime(read);
-                getOrCreateNode(read.getActualLocationOfNode(), expires).setChildren(read.getChildren());
-            } else if (request instanceof ReadBranchRequest) {
-                ReadBranchRequest read = (ReadBranchRequest)request;
-                DateTime expires = computeExpirationTime(read);
-                for (Location location : read) {
-                    BatchResultsNode node = getOrCreateNode(location, expires);
-                    node.setProperties(read.getPropertiesFor(location));
-                    node.setChildren(read.getChildren(location));
-                }
+            DateTime expires;
+            BatchResultsNode node;
+
+            switch (request.getType()) {
+                case READ_ALL_PROPERTIES:
+                    ReadAllPropertiesRequest readAll = (ReadAllPropertiesRequest)request;
+                    expires = computeExpirationTime(readAll);
+                    getOrCreateNode(readAll.getActualLocationOfNode(), expires).setProperties(readAll.getPropertiesByName());
+                    break;
+                case READ_PROPERTY:
+                    ReadPropertyRequest read = (ReadPropertyRequest)request;
+                    expires = computeExpirationTime(read);
+                    getOrCreateNode(read.getActualLocationOfNode(), expires).addProperty(read.getProperty());
+                    break;
+                case READ_NODE:
+                    ReadNodeRequest readNode = (ReadNodeRequest)request;
+                    expires = computeExpirationTime(readNode);
+                    node = getOrCreateNode(readNode.getActualLocationOfNode(), expires);
+                    node.setProperties(readNode.getPropertiesByName());
+                    node.setChildren(readNode.getChildren());
+                    break;
+                case READ_BLOCK_OF_CHILDREN:
+                    throw new IllegalStateException();
+                case READ_ALL_CHILDREN:
+                    ReadAllChildrenRequest readAllChildren = (ReadAllChildrenRequest)request;
+                    expires = computeExpirationTime(readAllChildren);
+                    getOrCreateNode(readAllChildren.getActualLocationOfNode(), expires).setChildren(readAllChildren.getChildren());
+                    break;
+                case READ_BRANCH:
+                    ReadBranchRequest readBranch = (ReadBranchRequest)request;
+                    expires = computeExpirationTime(readBranch);
+                    for (Location location : readBranch) {
+                        node = getOrCreateNode(location, expires);
+                        node.setProperties(readBranch.getPropertiesFor(location));
+                        node.setChildren(readBranch.getChildren(location));
+                    }
+                    break;
             }
             for (Map.Entry<Path, BatchResultsNode> entry : nodes.entrySet()) {
                 entry.getValue().freeze();

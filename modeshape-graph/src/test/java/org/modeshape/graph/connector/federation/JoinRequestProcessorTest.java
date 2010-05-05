@@ -34,9 +34,13 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import org.modeshape.graph.ModeShapeLexicon;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.federation.Projection.Rule;
 import org.modeshape.graph.property.DateTime;
@@ -46,10 +50,7 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.request.ReadNodeRequest;
 import org.modeshape.graph.request.Request;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Mock;
+import org.modeshape.graph.request.RequestType;
 
 /**
  * 
@@ -138,6 +139,7 @@ public class JoinRequestProcessorTest {
     public void shouldProcessFederatedRequestsUsingIteratable() {
         List<FederatedRequest> requests = new ArrayList<FederatedRequest>();
         Request original = mock(Request.class);
+        when(original.getType()).thenReturn(RequestType.INVALID);
         FederatedRequest request = mock(FederatedRequest.class);
         when(request.original()).thenReturn(original);
         requests.add(request);
@@ -150,6 +152,7 @@ public class JoinRequestProcessorTest {
     @Test
     public void shouldProcessFederatedRequestsUsingBlockingQueue() {
         Request original = mock(Request.class);
+        when(original.getType()).thenReturn(RequestType.INVALID);
         // Create the original request, the projection, and the federated request ...
         FederatedRequest request = new FederatedRequest(original);
         request.add(original, false, false, projectionA);
@@ -172,6 +175,7 @@ public class JoinRequestProcessorTest {
     @Test
     public void shouldProcessFederatedRequestsUsingBlockingQueueThatIsTerminatedAfterProcessingBegins() {
         final Request original = mock(Request.class);
+        when(original.getType()).thenReturn(RequestType.INVALID);
         final FederatedRequest request = new FederatedRequest(original);
         Thread thread = new Thread() {
             @Override

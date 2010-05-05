@@ -123,7 +123,7 @@ public class CompositeRequestChannel {
                         Thread.interrupted();
                     }
                 }
-                if (next instanceof LastRequest) {
+                if (RequestType.LAST == next.getType()) {
                     return false;
                 }
                 return next != null;
@@ -451,5 +451,11 @@ public class CompositeRequestChannel {
         public boolean isReadOnly() {
             return false;
         }
+
+        @Override
+        public RequestType getType() {
+            return RequestType.LAST;
+        }
+
     }
 }

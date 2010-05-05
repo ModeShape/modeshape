@@ -422,89 +422,102 @@ public class SearchableRepositorySource implements RepositorySource {
          */
         public void execute( ExecutionContext context,
                              Request request ) throws RepositorySourceException {
-            if (request instanceof AccessQueryRequest) {
-                AccessQueryRequest queryRequest = (AccessQueryRequest)request;
-                RequestProcessor searchProcessor = searchEngine().createProcessor(context, null, true);
-                try {
-                    searchProcessor.process(queryRequest);
-                } finally {
-                    searchProcessor.close();
-                }
-            } else if (request instanceof FullTextSearchRequest) {
-                FullTextSearchRequest searchRequest = (FullTextSearchRequest)request;
-                RequestProcessor searchProcessor = searchEngine().createProcessor(context, null, true);
-                try {
-                    searchProcessor.process(searchRequest);
-                } finally {
-                    searchProcessor.close();
-                }
-            } else if (request instanceof CompositeRequest) {
-                CompositeRequest composite = (CompositeRequest)request;
-                CompositeRequestChannel channel = null;
-                RequestProcessor searchProcessor = null;
-                try {
-                    for (Request nested : composite) {
-                        if (nested instanceof AccessQueryRequest) {
-                            AccessQueryRequest queryRequest = (AccessQueryRequest)request;
-                            if (searchProcessor == null) searchProcessor = searchEngine().createProcessor(context, null, true);
-                            searchProcessor.process(queryRequest);
-                        } else if (nested instanceof FullTextSearchRequest) {
-                            FullTextSearchRequest searchRequest = (FullTextSearchRequest)request;
-                            if (searchProcessor == null) searchProcessor = searchEngine().createProcessor(context, null, true);
-                            searchProcessor.process(searchRequest);
-                        } else {
-                            // Delegate to the channel ...
-                            if (channel == null) {
-                                // Create a connection factory that always returns the delegate connection ...
-                                RepositoryConnectionFactory connectionFactory = new RepositoryConnectionFactory() {
-                                    /**
-                                     * {@inheritDoc}
-                                     * 
-                                     * @see org.modeshape.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
-                                     */
-                                    public RepositoryConnection createConnection( String sourceName )
-                                        throws RepositorySourceException {
-                                        assert delegate().getName().equals(sourceName);
-                                        return delegateConnection();
-                                    }
-                                };
-                                channel = new CompositeRequestChannel(delegate().getName());
-                                channel.start(executorService, context, connectionFactory);
-                            }
-                            channel.add(request);
-                        }
-                    }
-                } finally {
+            RequestProcessor searchProcessor = null;
+
+            switch (request.getType()) {
+                case ACCESS_QUERY:
+                    AccessQueryRequest queryRequest = (AccessQueryRequest)request;
+                    searchProcessor = searchEngine().createProcessor(context, null, true);
                     try {
-                        if (searchProcessor != null) {
-                            searchProcessor.close();
+                        searchProcessor.process(queryRequest);
+                    } finally {
+                        searchProcessor.close();
+                    }
+                    break;
+                case FULL_TEXT_SEARCH:
+                    FullTextSearchRequest searchRequest = (FullTextSearchRequest)request;
+                    searchProcessor = searchEngine().createProcessor(context, null, true);
+                    try {
+                        searchProcessor.process(searchRequest);
+                    } finally {
+                        searchProcessor.close();
+                    }
+                    break;
+                case COMPOSITE:
+                    CompositeRequest composite = (CompositeRequest)request;
+                    CompositeRequestChannel channel = null;
+                    try {
+                        for (Request nested : composite) {
+                            switch (nested.getType()) {
+                                case ACCESS_QUERY:
+                                    queryRequest = (AccessQueryRequest)request;
+                                    if (searchProcessor == null) {
+                                        searchProcessor = searchEngine().createProcessor(context, null, true);
+                                    }
+                                    searchProcessor.process(queryRequest);
+                                    break;
+                                case FULL_TEXT_SEARCH:
+                                    searchRequest = (FullTextSearchRequest)request;
+                                    if (searchProcessor == null) {
+                                        searchProcessor = searchEngine().createProcessor(context, null, true);
+                                    }
+                                    searchProcessor.process(searchRequest);
+                                    break;
+                                default:
+                                    // Delegate to the channel ...
+                                    if (channel == null) {
+                                        // Create a connection factory that always returns the delegate connection ...
+                                        RepositoryConnectionFactory connectionFactory = new RepositoryConnectionFactory() {
+                                            /**
+                                             * {@inheritDoc}
+                                             * 
+                                             * @see org.modeshape.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
+                                             */
+                                            public RepositoryConnection createConnection( String sourceName )
+                                                throws RepositorySourceException {
+                                                assert delegate().getName().equals(sourceName);
+                                                return delegateConnection();
+                                            }
+                                        };
+                                        channel = new CompositeRequestChannel(delegate().getName());
+                                        channel.start(executorService, context, connectionFactory);
+                                    }
+                                    channel.add(request);
+
+                            }
                         }
                     } finally {
-                        if (channel != null) {
-                            try {
-                                channel.close();
-                            } finally {
+                        try {
+                            if (searchProcessor != null) {
+                                searchProcessor.close();
+                            }
+                        } finally {
+                            if (channel != null) {
                                 try {
-                                    channel.await();
-                                } catch (CancellationException err) {
-                                    composite.cancel();
-                                } catch (ExecutionException err) {
-                                    composite.setError(err);
-                                } catch (InterruptedException err) {
-                                    // Reset the thread ...
-                                    Thread.interrupted();
-                                    // Then log the message ...
-                                    I18n msg = GraphI18n.interruptedWhileClosingChannel;
-                                    Logger.getLogger(getClass()).warn(err, msg, delegate().getName());
-                                    composite.setError(err);
+                                    channel.close();
+                                } finally {
+                                    try {
+                                        channel.await();
+                                    } catch (CancellationException err) {
+                                        composite.cancel();
+                                    } catch (ExecutionException err) {
+                                        composite.setError(err);
+                                    } catch (InterruptedException err) {
+                                        // Reset the thread ...
+                                        Thread.interrupted();
+                                        // Then log the message ...
+                                        I18n msg = GraphI18n.interruptedWhileClosingChannel;
+                                        Logger.getLogger(getClass()).warn(err, msg, delegate().getName());
+                                        composite.setError(err);
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            } else {
-                // Just a single, non-query and non-search request ...
-                delegateConnection().execute(context, request);
+                    break;
+                default:
+                    delegateConnection().execute(context, request);
+
             }
         }
     }
@@ -526,70 +539,84 @@ public class SearchableRepositorySource implements RepositorySource {
          */
         public void execute( final ExecutionContext context,
                              final Request request ) throws RepositorySourceException {
-            if (request instanceof AccessQueryRequest) {
-                AccessQueryRequest queryRequest = (AccessQueryRequest)request;
-                RequestProcessor searchProcessor = searchEngine().createProcessor(context, null, true);
-                try {
-                    searchProcessor.process(queryRequest);
-                } finally {
-                    searchProcessor.close();
-                }
-            } else if (request instanceof FullTextSearchRequest) {
-                FullTextSearchRequest searchRequest = (FullTextSearchRequest)request;
-                RequestProcessor searchProcessor = searchEngine().createProcessor(context, null, true);
-                try {
-                    searchProcessor.process(searchRequest);
-                } finally {
-                    searchProcessor.close();
-                }
-            } else if (request instanceof CompositeRequest) {
-                CompositeRequest composite = (CompositeRequest)request;
-                List<Request> delegateRequests = null;
-                RequestProcessor searchProcessor = null;
-                try {
-                    Request delegateRequest = composite;
-                    for (Request nested : composite) {
-                        if (nested instanceof AccessQueryRequest) {
-                            AccessQueryRequest queryRequest = (AccessQueryRequest)request;
-                            if (searchProcessor == null) searchProcessor = searchEngine().createProcessor(context, null, true);
-                            searchProcessor.process(queryRequest);
-                            delegateRequest = null;
-                        } else if (nested instanceof FullTextSearchRequest) {
-                            FullTextSearchRequest searchRequest = (FullTextSearchRequest)request;
-                            if (searchProcessor == null) searchProcessor = searchEngine().createProcessor(context, null, true);
-                            searchProcessor.process(searchRequest);
-                            delegateRequest = null;
-                        } else {
-                            // Delegate the request ...
-                            if (delegateRequests == null) {
-                                delegateRequests = new LinkedList<Request>();
-                            }
-                            delegateRequests.add(request);
-                        }
-                    }
-                    if (delegateRequest == null) {
-                        // Then there was at least one query or search request ...
-                        if (delegateRequests != null) {
-                            // There was other requests ...
-                            assert !delegateRequests.isEmpty();
-                            delegateRequest = CompositeRequest.with(delegateRequests);
-                            delegateConnection().execute(context, delegateRequest);
-                        } else {
-                            // There were no other requests in the composite other than the search and/or query requests ...
-                            // So nothing to do ...
-                        }
-                    } else {
-                        // There were no search or query requests, so delegate the orginal composite request ...
-                        delegateConnection().execute(context, request);
-                    }
-                } finally {
-                    if (searchProcessor != null) {
+            RequestProcessor searchProcessor = null;
+
+            switch (request.getType()) {
+                case ACCESS_QUERY:
+                    AccessQueryRequest queryRequest = (AccessQueryRequest)request;
+                    searchProcessor = searchEngine().createProcessor(context, null, true);
+                    try {
+                        searchProcessor.process(queryRequest);
+                    } finally {
                         searchProcessor.close();
                     }
-                }
-            } else {
-                // Just a single, non-query and non-search request ...
-                delegateConnection().execute(context, request);
+                    break;
+                case FULL_TEXT_SEARCH:
+                    FullTextSearchRequest searchRequest = (FullTextSearchRequest)request;
+                    searchProcessor = searchEngine().createProcessor(context, null, true);
+                    try {
+                        searchProcessor.process(searchRequest);
+                    } finally {
+                        searchProcessor.close();
+                    }
+                    break;
+                case COMPOSITE:
+                    CompositeRequest composite = (CompositeRequest)request;
+                    List<Request> delegateRequests = null;
+                    try {
+                        Request delegateRequest = composite;
+                        for (Request nested : composite) {
+                            switch (nested.getType()) {
+                                case ACCESS_QUERY:
+                                    queryRequest = (AccessQueryRequest)request;
+                                    if (searchProcessor == null) {
+                                        searchProcessor = searchEngine().createProcessor(context, null, true);
+                                    }
+                                    searchProcessor.process(queryRequest);
+                                    delegateRequest = null;
+                                    break;
+                                case FULL_TEXT_SEARCH:
+                                    searchRequest = (FullTextSearchRequest)request;
+                                    if (searchProcessor == null) {
+                                        searchProcessor = searchEngine().createProcessor(context, null, true);
+                                    }
+                                    searchProcessor.process(searchRequest);
+                                    delegateRequest = null;
+                                    break;
+                                default:
+                                    // Delegate the request ...
+                                    if (delegateRequests == null) {
+                                        delegateRequests = new LinkedList<Request>();
+                                    }
+                                    delegateRequests.add(request);
+
+                            }
+                        }
+                        if (delegateRequest == null) {
+                            // Then there was at least one query or search request ...
+                            if (delegateRequests != null) {
+                                // There was other requests ...
+                                assert !delegateRequests.isEmpty();
+                                delegateRequest = CompositeRequest.with(delegateRequests);
+                                delegateConnection().execute(context, delegateRequest);
+                            } else {
+                                // There were no other requests in the composite other than the search and/or query requests ...
+                                // So nothing to do ...
+                            }
+                        } else {
+                            // There were no search or query requests, so delegate the orginal composite request ...
+                            delegateConnection().execute(context, request);
+                        }
+                    } finally {
+                        if (searchProcessor != null) {
+                            searchProcessor.close();
+                        }
+                    }
+                    break;
+                default:
+                    // Just a single, non-query and non-search request ...
+                    delegateConnection().execute(context, request);
+
             }
         }
     }

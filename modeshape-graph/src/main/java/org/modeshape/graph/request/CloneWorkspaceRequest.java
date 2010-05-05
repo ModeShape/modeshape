@@ -279,4 +279,9 @@ public final class CloneWorkspaceRequest extends ChangeRequest {
         request.setActualWorkspaceName(actualWorkspaceName);
         return request;
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.CLONE_WORKSPACE;
+    }
 }

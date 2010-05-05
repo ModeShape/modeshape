@@ -408,4 +408,8 @@ public class UpdatePropertiesRequest extends ChangeRequest {
         return request;
     }
 
+    @Override
+    public RequestType getType() {
+        return RequestType.UPDATE_PROPERTIES;
+    }
 }

@@ -346,4 +346,9 @@ public class CloneBranchRequest extends ChangeRequest {
         result.setActualLocations(actualFromLocation, actualIntoLocation);
         return result;
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.CLONE_BRANCH;
+    }
 }

@@ -241,4 +241,9 @@ public class AccessQueryRequest extends SearchRequest {
         }
         return sb.toString();
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.ACCESS_QUERY;
+    }
 }

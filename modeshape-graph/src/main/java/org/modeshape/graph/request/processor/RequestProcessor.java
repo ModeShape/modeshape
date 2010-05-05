@@ -219,66 +219,99 @@ public abstract class RequestProcessor {
         if (request == null) return;
         try {
             if (request.isCancelled()) return;
-            if (request instanceof CompositeRequest) {
-                process((CompositeRequest)request);
-            } else if (request instanceof CopyBranchRequest) {
-                process((CopyBranchRequest)request);
-            } else if (request instanceof CreateNodeRequest) {
-                process((CreateNodeRequest)request);
-            } else if (request instanceof DeleteBranchRequest) {
-                process((DeleteBranchRequest)request);
-            } else if (request instanceof DeleteChildrenRequest) {
-                process((DeleteChildrenRequest)request);
-            } else if (request instanceof MoveBranchRequest) {
-                process((MoveBranchRequest)request);
-            } else if (request instanceof ReadAllChildrenRequest) {
-                process((ReadAllChildrenRequest)request);
-            } else if (request instanceof ReadNextBlockOfChildrenRequest) {
-                process((ReadNextBlockOfChildrenRequest)request);
-            } else if (request instanceof ReadBlockOfChildrenRequest) {
-                process((ReadBlockOfChildrenRequest)request);
-            } else if (request instanceof ReadBranchRequest) {
-                process((ReadBranchRequest)request);
-            } else if (request instanceof ReadNodeRequest) {
-                process((ReadNodeRequest)request);
-            } else if (request instanceof ReadAllPropertiesRequest) {
-                process((ReadAllPropertiesRequest)request);
-            } else if (request instanceof ReadPropertyRequest) {
-                process((ReadPropertyRequest)request);
-            } else if (request instanceof RemovePropertyRequest) {
-                process((RemovePropertyRequest)request);
-            } else if (request instanceof SetPropertyRequest) {
-                process((SetPropertyRequest)request);
-            } else if (request instanceof RenameNodeRequest) {
-                process((RenameNodeRequest)request);
-            } else if (request instanceof UpdatePropertiesRequest) {
-                process((UpdatePropertiesRequest)request);
-            } else if (request instanceof VerifyNodeExistsRequest) {
-                process((VerifyNodeExistsRequest)request);
-            } else if (request instanceof LockBranchRequest) {
-                process((LockBranchRequest)request);
-            } else if (request instanceof UnlockBranchRequest) {
-                process((UnlockBranchRequest)request);
-            } else if (request instanceof VerifyWorkspaceRequest) {
-                process((VerifyWorkspaceRequest)request);
-            } else if (request instanceof GetWorkspacesRequest) {
-                process((GetWorkspacesRequest)request);
-            } else if (request instanceof CreateWorkspaceRequest) {
-                process((CreateWorkspaceRequest)request);
-            } else if (request instanceof CloneBranchRequest) {
-                process((CloneBranchRequest)request);
-            } else if (request instanceof CloneWorkspaceRequest) {
-                process((CloneWorkspaceRequest)request);
-            } else if (request instanceof DestroyWorkspaceRequest) {
-                process((DestroyWorkspaceRequest)request);
-            } else if (request instanceof UpdateValuesRequest) {
-                process((UpdateValuesRequest)request);
-            } else if (request instanceof AccessQueryRequest) {
-                process((AccessQueryRequest)request);
-            } else if (request instanceof FullTextSearchRequest) {
-                process((FullTextSearchRequest)request);
-            } else {
-                processUnknownRequest(request);
+            
+            switch(request.getType()) {
+                case ACCESS_QUERY:
+                    process((AccessQueryRequest)request);
+                    break;
+                case COMPOSITE:
+                    process((CompositeRequest)request);
+                    break;
+                case CLONE_BRANCH:
+                    process((CloneBranchRequest)request);
+                    break;
+                case CLONE_WORKSPACE:
+                    process((CloneWorkspaceRequest)request);
+                    break;
+                case COPY_BRANCH:
+                    process((CopyBranchRequest)request);
+                    break;
+                case CREATE_NODE:
+                    process((CreateNodeRequest)request);
+                    break;
+                case CREATE_WORKSPACE:
+                    process((CreateWorkspaceRequest)request);
+                    break;
+                case DELETE_BRANCH:
+                    process((DeleteBranchRequest)request);
+                    break;
+                case DELETE_CHILDREN:
+                    process((DeleteChildrenRequest)request);
+                    break;
+                case DESTROY_WORKSPACE:
+                    process((DestroyWorkspaceRequest)request);
+                    break;
+                case FULL_TEXT_SEARCH:
+                    process((FullTextSearchRequest)request);
+                    break;
+                case GET_WORKSPACES:
+                    process((GetWorkspacesRequest)request);
+                    break;
+                case LAST:
+                    break;
+                case LOCK_BRANCH:
+                    process((LockBranchRequest)request);
+                    break;
+                case MOVE_BRANCH:
+                    process((MoveBranchRequest)request);
+                    break;
+                case READ_ALL_CHILDREN:
+                    process((ReadAllChildrenRequest)request);
+                    break;
+                case READ_ALL_PROPERTIES:
+                    process((ReadAllPropertiesRequest)request);
+                    break;
+                case READ_BLOCK_OF_CHILDREN:
+                    process((ReadBlockOfChildrenRequest)request);
+                    break;
+                case READ_BRANCH:
+                    process((ReadBranchRequest)request);
+                    break;
+                case READ_NEXT_BLOCK_OF_CHILDREN:
+                    process((ReadNextBlockOfChildrenRequest)request);
+                    break;
+                case READ_NODE:
+                    process((ReadNodeRequest)request);
+                    break;
+                case READ_PROPERTY:
+                    process((ReadPropertyRequest)request);
+                    break;
+                case REMOVE_PROPERTY:
+                    process((RemovePropertyRequest)request);
+                    break;
+                case RENAME_NODE:
+                    process((RenameNodeRequest)request);
+                    break;
+                case SET_PROPERTY:
+                    process((SetPropertyRequest)request);
+                    break;
+                case UNLOCK_BRANCH:
+                    process((UnlockBranchRequest)request);
+                    break;
+                case UPDATE_PROPERTIES:
+                    process((UpdatePropertiesRequest)request);
+                    break;
+                case UPDATE_VALUES:
+                    process((UpdateValuesRequest)request);
+                    break;
+                case VERIFY_NODE_EXISTS:
+                    process((VerifyNodeExistsRequest)request);
+                    break;
+                case VERIFY_WORKSPACE:
+                    process((VerifyWorkspaceRequest)request);
+                    break;
+                default:
+                    processUnknownRequest(request);
             }
         } catch (RuntimeException e) {
             request.setError(e);

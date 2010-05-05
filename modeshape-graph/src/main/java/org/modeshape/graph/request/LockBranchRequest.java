@@ -244,4 +244,9 @@ public class LockBranchRequest extends ChangeRequest {
         request.setActualLocation(actualLocation);
         return request;
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.LOCK_BRANCH;
+    }
 }

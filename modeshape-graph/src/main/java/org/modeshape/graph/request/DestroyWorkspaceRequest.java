@@ -166,4 +166,9 @@ public final class DestroyWorkspaceRequest extends ChangeRequest {
     public DestroyWorkspaceRequest clone() {
         return new DestroyWorkspaceRequest(workspaceName);
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.DESTROY_WORKSPACE;
+    }
 }

@@ -174,4 +174,11 @@ public abstract class Request implements Serializable {
             throw new IllegalStateException(GraphI18n.requestIsFrozenAndMayNotBeChanged.text(this));
         }
     }
+
+    /**
+     * Returns the type of the request
+     * 
+     * @return the type of the request
+     */
+    public abstract RequestType getType();
 }

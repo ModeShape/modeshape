@@ -56,6 +56,7 @@ import org.modeshape.graph.request.ReadPropertyRequest;
 import org.modeshape.graph.request.RemovePropertyRequest;
 import org.modeshape.graph.request.RenameNodeRequest;
 import org.modeshape.graph.request.Request;
+import org.modeshape.graph.request.RequestType;
 import org.modeshape.graph.request.SetPropertyRequest;
 import org.modeshape.graph.request.UnlockBranchRequest;
 import org.modeshape.graph.request.UpdatePropertiesRequest;
@@ -267,7 +268,7 @@ class JoinMirrorRequestProcessor extends RequestProcessor {
     public void process( ReadBranchRequest request ) {
         CacheableRequest source = (CacheableRequest)federatedRequest.getFirstProjectedRequest().getRequest();
         if (checkErrorOrCancel(request, source)) return;
-        if (source instanceof ReadBranchRequest) {
+        if (RequestType.READ_BRANCH == source.getType()) {
             ReadBranchRequest readSource = (ReadBranchRequest)source;
             request.setActualLocationOfNode(readSource.getActualLocationOfNode());
             for (Location node : readSource) {
@@ -276,7 +277,7 @@ class JoinMirrorRequestProcessor extends RequestProcessor {
                 Map<Name, Property> props = readSource.getPropertiesFor(node);
                 if (props != null) request.setProperties(node, props.values());
             }
-        } else if (source instanceof ReadNodeRequest) {
+        } else if (RequestType.READ_NODE == source.getType()) {
             ReadNodeRequest readSource = (ReadNodeRequest)source;
             request.setActualLocationOfNode(readSource.getActualLocationOfNode());
             Location parent = readSource.getActualLocationOfNode();

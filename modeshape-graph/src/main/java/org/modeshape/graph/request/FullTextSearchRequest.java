@@ -161,4 +161,9 @@ public class FullTextSearchRequest extends SearchRequest {
     public String toString() {
         return "search the \"" + workspaceName + "\" workspace with \"" + expression + "\"";
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.FULL_TEXT_SEARCH;
+    }
 }

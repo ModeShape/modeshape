@@ -42,19 +42,12 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.request.ChangeRequest;
 import org.modeshape.graph.request.CloneBranchRequest;
-import org.modeshape.graph.request.CloneWorkspaceRequest;
-import org.modeshape.graph.request.CopyBranchRequest;
 import org.modeshape.graph.request.CreateNodeRequest;
-import org.modeshape.graph.request.CreateWorkspaceRequest;
-import org.modeshape.graph.request.DeleteBranchRequest;
 import org.modeshape.graph.request.DeleteChildrenRequest;
-import org.modeshape.graph.request.DestroyWorkspaceRequest;
-import org.modeshape.graph.request.LockBranchRequest;
 import org.modeshape.graph.request.MoveBranchRequest;
 import org.modeshape.graph.request.RemovePropertyRequest;
 import org.modeshape.graph.request.RenameNodeRequest;
 import org.modeshape.graph.request.SetPropertyRequest;
-import org.modeshape.graph.request.UnlockBranchRequest;
 import org.modeshape.graph.request.UpdatePropertiesRequest;
 import org.modeshape.graph.request.UpdateValuesRequest;
 
@@ -137,116 +130,138 @@ public abstract class NetChangeObserver extends ChangeObserver {
             // Find or create the NetChangeDetails for this node ...
             String workspace = change.changedWorkspace();
             NetChangeDetails details = findDetailsByLocation(workspace, location, detailsByLocationByWorkspace);
+            Location original;
+            NetChangeDetails originalDetails;
 
             // Process the specific kind of change ...
-            if (change instanceof CreateNodeRequest) {
-                CreateNodeRequest create = (CreateNodeRequest)change;
-                details.addEventType(ChangeType.NODE_ADDED);
-                for (Property property : create) {
-                    details.addProperty(property);
-                }
-            } else if (change instanceof UpdatePropertiesRequest) {
-                UpdatePropertiesRequest update = (UpdatePropertiesRequest)change;
-                for (Map.Entry<Name, Property> entry : update.properties().entrySet()) {
-                    Name propName = entry.getKey();
-                    Property property = entry.getValue();
+            switch (change.getType()) {
+                case CREATE_NODE:
+                    CreateNodeRequest create = (CreateNodeRequest)change;
+                    details.addEventType(ChangeType.NODE_ADDED);
+                    for (Property property : create) {
+                        details.addProperty(property);
+                    }
+                    break;
+                case UPDATE_PROPERTIES:
+                    UpdatePropertiesRequest update = (UpdatePropertiesRequest)change;
+                    for (Map.Entry<Name, Property> entry : update.properties().entrySet()) {
+                        Name propName = entry.getKey();
+                        Property property = entry.getValue();
 
-                    if (property != null) {
-                        if (update.isNewProperty(propName)) {
-                            details.addProperty(property);
+                        if (property != null) {
+                            if (update.isNewProperty(propName)) {
+                                details.addProperty(property);
+                            } else {
+                                details.changeProperty(property);
+                            }
                         } else {
-                            details.changeProperty(property);
+                            details.removeProperty(propName);
                         }
-                    } else {
-                        details.removeProperty(propName);
                     }
-                }
-            } else if (change instanceof SetPropertyRequest) {
-                SetPropertyRequest set = (SetPropertyRequest)change;
+                    break;
+                case SET_PROPERTY:
+                    SetPropertyRequest set = (SetPropertyRequest)change;
 
-                if (set.isNewProperty()) {
-                    details.addProperty(set.property());
-                } else {
-                    details.changeProperty(set.property());
-                }
-            } else if (change instanceof RemovePropertyRequest) {
-                RemovePropertyRequest remove = (RemovePropertyRequest)change;
-                details.removeProperty(remove.propertyName());
-            } else if (change instanceof DeleteBranchRequest) {
-                // if the node was previously added than a remove results in a net no change
-                if (details.getEventTypes().contains(ChangeType.NODE_ADDED)) {
-                    deleteLocationDetails(workspace, location, detailsByLocationByWorkspace);
-                } else {
+                    if (set.isNewProperty()) {
+                        details.addProperty(set.property());
+                    } else {
+                        details.changeProperty(set.property());
+                    }
+                    break;
+                case REMOVE_PROPERTY:
+                    RemovePropertyRequest remove = (RemovePropertyRequest)change;
+                    details.removeProperty(remove.propertyName());
+                    break;
+                case DELETE_BRANCH:
+                    // if the node was previously added than a remove results in a net no change
+                    if (details.getEventTypes().contains(ChangeType.NODE_ADDED)) {
+                        deleteLocationDetails(workspace, location, detailsByLocationByWorkspace);
+                    } else {
+                        details.addEventType(ChangeType.NODE_REMOVED);
+                    }
+                    break;
+                case DELETE_CHILDREN:
+                    DeleteChildrenRequest delete = (DeleteChildrenRequest)change;
+                    for (Location deletedChild : delete.getActualChildrenDeleted()) {
+                        NetChangeDetails childDetails = findDetailsByLocation(workspace,
+                                                                              deletedChild,
+                                                                              detailsByLocationByWorkspace);
+                        // if a child node was previously added than a remove results in a net no change
+                        if (childDetails.getEventTypes().contains(ChangeType.NODE_ADDED)) {
+                            deleteLocationDetails(workspace, deletedChild, detailsByLocationByWorkspace);
+                        } else {
+                            childDetails.addEventType(ChangeType.NODE_REMOVED);
+                        }
+                    }
+                    break;
+                case LOCK_BRANCH:
+                    details.setLockAction(LockAction.LOCKED);
+                    break;
+                case UNLOCK_BRANCH:
+                    details.setLockAction(LockAction.UNLOCKED);
+                    break;
+                case COPY_BRANCH:
+                    details.addEventType(ChangeType.NODE_ADDED);
+                    break;
+                case MOVE_BRANCH:
+                    // the old location is a removed node event and if it is the same location as the original location it is a
+                    // reorder
+                    original = ((MoveBranchRequest)change).getActualLocationBefore();
+                    originalDetails = findDetailsByLocation(workspace, original, detailsByLocationByWorkspace);
+                    originalDetails.addEventType(ChangeType.NODE_REMOVED);
+
+                    // the new location is a new node event
+                    details.addEventType(ChangeType.NODE_ADDED);
+                    break;
+                case CLONE_BRANCH:
+                    CloneBranchRequest cloneRequest = (CloneBranchRequest)change;
+
+                    // create event details for any nodes that were removed
+                    for (Location removed : cloneRequest.getRemovedNodes()) {
+                        NetChangeDetails removedDetails = findDetailsByLocation(workspace, removed, detailsByLocationByWorkspace);
+                        removedDetails.addEventType(ChangeType.NODE_REMOVED);
+                    }
+
+                    // create event details for new node
+                    details.addEventType(ChangeType.NODE_ADDED);
+                    break;
+
+                case RENAME_NODE:
+                    // the old location is a removed node event
+                    original = ((RenameNodeRequest)change).getActualLocationBefore();
+                    originalDetails = findDetailsByLocation(workspace, original, detailsByLocationByWorkspace);
+                    originalDetails.addEventType(ChangeType.NODE_REMOVED);
+
+                    // the new location is a new node event
+                    details.addEventType(ChangeType.NODE_ADDED);
+                    break;
+                case UPDATE_VALUES:
+                    UpdateValuesRequest updateValuesRequest = (UpdateValuesRequest)change;
+
+                    if (!updateValuesRequest.addedValues().isEmpty() || !updateValuesRequest.removedValues().isEmpty()) {
+                        assert (updateValuesRequest.getActualProperty() != null);
+
+                        if (updateValuesRequest.isNewProperty()) {
+                            details.addEventType(ChangeType.PROPERTY_ADDED);
+                            details.addProperty(updateValuesRequest.getActualProperty());
+                        } else {
+                            details.addEventType(ChangeType.PROPERTY_CHANGED);
+                            details.changeProperty(updateValuesRequest.getActualProperty());
+                        }
+                    } else if (details.getEventTypes().isEmpty()) {
+                        // details was just created for this request and now it is not needed
+                        deleteLocationDetails(workspace, location, detailsByLocationByWorkspace);
+                    }
+                    break;
+                case CREATE_WORKSPACE:
+                    details.addEventType(ChangeType.NODE_ADDED);
+                    break;
+                case DESTROY_WORKSPACE:
                     details.addEventType(ChangeType.NODE_REMOVED);
-                }
-            } else if (change instanceof DeleteChildrenRequest) {
-                DeleteChildrenRequest delete = (DeleteChildrenRequest)change;
-                for (Location deletedChild : delete.getActualChildrenDeleted()) {
-                    NetChangeDetails childDetails = findDetailsByLocation(workspace, deletedChild, detailsByLocationByWorkspace);
-                    // if a child node was previously added than a remove results in a net no change
-                    if (childDetails.getEventTypes().contains(ChangeType.NODE_ADDED)) {
-                        deleteLocationDetails(workspace, deletedChild, detailsByLocationByWorkspace);
-                    } else {
-                        childDetails.addEventType(ChangeType.NODE_REMOVED);
-                    }
-                }
-            } else if (change instanceof LockBranchRequest) {
-                details.setLockAction(LockAction.LOCKED);
-            } else if (change instanceof UnlockBranchRequest) {
-                details.setLockAction(LockAction.UNLOCKED);
-            } else if (change instanceof CopyBranchRequest) {
-                details.addEventType(ChangeType.NODE_ADDED);
-            } else if (change instanceof MoveBranchRequest) {
-                // the old location is a removed node event and if it is the same location as the original location it is a
-                // reorder
-                Location original = ((MoveBranchRequest)change).getActualLocationBefore();
-                NetChangeDetails originalDetails = findDetailsByLocation(workspace, original, detailsByLocationByWorkspace);
-                originalDetails.addEventType(ChangeType.NODE_REMOVED);
-
-                // the new location is a new node event
-                details.addEventType(ChangeType.NODE_ADDED);
-            } else if (change instanceof CloneBranchRequest) {
-                CloneBranchRequest cloneRequest = (CloneBranchRequest)change;
-
-                // create event details for any nodes that were removed
-                for (Location removed : cloneRequest.getRemovedNodes()) {
-                    NetChangeDetails removedDetails = findDetailsByLocation(workspace, removed, detailsByLocationByWorkspace);
-                    removedDetails.addEventType(ChangeType.NODE_REMOVED);
-                }
-
-                // create event details for new node
-                details.addEventType(ChangeType.NODE_ADDED);
-            } else if (change instanceof RenameNodeRequest) {
-                // the old location is a removed node event
-                Location original = ((RenameNodeRequest)change).getActualLocationBefore();
-                NetChangeDetails originalDetails = findDetailsByLocation(workspace, original, detailsByLocationByWorkspace);
-                originalDetails.addEventType(ChangeType.NODE_REMOVED);
-
-                // the new location is a new node event
-                details.addEventType(ChangeType.NODE_ADDED);
-            } else if (change instanceof UpdateValuesRequest) {
-                UpdateValuesRequest updateValuesRequest = (UpdateValuesRequest)change;
-
-                if (!updateValuesRequest.addedValues().isEmpty() || !updateValuesRequest.removedValues().isEmpty()) {
-                    assert (updateValuesRequest.getActualProperty() != null);
-
-                    if (updateValuesRequest.isNewProperty()) {
-                        details.addEventType(ChangeType.PROPERTY_ADDED);
-                        details.addProperty(updateValuesRequest.getActualProperty());
-                    } else {
-                        details.addEventType(ChangeType.PROPERTY_CHANGED);
-                        details.changeProperty(updateValuesRequest.getActualProperty());
-                    }
-                } else if (details.getEventTypes().isEmpty()) {
-                    // details was just created for this request and now it is not needed
-                    deleteLocationDetails(workspace, location, detailsByLocationByWorkspace);
-                }
-            } else if (change instanceof CreateWorkspaceRequest) {
-                details.addEventType(ChangeType.NODE_ADDED);
-            } else if (change instanceof DestroyWorkspaceRequest) {
-                details.addEventType(ChangeType.NODE_REMOVED);
-            } else if (change instanceof CloneWorkspaceRequest) {
-                details.addEventType(ChangeType.NODE_ADDED);
+                    break;
+                case CLONE_WORKSPACE:
+                    details.addEventType(ChangeType.NODE_ADDED);
+                    break;
             }
         }
 

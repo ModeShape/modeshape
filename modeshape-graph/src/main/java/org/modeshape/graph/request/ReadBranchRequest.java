@@ -435,4 +435,9 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
     public String toString() {
         return "read branch " + at() + " in the \"" + workspaceName + "\" workspace to depth " + maximumDepth();
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.READ_BRANCH;
+    }
 }

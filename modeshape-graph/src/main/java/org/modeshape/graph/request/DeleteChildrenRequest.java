@@ -269,4 +269,10 @@ public class DeleteChildrenRequest extends ChangeRequest {
     public DeleteChildrenRequest clone() {
         return new DeleteChildrenRequest(at, workspaceName);
     }
+
+    @Override
+    public RequestType getType() {
+        return RequestType.DELETE_CHILDREN;
+    }
+
 }
