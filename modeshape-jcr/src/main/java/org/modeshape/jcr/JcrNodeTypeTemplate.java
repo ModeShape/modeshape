@@ -94,6 +94,7 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
      * @see org.modeshape.jcr.nodetype.NodeTypeTemplate#setDeclaredSupertypeNames(java.lang.String[])
      * @deprecated Use {@link #setDeclaredSuperTypeNames(String[])} instead
      */
+    @SuppressWarnings( "dep-ann" )
     public void setDeclaredSupertypeNames( String[] names ) {
         setDeclaredSuperTypeNames(names);
     }
@@ -175,6 +176,7 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
      * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getDeclaredSupertypes()
      * @deprecated Use {@link #getDeclaredSuperTypeNames()} instead
      */
+    @Deprecated
     public String[] getDeclaredSupertypes() {
         return getDeclaredSuperTypeNames();
     }
@@ -250,6 +252,5 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
     public void setQueryable( boolean queryable ) {
         this.queryable = queryable;
     }
-
 
 }

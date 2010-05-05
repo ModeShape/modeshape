@@ -34,6 +34,8 @@ import javax.jcr.PropertyType;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
@@ -43,9 +45,8 @@ import org.modeshape.jcr.nodetype.NodeTypeDefinition;
 import org.modeshape.jcr.nodetype.NodeTypeExistsException;
 import org.modeshape.jcr.nodetype.NodeTypeTemplate;
 import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
-import org.junit.Before;
-import org.junit.Test;
 
+@SuppressWarnings( "deprecation" )
 public class TypeRegistrationTest extends AbstractSessionTest {
 
     private static final String TEST_TYPE_NAME = "mode:testNode";

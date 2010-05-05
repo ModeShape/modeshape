@@ -339,6 +339,9 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
                     requestByPath.clear();
                     deleteWorkspace = true;
                     return false;
+                default:
+                    // Do nothing with other request types ...
+                    break;
             }
 
             Location changedLocation = change.changedLocation();
@@ -380,6 +383,9 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
                 case CREATE_NODE:
                     forward(changedLocation, change);
                     return true;
+                default:
+                    // Do nothing with other request types ...
+                    break;
             }
 
             // Otherwise just index the whole friggin' workspace ...
@@ -469,7 +475,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
         assert !change.hasError();
         if (RequestType.CREATE_NODE == original.getType()) {
             CreateNodeRequest create = (CreateNodeRequest)original;
-            
+
             Map<Name, Property> newProperties;
             CreateNodeRequest newRequest;
 
@@ -487,7 +493,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
                                                        create.conflictBehavior(), newPropertiesList);
                     newRequest.setActualLocationOfNode(create.getActualLocationOfNode());
                     return newRequest;
-            
+
                 case UPDATE_PROPERTIES:
                     UpdatePropertiesRequest update = (UpdatePropertiesRequest)change;
                     newProperties = new HashMap<Name, Property>();
@@ -537,6 +543,9 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
                                                        create.conflictBehavior(), newProperties.values());
                     newRequest.setActualLocationOfNode(create.getActualLocationOfNode());
                     return newRequest;
+                default:
+                    // Do nothing with other request types ...
+                    break;
             }
         }
         if (RequestType.UPDATE_PROPERTIES == original.getType()) {
@@ -585,6 +594,9 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
                                                              newProperties, update.removeOtherProperties());
                     newRequest.setActualLocationOfNode(update.getActualLocationOfNode());
                     return newRequest;
+                default:
+                    // Do nothing with other request types ...
+                    break;
             }
         }
         return null;

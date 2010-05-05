@@ -262,6 +262,9 @@ public abstract class NetChangeObserver extends ChangeObserver {
                 case CLONE_WORKSPACE:
                     details.addEventType(ChangeType.NODE_ADDED);
                     break;
+                default:
+                    // Do nothing, as it's not a change type
+                    break;
             }
         }
 

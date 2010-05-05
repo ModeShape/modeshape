@@ -164,6 +164,7 @@ class NodeTemplateNodeTypeSource implements JcrNodeTypeSource {
      * @return the path to the newly created node
      * @throws InvalidNodeTypeDefinitionException
      */
+    @SuppressWarnings( "deprecation" )
     protected Path createNodeType( JcrNodeTypeTemplate nodeType,
                                    Path parentPath ) throws InvalidNodeTypeDefinitionException {
 

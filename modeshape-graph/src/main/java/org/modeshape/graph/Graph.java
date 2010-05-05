@@ -6649,6 +6649,9 @@ public class Graph {
                             node.setChildren(readBranch.getChildren(location));
                         }
                         break;
+                    default:
+                        // Do nothing with other request types ...
+                        break;
                 }
             }
             for (Map.Entry<Path, BatchResultsNode> entry : nodes.entrySet()) {
@@ -6695,6 +6698,9 @@ public class Graph {
                         node.setProperties(readBranch.getPropertiesFor(location));
                         node.setChildren(readBranch.getChildren(location));
                     }
+                    break;
+                default:
+                    // Do nothing with other request types ...
                     break;
             }
             for (Map.Entry<Path, BatchResultsNode> entry : nodes.entrySet()) {
