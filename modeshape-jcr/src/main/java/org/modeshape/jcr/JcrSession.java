@@ -361,9 +361,11 @@ class JcrSession implements Session {
     final boolean hasRole( String roleName,
                            String workspaceName ) {
         SecurityContext context = getExecutionContext().getSecurityContext();
-
-        return context.hasRole(roleName) || context.hasRole(roleName + "." + this.repository.getRepositorySourceName())
-               || context.hasRole(roleName + "." + this.repository.getRepositorySourceName() + "." + workspaceName);
+        if (context.hasRole(roleName)) return true;
+        roleName = roleName + "." + this.repository.getRepositorySourceName();
+        if (context.hasRole(roleName)) return true;
+        roleName = roleName + "." + workspaceName;
+        return context.hasRole(roleName);
     }
 
     /**

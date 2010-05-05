@@ -30,7 +30,6 @@ import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -657,9 +656,11 @@ public class JcrRepository implements Repository {
         SecurityContext anonymousUserContext = null;
         String rawAnonRoles = options != null ? options.get(Option.ANONYMOUS_USER_ROLES) : null;
         if (rawAnonRoles != null) {
-            String[] anonRoles = rawAnonRoles.split("\\s*,\\s*");
-            final List<String> roles = Arrays.asList(anonRoles);
-            if (anonRoles.length > 0) {
+            final Set<String> roles = new HashSet<String>();
+            for (String role : rawAnonRoles.split("\\s*,\\s*")) {
+                roles.add(role);
+            }
+            if (roles.size() > 0) {
                 anonymousUserContext = new SecurityContext() {
 
                     public String getUserName() {

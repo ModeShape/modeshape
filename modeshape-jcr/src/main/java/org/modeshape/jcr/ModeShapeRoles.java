@@ -29,8 +29,8 @@ import javax.jcr.Repository;
 import javax.security.auth.Subject;
 
 /**
- * ModeShape currently defines three roles: {@link #READONLY readonly}, {@link #READWRITE readwrite}, and {@link #ADMIN admin}. If the
- * {@link Credentials}; passed into {@link Repository#login(Credentials)} (or the {@link Subject} from the
+ * ModeShape currently defines three roles: {@link #READONLY readonly}, {@link #READWRITE readwrite}, and {@link #ADMIN admin}. If
+ * the {@link Credentials}; passed into {@link Repository#login(Credentials)} (or the {@link Subject} from the
  * {@link AccessControlContext}, if one of the no-credential <code>login(...)</code> methods are used) have any of these roles,
  * the session will have the corresponding access to all workspaces within the repository.
  * <p>
@@ -97,7 +97,7 @@ public interface ModeShapeRoles {
      */
     public static final String READONLY = "readonly";
     /**
-     * Constant containing the "readwrite role name.
+     * Constant containing the "readwrite" role name.
      */
     public static final String READWRITE = "readwrite";
     /**
