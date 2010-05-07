@@ -39,7 +39,7 @@
 			<plugin>
 				<groupId>org.codehaus.cargo</groupId>
 				<artifactId>cargo-maven2-plugin</artifactId>
-				<!-- >version>1.0.1-SNAPSHOT</version -->
+				<version>1.0.1-alpha-2</version>
 				<executions>
 					<execution>
 						<id>start-container</id>
