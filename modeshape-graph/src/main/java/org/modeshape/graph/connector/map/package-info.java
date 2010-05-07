@@ -63,7 +63,6 @@
  * </pre>
  * </p>
  * 
- * @see org.modeshape.graph.connector.inmemory.InMemoryRepository
  * @see org.modeshape.graph.connector.inmemory.InMemoryRepositorySource
  */
 

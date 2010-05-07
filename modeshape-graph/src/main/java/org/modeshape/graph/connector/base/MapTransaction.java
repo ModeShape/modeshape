@@ -290,6 +290,47 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
         if (!parent.hasChanges()) {
             parent = findNode(workspace, parent.getUuid());
         }
+
+        // Get some information about the child ...
+        Segment newChildSegment = newChild.getName();
+        Name newChildName = newChildSegment.getName();
+        int snsIndex = newChildSegment.getIndex();
+        UUID newChildUuid = newChild.getUuid();
+
+        // Find the existing parent of the new child ...
+        NodeType oldParent = getParent(workspace, newChild);
+
+        // Find the changes for this workspace ...
+        WorkspaceChanges changes = getChangesFor(workspace, true);
+
+        // if (oldParent == parent && beforeOtherChild == null) {
+        // // this node is being renamed, so find the correct index ...
+        // index = parent.getChildren().indexOf(newChildUuid);
+        // assert index >= 0;
+        // } else if (oldParent != null) {
+        if (oldParent != null) {
+            // Remove the node from it's parent ...
+            int oldIndex = oldParent.getChildren().indexOf(newChildUuid);
+            if (oldParent == parent) {
+                oldParent = (NodeType)oldParent.withoutChild(newChildUuid);
+                changes.changed(oldParent);
+                parent = oldParent;
+            } else {
+                oldParent = (NodeType)oldParent.withoutChild(newChildUuid);
+                changes.changed(oldParent);
+            }
+
+            // Now find any siblings with the same name that appear after the node in the parent's list of children ...
+            List<NodeType> siblings = getChildren(workspace, oldParent);
+            for (ListIterator<NodeType> iter = siblings.listIterator(oldIndex); iter.hasNext();) {
+                NodeType sibling = iter.next();
+                if (sibling.getName().getName().equals(newChildName)) {
+                    sibling = (NodeType)sibling.withName(pathFactory.createSegment(newChildName, snsIndex++));
+                    changes.changed(sibling);
+                }
+            }
+        }
+
         // Find the index of the other child ...
         int index = parent.getChildren().size();
         if (beforeOtherChild != null) {
@@ -299,32 +340,6 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
             }
             UUID otherChild = beforeOtherChild.getUuid();
             index = parent.getChildren().indexOf(otherChild);
-        }
-
-        // Find the changes for this workspace ...
-        WorkspaceChanges changes = getChangesFor(workspace, true);
-
-        // Find the existing parent of the new child, and remove the child ...
-        NodeType oldParent = getParent(workspace, newChild);
-        Name newChildName = newChild.getName().getName();
-        int snsIndex = newChild.getName().getIndex();
-        UUID newChildUuid = newChild.getUuid();
-
-        if (oldParent != null) {
-            // Remove the node from it's parent ...
-            int oldIndex = oldParent.getChildren().indexOf(newChildUuid);
-            oldParent = (NodeType)oldParent.withoutChild(newChildUuid);
-            changes.changed(oldParent);
-
-            // Now find any siblings with the same name that appear after the node in the parent's list of children ...
-            List<NodeType> siblings = getChildren(workspace, oldParent);
-            for (ListIterator<NodeType> iter = siblings.listIterator(oldIndex); iter.hasNext();) {
-                NodeType sibling = iter.next();
-                if (sibling.getName().equals(newChildName)) {
-                    sibling = (NodeType)sibling.withName(pathFactory.createSegment(newChildName, snsIndex++));
-                    changes.changed(sibling);
-                }
-            }
         }
 
         // Determine the desired new name for the node ...
@@ -739,7 +754,8 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
             NodeType newChild = copyBranch(originalWorkspace, originalChild, changes, newWorkspace, newNode, true, null);
             newNode = (NodeType)newNode.withChild(newChild.getUuid());
         }
-        changes.changed(newNode);
+        changes.created(newNode);
+        changes.changed(newParent);
 
         return newNode;
     }

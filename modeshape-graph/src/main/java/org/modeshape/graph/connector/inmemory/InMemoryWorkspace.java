@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,33 +21,35 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.graph.connector.memory;
+package org.modeshape.graph.connector.inmemory;
 
-import org.modeshape.graph.Graph;
-import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.graph.connector.test.WritableConnectorTest;
+import java.util.HashMap;
+import java.util.UUID;
+import org.modeshape.graph.connector.base.MapWorkspace;
 
-public class InMemoryConnectorWritableTest extends WritableConnectorTest {
+/**
+ * 
+ */
+public class InMemoryWorkspace extends MapWorkspace<InMemoryNode> {
 
     /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.test.AbstractConnectorTest#setUpSource()
+     * @param name
+     * @param rootNode
      */
-    @Override
-    protected RepositorySource setUpSource() {
-        InMemoryRepositorySource source = new InMemoryRepositorySource();
-        source.setName("Test Repository");
-        return source;
+    public InMemoryWorkspace( String name,
+                              InMemoryNode rootNode ) {
+        super(name, new HashMap<UUID, InMemoryNode>(), rootNode);
+
     }
 
     /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.test.AbstractConnectorTest#initializeContent(org.modeshape.graph.Graph)
+     * @param name
+     * @param originalToClone
      */
-    @Override
-    protected void initializeContent( Graph graph ) {
+    public InMemoryWorkspace( String name,
+                              InMemoryWorkspace originalToClone ) {
+        super(name, new HashMap<UUID, InMemoryNode>(), originalToClone);
+
     }
 
 }

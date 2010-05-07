@@ -143,7 +143,7 @@ public abstract class BaseTransaction<NodeType extends Node, WorkspaceType exten
                                    NodeType parent,
                                    Name childName ) {
         for (NodeType child : getChildren(workspace, parent)) {
-            if (child.getName().equals(childName)) return child;
+            if (child.getName().getName().equals(childName)) return child;
         }
         return null;
     }

@@ -342,11 +342,15 @@ public class JcrConfigurationTest {
         configuration.loadFrom("src/test/resources/config/configRepository.xml");
         // Verify that the configration was loaded correctly ...
         assertThat(configuration.repository("Car Repository").getSource(), is("Cars"));
+        // ModeShapeConfiguration.ConfigurationDefinition content1 = configuration.getConfigurationDefinition();
+        // Subgraph subgraph1 = content1.graph().getSubgraphOfDepth(6).at("/");
 
         // Load the node types from the CND file, and save the configuration ...
         InputStream nodeTypes = getClass().getResourceAsStream("/tck/tck_test_types.cnd");
         configuration.repository("Car Repository").addNodeTypes(nodeTypes);
         configuration.save();
+        // ModeShapeConfiguration.ConfigurationDefinition content2 = configuration.getConfigurationDefinition();
+        // Subgraph subgraph2 = content2.graph().getSubgraphOfDepth(6).at("/");
 
         // Verify there were no problems loading the CND file ...
         assertThat(configuration.getProblems().isEmpty(), is(true));

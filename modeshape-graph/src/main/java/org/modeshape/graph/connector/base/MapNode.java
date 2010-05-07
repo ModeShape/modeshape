@@ -353,6 +353,7 @@ public class MapNode implements Node, Serializable, Cloneable {
      */
     public MapNode withChild( UUID child ) {
         assert child != null;
+        if (getChildren().indexOf(child) != -1) return this;
         if (changes == null) {
             MapNode copy = clone();
             List<UUID> children = new LinkedList<UUID>(getChildren());
@@ -377,16 +378,31 @@ public class MapNode implements Node, Serializable, Cloneable {
                               UUID child ) {
         assert child != null;
         assert index >= 0;
+        int existingIndex = getChildren().indexOf(child);
+        if (existingIndex == index) {
+            // No need to add twice, so simply return (have not yet made any changes)
+            return this;
+        }
         if (changes == null) {
             MapNode copy = clone();
             List<UUID> children = new LinkedList<UUID>(getChildren());
-            assert !children.contains(child);
+            if (existingIndex >= 0) {
+                // The child is moving positions, so remove it before we add it ...
+                children.remove(existingIndex);
+                if (existingIndex < index) --index;
+            }
             children.add(index, child);
             copy.changes = newChanges();
             copy.changes.setChildren(children);
             return copy;
         }
-        changes.getChildren(true).add(index, child);
+        List<UUID> children = changes.getChildren(true);
+        if (existingIndex >= 0) {
+            // The child is moving positions, so remove it before we add it ...
+            children.remove(existingIndex);
+            if (existingIndex < index) --index;
+        }
+        children.add(index, child);
         return this;
     }
 

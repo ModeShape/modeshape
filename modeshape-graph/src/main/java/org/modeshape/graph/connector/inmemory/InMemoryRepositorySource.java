@@ -48,6 +48,7 @@ import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
@@ -55,8 +56,8 @@ import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.connector.map.MapRepositoryConnection;
-import org.modeshape.graph.connector.map.MapRepositorySource;
+import org.modeshape.graph.connector.base.BaseRepositorySource;
+import org.modeshape.graph.connector.base.Connection;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
@@ -64,7 +65,7 @@ import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior
  * repository, and the lifetime of the source dictates the lifetime of the repository and its content.
  */
 @ThreadSafe
-public class InMemoryRepositorySource implements MapRepositorySource, ObjectFactory {
+public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFactory {
 
     /**
      * The initial version is 1
@@ -103,6 +104,7 @@ public class InMemoryRepositorySource implements MapRepositorySource, ObjectFact
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
     private transient InMemoryRepository repository;
     private transient RepositoryContext repositoryContext;
+    private transient ExecutionContext defaultContext = new ExecutionContext();
 
     /**
      * Create a repository source instance.
@@ -263,14 +265,15 @@ public class InMemoryRepositorySource implements MapRepositorySource, ObjectFact
      */
     public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
         if (repository == null) {
-            repository = new InMemoryRepository(name, rootNodeUuid, defaultWorkspaceName);
+            ExecutionContext context = repositoryContext != null ? repositoryContext.getExecutionContext() : defaultContext;
+            repository = new InMemoryRepository(context, name, rootNodeUuid, defaultWorkspaceName);
 
             // Create the set of initial workspaces ...
-            for (String initialName : getPredefinedWorkspaceNames())
-                repository.createWorkspace(null, initialName, CreateConflictBehavior.DO_NOT_CREATE);
-
+            for (String initialName : getPredefinedWorkspaceNames()) {
+                repository.createWorkspace(null, initialName, CreateConflictBehavior.DO_NOT_CREATE, null);
+            }
         }
-        return new MapRepositoryConnection(this, repository);
+        return new Connection<InMemoryNode, InMemoryWorkspace>(this, repository);
     }
 
     /**

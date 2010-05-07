@@ -899,7 +899,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
         /* MODE FLAG - Needs to be uncommented for JCR 2 */
         // if (isNodeType(mixinCandidateType.getInternalName())) return true;
-
         if (mixinCandidateType.conflictsWith(primaryType, mixinTypes)) {
             return false;
         }
@@ -1154,6 +1153,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
         throw new ConstraintViolationException(JcrI18n.setPrimaryTypeNotSupported.text());
     }
+
     /**
      * {@inheritDoc}
      * 

@@ -25,6 +25,7 @@ package org.modeshape.graph.connector.inmemory;
 
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.RepositorySource;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.connector.test.TransactionalConnectorTest;
 
 /**
@@ -51,16 +52,6 @@ public class InMemoryConnectorTransactionalTest extends TransactionalConnectorTe
      */
     @Override
     protected void initializeContent( Graph graph ) {
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.test.TransactionalConnectorTest#shouldNotChangePersistedStateAfterMakingMultipleChangesWithOneFailure()
-     */
-    @Override
-    public void shouldNotChangePersistedStateAfterMakingMultipleChangesWithOneFailure() {
-        super.shouldNotChangePersistedStateAfterMakingMultipleChangesWithOneFailure();
     }
 
 }

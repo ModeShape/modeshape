@@ -196,6 +196,11 @@ public interface Transaction<NodeType extends Node, WorkspaceType extends Worksp
      * Inserts the specified child at the specified position in the list of children. Shifts the child currently at that position
      * (if any) and any subsequent children to the right (adds one to their indices). The child is automatically removed from its
      * existing parent (if it has one), though this method can be used to reorder a child within the same parent.
+     * <p>
+     * This method can also be used to rename an existing child by 'moving' the child node to the existing parent and a new
+     * desired name. However, if no 'beforeOtherChild' is supplied, then the node being renamed will also be moved to the end of
+     * the children.
+     * </p>
      * 
      * @param workspace the workspace; may not be null
      * @param parent the parent node; may not be null

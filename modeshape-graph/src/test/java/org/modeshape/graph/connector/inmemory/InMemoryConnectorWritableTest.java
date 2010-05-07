@@ -25,11 +25,9 @@ package org.modeshape.graph.connector.inmemory;
 
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.RepositorySource;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.connector.test.WritableConnectorTest;
 
-/**
- * @author Randall Hauch
- */
 public class InMemoryConnectorWritableTest extends WritableConnectorTest {
 
     /**

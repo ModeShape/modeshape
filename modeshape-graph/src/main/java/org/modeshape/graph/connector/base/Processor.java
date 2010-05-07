@@ -314,10 +314,7 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
                 if (node == null) {
                     node = txn.addChild(workspace, parentNode, request.named(), -1, uuid, propsToStore);
                 } else {
-                    // otherwise, we found it and we need to replace the properties ...
-                    txn.setProperties(workspace, node, propsToStore, null, true);
-                    // and remove the children ...
-                    txn.removeAllChildren(workspace, node);
+                    // otherwise, we found it and add the properties (which we'll do later on)...
                 }
                 break;
         }

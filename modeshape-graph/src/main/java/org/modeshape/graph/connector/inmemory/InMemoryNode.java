@@ -23,180 +23,74 @@
  */
 package org.modeshape.graph.connector.inmemory;
 
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.connector.inmemory.InMemoryRepository.InMemoryNodeState;
-import org.modeshape.graph.connector.map.DefaultMapNode;
-import org.modeshape.graph.connector.map.MapNode;
+import org.modeshape.graph.connector.base.MapNode;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.Path.Segment;
 
 /**
- * An {@link MapNode} implementation used by the {@link InMemoryRepository}.
+ * A specialization of the {@link MapNode}.
  */
-public class InMemoryNode extends DefaultMapNode {
+public class InMemoryNode extends MapNode {
 
-    private final ChangeListener listener;
+    private static final long serialVersionUID = 1L;
 
     /**
-     * @param listener the listener that is to be notified of any changes
-     * @param uuid the UUID of the node
+     * Create a new in-memory node.
+     * 
+     * @param uuid the desired UUID; never null
+     * @param name the name of the new node; may be null if the name is not known and there is no parent
+     * @param parent the UUID of the parent node; may be null if this is the root node and there is no name
+     * @param properties the properties; may be null if there are no properties
+     * @param children the list of child nodes; may be null
      */
-    public InMemoryNode( ChangeListener listener,
-                         UUID uuid ) {
+    public InMemoryNode( UUID uuid,
+                         Segment name,
+                         UUID parent,
+                         Map<Name, Property> properties,
+                         List<UUID> children ) {
+        super(uuid, name, parent, properties, children);
+    }
+
+    /**
+     * Create a new in-memory node.
+     * 
+     * @param uuid the desired UUID; never null
+     * @param name the name of the new node; may be null if the name is not known and there is no parent
+     * @param parent the UUID of the parent node; may be null if this is the root node and there is no name
+     * @param properties the properties; may be null if there are no properties
+     * @param children the list of child nodes; may be null
+     */
+    public InMemoryNode( UUID uuid,
+                         Segment name,
+                         UUID parent,
+                         Iterable<Property> properties,
+                         List<UUID> children ) {
+        super(uuid, name, parent, properties, children);
+    }
+
+    /**
+     * Create a new in-memory node.
+     * 
+     * @param uuid the desired UUID; never null
+     */
+    public InMemoryNode( UUID uuid ) {
         super(uuid);
-        this.listener = listener;
-        assert this.listener != null;
-    }
-
-    /**
-     * The interface that {@link InMemoryNode} objects use to signal when they are about to change.
-     */
-    public static interface ChangeListener {
-        /**
-         * Signal that the supplied node is about to change.
-         * 
-         * @param node the node that is about to change
-         */
-        void prepareForChange( InMemoryNode node );
-    }
-
-    /**
-     * Restore the state of this node from the supplied snapshot.
-     * 
-     * @param state the snapshot of the state; may not be null
-     */
-    protected void restoreFrom( InMemoryNodeState state ) {
-        super.setParent(state.getParent());
-        super.setName(state.getName());
-        // Restore the properties ...
-        super.setProperties(state.getProperties());
-        // Restore the children ...
-        super.clearChildren();
-        for (MapNode originalChild : state.getChildren()) {
-            originalChild.setParent(this);
-            super.addChild(originalChild);
-        }
-        Set<Name> uniqueChildNames = super.getUniqueChildNames();
-        uniqueChildNames.clear();
-        uniqueChildNames.addAll(state.getUniqueChildNames());
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.graph.connector.map.DefaultMapNode#addChild(int, org.modeshape.graph.connector.map.MapNode)
+     * @see org.modeshape.graph.connector.base.MapNode#freeze()
      */
     @Override
-    public void addChild( int index,
-                          MapNode child ) {
-        listener.prepareForChange(this);
-        super.addChild(index, child);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.map.DefaultMapNode#addChild(org.modeshape.graph.connector.map.MapNode)
-     */
-    @Override
-    public void addChild( MapNode child ) {
-        listener.prepareForChange(this);
-        super.addChild(child);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.map.DefaultMapNode#clearChildren()
-     */
-    @Override
-    public void clearChildren() {
-        listener.prepareForChange(this);
-        super.clearChildren();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.map.DefaultMapNode#removeChild(org.modeshape.graph.connector.map.MapNode)
-     */
-    @Override
-    public boolean removeChild( MapNode child ) {
-        listener.prepareForChange(this);
-        return super.removeChild(child);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.map.DefaultMapNode#removeProperty(org.modeshape.graph.property.Name)
-     */
-    @Override
-    public MapNode removeProperty( Name propertyName ) {
-        listener.prepareForChange(this);
-        return super.removeProperty(propertyName);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.map.DefaultMapNode#setName(org.modeshape.graph.property.Path.Segment)
-     */
-    @Override
-    public void setName( Segment name ) {
-        // This method only sets this name and does not change the name of any other node ...
-        listener.prepareForChange(this);
-        super.setName(name);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.map.DefaultMapNode#setParent(org.modeshape.graph.connector.map.MapNode)
-     */
-    @Override
-    public void setParent( MapNode parent ) {
-        listener.prepareForChange(this);
-        super.setParent(parent);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.map.DefaultMapNode#setProperties(java.lang.Iterable)
-     */
-    @Override
-    public MapNode setProperties( Iterable<Property> properties ) {
-        listener.prepareForChange(this);
-        return super.setProperties(properties);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.map.DefaultMapNode#setProperty(org.modeshape.graph.ExecutionContext, java.lang.String,
-     *      java.lang.Object[])
-     */
-    @Override
-    public MapNode setProperty( ExecutionContext context,
-                                String name,
-                                Object... values ) {
-        listener.prepareForChange(this);
-        return super.setProperty(context, name, values);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.map.DefaultMapNode#setProperty(org.modeshape.graph.property.Property)
-     */
-    @Override
-    public MapNode setProperty( Property property ) {
-        listener.prepareForChange(this);
-        return super.setProperty(property);
+    public InMemoryNode freeze() {
+        if (!hasChanges()) return this;
+        return new InMemoryNode(getUuid(), getName(), getParent(), changes.getUnmodifiableProperties(),
+                                changes.getUnmodifiableChildren());
     }
 
 }

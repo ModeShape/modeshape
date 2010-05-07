@@ -48,6 +48,7 @@ public class GraphSequencerOutput implements SequencerOutput {
     private final PathFactory pathFactory;
 
     private final Set<Path> paths = new HashSet<Path>();
+    private final Path startingPath;
 
     /**
      * Create a graph sequencer output instance using {@link Graph.Batch} object.
@@ -59,6 +60,7 @@ public class GraphSequencerOutput implements SequencerOutput {
         this.batch = batch;
         ExecutionContext context = batch.getGraph().getContext();
         this.pathFactory = context.getValueFactories().getPathFactory();
+        this.startingPath = this.pathFactory.createRootPath();
     }
 
     /**
@@ -80,6 +82,7 @@ public class GraphSequencerOutput implements SequencerOutput {
                              Object... values ) {
         assert valuesAreNotIterators(values);
         Path path = pathFactory.create(nodePath);
+        path = absolute(path);
         if (paths.add(path)) {
             batch.create(path).and();
         }
@@ -96,10 +99,15 @@ public class GraphSequencerOutput implements SequencerOutput {
                              Name propertyName,
                              Object... values ) {
         assert valuesAreNotIterators(values);
+        nodePath = absolute(nodePath);
         if (paths.add(nodePath)) {
             batch.create(nodePath).and();
         }
         batch.set(propertyName).on(nodePath).to(values);
+    }
+
+    private final Path absolute( Path path ) {
+        return path.isAbsolute() ? path : path.resolveAgainst(startingPath);
     }
 
     /**
@@ -111,6 +119,7 @@ public class GraphSequencerOutput implements SequencerOutput {
                               String propertyName,
                               String... paths ) {
         Path path = pathFactory.create(nodePath);
+        path = absolute(path);
         if (this.paths.add(path)) {
             batch.create(path).and();
         }

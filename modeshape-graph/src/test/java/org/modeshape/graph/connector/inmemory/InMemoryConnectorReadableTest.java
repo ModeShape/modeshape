@@ -23,17 +23,15 @@
  */
 package org.modeshape.graph.connector.inmemory;
 
+import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.connector.RepositorySource;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.connector.test.ReadableConnectorTest;
-import org.junit.Test;
 
-/**
- * @author Randall Hauch
- */
 public class InMemoryConnectorReadableTest extends ReadableConnectorTest {
 
     /**

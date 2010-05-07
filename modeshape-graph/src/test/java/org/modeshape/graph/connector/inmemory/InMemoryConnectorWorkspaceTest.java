@@ -26,6 +26,7 @@ package org.modeshape.graph.connector.inmemory;
 import java.io.IOException;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.RepositorySource;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.connector.test.WorkspaceConnectorTest;
 import org.xml.sax.SAXException;
 

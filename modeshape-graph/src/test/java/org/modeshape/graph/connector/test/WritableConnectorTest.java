@@ -1080,13 +1080,16 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         boolean batch = true;
         createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
 
+        // Check starting point ...
+        assertThat(graph.getChildren().of("/"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
+
         // Move last node to front ...
         graph.move("/node3").before("/node1");
 
         assertThat(graph.getChildren().of("/"), hasChildren(segment("node3"), segment("node1"), segment("node2")));
 
         // Move last node to front ...
-        graph.move("/node3").before("/node1");
+        graph.move("/node2").before("/node3");
 
         assertThat(graph.getChildren().of("/"), hasChildren(segment("node2"), segment("node3"), segment("node1")));
 

@@ -24,7 +24,7 @@
 /**
  * The In-Memory Connector represents a {@link org.modeshape.graph.connector.RepositorySource connector} that maintains 
  * a graph in transient in-process memory.  This connector is a good solution for a readable and writable repository source
- * that is very lightweight and of small to moderate sizes.
+ * that is very lightweight and of small to moderate sizes, but that does require automated persistence.
  */
 
 package org.modeshape.graph.connector.inmemory;

@@ -61,7 +61,9 @@ public class MapWorkspace<NodeType extends MapNode> implements Workspace {
         this.name = name;
         this.rootNodeUuid = rootNode.getUuid();
         this.nodesByUuid = nodesByUuid;
-        this.nodesByUuid.put(rootNodeUuid, rootNode);
+        if (!this.nodesByUuid.containsKey(rootNodeUuid)) {
+            this.nodesByUuid.put(rootNodeUuid, rootNode);
+        }
         assert this.name != null;
         assert this.rootNodeUuid != null;
         assert this.nodesByUuid != null;
@@ -143,5 +145,15 @@ public class MapWorkspace<NodeType extends MapNode> implements Workspace {
         NodeType newRootNode = (NodeType)getRootNode().withoutChildren().withoutProperties().freeze();
         nodesByUuid.clear();
         nodesByUuid.put(newRootNode.getUuid(), newRootNode);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return name;
     }
 }

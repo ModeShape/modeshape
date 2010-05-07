@@ -577,6 +577,8 @@ public class GraphSessionTest {
         Node<Object, Object> cars = cache.findNodeWith(path("/Cars"));
         assertConnectionsUsed(1); // "Utility" was found because it is child of "Cars" loaded when "Sports" was loaded
 
+        assertChildren(cars, "Hybrid", "Sports", "Luxury", "Utility");
+
         cars.orderChildBefore(utility.getSegment(), sports.getSegment());
         assertNoMoreConnectionsUsed();
 
