@@ -38,6 +38,7 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.request.AccessQueryRequest;
 import org.modeshape.graph.request.FullTextSearchRequest;
+import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.LockBranchRequest.LockScope;
 
 /**
@@ -75,17 +76,19 @@ public interface Transaction<NodeType extends Node, WorkspaceType extends Worksp
      * @param name the name of the workspace; may not be null
      * @param originalToClone the workspace that should be cloned, or null if the new workspace is to only contain a root node
      * @return the newly created workspace; may not be null
+     * @throws InvalidWorkspaceException if the workspace could not be created
      */
     WorkspaceType getWorkspace( String name,
-                                WorkspaceType originalToClone );
+                                WorkspaceType originalToClone ) throws InvalidWorkspaceException;
 
     /**
      * Destroy the workspace with the supplied name.
      * 
      * @param workspace the workspace that is to be destroyed; may not be null
      * @return true if the workspace was destroyed, or false if the workspace did not exist
+     * @throws InvalidWorkspaceException if the workspace could not be destroyed
      */
-    boolean destroyWorkspace( WorkspaceType workspace );
+    boolean destroyWorkspace( WorkspaceType workspace ) throws InvalidWorkspaceException;
 
     /**
      * Get the root node of the repository workspace.

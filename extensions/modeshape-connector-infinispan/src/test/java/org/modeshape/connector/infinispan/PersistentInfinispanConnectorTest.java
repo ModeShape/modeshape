@@ -23,13 +23,25 @@
  */
 package org.modeshape.connector.infinispan;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import java.io.File;
 import javax.naming.Context;
 import org.infinispan.manager.CacheManager;
+import org.infinispan.manager.DefaultCacheManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.Subgraph;
+import org.modeshape.graph.connector.RepositoryConnection;
+import org.modeshape.graph.connector.RepositoryContext;
 
 /**
  * 
@@ -42,56 +54,78 @@ public class PersistentInfinispanConnectorTest {
     private InfinispanSource source;
     private CacheManager cacheManager;
     private Context mockJndi;
+    private RepositoryContext mockRepositoryContext;
     private Graph graph;
 
     @Before
     public void beforeEach() throws Exception {
         context = new ExecutionContext();
 
-        // // Create the cache manager ...
-        // cacheManager = new DefaultCacheManager("infinispan_persistent_config.xml"); // looks on classpath first
-        // // Set up the mock JNDI ...
-        // mockJndi = mock(Context.class);
-        // when(mockJndi.lookup(anyString())).thenReturn(null);
-        // when(mockJndi.lookup(JNDI_NAME)).thenReturn(cacheManager);
-        //
-        // String[] predefinedWorkspaceNames = new String[] {"default"};
-        // source = new InfinispanSource();
-        // source.setName("Test Repository");
-        // source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
-        // source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
-        // source.setCreatingWorkspacesAllowed(true);
-        // source.setContext(mockJndi);
-        // source.setCacheManagerJndiName(JNDI_NAME);
-        //
-        // graph = Graph.create(source, context);
-        // graph.useWorkspace("default");
+        // Create the cache manager ...
+        cacheManager = new DefaultCacheManager("infinispan_persistent_config.xml"); // looks on classpath first
+        // Set up the mock JNDI ...
+        mockJndi = mock(Context.class);
+        when(mockJndi.lookup(anyString())).thenReturn(null);
+        when(mockJndi.lookup(JNDI_NAME)).thenReturn(cacheManager);
+
+        mockRepositoryContext = mock(RepositoryContext.class);
+        when(mockRepositoryContext.getExecutionContext()).thenReturn(context);
+
+        String[] predefinedWorkspaceNames = new String[] {"default"};
+        source = new InfinispanSource();
+        source.setName("Test Repository");
+        source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
+        source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
+        source.setCreatingWorkspacesAllowed(true);
+        source.setContext(mockJndi);
+        source.setCacheManagerJndiName(JNDI_NAME);
+        source.initialize(mockRepositoryContext);
     }
 
     @After
     public void afterEach() throws Exception {
-        // try {
-        // cacheManager.stop();
-        // } finally {
-        // // Delete all of the content stored on the file system ...
-        // File store = new File("target/infinispan/jcr");
-        // FileUtil.delete(store);
-        // }
+        graph = null;
+        try {
+            source.close(); // stops the cache manager
+        } finally {
+            // Delete all of the content stored on the file system ...
+            File store = new File("target/infinispan/jcr");
+            FileUtil.delete(store);
+        }
+    }
+
+    protected Graph graph() {
+        if (graph == null) {
+            graph = Graph.create(source, context);
+        }
+        return graph;
     }
 
     @Test
-    public void placeholder() {
+    public void shouldShutdownWithoutOpeningConnections() {
 
     }
 
-    // @Test
-    // public void shouldStartUp() {
-    // assertThat(graph.getNodeAt("/"), is(notNullValue()));
-    // }
-    //
-    // @Test
-    // public void shouldAllowCreatingAndReReadingNodes() {
-    // graph.create("/a").with("prop1", "value1").and();
-    //
-    // }
+    @Test
+    public void shouldShutdownAfterOpeningConnections() {
+        RepositoryConnection connection = source.getConnection();
+        connection.close();
+    }
+
+    @Test
+    public void shouldHaveRootNode() {
+        assertThat(graph().getNodeAt("/"), is(notNullValue()));
+    }
+
+    @Test
+    public void shouldAllowCreatingAndReReadingNodes() {
+        Subgraph subgraph = graph().getSubgraphOfDepth(10).at("/");
+        assertThat(subgraph.getNode("/"), is(notNullValue()));
+        // System.out.println(subgraph);
+        graph().create("/a").with("prop1", "value1").and();
+        subgraph = graph().getSubgraphOfDepth(10).at("/");
+        assertThat(subgraph.getNode("/"), is(notNullValue()));
+        assertThat(subgraph.getNode("/a").getProperty("prop1").getFirstValue(), is((Object)"value1"));
+        // System.out.println(subgraph);
+    }
 }

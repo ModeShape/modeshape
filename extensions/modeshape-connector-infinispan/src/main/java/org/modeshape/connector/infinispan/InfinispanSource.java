@@ -50,16 +50,16 @@ import org.infinispan.manager.DefaultCacheManager;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.connector.map.MapRepositoryConnection;
-import org.modeshape.graph.connector.map.MapRepositorySource;
+import org.modeshape.graph.connector.base.BaseRepositorySource;
+import org.modeshape.graph.connector.base.Connection;
 import org.modeshape.graph.observe.Observer;
-import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
  * A repository source that uses an Infinispan instance to manage the content. This source is capable of using an existing
@@ -76,7 +76,7 @@ import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior
  * </p>
  */
 @ThreadSafe
-public class InfinispanSource implements MapRepositorySource, ObjectFactory {
+public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
 
     private static final long serialVersionUID = 2L;
     /**
@@ -346,6 +346,9 @@ public class InfinispanSource implements MapRepositorySource, ObjectFactory {
      * @see #getPredefinedWorkspaceNames()
      */
     public synchronized void setPredefinedWorkspaceNames( String[] predefinedWorkspaceNames ) {
+        if (predefinedWorkspaceNames != null && predefinedWorkspaceNames.length == 1) {
+            predefinedWorkspaceNames = predefinedWorkspaceNames[0].split("\\s*,\\s*");
+        }
         this.predefinedWorkspaces = predefinedWorkspaceNames;
     }
 
@@ -416,15 +419,25 @@ public class InfinispanSource implements MapRepositorySource, ObjectFactory {
             if (cacheManager == null) cacheManager = new DefaultCacheManager();
 
             // Now create the repository ...
-            this.repository = new InfinispanRepository(this.name, this.rootNodeUuid, this.defaultWorkspace, cacheManager);
+            ExecutionContext execContext = repositoryContext.getExecutionContext();
+            this.repository = new InfinispanRepository(execContext, this.name, this.rootNodeUuid, this.defaultWorkspace,
+                                                       cacheManager, this.predefinedWorkspaces);
 
-            // Create the set of initial names ...
-            for (String initialName : getPredefinedWorkspaceNames())
-                repository.createWorkspace(null, initialName, CreateConflictBehavior.DO_NOT_CREATE);
-
+            // // Create the set of initial workspaces ...
+            // String[] workspaceNames = getPredefinedWorkspaceNames();
+            // if (workspaceNames.length != 0) {
+            // InfinispanTransaction txn = repository.startTransaction(execContext, false);
+            // try {
+            // for (String initialName : getPredefinedWorkspaceNames()) {
+            // repository.createWorkspace(txn, initialName, CreateConflictBehavior.DO_NOT_CREATE, null);
+            // }
+            // } finally {
+            // txn.commit();
+            // }
+            // }
         }
 
-        return new MapRepositoryConnection(this, this.repository);
+        return new Connection<InfinispanNode, InfinispanWorkspace>(this, repository);
     }
 
     /**
@@ -433,8 +446,13 @@ public class InfinispanSource implements MapRepositorySource, ObjectFactory {
      * @see org.modeshape.graph.connector.RepositorySource#close()
      */
     public synchronized void close() {
-        // Null the reference to the repository; open connections still reference it and can continue to work ...
-        this.repository = null;
+        if (this.repository != null) {
+            try {
+                this.repository.shutdown();
+            } finally {
+                this.repository = null;
+            }
+        }
     }
 
     /**

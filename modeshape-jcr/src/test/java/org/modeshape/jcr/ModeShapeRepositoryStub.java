@@ -49,6 +49,7 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
     private Properties configProps;
     private String repositoryConfigurationName;
     private JcrRepository repository;
+    private JcrEngine engine;
 
     static {
 
@@ -83,7 +84,16 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
             String configFileName = "/tck/" + repositoryConfigurationName + "/configRepository.xml";
             configuration.loadFrom(getClass().getResourceAsStream(configFileName));
 
-            JcrEngine engine = configuration.build();
+            if (engine != null) {
+                try {
+                    // Terminate any existing engine ...
+                    engine.shutdown();
+                } finally {
+                    engine = null;
+                }
+            }
+
+            engine = configuration.build();
             engine.start();
 
             Problems problems = engine.getProblems();

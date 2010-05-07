@@ -35,6 +35,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
@@ -167,7 +168,11 @@ public abstract class Repository<NodeType extends Node, WorkspaceType extends Wo
         Lock lock = workspacesLock.readLock();
         try {
             lock.lock();
-            return workspaces.get(name);
+            WorkspaceType workspace = workspaces.get(name);
+            if (workspace == null && getWorkspaceNames().contains(name)) {
+                workspace = txn.getWorkspace(name, null);
+            }
+            return workspace;
         } finally {
             lock.unlock();
         }
@@ -200,11 +205,12 @@ public abstract class Repository<NodeType extends Node, WorkspaceType extends Wo
      * @return the newly created workspace with an exact copy of the contents from the workspace named {@code
      *         nameOfWorkspaceToClone} or {@code null} if a workspace with the requested name already exists in the repository and
      *         {@code behavior == CreateConflictBehavior#DO_NOT_CREATE}.
+     * @throws InvalidWorkspaceException if the workspace could not be created
      */
     public WorkspaceType createWorkspace( Transaction<NodeType, WorkspaceType> txn,
                                           String name,
                                           CreateConflictBehavior existingWorkspaceBehavior,
-                                          String nameOfWorkspaceToClone ) {
+                                          String nameOfWorkspaceToClone ) throws InvalidWorkspaceException {
         String newName = name;
         Lock lock = workspacesLock.writeLock();
         try {

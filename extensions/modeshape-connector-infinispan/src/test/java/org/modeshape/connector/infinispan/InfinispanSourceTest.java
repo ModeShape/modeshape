@@ -41,18 +41,21 @@ import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
 import org.infinispan.manager.CacheManager;
-import org.modeshape.graph.cache.BasicCachePolicy;
-import org.modeshape.graph.connector.RepositoryConnection;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.cache.BasicCachePolicy;
+import org.modeshape.graph.connector.RepositoryConnection;
+import org.modeshape.graph.connector.RepositoryContext;
 
 /**
  */
 public class InfinispanSourceTest {
 
+    private ExecutionContext context;
     private InfinispanSource source;
     private RepositoryConnection connection;
     private String validName;
@@ -63,10 +66,14 @@ public class InfinispanSourceTest {
     private Context jndiContext;
     @Mock
     private CacheManager cacheManager;
+    @Mock
+    private RepositoryContext repositoryContext;
 
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
+        context = new ExecutionContext();
+        when(repositoryContext.getExecutionContext()).thenReturn(context);
         validName = "cache source";
         validCacheConfigurationName = "cache config name";
         validCacheManagerJndiName = "cache factory jndi name";
@@ -211,6 +218,7 @@ public class InfinispanSourceTest {
     public void shouldCreateCacheUsingDefaultCacheManagerWhenNoCacheOrCacheManagerOrCacheConfigurationNameIsFound()
         throws Exception {
         source.setName(validName);
+        source.initialize(repositoryContext);
         connection = source.getConnection();
         assertThat(connection, is(notNullValue()));
         // assertThat(connection.getCache(), is(notNullValue()));
