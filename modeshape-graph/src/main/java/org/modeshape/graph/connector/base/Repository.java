@@ -167,22 +167,7 @@ public abstract class Repository<NodeType extends Node, WorkspaceType extends Wo
         Lock lock = workspacesLock.readLock();
         try {
             lock.lock();
-            WorkspaceType workspace = workspaces.get(name);
-            if (workspace == null) {
-                // Release the read lock and acquire a write lock ...
-                lock.unlock();
-                lock = workspacesLock.writeLock();
-                lock.unlock();
-                // Try again, in case some other call slipped in ...
-                workspace = workspaces.get(name);
-                if (workspace == null) {
-                    workspace = txn.getWorkspace(name, null);
-                    if (workspace != null) {
-                        workspaces.put(workspace.getName(), workspace);
-                    }
-                }
-            }
-            return workspace;
+            return workspaces.get(name);
         } finally {
             lock.unlock();
         }
@@ -221,25 +206,31 @@ public abstract class Repository<NodeType extends Node, WorkspaceType extends Wo
                                           CreateConflictBehavior existingWorkspaceBehavior,
                                           String nameOfWorkspaceToClone ) {
         String newName = name;
-        boolean conflictingName = workspaces.containsKey(newName);
-        if (conflictingName) {
-            switch (existingWorkspaceBehavior) {
-                case DO_NOT_CREATE:
-                    return null;
-                case CREATE_WITH_ADJUSTED_NAME:
-                    int counter = 0;
-                    do {
-                        newName = name + (++counter);
-                    } while (workspaces.containsKey(newName));
-                    break;
+        Lock lock = workspacesLock.writeLock();
+        try {
+            lock.lock();
+            boolean conflictingName = workspaces.containsKey(newName);
+            if (conflictingName) {
+                switch (existingWorkspaceBehavior) {
+                    case DO_NOT_CREATE:
+                        return null;
+                    case CREATE_WITH_ADJUSTED_NAME:
+                        int counter = 0;
+                        do {
+                            newName = name + (++counter);
+                        } while (workspaces.containsKey(newName));
+                        break;
+                }
             }
-        }
-        assert workspaces.containsKey(newName) == false;
+            assert workspaces.containsKey(newName) == false;
 
-        WorkspaceType original = nameOfWorkspaceToClone != null ? getWorkspace(txn, nameOfWorkspaceToClone) : null;
-        WorkspaceType workspace = txn.getWorkspace(name, original);
-        workspaces.put(name, workspace);
-        return workspace;
+            WorkspaceType original = nameOfWorkspaceToClone != null ? getWorkspace(txn, nameOfWorkspaceToClone) : null;
+            WorkspaceType workspace = txn.getWorkspace(name, original);
+            workspaces.put(name, workspace);
+            return workspace;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**

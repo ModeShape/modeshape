@@ -60,6 +60,7 @@ import org.modeshape.graph.request.LockBranchRequest;
 import org.modeshape.graph.request.MoveBranchRequest;
 import org.modeshape.graph.request.ReadAllChildrenRequest;
 import org.modeshape.graph.request.ReadAllPropertiesRequest;
+import org.modeshape.graph.request.ReadNodeRequest;
 import org.modeshape.graph.request.Request;
 import org.modeshape.graph.request.UnlockBranchRequest;
 import org.modeshape.graph.request.UpdatePropertiesRequest;
@@ -89,6 +90,39 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
         this.pathFactory = txn.getContext().getValueFactories().getPathFactory();
         this.propertyFactory = txn.getContext().getPropertyFactory();
         this.updatesAllowed = updatesAllowed;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.request.processor.RequestProcessor#process(org.modeshape.graph.request.ReadNodeRequest)
+     */
+    @Override
+    public void process( ReadNodeRequest request ) {
+        WorkspaceType workspace = getWorkspace(request, request.inWorkspace());
+        NodeType node = getTargetNode(workspace, request, request.at());
+        if (node == null) {
+            assert request.hasError();
+            return;
+        }
+
+        Location actualLocation = getActualLocation(workspace, request.at(), node);
+        assert actualLocation != null;
+        Path path = actualLocation.getPath();
+        // Get the names of the children ...
+        List<NodeType> children = txn.getChildren(workspace, node);
+        for (Node child : children) {
+            Segment childName = child.getName();
+            Path childPath = pathFactory.create(path, childName);
+            request.addChild(childPath, propertyFactory.create(ModeShapeLexicon.UUID, child.getUuid()));
+        }
+
+        // Get the properties of the node ...
+        request.addProperty(propertyFactory.create(ModeShapeLexicon.UUID, node.getUuid()));
+        request.addProperties(node.getProperties().values());
+
+        request.setActualLocationOfNode(actualLocation);
+        setCacheableInfo(request);
     }
 
     /**
