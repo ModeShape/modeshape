@@ -27,16 +27,16 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.ByteArrayOutputStream;
-import org.modeshape.graph.ModeShapeLexicon;
+import org.junit.Test;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrMixLexicon;
 import org.modeshape.graph.JcrNtLexicon;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.test.AbstractConnectorTest;
 import org.modeshape.graph.property.PathNotFoundException;
-import org.junit.Test;
 import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNProperties;
 import org.tmatesoft.svn.core.io.SVNRepository;
@@ -73,7 +73,7 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
         source.setCreatingWorkspacesAllowed(Boolean.TRUE);
         source.setUpdatesAllowed(true);
 
-        remoteRepos = SvnConnectorTestUtil.createRepository(url + "trunk", "sp", "");
+        remoteRepos = SvnConnectorTestUtil.createRepository(url + "/trunk", "sp", "");
 
         return source;
     }

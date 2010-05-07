@@ -841,7 +841,11 @@ public class SvnRepository extends WritablePathRepository {
         protected SVNRepository getWorkspaceDirectory( String workspaceName ) {
             if (workspaceName == null) workspaceName = source.getDefaultWorkspaceName();
 
-            workspaceName = source.getRepositoryRootUrl() + workspaceName;
+            if (source.getRepositoryRootUrl().endsWith("/")) {
+                workspaceName = source.getRepositoryRootUrl() + workspaceName;
+            } else {
+                workspaceName = source.getRepositoryRootUrl() + "/" + workspaceName;
+            }
 
             SVNRepository repository = null;
             SVNRepository repos = SvnRepositoryUtil.createRepository(workspaceName, source.getUsername(), source.getPassword());

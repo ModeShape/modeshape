@@ -119,6 +119,8 @@ public class SvnConnectorTestUtil {
         // for SVN (over svn and svn+ssh)
         SVNRepositoryFactoryImpl.setup();
 
+        if (!url.endsWith("/")) url = url + "/";
+
         // The factory knows how to create a DAVRepository
         SVNRepository repository = SVNRepositoryFactory.create(SVNURL.parseURIDecoded(url));
         ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(username, password);
@@ -146,7 +148,6 @@ public class SvnConnectorTestUtil {
         SVNURL encodedUrl = SVNURL.parseURIEncoded(url);
         url = encodedUrl.toDecodedString();
 
-        if (!url.endsWith("/")) url = url + "/";
         return url;
     }
 
