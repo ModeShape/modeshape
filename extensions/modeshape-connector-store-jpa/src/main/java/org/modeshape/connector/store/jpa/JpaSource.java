@@ -44,6 +44,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import net.jcip.annotations.Immutable;
+import net.jcip.annotations.ThreadSafe;
 import org.hibernate.SessionFactory;
 import org.hibernate.ejb.Ejb3Configuration;
 import org.modeshape.common.i18n.I18n;
@@ -67,6 +68,7 @@ import org.modeshape.graph.connector.RepositorySourceException;
  * Persistence API as the interface to the database, with Hibernate as the JPA implementation. (Note that some Hibernate-specific
  * features are used.)
  */
+@ThreadSafe
 public class JpaSource implements RepositorySource, ObjectFactory {
 
     private final Logger LOGGER = Logger.getLogger(JpaSource.class);

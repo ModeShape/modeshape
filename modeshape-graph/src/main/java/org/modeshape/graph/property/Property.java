@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.property;
 
+import java.io.Serializable;
 import java.util.Iterator;
 import net.jcip.annotations.Immutable;
 
@@ -56,7 +57,7 @@ import net.jcip.annotations.Immutable;
  * </p>
  */
 @Immutable
-public interface Property extends Iterable<Object>, Comparable<Property>, Readable {
+public interface Property extends Iterable<Object>, Comparable<Property>, Readable, Serializable {
 
     /**
      * Get the name of the property.

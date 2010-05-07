@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns="urn:infinispan:config:4.0">
+  <global />
+  <default>
+    <loaders shared="false" preload="true">
+      <loader class="org.infinispan.loaders.file.FileCacheStore" 
+              fetchPersistentState="true" 
+              ignoreModifications="false"
+              purgeOnStartup="false">
+        <properties>
+          <property name="location" value="target/infinispan/jcr"/>
+        </properties>
+      </loader>
+    </loaders>
+  </default>
+</infinispan>

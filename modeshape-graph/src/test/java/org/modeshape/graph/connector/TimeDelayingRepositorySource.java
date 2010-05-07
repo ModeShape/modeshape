@@ -40,8 +40,6 @@ import org.modeshape.graph.request.Request;
 
 /**
  * A simple {@link RepositorySource} that simulates an imaginary source with a built-in delay mechanism.
- * 
- * @author Randall Hauch
  */
 @ThreadSafe
 public class TimeDelayingRepositorySource implements RepositorySource {

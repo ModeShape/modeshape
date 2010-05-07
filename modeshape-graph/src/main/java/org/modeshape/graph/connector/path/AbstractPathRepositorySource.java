@@ -34,6 +34,7 @@ import javax.naming.BinaryRefAddr;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
+import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySourceException;
@@ -45,6 +46,7 @@ import org.modeshape.graph.connector.path.cache.PathRepositoryCache;
  * Basic implementation of the trivial {@link PathRepositorySource} methods and the {@link org.modeshape.graph.connector.path path
  * repository cache life cycle}.
  */
+@ThreadSafe
 public abstract class AbstractPathRepositorySource implements PathRepositorySource {
 
     private static final long serialVersionUID = 1L;

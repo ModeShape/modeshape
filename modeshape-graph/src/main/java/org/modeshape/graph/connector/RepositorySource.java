@@ -28,7 +28,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.util.UUID;
 import javax.naming.Referenceable;
-import net.jcip.annotations.NotThreadSafe;
+import net.jcip.annotations.ThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.DateTime;
@@ -44,11 +44,11 @@ import org.modeshape.graph.request.CacheableRequest;
  * <p>
  * Typically this interface is implemented by classes that provide standard-style getters and setters for the various properties
  * necessary for proper configuration via reflection or introspection. This interface expects nor defines any such properties,
- * leaving that entirely to the implementation classes. Although any types can be used for these setters, other ModeShape components use
- * reflection to set these properties and work best when the setters accept a single parameter that is a primitive, an array of
- * primitives, a value compatible with {@link PropertyType} (e.g., {@link Path}, {@link Name}, {@link URI}, {@link UUID},
- * {@link Reference}, {@link Binary}, {@link Long}, {@link Double}, {@link BigDecimal}, {@link DateTime}, etc.), or an array of
- * values that are compatible with {@link PropertyType}.
+ * leaving that entirely to the implementation classes. Although any types can be used for these setters, other ModeShape
+ * components use reflection to set these properties and work best when the setters accept a single parameter that is a primitive,
+ * an array of primitives, a value compatible with {@link PropertyType} (e.g., {@link Path}, {@link Name}, {@link URI},
+ * {@link UUID}, {@link Reference}, {@link Binary}, {@link Long}, {@link Double}, {@link BigDecimal}, {@link DateTime}, etc.), or
+ * an array of values that are compatible with {@link PropertyType}.
  * </p>
  * <p>
  * Implementations should also provide a no-arg constructor so that it is possible to easily create instances and initialize using
@@ -62,19 +62,19 @@ import org.modeshape.graph.request.CacheableRequest;
  * </p>
  * <h3>Pooling connections</h3>
  * <p>
- * If the connections created by a RepositorySource are expensive to create, then connection pooling is recommended. ModeShape provides
- * this capability with a powerful and flexible {@link RepositoryConnectionPool} class. This is the pooling mechanism used by
- * ModeShape, but you are free to use your own pools.
+ * If the connections created by a RepositorySource are expensive to create, then connection pooling is recommended. ModeShape
+ * provides this capability with a powerful and flexible {@link RepositoryConnectionPool} class. This is the pooling mechanism
+ * used by ModeShape, but you are free to use your own pools.
  * </p>
  * <h3>Cache Policy</h3>
  * <p>
- * Each connector is responsible for determining whether and how long ModeShape is to cache the content made available by the connector.
- * This is referred to as the caching policy, and consists of a time to live value representing the number of milliseconds that a
- * piece of data may be cached. After the TTL has passed, the information is no longer used.
+ * Each connector is responsible for determining whether and how long ModeShape is to cache the content made available by the
+ * connector. This is referred to as the caching policy, and consists of a time to live value representing the number of
+ * milliseconds that a piece of data may be cached. After the TTL has passed, the information is no longer used.
  * </p>
  * <p>
- * ModeShape allows a connector to use a flexible and powerful caching policy. First, each connection returns the default caching policy
- * for all information returned by that connection. Often this policy can be configured via properties on the
+ * ModeShape allows a connector to use a flexible and powerful caching policy. First, each connection returns the default caching
+ * policy for all information returned by that connection. Often this policy can be configured via properties on the
  * {@link RepositorySource} implementation. This is optional, meaning the connector can return null if it does not wish to have a
  * default caching policy.
  * </p>
@@ -83,9 +83,9 @@ import org.modeshape.graph.request.CacheableRequest;
  * this is optional, meaning that a null caching policy on a request implies that the request has no overridden caching policy.
  * </p>
  * <p>
- * Third, if the connector has no default caching policy and none is set on the individual requests, ModeShape uses whatever caching
- * policy is set up for that component using the connector. For example, the federating connector allows a default caching policy
- * to be specified, and this policy is used should the sources being federated not define their own caching policy.
+ * Third, if the connector has no default caching policy and none is set on the individual requests, ModeShape uses whatever
+ * caching policy is set up for that component using the connector. For example, the federating connector allows a default caching
+ * policy to be specified, and this policy is used should the sources being federated not define their own caching policy.
  * </p>
  * <p>
  * In summary, a connector has total control over whether and for how long the information it provides is cached.
@@ -135,7 +135,7 @@ import org.modeshape.graph.request.CacheableRequest;
  * security properties.
  * </p>
  */
-@NotThreadSafe
+@ThreadSafe
 public interface RepositorySource extends Referenceable, Serializable {
 
     /**

@@ -346,7 +346,11 @@ public abstract class RequestProcessor {
             Request embedded = iter.next();
             assert embedded != null;
             if (embedded.isCancelled()) return;
-            process(embedded);
+            try {
+                process(embedded);
+            } catch (RuntimeException e) {
+                embedded.setError(e);
+            }
             if (!hasErrors && embedded.hasError()) {
                 hasErrors = true;
                 if (!readonly && !embedded.isReadOnly()) {

@@ -39,15 +39,15 @@ import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.NotThreadSafe;
+import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.NamedThreadFactory;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.SubgraphNode;
@@ -69,7 +69,7 @@ import org.modeshape.graph.property.ValueFactory;
 /**
  * A {@link RepositorySource} for a federated repository.
  */
-@NotThreadSafe
+@ThreadSafe
 public class FederatedRepositorySource implements RepositorySource, ObjectFactory {
 
     /**

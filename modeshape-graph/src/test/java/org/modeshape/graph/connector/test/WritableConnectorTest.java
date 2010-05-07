@@ -28,19 +28,22 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeNoException;
 import static org.modeshape.graph.IsNodeWithChildren.hasChild;
 import static org.modeshape.graph.IsNodeWithChildren.hasChildren;
 import static org.modeshape.graph.IsNodeWithChildren.isEmpty;
 import static org.modeshape.graph.IsNodeWithProperty.hasProperty;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeNoException;
 import java.util.UUID;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.JcrLexicon;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.connector.RepositorySource;
@@ -48,9 +51,6 @@ import org.modeshape.graph.connector.UuidAlreadyExistsException;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.Reference;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * A class that provides standard writing verification tests for connectors that are able to store any content (in any structure).
@@ -929,7 +929,6 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
 
         graph.create("/newUuids").and();
         // Copy once to get the UUID into the default workspace
-        // graph.copy("/node1").replacingExistingNodesWithSameUuids().fromWorkspace(workspaceName).to("/newUuids/node1");
         graph.clone("/node1")
              .fromWorkspace(workspaceName)
              .as(name("node1"))
@@ -945,8 +944,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         graph.create("/newUuids/node1/shouldBeRemoved");
 
         // Copy again to test the behavior now that the UUIDs are already in the default workspace
-        // This should remove /newUuids/node1/shouldBeRemoved
-        // graph.copy("/node1").replacingExistingNodesWithSameUuids().fromWorkspace(workspaceName).to("/newUuids/otherNode");
+        // This should first remove /newUuids/node1, which of course will remove /newUuids/node1/shouldBeRemoved
         graph.clone("/node1")
              .fromWorkspace(workspaceName)
              .as(name("otherNode"))
@@ -1745,8 +1743,8 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
 
         assertThat(graph.getChildren().of("/node3"), hasChildren(segment("node1"),
                                                                  segment("node2[1]"),
-                                                                 segment("node3"),
-                                                                 segment("node2[2]")));
+                                                                 segment("node2[2]"),
+                                                                 segment("node3")));
         assertThat(graph.getChildren().of("/node3/node2[1]"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
         assertThat(graph.getChildren().of("/node3/node3"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
         assertThat(graph.getChildren().of("/node3/node3/node1"), hasChildren());

@@ -33,6 +33,7 @@ import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.transaction.xa.XAResource;
 import net.jcip.annotations.NotThreadSafe;
+import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
@@ -61,6 +62,7 @@ import org.modeshape.graph.request.processor.RequestProcessor;
  * {@link RepositorySourceCapabilities#supportsQueries() non-querable} RepositorySource instance to provide search and query
  * capability.
  */
+@ThreadSafe
 public class SearchableRepositorySource implements RepositorySource {
 
     private static final long serialVersionUID = 1L;
