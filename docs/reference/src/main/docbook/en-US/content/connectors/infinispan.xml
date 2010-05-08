@@ -59,8 +59,16 @@
 				</row>
 				<row>
 					<entry>cacheConfigurationName</entry>
-					<entry>Optional property that, if used, specifies the name of the configuration that is supplied to the cache manager
-						when creating a new Infinispan CacheManager instance.</entry>
+					<entry>
+						<para>Optional property that, if used, specifies the name of the configuration resource or file that is supplied to the cache manager
+						when creating a new Infinispan DefaultCacheManager instance.  The configuration name is first treated as a resource name and will be attempted
+						to be loaded from the &ClassLoader;.  If that is unsuccessful, the configuration name is assumed to be a file name and will be loaded
+						from the file system.  This initialization happens the first time that the source is used.
+						</para>
+						<para><emphasis>Note that the <code>cacheManagerJndiName</code> property is checked first as a pointer to the Infinispan <code>CacheManager</code>.
+							If the JNDI name points to a CacheManager, the <code>cacheConfigurationName</code> property will not be considered. 
+						</emphasis></para>
+					</entry>
 				</row>
 				<row>
 					<entry>defaultCachePolicy</entry>

@@ -42,6 +42,7 @@ import org.modeshape.graph.Graph;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
+import org.modeshape.graph.connector.RepositorySourceException;
 
 /**
  * 
@@ -52,21 +53,12 @@ public class PersistentInfinispanConnectorTest {
 
     private ExecutionContext context;
     private InfinispanSource source;
-    private CacheManager cacheManager;
-    private Context mockJndi;
     private RepositoryContext mockRepositoryContext;
     private Graph graph;
 
     @Before
     public void beforeEach() throws Exception {
         context = new ExecutionContext();
-
-        // Create the cache manager ...
-        cacheManager = new DefaultCacheManager("infinispan_persistent_config.xml"); // looks on classpath first
-        // Set up the mock JNDI ...
-        mockJndi = mock(Context.class);
-        when(mockJndi.lookup(anyString())).thenReturn(null);
-        when(mockJndi.lookup(JNDI_NAME)).thenReturn(cacheManager);
 
         mockRepositoryContext = mock(RepositoryContext.class);
         when(mockRepositoryContext.getExecutionContext()).thenReturn(context);
@@ -77,8 +69,6 @@ public class PersistentInfinispanConnectorTest {
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(true);
-        source.setContext(mockJndi);
-        source.setCacheManagerJndiName(JNDI_NAME);
         source.initialize(mockRepositoryContext);
     }
 
@@ -101,24 +91,27 @@ public class PersistentInfinispanConnectorTest {
         return graph;
     }
 
-    @Test
-    public void shouldShutdownWithoutOpeningConnections() {
+    private void setupCacheThroughJndi() throws Exception {
+        // Create the cache manager ...
+        CacheManager cacheManager = new DefaultCacheManager("infinispan_persistent_config.xml"); // looks on classpath first
+        // Set up the mock JNDI ...
+        Context mockJndi = mock(Context.class);
+        when(mockJndi.lookup(anyString())).thenReturn(null);
+        when(mockJndi.lookup(JNDI_NAME)).thenReturn(cacheManager);
 
+        source.setContext(mockJndi);
+        source.setCacheManagerJndiName(JNDI_NAME);
     }
 
-    @Test
-    public void shouldShutdownAfterOpeningConnections() {
-        RepositoryConnection connection = source.getConnection();
-        connection.close();
+    private void setupCacheThroughClasspath() throws Exception {
+        source.setCacheConfigurationName("/infinispan_persistent_config.xml");
     }
 
-    @Test
-    public void shouldHaveRootNode() {
-        assertThat(graph().getNodeAt("/"), is(notNullValue()));
+    private void setupCacheThroughFile() throws Exception {
+        source.setCacheConfigurationName("./src/test/resources/infinispan_persistent_config.xml");
     }
 
-    @Test
-    public void shouldAllowCreatingAndReReadingNodes() {
+    private void testWriteAndRead() {
         Subgraph subgraph = graph().getSubgraphOfDepth(10).at("/");
         assertThat(subgraph.getNode("/"), is(notNullValue()));
         // System.out.println(subgraph);
@@ -127,5 +120,50 @@ public class PersistentInfinispanConnectorTest {
         assertThat(subgraph.getNode("/"), is(notNullValue()));
         assertThat(subgraph.getNode("/a").getProperty("prop1").getFirstValue(), is((Object)"value1"));
         // System.out.println(subgraph);
+
+    }
+
+    @Test
+    public void shouldShutdownWithoutOpeningConnections() throws Exception {
+        setupCacheThroughJndi();
+        source.close();
+    }
+
+    @Test
+    public void shouldShutdownAfterOpeningConnections() throws Exception {
+        setupCacheThroughJndi();
+        RepositoryConnection connection = source.getConnection();
+        connection.close();
+    }
+
+    @Test
+    public void shouldHaveRootNode() throws Exception {
+        setupCacheThroughJndi();
+        assertThat(graph().getNodeAt("/"), is(notNullValue()));
+    }
+
+    @Test
+    public void shouldAllowCreatingAndReReadingNodesFromJndiCache() throws Exception {
+        setupCacheThroughJndi();
+        testWriteAndRead();
+    }
+
+    @Test
+    public void shouldAllowCreatingAndReReadingNodesFromClasspathConfig() throws Exception {
+        setupCacheThroughClasspath();
+        testWriteAndRead();
+    }
+
+    @Test
+    public void shouldAllowCreatingAndReReadingNodesFromFileConfig() throws Exception {
+        setupCacheThroughFile();
+        testWriteAndRead();
+    }
+
+    @Test( expected = RepositorySourceException.class )
+    public void shouldThrowExceptionIfBadConfigFileSpecified() {
+        source.setCacheConfigurationName("./thisFileIsNotOnTheClasspathOrTheFileSystem.xml");
+        source.getConnection();
+
     }
 }

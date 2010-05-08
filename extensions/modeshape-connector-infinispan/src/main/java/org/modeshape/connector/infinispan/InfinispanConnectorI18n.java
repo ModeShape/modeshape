@@ -14,6 +14,8 @@ public final class InfinispanConnectorI18n {
     public static I18n errorSerializingCachePolicyInSource;
     public static I18n objectFoundInJndiWasNotCacheManager;
     public static I18n unableToCreateWorkspace;
+    public static I18n configFileNotFound;
+    public static I18n configFileNotValid;
 
     static {
         try {

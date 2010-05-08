@@ -25,7 +25,9 @@ package org.modeshape.connector.infinispan;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Enumeration;
@@ -416,25 +418,44 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
                     throw new RepositorySourceException(getName(), err);
                 }
             }
-            if (cacheManager == null) cacheManager = new DefaultCacheManager();
+            if (cacheManager == null) {
+                String configName = getCacheConfigurationName();
+                if (configName == null) {
+                    cacheManager = new DefaultCacheManager();
+                }
+                else {
+                    /*
+                     * First try treating the config name as a classpath resource, then as a file name.
+                     */
+                    InputStream configStream = getClass().getResourceAsStream(configName);
+                    try {
+                        if (configStream == null) {
+                            configStream = new FileInputStream(configName);
+                        }
+                    } catch (IOException ioe) {
+                        I18n msg = InfinispanConnectorI18n.configFileNotFound;
+                        throw new RepositorySourceException(this.name, msg.text(configName), ioe);
+                    }
+
+                    try {
+                        cacheManager = new DefaultCacheManager(configStream);
+                    } catch (IOException ioe) {
+                        I18n msg = InfinispanConnectorI18n.configFileNotValid;
+                        throw new RepositorySourceException(this.name, msg.text(configName), ioe);
+                    } finally {
+                        try {
+                            configStream.close();
+                        } catch (IOException ioe) {
+                        }
+                    }
+
+                }
+            }
 
             // Now create the repository ...
             ExecutionContext execContext = repositoryContext.getExecutionContext();
             this.repository = new InfinispanRepository(execContext, this.name, this.rootNodeUuid, this.defaultWorkspace,
                                                        cacheManager, this.predefinedWorkspaces);
-
-            // // Create the set of initial workspaces ...
-            // String[] workspaceNames = getPredefinedWorkspaceNames();
-            // if (workspaceNames.length != 0) {
-            // InfinispanTransaction txn = repository.startTransaction(execContext, false);
-            // try {
-            // for (String initialName : getPredefinedWorkspaceNames()) {
-            // repository.createWorkspace(txn, initialName, CreateConflictBehavior.DO_NOT_CREATE, null);
-            // }
-            // } finally {
-            // txn.commit();
-            // }
-            // }
         }
 
         return new Connection<InfinispanNode, InfinispanWorkspace>(this, repository);
