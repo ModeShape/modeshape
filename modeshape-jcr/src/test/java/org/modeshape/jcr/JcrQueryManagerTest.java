@@ -669,7 +669,7 @@ public class JcrQueryManagerTest {
             adminSession.setNamespacePrefix("cars", "http://www.modeshape.org/examples/cars/1.0");
 
             JcrNodeTypeManager nodeTypeManager = (JcrNodeTypeManager)adminSession.getWorkspace().getNodeTypeManager();
-            nodeTypeManager.unregisterNodeType(Collections.singletonList("cars:Car"));
+            nodeTypeManager.unregisterNodeTypes(Collections.singletonList("cars:Car"));
         } finally {
             if (adminSession != null) adminSession.logout();
         }

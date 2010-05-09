@@ -35,6 +35,7 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
@@ -67,17 +68,57 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         nameFactory = context.getValueFactories().getNameFactory();
     }
 
-    @Test( expected = InvalidNodeTypeDefinitionException.class )
+    @Ignore
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowNodeTypeWithInvalidName() throws Exception {
+        ntTemplate.setName("nt-name");
+    }
+
+    @Ignore
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowPropertyWithInvalidName() throws Exception {
+        JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(":foo[2]");
+        System.out.println(prop.getName());
+    }
+
+    @Ignore
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowChildNodeWithInvalidName() throws Exception {
+        JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
+        child.setName(":foo[2]");
+    }
+
+    @Ignore
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowChildNodeWithInvalidRequiredPrimaryTypeName() throws Exception {
+        JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
+        child.setRequiredPrimaryTypeNames(new String[] {"nt-Name"});
+    }
+
+    @Ignore
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowChildNodeWithInvalidDefaultPrimaryTypeName() throws Exception {
+        JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
+        child.setDefaultPrimaryTypeName("nt-Name");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNodeTypeWithNoName() throws Exception {
         ntTemplate.setName(null);
-        repoTypeManager.registerNodeType(ntTemplate, false);
+    }
+
+    @Test
+    public void shouldTranslateNameImmediately() throws Exception {
+        ntTemplate.setName("{" + ModeShapeLexicon.Namespace.URI + "}foo");
+        assertThat(ntTemplate.getName(), is("mode:foo"));
     }
 
     @Test
     public void shouldAllowNewDefinitionWithNoChildNodesOrProperties() throws Exception {
         Name testTypeName = nameFactory.create(TEST_TYPE_NAME);
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base"});
 
         JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate, false);
 
@@ -97,7 +138,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     public void shouldNotAllowRedefinitionOfNewTypeIfAllowUpdatesIsFalse() throws Exception {
         Name testTypeName = nameFactory.create(TEST_TYPE_NAME);
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base"});
 
         JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate, false);
 
@@ -113,7 +154,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     public void shouldAllowDefinitionWithExistingSupertypes() throws Exception {
         Name testTypeName = nameFactory.create(TEST_TYPE_NAME);
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate, false);
 
@@ -127,11 +168,11 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test
     public void shouldAllowDefinitionWithSupertypesFromTypesRegisteredInSameCall() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrNodeTypeTemplate ntTemplate2 = new JcrNodeTypeTemplate(context);
         ntTemplate2.setName(TEST_TYPE_NAME2);
-        ntTemplate2.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        ntTemplate2.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, ntTemplate2});
         compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
@@ -141,11 +182,11 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     public void shouldNotAllowDefinitionWithSupertypesFromTypesRegisteredInSameCallInWrongOrder() throws Exception {
         // Try to register the supertype AFTER the class that registers it
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrNodeTypeTemplate ntTemplate2 = new JcrNodeTypeTemplate(context);
         ntTemplate2.setName(TEST_TYPE_NAME2);
-        ntTemplate2.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        ntTemplate2.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate2, ntTemplate}), false);
     }
@@ -153,7 +194,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test
     public void shouldAllowDefinitionWithAProperty() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setRequiredType(PropertyType.LONG);
@@ -167,7 +208,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test
     public void shouldAllowDefinitionWithProperties() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setRequiredType(PropertyType.LONG);
@@ -190,7 +231,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowAutocreatedPropertyWithNoDefault() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setName(TEST_PROPERTY_NAME);
@@ -205,9 +246,10 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowAutocreatedResidualProperty() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(JcrNodeType.RESIDUAL_ITEM_NAME);
         prop.setRequiredType(PropertyType.UNDEFINED);
         prop.setAutoCreated(true);
         ntTemplate.getPropertyDefinitionTemplates().add(prop);
@@ -219,7 +261,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test
     public void shouldAllowAutocreatedNamedPropertyWithDefault() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setName(TEST_PROPERTY_NAME);
@@ -235,7 +277,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowSingleValuedPropertyWithMultipleDefaults() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setName(TEST_PROPERTY_NAME);
@@ -251,9 +293,10 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowMandatoryResidualProperty() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
+        prop.setName(JcrNodeType.RESIDUAL_ITEM_NAME);
         prop.setRequiredType(PropertyType.UNDEFINED);
         prop.setMandatory(true);
         ntTemplate.getPropertyDefinitionTemplates().add(prop);
@@ -265,11 +308,11 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test
     public void shouldAllowTypeWithChildNode() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(TEST_CHILD_NODE_NAME);
-        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:base"});
         child.setSameNameSiblings(true);
 
         ntTemplate.getNodeDefinitionTemplates().add(child);
@@ -281,23 +324,23 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test
     public void shouldAllowTypeWithMultipleChildNodes() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(TEST_CHILD_NODE_NAME);
-        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:base"});
         child.setSameNameSiblings(true);
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
         child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(TEST_CHILD_NODE_NAME);
-        child.setRequiredPrimaryTypes(new String[] {"nt:unstructured"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:unstructured"});
         child.setSameNameSiblings(false);
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
         child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(TEST_CHILD_NODE_NAME + "2");
-        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:base"});
         child.setSameNameSiblings(true);
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
@@ -308,11 +351,11 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowAutocreatedChildNodeWithNoDefaultPrimaryType() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(TEST_CHILD_NODE_NAME);
-        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:base"});
         child.setAutoCreated(true);
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
@@ -323,10 +366,11 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowMandatoryResidualChildNode() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
-        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setName(JcrNodeType.RESIDUAL_ITEM_NAME);
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:base"});
         child.setMandatory(true);
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
@@ -337,7 +381,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowOverridingProtectedProperty() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
         JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setName(JcrLexicon.PRIMARY_TYPE.getString(registry));
@@ -351,11 +395,11 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowOverridingProtectedChildNode() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"mode:root", "mix:referenceable"});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"mode:root", "mix:referenceable"});
 
         JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(JcrLexicon.SYSTEM.getString(registry));
-        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:base"});
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
@@ -365,11 +409,11 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test( expected = InvalidNodeTypeDefinitionException.class )
     public void shouldNotAllowOverridingMandatoryChildNodeWithOptionalChildNode() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"jcr:versionHistory",});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"jcr:versionHistory",});
 
         JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(JcrLexicon.SYSTEM.getString(registry));
-        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:base"});
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
@@ -385,7 +429,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
          * testNodeD extends testNodeB and testNodeC and overrides testProperty --> LEGAL
          */
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base",});
 
         JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setName(TEST_PROPERTY_NAME);
@@ -394,15 +438,15 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
         nodeBTemplate.setName(TEST_TYPE_NAME + "B");
-        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        nodeBTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         JcrNodeTypeTemplate nodeCTemplate = new JcrNodeTypeTemplate(this.context);
         nodeCTemplate.setName(TEST_TYPE_NAME + "C");
-        nodeCTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        nodeCTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         JcrNodeTypeTemplate nodeDTemplate = new JcrNodeTypeTemplate(this.context);
         nodeDTemplate.setName(TEST_TYPE_NAME + "D");
-        nodeDTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME + "B", TEST_TYPE_NAME + "C"});
+        nodeDTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME + "B", TEST_TYPE_NAME + "C"});
 
         prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setName(TEST_PROPERTY_NAME);
@@ -423,11 +467,11 @@ public class TypeRegistrationTest extends AbstractSessionTest {
          * testNodeD extends testNodeB and testNodeC and overrides testProperty --> ILLEGAL
          */
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base",});
 
         JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
         nodeBTemplate.setName(TEST_TYPE_NAME + "B");
-        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        nodeBTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setName(TEST_PROPERTY_NAME);
@@ -436,7 +480,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         JcrNodeTypeTemplate nodeCTemplate = new JcrNodeTypeTemplate(this.context);
         nodeCTemplate.setName(TEST_TYPE_NAME + "C");
-        nodeCTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        nodeCTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setName(TEST_PROPERTY_NAME);
@@ -445,7 +489,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         JcrNodeTypeTemplate nodeDTemplate = new JcrNodeTypeTemplate(this.context);
         nodeDTemplate.setName(TEST_TYPE_NAME + "D");
-        nodeDTemplate.setDeclaredSupertypeNames(new String[] {nodeBTemplate.getName(), nodeCTemplate.getName()});
+        nodeDTemplate.setDeclaredSuperTypeNames(new String[] {nodeBTemplate.getName(), nodeCTemplate.getName()});
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate, nodeCTemplate,
             nodeDTemplate});
@@ -461,28 +505,28 @@ public class TypeRegistrationTest extends AbstractSessionTest {
          * testNodeD extends testNodeB and testNodeC and overrides testChildNode --> LEGAL
          */
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base",});
 
         JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(JcrLexicon.SYSTEM.getString(registry));
-        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:base"});
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
         JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
         nodeBTemplate.setName(TEST_TYPE_NAME + "B");
-        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        nodeBTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         JcrNodeTypeTemplate nodeCTemplate = new JcrNodeTypeTemplate(this.context);
         nodeCTemplate.setName(TEST_TYPE_NAME + "C");
-        nodeCTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        nodeCTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         JcrNodeTypeTemplate nodeDTemplate = new JcrNodeTypeTemplate(this.context);
         nodeDTemplate.setName(TEST_TYPE_NAME + "D");
-        nodeDTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME + "B", TEST_TYPE_NAME + "C"});
+        nodeDTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME + "B", TEST_TYPE_NAME + "C"});
 
         child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(JcrLexicon.SYSTEM.getString(registry));
-        child.setRequiredPrimaryTypes(new String[] {"nt:unstructured"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:unstructured"});
         nodeDTemplate.getNodeDefinitionTemplates().add(child);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate, nodeCTemplate,
@@ -499,29 +543,29 @@ public class TypeRegistrationTest extends AbstractSessionTest {
          * testNodeD extends testNodeB and testNodeC and overrides testChildNode --> ILLEGAL
          */
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base",});
 
         JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
         nodeBTemplate.setName(TEST_TYPE_NAME + "B");
-        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        nodeBTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(JcrLexicon.SYSTEM.getString(registry));
-        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:base"});
         nodeBTemplate.getNodeDefinitionTemplates().add(child);
 
         JcrNodeTypeTemplate nodeCTemplate = new JcrNodeTypeTemplate(this.context);
         nodeCTemplate.setName(TEST_TYPE_NAME + "C");
-        nodeCTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        nodeCTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(JcrLexicon.SYSTEM.getString(registry));
-        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:base"});
         nodeCTemplate.getNodeDefinitionTemplates().add(child);
 
         JcrNodeTypeTemplate nodeDTemplate = new JcrNodeTypeTemplate(this.context);
         nodeDTemplate.setName(TEST_TYPE_NAME + "D");
-        nodeDTemplate.setDeclaredSupertypeNames(new String[] {nodeBTemplate.getName(), nodeCTemplate.getName()});
+        nodeDTemplate.setDeclaredSuperTypeNames(new String[] {nodeBTemplate.getName(), nodeCTemplate.getName()});
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate, nodeCTemplate,
             nodeDTemplate});
@@ -536,7 +580,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
          * testNodeC extends testNode, testNodeB -> LEGAL
          */
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base",});
 
         JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setName(TEST_PROPERTY_NAME);
@@ -546,7 +590,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
         nodeBTemplate.setName(TEST_TYPE_NAME + "B");
-        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        nodeBTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setName(TEST_PROPERTY_NAME);
@@ -556,7 +600,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         JcrNodeTypeTemplate nodeCTemplate = new JcrNodeTypeTemplate(this.context);
         nodeCTemplate.setName(TEST_TYPE_NAME + "C");
-        nodeCTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME, nodeBTemplate.getName()});
+        nodeCTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME, nodeBTemplate.getName()});
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate, nodeCTemplate});
         compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
@@ -569,7 +613,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
          * testNodeB extends testNode with SV property testProperty of type STRING -> LEGAL
          */
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base",});
 
         JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setName(TEST_PROPERTY_NAME);
@@ -579,7 +623,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
         nodeBTemplate.setName(TEST_TYPE_NAME + "B");
-        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        nodeBTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setName(TEST_PROPERTY_NAME);
@@ -598,7 +642,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
          * testNodeB extends testNode with SV property testProperty of type DOUBLE -> ILLEGAL
          */
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base",});
 
         JcrPropertyDefinitionTemplate prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setName(TEST_PROPERTY_NAME);
@@ -608,7 +652,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
         nodeBTemplate.setName(TEST_TYPE_NAME + "B");
-        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        nodeBTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         prop = new JcrPropertyDefinitionTemplate(this.context);
         prop.setName(TEST_PROPERTY_NAME);
@@ -627,21 +671,21 @@ public class TypeRegistrationTest extends AbstractSessionTest {
          * testNodeB extends testNode with No-SNS childNode testChildNode requiring type nt:file -> LEGAL
          */
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base",});
 
         JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(TEST_CHILD_NODE_NAME);
-        child.setRequiredPrimaryTypes(new String[] {"nt:hierarchyNode"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:hierarchyNode"});
         child.setSameNameSiblings(false);
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
         JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
         nodeBTemplate.setName(TEST_TYPE_NAME + "B");
-        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        nodeBTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(TEST_CHILD_NODE_NAME);
-        child.setRequiredPrimaryTypes(new String[] {"nt:file"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:file"});
         child.setSameNameSiblings(false);
         nodeBTemplate.getNodeDefinitionTemplates().add(child);
 
@@ -656,21 +700,21 @@ public class TypeRegistrationTest extends AbstractSessionTest {
          * testNodeB extends testNode with No-SNS childNode testChildNode requiring type nt:base -> ILLEGAL
          */
         ntTemplate.setName(TEST_TYPE_NAME);
-        ntTemplate.setDeclaredSupertypeNames(new String[] {"nt:base",});
+        ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base",});
 
         JcrNodeDefinitionTemplate child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(TEST_CHILD_NODE_NAME);
-        child.setRequiredPrimaryTypes(new String[] {"nt:hierarchyNode"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:hierarchyNode"});
         child.setSameNameSiblings(false);
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
         JcrNodeTypeTemplate nodeBTemplate = new JcrNodeTypeTemplate(this.context);
         nodeBTemplate.setName(TEST_TYPE_NAME + "B");
-        nodeBTemplate.setDeclaredSupertypeNames(new String[] {TEST_TYPE_NAME});
+        nodeBTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         child = new JcrNodeDefinitionTemplate(this.context);
         child.setName(TEST_CHILD_NODE_NAME);
-        child.setRequiredPrimaryTypes(new String[] {"nt:base"});
+        child.setRequiredPrimaryTypeNames(new String[] {"nt:base"});
         child.setSameNameSiblings(false);
         nodeBTemplate.getNodeDefinitionTemplates().add(child);
 
@@ -868,7 +912,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         // Had to match on name to even get to the definition
         // assertThat(template.getName(), is(definition.getName()));
 
-        assertThat(template.getValueConstraints(), is(definition.getValueConstraints()));
+        assertThat(emptyIfNull(template.getValueConstraints()), is(definition.getValueConstraints()));
         assertThat(template.getOnParentVersion(), is(definition.getOnParentVersion()));
         assertThat(template.getRequiredType(), is(definition.getRequiredType()));
         assertThat(template.isAutoCreated(), is(definition.isAutoCreated()));
@@ -896,4 +940,8 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
     }
 
+    private String[] emptyIfNull( String[] incoming ) {
+        if (incoming != null) return incoming;
+        return new String[0];
+    }
 }

@@ -49,6 +49,13 @@ public interface NodeTypeTemplate extends NodeTypeDefinition {
     public void setDeclaredSupertypeNames( String[] names );
 
     /**
+     * Set the direct supertypes for this node type.
+     * 
+     * @param names the names of the direct supertypes, or empty or null if there are none.
+     */
+    public void setDeclaredSuperTypeNames( String[] names );
+
+    /**
      * Set whether this node type is abstract.
      * 
      * @param isAbstract true if this node type is to be abstract, or false if it is concrete

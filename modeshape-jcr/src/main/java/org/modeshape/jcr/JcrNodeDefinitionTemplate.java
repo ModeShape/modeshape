@@ -25,7 +25,6 @@ package org.modeshape.jcr;
 
 import javax.jcr.nodetype.NodeType;
 import net.jcip.annotations.NotThreadSafe;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.jcr.nodetype.NodeDefinitionTemplate;
 
@@ -49,6 +48,15 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
      * @see org.modeshape.jcr.nodetype.NodeDefinitionTemplate#setDefaultPrimaryType(String)
      */
     public void setDefaultPrimaryType( String defaultPrimaryType ) {
+        setDefaultPrimaryTypeName(defaultPrimaryType);
+    }
+
+    /**
+     * Set the name of the primary type that should be used by default when creating children using this node definition
+     * 
+     * @param defaultPrimaryType the default primary type for this child node
+     */
+    public void setDefaultPrimaryTypeName( String defaultPrimaryType ) {
         this.defaultPrimaryType = defaultPrimaryType;
     }
 
@@ -56,9 +64,19 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
      * {@inheritDoc}
      * 
      * @see org.modeshape.jcr.nodetype.NodeDefinitionTemplate#setRequiredPrimaryTypes(java.lang.String[])
+     * @deprecated Use {@link #setRequiredPrimaryTypeNames(String[])} instead
      */
     public void setRequiredPrimaryTypes( String[] requiredPrimaryTypes ) {
-        CheckArg.isNotNull(requiredPrimaryTypes, "requiredPrimaryTypes");
+        setRequiredPrimaryTypeNames(requiredPrimaryTypes);
+    }
+
+    /**
+     * SSet the names of the primary types that must appear on the child(ren) described by this definition
+     * 
+     * @param requiredPrimaryTypes the names of the required primary types, or null or empty if there are no requirements for the
+     *        primary types of the children described by this definition
+     */
+    public void setRequiredPrimaryTypeNames( String[] requiredPrimaryTypes ) {
         this.requiredPrimaryTypes = requiredPrimaryTypes;
     }
 

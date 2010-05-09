@@ -26,6 +26,8 @@ package org.modeshape.jcr;
 import java.util.Arrays;
 import java.util.List;
 import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
@@ -213,7 +215,7 @@ class NodeTemplateNodeTypeSource implements JcrNodeTypeSource {
                                              Path parentPath ) {
         Name name = nameFrom(propDefn.getName());
         String requiredType = PropertyType.nameFromValue(propDefn.getRequiredType()).toUpperCase();
-        String[] defaultValues = propDefn.getInternalDefaultValues();
+        Value[] rawValues = propDefn.getDefaultValues();
         boolean multiple = booleanFrom(propDefn.isMultiple(), false);
         boolean mandatory = booleanFrom(propDefn.isMandatory(), false);
         boolean autoCreated = booleanFrom(propDefn.isAutoCreated(), false);
@@ -228,11 +230,26 @@ class NodeTemplateNodeTypeSource implements JcrNodeTypeSource {
         if (name == null) name = JcrNodeType.RESIDUAL_NAME;
         Path path = pathFactory.create(parentPath, JcrLexicon.PROPERTY_DEFINITION);
 
+        String defaultValues[];
+
+        if (rawValues == null) {
+            defaultValues = new String[0];
+        } else {
+            try {
+                defaultValues = new String[rawValues.length];
+                for (int i = 0; i < rawValues.length; i++) {
+                    defaultValues[i] = rawValues[i].getString();
+                }
+            } catch (RepositoryException re) {
+                throw new IllegalStateException(re);
+            }
+        }
+
         PropertyFactory factory = propDefn.getExecutionContext().getPropertyFactory();
         destination.create(path,
                            factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.PROPERTY_DEFINITION),
                            factory.create(JcrLexicon.REQUIRED_TYPE, requiredType),
-                           factory.create(JcrLexicon.DEFAULT_VALUES, (Object[])defaultValues),
+                           factory.create(JcrLexicon.DEFAULT_VALUES, defaultValues),
                            factory.create(JcrLexicon.MULTIPLE, multiple),
                            factory.create(JcrLexicon.MANDATORY, mandatory),
                            factory.create(JcrLexicon.NAME, name),

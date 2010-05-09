@@ -27,7 +27,9 @@ import javax.jcr.nodetype.ItemDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.OnParentVersionAction;
 import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.property.Name;
 
 /**
  * ModeShape convenience implementation to support the JCR 2 NodeDefinitionTemplate and PropertyDefinitionTemplate classes.
@@ -39,8 +41,8 @@ abstract class JcrItemDefinitionTemplate implements ItemDefinition {
     private boolean autoCreated = false;
     private boolean mandatory = false;
     private boolean isProtected = false;
-    private String name;
-    private int onParentVersion = OnParentVersionAction.IGNORE;
+    private Name name;
+    private int onParentVersion = OnParentVersionAction.COPY;
 
     JcrItemDefinitionTemplate( ExecutionContext context ) {
         assert context != null;
@@ -67,7 +69,8 @@ abstract class JcrItemDefinitionTemplate implements ItemDefinition {
      * @see javax.jcr.nodetype.ItemDefinition#getName()
      */
     public String getName() {
-        return name;
+        if (name == null) return null;
+        return name.getString(context.getNamespaceRegistry());
     }
 
     /**
@@ -123,7 +126,8 @@ abstract class JcrItemDefinitionTemplate implements ItemDefinition {
     }
 
     public void setName( String name ) {
-        this.name = name;
+        CheckArg.isNotEmpty(name, "name");
+        this.name = context.getValueFactories().getNameFactory().create(name);
     }
 
     public void setOnParentVersion( int onParentVersion ) {

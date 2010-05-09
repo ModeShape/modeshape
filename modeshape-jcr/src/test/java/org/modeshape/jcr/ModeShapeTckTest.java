@@ -139,7 +139,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         String nodeTypeName = session.getUserID() + "Type";
         newType.setName(nodeTypeName);
         nodeTypes.registerNodeType(newType, false);
-        nodeTypes.unregisterNodeType(Collections.singleton(nodeTypeName));
+        nodeTypes.unregisterNodeTypes(Collections.singleton(nodeTypeName));
     }
 
     private void testWrite( Session session ) throws Exception {

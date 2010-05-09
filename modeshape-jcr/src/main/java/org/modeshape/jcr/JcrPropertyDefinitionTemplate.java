@@ -24,10 +24,9 @@
 package org.modeshape.jcr;
 
 import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
 
 /**
@@ -36,9 +35,9 @@ import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
 class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements PropertyDefinitionTemplate {
 
     private boolean multiple = false;
-    private String[] defaultValues;
+    private Value[] defaultValues = null;
     private int requiredType = PropertyType.STRING;
-    private String[] valueConstraints = new String[0];
+    private String[] valueConstraints = null;
     private boolean fullTextSearchable = true;
     private boolean queryOrderable = true;
     private String[] availableQueryOperators;
@@ -53,8 +52,16 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
      * @see org.modeshape.jcr.nodetype.PropertyDefinitionTemplate#setDefaultValues(java.lang.String[])
      */
     public void setDefaultValues( String[] defaultValues ) {
-        CheckArg.isNotNull(defaultValues, "defaultValues");
-        this.defaultValues = defaultValues;
+        if (defaultValues == null) {
+            this.defaultValues = null;
+            return;
+        }
+
+        this.defaultValues = new Value[defaultValues.length];
+        ValueFactories factories = getExecutionContext().getValueFactories();
+        for (int i = 0; i < defaultValues.length; i++) {
+            this.defaultValues[i] = new JcrValue(factories, null, PropertyType.STRING, defaultValues[i]);
+        }
     }
 
     /**
@@ -63,16 +70,7 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
      * @see org.modeshape.jcr.nodetype.PropertyDefinitionTemplate#setDefaultValues(Value[])
      */
     public void setDefaultValues( Value[] defaultValues ) {
-        CheckArg.isNotNull(defaultValues, "defaultValues");
-        this.defaultValues = new String[defaultValues.length];
-
-        try {
-            for (int i = 0; i < defaultValues.length; i++) {
-                this.defaultValues[i] = defaultValues[i].getString();
-            }
-        } catch (RepositoryException re) {
-            throw new IllegalStateException(re);
-        }
+        this.defaultValues = defaultValues;
     }
 
     /**
@@ -103,7 +101,6 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
      * @see org.modeshape.jcr.nodetype.PropertyDefinitionTemplate#setValueConstraints(java.lang.String[])
      */
     public void setValueConstraints( String[] constraints ) {
-        CheckArg.isNotNull(constraints, "constraints");
         this.valueConstraints = constraints;
     }
 
@@ -113,11 +110,7 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
      * @see javax.jcr.nodetype.PropertyDefinition#getDefaultValues()
      */
     public Value[] getDefaultValues() {
-        return null;
-    }
-
-    String[] getInternalDefaultValues() {
-        return defaultValues;
+        return this.defaultValues;
     }
 
     /**

@@ -49,6 +49,13 @@ public interface NodeTypeDefinition {
     public String[] getDeclaredSupertypes();
 
     /**
+     * Get the direct supertypes for this node type.
+     * 
+     * @return the names of the direct supertypes, or an empty array if there are none
+     */
+    public String[] getDeclaredSupertypeNames();
+
+    /**
      * Get whether this node type is abstract.
      * 
      * @return true if this node type is abstract, or false if it is concrete

@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import java.security.AccessControlException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -525,6 +526,43 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     }
 
     /**
+     * Registers or updates the specified array of {@code NodeTypeDefinition} objects. This method is used to register or update a
+     * set of node types with mutual dependencies. Returns an iterator over the resulting {@code NodeType} objects.
+     * <p>
+     * The effect of the method is "all or nothing"; if an error occurs, no node types are registered or updated.
+     * </p>
+     * 
+     * @param ntds the new node types to register
+     * @param allowUpdate must be {@code false}; ModeShape does not allow updating node types at this time
+     * @return the {@code newly created node types}
+     * @throws InvalidNodeTypeDefinitionException if a {@code NodeTypeDefinition} within the collection is invalid
+     * @throws NodeTypeExistsException if {@code allowUpdate} is false and a {@code NodeTypeDefinition} within the collection
+     *         specifies a node type name that already exists
+     * @throws UnsupportedRepositoryOperationException if {@code allowUpdate} is true; ModeShape does not allow updating node
+     *         types at this time.
+     * @throws AccessDeniedException if the current session does not have the {@link ModeShapePermissions#REGISTER_TYPE register
+     *         type permission}.
+     * @throws RepositoryException if another error occurs
+     */
+    public NodeTypeIterator registerNodeTypes( NodeTypeDefinition[] ntds,
+                                               boolean allowUpdate )
+        throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
+        RepositoryException {
+
+        try {
+            session.checkPermission((Path)null, ModeShapePermissions.REGISTER_TYPE);
+        } catch (AccessControlException ace) {
+            throw new AccessDeniedException(ace);
+        }
+
+        try {
+            return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(Arrays.asList(ntds), allowUpdate));
+        } finally {
+            schemata = null;
+        }
+    }
+
+    /**
      * Unregisters the named node type if it is not referenced by other node types as a supertype, a default primary type of a
      * child node (or nodes), or a required primary type of a child node (or nodes).
      * 
@@ -538,7 +576,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      */
     public void unregisterNodeType( String nodeTypeName )
         throws NoSuchNodeTypeException, InvalidNodeTypeDefinitionException, RepositoryException {
-        unregisterNodeType(Collections.singleton(nodeTypeName));
+        unregisterNodeTypes(Collections.singleton(nodeTypeName));
     }
 
     /**
@@ -554,7 +592,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      *         type permission}.
      * @throws RepositoryException if any other error occurs
      */
-    public void unregisterNodeType( Collection<String> nodeTypeNames )
+    public void unregisterNodeTypes( Collection<String> nodeTypeNames )
         throws NoSuchNodeTypeException, InvalidNodeTypeDefinitionException, RepositoryException {
         NameFactory nameFactory = context().getValueFactories().getNameFactory();
 
@@ -573,6 +611,23 @@ public class JcrNodeTypeManager implements NodeTypeManager {
     }
 
     /**
+     * Allows the collection of node types to be unregistered if they are not referenced by other node types as supertypes,
+     * default primary types of child nodes, or required primary types of child nodes.
+     * 
+     * @param names the names of the node types to be unregistered
+     * @throws NoSuchNodeTypeException if any of the node type names do not correspond to a registered node type
+     * @throws InvalidNodeTypeDefinitionException if any of the node types with the given names cannot be unregistered because
+     *         they are the supertype, one of the required primary types, or a default primary type of a node type that is not
+     *         being unregistered.
+     * @throws AccessDeniedException if the current session does not have the {@link ModeShapePermissions#REGISTER_TYPE register
+     *         type permission}.
+     * @throws RepositoryException if any other error occurs
+     */
+    public void unregisterNodeTypes( String[] names ) throws NoSuchNodeTypeException, RepositoryException {
+        unregisterNodeTypes(Arrays.asList(names));
+    }
+
+    /**
      * Returns an empty {@code NodeTypeTemplate} which can then be used to define a node type and passed to
      * {@link JcrNodeTypeManager#registerNodeType(NodeTypeDefinition, boolean)}
      * 
@@ -582,6 +637,33 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      */
     public NodeTypeTemplate createNodeTypeTemplate() throws RepositoryException {
         return new JcrNodeTypeTemplate(context());
+    }
+
+    /**
+     * Returns a {@code NodeTypeTemplate} based on the definition given in {@code ntd}. This template can then be used to define a
+     * node type and passed to {@link JcrNodeTypeManager#registerNodeType(NodeTypeDefinition, boolean)}
+     * 
+     * @param ntd an existing node type definition; null values will be ignored
+     * @return an empty {@code NodeTypeTemplate} which can then be used to define a node type and passed to
+     *         {@link JcrNodeTypeManager#registerNodeType(NodeTypeDefinition, boolean)}.
+     * @throws RepositoryException if another error occurs
+     */
+    public NodeTypeTemplate createNodeTypeTemplate( NodeTypeDefinition ntd ) throws RepositoryException {
+        NodeTypeTemplate ntt = createNodeTypeTemplate();
+
+        if (ntd != null) {
+            ntt.setName(ntd.getName());
+            ntt.setAbstract(ntd.isAbstract());
+            ntt.setDeclaredSuperTypeNames(ntd.getDeclaredSupertypeNames());
+            ntt.setMixin(ntd.isMixin());
+            ntt.setOrderableChildNodes(ntd.hasOrderableChildNodes());
+            ntt.setPrimaryItemName(ntd.getPrimaryItemName());
+            ntt.setQueryable(ntd.isQueryable());
+
+            // copy child nodes and props
+        }
+
+        return ntt;
     }
 
     /**

@@ -30,6 +30,7 @@ import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.property.Name;
 import org.modeshape.jcr.nodetype.NodeDefinitionTemplate;
 import org.modeshape.jcr.nodetype.NodeTypeTemplate;
 import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
@@ -47,9 +48,9 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
     private boolean queryable = true;
     private boolean mixin;
     private boolean orderableChildNodes;
-    private String[] declaredSupertypeNames;
-    private String name;
-    private String primaryItemName;
+    private Name[] declaredSupertypeNames;
+    private Name name;
+    private Name primaryItemName;
 
     JcrNodeTypeTemplate( ExecutionContext context ) {
         assert context != null;
@@ -59,6 +60,12 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
 
     ExecutionContext getExecutionContext() {
         return context;
+    }
+
+
+    private String string( Name name ) {
+        if (name == null) return null;
+        return name.getString(context.getNamespaceRegistry());
     }
 
     /**
@@ -106,7 +113,14 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
      */
     public void setDeclaredSuperTypeNames( String[] names ) {
         CheckArg.isNotNull(names, "names");
-        this.declaredSupertypeNames = names;
+
+        Name[] supertypeNames = new Name[names.length];
+        
+        for (int i = 0; i < names.length; i++) {
+            CheckArg.isNotEmpty(names[i], "names[" + i + "");
+            supertypeNames[i] = context.getValueFactories().getNameFactory().create(names[i]);
+        }
+        this.declaredSupertypeNames = supertypeNames;
     }
 
     /**
@@ -124,7 +138,8 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
      * @see org.modeshape.jcr.nodetype.NodeTypeTemplate#setName(java.lang.String)
      */
     public void setName( String name ) {
-        this.name = name;
+        CheckArg.isNotEmpty(name, "name");
+        this.name = context.getValueFactories().getNameFactory().create(name);
     }
 
     /**
@@ -143,42 +158,49 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
      *      type.NodeTypeTemplate#setPrimaryItemName(java.lang.String)
      */
     public void setPrimaryItemName( String name ) {
-        this.primaryItemName = name;
+        this.primaryItemName = context.getValueFactories().getNameFactory().create(name);
     }
 
     /**
      * {@inheritDoc}
      * 
      * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getDeclaredNodeDefinitions()
+     * @deprecated use {@link #getDeclaredChildNodeDefinitions()} instead
      */
     public NodeDefinition[] getDeclaredNodeDefinitions() {
         return getDeclaredChildNodeDefinitions();
     }
 
+    /**
+     * Get the array of child node definition templates for this node type. This method always returns null from a {@code
+     * JcrNodeTypeTemplate}, as the method is only meaningful for registered types.
+     * 
+     * @return null always
+     */
     public NodeDefinition[] getDeclaredChildNodeDefinitions() {
-        if (this.nodeDefinitionTemplates == null) return null;
-        return nodeDefinitionTemplates.toArray(new NodeDefinition[nodeDefinitionTemplates.size()]);
+        return null;
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc} This method always returns null from a {@code JcrNodeTypeTemplate}, as the method is only meaningful for
+     * registered types.
      * 
+     * @return null always
      * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getDeclaredPropertyDefinitions()
      */
     public PropertyDefinition[] getDeclaredPropertyDefinitions() {
-        if (this.propertyDefinitionTemplates == null) return null;
-        return propertyDefinitionTemplates.toArray(new PropertyDefinition[propertyDefinitionTemplates.size()]);
+        return null;
     }
 
     /**
      * {@inheritDoc}
      * 
      * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getDeclaredSupertypes()
-     * @deprecated Use {@link #getDeclaredSuperTypeNames()} instead
+     * @deprecated Use {@link #getDeclaredSupertypeNames()} instead
      */
     @Deprecated
     public String[] getDeclaredSupertypes() {
-        return getDeclaredSuperTypeNames();
+        return getDeclaredSupertypeNames();
     }
 
     /**
@@ -186,8 +208,14 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
      * 
      * @return the names of the direct supertypes, or an empty array if there are none
      */
-    public String[] getDeclaredSuperTypeNames() {
-        return declaredSupertypeNames;
+    public String[] getDeclaredSupertypeNames() {
+        if (declaredSupertypeNames == null) return new String[0];
+        String[] names = new String[declaredSupertypeNames.length];
+
+        for (int i = 0; i < declaredSupertypeNames.length; i++) {
+            names[i] = declaredSupertypeNames[i].getString(context.getNamespaceRegistry());
+        }
+        return names;
     }
 
     /**
@@ -196,7 +224,7 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
      * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getName()
      */
     public String getName() {
-        return name;
+        return string(name);
     }
 
     /**
@@ -205,7 +233,7 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
      * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getPrimaryItemName()
      */
     public String getPrimaryItemName() {
-        return primaryItemName;
+        return string(primaryItemName);
     }
 
     /**
