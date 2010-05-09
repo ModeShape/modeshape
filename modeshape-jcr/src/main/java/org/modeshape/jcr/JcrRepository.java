@@ -49,7 +49,6 @@ import javax.jcr.Credentials;
 import javax.jcr.LoginException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PropertyType;
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
@@ -94,11 +93,13 @@ import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
+import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
 import org.modeshape.graph.query.parse.QueryParsers;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.jcr.RepositoryQueryManager.PushDown;
+import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.xpath.XPathQueryParser;
 
 /**
@@ -399,7 +400,7 @@ public class JcrRepository implements Repository {
     }
 
     private final String sourceName;
-    private final Map<String, String> descriptors;
+    private final Map<String, Object> descriptors;
     private final ExecutionContext executionContext;
     private final RepositoryConnectionFactory connectionFactory;
     private final RepositoryNodeTypeManager repositoryTypeManager;
@@ -449,41 +450,8 @@ public class JcrRepository implements Repository {
         CheckArg.isNotNull(repositorySourceName, "repositorySourceName");
         CheckArg.isNotNull(repositoryObservable, "repositoryObservable");
 
-        Map<String, String> modifiableDescriptors;
-        if (descriptors == null) {
-            modifiableDescriptors = new HashMap<String, String>();
-        } else {
-            modifiableDescriptors = new HashMap<String, String>(descriptors);
-        }
         // Initialize required JCR descriptors.
-        modifiableDescriptors.put(Repository.LEVEL_1_SUPPORTED, "true");
-        modifiableDescriptors.put(Repository.LEVEL_2_SUPPORTED, "true");
-        modifiableDescriptors.put(Repository.OPTION_LOCKING_SUPPORTED, "true");
-        modifiableDescriptors.put(Repository.OPTION_OBSERVATION_SUPPORTED, "true");
-        modifiableDescriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, "true");
-        modifiableDescriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, "false");
-        modifiableDescriptors.put(Repository.OPTION_VERSIONING_SUPPORTED, "true");
-        modifiableDescriptors.put(Repository.QUERY_XPATH_DOC_ORDER, "false"); // see MODE-613
-        if (!modifiableDescriptors.containsKey(Repository.QUERY_XPATH_POS_INDEX)) {
-            // don't override what was supplied ...
-            modifiableDescriptors.put(Repository.QUERY_XPATH_POS_INDEX, "true");
-        }
-        // Vendor-specific descriptors (REP_XXX) will only be initialized if not already present, allowing for customer branding.
-        if (!modifiableDescriptors.containsKey(Repository.REP_NAME_DESC)) {
-            modifiableDescriptors.put(Repository.REP_NAME_DESC, getBundleProperty(Repository.REP_NAME_DESC, true));
-        }
-        if (!modifiableDescriptors.containsKey(Repository.REP_VENDOR_DESC)) {
-            modifiableDescriptors.put(Repository.REP_VENDOR_DESC, getBundleProperty(Repository.REP_VENDOR_DESC, true));
-        }
-        if (!modifiableDescriptors.containsKey(Repository.REP_VENDOR_URL_DESC)) {
-            modifiableDescriptors.put(Repository.REP_VENDOR_URL_DESC, getBundleProperty(Repository.REP_VENDOR_URL_DESC, true));
-        }
-        if (!modifiableDescriptors.containsKey(Repository.REP_VERSION_DESC)) {
-            modifiableDescriptors.put(Repository.REP_VERSION_DESC, getBundleProperty(Repository.REP_VERSION_DESC, true));
-        }
-        modifiableDescriptors.put(Repository.SPEC_NAME_DESC, JcrI18n.SPEC_NAME_DESC.text());
-        modifiableDescriptors.put(Repository.SPEC_VERSION_DESC, "1.0");
-        this.descriptors = Collections.unmodifiableMap(modifiableDescriptors);
+        this.descriptors = initializeDescriptors(executionContext.getValueFactories(), descriptors);
 
         // Set up the options ...
         if (options == null) {
@@ -814,11 +782,66 @@ public class JcrRepository implements Repository {
      * {@inheritDoc}
      * 
      * @throws IllegalArgumentException if <code>key</code> is <code>null</code>.
-     * @see javax.jcr.Repository#getDescriptor(java.lang.String)
+     * @see Repository#getDescriptor(java.lang.String)
      */
     public String getDescriptor( String key ) {
+        if (!isSingleValueDescriptor(key)) return null;
+
+        JcrValue value = (JcrValue)descriptors.get(key);
+        try {
+            return value.getString();
+        } catch (RepositoryException re) {
+            throw new IllegalStateException(re);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws IllegalArgumentException if {@code key} is null or empty
+     * @see Repository#getDescriptorValue(String)
+     */
+    public JcrValue getDescriptorValue( String key ) {
+        if (!isSingleValueDescriptor(key)) return null;
+        return (JcrValue)descriptors.get(key);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws IllegalArgumentException if {@code key} is null or empty
+     * @see Repository#getDescriptorValues(String)
+     */
+    public JcrValue[] getDescriptorValues( String key ) {
+        Object value = descriptors.get(key);
+        if (value instanceof JcrValue[]) {
+            return (JcrValue[])value;
+        }
+        if (value instanceof JcrValue) {
+            return new JcrValue[] {(JcrValue)value};
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws IllegalArgumentException if {@code key} is null or empty
+     * @see Repository#isSingleValueDescriptor(String)
+     */
+    public boolean isSingleValueDescriptor( String key ) {
         CheckArg.isNotEmpty(key, "key");
-        return descriptors.get(key);
+        return descriptors.get(key) instanceof JcrValue;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws IllegalArgumentException if {@code key} is null or empty
+     * @see Repository#isStandardDescriptor(String)
+     */
+    public boolean isStandardDescriptor( String key ) {
+        return STANDARD_DESCRIPTORS.contains(key);
     }
 
     /**
@@ -1157,7 +1180,7 @@ public class JcrRepository implements Repository {
         }
     }
 
-    protected static Properties getBundleProperties() throws RepositoryException {
+    protected static Properties getBundleProperties() {
         if (bundleProperties == null) {
             // This is idempotent, so we don't need to lock ...
             InputStream stream = null;
@@ -1168,7 +1191,7 @@ public class JcrRepository implements Repository {
                 props.load(stream);
                 bundleProperties = new UnmodifiableProperties(props);
             } catch (IOException e) {
-                throw new RepositoryException(JcrI18n.failedToReadPropertiesFromManifest.text(e.getLocalizedMessage()), e);
+                throw new IllegalStateException(JcrI18n.failedToReadPropertiesFromManifest.text(e.getLocalizedMessage()), e);
             } finally {
                 if (stream != null) {
                     try {
@@ -1184,12 +1207,119 @@ public class JcrRepository implements Repository {
     }
 
     protected static String getBundleProperty( String propertyName,
-                                               boolean required ) throws RepositoryException {
+                                               boolean required ) {
         String value = getBundleProperties().getProperty(propertyName);
         if (value == null && required) {
-            throw new RepositoryException(JcrI18n.failedToReadPropertyFromManifest.text(propertyName));
+            throw new IllegalStateException(JcrI18n.failedToReadPropertyFromManifest.text(propertyName));
         }
         return value;
+    }
+
+    /**
+     * Combines the given custom descriptors with the default repository descriptors.
+     * 
+     * @param factories the value factories to use to create the descriptor values
+     * @param customDescriptors the custom descriptors; may be null
+     * @return the custom descriptors (if any) combined with the default repository descriptors; never null or empty
+     */
+    private static Map<String, Object> initializeDescriptors( ValueFactories factories,
+                                                              Map<String, String> customDescriptors ) {
+        if (customDescriptors == null) customDescriptors = Collections.emptyMap();
+        Map<String, Object> repoDescriptors = new HashMap<String, Object>(customDescriptors.size() + 60);
+
+        for (Map.Entry<String, String> entry : customDescriptors.entrySet()) {
+            repoDescriptors.put(entry.getKey(), valueFor(factories, entry.getValue()));
+        }
+
+        repoDescriptors.put(Repository.LEVEL_1_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.LEVEL_2_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.OPTION_LOCKING_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.OPTION_OBSERVATION_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.OPTION_QUERY_SQL_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.OPTION_VERSIONING_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.QUERY_XPATH_DOC_ORDER, valueFor(factories, false)); // see MODE-613
+        repoDescriptors.put(Repository.QUERY_XPATH_POS_INDEX, valueFor(factories, true));
+
+        repoDescriptors.put(Repository.WRITE_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.IDENTIFIER_STABILITY, valueFor(factories,
+                                                                        Repository.IDENTIFIER_STABILITY_METHOD_DURATION));
+        repoDescriptors.put(Repository.OPTION_XML_IMPORT_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.OPTION_XML_EXPORT_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.OPTION_UNFILED_CONTENT_SUPPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.OPTION_SIMPLE_VERSIONING_SUPPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.OPTION_ACTIVITIES_SUPPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.OPTION_BASELINES_SUPPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.OPTION_ACCESS_CONTROL_SUPPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.OPTION_JOURNALED_OBSERVATION_SUPPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.OPTION_RETENTION_SUPPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.OPTION_LIFECYCLE_SUPPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.OPTION_NODE_AND_PROPERTY_WITH_SAME_NAME_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.OPTION_UPDATE_PRIMARY_NODE_TYPE_SUPPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.OPTION_UPDATE_MIXIN_NODE_TYPES_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.OPTION_SHAREABLE_NODES_SUPPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.OPTION_NODE_TYPE_MANAGEMENT_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_INHERITANCE,
+                              valueFor(factories, Repository.NODE_TYPE_MANAGEMENT_INHERITANCE_MULTIPLE));
+        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_PRIMARY_ITEM_NAME_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_ORDERABLE_CHILD_NODES_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_RESIDUAL_DEFINITIONS_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_AUTOCREATED_DEFINITIONS_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_SAME_NAME_SIBLINGS_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_PROPERTY_TYPES, valueFor(factories, true));
+        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_OVERRIDES_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_MULTIVALUED_PROPERTIES_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_MULTIPLE_BINARY_PROPERTIES_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_VALUE_CONSTRAINTS_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_UPDATE_IN_USE_SUPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.QUERY_LANGUAGES, new JcrValue[] {valueFor(factories, Query.XPATH),
+            valueFor(factories, JcrSql2QueryParser.LANGUAGE), valueFor(factories, Query.SQL)});
+        repoDescriptors.put(Repository.QUERY_STORED_QUERIES_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.QUERY_FULL_TEXT_SEARCH_SUPPORTED, valueFor(factories, true));
+        repoDescriptors.put(Repository.QUERY_JOINS, valueFor(factories, Repository.QUERY_JOINS_INNER));
+        repoDescriptors.put(Repository.SPEC_NAME_DESC, valueFor(factories, JcrI18n.SPEC_NAME_DESC.text()));
+        repoDescriptors.put(Repository.SPEC_VERSION_DESC, valueFor(factories, "1.0"));
+
+        if (!repoDescriptors.containsKey(Repository.REP_NAME_DESC)) {
+            repoDescriptors.put(Repository.REP_NAME_DESC,
+                                valueFor(factories,
+                                                                 JcrRepository.getBundleProperty(Repository.REP_NAME_DESC, true)));
+        }
+        if (!repoDescriptors.containsKey(Repository.REP_VENDOR_DESC)) {
+            repoDescriptors.put(Repository.REP_VENDOR_DESC, valueFor(factories,
+                                                                   JcrRepository.getBundleProperty(Repository.REP_VENDOR_DESC,
+                                                                                                   true)));
+        }
+        if (!repoDescriptors.containsKey(Repository.REP_VENDOR_URL_DESC)) {
+            repoDescriptors.put(Repository.REP_VENDOR_URL_DESC,
+                              valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VENDOR_URL_DESC, true)));
+        }
+        if (!repoDescriptors.containsKey(Repository.REP_VERSION_DESC)) {
+            repoDescriptors.put(Repository.REP_VERSION_DESC,
+                                valueFor(factories,
+                                                                    JcrRepository.getBundleProperty(Repository.REP_VERSION_DESC,
+                                                                                                    true)));
+        }
+
+        return Collections.unmodifiableMap(repoDescriptors);
+    }
+
+    private static JcrValue valueFor( ValueFactories valueFactories,
+                                      int type,
+                                      Object value ) {
+        return new JcrValue(valueFactories, null, type, value);
+    }
+
+    private static JcrValue valueFor( ValueFactories valueFactories,
+                                      String value ) {
+        return valueFor(valueFactories, PropertyType.STRING, value);
+    }
+
+    private static JcrValue valueFor( ValueFactories valueFactories,
+                                      boolean value ) {
+        return valueFor(valueFactories, PropertyType.BOOLEAN, value);
     }
 
     protected class FederatedRepositoryContext implements RepositoryContext {
