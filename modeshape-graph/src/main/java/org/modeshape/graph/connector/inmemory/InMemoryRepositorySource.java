@@ -268,10 +268,16 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
             ExecutionContext context = repositoryContext != null ? repositoryContext.getExecutionContext() : defaultContext;
             repository = new InMemoryRepository(context, name, rootNodeUuid, defaultWorkspaceName);
 
-            // Create the set of initial workspaces ...
-            for (String initialName : getPredefinedWorkspaceNames()) {
-                repository.createWorkspace(null, initialName, CreateConflictBehavior.DO_NOT_CREATE, null);
+            InMemoryTransaction txn = repository.startTransaction(context, false);
+            try {
+                // Create the set of initial workspaces ...
+                for (String initialName : getPredefinedWorkspaceNames()) {
+                    repository.createWorkspace(txn, initialName, CreateConflictBehavior.DO_NOT_CREATE, null);
+                }
+            } finally {
+                txn.commit();
             }
+
         }
         return new Connection<InMemoryNode, InMemoryWorkspace>(this, repository);
     }
