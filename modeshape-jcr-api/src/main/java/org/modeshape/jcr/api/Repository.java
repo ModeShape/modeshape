@@ -1,6 +1,7 @@
 package org.modeshape.jcr.api;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.Value;
@@ -438,10 +439,10 @@ public interface Repository extends javax.jcr.Repository {
     public Value[] getDescriptorValues( String key );
 
     /**
-     * A collection of "standard" descriptors, as defined in the JSR-283 specification.
+     * An immutable collection of "standard" descriptors, as defined in the JSR-283 specification.
      */
-    public static final Set<String> STANDARD_DESCRIPTORS = new HashSet<String>(Arrays.asList(new String[] {LEVEL_1_SUPPORTED,
-        LEVEL_2_SUPPORTED, OPTION_LOCKING_SUPPORTED, OPTION_OBSERVATION_SUPPORTED, OPTION_QUERY_SQL_SUPPORTED,
+    public static final Set<String> STANDARD_DESCRIPTORS = Collections.unmodifiableSet( new HashSet<String>(Arrays.asList(new String[] {
+        LEVEL_1_SUPPORTED, LEVEL_2_SUPPORTED, OPTION_LOCKING_SUPPORTED, OPTION_OBSERVATION_SUPPORTED, OPTION_QUERY_SQL_SUPPORTED,
         OPTION_TRANSACTIONS_SUPPORTED, OPTION_VERSIONING_SUPPORTED, QUERY_XPATH_DOC_ORDER, QUERY_XPATH_POS_INDEX,
         WRITE_SUPPORTED, IDENTIFIER_STABILITY, OPTION_XML_IMPORT_SUPPORTED, OPTION_XML_EXPORT_SUPPORTED,
         OPTION_UNFILED_CONTENT_SUPPORTED, OPTION_SIMPLE_VERSIONING_SUPPORTED, OPTION_ACTIVITIES_SUPPORTED,
@@ -458,7 +459,6 @@ public interface Repository extends javax.jcr.Repository {
         NODE_TYPE_MANAGEMENT_UPDATE_IN_USE_SUPORTED, QUERY_LANGUAGES, QUERY_STORED_QUERIES_SUPPORTED,
         QUERY_FULL_TEXT_SEARCH_SUPPORTED, QUERY_JOINS, SPEC_NAME_DESC, SPEC_VERSION_DESC, REP_NAME_DESC, REP_VENDOR_DESC,
         REP_VENDOR_URL_DESC, REP_VERSION_DESC,
-
-    }));
+    })));
 
 }

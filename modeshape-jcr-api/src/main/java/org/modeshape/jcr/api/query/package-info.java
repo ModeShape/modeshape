@@ -22,10 +22,8 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * This package provides a set of interfaces that extend the JCR 1.0 API interfaces with JCR 2.0 functionality,
- * as well as defining the {@link Repositories} interface as a generic abstraction to any container of multiple
- * JCR {@link javax.jcr.Repository Repository} instances. 
+ * This package provides a set of interfaces that extend the JCR 1.0 API query interfaces with JCR 2.0 functionality.
  */
 
-package org.modeshape.jcr.api;
+package org.modeshape.jcr.api.query;
 

@@ -26,7 +26,8 @@ package org.modeshape.jcr.api.query;
 import javax.jcr.PropertyType;
 
 /**
- * 
+ * Replicates some of the methods introduced in JCR 2.0, but also provides an extension that allows accessing the JCR
+ * {@link PropertyType} for each of the columns.
  */
 public interface QueryResult extends javax.jcr.query.QueryResult {
 
@@ -43,6 +44,7 @@ public interface QueryResult extends javax.jcr.query.QueryResult {
      * be "" for all fabricated columns.
      * 
      * @return the array of table names; never null, and the size always matches {@link QueryResult#getColumnNames()}
+     * @since JCR 2.0
      */
     public String[] getSelectorNames();
 }

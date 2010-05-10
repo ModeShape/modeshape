@@ -26,7 +26,8 @@ package org.modeshape.jcr.api;
 import java.util.Set;
 
 /**
- * Generic interface to help decouple the JCR implementation from the applications that consume the JCR implementation.
+ * Representation of a generic container of multiple {@link javax.jcr.Repository Repository} instances. This interface helps
+ * decouple applications that use JCR repositories from the actual JCR implementation.
  */
 public interface Repositories {
 
