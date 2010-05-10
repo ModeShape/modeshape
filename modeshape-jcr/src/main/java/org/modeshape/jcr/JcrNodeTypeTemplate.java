@@ -62,7 +62,6 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
         return context;
     }
 
-
     private String string( Name name ) {
         if (name == null) return null;
         return name.getString(context.getNamespaceRegistry());
@@ -115,7 +114,7 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
         CheckArg.isNotNull(names, "names");
 
         Name[] supertypeNames = new Name[names.length];
-        
+
         for (int i = 0; i < names.length; i++) {
             CheckArg.isNotEmpty(names[i], "names[" + i + "");
             supertypeNames[i] = context.getValueFactories().getNameFactory().create(names[i]);
@@ -167,6 +166,7 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
      * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getDeclaredNodeDefinitions()
      * @deprecated use {@link #getDeclaredChildNodeDefinitions()} instead
      */
+    @SuppressWarnings( "dep-ann" )
     public NodeDefinition[] getDeclaredNodeDefinitions() {
         return getDeclaredChildNodeDefinitions();
     }

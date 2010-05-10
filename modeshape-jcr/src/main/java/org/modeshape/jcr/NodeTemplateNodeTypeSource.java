@@ -230,13 +230,13 @@ class NodeTemplateNodeTypeSource implements JcrNodeTypeSource {
         if (name == null) name = JcrNodeType.RESIDUAL_NAME;
         Path path = pathFactory.create(parentPath, JcrLexicon.PROPERTY_DEFINITION);
 
-        String defaultValues[];
+        Object[] defaultValues;
 
         if (rawValues == null) {
-            defaultValues = new String[0];
+            defaultValues = new Object[0];
         } else {
             try {
-                defaultValues = new String[rawValues.length];
+                defaultValues = new Object[rawValues.length];
                 for (int i = 0; i < rawValues.length; i++) {
                     defaultValues[i] = rawValues[i].getString();
                 }
