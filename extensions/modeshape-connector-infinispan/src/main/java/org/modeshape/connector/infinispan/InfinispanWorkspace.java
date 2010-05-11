@@ -25,12 +25,12 @@ package org.modeshape.connector.infinispan;
 
 import java.util.UUID;
 import org.infinispan.Cache;
-import org.modeshape.graph.connector.base.MapWorkspace;
+import org.modeshape.graph.connector.base.StandardMapWorkspace;
 
 /**
  * 
  */
-public class InfinispanWorkspace extends MapWorkspace<InfinispanNode> {
+public class InfinispanWorkspace extends StandardMapWorkspace<InfinispanNode> {
 
     private Cache<UUID, InfinispanNode> workspaceCache;
 

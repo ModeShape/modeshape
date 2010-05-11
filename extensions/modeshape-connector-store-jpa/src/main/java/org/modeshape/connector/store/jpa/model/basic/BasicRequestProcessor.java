@@ -61,10 +61,10 @@ import org.modeshape.connector.store.jpa.util.RequestProcessorCache;
 import org.modeshape.connector.store.jpa.util.Serializer;
 import org.modeshape.connector.store.jpa.util.Workspaces;
 import org.modeshape.connector.store.jpa.util.Serializer.LargeValues;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.NodeConflictBehavior;
 import org.modeshape.graph.connector.UuidAlreadyExistsException;
 import org.modeshape.graph.observe.Observer;
@@ -2155,10 +2155,10 @@ public class BasicRequestProcessor extends RequestProcessor {
                 }
             }
         } catch (Throwable e) { // Includes PathNotFoundException
-            System.err.flush();
-            System.out.flush();
-            e.printStackTrace();
-            System.err.flush();
+        // System.err.flush();
+        // System.out.flush();
+        // e.printStackTrace();
+        // System.err.flush();
             request.setError(e);
             return;
         }

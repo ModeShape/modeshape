@@ -93,4 +93,16 @@ public class InfinispanNode extends MapNode {
                                   changes.getUnmodifiableChildren());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method never clones the {@link #hasChanges() changes}.
+     * </p>
+     * 
+     * @see java.lang.Object#clone()
+     */
+    @Override
+    public InfinispanNode clone() {
+        return new InfinispanNode(getUuid(), getName(), getParent(), getProperties(), getChildren());
+    }
 }

@@ -55,7 +55,7 @@ import org.modeshape.graph.request.AccessQueryRequest;
 import org.modeshape.graph.request.FullTextSearchRequest;
 
 /**
- * An implementation of {@link Transaction} that maintains a cache of nodes by their UUID.
+ * An implementation of {@link Transaction} that maintains a cache of nodes by their hash (or {@link UUID}).
  * 
  * @param <WorkspaceType> the type of workspace
  * @param <NodeType> the type of node
@@ -76,7 +76,7 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
      * @param rootNodeUuid the UUID of the root node; may not be null
      */
     protected MapTransaction( Repository<NodeType, WorkspaceType> repository,
-                              UUID rootNodeUuid ) {
+                                 UUID rootNodeUuid ) {
         super(repository.getContext(), rootNodeUuid);
         this.repository = repository;
     }

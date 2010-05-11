@@ -422,8 +422,7 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
                 String configName = getCacheConfigurationName();
                 if (configName == null) {
                     cacheManager = new DefaultCacheManager();
-                }
-                else {
+                } else {
                     /*
                      * First try treating the config name as a classpath resource, then as a file name.
                      */

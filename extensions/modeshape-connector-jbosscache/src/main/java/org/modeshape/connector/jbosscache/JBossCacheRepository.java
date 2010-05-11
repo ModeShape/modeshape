@@ -1,138 +1,102 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors.
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ * 
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
 package org.modeshape.connector.jbosscache;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import net.jcip.annotations.ThreadSafe;
 import org.jboss.cache.Cache;
-import org.jboss.cache.Fqn;
-import org.jboss.cache.Node;
 import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.connector.LockFailedException;
-import org.modeshape.graph.connector.map.AbstractMapWorkspace;
-import org.modeshape.graph.connector.map.LockBasedTransaction;
-import org.modeshape.graph.connector.map.MapNode;
-import org.modeshape.graph.connector.map.MapRepository;
-import org.modeshape.graph.connector.map.MapRepositoryTransaction;
-import org.modeshape.graph.connector.map.MapWorkspace;
-import org.modeshape.graph.request.LockBranchRequest.LockScope;
+import org.modeshape.graph.connector.base.Repository;
 
 /**
- * A repository implementation that uses JBoss Cache.
+ * The representation of an in-memory repository and its content.
  */
-public class JBossCacheRepository extends MapRepository {
+@ThreadSafe
+public class JBossCacheRepository extends Repository<JBossCacheNode, JBossCacheWorkspace> {
 
-    protected final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Cache<UUID, MapNode> cache;
+    private final Cache<UUID, JBossCacheNode> cache;
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Set<String> predefinedWorkspaceNames;
 
-    public JBossCacheRepository( String sourceName,
-                                 UUID rootNodeUuid,
-                                 Cache<UUID, MapNode> cache ) {
-        super(sourceName, rootNodeUuid, null);
-        assert cache != null;
-        this.cache = cache;
-        initialize();
-    }
-
-    public JBossCacheRepository( String sourceName,
+    public JBossCacheRepository( ExecutionContext context,
+                                 String sourceName,
                                  UUID rootNodeUuid,
                                  String defaultWorkspaceName,
-                                 Cache<UUID, MapNode> cache ) {
-        super(sourceName, rootNodeUuid, defaultWorkspaceName);
-
-        assert cache != null;
+                                 Cache<UUID, JBossCacheNode> cache,
+                                 String... predefinedWorkspaceNames ) {
+        super(context, sourceName, rootNodeUuid, defaultWorkspaceName);
         this.cache = cache;
-
+        assert this.cache != null;
+        Set<String> workspaceNames = new HashSet<String>();
+        for (String workspaceName : predefinedWorkspaceNames) {
+            workspaceNames.add(workspaceName);
+        }
+        this.predefinedWorkspaceNames = Collections.unmodifiableSet(workspaceNames);
         initialize();
-    }
-
-    @Override
-    protected MapWorkspace createWorkspace( ExecutionContext context,
-                                            String name ) {
-        assert name != null;
-        assert cache != null;
-        Node<UUID, MapNode> newWorkspaceNode = cache.getRoot().addChild(Fqn.fromElements(name));
-        return new Workspace(this, name, newWorkspaceNode);
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.graph.connector.map.MapRepository#startTransaction(boolean)
+     * @see org.modeshape.graph.connector.base.Repository#getWorkspaceNames()
      */
     @Override
-    public MapRepositoryTransaction startTransaction( boolean readonly ) {
-        return new LockBasedTransaction(readonly ? lock.readLock() : lock.writeLock()) {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.modeshape.graph.connector.map.LockBasedTransaction#commit()
-             */
-            @Override
-            public void commit() {
-                super.commit();
-            }
-
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.modeshape.graph.connector.map.LockBasedTransaction#rollback()
-             */
-            @Override
-            public void rollback() {
-                super.rollback();
-            }
-        };
+    public Set<String> getWorkspaceNames() {
+        Set<String> names = new HashSet<String>(super.getWorkspaceNames());
+        names.addAll(predefinedWorkspaceNames);
+        return Collections.unmodifiableSet(names);
     }
 
-    protected ReadWriteLock getLock() {
-        return lock;
+    /**
+     * @return cache
+     */
+    public Cache<UUID, JBossCacheNode> getCache() {
+        return cache;
     }
 
-    protected class Workspace extends AbstractMapWorkspace {
-        private final Node<UUID, MapNode> workspaceNode;
-
-        public Workspace( MapRepository repository,
-                          String name,
-                          Node<UUID, MapNode> workspaceNode ) {
-            super(repository, name);
-
-            this.workspaceNode = workspaceNode;
-            initialize();
-        }
-
-        @Override
-        protected void addNodeToMap( MapNode node ) {
-            assert node != null;
-            workspaceNode.put(node.getUuid(), node);
-        }
-
-        @Override
-        protected MapNode removeNodeFromMap( UUID nodeUuid ) {
-            assert nodeUuid != null;
-            return workspaceNode.remove(nodeUuid);
-        }
-
-        @Override
-        protected void removeAllNodesFromMap() {
-            workspaceNode.clearData();
-        }
-
-        @Override
-        public MapNode getNode( UUID nodeUuid ) {
-            assert nodeUuid != null;
-            return workspaceNode.get(nodeUuid);
-        }
-
-        public void lockNode( MapNode node,
-                              LockScope lockScope,
-                              long lockTimeoutInMillis ) throws LockFailedException {
-            // Locking is not supported by this connector
-        }
-
-        public void unlockNode( MapNode node ) {
-            // Locking is not supported by this connector
-        }
-
+    /**
+     * This method shuts down the workspace and makes it no longer usable. This method should also only be called once.
+     */
+    public void shutdown() {
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.base.Repository#startTransaction(org.modeshape.graph.ExecutionContext, boolean)
+     */
+    @Override
+    public JBossCacheTransaction startTransaction( ExecutionContext context,
+                                                   boolean readonly ) {
+        final Lock lock = readonly ? this.lock.readLock() : this.lock.writeLock();
+        lock.lock();
+        return new JBossCacheTransaction(this, getRootNodeUuid(), lock);
+    }
 }

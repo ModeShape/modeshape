@@ -55,6 +55,7 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
@@ -62,11 +63,9 @@ import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.connector.map.MapNode;
-import org.modeshape.graph.connector.map.MapRepositoryConnection;
-import org.modeshape.graph.connector.map.MapRepositorySource;
+import org.modeshape.graph.connector.base.BaseRepositorySource;
+import org.modeshape.graph.connector.base.Connection;
 import org.modeshape.graph.observe.Observer;
-import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
  * A repository source that uses a JBoss Cache instance to manage the content. This source is capable of using an existing
@@ -84,7 +83,7 @@ import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior
  * </p>
  */
 @ThreadSafe
-public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
+public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
 
     private static final long serialVersionUID = 2L;
     /**
@@ -458,14 +457,14 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
                 }
             }
 
-            // Look for a cache factory in JNDI ...
-            CacheFactory<UUID, MapNode> cacheFactory = null;
+            // Look for a cache manager in JNDI ...
+            CacheFactory<UUID, JBossCacheNode> cacheFactory = null;
             String jndiName = getCacheFactoryJndiName();
             if (jndiName != null && jndiName.trim().length() != 0) {
                 Object object = null;
                 try {
                     object = context.lookup(jndiName);
-                    if (object != null) cacheFactory = (CacheFactory<UUID, MapNode>)object;
+                    if (object != null) cacheFactory = (CacheFactory<UUID, JBossCacheNode>)object;
                 } catch (ClassCastException err) {
                     I18n msg = JBossCacheConnectorI18n.objectFoundInJndiWasNotCacheFactory;
                     String className = object != null ? object.getClass().getName() : "null";
@@ -475,19 +474,16 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
                     throw new RepositorySourceException(getName(), err);
                 }
             }
-            if (cacheFactory == null) cacheFactory = new DefaultCacheFactory<UUID, MapNode>();
+            if (cacheFactory == null) cacheFactory = new DefaultCacheFactory<UUID, JBossCacheNode>();
 
             // Now create the repository ...
-            this.repository = new JBossCacheRepository(getName(), this.rootNodeUuid, this.defaultWorkspace,
-                                                       createNewCache(cacheFactory, getName()));
-
-            // Create the set of initial names ...
-            for (String initialName : getPredefinedWorkspaceNames())
-                repository.createWorkspace(null, initialName, CreateConflictBehavior.DO_NOT_CREATE);
-
+            ExecutionContext execContext = repositoryContext.getExecutionContext();
+            Cache<UUID, JBossCacheNode> cache = createNewCache(cacheFactory, getName());
+            this.repository = new JBossCacheRepository(execContext, this.name, this.rootNodeUuid, this.defaultWorkspace, cache,
+                                                       this.predefinedWorkspaces);
         }
 
-        return new MapRepositoryConnection(this, this.repository);
+        return new Connection<JBossCacheNode, JBossCacheWorkspace>(this, repository);
     }
 
     /**
@@ -510,8 +506,8 @@ public class JBossCacheSource implements MapRepositorySource, ObjectFactory {
      * @return the new cache that corresponds to the workspace name
      */
     @GuardedBy( "writeLock" )
-    protected Cache<UUID, MapNode> createNewCache( CacheFactory<UUID, MapNode> cacheFactory,
-                                                   String repositoryName ) {
+    protected Cache<UUID, JBossCacheNode> createNewCache( CacheFactory<UUID, JBossCacheNode> cacheFactory,
+                                                          String repositoryName ) {
         assert repositoryName != null;
         if (cacheFactory == null) return null;
 

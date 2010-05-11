@@ -25,12 +25,12 @@ package org.modeshape.graph.connector.inmemory;
 
 import java.util.HashMap;
 import java.util.UUID;
-import org.modeshape.graph.connector.base.MapWorkspace;
+import org.modeshape.graph.connector.base.StandardMapWorkspace;
 
 /**
  * 
  */
-public class InMemoryWorkspace extends MapWorkspace<InMemoryNode> {
+public class InMemoryWorkspace extends StandardMapWorkspace<InMemoryNode> {
 
     /**
      * @param name

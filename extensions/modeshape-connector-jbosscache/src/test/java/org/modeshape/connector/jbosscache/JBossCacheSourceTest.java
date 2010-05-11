@@ -42,13 +42,15 @@ import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
 import org.jboss.cache.Cache;
 import org.jboss.cache.CacheFactory;
-import org.modeshape.graph.cache.BasicCachePolicy;
-import org.modeshape.graph.connector.RepositoryConnection;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.cache.BasicCachePolicy;
+import org.modeshape.graph.connector.RepositoryConnection;
+import org.modeshape.graph.connector.RepositoryContext;
 
 /**
  * @author Randall Hauch
@@ -62,16 +64,20 @@ public class JBossCacheSourceTest {
     private String validCacheFactoryJndiName;
     private String validCacheJndiName;
     private UUID validRootNodeUuid;
+    private ExecutionContext context;
     @Mock
     private Context jndiContext;
     @Mock
     private CacheFactory<Name, Object> cacheFactory;
     @Mock
     private Cache<Name, Object> cache;
+    @Mock
+    private RepositoryContext repositoryContext;
 
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
+        context = new ExecutionContext();
         validName = "cache source";
         validCacheConfigurationName = "cache config name";
         validCacheFactoryJndiName = "cache factory jndi name";
@@ -81,6 +87,8 @@ public class JBossCacheSourceTest {
 
         // Set up the fake JNDI context ...
         source.setContext(jndiContext);
+        source.initialize(repositoryContext);
+        when(repositoryContext.getExecutionContext()).thenReturn(context);
         when(jndiContext.lookup(validCacheFactoryJndiName)).thenReturn(cacheFactory);
         when(jndiContext.lookup(validCacheJndiName)).thenReturn(cache);
     }

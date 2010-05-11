@@ -60,9 +60,6 @@ public class JBossCacheConnectorWritableTest extends WritableConnectorTest {
         when(mockJndi.lookup(anyString())).thenReturn(null);
         source.setContext(mockJndi);
 
-        Graph graph = Graph.create(source, context);
-        graph.useWorkspace("default");
-
         return source;
     }
 

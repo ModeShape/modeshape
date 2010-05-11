@@ -38,7 +38,7 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Property;
 
-public class MapWorkspaceTest {
+public class StandardMapWorkspaceTest {
 
     private ExecutionContext context;
     private Map<UUID, MapNode> store;
@@ -50,7 +50,7 @@ public class MapWorkspaceTest {
         context = new ExecutionContext();
         store = new HashMap<UUID, MapNode>();
         rootUuid = UUID.randomUUID();
-        workspace = new MapWorkspace<MapNode>("workspace", store, new MapNode(rootUuid));
+        workspace = new StandardMapWorkspace<MapNode>("workspace", store, new MapNode(rootUuid));
     }
 
     @Test
@@ -76,7 +76,7 @@ public class MapWorkspaceTest {
         MapNode root = new MapNode(rootUuid);
         store.clear();
         store.put(rootUuid, root);
-        workspace = new MapWorkspace<MapNode>("workspace", store, new MapNode(rootUuid));
+        workspace = new StandardMapWorkspace<MapNode>("workspace", store, new MapNode(rootUuid));
         assertStored(root);
     }
 
@@ -144,16 +144,16 @@ public class MapWorkspaceTest {
     }
 
     protected MapNode addProperty( MapNode original,
-                                   String name,
-                                   Object... values ) {
+                                      String name,
+                                      Object... values ) {
         MapNode newNode = original.withProperty(property(name, values));
         assertThat(workspace.putNode(newNode), is(sameInstance(original)));
         return newNode;
     }
 
     protected MapNode[] addProperty( MapNode[] nodes,
-                                     String name,
-                                     Object... values ) {
+                                        String name,
+                                        Object... values ) {
         MapNode[] results = new MapNode[nodes.length];
         int i = 0;
         for (MapNode original : nodes) {

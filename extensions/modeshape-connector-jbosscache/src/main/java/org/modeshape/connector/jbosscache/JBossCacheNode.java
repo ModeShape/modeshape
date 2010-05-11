@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.graph.connector.inmemory;
+package org.modeshape.connector.jbosscache;
 
 import java.util.List;
 import java.util.Map;
@@ -34,12 +34,12 @@ import org.modeshape.graph.property.Path.Segment;
 /**
  * A specialization of the {@link MapNode}.
  */
-public class InMemoryNode extends MapNode {
+public class JBossCacheNode extends MapNode {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * Create a new in-memory node.
+     * Create a new node for storage inside Infinispan.
      * 
      * @param uuid the desired UUID; never null
      * @param name the name of the new node; may be null if the name is not known and there is no parent
@@ -47,16 +47,16 @@ public class InMemoryNode extends MapNode {
      * @param properties the properties; may be null if there are no properties
      * @param children the list of child nodes; may be null
      */
-    public InMemoryNode( UUID uuid,
-                         Segment name,
-                         UUID parent,
-                         Map<Name, Property> properties,
-                         List<UUID> children ) {
+    public JBossCacheNode( UUID uuid,
+                           Segment name,
+                           UUID parent,
+                           Map<Name, Property> properties,
+                           List<UUID> children ) {
         super(uuid, name, parent, properties, children);
     }
 
     /**
-     * Create a new in-memory node.
+     * Create a new node for storage inside Infinispan.
      * 
      * @param uuid the desired UUID; never null
      * @param name the name of the new node; may be null if the name is not known and there is no parent
@@ -64,20 +64,20 @@ public class InMemoryNode extends MapNode {
      * @param properties the properties; may be null if there are no properties
      * @param children the list of child nodes; may be null
      */
-    public InMemoryNode( UUID uuid,
-                         Segment name,
-                         UUID parent,
-                         Iterable<Property> properties,
-                         List<UUID> children ) {
+    public JBossCacheNode( UUID uuid,
+                           Segment name,
+                           UUID parent,
+                           Iterable<Property> properties,
+                           List<UUID> children ) {
         super(uuid, name, parent, properties, children);
     }
 
     /**
-     * Create a new in-memory node.
+     * Create a new node for storage inside Infinispan.
      * 
      * @param uuid the desired UUID; never null
      */
-    public InMemoryNode( UUID uuid ) {
+    public JBossCacheNode( UUID uuid ) {
         super(uuid);
     }
 
@@ -87,10 +87,10 @@ public class InMemoryNode extends MapNode {
      * @see org.modeshape.graph.connector.base.MapNode#freeze()
      */
     @Override
-    public InMemoryNode freeze() {
+    public JBossCacheNode freeze() {
         if (!hasChanges()) return this;
-        return new InMemoryNode(getUuid(), getName(), getParent(), changes.getUnmodifiableProperties(),
-                                changes.getUnmodifiableChildren());
+        return new JBossCacheNode(getUuid(), getName(), getParent(), changes.getUnmodifiableProperties(),
+                                  changes.getUnmodifiableChildren());
     }
 
     /**
@@ -102,7 +102,7 @@ public class InMemoryNode extends MapNode {
      * @see java.lang.Object#clone()
      */
     @Override
-    public InMemoryNode clone() {
-        return new InMemoryNode(getUuid(), getName(), getParent(), getProperties(), getChildren());
+    public JBossCacheNode clone() {
+        return new JBossCacheNode(getUuid(), getName(), getParent(), getProperties(), getChildren());
     }
 }

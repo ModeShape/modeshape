@@ -33,18 +33,12 @@ import org.modeshape.common.i18n.I18n;
 public final class JBossCacheConnectorI18n {
 
     public static I18n connectorName;
-    public static I18n nodeDoesNotExist;
     public static I18n propertyIsRequired;
-    public static I18n locationsMustHavePath;
     public static I18n errorSerializingCachePolicyInSource;
-    public static I18n objectFoundInJndiWasNotCache;
     public static I18n objectFoundInJndiWasNotCacheFactory;
-    public static I18n unableToDeleteBranch;
-    public static I18n unableToCloneWorkspaces;
-    public static I18n unableToCreateWorkspaces;
     public static I18n unableToCreateWorkspace;
-    public static I18n workspaceAlreadyExists;
-    public static I18n workspaceDoesNotExist;
+    public static I18n configFileNotFound;
+    public static I18n configFileNotValid;
     public static I18n workspaceNameWasNotValidConfiguration;
     public static I18n defaultCacheFactoryConfigurationNameWasNotValidConfiguration;
 
