@@ -23,7 +23,6 @@
  */
 package org.modeshape.graph.connector.inmemory;
 
-import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -39,18 +38,8 @@ public class InMemoryRepository extends Repository<InMemoryNode, InMemoryWorkspa
 
     protected final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    public InMemoryRepository( ExecutionContext context,
-                               String sourceName,
-                               UUID rootNodeUuid ) {
-        super(context, sourceName, rootNodeUuid, null);
-        initialize();
-    }
-
-    public InMemoryRepository( ExecutionContext context,
-                               String sourceName,
-                               UUID rootNodeUuid,
-                               String defaultWorkspaceName ) {
-        super(context, sourceName, rootNodeUuid, defaultWorkspaceName);
+    public InMemoryRepository( InMemoryRepositorySource source ) {
+        super(source);
         initialize();
     }
 

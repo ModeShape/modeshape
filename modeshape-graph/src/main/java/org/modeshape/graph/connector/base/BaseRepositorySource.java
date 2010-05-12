@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.connector.base;
 
+import java.util.UUID;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryContext;
 
@@ -63,4 +64,17 @@ public interface BaseRepositorySource extends org.modeshape.graph.connector.Repo
      */
     RepositoryContext getRepositoryContext();
 
+    /**
+     * Get the UUID for the root node.
+     * 
+     * @return the root node's UUID; may not be null
+     */
+    UUID getRootNodeUuidObject();
+
+    /**
+     * Get the name of the workspace that should be used by default.
+     * 
+     * @return the name of the default workspace; may be null if there is no such default
+     */
+    String getDefaultWorkspaceName();
 }

@@ -26,7 +26,6 @@ package org.modeshape.connector.infinispan;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -45,17 +44,13 @@ public class InfinispanRepository extends Repository<InfinispanNode, InfinispanW
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Set<String> predefinedWorkspaceNames;
 
-    public InfinispanRepository( ExecutionContext context,
-                                 String sourceName,
-                                 UUID rootNodeUuid,
-                                 String defaultWorkspaceName,
-                                 CacheManager cacheManager,
-                                 String... predefinedWorkspaceNames ) {
-        super(context, sourceName, rootNodeUuid, defaultWorkspaceName);
+    public InfinispanRepository( InfinispanSource source,
+                                 CacheManager cacheManager ) {
+        super(source);
         this.cacheManager = cacheManager;
         assert this.cacheManager != null;
         Set<String> workspaceNames = new HashSet<String>();
-        for (String workspaceName : predefinedWorkspaceNames) {
+        for (String workspaceName : source.getPredefinedWorkspaceNames()) {
             workspaceNames.add(workspaceName);
         }
         this.predefinedWorkspaceNames = Collections.unmodifiableSet(workspaceNames);

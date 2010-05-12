@@ -23,31 +23,44 @@
  */
 package org.modeshape.graph.connector.inmemory;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.connector.inmemory.InMemoryRepository;
+import org.modeshape.graph.connector.RepositoryContext;
 
 public class InMemoryRepositoryTest {
 
-    private UUID rootUuid;
-
+    private InMemoryRepositorySource source;
+    private RepositoryContext repositoryContext;
     private ExecutionContext context;
 
     @Before
     public void beforeEach() throws Exception {
         context = new ExecutionContext();
-        rootUuid = UUID.randomUUID();
+        repositoryContext = mock(RepositoryContext.class);
+        when(repositoryContext.getExecutionContext()).thenReturn(context);
+        source = new InMemoryRepositorySource();
+        source.setName("SomeName");
+        source.setRootNodeUuid(UUID.randomUUID());
+        source.initialize(repositoryContext);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowNullNameInConstructor() {
-        new InMemoryRepository(context, null, rootUuid);
+    public void shouldNotAllowNullSourceInConstructor() {
+        new InMemoryRepository(null);
     }
 
     @Test( expected = IllegalArgumentException.class )
-    public void shouldNotAllowBlankNameInConstructor() {
-        new InMemoryRepository(context, "  \t  ", rootUuid);
+    public void shouldNotAllowSourceWithBlankNameInConstructor() {
+        source.setName("   \t ");
+        new InMemoryRepository(source);
+    }
+
+    @Test
+    public void shouldAllowValidSourceInConstructor() {
+        new InMemoryRepository(source);
     }
 }

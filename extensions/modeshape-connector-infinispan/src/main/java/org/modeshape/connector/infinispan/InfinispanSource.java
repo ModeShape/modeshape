@@ -52,7 +52,6 @@ import org.infinispan.manager.DefaultCacheManager;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
@@ -452,9 +451,7 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
             }
 
             // Now create the repository ...
-            ExecutionContext execContext = repositoryContext.getExecutionContext();
-            this.repository = new InfinispanRepository(execContext, this.name, this.rootNodeUuid, this.defaultWorkspace,
-                                                       cacheManager, this.predefinedWorkspaces);
+            this.repository = new InfinispanRepository(this, cacheManager);
         }
 
         return new Connection<InfinispanNode, InfinispanWorkspace>(this, repository);

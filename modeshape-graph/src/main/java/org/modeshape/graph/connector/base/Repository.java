@@ -35,8 +35,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.connector.RepositoryContext;
+import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
+import org.modeshape.graph.request.processor.RequestProcessor;
 
 /**
  * A representation of a repository as a set of named workspaces. Workspaces can be
@@ -55,6 +58,7 @@ import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior
 @ThreadSafe
 public abstract class Repository<NodeType extends Node, WorkspaceType extends Workspace> {
 
+    protected final BaseRepositorySource source;
     protected final UUID rootNodeUuid;
     protected final ExecutionContext context;
     private final String sourceName;
@@ -66,25 +70,22 @@ public abstract class Repository<NodeType extends Node, WorkspaceType extends Wo
      * Creates a {@code MapRepository} with the given repository source name, root node UUID, and a default workspace with the
      * given name.
      * 
-     * @param context the context in which this repository exists
-     * @param sourceName the name of the repository source for use in error and informational messages
-     * @param rootNodeUuid the UUID that will be used as the root node UUID for each workspace in the repository
-     * @param defaultWorkspaceName the name of the default, auto-created workspace; if null, then a blank name (e.g., "") is
-     *        assumed
-     * @throws IllegalArgumentException if the repository context or root node UUID are null, or if the source name is null or
-     *         empty
+     * @param source the repository source to which this repository belongs
+     * @throws IllegalArgumentException if the repository source is null, if the source's
+     *         {@link BaseRepositorySource#getRepositoryContext()} is null, or if the source name is null or empty
      */
-    protected Repository( ExecutionContext context,
-                          String sourceName,
-                          UUID rootNodeUuid,
-                          String defaultWorkspaceName ) {
-        CheckArg.isNotNull(context, "repositoryContext");
-        CheckArg.isNotEmpty(sourceName, "sourceName");
-        CheckArg.isNotNull(rootNodeUuid, "rootNodeUUID");
-        this.context = context;
-        this.rootNodeUuid = rootNodeUuid;
-        this.sourceName = sourceName;
-        this.defaultWorkspaceName = defaultWorkspaceName != null ? defaultWorkspaceName : "";
+    protected Repository( BaseRepositorySource source ) {
+        CheckArg.isNotNull(source, "source");
+        CheckArg.isNotEmpty(source.getName(), "source.getName()");
+        CheckArg.isNotNull(source.getRepositoryContext(), "source.getRepositoryContext()");
+        CheckArg.isNotNull(source.getRepositoryContext().getExecutionContext(),
+                           "source.getRepositoryContext().getExecutionContext()");
+        CheckArg.isNotNull(source.getRootNodeUuidObject(), "source.getRootNodeUuid()");
+        this.source = source;
+        this.context = source.getRepositoryContext().getExecutionContext();
+        this.rootNodeUuid = source.getRootNodeUuidObject();
+        this.sourceName = source.getName();
+        this.defaultWorkspaceName = source.getDefaultWorkspaceName() != null ? source.getDefaultWorkspaceName() : "";
     }
 
     /**
@@ -252,6 +253,18 @@ public abstract class Repository<NodeType extends Node, WorkspaceType extends Wo
         } finally {
             workspacesLock.writeLock().unlock();
         }
+    }
+
+    /**
+     * Create a RequestProcessor instance that should be used to process a set of requests within the supplied transaction.
+     * 
+     * @param txn the transaction; may not be null
+     * @return the request processor
+     */
+    public RequestProcessor createRequestProcessor( Transaction<NodeType, WorkspaceType> txn ) {
+        RepositoryContext repositoryContext = this.source.getRepositoryContext();
+        Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
+        return new Processor<NodeType, WorkspaceType>(txn, this, observer, source.areUpdatesAllowed());
     }
 
     /**

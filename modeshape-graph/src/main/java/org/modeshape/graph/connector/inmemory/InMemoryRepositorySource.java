@@ -50,14 +50,17 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.GraphI18n;
+import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
+import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.base.BaseRepositorySource;
 import org.modeshape.graph.connector.base.Connection;
+import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
@@ -103,8 +106,47 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
     private volatile String[] predefinedWorkspaces = new String[] {};
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
     private transient InMemoryRepository repository;
-    private transient RepositoryContext repositoryContext;
     private transient ExecutionContext defaultContext = new ExecutionContext();
+    private transient RepositoryContext repositoryContext = new DefaultRepositoryContext();
+
+    protected class DefaultRepositoryContext implements RepositoryContext {
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.connector.RepositoryContext#getExecutionContext()
+         */
+        @SuppressWarnings( "synthetic-access" )
+        public ExecutionContext getExecutionContext() {
+            return defaultContext;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.connector.RepositoryContext#getConfiguration(int)
+         */
+        public Subgraph getConfiguration( int depth ) {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.connector.RepositoryContext#getObserver()
+         */
+        public Observer getObserver() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.connector.RepositoryContext#getRepositoryConnectionFactory()
+         */
+        public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+            return null;
+        }
+    }
 
     /**
      * Create a repository source instance.
@@ -119,7 +161,7 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
      * @see org.modeshape.graph.connector.RepositorySource#initialize(org.modeshape.graph.connector.RepositoryContext)
      */
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
-        this.repositoryContext = context;
+        this.repositoryContext = context != null ? context : new DefaultRepositoryContext();
     }
 
     /**
@@ -182,9 +224,20 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
     }
 
     /**
-     * @return rootNodeUuid
+     * Get the string representation of the UUID for the root node.
+     * 
+     * @return the root node's UUID as a string; may not be null
      */
-    public UUID getRootNodeUuid() {
+    public String getRootNodeUuid() {
+        return this.rootNodeUuid.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.base.BaseRepositorySource#getRootNodeUuidObject()
+     */
+    public UUID getRootNodeUuidObject() {
         return this.rootNodeUuid;
     }
 
@@ -193,6 +246,13 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
      */
     public void setRootNodeUuid( UUID rootNodeUuid ) {
         this.rootNodeUuid = rootNodeUuid != null ? rootNodeUuid : UUID.randomUUID();
+    }
+
+    /**
+     * @param rootNodeUuid Sets rootNodeUuid to the specified value.
+     */
+    public void setRootNodeUuid( String rootNodeUuid ) {
+        this.rootNodeUuid = rootNodeUuid != null ? UUID.fromString(rootNodeUuid) : UUID.randomUUID();
     }
 
     /**
@@ -265,9 +325,9 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
      */
     public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
         if (repository == null) {
-            ExecutionContext context = repositoryContext != null ? repositoryContext.getExecutionContext() : defaultContext;
-            repository = new InMemoryRepository(context, name, rootNodeUuid, defaultWorkspaceName);
+            repository = new InMemoryRepository(this);
 
+            ExecutionContext context = repositoryContext != null ? repositoryContext.getExecutionContext() : defaultContext;
             InMemoryTransaction txn = repository.startTransaction(context, false);
             try {
                 // Create the set of initial workspaces ...

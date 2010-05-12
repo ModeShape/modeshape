@@ -31,9 +31,7 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.request.Request;
 import org.modeshape.graph.request.processor.RequestProcessor;
 
@@ -111,10 +109,7 @@ public class Connection<NodeType extends Node, WorkspaceType extends Workspace> 
         boolean commit = true;
         Transaction<NodeType, WorkspaceType> txn = repository.startTransaction(context, request.isReadOnly());
 
-        RepositoryContext repositoryContext = this.source.getRepositoryContext();
-        Observer observer = repositoryContext != null ? repositoryContext.getObserver() : null;
-        RequestProcessor processor = new Processor<NodeType, WorkspaceType>(txn, this.repository, observer,
-                                                                            source.areUpdatesAllowed());
+        RequestProcessor processor = repository.createRequestProcessor(txn);
         try {
             // Obtain the lock and execute the commands ...
             processor.process(request);
