@@ -45,17 +45,13 @@ public class JBossCacheRepository extends Repository<JBossCacheNode, JBossCacheW
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Set<String> predefinedWorkspaceNames;
 
-    public JBossCacheRepository( ExecutionContext context,
-                                 String sourceName,
-                                 UUID rootNodeUuid,
-                                 String defaultWorkspaceName,
-                                 Cache<UUID, JBossCacheNode> cache,
-                                 String... predefinedWorkspaceNames ) {
-        super(context, sourceName, rootNodeUuid, defaultWorkspaceName);
+    public JBossCacheRepository( JBossCacheSource source,
+                                 Cache<UUID, JBossCacheNode> cache ) {
+        super(source);
         this.cache = cache;
         assert this.cache != null;
         Set<String> workspaceNames = new HashSet<String>();
-        for (String workspaceName : predefinedWorkspaceNames) {
+        for (String workspaceName : source.getPredefinedWorkspaceNames()) {
             workspaceNames.add(workspaceName);
         }
         this.predefinedWorkspaceNames = Collections.unmodifiableSet(workspaceNames);

@@ -55,7 +55,6 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
@@ -477,10 +476,8 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
             if (cacheFactory == null) cacheFactory = new DefaultCacheFactory<UUID, JBossCacheNode>();
 
             // Now create the repository ...
-            ExecutionContext execContext = repositoryContext.getExecutionContext();
             Cache<UUID, JBossCacheNode> cache = createNewCache(cacheFactory, getName());
-            this.repository = new JBossCacheRepository(execContext, this.name, this.rootNodeUuid, this.defaultWorkspace, cache,
-                                                       this.predefinedWorkspaces);
+            this.repository = new JBossCacheRepository(this, cache);
         }
 
         return new Connection<JBossCacheNode, JBossCacheWorkspace>(this, repository);
