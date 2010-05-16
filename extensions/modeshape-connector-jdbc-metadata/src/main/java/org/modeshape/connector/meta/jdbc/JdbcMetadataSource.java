@@ -35,16 +35,19 @@ import javax.sql.DataSource;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
+import org.modeshape.connector.meta.jdbc.JdbcMetadataRepository.JdbcMetadataTransaction;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.connector.path.AbstractPathRepositorySource;
-import org.modeshape.graph.connector.path.PathRepositoryConnection;
+import org.modeshape.graph.connector.base.AbstractRepositorySource;
+import org.modeshape.graph.connector.base.Connection;
+import org.modeshape.graph.connector.base.PathNode;
+import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 @ThreadSafe
-public class JdbcMetadataSource extends AbstractPathRepositorySource implements ObjectFactory {
+public class JdbcMetadataSource extends AbstractRepositorySource implements ObjectFactory {
 
     private static final long serialVersionUID = 1L;
 
@@ -144,6 +147,8 @@ public class JdbcMetadataSource extends AbstractPathRepositorySource implements 
     private transient JdbcMetadataRepository repository;
     private transient MetadataCollector metadataCollector = DEFAULT_METADATA_COLLECTOR;
 
+    private ExecutionContext defaultContext = new ExecutionContext();
+
     final JdbcMetadataRepository repository() {
         return this.repository;
     }
@@ -240,9 +245,17 @@ public class JdbcMetadataSource extends AbstractPathRepositorySource implements 
 
         if (repository == null) {
             repository = new JdbcMetadataRepository(this);
-        }
 
-        return new PathRepositoryConnection(this, repository);
+            ExecutionContext context = repositoryContext != null ? repositoryContext.getExecutionContext() : defaultContext;
+            JdbcMetadataTransaction txn = repository.startTransaction(context, true);
+            try {
+                repository.createWorkspace(txn, getDefaultWorkspaceName(), CreateConflictBehavior.DO_NOT_CREATE, null);
+            } finally {
+                txn.commit();
+            }
+
+        }
+        return new Connection<PathNode, JdbcMetadataWorkspace>(this, repository);
     }
 
     public Reference getReference() {
@@ -251,7 +264,7 @@ public class JdbcMetadataSource extends AbstractPathRepositorySource implements 
         Reference ref = new Reference(className, factoryClassName, null);
 
         ref.add(new StringRefAddr(SOURCE_NAME, getName()));
-        ref.add(new StringRefAddr(ROOT_NODE_UUID, getRootNodeUuid().toString()));
+        ref.add(new StringRefAddr(ROOT_NODE_UUID, getRootNodeUuidObject().toString()));
         ref.add(new StringRefAddr(DATA_SOURCE_JNDI_NAME, getDataSourceJndiName()));
         ref.add(new StringRefAddr(USERNAME, getUsername()));
         ref.add(new StringRefAddr(PASSWORD, getPassword()));
@@ -310,7 +323,7 @@ public class JdbcMetadataSource extends AbstractPathRepositorySource implements 
         // Create the source instance ...
         JdbcMetadataSource source = new JdbcMetadataSource();
         if (sourceName != null) source.setName(sourceName);
-        if (rootNodeUuid != null) source.setRootNodeUuid(rootNodeUuid);
+        if (rootNodeUuid != null) source.setRootNodeUuidObject(rootNodeUuid);
         if (dataSourceJndiName != null) source.setDataSourceJndiName(dataSourceJndiName);
         if (username != null) source.setUsername(username);
         if (password != null) source.setPassword(password);

@@ -29,6 +29,8 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.util.List;
 import java.util.UUID;
+import org.junit.After;
+import org.junit.Test;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.Subgraph;
@@ -45,8 +47,6 @@ import org.modeshape.graph.request.ReadBranchRequest;
 import org.modeshape.graph.request.ReadNextBlockOfChildrenRequest;
 import org.modeshape.graph.request.ReadNodeRequest;
 import org.modeshape.graph.request.ReadPropertyRequest;
-import org.junit.After;
-import org.junit.Test;
 
 /**
  * A class that provides standard reading verification tests for connectors. This class is designed to be extended for each
@@ -204,7 +204,8 @@ public abstract class ReadableConnectorTest extends AbstractConnectorTest {
     public void shouldFailToReadNodeThatDoesNotExist() {
         // Look up the child that should not exist, and this should throw an exception ...
         Path nonExistantChildName = findPathToNonExistentNodeUnder("/");
-        graph.getNodeAt(nonExistantChildName);
+        Object node = graph.getNodeAt(nonExistantChildName);
+        System.out.println(node);
     }
 
     @Test( expected = PathNotFoundException.class )

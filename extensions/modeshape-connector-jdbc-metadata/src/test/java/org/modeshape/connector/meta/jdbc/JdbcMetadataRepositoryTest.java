@@ -37,13 +37,19 @@ import java.sql.Types;
 import java.util.Map;
 import java.util.Set;
 import javax.sql.DataSource;
-import org.modeshape.graph.ModeShapeLexicon;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.modeshape.connector.meta.jdbc.JdbcMetadataRepository.JdbcMetadataTransaction;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
+import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.connector.RepositoryContext;
-import org.modeshape.graph.connector.path.PathNode;
-import org.modeshape.graph.connector.path.PathWorkspace;
+import org.modeshape.graph.connector.base.PathNode;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
@@ -51,11 +57,7 @@ import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.Path.Segment;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Mock;
+import org.modeshape.graph.request.InvalidWorkspaceException;
 
 public class JdbcMetadataRepositoryTest {
 
@@ -64,7 +66,8 @@ public class JdbcMetadataRepositoryTest {
     private RepositoryContext repositoryContext;
     private ExecutionContext context;
     private JdbcMetadataRepository repository;
-    private PathWorkspace workspace;
+    private JdbcMetadataWorkspace workspace;
+    private JdbcMetadataTransaction txn;
     private PathFactory pathFactory;
     private NameFactory nameFactory;
     private ValueFactory<Long> longFactory;
@@ -99,7 +102,8 @@ public class JdbcMetadataRepositoryTest {
 
         source.getConnection().close(); // Need to call this once to instantiate the repository
         this.repository = source.repository();
-        workspace = repository.getWorkspace(source.getDefaultWorkspaceName());
+        txn = repository.startTransaction(context, true);
+        workspace = txn.getWorkspace(source.getDefaultWorkspaceName(), null);
         assertThat(workspace, is(notNullValue()));
 
         try {
@@ -160,19 +164,19 @@ public class JdbcMetadataRepositoryTest {
 
     }
 
-    @Test
+    @Test( expected = InvalidWorkspaceException.class )
     public void shouldNotReturnInvalidWorkspace() {
-        workspace = repository.getWorkspace(source.getDefaultWorkspaceName() + "Invalid");
-        assertThat(workspace, is(nullValue()));
+        JdbcMetadataTransaction txn = repository.startTransaction(context, true);
+        workspace = txn.getWorkspace(source.getDefaultWorkspaceName() + "Invalid", null);
     }
 
     @Test
     public void shouldReturnRootNode() {
         Path rootPath = pathFactory.createRootPath();
-        PathNode rootNode = workspace.getNode(rootPath);
+        PathNode rootNode = txn.getNode(workspace, Location.create(rootPath));
         Map<Name, Property> properties = rootNode.getProperties();
 
-        assertThat(rootNode.getPath(), is(rootPath));
+        assertThat(pathFor(rootNode), is(rootPath));
         assertThat(properties, is(notNullValue()));
         assertThat(properties.size(), is(6));
         assertThat(nameFor(properties.get(JcrLexicon.PRIMARY_TYPE)), is(ModeShapeLexicon.ROOT));
@@ -182,7 +186,7 @@ public class JdbcMetadataRepositoryTest {
         assertThat(properties.get(JdbcMetadataLexicon.DATABASE_MAJOR_VERSION), is(notNullValue()));
         assertThat(properties.get(JdbcMetadataLexicon.DATABASE_MINOR_VERSION), is(notNullValue()));
 
-        assertThat(rootNode.getChildSegments().isEmpty(), is(false));
+        assertThat(rootNode.getChildren().isEmpty(), is(false));
     }
 
     @Test
@@ -190,26 +194,26 @@ public class JdbcMetadataRepositoryTest {
         Path rootPath = pathFactory.createRootPath();
         PathNode rootNode = workspace.getNode(rootPath);
 
-        Segment catalogSegment = rootNode.getChildSegments().get(0);
+        Segment catalogSegment = rootNode.getChildren().get(0);
         Path catalogPath = pathFactory.createAbsolutePath(catalogSegment);
         PathNode catalogNode = workspace.getNode(catalogPath);
 
         Map<Name, Property> properties = catalogNode.getProperties();
 
-        assertThat(catalogNode.getPath(), is(catalogPath));
+        assertThat(pathFor(catalogNode), is(catalogPath));
         assertThat(properties, is(notNullValue()));
         assertThat(properties.size(), is(2));
         assertThat(nameFor(properties.get(JcrLexicon.PRIMARY_TYPE)), is(JcrNtLexicon.UNSTRUCTURED));
         assertThat(nameFor(properties.get(JcrLexicon.MIXIN_TYPES)), is(JdbcMetadataLexicon.CATALOG));
 
-        assertThat(rootNode.getChildSegments().isEmpty(), is(false));
+        assertThat(rootNode.getChildren().isEmpty(), is(false));
     }
 
     @Test
     public void shouldNotReturnInvalidCatalogNode() {
         Path rootPath = pathFactory.createRootPath();
         PathNode rootNode = workspace.getNode(rootPath);
-        Segment catalogSegment = rootNode.getChildSegments().get(0);
+        Segment catalogSegment = rootNode.getChildren().get(0);
 
         Name invalidCatalogName = nameFactory.create(catalogSegment.getName().getLocalName() + "-InvalidCatalog");
         Path catalogPath = pathFactory.createAbsolutePath(invalidCatalogName);
@@ -221,23 +225,23 @@ public class JdbcMetadataRepositoryTest {
         Path rootPath = pathFactory.createRootPath();
         PathNode rootNode = workspace.getNode(rootPath);
 
-        Segment catalogSegment = rootNode.getChildSegments().get(0);
+        Segment catalogSegment = rootNode.getChildren().get(0);
         Path catalogPath = pathFactory.createAbsolutePath(catalogSegment);
         PathNode catalogNode = workspace.getNode(catalogPath);
 
-        Segment schemaSegment = catalogNode.getChildSegments().get(0);
+        Segment schemaSegment = catalogNode.getChildren().get(0);
         Path schemaPath = pathFactory.createAbsolutePath(catalogSegment, schemaSegment);
         PathNode schemaNode = workspace.getNode(schemaPath);
 
         Map<Name, Property> properties = schemaNode.getProperties();
 
-        assertThat(schemaNode.getPath(), is(schemaPath));
+        assertThat(pathFor(schemaNode), is(schemaPath));
         assertThat(properties, is(notNullValue()));
         assertThat(properties.size(), is(2));
         assertThat(nameFor(properties.get(JcrLexicon.PRIMARY_TYPE)), is(JcrNtLexicon.UNSTRUCTURED));
         assertThat(nameFor(properties.get(JcrLexicon.MIXIN_TYPES)), is(JdbcMetadataLexicon.SCHEMA));
 
-        assertThat(rootNode.getChildSegments().isEmpty(), is(false));
+        assertThat(rootNode.getChildren().isEmpty(), is(false));
     }
 
     @Test
@@ -245,11 +249,11 @@ public class JdbcMetadataRepositoryTest {
         Path rootPath = pathFactory.createRootPath();
         PathNode rootNode = workspace.getNode(rootPath);
 
-        Segment catalogSegment = rootNode.getChildSegments().get(0);
+        Segment catalogSegment = rootNode.getChildren().get(0);
         Path catalogPath = pathFactory.createAbsolutePath(catalogSegment);
         PathNode catalogNode = workspace.getNode(catalogPath);
 
-        Segment schemaSegment = catalogNode.getChildSegments().get(0);
+        Segment schemaSegment = catalogNode.getChildren().get(0);
         Name invalidSchemaName = nameFactory.create(schemaSegment.getName().getLocalName() + "-InvalidSchema");
         Path invalidSchemaPath = pathFactory.createAbsolutePath(catalogSegment.getName(), invalidSchemaName);
         assertThat(workspace.getNode(invalidSchemaPath), is(nullValue()));
@@ -265,13 +269,13 @@ public class JdbcMetadataRepositoryTest {
 
         Map<Name, Property> properties = tablesNode.getProperties();
 
-        assertThat(tablesNode.getPath(), is(tablesPath));
+        assertThat(pathFor(tablesNode), is(tablesPath));
         assertThat(properties, is(notNullValue()));
         assertThat(properties.size(), is(2));
         assertThat(nameFor(properties.get(JcrLexicon.PRIMARY_TYPE)), is(JcrNtLexicon.UNSTRUCTURED));
         assertThat(nameFor(properties.get(JcrLexicon.MIXIN_TYPES)), is(JdbcMetadataLexicon.TABLES));
 
-        assertThat(tablesNode.getChildSegments().isEmpty(), is(false));
+        assertThat(tablesNode.getChildren().isEmpty(), is(false));
     }
 
     @Test
@@ -280,7 +284,7 @@ public class JdbcMetadataRepositoryTest {
         Path catalogPath = pathFactory.createAbsolutePath(catalogSegment);
         PathNode catalogNode = workspace.getNode(catalogPath);
 
-        Segment schemaSegment = catalogNode.getChildSegments().get(0);
+        Segment schemaSegment = catalogNode.getChildren().get(0);
         Name invalidSchemaName = nameFactory.create(schemaSegment.getName().getLocalName() + "-InvalidSchema");
         Path invalidSchemaPath = pathFactory.createAbsolutePath(catalogSegment.getName(),
                                                                 invalidSchemaName,
@@ -301,14 +305,14 @@ public class JdbcMetadataRepositoryTest {
 
         Map<Name, Property> properties = tableNode.getProperties();
 
-        assertThat(tableNode.getPath(), is(tablePath));
+        assertThat(pathFor(tableNode), is(tablePath));
         assertThat(properties, is(notNullValue()));
         assertThat(properties.size() >= 2, is(true));
         assertThat(properties.size() <= 9, is(true));
         assertThat(nameFor(properties.get(JcrLexicon.PRIMARY_TYPE)), is(JcrNtLexicon.UNSTRUCTURED));
         assertThat(nameFor(properties.get(JcrLexicon.MIXIN_TYPES)), is(JdbcMetadataLexicon.TABLE));
 
-        assertThat(tableNode.getChildSegments().size(), is(4));
+        assertThat(tableNode.getChildren().size(), is(4));
     }
 
     @Test
@@ -317,7 +321,7 @@ public class JdbcMetadataRepositoryTest {
         Path catalogPath = pathFactory.createAbsolutePath(catalogSegment);
         PathNode catalogNode = workspace.getNode(catalogPath);
 
-        Segment schemaSegment = catalogNode.getChildSegments().get(0);
+        Segment schemaSegment = catalogNode.getChildren().get(0);
         Name invalidSchemaName = nameFactory.create(schemaSegment.getName().getLocalName() + "-InvalidSchema");
         Path invalidSchemaPath = pathFactory.createAbsolutePath(catalogSegment.getName(),
                                                                 invalidSchemaName,
@@ -354,7 +358,7 @@ public class JdbcMetadataRepositoryTest {
 
         Map<Name, Property> properties = columnNode.getProperties();
 
-        assertThat(columnNode.getPath(), is(columnPath));
+        assertThat(pathFor(columnNode), is(columnPath));
         assertThat(properties, is(notNullValue()));
         assertThat(properties.size() >= 9, is(true));
         assertThat(properties.size() <= 16, is(true));
@@ -372,7 +376,7 @@ public class JdbcMetadataRepositoryTest {
         assertThat(longFor(properties.get(JdbcMetadataLexicon.ORDINAL_POSITION)), is(4L));
 
         // Some DBMSes don't have any procedures in the default schema
-        // assertThat(columnNode.getChildSegments().isEmpty(), is(true));
+        // assertThat(columnNode.getChildren().isEmpty(), is(true));
     }
 
     @Test
@@ -381,7 +385,7 @@ public class JdbcMetadataRepositoryTest {
         Path catalogPath = pathFactory.createAbsolutePath(catalogSegment);
         PathNode catalogNode = workspace.getNode(catalogPath);
 
-        Segment schemaSegment = catalogNode.getChildSegments().get(0);
+        Segment schemaSegment = catalogNode.getChildren().get(0);
         Name invalidSchemaName = nameFactory.create(schemaSegment.getName().getLocalName() + "-InvalidSchema");
         Path invalidSchemaPath = pathFactory.createAbsolutePath(catalogSegment.getName(),
                                                                 invalidSchemaName,
@@ -422,14 +426,14 @@ public class JdbcMetadataRepositoryTest {
 
         Map<Name, Property> properties = proceduresNode.getProperties();
 
-        assertThat(proceduresNode.getPath(), is(proceduresPath));
+        assertThat(pathFor(proceduresNode), is(proceduresPath));
         assertThat(properties, is(notNullValue()));
         assertThat(properties.size(), is(2));
         assertThat(nameFor(properties.get(JcrLexicon.PRIMARY_TYPE)), is(JcrNtLexicon.UNSTRUCTURED));
         assertThat(nameFor(properties.get(JcrLexicon.MIXIN_TYPES)), is(JdbcMetadataLexicon.PROCEDURES));
 
         // Not all schemas will have stored procs
-        // assertThat(proceduresNode.getChildSegments().isEmpty(), is(false));
+        // assertThat(proceduresNode.getChildren().isEmpty(), is(false));
     }
 
     @Test
@@ -437,11 +441,11 @@ public class JdbcMetadataRepositoryTest {
         Path rootPath = pathFactory.createRootPath();
         PathNode rootNode = workspace.getNode(rootPath);
 
-        Segment catalogSegment = rootNode.getChildSegments().get(0);
+        Segment catalogSegment = rootNode.getChildren().get(0);
         Path catalogPath = pathFactory.createAbsolutePath(catalogSegment);
         PathNode catalogNode = workspace.getNode(catalogPath);
 
-        Segment schemaSegment = catalogNode.getChildSegments().get(0);
+        Segment schemaSegment = catalogNode.getChildren().get(0);
         Name invalidSchemaName = nameFactory.create(schemaSegment.getName().getLocalName() + "-InvalidSchema");
         Path invalidSchemaPath = pathFactory.createAbsolutePath(catalogSegment.getName(),
                                                                 invalidSchemaName,
@@ -449,6 +453,17 @@ public class JdbcMetadataRepositoryTest {
         assertThat(workspace.getNode(invalidSchemaPath), is(nullValue()));
     }
 
+    private Path pathFor( PathNode node ) {
+        if (node == null) {
+            return null;
+        }
+
+        if (node.getParent() == null) {
+            return pathFactory.createRootPath();
+        }
+
+        return pathFactory.create(node.getParent(), node.getName());
+    }
     private Name nameFor( Property property ) {
         if (property == null) {
             return null;

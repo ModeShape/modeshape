@@ -129,6 +129,20 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
         }
         // Otherwise, look by path ...
         if (location.hasPath()) {
+            // First, find the lowest node in the path that has a change (if any)
+            Path path = location.getPath();
+
+            WorkspaceChanges changes = getChangesFor(workspace, false);
+            NodeType lowestNode = changes == null ? null : changes.getLowestChangedNodeFor(path);
+
+            if (lowestNode == null) {
+                // No nodes on the path were change, go straight to the source
+                NodeType node = workspace.getNode(path);
+
+                // If the source has no node at this location, default to a slow walk up the path from the root
+                if (node != null) return node;
+            }
+            
             return getNode(workspace, location.getPath(), location);
         }
         // Unable to find by UUID or by path, so fail ...
@@ -723,7 +737,7 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
      */
     protected class WorkspaceChanges {
         private final WorkspaceType workspace;
-        private final Map<Path, NodeType> changedOrAddedNodes = new TreeMap<Path, NodeType>();
+        private final TreeMap<Path, NodeType> changedOrAddedNodes = new TreeMap<Path, NodeType>();
         private final TreeMap<Path, Path> movedNodes = new TreeMap<Path, Path>();
         private final Set<Path> removedNodes = new HashSet<Path>();
         private final List<ChangeCommand<NodeType>> commands = new LinkedList<ChangeCommand<NodeType>>();
@@ -744,6 +758,16 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
 
         public boolean isRemoved( Path path ) {
             return removedNodes.contains(path);
+        }
+
+        public NodeType getLowestChangedNodeFor( Path path ) {
+            for (Path newPath : changedOrAddedNodes.descendingKeySet()) {
+                if (path.isAtOrBelow(newPath)) {
+                    return changedOrAddedNodes.get(newPath);
+                }
+            }
+            return null;
+
         }
 
         public Path persistentPathFor( Path path ) {

@@ -80,7 +80,7 @@ public class TestEnvironment {
         if (isValue(value)) source.setRetryLimit(Integer.parseInt(value));
 
         value = properties.getProperty("jpaSource.rootNodeUuid");
-        if (isValue(value)) source.setRootNodeUuid(value);
+        if (isValue(value)) source.setRootNodeUuidObject(value);
 
         value = properties.getProperty("metadata.collectorClassName");
         if (isValue(value)) source.setMetadataCollectorClassName(value);
