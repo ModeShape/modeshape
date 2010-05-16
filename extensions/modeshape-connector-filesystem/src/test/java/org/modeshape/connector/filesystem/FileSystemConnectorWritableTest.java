@@ -24,6 +24,7 @@
 package org.modeshape.connector.filesystem;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -32,11 +33,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.JcrLexicon;
-import org.modeshape.graph.JcrMixLexicon;
 import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.ModeShapeLexicon;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.test.AbstractConnectorTest;
@@ -183,11 +185,6 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     @Test( expected = RepositorySourceException.class )
     public void shouldNotBeAbleToCreateInvalidTypeForRepository() {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED).orReplace().and();
-    }
-
-    @Test( expected = RepositorySourceException.class )
-    public void shouldNotBeAbleToSetArbitraryProperties() {
-        graph.create("/testFile").with(JcrLexicon.MIXIN_TYPES, JcrMixLexicon.LOCKABLE).orReplace().and();
     }
 
     @Test
@@ -515,6 +512,32 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         }
     }
 
+    @Test
+    public void shouldBeAllOrNothing() {
+        String longTestFileName = "/testFileWithTooLongName" + StringUtil.createString('x', 300);
+
+        Batch batch = graph.batch();
+
+        batch.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
+        batch.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
+        batch.create(longTestFileName).and();
+        
+        try {
+            batch.execute();
+            fail("The overly long test file name (" + longTestFileName + ") did not fail");
+        } catch (RepositorySourceException rse) {
+            // Expected
+        }
+
+        File newFile = new File(testWorkspaceRoot, "testFile");
+        assertFalse(newFile.exists());
+    }
+
+    
     protected void assertContents( File file,
                                    String contents ) {
         assertTrue(file.exists());

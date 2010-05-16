@@ -23,7 +23,6 @@
  */
 package org.modeshape.graph.connector.inmemory;
 
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import net.jcip.annotations.NotThreadSafe;
@@ -47,15 +46,6 @@ public class InMemoryTransaction extends MapTransaction<InMemoryNode, InMemoryWo
         this.repository = repository;
         this.lock = lock;
         assert this.lock != null;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.base.Transaction#getWorkspaceNames()
-     */
-    public Set<String> getWorkspaceNames() {
-        return repository.getWorkspaceNames();
     }
 
     /**

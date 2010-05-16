@@ -38,7 +38,6 @@ public final class FileSystemI18n {
     public static I18n pathForWorkspaceRootIsNotDirectory;
     public static I18n pathForWorkspaceRootCannotBeRead;
     public static I18n propertyIsRequired;
-    public static I18n locationInRequestMustHavePath;
     public static I18n sameNameSiblingsAreNotAllowed;
     public static I18n nodeOrderingNotSupported;
     public static I18n onlyTheDefaultNamespaceIsAllowed;
@@ -63,7 +62,6 @@ public final class FileSystemI18n {
     public static I18n couldNotUpdateData;
     public static I18n missingRequiredProperty;
     public static I18n deleteFailed;
-    public static I18n copyFailed;
     public static I18n getCanonicalPathFailed;
     public static I18n maxPathLengthExceeded;
 

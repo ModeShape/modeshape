@@ -44,6 +44,7 @@ import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.connector.filesystem.FileSystemRepository.FileSystemTransaction;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
@@ -52,11 +53,13 @@ import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.connector.path.AbstractPathRepositorySource;
-import org.modeshape.graph.connector.path.PathRepositoryConnection;
+import org.modeshape.graph.connector.base.AbstractRepositorySource;
+import org.modeshape.graph.connector.base.Connection;
+import org.modeshape.graph.connector.base.PathNode;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Property;
+import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
  * The {@link RepositorySource} for the connector that exposes an area of the local file system as content in a repository. This
@@ -64,7 +67,7 @@ import org.modeshape.graph.property.Property;
  * workspace. New workspaces can be created, as long as the names represent valid paths to existing directories.
  */
 @ThreadSafe
-public class FileSystemSource extends AbstractPathRepositorySource implements ObjectFactory {
+public class FileSystemSource extends AbstractRepositorySource implements ObjectFactory {
 
     /**
      * An immutable {@link CustomPropertiesFactory} implementation that is used by default when none is provided. Note that this
@@ -132,6 +135,8 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
                                                                                                   SUPPORTS_REFERENCES);
     private transient FileSystemRepository repository;
     private volatile CustomPropertiesFactory customPropertiesFactory;
+
+    private ExecutionContext defaultContext = new ExecutionContext();
 
     /**
      * 
@@ -527,8 +532,22 @@ public class FileSystemSource extends AbstractPathRepositorySource implements Ob
             throw new RepositorySourceException(getName(), msg.text("name"));
         }
 
-        if (repository == null) repository = new FileSystemRepository(this);
-        return new PathRepositoryConnection(this, repository);
+        if (repository == null) {
+            repository = new FileSystemRepository(this);
+
+            ExecutionContext context = repositoryContext != null ? repositoryContext.getExecutionContext() : defaultContext;
+            FileSystemTransaction txn = repository.startTransaction(context, false);
+            try {
+                // Create the set of initial workspaces ...
+                for (String initialName : getPredefinedWorkspaceNames()) {
+                    repository.createWorkspace(txn, initialName, CreateConflictBehavior.DO_NOT_CREATE, null);
+                }
+            } finally {
+                txn.commit();
+            }
+
+        }
+        return new Connection<PathNode, FileSystemWorkspace>(this, repository);
     }
 
     protected static class StandardPropertiesFactory implements CustomPropertiesFactory {

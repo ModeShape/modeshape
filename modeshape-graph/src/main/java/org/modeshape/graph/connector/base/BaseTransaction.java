@@ -25,6 +25,7 @@ package org.modeshape.graph.connector.base;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
@@ -55,7 +56,11 @@ public abstract class BaseTransaction<NodeType extends Node, WorkspaceType exten
     protected final PropertyFactory propertyFactory;
     protected final ValueFactories valueFactories;
 
+    /** The repository against which this transaction is operating */
+    private final Repository<NodeType, WorkspaceType> repository;
+
     protected BaseTransaction( ExecutionContext context,
+                               Repository<NodeType, WorkspaceType> repository,
                                UUID rootNodeUuid ) {
         this.rootNodeUuid = rootNodeUuid;
         this.context = context;
@@ -63,6 +68,7 @@ public abstract class BaseTransaction<NodeType extends Node, WorkspaceType exten
         this.valueFactories = context.getValueFactories();
         this.pathFactory = valueFactories.getPathFactory();
         this.nameFactory = valueFactories.getNameFactory();
+        this.repository = repository;
     }
 
     protected String readable( Object obj ) {
@@ -76,6 +82,24 @@ public abstract class BaseTransaction<NodeType extends Node, WorkspaceType exten
      */
     public ExecutionContext getContext() {
         return context;
+    }
+
+    /**
+     * Obtain the repository object against which this transaction is running.
+     * 
+     * @return the repository object; never null
+     */
+    protected Repository<NodeType, WorkspaceType> getRepository() {
+        return repository;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.base.Transaction#getWorkspaceNames()
+     */
+    public Set<String> getWorkspaceNames() {
+        return repository.getWorkspaceNames();
     }
 
     /**

@@ -23,7 +23,9 @@
  */
 /**
  * The classes that make up the connector that accesses the files and directories on a local file system and exposes them as content in a repository.
- * This connector is based on the {@link org.modeshape.graph.connector.path.WritablePathRepository path repository framework}.
+ * This connector is based on the {@link org.modeshape.graph.connector.base.PathWorkspace path repository framework}.
+ * @see org.modeshape.graph.connector.base.PathWorkspace
+ * @see org.modeshape.graph.connector.base.PathTransaction
  */
 
 package org.modeshape.connector.filesystem;

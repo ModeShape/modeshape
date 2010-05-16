@@ -114,7 +114,15 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
         for (Node child : children) {
             Segment childName = child.getName();
             Path childPath = pathFactory.create(path, childName);
-            request.addChild(childPath, propertyFactory.create(ModeShapeLexicon.UUID, child.getUuid()));
+            Location childLocation = null;
+
+            if (child.getUuid() != null) {
+                childLocation = Location.create(childPath, child.getUuid());
+            } else {
+                childLocation = Location.create(childPath);
+            }
+
+            request.addChild(childLocation);
         }
 
         // Get the properties of the node ...
@@ -147,7 +155,14 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
         for (Node child : children) {
             Segment childName = child.getName();
             Path childPath = pathFactory.create(path, childName);
-            request.addChild(childPath, propertyFactory.create(ModeShapeLexicon.UUID, child.getUuid()));
+            Location childLocation = null;
+
+            if (child.getUuid() != null) {
+                childLocation = Location.create(childPath, child.getUuid());
+            } else {
+                childLocation = Location.create(childPath);
+            }
+            request.addChild(childLocation);
         }
         request.setActualLocationOfNode(actualLocation);
         setCacheableInfo(request);
@@ -302,8 +317,13 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
                 // See if the node already exists (this doesn't record an error on the request) ...
                 node = txn.getFirstChild(workspace, parentNode, request.named());
                 if (node != null) {
-                    txn.removeNode(workspace, node);
-                    node = txn.addChild(workspace, parentNode, request.named(), 1, uuid, propsToStore);
+                    List<NodeType> children = txn.getChildren(workspace, node);
+                    for (NodeType child : children) {
+                        txn.removeNode(workspace, child);
+                    }
+                    txn.setProperties(workspace, node, propsToStore, null, true);
+                    // txn.removeNode(workspace, node);
+                    // node = txn.addChild(workspace, parentNode, request.named(), 1, uuid, propsToStore);
                 } else {
                     node = txn.addChild(workspace, parentNode, request.named(), -1, uuid, propsToStore);
                 }

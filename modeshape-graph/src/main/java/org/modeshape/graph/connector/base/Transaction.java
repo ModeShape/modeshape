@@ -45,7 +45,7 @@ import org.modeshape.graph.request.LockBranchRequest.LockScope;
  * A transaction in which all read and write operations against a repository are performed. The actual transaction instance is
  * obtained by calling {@link Repository#startTransaction(ExecutionContext,boolean)}.
  * <p>
- * Note that implementations are not required to be thread-safe, since they (and their corresonding {@link Connection}) are
+ * Note that implementations are not required to be thread-safe, since they (and their corresponding {@link Connection}) are
  * expected to be used by a single thread.
  * </p>
  * 

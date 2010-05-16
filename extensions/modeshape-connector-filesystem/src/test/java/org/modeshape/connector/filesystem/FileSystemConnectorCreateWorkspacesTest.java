@@ -27,11 +27,11 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.util.HashSet;
 import java.util.Set;
+import org.junit.Test;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Workspace;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.test.WorkspaceConnectorTest;
-import org.junit.Test;
 
 /**
  * These tests verify that the file system connector behaves correctly when the source is configured to
@@ -56,6 +56,7 @@ public class FileSystemConnectorCreateWorkspacesTest extends WorkspaceConnectorT
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(true);
+        source.setUpdatesAllowed(true);
 
         return source;
     }

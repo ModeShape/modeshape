@@ -64,8 +64,6 @@ import org.modeshape.graph.request.FullTextSearchRequest;
 public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType extends MapWorkspace<NodeType>>
     extends BaseTransaction<NodeType, WorkspaceType> {
 
-    /** The repository against which this transaction is operating */
-    private final Repository<NodeType, WorkspaceType> repository;
     /** The set of changes to the workspaces that have been made by this transaction */
     private Map<String, WorkspaceChanges> changesByWorkspaceName;
 
@@ -77,17 +75,7 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
      */
     protected MapTransaction( Repository<NodeType, WorkspaceType> repository,
                                  UUID rootNodeUuid ) {
-        super(repository.getContext(), rootNodeUuid);
-        this.repository = repository;
-    }
-
-    /**
-     * Obtain the repository object against which this transaction is running.
-     * 
-     * @return the repository object; never null
-     */
-    protected Repository<NodeType, WorkspaceType> getRepository() {
-        return repository;
+        super(repository.getContext(), repository, rootNodeUuid);
     }
 
     /**
@@ -690,7 +678,7 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
                 if (null != (existing = findNode(newWorkspace, uuid))) {
                     NamespaceRegistry namespaces = context.getNamespaceRegistry();
                     String path = pathFor(newWorkspace, existing).getString(namespaces);
-                    throw new UuidAlreadyExistsException(repository.getSourceName(), uuid, path, newWorkspace.getName());
+                    throw new UuidAlreadyExistsException(getRepository().getSourceName(), uuid, path, newWorkspace.getName());
                 }
             }
         }
