@@ -64,6 +64,7 @@ public final class SvnRepositoryConnectorI18n {
     public static I18n couldNotCreateFile;
     public static I18n couldNotReadData;
     public static I18n deleteFailed;
+    public static I18n nodeOrderingNotSupported;
 
     static {
         try {

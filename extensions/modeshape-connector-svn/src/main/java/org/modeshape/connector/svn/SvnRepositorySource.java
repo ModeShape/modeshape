@@ -35,12 +35,16 @@ import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.connector.svn.SvnRepository.SvnTransaction;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.connector.path.AbstractPathRepositorySource;
-import org.modeshape.graph.connector.path.PathRepositoryConnection;
+import org.modeshape.graph.connector.base.AbstractRepositorySource;
+import org.modeshape.graph.connector.base.Connection;
+import org.modeshape.graph.connector.base.PathNode;
+import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
  * The {@link RepositorySource} for the connector that exposes an area of the local/remote svn repository as content in a
@@ -49,7 +53,7 @@ import org.modeshape.graph.connector.path.PathRepositoryConnection;
  * existing directories.
  */
 @ThreadSafe
-public class SvnRepositorySource extends AbstractPathRepositorySource implements ObjectFactory {
+public class SvnRepositorySource extends AbstractRepositorySource implements ObjectFactory {
 
     /**
      * The first serialized version of this source. Version {@value} .
@@ -101,6 +105,8 @@ public class SvnRepositorySource extends AbstractPathRepositorySource implements
                                                                                                   SUPPORTS_REFERENCES);
 
     private transient SvnRepository repository;
+
+    private ExecutionContext defaultContext = new ExecutionContext();
 
     /**
      * Create a repository source instance.
@@ -316,7 +322,7 @@ public class SvnRepositorySource extends AbstractPathRepositorySource implements
             ref.add(new StringRefAddr(SVN_PASSWORD, getPassword()));
         }
         ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
-        ref.add(new StringRefAddr(ROOT_NODE_UUID, rootNodeUuid.toString()));
+        ref.add(new StringRefAddr(ROOT_NODE_UUID, getRootNodeUuidObject().toString()));
         ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDefaultWorkspaceName()));
         ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
         String[] workspaceNames = getPredefinedWorkspaceNames();
@@ -363,7 +369,7 @@ public class SvnRepositorySource extends AbstractPathRepositorySource implements
         if (username != null) source.setUsername(username);
         if (password != null) source.setPassword(password);
         if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
-        if (rootNodeUuid != null) source.setRootNodeUuid(rootNodeUuid);
+        if (rootNodeUuid != null) source.setRootNodeUuidObject(rootNodeUuid);
         if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
         if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
         if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
@@ -403,10 +409,21 @@ public class SvnRepositorySource extends AbstractPathRepositorySource implements
         repositoryRootURL = repositoryRootURL.trim();
         if (repositoryRootURL.endsWith("/")) repositoryRootURL = repositoryRootURL + "/";
 
-        if (this.repository == null) {
-            this.repository = new SvnRepository(this);
-        }
+        if (repository == null) {
+            repository = new SvnRepository(this);
 
-        return new PathRepositoryConnection(this, this.repository);
+            ExecutionContext context = repositoryContext != null ? repositoryContext.getExecutionContext() : defaultContext;
+            SvnTransaction txn = repository.startTransaction(context, false);
+            try {
+                // Create the set of initial workspaces ...
+                for (String initialName : getPredefinedWorkspaceNames()) {
+                    repository.createWorkspace(txn, initialName, CreateConflictBehavior.DO_NOT_CREATE, null);
+                }
+            } finally {
+                txn.commit();
+            }
+
+        }
+        return new Connection<PathNode, SvnWorkspace>(this, repository);
     }
 }

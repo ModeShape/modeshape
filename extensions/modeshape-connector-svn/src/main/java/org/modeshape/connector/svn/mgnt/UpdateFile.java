@@ -61,4 +61,9 @@ public class UpdateFile implements ScmAction {
         ISVNEditorUtil.closeDirectories(editor, path);
     }
 
+    @Override
+    public String toString() {
+        return "UpdateFile {" + path + "/" + file + "}";
+    }
+
 }

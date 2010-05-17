@@ -252,7 +252,8 @@ public class SvnRepositorySourceTest {
         assertThat((String)refAttributes.remove(SvnRepositorySource.SVN_REPOSITORY_ROOT_URL), is(source.getRepositoryRootUrl()));
         assertThat((String)refAttributes.remove(SvnRepositorySource.SVN_USERNAME), is(source.getUsername()));
         assertThat((String)refAttributes.remove(SvnRepositorySource.SVN_PASSWORD), is(source.getPassword()));
-        assertThat((String)refAttributes.remove(SvnRepositorySource.ROOT_NODE_UUID), is(source.getRootNodeUuid().toString()));
+        assertThat((String)refAttributes.remove(SvnRepositorySource.ROOT_NODE_UUID),
+                   is(source.getRootNodeUuidObject().toString()));
         assertThat((String)refAttributes.remove(SvnRepositorySource.RETRY_LIMIT), is(Integer.toString(source.getRetryLimit())));
         assertThat((String)refAttributes.remove(SvnRepositorySource.ALLOW_CREATING_WORKSPACES),
                    is(Boolean.toString(source.isCreatingWorkspacesAllowed())));

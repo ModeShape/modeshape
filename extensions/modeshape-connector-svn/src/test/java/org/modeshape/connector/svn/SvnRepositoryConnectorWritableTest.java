@@ -26,6 +26,7 @@ package org.modeshape.connector.svn;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.ByteArrayOutputStream;
 import org.junit.Test;
 import org.modeshape.graph.Graph;
@@ -33,6 +34,7 @@ import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrMixLexicon;
 import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.ModeShapeLexicon;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.test.AbstractConnectorTest;
@@ -283,6 +285,65 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
     }
 
     @Test
+    public void shouldBeAbleToMoveFile() throws Exception {
+        graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
+        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
+                                                                                                           TEST_CONTENT.getBytes()).orReplace().and();
+
+        kind = remoteRepos.checkPath("testFile", -1);
+        assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
+        fileProperties = new SVNProperties();
+        baos = new ByteArrayOutputStream();
+        remoteRepos.getFile("testFile", -1, fileProperties, baos);
+        assertContents(baos, TEST_CONTENT);
+
+        graph.move("/testFile").as("newFile").into("/").and();
+        kind = remoteRepos.checkPath("newFile", -1);
+        assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
+        fileProperties = new SVNProperties();
+        baos = new ByteArrayOutputStream();
+        remoteRepos.getFile("newFile", -1, fileProperties, baos);
+        assertContents(baos, TEST_CONTENT);
+
+        try {
+            graph.getNodeAt("/testFile");
+            fail("Old copy of file still exists at source location");
+        } catch (PathNotFoundException expected) {
+
+        }
+    }
+
+    @Test
+    public void shouldBeAbleToMoveFolder() throws Exception {
+        graph.create("/testFolder").orReplace().and();
+        graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
+                                                                                                                      TEST_CONTENT.getBytes()).orReplace().and();
+
+        kind = remoteRepos.checkPath("testFolder/testFile", -1);
+        assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
+        fileProperties = new SVNProperties();
+        baos = new ByteArrayOutputStream();
+        remoteRepos.getFile("testFolder/testFile", -1, fileProperties, baos);
+        assertContents(baos, TEST_CONTENT);
+
+        graph.move("/testFolder").as("newFolder").into("/").and();
+        kind = remoteRepos.checkPath("newFolder", -1);
+        assertThat(kind == SVNNodeKind.DIR, is(Boolean.TRUE));
+        fileProperties = new SVNProperties();
+        baos = new ByteArrayOutputStream();
+        remoteRepos.getFile("newFolder/testFile", -1, fileProperties, baos);
+        assertContents(baos, TEST_CONTENT);
+        try {
+            graph.getNodeAt("/testFolder");
+            fail("Old copy of file still exists at source location");
+        } catch (PathNotFoundException expected) {
+
+        }
+
+    }
+
+    @Test
     public void shouldBeAbleToDeleteFolder() throws Exception {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
@@ -350,6 +411,39 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
         baos = new ByteArrayOutputStream();
         remoteRepos.getFile("testFile", -1, fileProperties, baos);
         assertContents(baos, "");
+    }
+
+    @Test
+    public void shouldBeAllOrNothing() {
+        String badTestFileName = "/missingDirectory/someFile";
+
+        Batch batch = graph.batch();
+
+        batch.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
+        batch.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
+                                                                                                           TEST_CONTENT.getBytes()).orReplace().and();
+        batch.create(badTestFileName).and();
+
+        try {
+            batch.execute();
+            fail("The invalid test file name (" + badTestFileName + ") did not fail");
+        } catch (PathNotFoundException rse) {
+            // Expected
+        }
+
+        try {
+            graph.getNodeAt("/testFile");
+            fail("Got node at /testFile -- whole transaction should have failed");
+        } catch (PathNotFoundException expected) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void runItTwice() {
+        shouldBeAllOrNothing();
+        shouldBeAllOrNothing();
+        shouldBeAllOrNothing();
     }
 
     protected void assertContents( ByteArrayOutputStream baos,

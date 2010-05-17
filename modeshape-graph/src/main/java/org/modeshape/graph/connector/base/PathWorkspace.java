@@ -114,7 +114,7 @@ public abstract class PathWorkspace<NodeType extends PathNode> implements Worksp
      * @throws UnsupportedOperationException by default, subclasses should override this method so that this exception is not
      *         thrown
      * @see #createMoveCommand(PathNode, PathNode)
-     * @see #createPutCommand(PathNode)
+     * @see #createPutCommand(PathNode, PathNode)
      * @see #createRemoveCommand(Path)
      */
     public NodeType putNode( NodeType node ) {
@@ -136,7 +136,7 @@ public abstract class PathWorkspace<NodeType extends PathNode> implements Worksp
      * @throws UnsupportedOperationException by default, subclasses should override this method so that this exception is not
      *         thrown
      * @see #createMoveCommand(PathNode, PathNode)
-     * @see #createPutCommand(PathNode)
+     * @see #createPutCommand(PathNode, PathNode)
      * @see #createRemoveCommand(Path)
      */
     public NodeType moveNode( NodeType source,
@@ -153,7 +153,7 @@ public abstract class PathWorkspace<NodeType extends PathNode> implements Worksp
      * @throws UnsupportedOperationException by default, subclasses should override this method so that this exception is not
      *         thrown
      * @see #createMoveCommand(PathNode, PathNode)
-     * @see #createPutCommand(PathNode)
+     * @see #createPutCommand(PathNode, PathNode)
      * @see #createRemoveCommand(Path)
      */
     public NodeType removeNode( Path path ) {
@@ -196,12 +196,13 @@ public abstract class PathWorkspace<NodeType extends PathNode> implements Worksp
     /**
      * Create a change command for the required update to the given node
      * 
+     * @param oldNode the prior version of the node; may be null if this is a new node
      * @param node the new version of the node; may not be null
      * @return a {@link ChangeCommand} instance that reflects the changes to the node
-     * @see #createPutCommand(PathNode)
      * @see #commit(List)
      */
-    public ChangeCommand<NodeType> createPutCommand( NodeType node ) {
+    public ChangeCommand<NodeType> createPutCommand( NodeType oldNode,
+                                                     NodeType node ) {
         return new PutCommand(node);
     }
 
@@ -210,7 +211,7 @@ public abstract class PathWorkspace<NodeType extends PathNode> implements Worksp
      * 
      * @param path the path to the node at the root of the branch to be removed; may not be null
      * @return a {@link ChangeCommand} instance that reflects the changes to the node
-     * @see #createPutCommand(PathNode)
+     * @see #createPutCommand(PathNode, PathNode)
      * @see #commit(List)
      */
     public ChangeCommand<NodeType> createRemoveCommand( Path path ) {
@@ -220,7 +221,7 @@ public abstract class PathWorkspace<NodeType extends PathNode> implements Worksp
     /**
      * Create a change command that represents the movement of a node. The movement record will only reflect the changes to the
      * node's name and/or parent. Changes to the node's properties or children should be ignored. A separate
-     * {@link #createPutCommand(PathNode) put command} should be used to reflect these changes.
+     * {@link #createPutCommand(PathNode, PathNode) put command} should be used to reflect these changes.
      * 
      * @param source the original version of the node; may not be null
      * @param target the new version of the node; may not be null

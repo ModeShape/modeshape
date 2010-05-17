@@ -119,6 +119,7 @@ public class Connection<NodeType extends Node, WorkspaceType extends Workspace> 
             }
         } catch (Throwable error) {
             commit = false;
+            error.printStackTrace();
         } finally {
             try {
                 processor.close();
@@ -132,6 +133,7 @@ public class Connection<NodeType extends Node, WorkspaceType extends Workspace> 
                         txn.rollback();
                     }
                 } catch (Throwable commitOrRollbackError) {
+                    commitOrRollbackError.printStackTrace();
                     if (commit && !request.hasError() && !request.isFrozen()) {
                         // Record the error on the request ...
                         request.setError(commitOrRollbackError);

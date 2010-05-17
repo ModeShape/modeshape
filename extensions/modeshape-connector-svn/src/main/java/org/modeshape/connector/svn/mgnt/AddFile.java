@@ -54,4 +54,9 @@ public class AddFile implements ScmAction {
         ISVNEditorUtil.closeDirectories(editor, this.path);
     }
 
+    @Override
+    public String toString() {
+        return "AddFile {" + path + "/" + file + "}";
+    }
+
 }

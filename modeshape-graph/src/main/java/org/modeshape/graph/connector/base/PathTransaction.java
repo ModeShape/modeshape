@@ -239,13 +239,13 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
                               int index,
                               UUID uuid,
                               Iterable<Property> properties ) {
-        assert uuid == null : "UUID should always be null for a PathTransaction";
         WorkspaceChanges changes = getChangesFor(workspace, true);
 
         // If the parent doesn't already have changes, we need to find the new parent in the newWorkspace's changes
         if (!parent.hasChanges()) {
             parent = getNode(workspace, locationFor(parent));
         }
+        NodeType oldParent = (NodeType)parent.clone();
 
         NodeType newNode = null;
         if (index < 0) {
@@ -272,8 +272,9 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
                     if (existingSegment.getName().equals(name)) {
                         int existingIndex = existingSegment.getIndex();
                         if (snsIndex == 0) snsIndex = existingIndex;
+                        NodeType oldSibling = (NodeType)existingSibling.clone();
                         existingSibling = (NodeType)existingSibling.withName(pathFactory.createSegment(name, existingIndex + 1));
-                        changes.changed(existingSibling);
+                        changes.changed(oldSibling, existingSibling);
                     }
                 }
             }
@@ -284,7 +285,7 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
             parent = (NodeType)parent.withChild(index, childSegment);
         }
         changes.created(newNode);
-        changes.changed(parent);
+        changes.changed(oldParent, parent);
         return newNode;
     }
 
@@ -322,13 +323,14 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
             newChildWithOldParent = newChild;
             // Remove the node from it's parent ...
             int oldIndex = oldParent.getChildren().indexOf(newChildSegment);
+            NodeType priorParent = (NodeType)oldParent.clone();
             if (oldParent.equals(parent)) {
                 oldParent = (NodeType)oldParent.withoutChild(newChildSegment);
-                changes.changed(oldParent);
+                changes.changed(priorParent, oldParent);
                 parent = oldParent;
             } else {
                 oldParent = (NodeType)oldParent.withoutChild(newChildSegment);
-                changes.changed(oldParent);
+                changes.changed(priorParent, oldParent);
             }
 
             // Now find any siblings with the same name that appear after the node in the parent's list of children ...
@@ -337,8 +339,9 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
                 for (ListIterator<NodeType> iter = siblings.listIterator(oldIndex); iter.hasNext();) {
                     NodeType sibling = iter.next();
                     if (sibling.getName().getName().equals(newChildName)) {
+                        NodeType oldSibling = (NodeType)sibling.clone();
                         sibling = (NodeType)sibling.withName(pathFactory.createSegment(newChildName, snsIndex++));
-                        changes.changed(sibling);
+                        changes.changed(oldSibling, sibling);
                     }
                 }
             }
@@ -377,8 +380,9 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
                     childName = pathFactory.createSegment(newChildName, snsIndex);
                 }
                 if (existingSegment.getName().equals(newChildName)) {
+                    NodeType oldSibling = (NodeType)existingSibling.clone();
                     existingSibling = (NodeType)existingSibling.withName(pathFactory.createSegment(newChildName, ++snsIndex));
-                    changes.changed(existingSibling);
+                    changes.changed(oldSibling, existingSibling);
                 }
             }
             ++i;
@@ -486,8 +490,9 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
         for (NodeType child : getChildren(workspace, node)) {
             destroyNode(workspace, child);
         }
+        NodeType oldNode = (NodeType)node.clone();
         node = (NodeType)node.withoutChildren();
-        getChangesFor(workspace, true).changed(node);
+        getChangesFor(workspace, true).changed(oldNode, node);
     }
 
     /**
@@ -514,9 +519,10 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
         Name name = node.getName().getName();
         int snsIndex = node.getName().getIndex();
         WorkspaceChanges changes = getChangesFor(workspace, true);
+        NodeType oldParent = (NodeType)parent.clone();
         // Remove the node from the parent ...
         parent = (NodeType)parent.withoutChild(node.getName());
-        changes.changed(parent);
+        changes.changed(oldParent, parent);
 
         // Now find any siblings with the same name that appear after the node in the parent's list of children ...
         List<NodeType> siblings = getChildren(workspace, parent);
@@ -524,8 +530,9 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
             for (ListIterator<NodeType> iter = siblings.listIterator(index); iter.hasNext();) {
                 NodeType sibling = iter.next();
                 if (sibling.getName().getName().equals(name)) {
+                    NodeType oldSibling = (NodeType)sibling.clone();
                     sibling = (NodeType)sibling.withName(pathFactory.createSegment(name, snsIndex++));
-                    changes.changed(sibling);
+                    changes.changed(oldSibling, sibling);
                 }
             }
         }
@@ -544,10 +551,11 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
     public NodeType removeProperty( WorkspaceType workspace,
                                     NodeType node,
                                     Name propertyName ) {
+        NodeType oldCopy = (NodeType)node.clone();
         NodeType copy = (NodeType)node.withoutProperty(propertyName);
         if (copy != node) {
             WorkspaceChanges changes = getChangesFor(workspace, true);
-            changes.changed(copy);
+            changes.changed(oldCopy, copy);
         }
         return copy;
     }
@@ -564,10 +572,11 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
                                    Iterable<Property> propertiesToSet,
                                    Iterable<Name> propertiesToRemove,
                                    boolean removeAllExisting ) {
+        NodeType oldCopy = (NodeType)node.clone();
         NodeType copy = (NodeType)node.withProperties(propertiesToSet, propertiesToRemove, removeAllExisting);
         if (copy != node) {
             WorkspaceChanges changes = getChangesFor(workspace, true);
-            changes.changed(copy);
+            changes.changed(oldCopy, copy);
         }
         return copy;
     }
@@ -598,10 +607,6 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
                 copy = (NodeType)copy.withChild(newChild.getName());
             }
         }
-
-        // Record the latest changes on the newly-created node ..
-        WorkspaceChanges changes = getChangesFor(newWorkspace, true);
-        changes.changed(copy);
 
         return copy;
     }
@@ -663,7 +668,7 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
             NodeType newChild = copyBranch(originalWorkspace, originalChild, newWorkspaceChanges, newWorkspace, copy);
             copy = (NodeType)copy.withChild(newChild.getName());
         }
-        newWorkspaceChanges.changed(copy);
+        // newWorkspaceChanges.changed(null, copy);
         return copy;
     }
 
@@ -795,16 +800,17 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
             Path path = pathTo(node);
             removedNodes.remove(path);
             changedOrAddedNodes.put(path, node);
-            commands.add(workspace.createPutCommand(node));
+            commands.add(workspace.createPutCommand(null, node));
         }
 
-        public void changed( NodeType node ) {
-            validateNode(workspace, node);
+        public void changed( NodeType from,
+                             NodeType to ) {
+            validateNode(workspace, to);
 
-            Path path = pathTo(node);
+            Path path = pathTo(to);
             assert !removedNodes.contains(path); // should not be removed
-            changedOrAddedNodes.put(path, node);
-            commands.add(workspace.createPutCommand(node));
+            changedOrAddedNodes.put(path, to);
+            commands.add(workspace.createPutCommand(from, to));
         }
 
         public void moved( NodeType node,

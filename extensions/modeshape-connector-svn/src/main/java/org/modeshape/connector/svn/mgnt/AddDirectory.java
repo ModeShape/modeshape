@@ -57,4 +57,9 @@ public class AddDirectory implements ScmAction {
         ISVNEditorUtil.closeDirectories(editor, childDirPath);
         ISVNEditorUtil.closeDirectories(editor, this.rootDirPath);
     }
+
+    @Override
+    public String toString() {
+        return "AddDirectory {" + rootDirPath + "/" + childDirPath + "}";
+    }
 }
