@@ -158,7 +158,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
                 ensureValidPathLength(newFile);
 
                 // Don't try to write if the node conflict behavior is DO_NOT_REPLACE
-                if (!newFile.createNewFile()) {
+                if (!newFile.exists() && !newFile.createNewFile()) {
                     I18n msg = FileSystemI18n.fileAlreadyExists;
                     throw new RepositorySourceException(source.getName(), msg.text(parentPath, getName(), source.getName()));
                 }
