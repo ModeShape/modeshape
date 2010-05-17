@@ -67,12 +67,9 @@ public class JcrStatementTest {
     private Query jcrQuery;
     @Mock
     private Workspace workspace;
-
-
-    
+ 
     @After
     public void afterEach() {
-
 	if (stmt != null) {
 	    stmt.close();
 	    stmt = null;
@@ -85,9 +82,8 @@ public class JcrStatementTest {
 	
         stmt =  new JcrStatement(connection, session);
         
-        when(queryResult.getColumnNames()).thenReturn(TestResultSetMetaData.COLUMN_NAMES);
-
-        
+        when(queryResult.getColumnNames()).thenReturn(TestQueryResultMetaData.COLUMN_NAMES);
+       
         when(session.getWorkspace()).thenReturn(workspace);
         
         when(workspace.getQueryManager()).thenReturn(queryMgr);
@@ -154,12 +150,12 @@ public class JcrStatementTest {
       
     @Test
     public void shouldExcute() throws SQLException {
-	stmt.execute(TestResultSetMetaData.SQL_SELECT);
+	stmt.execute(TestQueryResultMetaData.SQL_SELECT);
 
     }
     
     public void shouldExcuteQuery() throws SQLException {
-	stmt.executeQuery(TestResultSetMetaData.SQL_SELECT);
+	stmt.executeQuery(TestQueryResultMetaData.SQL_SELECT);
     }
     
     /**
@@ -187,7 +183,7 @@ public class JcrStatementTest {
     /**
      * Because updates are not supported, this test should throw an
      * exception.
-    * @throws SQLException 
+     * @throws SQLException 
      */
     @Test(expected= SQLException.class)
     public void shouldThrowExceptionForUpdate() throws SQLException  {
@@ -266,6 +262,71 @@ public class JcrStatementTest {
     @Test
     public void shouldBeAbleToClose() {
 	stmt.close();
+    }
+    
+    @Test
+    public void shouldSetFetchSize() throws SQLException {
+	stmt.setFetchSize(100);
+    }
+    
+    /**
+     * Because updates are not supported, this test should throw an
+     * exception.
+     * @throws SQLException 
+     */
+    @Test(expected= SQLException.class)
+    public void shouldSetCursorName() throws SQLException {
+	stmt.setCursorName("CursorName");
+    }
+    
+    @Test
+    public void shouldSetEscapeProcessingTrue() throws SQLException {
+	stmt.setEscapeProcessing(true);
+    }
+    
+    @Test
+    public void shouldSetEscapeProcessingFalse() throws SQLException {
+	stmt.setEscapeProcessing(false);
+    }
+    
+    @Test
+    public void shouldSetFetchDirectionReverse() throws SQLException {
+	stmt.setFetchDirection(ResultSet.FETCH_REVERSE);
+    }
+    
+    @Test
+    public void shouldSetFetchDirectionUnknown() throws SQLException {
+	stmt.setFetchDirection(ResultSet.FETCH_UNKNOWN);
+    }
+    
+    @Test
+    public void shouldSetFetchDirectionForward() throws SQLException {
+	stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+    }
+    
+    @Test
+    public void shouldSetMaxFieldSize() throws SQLException {
+	stmt.setMaxFieldSize(30);
+    }
+    
+    @Test
+    public void shouldSetMaxRows() throws SQLException {
+	stmt.setMaxRows(200);
+    }
+    
+    @Test
+    public void shouldSetPoolableTrue() throws SQLException {
+	stmt.setPoolable(true);
+    }
+    
+    @Test
+    public void shouldSetPoolableFalse() throws SQLException {
+	stmt.setPoolable(false);
+    }
+    
+    @Test
+    public void shouldSetQueryTimeout() throws SQLException {
+	stmt.setQueryTimeout(60);
     }
     
 }
