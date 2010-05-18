@@ -75,6 +75,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(true);
         source.setUpdatesAllowed(true);
+        source.setExclusionPattern("\\.svn");
 
         testWorkspaceRoot = new File(REPO_PATH, "test");
         testWorkspaceRoot.mkdir();
