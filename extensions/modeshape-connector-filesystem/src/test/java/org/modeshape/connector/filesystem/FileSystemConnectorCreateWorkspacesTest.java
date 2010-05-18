@@ -57,6 +57,7 @@ public class FileSystemConnectorCreateWorkspacesTest extends WorkspaceConnectorT
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(true);
         source.setUpdatesAllowed(true);
+        source.setExclusionPattern("\\.svn");
 
         return source;
     }
