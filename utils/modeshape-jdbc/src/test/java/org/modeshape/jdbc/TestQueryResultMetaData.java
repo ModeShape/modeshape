@@ -26,6 +26,8 @@ package org.modeshape.jdbc;
 import static org.mockito.Mockito.when;
 import org.mockito.Mockito;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -63,6 +65,7 @@ public class TestQueryResultMetaData {
     public static final String BOOLEAN = PropertyType.nameFromValue(PropertyType.BOOLEAN);
     public static final String DATE = PropertyType.nameFromValue(PropertyType.DATE);
     public static final String PATH = PropertyType.nameFromValue(PropertyType.PATH);
+    public static final String BINARY = PropertyType.nameFromValue(PropertyType.BINARY);
     
     public static final String REFERENCE = PropertyType.nameFromValue(PropertyType.REFERENCE);
 
@@ -76,6 +79,7 @@ public class TestQueryResultMetaData {
 	public static final String PROP_E ="propE";
 	public static final String PROP_F ="propF";
 	public static final String PROP_G ="propG";
+	public static final String PROP_H ="propH";
 
     }
     
@@ -87,7 +91,10 @@ public class TestQueryResultMetaData {
     
     public static final String SQL_SELECT = "Select propA FROM typeA";
     
+ //   public static final InputStream TEST_IS = new ByteArrayInputStream(  (new String("Heres my data 1234").getBytes()  ));
+    
     static {
+	
 	// The column names must match the number of columns in #TUPLES
 	COLUMN_NAMES = new String[] {COLUMN_NAME_PROPERTIES.PROP_A, 
 		COLUMN_NAME_PROPERTIES.PROP_B,
@@ -95,10 +102,11 @@ public class TestQueryResultMetaData {
 		COLUMN_NAME_PROPERTIES.PROP_D,
 		COLUMN_NAME_PROPERTIES.PROP_E,
 		COLUMN_NAME_PROPERTIES.PROP_F,
-		COLUMN_NAME_PROPERTIES.PROP_G};
+		COLUMN_NAME_PROPERTIES.PROP_G,
+		COLUMN_NAME_PROPERTIES.PROP_H};
 	TABLE_NAMES = new String[] {"typeA", "typeB", "typeA", "", "typeA"};
 	// The TYPE_NAMES correspond to the column value types defined in #TUPLES
-	TYPE_NAMES = new String[] {STRING, LONG, PATH, REFERENCE, DOUBLE, BOOLEAN, DATE};
+	TYPE_NAMES = new String[] {STRING, LONG, PATH, REFERENCE, DOUBLE, BOOLEAN, DATE, BINARY};
 
 	NODE_NAMES = new String[] {"node1", "node2"};
 	// Provides the resultset rows
@@ -107,10 +115,10 @@ public class TestQueryResultMetaData {
 	/*
 	 *  the tuples data types for each column correspond to @see TYPE_NAMES
 	 */
-	TUPLES.add( new Object[] {"r1c1", new Long(1), null, null, new Double(1), new Boolean(true), new Date()});
-	TUPLES.add( new Object[] {"r2c1", new Long(2), null, null, new Double(2), new Boolean(false), new Date()});
-	TUPLES.add( new Object[] {"r3c1", new Long(3), null, null, new Double(3), new Boolean(true), new Date()});
-	TUPLES.add( new Object[] {"r4c1", 4L, null, null, 4D, new Boolean(true).booleanValue(), new Date()});
+	TUPLES.add( new Object[] {"r1c1", new Long(1), null, null, new Double(1), new Boolean(true), new Date(), new ByteArrayInputStream(  (new String("Heres my data at r1").getBytes()  ))});
+	TUPLES.add( new Object[] {"r2c1", new Long(2), null, null, new Double(2), new Boolean(false), new Date(), new ByteArrayInputStream(  (new String("Heres my data r2   ").getBytes()  ))});
+	TUPLES.add( new Object[] {"r3c1", new Long(3), null, null, new Double(3), new Boolean(true), new Date(), new ByteArrayInputStream(  (new String("Heres my data at r3  ").getBytes()  ))});
+	TUPLES.add( new Object[] {"r4c1", 4L, null, null, 4D, new Boolean(true).booleanValue(), new Date(), new ByteArrayInputStream(  (new String("Heres  my  data    r4  ").getBytes()  ))});
 	
     }
     
@@ -418,16 +426,16 @@ class QueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
 		for (int i=0; i< tuple.length; i++) {
 		    values[i] = createValue(tuple[i]);
 		    
-		}
-
-	    
+		} 
 	    return values;
 	}
 	 
 	private Value createValue(final Object value) {
 	    
+	    if (value == null) return null;
+	    
 	    Value rtnvalue = new Value() {
-		Object valueObject = value;
+		final Object valueObject = value;
 
 		@Override
 		public boolean getBoolean() throws ValueFormatException,
@@ -455,7 +463,8 @@ class QueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
 			IllegalStateException, RepositoryException {
 		    if (value instanceof Double) {
 			return ((Double) valueObject).doubleValue();
-		    }
+		    } 
+		 
 		    throw new ValueFormatException("Value not a Double");
 		}
 
@@ -484,7 +493,8 @@ class QueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
 		    if (value == null) return null;
 		    if (value instanceof String) {
 			return (String) valueObject;
-		    }
+		    } 
+		    
 		    return valueObject.toString();
 		}
 
@@ -499,7 +509,19 @@ class QueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
 
 	    return rtnvalue;
 	    
-	}
+	}	
 	
 }
+class TestInputStream extends InputStream {
 
+    /**
+     * {@inheritDoc}
+     *
+     * @see java.io.InputStream#read()
+     */
+    @Override
+    public int read() throws IOException {
+	return 0;
+    }
+    
+}

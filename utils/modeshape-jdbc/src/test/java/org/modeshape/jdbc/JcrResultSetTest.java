@@ -24,11 +24,16 @@
 package org.modeshape.jdbc;
 
 
+import static org.junit.Assert.assertTrue;
+
+import static org.junit.Assert.assertNull;
+
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
+import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -254,49 +259,94 @@ public class JcrResultSetTest {
 	}
     }
     
-//    @Test
-//    public void shouldCallGetDateUsingColumnName() throws SQLException {	
-//	int col = getColumnTypeLoc(TestQueryResultMetaData.DATE);
-//	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
-//	    assertThat(resultSet.next(), is(true));
-//	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
-//	    assertThat(resultSet.getDate(TestQueryResultMetaData.COLUMN_NAMES[col]), is(tuple[col]));
-//
-//	}
-//    }
-//    
-//    @Test
-//    public void shouldCallGetDateUsingColmnIndex() throws SQLException {	
-//	int col = getColumnTypeLoc(TestQueryResultMetaData.DATE);
-//	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
-//	    assertThat(resultSet.next(), is(true));
-//	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
-//	    // need to increment because ResultSet is 1 based.
-//	    assertThat(resultSet.getDate(col +1), is(tuple[col]));
-//
-//	}
-//    }
+    @Test
+    public void shouldCallGetDateUsingColumnName() throws SQLException {	
+	int col = getColumnTypeLoc(TestQueryResultMetaData.DATE);
+	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	    assertThat(resultSet.next(), is(true));
+	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
+	    assertThat(resultSet.getDate(TestQueryResultMetaData.COLUMN_NAMES[col]), is(tuple[col]));
+
+	}
+    }
     
     @Test
-    public void shouldCallGetBytesUsingColmnIndex() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.STRING);
+    public void shouldCallGetDateUsingColmnIndex() throws SQLException {	
+	int col = getColumnTypeLoc(TestQueryResultMetaData.DATE);
 	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
 	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
 	    // need to increment because ResultSet is 1 based.
-	    assertThat(resultSet.getBytes(col +1), 
-		    is(  (tuple[col].toString()).getBytes()  ));
+	    assertThat(resultSet.getDate(col +1), is(tuple[col]));
+
+	}
+    }
+    
+    @Test
+    public void shouldCallGetBytesUsingColmnIndex() throws SQLException {	
+	int numCols = TestQueryResultMetaData.COLUMN_NAMES.length;
+	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	    assertThat(resultSet.next(), is(true));
+	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
+	    // need to start at 1 because ResultSet is 1 based.
+	    for (int x=1; x <= numCols; x++) {
+		assertThat(resultSet.getBytes(x), 
+		    is( (tuple[x-1] != null ? (tuple[x-1].toString()).getBytes() : null )));
+	    }
 	}
     }
     
     @Test
     public void shouldCallGetBytesUsingColumnName() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.STRING);
+	int numCols = TestQueryResultMetaData.COLUMN_NAMES.length;
+	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	    assertThat(resultSet.next(), is(true));
+	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i); 
+	    
+	    for (int x=0; x < numCols; x++) {	    
+		assertThat(resultSet.getBytes(TestQueryResultMetaData.COLUMN_NAMES[x]), 
+		    is( (tuple[x] != null ? (tuple[x].toString()).getBytes() : null )));
+	    }
+	}
+    }
+    
+    @Test
+    public void shouldCallGetBinaryUsingColmnIndex() throws SQLException {	
+	int col = getColumnTypeLoc(TestQueryResultMetaData.BINARY);
 	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
 	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
-	    assertThat(resultSet.getBytes(TestQueryResultMetaData.COLUMN_NAMES[col]), 
-		    is(  (tuple[col].toString()).getBytes()  ));
+	    // need to increment because ResultSet is 1 based.
+	    assertThat(resultSet.getBinaryStream(col +1), 
+		    is(tuple[col]) );
+	}
+    }
+    
+    @Test
+    public void shouldCallGetBinaryUsingColumnName() throws SQLException {	
+	int col = getColumnTypeLoc(TestQueryResultMetaData.BINARY);
+	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	    assertThat(resultSet.next(), is(true));
+	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
+	    assertThat(resultSet.getBinaryStream(TestQueryResultMetaData.COLUMN_NAMES[col]), 
+		    is( tuple[col] ));
+	}
+    }
+    
+    @Test
+    public void shouldCallGetObjectUsingColumnName() throws SQLException {	
+	int numCols = TestQueryResultMetaData.COLUMN_NAMES.length;
+	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	    assertThat(resultSet.next(), is(true));
+	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i); 
+	    
+	    for (int x=0; x < numCols; x++) {	   
+		Object o = resultSet.getObject(TestQueryResultMetaData.COLUMN_NAMES[x]);
+		// doing .toString() to compare the Object value to the TestQueryResultMetaData 
+		// which has primitives
+		assertThat( (o != null ? o.toString() : null)  , 
+			is( (tuple[x] != null ? tuple[x].toString() : null) ) );
+	    }
 	}
     }
     
@@ -376,10 +426,23 @@ public class JcrResultSetTest {
         assertThat(resultSet.rowUpdated(), is(false));
     }
     
+    @Test
+    public void shouldCallWasNull() throws SQLException   {
+	// wasNull should be null until a get method is called
+	assertTrue(resultSet.wasNull());
+	
+	assertThat(resultSet.next(), is(true));
+	assertTrue(resultSet.wasNull());
+	
+	
+	assertThat(resultSet.getString(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A), is(notNullValue()));
+	assertFalse(resultSet.wasNull());
+
+    }
+    
     //*******************
-    // Because fetch direction is {@link ResultSet#FETCH_FORWARD}, 
-    // cursor movement related methods are not supported, therefore the 
-    // following tests should throw an exception.	
+    // The following tests should throw an exception because fetch direction is {@link ResultSet#FETCH_FORWARD}, 
+    // therefore, cursor movement related methods are not supported.   	
     //*******************
     
     
@@ -484,15 +547,6 @@ public class JcrResultSetTest {
     }
 
     
-    /**
-     * @throws SQLException 
-     */
-    @Test
-    public void shouldThrowExceptionForUpdate() throws SQLException   {
-	resultSet.wasNull();
-
-    }
-    
     //*******************
     //  The following methods are not supported
     //*******************   
@@ -515,8 +569,7 @@ public class JcrResultSetTest {
     
     
     //*******************
-    //  The following tests are the negative tests to check for expected
-    //  exceptions
+    //  The following tests initiate invalid test in order to validate expected exception
     //*******************
     
     /**
