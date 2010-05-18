@@ -47,6 +47,7 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,7 +66,10 @@ import javax.jcr.query.RowIterator;
  * 
  */
 public class JcrResultSet implements ResultSet {
+    
+    private static final Map<String, JcrType> TYPE_INFO = JcrType.builtInTypeMap();
 
+    
     private boolean closed;
     private JcrStatement statement;
     private QueryResult jcrResults;
@@ -144,8 +148,9 @@ public class JcrResultSet implements ResultSet {
     byte[] convertToByteArray(final Value value) throws SQLException {
 	BufferedOutputStream bos = null;
 	InputStream is = null;
-         byte[] data = null;
-         if (value == null) return data;
+        byte[] data = null;
+        boolean error = false;
+        if (value == null) return data;
         try {
             	switch (value.getType()) {
 		case PropertyType.STRING:
@@ -170,23 +175,29 @@ public class JcrResultSet implements ResultSet {
 		bos.write(l_buffer,0,l_nbytes); // Write to file stream
 	        data = out.toByteArray();
 
-        } catch (IOException ioe) {
+        } catch (IOException ioe) { 
+            error = true; 
             throw new SQLException(ioe.getLocalizedMessage(), ioe);
         } catch (IllegalStateException ie) {
+            error = true;
             throw new SQLException(ie.getLocalizedMessage(), ie);
         } catch (RepositoryException e) {
-	    throw new SQLException(e.getLocalizedMessage(), e);
+            error = true;
+            throw new SQLException(e.getLocalizedMessage(), e);
 	} finally {
             try {
         	if (is!=null) is.close();
             } catch (Exception e) {
+        	if (!error) throw new SQLException(e.getLocalizedMessage(), e)  ;
             }
             try {
         	if (bos != null) bos.close();
             } catch (Exception e) {
+        	if (!error) throw new SQLException(e.getLocalizedMessage(), e)  ;
             }
         }
-         return data;
+		
+        return data;
     }
 
     protected final void notClosed() throws SQLException {
@@ -921,7 +932,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Object getObject( String columnLabel ) throws SQLException {
-	return getValueObjectReturn(columnLabel);
+	return getValueTranslatedToJDBC(columnLabel);
     }
 
     /**
@@ -1159,30 +1170,29 @@ public class JcrResultSet implements ResultSet {
      * @return Object
      * @throws SQLException 
      */
-    private Object getValueObjectReturn(String columnName) throws SQLException {
-	notClosed();
-	isRowSet();
-	
-	try {
-	    
-	    final Value value = row.getValue(columnName);
-	    
-	    this.currentValue = getValueObject(value, (value != null ? value.getType() : 0));
-	    return this.currentValue;    
-	  
-	} catch (ItemNotFoundException e) {	    
-	    itemNotFoundUsingColunName(columnName);
-	} catch (RepositoryException e) {
-	    throw new SQLException(e.getLocalizedMessage(), e);
-	}
-	return null;
-
-    }
+//    private Object getValueObjectReturn(String columnName) throws SQLException {
+//	notClosed();
+//	isRowSet();
+//	
+//	try {
+//	    
+//	    final Value value = row.getValue(columnName);
+//	    
+//	    this.currentValue = getValueObject(value, (value != null ? value.getType() : 0));
+//	    return this.currentValue;    
+//	  
+//	} catch (ItemNotFoundException e) {	    
+//	    itemNotFoundUsingColunName(columnName);
+//	} catch (RepositoryException e) {
+//	    throw new SQLException(e.getLocalizedMessage(), e);
+//	}
+//	return null;
+//
+//    }
     
     /**
      * This is called when the calling method controls what datatype to be returned.
      * Another reason for centralizing this logic so that the {@link #currentValue} can be maintained
-     * @see #getValueObjectReturn(String)
      * @param columnName 
      * @param type is the {@link PropertyType datatype} to be returned
      * @return Object
@@ -1205,7 +1215,7 @@ public class JcrResultSet implements ResultSet {
 	}
 	return null;
     }
-    
+       
     /**
      * Helper method for returning an object from <code>value</code> based on <code>type</code>
      * @param value 
@@ -1241,6 +1251,61 @@ public class JcrResultSet implements ResultSet {
 	    throw new SQLException(e.getLocalizedMessage(), e);
 	}	
 	return value.toString();
+    }
+    
+    
+    /**
+     * This method transforms a {@link Value} into a JDBC type   
+     * based on {@link JcrType} mappings
+     * @param columnName
+     * @return Object
+     * @throws SQLException 
+     */
+    private Object getValueTranslatedToJDBC(String columnName)
+	    throws SQLException {
+
+	try {
+	    final Value value = row.getValue(columnName);
+
+	    if (value == null)
+		return null;
+
+	    JcrType jcrType = TYPE_INFO.get(PropertyType.nameFromValue(value
+		    .getType()));
+
+	    switch (jcrType.getJdbcType()) {
+
+	    case Types.VARCHAR:
+		return value.getString();
+	    case Types.BOOLEAN:
+		return new Boolean(value.getBoolean());
+	    case Types.DATE:
+		return new Date(value.getDate().getTime().getTime());
+	    case Types.TIMESTAMP:
+		return new java.sql.Timestamp(value.getDate().getTime()
+			.getTime());
+	    case Types.FLOAT:
+		return new Float(value.getDouble());
+	    case Types.BIGINT:
+		return new Long(value.getLong());
+	    case Types.BLOB:
+		return new JcrBlob(value, 0L);
+	    }
+	    
+	    return value.toString();
+	    
+	} catch (ItemNotFoundException e) {
+	    itemNotFoundUsingColunName(columnName);
+	    return null;
+	} catch (ValueFormatException ve) {
+	    throw new SQLException(ve.getLocalizedMessage(), ve);
+	} catch (IllegalStateException ie) {
+	    throw new SQLException(ie.getLocalizedMessage(), ie);
+	} catch (RepositoryException e) {
+	    throw new SQLException(e.getLocalizedMessage(), e);
+	}
+
+	
     }
 
     /**

@@ -142,7 +142,7 @@ public class TestQueryResultMetaData {
     public static QueryResult createQueryResult() {
 	final Node[] nodes = createNodes();
 
-	QueryResult qr = new QueryResult() {
+	QueryResult qr = new org.modeshape.jcr.api.query.QueryResult() {
  
         	@Override
         	public String[] getColumnNames()  {
@@ -169,6 +169,16 @@ public class TestQueryResultMetaData {
         		    				tuplesArray.size());
         	    return ri;
         	}
+
+		@Override
+		public String[] getColumnTypes() {
+		    return null;
+		}
+
+		@Override
+		public String[] getSelectorNames() {
+		    return null;
+		}
 	};
 	return qr;
     }   
