@@ -489,7 +489,25 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
             // This is the second push-down query, so create a BooleanQuery ...
             BooleanQuery booleanQuery = new BooleanQuery();
             booleanQuery.add(first, Occur.MUST);
-            booleanQuery.add(second, Occur.MUST);
+
+            // If the second is a BooleanQuery, then it is probably a 'NOT(query)'
+            boolean done = false;
+            if (second instanceof BooleanQuery) {
+                BooleanQuery booleanSecond = (BooleanQuery)second;
+                if (booleanSecond.getClauses().length == 1) {
+                    BooleanClause onlyClause = booleanSecond.getClauses()[0];
+                    if (onlyClause.isProhibited()) {
+                        booleanQuery.add(onlyClause.getQuery(), Occur.MUST_NOT);
+                        done = true;
+                    } else if (onlyClause.isRequired()) {
+                        booleanQuery.add(onlyClause.getQuery(), Occur.MUST);
+                        done = true;
+                    }
+                }
+            }
+            if (!done) {
+                booleanQuery.add(second, Occur.MUST);
+            }
             return booleanQuery;
         }
 

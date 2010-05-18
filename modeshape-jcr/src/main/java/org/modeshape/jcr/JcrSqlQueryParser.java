@@ -39,6 +39,7 @@ import org.modeshape.graph.query.model.And;
 import org.modeshape.graph.query.model.Comparison;
 import org.modeshape.graph.query.model.Constraint;
 import org.modeshape.graph.query.model.DynamicOperand;
+import org.modeshape.graph.query.model.FullTextSearch;
 import org.modeshape.graph.query.model.FullTextSearchScore;
 import org.modeshape.graph.query.model.Join;
 import org.modeshape.graph.query.model.JoinType;
@@ -458,14 +459,16 @@ public class JcrSqlQueryParser extends SqlQueryParser {
     @Override
     protected Source parseFrom( TokenStream tokens,
                                 TypeSystem typeSystem ) {
+        Position firstSourcePosition = tokens.nextPosition();
         Source source = super.parseFrom(tokens, typeSystem);
         if (tokens.matches(',') && source instanceof NamedSelector) {
             NamedSelector selector = (NamedSelector)source;
-            JoinableSources joinedSources = new JoinableSources(selector);
+            JoinableSources joinedSources = new JoinableSources(selector, firstSourcePosition);
             while (tokens.canConsume(',')) {
                 // This is a JCR-SQL-style JOIN ...
+                Position nextSourcePosition = tokens.nextPosition();
                 NamedSelector nextSource = parseNamedSelector(tokens, typeSystem);
-                joinedSources.add(nextSource);
+                joinedSources.add(nextSource, nextSourcePosition);
             }
             source = joinedSources;
         }
@@ -507,6 +510,7 @@ public class JcrSqlQueryParser extends SqlQueryParser {
             // See if this is a join condition ...
             if (tokens.matches(ANY_VALUE, ":", ANY_VALUE, ".", "JCR", ":", "PATH", "=")
                 || tokens.matches(ANY_VALUE, ".", "JCR", ":", "PATH", "=")) {
+                Position position = tokens.nextPosition();
                 SelectorName selector1 = parseSelectorName(tokens, typeSystem);
                 tokens.consume('.');
                 parseName(tokens, typeSystem); // jcr:path
@@ -514,7 +518,7 @@ public class JcrSqlQueryParser extends SqlQueryParser {
                 SelectorName selector2 = parseSelectorName(tokens, typeSystem);
                 tokens.consume('.');
                 parseName(tokens, typeSystem); // jcr:path
-                joinableSources.add(new SameNodeJoinCondition(selector1, selector2));
+                joinableSources.add(new SameNodeJoinCondition(selector1, selector2), position);
 
                 // AND has higher precedence than OR, so we need to evaluate it first ...
                 while (tokens.canConsume("AND")) {
@@ -614,6 +618,14 @@ public class JcrSqlQueryParser extends SqlQueryParser {
                     FullTextSearchScore score = new FullTextSearchScore(propValue.getSelectorName());
                     return new Comparison(score, comparison.getOperator(), comparison.getOperand2());
                 }
+            }
+        } else if (constraint instanceof FullTextSearch) {
+            FullTextSearch search = (FullTextSearch)constraint;
+            if (".".equals(search.getPropertyName())) {
+                // JCR-SQL's use of CONTAINS allows a '.' to be used to represent the search is to be
+                // performed on all properties of the node(s). However, JCR-SQL2 and our AQM
+                // expect a '*' to be used instead ...
+                return new FullTextSearch(search.getSelectorName(), search.getFullTextSearchExpression());
             }
         } else if (constraint instanceof And) {
             And and = (And)constraint;
@@ -724,6 +736,20 @@ public class JcrSqlQueryParser extends SqlQueryParser {
                 // Nothing matched, so add a new join ...
                 Source left = joinableSources.getSelectors().get(selector1.getName());
                 Source right = joinableSources.getSelectors().get(selector2.getName());
+                if (left == null) {
+                    Position pos = joinableSources.getJoinCriteriaPosition();
+                    String msg = JcrI18n.selectorUsedInEquiJoinCriteriaDoesNotExistInQuery.text(selector1.getName(),
+                                                                                                pos.getLine(),
+                                                                                                pos.getColumn());
+                    throw new ParsingException(pos, msg);
+                }
+                if (right == null) {
+                    Position pos = joinableSources.getJoinCriteriaPosition();
+                    String msg = JcrI18n.selectorUsedInEquiJoinCriteriaDoesNotExistInQuery.text(selector2.getName(),
+                                                                                                pos.getLine(),
+                                                                                                pos.getColumn());
+                    throw new ParsingException(pos, msg);
+                }
                 joins.add(new Join(left, JoinType.INNER, right, joinCondition));
             }
         }
@@ -749,17 +775,24 @@ public class JcrSqlQueryParser extends SqlQueryParser {
         private static final long serialVersionUID = 1L;
         private transient Map<String, Selector> selectors = new LinkedHashMap<String, Selector>();
         private transient List<SameNodeJoinCondition> joinConditions = new ArrayList<SameNodeJoinCondition>();
+        private transient List<Position> selectorPositions = new ArrayList<Position>();
+        private transient Position joinCriteriaPosition;
 
-        protected JoinableSources( Selector firstSelector ) {
-            add(firstSelector);
+        protected JoinableSources( Selector firstSelector,
+                                   Position position ) {
+            add(firstSelector, position);
         }
 
-        public void add( Selector selector ) {
+        public void add( Selector selector,
+                         Position position ) {
             selectors.put(selector.getAliasOrName().getName(), selector);
+            selectorPositions.add(position);
         }
 
-        public void add( SameNodeJoinCondition joinCondition ) {
+        public void add( SameNodeJoinCondition joinCondition,
+                         Position position ) {
             joinConditions.add(joinCondition);
+            joinCriteriaPosition = position;
         }
 
         public Iterable<String> selectorNames() {
@@ -778,6 +811,22 @@ public class JcrSqlQueryParser extends SqlQueryParser {
          */
         public Map<String, Selector> getSelectors() {
             return selectors;
+        }
+
+        /**
+         * @return joinCriteriaPosition
+         */
+        public Position getJoinCriteriaPosition() {
+            return joinCriteriaPosition;
+        }
+
+        public Position getPositionForSelector( String selector ) {
+            int index = 0;
+            for (Map.Entry<String, Selector> entry : selectors.entrySet()) {
+                if (entry.getKey().equals(selector)) return selectorPositions.get(index);
+                ++index;
+            }
+            return null;
         }
 
         /**

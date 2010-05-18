@@ -30,48 +30,145 @@
           jcr:primaryType="nt:unstructured"
           jcr:mixinTypes="mix:referenceable"
           xmlns:modetest="http://www.modeshape.org/test/1.0">
-    <nt:unstructured jcr:name="serializationNode" />
-    <nt:unstructured jcr:name="node1" prop1="&lt;foo&amp;foo&gt;">
-       <!--  
-           This stanza checks for the jcr:xmltext special case for export as per JCR 1.0.1 section 6.4.2.3
-         -->
-       <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is my &quot;XML&quot; text!" />
-    </nt:unstructured>
-    <nt:unstructured jcr:name="node2 has a multi-word name" multi-valued-property="bar baz blah">
-       <!--  
-           This stanza checks that consecutive jcr:xmltext elements will be merged in the export as 
-           per JCR 1.0.1 section 6.4.2.3
-         -->
-       <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is my &quot;XML&quot; text!" />
-       <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is my &quot;other&quot; text!" />
-    </nt:unstructured>
-    <nt:unstructured jcr:name="node3" />
-    <!--  
-       Test of unprintable character exports.
-       Cannot test \r character here on Windows as TCK XML Parser will replace it with \n and fail the comparison 
+    <nt:unstructured jcr:name="workarea" jcr:mixinTypes="mix:referenceable">
+      <nt:unstructured jcr:name="serializationNode" />
+      <nt:unstructured jcr:name="node1" prop1="&lt;foo&amp;foo&gt;">
+         <!--  
+             This stanza checks for the jcr:xmltext special case for export as per JCR 1.0.1 section 6.4.2.3
+           -->
+         <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is my &quot;XML&quot; text!" />
+      </nt:unstructured>
+      <nt:unstructured jcr:name="node2 has a multi-word name" multi-valued-property="bar baz blah">
+         <!--  
+             This stanza checks that consecutive jcr:xmltext elements will be merged in the export as 
+             per JCR 1.0.1 section 6.4.2.3
+           -->
+         <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is my &quot;XML&quot; text!" />
+         <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is my &quot;other&quot; text!" />
+      </nt:unstructured>
+      <nt:unstructured jcr:name="node3" />
+      <!--  
+         Test of unprintable character exports.
+         Cannot test \r character here on Windows as TCK XML Parser will replace it with \n and fail the comparison 
+        -->
+      <nt:unstructured jcr:name="node4" multi-line-property="Line&#009;1&#010;Line 2"/>
+      <!-- 
+          XPathPosIndexTest requires multiple nodes named 'node1'
       -->
-    <nt:unstructured jcr:name="node4" multi-line-property="Line&#009;1&#010;Line 2"/>
+      <nt:unstructured jcr:name="node1" prop1="&lt;foo&amp;foo&gt;">
+         <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is the text for node1[2]!" />
+      </nt:unstructured>
+      <nt:unstructured jcr:name="node1" prop1="prop1 value for node1[3]">
+         <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is the text for node1[3]!" />
+      </nt:unstructured>
+      <!-- 
+          XPathOrderByTest requires multiple nodes of type 'nt:unstructured' with distinct 'prop1' values
+      -->
+      <nt:unstructured jcr:name="nodeForOrderBy" prop1="propValue3"/>
+      <nt:unstructured jcr:name="anotherNodeForOrderBy" prop1="propValue1">
+         <nt:unstructured jcr:name="aNestedNodeForOrderBy" prop1="propValue2"/>
+      </nt:unstructured>
+    </nt:unstructured>
     <!-- 
-        XPathPosIndexTest requires multiple nodes named 'node1'
+        SaveTest requires an area where it will be storing nodes
     -->
-    <nt:unstructured jcr:name="node1" prop1="&lt;foo&amp;foo&gt;">
-       <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is the text for node1[2]!" />
-    </nt:unstructured>
-    <nt:unstructured jcr:name="node1" prop1="prop1 value for node1[3]">
-       <nt:unstructured jcr:name="jcr:xmltext" jcr:xmlcharacters="This is the text for node1[3]!" />
-    </nt:unstructured>
-    <!-- 
-        XPathOrderByTest requires multiple nodes of type 'nt:unstructured' with distinct 'prop1' values
-    -->
-    <nt:unstructured jcr:name="nodeForOrderBy" prop1="propValue3"/>
-    <nt:unstructured jcr:name="anotherNodeForOrderBy" prop1="propValue1">
-       <nt:unstructured jcr:name="aNestedNodeForOrderBy" prop1="propValue2"/>
-    </nt:unstructured>
+    <nt:unstructured jcr:name="saveTestArea" prop1="&lt;foo&amp;foo&gt;"/>
+    
     <!-- 
         Query tests require some nodes with non-residual properties that can be queried
     -->
     <modetest:queryable jcr:name="someQueryableNodeA" selectableProp1="This is the first property" />
     <modetest:queryable jcr:name="someQueryableNodeB" selectableProp1="This is the second property" />
     <modetest:queryable jcr:name="someQueryableNodeC" selectableProp1="This is the third property" />
-    <modetest:queryable jcr:name="someQueryableNodeD" selectableProp1="This is the fourth property" />
+    <modetest:queryable jcr:name="someQueryableNodeD" selectableProp1="This is the fourth property">
+       <modetest:queryable jcr:name="someNestedQueryableNodeA" selectableProp1="This is the first nested property" />
+       <modetest:queryable jcr:name="someNestedQueryableNodeB" selectableProp1="This is the second nested property" />
+       <modetest:queryable jcr:name="someNestedQueryableNodeC" selectableProp1="This is the third nested property" />
+       <modetest:queryable jcr:name="someNestedQueryableNodeD" selectableProp1="This is the fourth nested property">
+         <modetest:queryable jcr:name="someDeepNestedQueryableNodeA" selectableProp1="This is the first deep nested property" />
+         <modetest:queryable jcr:name="someDeepNestedQueryableNodeB" selectableProp1="This is the second deep nested property" />
+         <modetest:queryable jcr:name="someDeepNestedQueryableNodeC" selectableProp1="This is the third deep nested property" />
+         <modetest:queryable jcr:name="someDeepNestedQueryableNodeD" selectableProp1="This is the fourth deep nested property" />
+       </modetest:queryable>
+    </modetest:queryable>
+    
+    <!-- 
+        Query tests require some nodes with non-residual properties that can be queried
+    -->
+    <nt:unstructured jcr:name="sqlJoinTest">
+      <modetest:queryable jcr:name="someQueryableNodeA" selectableProp1="This is the first property" />
+      <modetest:queryable jcr:name="someQueryableNodeB" selectableProp1="This is the second property" />
+      <modetest:queryable jcr:name="someQueryableNodeC" selectableProp1="This is the third property" />
+      <modetest:queryable jcr:name="someQueryableNodeD" selectableProp1="This is the fourth property">
+         <modetest:queryable jcr:name="someNestedQueryableNodeA" selectableProp1="This is the first nested property" />
+         <modetest:queryable jcr:name="someNestedQueryableNodeB" selectableProp1="This is the second nested property" />
+         <modetest:queryable jcr:name="someNestedQueryableNodeC" selectableProp1="This is the third nested property" />
+         <modetest:queryable jcr:name="someNestedQueryableNodeD" selectableProp1="This is the fourth nested property">
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeA" selectableProp1="This is the first deep nested property" />
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeB" selectableProp1="This is the second deep nested property" />
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeC" selectableProp1="This is the third deep nested property" />
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeD" selectableProp1="This is the fourth deep nested property" />
+         </modetest:queryable>
+      </modetest:queryable>
+    </nt:unstructured>
+    
+    <!-- 
+        Query tests require some nodes with non-residual properties that can be queried
+    -->
+    <nt:unstructured jcr:name="sqlOrderByTest">
+      <modetest:queryable jcr:name="someQueryableNodeA" selectableProp1="This is the first property" />
+      <modetest:queryable jcr:name="someQueryableNodeB" selectableProp1="This is the second property" />
+      <modetest:queryable jcr:name="someQueryableNodeC" selectableProp1="This is the third property" />
+      <modetest:queryable jcr:name="someQueryableNodeD" selectableProp1="This is the fourth property">
+         <modetest:queryable jcr:name="someNestedQueryableNodeA" selectableProp1="This is the first nested property" />
+         <modetest:queryable jcr:name="someNestedQueryableNodeB" selectableProp1="This is the second nested property" />
+         <modetest:queryable jcr:name="someNestedQueryableNodeC" selectableProp1="This is the third nested property" />
+         <modetest:queryable jcr:name="someNestedQueryableNodeD" selectableProp1="This is the fourth nested property">
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeA" selectableProp1="This is the first deep nested property" />
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeB" selectableProp1="This is the second deep nested property" />
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeC" selectableProp1="This is the third deep nested property" />
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeD" selectableProp1="This is the fourth deep nested property" />
+         </modetest:queryable>
+      </modetest:queryable>
+    </nt:unstructured>
+    
+    <!-- 
+        Query tests require some nodes with non-residual properties that can be queried
+    -->
+    <nt:unstructured jcr:name="xpath">
+      <modetest:queryable jcr:name="someQueryableNodeA" selectableProp1="This is the first property" />
+      <modetest:queryable jcr:name="someQueryableNodeB" selectableProp1="This is the second property" />
+      <modetest:queryable jcr:name="someQueryableNodeC" selectableProp1="This is the third property" />
+      <modetest:queryable jcr:name="someQueryableNodeD" selectableProp1="This is the fourth property">
+         <modetest:queryable jcr:name="someNestedQueryableNodeA" selectableProp1="This is the first nested property" />
+         <modetest:queryable jcr:name="someNestedQueryableNodeB" selectableProp1="This is the second nested property" />
+         <modetest:queryable jcr:name="someNestedQueryableNodeC" selectableProp1="This is the third nested property" />
+         <modetest:queryable jcr:name="someNestedQueryableNodeD" selectableProp1="This is the fourth nested property">
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeA" selectableProp1="This is the first deep nested property" />
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeB" selectableProp1="This is the second deep nested property" />
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeC" selectableProp1="This is the third deep nested property" />
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeD" selectableProp1="This is the fourth deep nested property" />
+         </modetest:queryable>
+      </modetest:queryable>
+    </nt:unstructured>
+   
+    <!-- 
+        Query tests require some nodes with non-residual properties that can be queried
+    -->
+    <nt:unstructured jcr:name="sqlPathTest">
+      <modetest:queryable jcr:name="someQueryableNodeA" selectableProp1="This is the first property" />
+      <modetest:queryable jcr:name="someQueryableNodeB" selectableProp1="This is the second property" />
+      <modetest:queryable jcr:name="someQueryableNodeC" selectableProp1="This is the third property" />
+      <modetest:queryable jcr:name="someQueryableNodeD" selectableProp1="This is the fourth property">
+         <modetest:queryable jcr:name="someNestedQueryableNodeA" selectableProp1="This is the first nested property" />
+         <modetest:queryable jcr:name="someNestedQueryableNodeB" selectableProp1="This is the second nested property" />
+         <modetest:queryable jcr:name="someNestedQueryableNodeC" selectableProp1="This is the third nested property" />
+         <modetest:queryable jcr:name="someNestedQueryableNodeD" selectableProp1="This is the fourth nested property">
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeA" selectableProp1="This is the first deep nested property" />
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeB" selectableProp1="This is the second deep nested property" />
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeC" selectableProp1="This is the third deep nested property" />
+           <modetest:queryable jcr:name="someDeepNestedQueryableNodeD" selectableProp1="This is the fourth deep nested property" />
+         </modetest:queryable>
+      </modetest:queryable>
+    </nt:unstructured>
 </testroot>

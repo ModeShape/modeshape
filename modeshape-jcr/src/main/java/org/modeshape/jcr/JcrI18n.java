@@ -151,6 +151,7 @@ public final class JcrI18n {
     public static I18n queryInLanguageIsNotValid;
     public static I18n queryIsDisabledInRepository;
     public static I18n selectorNotUsedInQuery;
+    public static I18n selectorUsedInEquiJoinCriteriaDoesNotExistInQuery;
 
     // Type registration messages
     public static I18n invalidNodeTypeName;

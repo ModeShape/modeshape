@@ -64,6 +64,7 @@ import org.modeshape.graph.query.model.ReferenceValue;
 import org.modeshape.graph.query.model.SameNode;
 import org.modeshape.graph.query.model.SameNodeJoinCondition;
 import org.modeshape.graph.query.model.SelectorName;
+import org.modeshape.graph.query.model.SetCriteria;
 import org.modeshape.graph.query.model.StaticOperand;
 import org.modeshape.graph.query.model.UpperCase;
 import org.modeshape.graph.query.model.Visitors;
@@ -561,7 +562,17 @@ public class PlanUtil {
                                         columns.set(i, new Column(sourceName, sourceColumn.getPropertyName(), columnAlias));
                                         node.addSelector(sourceName);
                                     } else {
-                                        node.addSelector(column.getSelectorName());
+                                        if (mappings.getMappedSelectorNames().size() == 1) {
+                                            SelectorName sourceName = mappings.getSingleMappedSelectorName();
+                                            if (sourceName != null) {
+                                                columns.set(i, new Column(sourceName, columnName, columnAlias));
+                                                node.addSelector(sourceName);
+                                            } else {
+                                                node.addSelector(column.getSelectorName());
+                                            }
+                                        } else {
+                                            node.addSelector(column.getSelectorName());
+                                        }
                                     }
                                 } else {
                                     node.addSelector(column.getSelectorName());
@@ -712,10 +723,28 @@ public class PlanUtil {
             FullTextSearch search = (FullTextSearch)constraint;
             if (!mapping.getOriginalName().equals(search.getSelectorName())) return search;
             Column sourceColumn = mapping.getMappedColumn(search.getPropertyName());
-            if (sourceColumn == null) return search;
+            if (sourceColumn == null) {
+                if (search.getPropertyName() == null && mapping.getMappedSelectorNames().size() == 1) {
+                    SelectorName newSelectorName = mapping.getSingleMappedSelectorName();
+                    if (newSelectorName != null) {
+                        node.addSelector(newSelectorName);
+                        return new FullTextSearch(newSelectorName, search.getFullTextSearchExpression());
+                    }
+                }
+                return search;
+            }
             node.addSelector(sourceColumn.getSelectorName());
             return new FullTextSearch(sourceColumn.getSelectorName(), sourceColumn.getPropertyName(),
                                       search.getFullTextSearchExpression());
+        }
+        if (constraint instanceof SetCriteria) {
+            SetCriteria set = (SetCriteria)constraint;
+            DynamicOperand oldLeft = set.getLeftOperand();
+            Set<SelectorName> selectorNames = oldLeft.getSelectorNames();
+            if (selectorNames.size() == 1 && !selectorNames.contains(mapping.getOriginalName())) return set;
+            DynamicOperand newLeft = replaceViewReferences(context, oldLeft, mapping, node);
+            if (newLeft == oldLeft) return set;
+            return new SetCriteria(newLeft, set.getRightOperands());
         }
         if (constraint instanceof Between) {
             Between between = (Between)constraint;
@@ -795,7 +824,16 @@ public class PlanUtil {
             PropertyValue value = (PropertyValue)operand;
             if (!mapping.getOriginalName().equals(value.getSelectorName())) return value;
             Column sourceColumn = mapping.getMappedColumn(value.getPropertyName());
-            if (sourceColumn == null) return value;
+            if (sourceColumn == null) {
+                if (mapping.getMappedSelectorNames().size() == 1) {
+                    SelectorName newSelectorName = mapping.getSingleMappedSelectorName();
+                    if (newSelectorName != null) {
+                        node.addSelector(newSelectorName);
+                        return new PropertyValue(newSelectorName, value.getPropertyName());
+                    }
+                }
+                return value;
+            }
             node.addSelector(sourceColumn.getSelectorName());
             return new PropertyValue(sourceColumn.getSelectorName(), sourceColumn.getPropertyName());
         }

@@ -219,7 +219,7 @@ public class ImmutableSchemata implements Schemata {
                 columns.add(new ImmutableColumn(columnName, type, fullTextSearchable));
                 table = new ImmutableTable(selector, columns);
             } else {
-                table = existing.withColumn(columnName, type);
+                table = existing.withColumn(columnName, type, fullTextSearchable);
             }
             tables.put(table.getName(), table);
             return this;

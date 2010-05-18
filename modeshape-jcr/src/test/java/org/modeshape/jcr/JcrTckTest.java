@@ -106,11 +106,15 @@ import org.apache.jackrabbit.test.api.query.GetSupportedQueryLanguagesTest;
 import org.apache.jackrabbit.test.api.query.OrderByDateTest;
 import org.apache.jackrabbit.test.api.query.OrderByDoubleTest;
 import org.apache.jackrabbit.test.api.query.OrderByLongTest;
+import org.apache.jackrabbit.test.api.query.OrderByMultiTypeTest;
+import org.apache.jackrabbit.test.api.query.OrderByStringTest;
 import org.apache.jackrabbit.test.api.query.PredicatesTest;
 import org.apache.jackrabbit.test.api.query.QueryResultNodeIteratorTest;
 import org.apache.jackrabbit.test.api.query.SQLJcrPathTest;
+import org.apache.jackrabbit.test.api.query.SQLQueryLevel2Test;
 import org.apache.jackrabbit.test.api.query.SaveTest;
 import org.apache.jackrabbit.test.api.query.SimpleSelectionTest;
+import org.apache.jackrabbit.test.api.query.XPathDocOrderTest;
 import org.apache.jackrabbit.test.api.query.XPathJcrPathTest;
 import org.apache.jackrabbit.test.api.query.XPathPosIndexTest;
 import org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test;
@@ -306,9 +310,9 @@ public class JcrTckTest {
             // See https://jira.jboss.org/jira/browse/ModeShape-285
 
             addTest(new QueryTests());
-
             addTest(new ObservationTests()); // remove this and the ObservationTests inner class when all tests pass and
             // uncomment observation.TestAll
+
             // addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
             addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
             addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
@@ -323,20 +327,20 @@ public class JcrTckTest {
 
             // these are the tests included in observation.TestAll.suite()
             addTestSuite(SaveTest.class);
-            // addTestSuite(SQLOrderByTest.class);
-            // addTestSuite(SQLQueryLevel2Test.class);
-            // addTestSuite(SQLJoinTest.class);
+            // MODE-760 addTestSuite(SQLOrderByTest.class);
+            addTestSuite(SQLQueryLevel2Test.class);
+            // addTestSuite(SQLJoinTest.class); // 2 of these tests generate invalid queries
             addTestSuite(SQLJcrPathTest.class);
-            // addTestSuite(SQLPathTest.class);
+            // MODE-760 addTestSuite(SQLPathTest.class);
             addTestSuite(XPathPosIndexTest.class);
-            // addTestSuite(XPathDocOrderTest.class);
-            // addTestSuite(XPathOrderByTest.class);
+            addTestSuite(XPathDocOrderTest.class);
+            // addTestSuite(XPathOrderByTest.class); // failure, but its run earlier and some previous test is messing up this run
             addTestSuite(XPathQueryLevel2Test.class);
             addTestSuite(XPathJcrPathTest.class);
 
             addTestSuite(DerefQueryLevel1Test.class);
             addTestSuite(ElementTest.class);
-            // addTestSuite(TextNodeTest.class);
+            // MODE-759 addTestSuite(TextNodeTest.class);
             addTestSuite(GetLanguageTest.class);
             addTestSuite(GetPersistentQueryPathLevel1Test.class);
             addTestSuite(GetPersistentQueryPathTest.class);
@@ -351,8 +355,8 @@ public class JcrTckTest {
             addTestSuite(OrderByDateTest.class);
             addTestSuite(OrderByDoubleTest.class);
             addTestSuite(OrderByLongTest.class);
-            // addTestSuite(OrderByMultiTypeTest.class);
-            // addTestSuite(OrderByStringTest.class);
+            addTestSuite(OrderByMultiTypeTest.class);
+            addTestSuite(OrderByStringTest.class);
         }
     }
 

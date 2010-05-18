@@ -45,6 +45,7 @@ import org.modeshape.graph.query.model.JoinType;
 import org.modeshape.graph.query.model.Literal;
 import org.modeshape.graph.query.model.NamedSelector;
 import org.modeshape.graph.query.model.NodePath;
+import org.modeshape.graph.query.model.Not;
 import org.modeshape.graph.query.model.Or;
 import org.modeshape.graph.query.model.Order;
 import org.modeshape.graph.query.model.Ordering;
@@ -218,9 +219,29 @@ public class JcrSqlQueryParserTest {
     }
 
     @Test
+    public void shouldParseSelectStarFromEquijoinAndAdditionalCriteria() {
+        query = parse("SELECT * FROM modetest:queryable, mix:referenceable WHERE modetest:queryable.jcr:path = mix:referenceable.jcr:path AND jcr:path LIKE '/testroot/someQueryableNodeD/%'");
+        // SELECT * ...
+        assertThat(query.getColumns().isEmpty(), is(true));
+        // FROM ...
+        Join join = isJoin(query.getSource());
+        assertThat(join.getLeft(), is((Source)namedSelector(selectorName("modetest:queryable"))));
+        assertThat(join.getRight(), is((Source)namedSelector(selectorName("mix:referenceable"))));
+        assertThat(join.getType(), is(JoinType.INNER));
+        SameNodeJoinCondition joinCondition = isSameNodeJoinCondition(join.getJoinCondition());
+        assertThat(joinCondition.getSelector1Name(), is(selectorName("modetest:queryable")));
+        assertThat(joinCondition.getSelector2Name(), is(selectorName("mix:referenceable")));
+        assertThat(joinCondition.getSelector2Path(), is(nullValue()));
+        // WHERE ...
+        Comparison comparison = isComparison(query.getConstraint());
+        assertThat(comparison.getOperand1(), is((DynamicOperand)nodePath(selectorName("modetest:queryable"))));
+        assertThat(comparison.getOperand2(), is((StaticOperand)literal("/testroot/someQueryableNodeD/%")));
+    }
+
+    @Test
     public void shouldParseSelectWithOrderByClause() {
         query = parse("SELECT car:model FROM car:Car WHERE car:model IS NOT NULL ORDER BY car:model ASC");
-        // SELECT * ...
+        // SELECT car:model ...
         assertThat(query.getColumns().size(), is(1));
         assertThat(query.getColumns().get(0).getSelectorName(), is(selectorName("car:Car")));
         assertThat(query.getColumns().get(0).getColumnName(), is("car:model"));
@@ -241,6 +262,30 @@ public class JcrSqlQueryParserTest {
         assertThat(ordering.getOperand(), is((DynamicOperand)propertyValue(selectorName("car:Car"), "car:model")));
     }
 
+    /**
+     * Tests that the child nodes (but no grandchild nodes) are returned.
+     */
+    @Test
+    public void shouldParseSelectWithChildAxisCriteria() {
+        query = parse("SELECT * FROM nt:base WHERE jcr:path LIKE '/a/b/%' AND NOT jcr:path LIKE '/a/b/%/%'");
+        // SELECT * ...
+        assertThat(query.getColumns().isEmpty(), is(true));
+        // FROM ...
+        NamedSelector selector = (NamedSelector)query.getSource();
+        assertThat(selector.getName(), is(selectorName("nt:base")));
+        assertThat(selector.getAliasOrName(), is(selectorName("nt:base")));
+        assertThat(selector.getAlias(), is(nullValue()));
+        // WHERE ...
+        And and = isAnd(query.getConstraint());
+        Comparison comparison1 = isComparison(and.getLeft());
+        assertThat(comparison1.getOperand1(), is((DynamicOperand)nodePath(selectorName("nt:base"))));
+        assertThat(comparison1.getOperand2(), is((StaticOperand)literal("/a/b/%")));
+        Not not = isNot(and.getRight());
+        Comparison comparison2a = isComparison(not.getConstraint());
+        assertThat(comparison2a.getOperand1(), is((DynamicOperand)nodePath(selectorName("nt:base"))));
+        assertThat(comparison2a.getOperand2(), is((StaticOperand)literal("/a/b/%/%")));
+    }
+
     protected Join isJoin( Source source ) {
         assertThat(source, is(instanceOf(Join.class)));
         return (Join)source;
@@ -249,6 +294,11 @@ public class JcrSqlQueryParserTest {
     protected PropertyExistence isPropertyExistence( Constraint constraint ) {
         assertThat(constraint, is(instanceOf(PropertyExistence.class)));
         return (PropertyExistence)constraint;
+    }
+
+    protected Not isNot( Constraint constraint ) {
+        assertThat(constraint, is(instanceOf(Not.class)));
+        return (Not)constraint;
     }
 
     protected Comparison isComparison( Constraint constraint ) {

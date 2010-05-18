@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.GraphI18n;
@@ -61,8 +63,6 @@ import org.modeshape.graph.query.plan.PlanNode.Property;
 import org.modeshape.graph.query.plan.PlanNode.Type;
 import org.modeshape.graph.query.validate.ImmutableSchemata;
 import org.modeshape.graph.query.validate.Schemata;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 
@@ -695,6 +695,85 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         leftSelect2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c12"),
                                                                          Operator.EQUAL_TO, new Literal("y")));
         PlanNode leftSource = new PlanNode(Type.SOURCE, leftSelect2, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_NAME, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+
+        PlanNode rightAccess = new PlanNode(Type.ACCESS, join, selector("t2"));
+        PlanNode rightProject = new PlanNode(Type.PROJECT, rightAccess, selector("t2"));
+        rightProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c21")));
+        PlanNode rightSelect1 = new PlanNode(Type.SELECT, rightProject, selector("t2"));
+        rightSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t2"), "c21"),
+                                                                          Operator.EQUAL_TO, new Literal("x")));
+        PlanNode rightSource = new PlanNode(Type.SOURCE, rightSelect1, selector("t2"));
+        rightSource.setProperty(Property.SOURCE_NAME, selector("t2"));
+        rightSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t2")).getColumns());
+
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(sort), is(true));
+    }
+
+    @Test
+    public void shouldOptimizePlanForQueryWithOrderByClauseUsingColumsNotInSelectButUsedInCriteria() {
+        node = optimize("SELECT v2.c11 FROM v2 WHERE v2.c11 = 'x' AND v2.c12 = 'y' ORDER BY v2.c11, v2.c12");
+
+        // Create the expected plan ...
+        PlanNode sort = new PlanNode(Type.SORT, selector("t1"));
+        sort.setProperty(Property.SORT_ORDER_BY, orderings(ascending("t1", "c11"), ascending("t1", "c12")));
+        PlanNode project = new PlanNode(Type.PROJECT, sort, selector("t1"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11")));
+        PlanNode join = new PlanNode(Type.JOIN, project, selector("t2"), selector("t1"));
+        join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
+        join.setProperty(Property.JOIN_TYPE, JoinType.INNER);
+        join.setProperty(Property.JOIN_CONDITION, new EquiJoinCondition(selector("t1"), "c11", selector("t2"), "c21"));
+
+        PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("t1"));
+        PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11")));
+        PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
+        leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
+                                                                         Operator.EQUAL_TO, new Literal("x")));
+        PlanNode leftSelect2 = new PlanNode(Type.SELECT, leftSelect1, selector("t1"));
+        leftSelect2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c12"),
+                                                                         Operator.EQUAL_TO, new Literal("y")));
+        PlanNode leftSource = new PlanNode(Type.SOURCE, leftSelect2, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_NAME, selector("t1"));
+        leftSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+
+        PlanNode rightAccess = new PlanNode(Type.ACCESS, join, selector("t2"));
+        PlanNode rightProject = new PlanNode(Type.PROJECT, rightAccess, selector("t2"));
+        rightProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c21")));
+        PlanNode rightSelect1 = new PlanNode(Type.SELECT, rightProject, selector("t2"));
+        rightSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t2"), "c21"),
+                                                                          Operator.EQUAL_TO, new Literal("x")));
+        PlanNode rightSource = new PlanNode(Type.SOURCE, rightSelect1, selector("t2"));
+        rightSource.setProperty(Property.SOURCE_NAME, selector("t2"));
+        rightSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t2")).getColumns());
+
+        // Compare the expected and actual plan ...
+        assertThat(node.isSameAs(sort), is(true));
+    }
+
+    @Test
+    public void shouldOptimizePlanForQueryWithOrderByClauseUsingColumsNotInSelectOrCriteria() {
+        node = optimize("SELECT v2.c11 FROM v2 WHERE v2.c11 = 'x' ORDER BY v2.c11, v2.c12");
+
+        // Create the expected plan ...
+        PlanNode sort = new PlanNode(Type.SORT, selector("t1"));
+        sort.setProperty(Property.SORT_ORDER_BY, orderings(ascending("t1", "c11"), ascending("t1", "c12")));
+        PlanNode project = new PlanNode(Type.PROJECT, sort, selector("t1"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11")));
+        PlanNode join = new PlanNode(Type.JOIN, project, selector("t2"), selector("t1"));
+        join.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
+        join.setProperty(Property.JOIN_TYPE, JoinType.INNER);
+        join.setProperty(Property.JOIN_CONDITION, new EquiJoinCondition(selector("t1"), "c11", selector("t2"), "c21"));
+
+        PlanNode leftAccess = new PlanNode(Type.ACCESS, join, selector("t1"));
+        PlanNode leftProject = new PlanNode(Type.PROJECT, leftAccess, selector("t1"));
+        leftProject.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11")));
+        PlanNode leftSelect1 = new PlanNode(Type.SELECT, leftProject, selector("t1"));
+        leftSelect1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c11"),
+                                                                         Operator.EQUAL_TO, new Literal("x")));
+        PlanNode leftSource = new PlanNode(Type.SOURCE, leftSelect1, selector("t1"));
         leftSource.setProperty(Property.SOURCE_NAME, selector("t1"));
         leftSource.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
 

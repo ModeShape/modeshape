@@ -141,9 +141,9 @@ public class JcrQueryManagerTest {
 
             // Create a branch that contains some same-name-siblings ...
             Node other = session.getRootNode().addNode("Other", "nt:unstructured");
-            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value3");
-            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value2");
-            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value1");
+            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value3 quick brown fox");
+            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value2 quick brown cat");
+            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value1 quick black dog");
             session.getRootNode().addNode("NodeB", "nt:unstructured").setProperty("myUrl", "http://www.acme.com/foo/bar");
             session.save();
 
@@ -397,6 +397,42 @@ public class JcrQueryManagerTest {
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 12);
         assertResultsHaveColumns(result, "jcr:path", "jcr:score", "car:model");
+    }
+
+    /**
+     * Tests that the child nodes (but no grandchild nodes) are returned.
+     * 
+     * @throws RepositoryException
+     */
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithChildAxisCriteria() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'",
+                                          QueryLanguage.JCR_SQL);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 4); // the 4 types of cars
+        assertResultsHaveColumns(result, "jcr:path", "jcr:score", "jcr:primaryType");
+    }
+
+    /**
+     * Tests that the child nodes (but no grandchild nodes) are returned.
+     * 
+     * @throws RepositoryException
+     */
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithContainsCriteria() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'",
+                                          QueryLanguage.JCR_SQL);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 4); // the 4 types of cars
+        assertResultsHaveColumns(result, "jcr:path", "jcr:score", "jcr:primaryType");
     }
 
     // ----------------------------------------------------------------------------------------------------------------

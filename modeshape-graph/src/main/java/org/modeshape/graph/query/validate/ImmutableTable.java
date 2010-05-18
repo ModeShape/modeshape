@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.query.validate;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -55,7 +56,7 @@ class ImmutableTable implements Table {
                               Iterable<Column>... keyColumns ) {
         this.name = name;
         // Define the columns ...
-        List<Column> columnList = new LinkedList<Column>();
+        List<Column> columnList = new ArrayList<Column>();
         Map<String, Column> columnMap = new HashMap<String, Column>();
         for (Column column : columns) {
             Column old = columnMap.put(column.getName(), column);

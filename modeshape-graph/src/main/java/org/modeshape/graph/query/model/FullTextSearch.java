@@ -113,7 +113,7 @@ public class FullTextSearch extends Constraint {
     /**
      * Get the name of the property that is to be searched.
      * 
-     * @return the property name; never null
+     * @return the property name; or null if the full-text search is to be performed across all searchable properties
      */
     public final String getPropertyName() {
         return propertyName;
