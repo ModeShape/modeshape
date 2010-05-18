@@ -29,6 +29,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -42,6 +43,16 @@ import net.jcip.annotations.Immutable;
 @Immutable
 public class FileUtil {
 
+    private static FilenameFilter ACCEPT_ALL = new FilenameFilter() {
+
+        @Override
+        public boolean accept( File dir,
+                               String name ) {
+            return true;
+        }
+
+    };
+    
     /**
      * Delete the file or directory at the supplied path. This method works on a directory that is not empty, unlike the
      * {@link File#delete()} method.
@@ -77,7 +88,7 @@ public class FileUtil {
     }
 
     /**
-     * Copy the source file system structure into the supplied target location. If the source is a file, the destiniation will be
+     * Copy the source file system structure into the supplied target location. If the source is a file, the destination will be
      * created as a file; if the source is a directory, the destination will be created as a directory.
      * 
      * @param sourceFileOrDirectory the file or directory whose contents are to be copied into the target location
@@ -89,15 +100,36 @@ public class FileUtil {
      */
     public static int copy( File sourceFileOrDirectory,
                             File destinationFileOrDirectory ) throws IOException {
+        return copy(sourceFileOrDirectory, destinationFileOrDirectory, null);
+    }
+
+    /**
+     * Copy the source file system structure into the supplied target location. If the source is a file, the destination will be
+     * created as a file; if the source is a directory, the destination will be created as a directory.
+     * 
+     * @param sourceFileOrDirectory the file or directory whose contents are to be copied into the target location
+     * @param destinationFileOrDirectory the location where the copy is to be placed; does not need to exist, but if it does its
+     *        type must match that of <code>src</code>
+     * @param exclusionFilter a filter that matches files or folders that should _not_ be copied; null indicates that all files
+     *        and folders should be copied
+     * @return the number of files (not directories) that were copied
+     * @throws IllegalArgumentException if the <code>src</code> or <code>dest</code> references are null
+     * @throws IOException
+     */
+    public static int copy( File sourceFileOrDirectory,
+                            File destinationFileOrDirectory,
+                            FilenameFilter exclusionFilter ) throws IOException {
+        if (exclusionFilter == null) exclusionFilter = ACCEPT_ALL;
         int numberOfFilesCopied = 0;
         if (sourceFileOrDirectory.isDirectory()) {
             destinationFileOrDirectory.mkdirs();
-            String list[] = sourceFileOrDirectory.list();
+            String list[] = sourceFileOrDirectory.list(exclusionFilter);
 
             for (int i = 0; i < list.length; i++) {
                 String dest1 = destinationFileOrDirectory.getPath() + File.separator + list[i];
                 String src1 = sourceFileOrDirectory.getPath() + File.separator + list[i];
-                numberOfFilesCopied += copy(new File(src1), new File(dest1));
+
+                numberOfFilesCopied += copy(new File(src1), new File(dest1), exclusionFilter);
             }
         } else {
             InputStream fin = new FileInputStream(sourceFileOrDirectory);

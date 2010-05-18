@@ -26,7 +26,9 @@ package org.modeshape.connector.filesystem;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.util.List;
+import org.junit.Test;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
@@ -34,7 +36,7 @@ import org.modeshape.graph.Location;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.test.ReadableConnectorTest;
-import org.junit.Test;
+import org.modeshape.graph.property.PathNotFoundException;
 
 /**
  * @author Randall Hauch
@@ -104,4 +106,19 @@ public class FileSystemConnectorReadableTest extends ReadableConnectorTest {
         Node readme = graph.getNodeAt("/commercial/Boeing_777.jpg");
         assertThatNodeIsFile(readme, "image/jpeg", null);
     }
+
+    @Test
+    public void shouldBeAbleToExcludePattern() {
+        ((FileSystemSource)source).setExclusionPattern("emptyfile.txt");
+
+        try {
+            graph.getNodeAt("/emptyfile.txt");
+            fail("Should not exist");
+        } catch (PathNotFoundException pnfe) {
+            // expected
+        }
+
+        ((FileSystemSource)source).setExclusionPattern(null);
+    }
+
 }

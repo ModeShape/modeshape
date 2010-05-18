@@ -81,7 +81,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
         File newRoot = repository.getWorkspaceDirectory(this.getName());
 
         try {
-            FileUtil.copy(originalRoot, newRoot);
+            FileUtil.copy(originalRoot, newRoot, source.filenameFilter());
         } catch (IOException ioe) {
             throw new IllegalStateException(ioe);
         }
