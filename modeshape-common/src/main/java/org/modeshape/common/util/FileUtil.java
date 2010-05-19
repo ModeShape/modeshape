@@ -45,14 +45,12 @@ public class FileUtil {
 
     private static FilenameFilter ACCEPT_ALL = new FilenameFilter() {
 
-        @Override
         public boolean accept( File dir,
                                String name ) {
             return true;
         }
-
     };
-    
+
     /**
      * Delete the file or directory at the supplied path. This method works on a directory that is not empty, unlike the
      * {@link File#delete()} method.

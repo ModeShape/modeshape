@@ -74,7 +74,7 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
      * @param rootNodeUuid the UUID of the root node; may not be null
      */
     protected MapTransaction( Repository<NodeType, WorkspaceType> repository,
-                                 UUID rootNodeUuid ) {
+                              UUID rootNodeUuid ) {
         super(repository.getContext(), repository, rootNodeUuid);
     }
 
@@ -296,9 +296,10 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
         // index = parent.getChildren().indexOf(newChildUuid);
         // assert index >= 0;
         // } else if (oldParent != null) {
+        int oldIndex = -1;
         if (oldParent != null) {
             // Remove the node from it's parent ...
-            int oldIndex = oldParent.getChildren().indexOf(newChildUuid);
+            oldIndex = oldParent.getChildren().indexOf(newChildUuid);
             if (oldParent == parent) {
                 oldParent = (NodeType)oldParent.withoutChild(newChildUuid);
                 changes.changed(oldParent);
@@ -328,7 +329,9 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
             }
             UUID otherChild = beforeOtherChild.getUuid();
             index = parent.getChildren().indexOf(otherChild);
+            if (index == -1) index = parent.getChildren().size();
         }
+        assert index >= 0;
 
         // Determine the desired new name for the node ...
         newChildName = desiredName != null ? desiredName : newChildName;

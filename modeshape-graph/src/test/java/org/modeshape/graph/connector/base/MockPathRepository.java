@@ -19,7 +19,7 @@ public class MockPathRepository extends Repository<MockPathNode, MockPathWorkspa
 
     @Override
     public PathTransaction<MockPathNode, MockPathWorkspace> startTransaction( ExecutionContext context,
-                                                                          boolean readonly ) {
+                                                                              boolean readonly ) {
         return new MockPathTransaction(this);
     }
 
@@ -36,12 +36,10 @@ public class MockPathRepository extends Repository<MockPathNode, MockPathWorkspa
             super(repository, repository.getRootNodeUuid());
         }
 
-        @Override
         public boolean destroyWorkspace( MockPathWorkspace workspace ) throws InvalidWorkspaceException {
             return false;
         }
 
-        @Override
         public MockPathWorkspace getWorkspace( String name,
                                                MockPathWorkspace originalToClone ) throws InvalidWorkspaceException {
             MockPathWorkspace workspace = workspaces.get(name);

@@ -37,8 +37,8 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.Path.Segment;
 
 /**
- * A {@link Node} implementation used by the hashed-based connector (see {@link MapWorkspace} and {@link MapTransaction}),
- * which stores all node state keyed by the node's hash (or identifier).
+ * A {@link Node} implementation used by the hashed-based connector (see {@link MapWorkspace} and {@link MapTransaction}), which
+ * stores all node state keyed by the node's hash (or identifier).
  * <p>
  * Strictly speaking, this class is not immutable or thread safe. However, the persisted state cannot be changed. Instead, any
  * changes made to the object are stored in a transient area and are made "persistable"via the {@link #freeze()} method.
@@ -72,10 +72,10 @@ public class MapNode implements Node, Serializable, Cloneable {
      * @param children the unmodificable list of child UUIDs; may be null or empty
      */
     public MapNode( UUID uuid,
-                       Segment name,
-                       UUID parent,
-                       Map<Name, Property> properties,
-                       List<UUID> children ) {
+                    Segment name,
+                    UUID parent,
+                    Map<Name, Property> properties,
+                    List<UUID> children ) {
         this.uuid = uuid;
         this.name = name;
         this.parent = parent;
@@ -98,11 +98,11 @@ public class MapNode implements Node, Serializable, Cloneable {
      * @param version the version number
      */
     protected MapNode( UUID uuid,
-                          Segment name,
-                          UUID parent,
-                          Map<Name, Property> properties,
-                          List<UUID> children,
-                          int version ) {
+                       Segment name,
+                       UUID parent,
+                       Map<Name, Property> properties,
+                       List<UUID> children,
+                       int version ) {
         this.uuid = uuid;
         this.name = name;
         this.parent = parent;
@@ -125,10 +125,10 @@ public class MapNode implements Node, Serializable, Cloneable {
      * @param children the unmodificable list of child UUIDs; may be null or empty
      */
     public MapNode( UUID uuid,
-                       Segment name,
-                       UUID parent,
-                       Iterable<Property> properties,
-                       List<UUID> children ) {
+                    Segment name,
+                    UUID parent,
+                    Iterable<Property> properties,
+                    List<UUID> children ) {
         this.uuid = uuid;
         this.name = name;
         this.parent = parent;
@@ -308,7 +308,7 @@ public class MapNode implements Node, Serializable, Cloneable {
     public MapNode freeze() {
         if (!hasChanges()) return this;
         return new MapNode(uuid, changes.getName(), changes.getParent(), changes.getUnmodifiableProperties(),
-                              changes.getUnmodifiableChildren(), version + 1);
+                           changes.getUnmodifiableChildren(), version + 1);
     }
 
     /**
@@ -375,7 +375,7 @@ public class MapNode implements Node, Serializable, Cloneable {
      * @return the new map node; never null
      */
     public MapNode withChild( int index,
-                                 UUID child ) {
+                              UUID child ) {
         assert child != null;
         assert index >= 0;
         int existingIndex = getChildren().indexOf(child);
@@ -453,8 +453,8 @@ public class MapNode implements Node, Serializable, Cloneable {
      * @return the unfrozen map node; never null
      */
     public MapNode withProperties( Iterable<Property> propertiesToSet,
-                                      Iterable<Name> propertiesToRemove,
-                                      boolean removeAllExisting ) {
+                                   Iterable<Name> propertiesToRemove,
+                                   boolean removeAllExisting ) {
         if (propertiesToSet == null && propertiesToRemove == null && !removeAllExisting) {
             // no changes ...
             return this;
