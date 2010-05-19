@@ -134,21 +134,26 @@
     <para>
     	Many Java specifications provide TCK test suites that can be used to check or verify that an implementation
       correctly implements the API or SPI defined by the specification.  These TCK tests vary by technology, but
-			<ulink url="&JSR170;">JSR-170</ulink> does provide TCK tests that ensure that a JCR repository implementation exhibits the correct and expected
-			behavior.
+			<ulink url="&JSR170;">JSR-170</ulink> does provide TCK tests that ensure that a JCR repository implementation 
+			exhibits the correct and expected behavior.
 	  </para>
 	  <para>
-		  ModeShape has implemented all of the JCR Level 1 and Level 2 features, along with the optional locking, versioning, and observation
-		  features. The JCR-SQL optional feature has already been deprecated for <ulink url="&JSR283;">JSR-283</ulink> and will not be implemented.
+		  ModeShape has implemented all of the JCR Level 1 and Level 2 features, along with the optional locking, query, versioning, and observation
+		  features. Though the JCR-SQL optional feature has already been deprecated in <ulink url="&JSR283;">JSR-283</ulink> and is superseded 
+		  by JCR-SQL2, both are SQL-like query languages are supported in ModeShape.
 		</para>
 		<para>
-			The ModeShape project also frequently runs the JCR TCK unit tests from the reference implementation.  (Those these tests are not
-			the official TCK, they apparently are used within the official TCK.)  These unit tests are set up in the
-			<code>modeshape-jcr-tck</code> project.
+			The ModeShape project also frequently runs the JCR TCK unit tests from the reference implementation.  (These tests are not
+			the official TCK, but are used within the official TCK.)  Most of these unit tests are run in the <code>modeshape-jcr</code>
+			module against the <link linkend="in-memory-connector">in-memory repository</link> to ensure our JCR implementation behaves
+			correctly, and the same tests are run in the <code>modeshape-integration-tests</code> module against a variety of connectors
+			to ensure they're implemented correctly. The <code>modeshape-jcr-tck</code> module runs <emphasis>all</emphasis> of these
+			TCK unit tests, and currently there are only a handful of failures due to known issues (see <ulink url="&JIRA;-563">MODE-563</ulink>
+			and <ulink url="&JIRA;-760">MODE-760</ulink>).
 		</para>
 		<para>
-		  The &versionNumber; release passes all of the JCR Level 1, Level2, versioning, and locking TCK tests (and almost all of them for observation), 
-		  but still needs to be certified before being considered fully compliant with JCR 1.0.
+		  The &versionNumber; release passes all of the JCR Level 1, Level2, versioning, and locking TCK tests (and almost all of them for observation
+		  and query), but still needs to be certified before being considered fully compliant with JCR 1.0.
 		  The ModeShape project plans to focus on attaining this certification in the very near future.
 		</para>
   </sect1>

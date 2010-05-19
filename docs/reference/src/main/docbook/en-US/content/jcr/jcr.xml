@@ -206,17 +206,19 @@ final &LoginContext; loginContext = ...;
 		<sect2>
 			<title>Optional Features</title>
 			<para>
-				ModeShape also supports the optional JCR locking, observation, and versioning features, 
-				though the ModeShape behavior with regard to events upon deletion follows the updated behavior 
+				ModeShape also supports the optional JCR locking, observation, query, and versioning features.
+				However, ModeShape's behavior with regard to events upon deletion follows the updated behavior 
 				outline in the <ulink url="&JSR283;">JSR-283</ulink> specification (namely that when a subgraph 
 				is deleted, ModeShape generates only one event for the top-level node in that subgraph).
 			</para>
 			<para>
-				ModeShape does not support the optional SQL query feature as defined by <ulink url="&JSR170;">JSR-170</ulink>
-				and the JCR-SQL query language.
-				Instead, ModeShape already supports its replacement, the <emphasis>JCR-SQL2</emphasis> query language defined by the 
+				ModeShape now supports the optional SQL query feature as defined by <ulink url="&JSR170;">JSR-170</ulink>
+				and the JCR-SQL query language, though the "<code>/jcr:system</code>" content does not appear
+				in the query results as expected (see <ulink url="&JIRA;-759">MODE-760</ulink>).
+				ModeShape also supports its replacement, the <emphasis>JCR-SQL2</emphasis> query language defined by the 
 				<ulink url="&JSR283;">JSR-283</ulink> specification.  JCR-SQL2 is much improved and much more capable.
-				For details, see the chapter on <link linkend="jcr-query-and-search">queries and search languages</link>.
+				For details on both of these query languages, see the chapter on 
+				<link linkend="jcr-query-and-search">queries and search languages</link>.
 			</para>
 		</sect2>
 		<sect2 id="modeshape_jcr_security">

@@ -54,8 +54,8 @@
 		<title>Future directions</title>
 		<para>
 			At this point, ModeShape passes all of the JCR Technology Compatibility Kit (TCK) tests 
-			for Level 1, Level 2, and the optional locking and versioning features (plus almost all of the tests for the
-			optional observation feature). We'll soon begin the process of attaining JCR certification for ModeShape.
+			for Level 1, Level 2, and the optional locking, versioning, observation, and query features.
+			We'll soon begin the process of attaining JCR certification for ModeShape.
 		</para>
 		<para>
 			We also plan to add support for clustering multiple ModeShape engines spread across multiple JVM processes.

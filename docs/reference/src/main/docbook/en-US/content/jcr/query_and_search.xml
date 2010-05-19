@@ -34,19 +34,62 @@
 	  The JCR API defines a way to query a repository for content that meets user-defined criteria. 
 	  The JCR API actually makes it possible for implementations to support multiple query languages,
 	  but the only language required by <ulink url="&JSR170;">JCR 1.0</ulink> is a subset of XPath. The 1.0 specification
-	  also defines a SQL-like query language, but supporting it is optional.
+	  also defines an optional SQL-like query language called <link linkend="jcr-sql-query-language">JCR-SQL</link>.
+	  <ulink url="&JSR283;">JCR 2.0</ulink> defines a new language called <link linkend="jcr-sql2-query-language">JCR-SQL2</link>
+    that improves upon (and in fact supersedes) JCR-SQL.
   </para>
 	<para>
-		ModeShape now supports this query feature, including the required XPath language and two other languages not
-		defined in the <ulink url="&JSR170;">JCR 1.0</ulink> specification. This chapter describes how your applications can use queries to search
-		your repositories, and defines the three query languages that are available with ModeShape.
+		At this time, ModeShape supports all of these query languages, plus one search-engine-like language not
+		defined in the <ulink url="&JSR170;">JCR 1.0</ulink> specification. In fact, ModeShape handles all of
+		these query languages in a similar way:
+    <orderedlist>
+      <listitem>
+        <para>
+					ModeShape parses the query string using a language-specific parser and creates a language-independent representation
+					called the query model.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+					The language-independent query model is used to create a canonical (relational) query plan.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+					The canonical query plan is then validated to ensure that all identifiers in the query are resolvable.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+					The canonical query plan is then optimized using a flexible rule-based optimizer. Optimizations include
+					(but are not limited to): replace view references; unify handling of aliases; convert right outer joins into left outer
+					joins; choose algorithms for each join; raise and lower criteria; push projection of columns as low in the plan
+					as possible; duplicate criteria across identity joins; rewrite identity joins involving only columns that form keys;
+					remove parts of the plan that (based upon the criteria) will return no rows; determination of the low-level
+					"access" queries that will be submitted to the connector layer.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+					The optimized query plan is then executed, whereby each access query is pushed down to the connector and the
+					results are then processed and combined to produce the desired result set.
+        </para>
+      </listitem>
+    </orderedlist>
+		Note that only the parsing step is dependent upon the query language. This means that all of the query languages
+		are processed using the same, unified engine.
+	</para>
+	<para>
+		The rest of this chapter describes how your applications can use queries to search
+		your repositories, and outlines the specifics of each of the four query languages available in ModeShape.
 	</para>
   <sect1 id="jcr-query-api">	
     <title>JCR Query API</title>
-	  <para>
-			Like most operations in the JCR API, querying is done through a &Session; instance, from which can be obtained
-			the &QueryManager; that defines methods for creating &Query; objects, storing queries as &Node;s in the repository,
-			and reconstituting queries that were stored on &Node;s.  Thus, querying a repository generally follows this pattern:
+    <para>
+	    With ModeShape, all query operations can be performed using only the JCR API interfaces. The first step is to
+	    obtain the &QueryManager; from your &Session; instance. The QueryManager interface defines methods for creating
+	    &Query; objects, executing queries, storing queries (not results) as &Node;s in the repository, and reconstituting 
+	    queries that were stored on &Node;s. Thus, querying a repository generally follows this pattern:
 		</para>
 <programlisting role="JAVA"><![CDATA[
 // Obtain the query manager for the session ...
@@ -477,15 +520,146 @@ ORDER BY nodeSet1.title,
 		  queries using strings that are similar to SQL. Support for the language is optional, and in fact this language
 		  was deprecated in the <ulink url="&JSR283;">JCR 2.0 specification</ulink> in favor of the improved and more powerful 
 		  (and more SQL-like) <link linkend="jcr-sql2-query-language">JCR-SQL2</link> language, which is covered in the next section.
-		  As such, <emphasis role="strong">ModeShape does not support the original JCR-SQL language</emphasis>.
 		</para>
+		<para>
+		  ModeShape includes support for the JCR-SQL language, and adds several extensions to make it even more powerful and useful:
+      <itemizedlist>
+        <listitem>
+          <para>
+	          Support for the <code>UNION</code>, <code>INTERSECT</code>, and <code>EXCEPT</code> set operations on multiple result
+	          sets to form a single result set. As with standard SQL, the result sets being combined must have the same columns.
+	          The <code>UNION</code> operator combines the rows from two result sets, the <code>INTERSECT</code> operator returns
+	          the difference between two result sets, and the <code>EXCEPT</code> operator returns the rows that are common to
+	          two result sets.  Duplicate rows are removed unless the operator is followed by the <code>ALL</code> keyword.
+						For detail, see the <link linkend="jcr-sql-queries">grammar for set queries</link>.
+	        </para>
+        </listitem>
+        <listitem>
+	        <para>
+		        Removal of duplicate rows in the results, using "<code>SELECT DISTINCT ...</code>".
+	        </para>
+        </listitem>
+        <listitem>
+	        <para>
+		        Limiting the number of rows in the result set with the "<code>LIMIT count</code>" clause, where <code>count</code>
+		        is the maximum number of rows that should be returned.  This clause may optionally be followed by the
+						"<code>OFFSET number</code>" clause to specify the number of initial rows that should be skipped.
+	        </para>
+        </listitem>
+        <listitem>
+	        <para>
+						Support for the <code>IN</code> and <code>NOT IN</code> clauses to more easily and concisely supply multiple
+						of discrete static operands.
+						For example, "<code>WHERE ... [my:type].[prop1] IN (3,5,7,10,11,50) ...</code>".
+	        </para>
+        </listitem>
+        <listitem>
+	        <para>
+						Support for the <code>BETWEEN</code> clause to more easily and concisely supply a range of discrete operands.
+						For example, "<code>WHERE ... [my:type].[prop1] BETWEEN 3 EXCLUSIVE AND 10 ...</code>".
+	        </para>
+        </listitem>
+      </itemizedlist>
+		</para>
+		<para>
+			The grammar for the JCR-SQL query language is actually a superset of that defined by the
+			<ulink url="&JSR170;">JCR 1.0 specification</ulink>, and as such the complete grammar is included here.
+		</para>
+		<note>
+			<para>
+				The grammar is presented using the same EBNF nomenclature as used in the JCR 1.0 specification.
+				Terms are surrounded by '[' and ']' denote optional terms that appear zero or one times. 
+				Terms surrounded by '{' and '}' denote terms that appear zero or more times.
+				Parentheses are used to identify groups, and are often used to surround possible values.
+				Literals (or keywords) are denoted by single-quotes. 
+			</para>
+		</note>
+			<sect2 id="jcr-sql-queries">
+				<title>Queries</title>
+<programlisting><![CDATA[
+QueryCommand ::= Query | SetQuery
+
+SetQuery ::= Query ('UNION'|'INTERSECT'|'EXCEPT') ['ALL'] Query
+                 { ('UNION'|'INTERSECT'|'EXCEPT') ['ALL'] Query }
+
+Query ::= Select From [Where] [OrderBy] [Limit]
+
+Select ::= 'SELECT' ('*' | Proplist ) 
+
+From ::= 'FROM' NtList 
+
+Where ::= 'WHERE' WhereExp
+
+OrderBy ::= 'ORDER BY' propname [Order] {',' propname [Order]}
+
+Order ::= 'DESC' | 'ASC'
+
+Proplist ::= propname {',' propname}
+
+NtList ::= ntname {',' ntname}
+
+WhereExp ::= propname Op value |
+             propname 'IS' ['NOT'] 'NULL' |
+             like | 
+             contains | 
+             whereexp ('AND'|'OR') whereexp | 
+             'NOT' whereexp |
+             '(' whereexp ')' | 
+             joinpropname '=' joinpropname |
+             between |
+             propname ['NOT'] 'IN' '(' value {',' value } ')'
+
+Op ::= '='|'>'|'<'|'>='|'<='|'<>'
+
+joinpropname ::= quotedjoinpropname | unquotedjoinpropname
+quotedjoinpropname ::= ''' unquotedjoinpropname '''
+unquotedjoinpropname ::= ntname '.jcr:path'
+
+propname ::= quotedpropname | unquotedpropname
+quotedpropname ::= ''' unquotedpropname '''
+unquotedpropname ::= /* A property name, possible a pseudo-property: jcr:score or jcr:path */
+
+ntname ::= quotedntname | unquotedntname 
+quotedntname ::= ''' unquotedntname ''' 
+unquotedntname ::= /* A node type name */ 
+
+value ::= ''' literalvalue ''' | literalvalue
+literalvalue ::= /* A property value (in standard string form) */
+
+like ::= propname 'LIKE' likepattern [ escape ]
+likepattern ::= ''' likechar { likepattern } '''
+likechar ::= char | '%' | '_'
+
+escape ::= 'ESCAPE' ''' likechar '''
+
+char ::= /* Any character valid within the string representation of a value
+            except for the characters % and _ themselves. These must be escaped */
+
+contains ::= 'CONTAINS(' scope ',' searchexp ')'
+scope ::= unquotedpropname | '.'
+searchexp ::= ''' exp '''
+exp ::= ['-']term {whitespace ['OR'] whitespace ['-']term}
+term ::= word | '"' word {whitespace word} '"'
+word ::= /* A string containing no whitespace */
+whitespace ::= /* A string of only whitespace*/
+
+between ::= propname ['NOT'] 'BETWEEN' lowerBound ['EXCLUSIVE'] 
+                                 'AND' upperBound ['EXCLUSIVE']
+lowerBound ::= value
+upperBound ::= value
+
+Limit ::= 'LIMIT' count [ 'OFFSET' offset ]
+count ::= /* Positive integer value */
+offset ::= /* Non-negative integer value */
+]]></programlisting>
+			</sect2>
 	</sect1>
   <sect1 id="jcr-sql2-query-language">	
     <title>JCR-SQL2 Query Language</title>
 	  <para>
 		  The JCR-SQL2 query language is defined by the <ulink url="&JSR283;">JCR 2.0 specification</ulink> as a way to express
-		  queries using strings that are similar to SQL.  This query language is an improvement over the earlier JCR-SQL language,
-		  which has been deprecated in JCR 2.0 (see previous section).
+		  queries using strings that are similar to SQL. This query language is an improvement over the JCR-SQL language,
+		  providing among other things far richer specifications of joins and criteria.
 		</para>
 		<para>
 		  ModeShape includes full support for the complete JCR-SQL2 query language. 

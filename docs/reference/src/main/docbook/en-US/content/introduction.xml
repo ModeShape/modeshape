@@ -569,19 +569,18 @@
   <sect1 id="whats_new">
     <title>What's new?</title>
 	  <para>
-			With version &versionNumber;, ModeShape adds support for <link linkend="jcr-spec-support">JCR versioning</link>
-			and introduces a new <link linkend="jcr-connector">JCR connector</link>. 
+			With version &versionNumber;, ModeShape adds support for the <link linkend="jcr-sql-query-language">JCR-SQL query language</link>,
+			improvements to the existing connectors, and quite a few <ulink url="&ReleaseNotes;">bug fixes and improvements</ulink>.
 		</para>
 		<para>This means that <emphasis role="strong">ModeShape now implements all of the JCR Level 1 and Level 2 features, 
-			along with the optional locking, versioning, and observation features</emphasis>.
-			Of all of the JCR TCK tests, the only failures are two from observation (see <ulink url="&JIRA;-563"></ulink>)
-			and those from the optional JCR-SQL query language that ModeShape does not support 
-			(see <link linkend="jcr-query-and-search">supported query languages</link>).
+			along with the optional locking, query, versioning, and observation features</emphasis>.
+			Of all of the JCR TCK tests, the only failures are related to several known issues: two from observation (see <ulink url="&JIRA;-563">MODE-563</ulink>)
+			one from query tests (see <ulink url="&JIRA;-760">MODE-760</ulink>), and two from invalid/incorrect queries created by the tests.
 		</para>
 		<para>
-		  This release also brings several <ulink url="&ReleaseNotes;">bug fixes and improvements</ulink>, including
-			several issues with using MySQL as a content store.
-			The release also upgrades all third-party dependencies to the latest versions available at the time of release.
+		  This release also upgrades several third-party dependencies to the latest versions available at the time of release.
+		  Some of the upgraded libraries include <ulink url="http://hibernate.org/">Hibernate</ulink>, 
+		  <ulink url="http://jboss.org/jbosscache">JBoss Cache</ulink>, and <ulink url="http://slf4j.org/">SLF4J</ulink>. 
 		</para>
   </sect1>
 </chapter>
