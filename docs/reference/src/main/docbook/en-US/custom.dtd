@@ -1,4 +1,4 @@
-<!ENTITY versionNumber "1.1.0.Final">
+<!ENTITY versionNumber "1.2.0.Final">
 <!ENTITY copyrightYears "2008-2010">
 <!ENTITY copyrightHolder "Red Hat, Inc.">
 
@@ -13,7 +13,7 @@
 <!ENTITY DocHome    					"http://docs.jboss.org/modeshape">
 <!ENTITY API        					"&DocHome;/&versionNumber;/api/org/modeshape/">
 <!ENTITY ReleaseNotes					"&DocHome;/&versionNumber;/release.html">
-<!ENTITY JIRA       					"http://jira.jboss.org/jira/browse/MODE">
+<!ENTITY JIRA       					"http://jira.jboss.org/browse/MODE">
 <!ENTITY Roadmap       				"&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">
 <!ENTITY Subversion  					"http://anonsvn.jboss.org/repos/modeshape/">
 <!ENTITY SecureSubversion  		"https://svn.jboss.org/repos/modeshape/">
