@@ -44,7 +44,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 /**
- * @author vanhalbert
+ * 
  *
  */
 public class JcrResultSetTest {

@@ -52,7 +52,7 @@ import net.jcip.annotations.NotThreadSafe;
 
 
 /**
- * @author vanhalbert
+ * 
  * 
  * This provides common result set metadata used by various tests
  *
@@ -90,8 +90,6 @@ public class TestUtil {
     public static List<Object[]> TUPLES;
     
     public static final String SQL_SELECT = "Select propA FROM typeA";
-    
- //   public static final InputStream TEST_IS = new ByteArrayInputStream(  (new String("Heres my data 1234").getBytes()  ));
     
     static {
 	
@@ -516,22 +514,8 @@ class QueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
 		
 	    };
 
-
 	    return rtnvalue;
 	    
-	}	
-	
+	}		
 }
-class TestInputStream extends InputStream {
 
-    /**
-     * {@inheritDoc}
-     *
-     * @see java.io.InputStream#read()
-     */
-    @Override
-    public int read() throws IOException {
-	return 0;
-    }
-    
-}
