@@ -239,6 +239,17 @@
         </listitem>
         <listitem>
           <para>
+            <emphasis role="strong">modeshape-jcr-api</emphasis>
+            defines a number of interfaces that extend a few of the JCR API interfaces, adding some of the methods that appear
+            in JCR 2.0. This module serves as a temporary bridge to some very useful JCR 2.0 functionality.
+            Plus, this module defines a <code>Repositories</code> interface that defines a way to look up <code>javax.jcr.Repository</code> 
+            instances by name, and that is implemented by the ModeShape <code>JcrEngine</code>, allowing client applications to
+            dependency on this module to look up repositories by name <emphasis>without</emphasis> having to depend on the 
+            <code>modeshape-jcr</code> interfaces or its dependencies.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
             <emphasis role="strong">modeshape-repository</emphasis>
             provides the core ModeShape graph engine and services for managing repository connections, sequencers, MIME type detectors,
 						and observation. If you're using ModeShape repositories via our graph API rather than JCR, then this is where you'd start.
