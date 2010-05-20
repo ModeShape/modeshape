@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.modeshape</groupId>
     <artifactId>modeshape</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.2.0.Final</version>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
   <artifactId>modeshape-repository</artifactId>
