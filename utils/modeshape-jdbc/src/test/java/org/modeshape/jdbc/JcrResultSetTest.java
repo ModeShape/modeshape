@@ -24,18 +24,16 @@
 package org.modeshape.jdbc;
 
 
-import static org.junit.Assert.assertTrue;
-
-import static org.junit.Assert.assertNull;
-
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
-import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.Calendar;
 
 import javax.jcr.query.QueryResult;
 
@@ -283,6 +281,34 @@ public class JcrResultSetTest {
     }
     
     @Test
+    public void shouldCallGetTimeUsingColumnName() throws SQLException {	
+	int col = getColumnTypeLoc(TestQueryResultMetaData.DATE);
+	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	    assertThat(resultSet.next(), is(true));
+	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
+	    long lt =  ((java.util.Date) tuple[col]).getTime();
+	    java.sql.Time t = new java.sql.Time(lt);
+	    assertThat(resultSet.getTime(TestQueryResultMetaData.COLUMN_NAMES[col]), is(t));
+
+	}
+    }
+    
+    @Test
+    public void shouldCallGetTimeUsingColmnIndex() throws SQLException {	
+	int col = getColumnTypeLoc(TestQueryResultMetaData.DATE);
+	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	    assertThat(resultSet.next(), is(true));
+	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
+	    long lt =  ((java.util.Date) tuple[col]).getTime();
+	    java.sql.Time t = new java.sql.Time(lt);
+
+	    // need to increment because ResultSet is 1 based.
+	    assertThat(resultSet.getTime(col +1), is(t));
+
+	}
+    }
+    
+    @Test
     public void shouldCallGetBytesUsingColmnIndex() throws SQLException {	
 	int numCols = TestQueryResultMetaData.COLUMN_NAMES.length;
 	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
@@ -427,6 +453,16 @@ public class JcrResultSetTest {
     }
     
     @Test
+    public void shouldCallConcurrency() throws SQLException {
+        assertThat(resultSet.getConcurrency(), is(0));
+    }
+    
+     
+    //*******************
+    // There are 3 - wasNull - tests because each has its own path for setting current value.
+    //*******************
+    
+    @Test
     public void shouldCallWasNull() throws SQLException   {
 	// wasNull should be null until a get method is called
 	assertTrue(resultSet.wasNull());
@@ -436,6 +472,34 @@ public class JcrResultSetTest {
 	
 	
 	assertThat(resultSet.getString(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A), is(notNullValue()));
+	assertFalse(resultSet.wasNull());
+
+    }
+    
+    @Test
+    public void shouldCallWasNullCallingGetObject() throws SQLException   {
+	// wasNull should be null until a get method is called
+	assertTrue(resultSet.wasNull());
+	
+	assertThat(resultSet.next(), is(true));
+	assertTrue(resultSet.wasNull());
+	
+	
+	assertThat(resultSet.getObject(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A), is(notNullValue()));
+	assertFalse(resultSet.wasNull());
+
+    }
+    
+    @Test
+    public void shouldCallWasNullCallingGetBytes() throws SQLException   {
+	// wasNull should be null until a get method is called
+	assertTrue(resultSet.wasNull());
+	
+	assertThat(resultSet.next(), is(true));
+	assertTrue(resultSet.wasNull());
+	
+	
+	assertThat(resultSet.getBytes(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A), is(notNullValue()));
 	assertFalse(resultSet.wasNull());
 
     }
@@ -547,29 +611,10 @@ public class JcrResultSetTest {
     }
 
     
-    //*******************
-    //  The following methods are not supported
-    //*******************   
-    
-    /**
-     * @throws SQLException 
-     */
-    @Test(expected= SQLException.class)
-    public void shouldThrowExceptionForReturnRowIDInt() throws SQLException {
-	resultSet.getRowId(0);
-    }
-    
-    /**
-     * @throws SQLException 
-     */
-    @Test(expected= SQLException.class)
-    public void shouldThrowExceptionForReturnRowIDString() throws SQLException {
-	resultSet.getRowId("columnname");
-    }
-    
     
     //*******************
-    //  The following tests initiate invalid test in order to validate expected exception
+    //  The following tests initiate invalid test in order 
+    //  to validate expected exceptions
     //*******************
     
     /**
@@ -589,24 +634,7 @@ public class JcrResultSetTest {
 	assertThat(resultSet.next(), is(true));
 	resultSet.getString(-1);
     }
-    
-    /**
-     * @throws SQLException 
-     */
-    @Test(expected= SQLException.class)
-    public void shouldThrowExceptionForCurrentRowNotSet() throws SQLException {
-	resultSet.getString(1);
-    }
-    
-    /**
-     * @throws SQLException 
-     */
-    @Test(expected= SQLException.class)
-    public void shouldThrowExceptionResultSetIsClosed() throws SQLException {
-	resultSet.close();
-	resultSet.next();
-    }
-    
+   
     /**
      * @throws SQLException 
      */
@@ -625,12 +653,456 @@ public class JcrResultSetTest {
     }
     
     /**
+     * Not all the update related methods are tested because they all perform the same check.
      * @throws SQLException 
      */
     @Test(expected= SQLException.class)
     public void shouldThrowUpdatesNotSupported() throws SQLException {
 	assertThat(resultSet.next(), is(true));
 	resultSet.insertRow();
+    }
+    
+    
+    //*******************
+    // These are negative tests and verify exception is thrown
+    // when the resultset is closed
+    //*******************
+    
+    /**
+     * @throws SQLException 
+     */
+    @Test(expected= SQLException.class)
+    public void shouldThrowExceptionResultSetIsClosed() throws SQLException {
+	resultSet.close();
+	resultSet.next();
+    }
+    
+    @Test(expected= SQLException.class)
+    public void shouldThrowExceptionIsClosedWhenGettingValue() throws SQLException {
+	resultSet.close();
+	resultSet.getString(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A);
+    }
+    
+    @Test(expected= SQLException.class)
+    public void shouldThrowExceptionIsClosedWhenGettingObject() throws SQLException {
+	resultSet.close();
+	resultSet.getObject(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A);
+    }
+    
+    @Test(expected= SQLException.class)
+    public void shouldThrowExceptionIsClosedWhenGettingBytes() throws SQLException {
+	resultSet.close();
+	resultSet.getBytes(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A);
+    }
+    
+    //*******************
+    // There are negative tests the verify an exception will be thrown
+    //	when the row has not been set;
+    //*******************
+    
+    
+    @Test(expected= SQLException.class)
+    public void shouldThrowExceptionIsRowSetWhenGettingValue() throws SQLException {
+	resultSet.getString(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A);
+    }
+    
+    @Test(expected= SQLException.class)
+    public void shouldThrowExceptionIsRowSetWhenGettingObject() throws SQLException {
+	resultSet.getObject(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A);
+    }
+    
+    @Test(expected= SQLException.class)
+    public void shouldThrowExceptionIsRowSetWhenGettingBytes() throws SQLException {
+	resultSet.getBytes(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A);
+    }
+    
+    
+    //*******************
+    // The following are unsupported features
+    //*******************
+ 
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetRowIDInt() throws SQLException {
+	resultSet.getRowId(0);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetRowIDString() throws SQLException {
+	resultSet.getRowId("columnname");
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetCursorName() throws SQLException {
+	resultSet.getCursorName();
+    }
+    
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetArrayIdx() throws SQLException {
+	resultSet.getArray(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetArrayColName() throws SQLException {
+	resultSet.getArray("colname");
+    }
+    
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetAsciiStreamIdx() throws SQLException {
+	resultSet.getAsciiStream(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetAsciiStreamColName() throws SQLException {
+	resultSet.getAsciiStream("colname");
+    }
+    
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetBigDecimalIdx() throws SQLException {
+	resultSet.getBigDecimal(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetBigDecimalColName() throws SQLException {
+	resultSet.getBigDecimal("colname");
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetBigDecimalIdxScale() throws SQLException {
+	resultSet.getBigDecimal(1,1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetBigDecimalColNameScale() throws SQLException {
+	resultSet.getBigDecimal("colname",1);
+    }
+       
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetBlobIdx() throws SQLException {
+	resultSet.getBlob(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetBlobColName() throws SQLException {
+	resultSet.getBlob("colname");
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetByteIdx() throws SQLException {
+	resultSet.getByte(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetByteColName() throws SQLException {
+	resultSet.getByte("colname");
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetCharacterStreamIdx() throws SQLException {
+	resultSet.getCharacterStream(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetCharacterStreamColName() throws SQLException {
+	resultSet.getCharacterStream("colname");
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetClobIdx() throws SQLException {
+	resultSet.getClob(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetClobColName() throws SQLException {
+	resultSet.getClob("colname");
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetDateIdxCal() throws SQLException {
+	resultSet.getDate(1, Calendar.getInstance());
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetDateColNameCal() throws SQLException {
+	resultSet.getDate("colname", Calendar.getInstance());
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetFloatIdx() throws SQLException {
+	resultSet.getFloat(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetFloatColNameCal() throws SQLException {
+	resultSet.getFloat("colname");
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetNCharacterStreamIdx() throws SQLException {
+	resultSet.getNCharacterStream(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetNCharacterStreamColName() throws SQLException {
+	resultSet.getNCharacterStream("colname");
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetNClobIdx() throws SQLException {
+	resultSet.getNClob(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetNClobColName() throws SQLException {
+	resultSet.getNClob("colname");
+    }
+    
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetNStringIdx() throws SQLException {
+	resultSet.getNString(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetNStringColName() throws SQLException {
+	resultSet.getNString("colname");
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetObjectIdxMap() throws SQLException {
+	resultSet.getObject(1, null);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetObjectColNameMap() throws SQLException {
+	resultSet.getObject("colname", null);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetRefIdx() throws SQLException {
+	resultSet.getRef(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetRefColName() throws SQLException {
+	resultSet.getRef("colname");
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetSQLXMLIdx() throws SQLException {
+	resultSet.getSQLXML(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetSQLXMLColName() throws SQLException {
+	resultSet.getSQLXML("colname");
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetShortIdx() throws SQLException {
+	resultSet.getShort(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetShortColName() throws SQLException {
+	resultSet.getShort("colname");
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetTimeIdxCal() throws SQLException {
+	resultSet.getTime(1, null);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetTimeColNameCal() throws SQLException {
+	resultSet.getTime("colname", null);
+    }
+    
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetTimestampIdx() throws SQLException {
+	resultSet.getTimestamp(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetTimestampColName() throws SQLException {
+	resultSet.getTimestamp("colname");
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetTimestampIdxCal() throws SQLException {
+	resultSet.getTimestamp(1, null);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetTimestampColNameCal() throws SQLException {
+	resultSet.getTimestamp("colname", null);
+    }
+    
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetURLIdx() throws SQLException {
+	resultSet.getURL(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetURLColName() throws SQLException {
+	resultSet.getURL("colname");
+    }
+    
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetUnicodeStreamIdx() throws SQLException {
+	resultSet.getUnicodeStream(1);
+    }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingGetUnicodeStreamColName() throws SQLException {
+	resultSet.getUnicodeStream("colname");
     }
 
 }

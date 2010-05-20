@@ -932,7 +932,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Object getObject( String columnLabel ) throws SQLException {
-	return getValueTranslatedToJDBC(columnLabel);
+	return getColumnTranslatedToJDBC(columnLabel);
     }
 
     /**
@@ -1055,7 +1055,9 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Time getTime( String columnLabel ) throws SQLException {
-        return null;
+	Date d = (Date) getValueReturn(columnLabel, PropertyType.DATE);
+	if (d == null) return null;
+        return new Time(d.getTime());
     }
 
     /**
@@ -1161,35 +1163,7 @@ public class JcrResultSet implements ResultSet {
     public InputStream getUnicodeStream( String columnLabel ) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
-    
-    /**
-     * This is called when the <code>Value</code> drives the datatype to be returned.
-     * Another reason for centralizing this logic so that the {@link #currentValue} can be maintained
-     * @see #getValueReturn(String, int)
-     * @param columnName 
-     * @return Object
-     * @throws SQLException 
-     */
-//    private Object getValueObjectReturn(String columnName) throws SQLException {
-//	notClosed();
-//	isRowSet();
-//	
-//	try {
-//	    
-//	    final Value value = row.getValue(columnName);
-//	    
-//	    this.currentValue = getValueObject(value, (value != null ? value.getType() : 0));
-//	    return this.currentValue;    
-//	  
-//	} catch (ItemNotFoundException e) {	    
-//	    itemNotFoundUsingColunName(columnName);
-//	} catch (RepositoryException e) {
-//	    throw new SQLException(e.getLocalizedMessage(), e);
-//	}
-//	return null;
-//
-//    }
-    
+        
     /**
      * This is called when the calling method controls what datatype to be returned.
      * Another reason for centralizing this logic so that the {@link #currentValue} can be maintained
@@ -1261,19 +1235,33 @@ public class JcrResultSet implements ResultSet {
      * @return Object
      * @throws SQLException 
      */
-    private Object getValueTranslatedToJDBC(String columnName)
+    private Object getColumnTranslatedToJDBC(String columnName)
 	    throws SQLException {
-
+	notClosed();
+	isRowSet();
 	try {
-	    final Value value = row.getValue(columnName);
+	    Value value = row.getValue(columnName);
 
 	    if (value == null)
 		return null;
-
+	    
 	    JcrType jcrType = TYPE_INFO.get(PropertyType.nameFromValue(value
 		    .getType()));
-
-	    switch (jcrType.getJdbcType()) {
+	    
+	    this.currentValue = getValueTranslatedToJDBC(value, jcrType.getJdbcType());
+	    return this.currentValue;
+    	    
+	} catch (RepositoryException e) {
+	    throw new SQLException(e.getLocalizedMessage(), e);
+	}
+    }
+    
+    private Object getValueTranslatedToJDBC(Value value, int jdbcType) 
+    throws SQLException {
+	if (value == null) return null;
+	try {
+	
+	    switch (jdbcType) {
 
 	    case Types.VARCHAR:
 		return value.getString();
@@ -1294,9 +1282,6 @@ public class JcrResultSet implements ResultSet {
 	    
 	    return value.toString();
 	    
-	} catch (ItemNotFoundException e) {
-	    itemNotFoundUsingColunName(columnName);
-	    return null;
 	} catch (ValueFormatException ve) {
 	    throw new SQLException(ve.getLocalizedMessage(), ve);
 	} catch (IllegalStateException ie) {
@@ -1304,8 +1289,7 @@ public class JcrResultSet implements ResultSet {
 	} catch (RepositoryException e) {
 	    throw new SQLException(e.getLocalizedMessage(), e);
 	}
-
-	
+    
     }
 
     /**
