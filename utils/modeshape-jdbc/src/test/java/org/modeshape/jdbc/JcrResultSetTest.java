@@ -61,7 +61,7 @@ public class JcrResultSetTest {
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
         
-        result = TestQueryResultMetaData.createQueryResult();
+        result = TestUtil.createQueryResult();
  	resultSet = new JcrResultSet(statement, result);        
     }
     
@@ -79,7 +79,7 @@ public class JcrResultSetTest {
     @Test
     public void shouldCallNext() throws SQLException  {
 	// iterate the full resultset
-	for (int i=1; i<= TestQueryResultMetaData.TUPLES.size(); i++) {
+	for (int i=1; i<= TestUtil.TUPLES.size(); i++) {
 	       assertThat(resultSet.next(), is(true));
 	}
 	// after all rows have been retrieved, the resultset
@@ -93,7 +93,7 @@ public class JcrResultSetTest {
 	// should return zero to indicate positioning pre-firsts row
 	assertThat(resultSet.getRow(), is(0));
 	// set i=1 because row position is 1 based
-	for (int i=1; i<= TestQueryResultMetaData.TUPLES.size(); i++) {
+	for (int i=1; i<= TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
 	    assertThat(resultSet.getRow(), is(i));
 
@@ -105,7 +105,7 @@ public class JcrResultSetTest {
         assertThat(resultSet.isBeforeFirst(), is(true));
 	// as the resultset is being processed 
 	// verify isBeforeFirst is only valid before processing the resultset
-	for (int i=1; i<= TestQueryResultMetaData.TUPLES.size(); i++) {
+	for (int i=1; i<= TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
 	    assertThat(resultSet.isBeforeFirst(), is(false));
 
@@ -119,7 +119,7 @@ public class JcrResultSetTest {
 	assertThat(resultSet.isFirst(), is(false));
 	// as the resultset is being processed
 	// verify isFirst is only valid for the first row of the resultset
-	for (int i=1; i<= TestQueryResultMetaData.TUPLES.size(); i++) {
+	for (int i=1; i<= TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
 	    if (i == 1) {
 		assertThat(resultSet.isFirst(), is(true));
@@ -138,9 +138,9 @@ public class JcrResultSetTest {
         assertThat(resultSet.isLast(), is(false));
 	// as the resultset is being processed 
 	// verify isLast only valid for the last row of the resultset
-	for (int i=1; i<= TestQueryResultMetaData.TUPLES.size(); i++) {
+	for (int i=1; i<= TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    if (i == TestQueryResultMetaData.TUPLES.size()) {
+	    if (i == TestUtil.TUPLES.size()) {
 		assertThat(resultSet.isLast(), is(true));
 	    } else {
 		assertThat(resultSet.isLast(), is(false));
@@ -156,7 +156,7 @@ public class JcrResultSetTest {
 	assertThat(resultSet.isAfterLast(), is(false));
 	// as the resultset is being processed 
 	// verify isAfterLast is only valid after processing all rows in the resultset
-	for (int i=1; i<= TestQueryResultMetaData.TUPLES.size(); i++) {
+	for (int i=1; i<= TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
 	    assertThat(resultSet.isAfterLast(), is(false));
 	}
@@ -167,21 +167,21 @@ public class JcrResultSetTest {
     
     @Test
     public void shouldCallGetStringUsingColmnName() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.STRING);
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int col = getColumnTypeLoc(TestUtil.STRING);
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
-	    assertThat(resultSet.getString(TestQueryResultMetaData.COLUMN_NAMES[col]), is(tuple[col]));
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
+	    assertThat(resultSet.getString(TestUtil.COLUMN_NAMES[col]), is(tuple[col]));
 
 	}
     }
     
     @Test
     public void shouldCallGetStringUsingColmnIndex() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.STRING);
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int col = getColumnTypeLoc(TestUtil.STRING);
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
 	    // need to increment because ResultSet is 1 based.
 	    assertThat(resultSet.getString(col +1), is(tuple[col]));
 
@@ -190,21 +190,21 @@ public class JcrResultSetTest {
     
     @Test
     public void shouldCallGetLongUsingColumnName() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.LONG);
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int col = getColumnTypeLoc(TestUtil.LONG);
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
-	    assertThat(resultSet.getLong(TestQueryResultMetaData.COLUMN_NAMES[col]), is(tuple[col]));
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
+	    assertThat(resultSet.getLong(TestUtil.COLUMN_NAMES[col]), is(tuple[col]));
 
 	}
     }
     
     @Test
     public void shouldCallGetLongUsingColmnIndex() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.LONG);
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int col = getColumnTypeLoc(TestUtil.LONG);
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
 	    // need to increment because ResultSet is 1 based.
 	    assertThat(resultSet.getLong(col +1), is(tuple[col]));
 
@@ -213,21 +213,21 @@ public class JcrResultSetTest {
     
     @Test
     public void shouldCallGetDoubleUsingColumnName() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.DOUBLE);
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int col = getColumnTypeLoc(TestUtil.DOUBLE);
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
-	    assertThat(resultSet.getDouble(TestQueryResultMetaData.COLUMN_NAMES[col]), is(tuple[col]));
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
+	    assertThat(resultSet.getDouble(TestUtil.COLUMN_NAMES[col]), is(tuple[col]));
 
 	}
     }
     
     @Test
     public void shouldCallGetDoubleUsingColmnIndex() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.DOUBLE);
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int col = getColumnTypeLoc(TestUtil.DOUBLE);
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
 	    // need to increment because ResultSet is 1 based.
 	    assertThat(resultSet.getDouble(col +1), is(tuple[col]));
 
@@ -236,21 +236,21 @@ public class JcrResultSetTest {
     
     @Test
     public void shouldCallGetBooleanUsingColumnName() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.BOOLEAN);
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int col = getColumnTypeLoc(TestUtil.BOOLEAN);
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
-	    assertThat(resultSet.getBoolean(TestQueryResultMetaData.COLUMN_NAMES[col]), is(tuple[col]));
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
+	    assertThat(resultSet.getBoolean(TestUtil.COLUMN_NAMES[col]), is(tuple[col]));
 
 	}
     }
     
     @Test
     public void shouldCallGetBooleanUsingColmnIndex() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.BOOLEAN);
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int col = getColumnTypeLoc(TestUtil.BOOLEAN);
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
 	    // need to increment because ResultSet is 1 based.
 	    assertThat(resultSet.getBoolean(col +1), is(tuple[col]));
 
@@ -259,21 +259,21 @@ public class JcrResultSetTest {
     
     @Test
     public void shouldCallGetDateUsingColumnName() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.DATE);
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int col = getColumnTypeLoc(TestUtil.DATE);
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
-	    assertThat(resultSet.getDate(TestQueryResultMetaData.COLUMN_NAMES[col]), is(tuple[col]));
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
+	    assertThat(resultSet.getDate(TestUtil.COLUMN_NAMES[col]), is(tuple[col]));
 
 	}
     }
     
     @Test
     public void shouldCallGetDateUsingColmnIndex() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.DATE);
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int col = getColumnTypeLoc(TestUtil.DATE);
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
 	    // need to increment because ResultSet is 1 based.
 	    assertThat(resultSet.getDate(col +1), is(tuple[col]));
 
@@ -282,23 +282,23 @@ public class JcrResultSetTest {
     
     @Test
     public void shouldCallGetTimeUsingColumnName() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.DATE);
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int col = getColumnTypeLoc(TestUtil.DATE);
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
 	    long lt =  ((java.util.Date) tuple[col]).getTime();
 	    java.sql.Time t = new java.sql.Time(lt);
-	    assertThat(resultSet.getTime(TestQueryResultMetaData.COLUMN_NAMES[col]), is(t));
+	    assertThat(resultSet.getTime(TestUtil.COLUMN_NAMES[col]), is(t));
 
 	}
     }
     
     @Test
     public void shouldCallGetTimeUsingColmnIndex() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.DATE);
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int col = getColumnTypeLoc(TestUtil.DATE);
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
 	    long lt =  ((java.util.Date) tuple[col]).getTime();
 	    java.sql.Time t = new java.sql.Time(lt);
 
@@ -310,10 +310,10 @@ public class JcrResultSetTest {
     
     @Test
     public void shouldCallGetBytesUsingColmnIndex() throws SQLException {	
-	int numCols = TestQueryResultMetaData.COLUMN_NAMES.length;
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int numCols = TestUtil.COLUMN_NAMES.length;
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
 	    // need to start at 1 because ResultSet is 1 based.
 	    for (int x=1; x <= numCols; x++) {
 		assertThat(resultSet.getBytes(x), 
@@ -324,13 +324,13 @@ public class JcrResultSetTest {
     
     @Test
     public void shouldCallGetBytesUsingColumnName() throws SQLException {	
-	int numCols = TestQueryResultMetaData.COLUMN_NAMES.length;
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int numCols = TestUtil.COLUMN_NAMES.length;
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i); 
+	    Object[] tuple = TestUtil.TUPLES.get(i); 
 	    
 	    for (int x=0; x < numCols; x++) {	    
-		assertThat(resultSet.getBytes(TestQueryResultMetaData.COLUMN_NAMES[x]), 
+		assertThat(resultSet.getBytes(TestUtil.COLUMN_NAMES[x]), 
 		    is( (tuple[x] != null ? (tuple[x].toString()).getBytes() : null )));
 	    }
 	}
@@ -338,10 +338,10 @@ public class JcrResultSetTest {
     
     @Test
     public void shouldCallGetBinaryUsingColmnIndex() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.BINARY);
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int col = getColumnTypeLoc(TestUtil.BINARY);
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
 	    // need to increment because ResultSet is 1 based.
 	    assertThat(resultSet.getBinaryStream(col +1), 
 		    is(tuple[col]) );
@@ -350,24 +350,24 @@ public class JcrResultSetTest {
     
     @Test
     public void shouldCallGetBinaryUsingColumnName() throws SQLException {	
-	int col = getColumnTypeLoc(TestQueryResultMetaData.BINARY);
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int col = getColumnTypeLoc(TestUtil.BINARY);
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i);  
-	    assertThat(resultSet.getBinaryStream(TestQueryResultMetaData.COLUMN_NAMES[col]), 
+	    Object[] tuple = TestUtil.TUPLES.get(i);  
+	    assertThat(resultSet.getBinaryStream(TestUtil.COLUMN_NAMES[col]), 
 		    is( tuple[col] ));
 	}
     }
     
     @Test
     public void shouldCallGetObjectUsingColumnName() throws SQLException {	
-	int numCols = TestQueryResultMetaData.COLUMN_NAMES.length;
-	for (int i=0; i< TestQueryResultMetaData.TUPLES.size(); i++) {
+	int numCols = TestUtil.COLUMN_NAMES.length;
+	for (int i=0; i< TestUtil.TUPLES.size(); i++) {
 	    assertThat(resultSet.next(), is(true));
-	    Object[] tuple = TestQueryResultMetaData.TUPLES.get(i); 
+	    Object[] tuple = TestUtil.TUPLES.get(i); 
 	    
 	    for (int x=0; x < numCols; x++) {	   
-		Object o = resultSet.getObject(TestQueryResultMetaData.COLUMN_NAMES[x]);
+		Object o = resultSet.getObject(TestUtil.COLUMN_NAMES[x]);
 		// doing .toString() to compare the Object value to the TestQueryResultMetaData 
 		// which has primitives
 		assertThat( (o != null ? o.toString() : null)  , 
@@ -377,8 +377,8 @@ public class JcrResultSetTest {
     }
     
     private int getColumnTypeLoc(String type) {
-	for (int i=0; i<= TestQueryResultMetaData.TYPE_NAMES.length; i++) {
-	    if (TestQueryResultMetaData.TYPE_NAMES[i].equals(type)) {
+	for (int i=0; i<= TestUtil.TYPE_NAMES.length; i++) {
+	    if (TestUtil.TYPE_NAMES[i].equals(type)) {
 		return i;
 	    }
 	}	
@@ -434,7 +434,7 @@ public class JcrResultSetTest {
       
     @Test
     public void shouldFindColumn() throws SQLException {
-        assertThat(resultSet.findColumn(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A), is(1));
+        assertThat(resultSet.findColumn(TestUtil.COLUMN_NAME_PROPERTIES.PROP_A), is(1));
     }
     
     @Test
@@ -471,7 +471,7 @@ public class JcrResultSetTest {
 	assertTrue(resultSet.wasNull());
 	
 	
-	assertThat(resultSet.getString(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A), is(notNullValue()));
+	assertThat(resultSet.getString(TestUtil.COLUMN_NAME_PROPERTIES.PROP_A), is(notNullValue()));
 	assertFalse(resultSet.wasNull());
 
     }
@@ -485,7 +485,7 @@ public class JcrResultSetTest {
 	assertTrue(resultSet.wasNull());
 	
 	
-	assertThat(resultSet.getObject(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A), is(notNullValue()));
+	assertThat(resultSet.getObject(TestUtil.COLUMN_NAME_PROPERTIES.PROP_A), is(notNullValue()));
 	assertFalse(resultSet.wasNull());
 
     }
@@ -499,7 +499,7 @@ public class JcrResultSetTest {
 	assertTrue(resultSet.wasNull());
 	
 	
-	assertThat(resultSet.getBytes(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A), is(notNullValue()));
+	assertThat(resultSet.getBytes(TestUtil.COLUMN_NAME_PROPERTIES.PROP_A), is(notNullValue()));
 	assertFalse(resultSet.wasNull());
 
     }
@@ -623,7 +623,7 @@ public class JcrResultSetTest {
     @Test(expected= SQLException.class)
     public void shouldThrowExceptionForInvalidColumnIndexPlus1() throws SQLException {
 	assertThat(resultSet.next(), is(true));
-	resultSet.getString(TestQueryResultMetaData.COLUMN_NAMES.length + 1);
+	resultSet.getString(TestUtil.COLUMN_NAMES.length + 1);
     }
     
     /**
@@ -680,19 +680,19 @@ public class JcrResultSetTest {
     @Test(expected= SQLException.class)
     public void shouldThrowExceptionIsClosedWhenGettingValue() throws SQLException {
 	resultSet.close();
-	resultSet.getString(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A);
+	resultSet.getString(TestUtil.COLUMN_NAME_PROPERTIES.PROP_A);
     }
     
     @Test(expected= SQLException.class)
     public void shouldThrowExceptionIsClosedWhenGettingObject() throws SQLException {
 	resultSet.close();
-	resultSet.getObject(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A);
+	resultSet.getObject(TestUtil.COLUMN_NAME_PROPERTIES.PROP_A);
     }
     
     @Test(expected= SQLException.class)
     public void shouldThrowExceptionIsClosedWhenGettingBytes() throws SQLException {
 	resultSet.close();
-	resultSet.getBytes(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A);
+	resultSet.getBytes(TestUtil.COLUMN_NAME_PROPERTIES.PROP_A);
     }
     
     //*******************
@@ -703,17 +703,17 @@ public class JcrResultSetTest {
     
     @Test(expected= SQLException.class)
     public void shouldThrowExceptionIsRowSetWhenGettingValue() throws SQLException {
-	resultSet.getString(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A);
+	resultSet.getString(TestUtil.COLUMN_NAME_PROPERTIES.PROP_A);
     }
     
     @Test(expected= SQLException.class)
     public void shouldThrowExceptionIsRowSetWhenGettingObject() throws SQLException {
-	resultSet.getObject(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A);
+	resultSet.getObject(TestUtil.COLUMN_NAME_PROPERTIES.PROP_A);
     }
     
     @Test(expected= SQLException.class)
     public void shouldThrowExceptionIsRowSetWhenGettingBytes() throws SQLException {
-	resultSet.getBytes(TestQueryResultMetaData.COLUMN_NAME_PROPERTIES.PROP_A);
+	resultSet.getBytes(TestUtil.COLUMN_NAME_PROPERTIES.PROP_A);
     }
     
     

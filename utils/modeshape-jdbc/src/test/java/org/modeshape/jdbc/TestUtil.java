@@ -57,7 +57,7 @@ import net.jcip.annotations.NotThreadSafe;
  * This provides common result set metadata used by various tests
  *
  */
-public class TestQueryResultMetaData {
+public class TestUtil {
     
     public static final String STRING = PropertyType.nameFromValue(PropertyType.STRING);
     public static final String DOUBLE = PropertyType.nameFromValue(PropertyType.DOUBLE);
@@ -418,8 +418,8 @@ class QueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
 	 */
 	@Override
 	public Value getValue(String arg0) throws ItemNotFoundException {
-		for (int i=0; i< TestQueryResultMetaData.COLUMN_NAMES.length; i++) {
-		    if (TestQueryResultMetaData.COLUMN_NAMES[i].equals(arg0)) {
+		for (int i=0; i< TestUtil.COLUMN_NAMES.length; i++) {
+		    if (TestUtil.COLUMN_NAMES[i].equals(arg0)) {
 			return createValue(tuple[i]);
 		    }
 		}	    

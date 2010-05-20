@@ -82,7 +82,7 @@ public class JcrStatementTest {
 	
         stmt =  new JcrStatement(connection, session);
         
-        when(queryResult.getColumnNames()).thenReturn(TestQueryResultMetaData.COLUMN_NAMES);
+        when(queryResult.getColumnNames()).thenReturn(TestUtil.COLUMN_NAMES);
        
         when(session.getWorkspace()).thenReturn(workspace);
         
@@ -150,12 +150,12 @@ public class JcrStatementTest {
       
     @Test
     public void shouldExcute() throws SQLException {
-	stmt.execute(TestQueryResultMetaData.SQL_SELECT);
+	stmt.execute(TestUtil.SQL_SELECT);
 
     }
     
     public void shouldExcuteQuery() throws SQLException {
-	stmt.executeQuery(TestQueryResultMetaData.SQL_SELECT);
+	stmt.executeQuery(TestUtil.SQL_SELECT);
     }
     
     /**

@@ -50,11 +50,11 @@ import org.modeshape.jdbc.JcrDriver.ConnectionInfo;
  */
 public class JcrResultSetMetaDataTest {
 
-    public static final String STRING = TestQueryResultMetaData.STRING;
-    public static final String DOUBLE = TestQueryResultMetaData.DOUBLE;
-    public static final String LONG = TestQueryResultMetaData.LONG;
-    public static final String PATH = TestQueryResultMetaData.PATH;
-    public static final String REFERENCE = TestQueryResultMetaData.REFERENCE;
+    public static final String STRING = TestUtil.STRING;
+    public static final String DOUBLE = TestUtil.DOUBLE;
+    public static final String LONG = TestUtil.LONG;
+    public static final String PATH = TestUtil.PATH;
+    public static final String REFERENCE = TestUtil.REFERENCE;
 
     public static final Class<?> STRING_CLASS = JcrType.builtInTypeMap().get(STRING).getRepresentationClass();
 
@@ -66,9 +66,9 @@ public class JcrResultSetMetaDataTest {
     private QueryResult results;
     @Mock
     private org.modeshape.jcr.api.query.QueryResult extendedResults;
-    private String[] columnNames = TestQueryResultMetaData.COLUMN_NAMES;
-    private String[] tableNames = TestQueryResultMetaData.TABLE_NAMES;
-    private String[] typeNames = TestQueryResultMetaData.TYPE_NAMES;
+    private String[] columnNames = TestUtil.COLUMN_NAMES;
+    private String[] tableNames = TestUtil.TABLE_NAMES;
+    private String[] typeNames = TestUtil.TYPE_NAMES;
     @Mock
     private ConnectionInfo info;
 
