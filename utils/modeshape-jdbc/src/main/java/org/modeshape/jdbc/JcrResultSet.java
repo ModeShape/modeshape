@@ -47,13 +47,14 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.sql.Types;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.jcr.ItemNotFoundException;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -648,11 +649,14 @@ public class JcrResultSet implements ResultSet {
 	notClosed();
 	isRowSet();
 
+	this.currentValue = null;
 	try {
 	    Value value = row.getValue(columnLabel);
 	    byte[] rtnbytes = convertToByteArray(value);
 	    this.currentValue = rtnbytes;
 	    return rtnbytes;
+	} catch (PathNotFoundException pnfe) {
+	   // do nothing, return null
 	} catch (ItemNotFoundException e) {	    
 	    itemNotFoundUsingColunName(columnLabel);
 	} catch (RepositoryException e) {
@@ -935,6 +939,7 @@ public class JcrResultSet implements ResultSet {
 	return getColumnTranslatedToJDBC(columnLabel);
     }
 
+
     /**
      * {@inheritDoc}
      * 
@@ -1163,6 +1168,27 @@ public class JcrResultSet implements ResultSet {
     public InputStream getUnicodeStream( String columnLabel ) throws SQLException {
 	throw new SQLFeatureNotSupportedException();
     }
+    
+    
+    public Value getValue(int columnIndex) throws SQLException {
+	return getValue(findColumn(columnIndex));
+	
+    }
+    
+    
+    public Value getValue(String columnLabel) throws SQLException {
+	notClosed();
+	isRowSet();
+	
+	try {
+		return row.getValue(columnLabel);
+	} catch (PathNotFoundException pnfe) {
+	    	 return null;
+	} catch (RepositoryException e) {
+	    throw new SQLException(e.getLocalizedMessage(), e);
+	}
+
+    }
         
     /**
      * This is called when the calling method controls what datatype to be returned.
@@ -1176,18 +1202,20 @@ public class JcrResultSet implements ResultSet {
 	notClosed();
 	isRowSet();
 	
+	this.currentValue = null;
 	try {
-	    
+	    	    
 	    final Value value = row.getValue(columnName);
 	    this.currentValue = getValueObject(value, type);
-	    return this.currentValue;
-	    	  
+	    
+	} catch (PathNotFoundException pnfe) {
+	    	  // do nothing, return null
 	} catch (ItemNotFoundException e) {	    
 	    itemNotFoundUsingColunName(columnName);
 	} catch (RepositoryException e) {
 	    throw new SQLException(e.getLocalizedMessage(), e);
 	}
-	return null;
+	return this.currentValue;
     }
        
     /**
@@ -1240,48 +1268,59 @@ public class JcrResultSet implements ResultSet {
 	notClosed();
 	isRowSet();
 	try {
-	    Value value = row.getValue(columnName);
 
+	    Value value = null;
+	    this.currentValue = null;
+	    
+	    try {
+		value = row.getValue(columnName);
+	    } catch (javax.jcr.PathNotFoundException pnf) {
+	    }
+		
 	    if (value == null)
 		return null;
 	    
 	    JcrType jcrType = TYPE_INFO.get(PropertyType.nameFromValue(value
 		    .getType()));
-	    
-	    this.currentValue = getValueTranslatedToJDBC(value, jcrType.getJdbcType());
-	    return this.currentValue;
     	    
+	    this.currentValue = getValueTranslatedToJDBC(value, jcrType);
+	    return this.currentValue;
+	    
+
 	} catch (RepositoryException e) {
 	    throw new SQLException(e.getLocalizedMessage(), e);
 	}
     }
     
-    private Object getValueTranslatedToJDBC(Value value, int jdbcType) 
+    private Object getValueTranslatedToJDBC(Value value, JcrType jcrType) 
     throws SQLException {
 	if (value == null) return null;
-	try {
 	
-	    switch (jdbcType) {
-
-	    case Types.VARCHAR:
+	try {
+	    
+	    if (jcrType.getRepresentationClass() == java.lang.String.class) {
 		return value.getString();
-	    case Types.BOOLEAN:
-		return new Boolean(value.getBoolean());
-	    case Types.DATE:
-		return new Date(value.getDate().getTime().getTime());
-	    case Types.TIMESTAMP:
-		return new java.sql.Timestamp(value.getDate().getTime()
-			.getTime());
-	    case Types.FLOAT:
-		return new Float(value.getDouble());
-	    case Types.BIGINT:
+	    } else if (jcrType.getRepresentationClass() == java.lang.Long.class) {
 		return new Long(value.getLong());
-	    case Types.BLOB:
+	    } else if (jcrType.getRepresentationClass() == java.lang.Boolean.class) {
+		return new Boolean(value.getBoolean());
+	    } else if (jcrType.getRepresentationClass() == java.lang.Double.class ||
+		    jcrType.getRepresentationClass() == java.lang.Float.class) {
+		return new Float(value.getDouble());
+	    } else if (jcrType.getRepresentationClass() == java.sql.Date.class) {
+		return new Date(value.getDate().getTime().getTime());
+	    } else if (jcrType.getRepresentationClass() == java.sql.Timestamp.class) {
+		return new java.sql.Timestamp(value.getDate().getTime()
+			.getTime());		
+	    } else if (jcrType.getRepresentationClass() == java.sql.Blob.class) {
 		return new JcrBlob(value, 0L);
+	    } else if (jcrType.getRepresentationClass() == UUID.class) {
+		return UUID.fromString(value.getString());
+		
+	    } else {
+		throw new SQLException(JdbcI18n.noJcrTypeMapped.text(jcrType.getRepresentationClass().getName()));
 	    }
-	    
-	    return value.toString();
-	    
+	    	    
 	} catch (ValueFormatException ve) {
 	    throw new SQLException(ve.getLocalizedMessage(), ve);
 	} catch (IllegalStateException ie) {

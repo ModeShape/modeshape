@@ -67,6 +67,7 @@ public final class JdbcI18n {
     public static I18n invalidArgument;
     public static I18n invalidColumnIndex;
     public static I18n currentRowNotSet;
+    public static I18n noJcrTypeMapped;
 
     static {
         try {

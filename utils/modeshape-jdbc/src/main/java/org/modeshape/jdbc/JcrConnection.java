@@ -90,7 +90,7 @@ public class JcrConnection implements Connection {
   
     }
 
-    protected ConnectionInfo info() {
+    public ConnectionInfo info() {
         return info;
     }
 
@@ -99,6 +99,7 @@ public class JcrConnection implements Connection {
             Credentials credentials = info.getCredentials();
             String workspaceName = info.getWorkspaceName();
             try {
+        	
                 if (workspaceName != null) {
                     this.session = credentials != null ? repository.login(credentials, workspaceName) : repository.login(workspaceName);
                 } else {
@@ -513,7 +514,7 @@ public class JcrConnection implements Connection {
      */
     @Override
     public String nativeSQL( String sql ) throws SQLException {
-        return null;
+        return sql;
     }
 
     /**
