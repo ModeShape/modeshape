@@ -822,10 +822,6 @@
 							<name>java.io.tmpdir</name>
 							<value>${basedir}/target</value>
 						</property>
-                                                <property>
-                                                        <name>java.net.preferIPv4Stack</name>
-                                                        <value>true</value>
-                                                </property>
 					</systemProperties>
 				</configuration>
 			</plugin>
