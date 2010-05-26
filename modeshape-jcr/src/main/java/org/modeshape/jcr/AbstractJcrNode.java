@@ -261,6 +261,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @throws RepositoryException if there is an exception
      */
     public final boolean isNodeType( Name nodeTypeName ) throws RepositoryException {
+        checkSession();
         return cache.isNodeType(nodeInfo(), nodeTypeName);
     }
 
@@ -270,6 +271,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#getDefinition()
      */
     public NodeDefinition getDefinition() throws RepositoryException {
+        checkSession();
         NodeDefinitionId definitionId = nodeInfo().getPayload().getDefinitionId();
         return session().nodeTypeManager().getNodeDefinition(definitionId);
     }
@@ -280,6 +282,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#getPrimaryNodeType()
      */
     public JcrNodeType getPrimaryNodeType() throws RepositoryException {
+        checkSession();
         return session().nodeTypeManager().getNodeType(getPrimaryTypeName());
     }
 
@@ -293,6 +296,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#getMixinNodeTypes()
      */
     public NodeType[] getMixinNodeTypes() throws RepositoryException {
+        checkSession();
         NodeTypeManager nodeTypeManager = session().nodeTypeManager();
         Property mixinTypesProperty = getProperty(JcrLexicon.MIXIN_TYPES);
         if (mixinTypesProperty == null) return EMPTY_NODE_TYPES;
@@ -315,6 +319,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#getPrimaryItem()
      */
     public final Item getPrimaryItem() throws RepositoryException {
+        checkSession();
         // Get the primary item name from this node's type ...
         NodeType primaryType = getPrimaryNodeType();
         String primaryItemNameString = primaryType.getPrimaryItemName();
@@ -356,6 +361,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     @Override
     public boolean isSame( Item otherItem ) throws RepositoryException {
         CheckArg.isNotNull(otherItem, "otherItem");
+        checkSession();
         if (super.isSame(otherItem) && otherItem instanceof javax.jcr.Node) {
             if (otherItem instanceof AbstractJcrNode) {
                 AbstractJcrNode that = (AbstractJcrNode)otherItem;
@@ -403,6 +409,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#hasProperties()
      */
     public final boolean hasProperties() throws RepositoryException {
+        checkSession();
         return nodeInfo().getPropertyCount() > 0;
     }
 
@@ -414,6 +421,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final boolean hasProperty( String relativePath ) throws RepositoryException {
         CheckArg.isNotEmpty(relativePath, "relativePath");
+        checkSession();
         if (relativePath.indexOf('/') >= 0) {
             try {
                 getProperty(relativePath);
@@ -429,6 +437,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     }
 
     public final boolean hasProperty( Name name ) throws RepositoryException {
+        checkSession();
         return nodeInfo().getProperty(name) != null;
     }
 
@@ -438,6 +447,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#getProperties()
      */
     public final PropertyIterator getProperties() throws RepositoryException {
+        checkSession();
         return new JcrPropertyIterator(cache.findJcrPropertiesFor(nodeId, location.getPath()));
     }
 
@@ -448,6 +458,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public PropertyIterator getProperties( String namePattern ) throws RepositoryException {
         CheckArg.isNotNull(namePattern, "namePattern");
+        checkSession();
         namePattern = namePattern.trim();
         if (namePattern.length() == 0) return new JcrEmptyPropertyIterator();
         if ("*".equals(namePattern)) {
@@ -570,6 +581,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#getReferences()
      */
     public final PropertyIterator getReferences( String propertyName ) throws RepositoryException {
+        checkSession();
         if (!this.isReferenceable()) {
             // This node is not referenceable, so it cannot have any references to it ...
             return new JcrEmptyPropertyIterator();
@@ -634,6 +646,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final Property getProperty( String relativePath ) throws RepositoryException {
         CheckArg.isNotEmpty(relativePath, "relativePath");
+        checkSession();
         int indexOfFirstSlash = relativePath.indexOf('/');
         if (indexOfFirstSlash == 0) {
             // Not a relative path ...
@@ -675,6 +688,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final boolean hasNode( String relativePath ) throws RepositoryException {
         CheckArg.isNotEmpty(relativePath, "relativePath");
+        checkSession();
         if (relativePath.equals(".")) return true;
         if (relativePath.equals("..")) return isRoot() ? false : true;
         int indexOfFirstSlash = relativePath.indexOf('/');
@@ -706,6 +720,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#hasNodes()
      */
     public final boolean hasNodes() throws RepositoryException {
+        checkSession();
         return nodeInfo().getChildrenCount() > 0;
     }
 
@@ -735,6 +750,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final AbstractJcrNode getNode( String relativePath ) throws RepositoryException {
         CheckArg.isNotEmpty(relativePath, "relativePath");
+        checkSession();
         if (relativePath.equals(".")) return this;
         if (relativePath.equals("..")) return this.getParent();
         int indexOfFirstSlash = relativePath.indexOf('/');
@@ -780,6 +796,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#getNodes()
      */
     public final NodeIterator getNodes() throws RepositoryException {
+        checkSession();
         int childCount = nodeInfo().getChildrenCount();
         if (childCount == 0) {
             return new JcrEmptyNodeIterator();
@@ -798,6 +815,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public NodeIterator getNodes( String namePattern ) throws RepositoryException {
         CheckArg.isNotNull(namePattern, "namePattern");
+        checkSession();
         namePattern = namePattern.trim();
         if (namePattern.length() == 0) return new JcrEmptyNodeIterator();
         if ("*".equals(namePattern)) return getNodes();
@@ -842,6 +860,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final void accept( ItemVisitor visitor ) throws RepositoryException {
         CheckArg.isNotNull(visitor, "visitor");
+        checkSession();
         visitor.visit(this);
     }
 
@@ -869,6 +888,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final boolean canAddMixin( String mixinName ) throws NoSuchNodeTypeException, RepositoryException {
         CheckArg.isNotNull(mixinName, "mixinName");
         CheckArg.isNotZeroLength(mixinName, "mixinName");
+        checkSession();
 
         session().checkPermission(path(), ModeShapePermissions.SET_PROPERTY);
 
@@ -968,6 +988,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final void addMixin( String mixinName ) throws RepositoryException {
         CheckArg.isNotNull(mixinName, "mixinName");
         CheckArg.isNotZeroLength(mixinName, "mixinName");
+        checkSession();
 
         JcrNodeType mixinCandidateType = cache.nodeTypes().getNodeType(mixinName);
 
@@ -1006,6 +1027,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#removeMixin(java.lang.String)
      */
     public final void removeMixin( String mixinName ) throws RepositoryException {
+        checkSession();
 
         if (this.isLocked() && !holdsLock()) {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
@@ -1134,6 +1156,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public void setPrimaryType( String nodeTypeName )
         throws NoSuchNodeTypeException, VersionException, ConstraintViolationException, LockException, RepositoryException {
+        checkSession();
 
         if (this.isLocked() && !holdsLock()) {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
@@ -1199,6 +1222,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                    UUID desiredUuid )
         throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException,
         RepositoryException {
+        checkSession();
 
         if (isLocked() && !holdsLock()) {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
@@ -1294,6 +1318,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     final boolean canAddNode( String relPath,
                               String primaryNodeTypeName ) throws RepositoryException {
         CheckArg.isNotEmpty(relPath, relPath);
+        checkSession();
 
         if (isLocked() && !holdsLock()) {
             return false;
@@ -1353,6 +1378,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        boolean value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
         return editor().setProperty(nameFrom(name), valueFrom(PropertyType.BOOLEAN, value));
     }
 
@@ -1364,6 +1390,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        Calendar value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
 
         if (value == null) {
             return removeExistingValuedProperty(name);
@@ -1380,6 +1407,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        double value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
         return editor().setProperty(nameFrom(name), valueFrom(PropertyType.DOUBLE, value));
     }
 
@@ -1391,6 +1419,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        InputStream value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
         if (value == null) {
             return removeExistingValuedProperty(name);
         }
@@ -1406,6 +1435,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        long value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
         return editor().setProperty(nameFrom(name), valueFrom(PropertyType.LONG, value));
     }
 
@@ -1417,6 +1447,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        javax.jcr.Node value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
         if (value == null) {
             return removeExistingValuedProperty(name);
         }
@@ -1432,6 +1463,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        String value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
         if (value == null) {
             return removeExistingValuedProperty(name);
         }
@@ -1448,6 +1480,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                        String value,
                                        int type )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
         if (value == null) {
             return removeExistingValuedProperty(name);
         }
@@ -1463,6 +1496,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        String[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
         if (values == null) {
             return removeExistingValuedProperty(name);
         }
@@ -1479,6 +1513,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                        String[] values,
                                        int type )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
         if (values == null) {
             return removeExistingValuedProperty(name);
         }
@@ -1494,6 +1529,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        Value value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
         if (value == null) {
             return removeExistingValuedProperty(name);
         }
@@ -1510,6 +1546,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                        Value value,
                                        int type )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
         if (value == null) {
             return removeExistingValuedProperty(name);
         }
@@ -1525,6 +1562,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Property setProperty( String name,
                                        Value[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
         if (values == null) {
             // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
@@ -1542,6 +1580,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                        Value[] values,
                                        int type )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
         if (values == null) {
             // If there is an existing property, then remove it ...
             return removeExistingValuedProperty(name);
@@ -1587,6 +1626,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#isCheckedOut()
      */
     public final boolean isCheckedOut() throws RepositoryException {
+        checkSession();
         return editor().isCheckedOut();
     }
 
@@ -1596,6 +1636,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#checkin()
      */
     public final Version checkin() throws RepositoryException {
+        checkSession();
         checkVersionable();
 
         return versionManager().checkin(this);
@@ -1607,6 +1648,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#checkout()
      */
     public final void checkout() throws UnsupportedRepositoryOperationException, LockException, RepositoryException {
+        checkSession();
         checkVersionable();
 
         versionManager().checkout(this);
@@ -1621,6 +1663,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                      boolean bestEffort ) throws ConstraintViolationException, RepositoryException {
         CheckArg.isNotNull(srcWorkspace, "source workspace name");
 
+        checkSession();
         checkNotProtected();
 
         return versionManager().merge(this, srcWorkspace, bestEffort);
@@ -1632,6 +1675,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#cancelMerge(javax.jcr.version.Version)
      */
     public final void cancelMerge( Version version ) throws RepositoryException {
+        checkSession();
         checkVersionable();
 
         versionManager().cancelMerge(this, version);
@@ -1643,6 +1687,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#doneMerge(javax.jcr.version.Version)
      */
     public final void doneMerge( Version version ) throws RepositoryException {
+        checkSession();
         checkVersionable();
 
         versionManager().doneMerge(this, version);
@@ -1654,6 +1699,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#getVersionHistory()
      */
     public final JcrVersionHistoryNode getVersionHistory() throws RepositoryException {
+        checkSession();
         checkVersionable();
 
         return versionManager().getVersionHistory(this);
@@ -1665,6 +1711,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#getBaseVersion()
      */
     public final JcrVersionNode getBaseVersion() throws RepositoryException {
+        checkSession();
         checkVersionable();
 
         // This can happen if the versionable type was added to the node, but it hasn't been saved yet
@@ -1692,6 +1739,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final void restore( Version version,
                                boolean removeExisting ) throws RepositoryException {
+        checkSession();
         try {
             checkNotProtected();
         } catch (ConstraintViolationException cve) {
@@ -1708,6 +1756,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final void restore( Version version,
                                String relPath,
                                boolean removeExisting ) throws RepositoryException {
+        checkSession();
         checkNotProtected();
 
         PathFactory pathFactory = context().getValueFactories().getPathFactory();
@@ -1734,7 +1783,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @return <code>false</code>
      * @see javax.jcr.Node#holdsLock()
      */
-    public final boolean holdsLock() {
+    public final boolean holdsLock() throws RepositoryException {
+        checkSession();
         WorkspaceLockManager.ModeShapeLock lock = session().workspace().lockManager().lockFor(session(), this.location);
 
         return lock != null && cache.session().lockTokens().contains(lock.getLockToken());
@@ -1757,6 +1807,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final Lock lock( boolean isDeep,
                             boolean isSessionScoped ) throws LockException, RepositoryException {
+        checkSession();
         if (!isLockable()) {
             throw new LockException(JcrI18n.nodeNotLockable.text(getPath()));
         }
@@ -1796,6 +1847,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#unlock()
      */
     public final void unlock() throws LockException, RepositoryException {
+        checkSession();
         WorkspaceLockManager.ModeShapeLock lock = session().workspace().lockManager().lockFor(session(), this.location);
 
         if (lock == null) {
@@ -1841,6 +1893,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#getLock()
      */
     public final Lock getLock() throws LockException, RepositoryException {
+        checkSession();
         WorkspaceLockManager.ModeShapeLock lock = lock();
 
         if (lock == null) throw new LockException(JcrI18n.notLocked.text(this.location));
@@ -1854,6 +1907,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final boolean isModified() {
         try {
+            checkSession();
             Node<JcrNodePayload, JcrPropertyPayload> node = nodeInfo();
             // Considered modified if *not* new but changed
             return !node.isNew() && node.isChanged(true);
@@ -1869,6 +1923,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final boolean isNew() {
         try {
+            checkSession();
             return nodeInfo().isNew();
         } catch (RepositoryException re) {
             throw new IllegalStateException(re);
@@ -1883,6 +1938,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final String getCorrespondingNodePath( String workspaceName )
         throws NoSuchWorkspaceException, ItemNotFoundException, RepositoryException {
         CheckArg.isNotNull(workspaceName, "workspace name");
+        checkSession();
         NamespaceRegistry namespaces = this.context().getNamespaceRegistry();
         return correspondingNodePath(workspaceName).getString(namespaces);
     }
@@ -1911,6 +1967,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final void update( String srcWorkspaceName ) throws NoSuchWorkspaceException, RepositoryException {
         CheckArg.isNotNull(srcWorkspaceName, "workspace name");
+        checkSession();
 
         if (session().hasPendingChanges()) {
             throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
@@ -1939,6 +1996,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final void orderBefore( String srcChildRelPath,
                                    String destChildRelPath ) throws UnsupportedRepositoryOperationException, RepositoryException {
+        checkSession();
         // This implementation is correct, except for not calling the SessionCache or graph layer to do the re-order
         if (!getPrimaryNodeType().hasOrderableChildNodes()) {
             throw new UnsupportedRepositoryOperationException(
@@ -2047,6 +2105,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Item#refresh(boolean)
      */
     public void refresh( boolean keepChanges ) throws RepositoryException {
+        checkSession();
         this.cache.refresh(this.nodeId, location.getPath(), keepChanges);
     }
 
@@ -2056,6 +2115,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Item#save()
      */
     public void save() throws RepositoryException {
+        checkSession();
         session().checkReferentialIntegrityOfChanges(this);
         cache.save(nodeId, location.getPath());
     }

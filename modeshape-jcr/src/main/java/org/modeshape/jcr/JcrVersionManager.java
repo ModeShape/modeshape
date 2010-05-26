@@ -190,6 +190,7 @@ final class JcrVersionManager {
      * @see AbstractJcrNode#getVersionHistory()
      */
     JcrVersionHistoryNode getVersionHistory( AbstractJcrNode node ) throws RepositoryException {
+        session.checkLive();
         Location historyLocation = Location.create(versionHistoryPathFor(node.uuid()));
         try {
             return (JcrVersionHistoryNode)cache().findJcrNode(historyLocation);

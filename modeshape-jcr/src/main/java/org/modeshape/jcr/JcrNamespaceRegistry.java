@@ -32,6 +32,7 @@ import java.util.Set;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.xml.XMLConstants;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
@@ -133,11 +134,21 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
     }
 
     /**
+     * Check that the session is still valid and {@link Session#isLive() live}.
+     * 
+     * @throws RepositoryException if the session is not valid or live
+     */
+    protected final void checkSession() throws RepositoryException {
+        session.checkLive();
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.NamespaceRegistry#getPrefix(java.lang.String)
      */
     public String getPrefix( String uri ) throws NamespaceException, RepositoryException {
+        checkSession();
         if (behavior == Behavior.WORKSPACE) {
             // Check the standard ones first, ensuring that invalid changes to the persistent storage don't matter ...
             String prefix = STANDARD_BUILT_IN_PREFIXES_BY_NAMESPACE.get(uri);
@@ -156,7 +167,8 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
      * 
      * @see javax.jcr.NamespaceRegistry#getPrefixes()
      */
-    public String[] getPrefixes() {
+    public String[] getPrefixes() throws RepositoryException {
+        checkSession();
         Set<Namespace> namespaces = registry.getNamespaces();
         String[] prefixes = new String[namespaces.size()];
         int i = 0;
@@ -172,6 +184,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
      * @see javax.jcr.NamespaceRegistry#getURI(java.lang.String)
      */
     public String getURI( String prefix ) throws NamespaceException, RepositoryException {
+        checkSession();
         if (behavior == Behavior.WORKSPACE) {
             // Check the standard ones first, ensuring that invalid changes to the persistent storage don't matter ...
             String uri = STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX.get(prefix);
@@ -190,7 +203,8 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
      * 
      * @see javax.jcr.NamespaceRegistry#getURIs()
      */
-    public String[] getURIs() {
+    public String[] getURIs() throws RepositoryException {
+        checkSession();
         Set<Namespace> namespaces = registry.getNamespaces();
         String[] uris = new String[namespaces.size()];
         int i = 0;
@@ -209,6 +223,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
                                                 String uri ) throws NamespaceException, RepositoryException {
         CheckArg.isNotNull(prefix, "prefix");
         CheckArg.isNotNull(uri, "uri");
+        checkSession();
 
         boolean global = false;
         switch (behavior) {
@@ -334,6 +349,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
     public synchronized void unregisterNamespace( String prefix )
         throws NamespaceException, AccessDeniedException, RepositoryException {
         CheckArg.isNotNull(prefix, "prefix");
+        checkSession();
 
         // Don't need to check permissions for transient registration/unregistration
         if (behavior.equals(Behavior.WORKSPACE)) {

@@ -83,6 +83,7 @@ class JcrNode extends AbstractJcrNode {
      */
     @Override
     public AbstractJcrNode getParent() throws ItemNotFoundException, RepositoryException {
+        checkSession();
         return nodeInfo().getParent().getPayload().getJcrNode();
     }
 
@@ -92,6 +93,7 @@ class JcrNode extends AbstractJcrNode {
      * @see javax.jcr.Item#getPath()
      */
     public String getPath() throws RepositoryException {
+        // checkSession(); ideally we don't have to do this, because getting the path is a useful thing and is used in 'toString'
         return nodeInfo().getPath().getString(namespaces());
     }
 

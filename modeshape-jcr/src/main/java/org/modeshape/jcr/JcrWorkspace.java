@@ -247,6 +247,7 @@ class JcrWorkspace implements Workspace {
      * {@inheritDoc}
      */
     public String[] getAccessibleWorkspaceNames() throws RepositoryException {
+        session.checkLive();
         try {
             Set<String> workspaceNamesFromGraph = graph.getWorkspaces();
             Set<String> workspaceNames = new HashSet<String>(workspaceNamesFromGraph.size());
@@ -307,6 +308,7 @@ class JcrWorkspace implements Workspace {
         CheckArg.isNotNull(srcWorkspace, "source workspace name");
         CheckArg.isNotNull(srcAbsPath, "source path");
         CheckArg.isNotNull(destAbsPath, "destination path");
+        session.checkLive();
 
         if (!graph.getWorkspaces().contains(srcWorkspace)) {
             throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(graph.getSourceName(), this.name));
@@ -466,6 +468,7 @@ class JcrWorkspace implements Workspace {
         CheckArg.isNotNull(srcWorkspace, "source workspace name");
         CheckArg.isNotNull(srcAbsPath, "source path");
         CheckArg.isNotNull(destAbsPath, "destination path");
+        session.checkLive();
 
         if (!graph.getWorkspaces().contains(srcWorkspace)) {
             throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(graph.getSourceName(), this.name));
@@ -577,6 +580,7 @@ class JcrWorkspace implements Workspace {
         RepositoryException {
 
         CheckArg.isNotNull(parentAbsPath, "parentAbsPath");
+        session.checkLive();
 
         Path parentPath = this.context.getValueFactories().getPathFactory().create(parentAbsPath);
 
@@ -596,6 +600,7 @@ class JcrWorkspace implements Workspace {
 
         CheckArg.isNotNull(parentAbsPath, "parentAbsPath");
         CheckArg.isNotNull(in, "in");
+        session.checkLive();
 
         try {
             XMLReader parser = XMLReaderFactory.createXMLReader();
@@ -626,6 +631,7 @@ class JcrWorkspace implements Workspace {
                       String destAbsPath ) throws PathNotFoundException, RepositoryException {
         CheckArg.isNotEmpty(srcAbsPath, "srcAbsPath");
         CheckArg.isNotEmpty(destAbsPath, "destAbsPath");
+        session.checkLive();
 
         // Create the paths ...
         PathFactory factory = context.getValueFactories().getPathFactory();
@@ -699,6 +705,7 @@ class JcrWorkspace implements Workspace {
      */
     public void restore( Version[] versions,
                          boolean removeExisting ) throws RepositoryException {
+        session.checkLive();
         if (session.hasPendingChanges()) {
             throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
         }

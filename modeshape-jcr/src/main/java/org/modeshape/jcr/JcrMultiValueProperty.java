@@ -121,6 +121,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getLengths()
      */
     public long[] getLengths() throws RepositoryException {
+        checkSession();
         Property dnaProperty = propertyInfo().getProperty();
         long[] lengths = new long[dnaProperty.size()];
         Iterator<?> iter = dnaProperty.iterator();
@@ -171,6 +172,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getValues()
      */
     public Value[] getValues() throws RepositoryException {
+        checkSession();
         Property dnaProperty = propertyInfo().getProperty();
         Value[] values = new JcrValue[dnaProperty.size()];
         Iterator<?> iter = dnaProperty.iterator();
@@ -188,11 +190,12 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
     public final void setValue( Value[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         checkForLock();
-        
+
         if (values == null) {
             this.remove();
             return;
         }
+        checkSession();
 
         for (int i = 0; i < values.length; i++) {
             // Force a conversion as per SetValueValueFormatExceptionTest in JR TCK
@@ -210,11 +213,12 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
     public final void setValue( String[] values )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         checkForLock();
-        
+
         if (values == null) {
             this.remove();
             return;
         }
+        checkSession();
 
         Value[] jcrValues = null;
         if (values.length != 0) {

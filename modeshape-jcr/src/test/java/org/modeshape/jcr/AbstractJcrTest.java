@@ -121,6 +121,7 @@ public abstract class AbstractJcrTest {
         when(jcrSession.getWorkspace()).thenReturn(workspace);
         when(jcrSession.getRepository()).thenReturn(repository);
         when(workspace.getName()).thenReturn("workspace1");
+        when(jcrSession.isLive()).thenReturn(true);
 
         // Create the node type manager for the session ...
         // no need to stub the 'JcrSession.checkPermission' methods, since we're never calling 'register' on the

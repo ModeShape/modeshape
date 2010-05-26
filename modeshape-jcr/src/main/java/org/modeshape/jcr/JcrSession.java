@@ -200,6 +200,26 @@ class JcrSession implements Session {
         return this.cache;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Session#isLive()
+     */
+    public boolean isLive() {
+        return isLive;
+    }
+
+    /**
+     * Method that verifies that this session is still {@link #isLive() live}.
+     * 
+     * @throws RepositoryException if session has been closed and is no longer usable.
+     */
+    final void checkLive() throws RepositoryException {
+        if (!isLive()) {
+            throw new RepositoryException(JcrI18n.sessionIsNotActive.text(sessionId()));
+        }
+    }
+
     ExecutionContext getExecutionContext() {
         return this.executionContext;
     }
@@ -306,7 +326,7 @@ class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#getNamespacePrefixes()
      */
-    public String[] getNamespacePrefixes() {
+    public String[] getNamespacePrefixes() throws RepositoryException {
         return sessionRegistry.getPrefixes();
     }
 
@@ -966,15 +986,6 @@ class JcrSession implements Session {
         } catch (SAXException se) {
             throw new RepositoryException(se);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see javax.jcr.Session#isLive()
-     */
-    public boolean isLive() {
-        return isLive;
     }
 
     /**

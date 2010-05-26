@@ -72,6 +72,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getBoolean()
      */
     public boolean getBoolean() throws RepositoryException {
+        checkSession();
         try {
             return context().getValueFactories().getBooleanFactory().create(property().getFirstValue());
         } catch (org.modeshape.graph.property.ValueFormatException e) {
@@ -85,6 +86,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getDate()
      */
     public Calendar getDate() throws RepositoryException {
+        checkSession();
         try {
             return context().getValueFactories().getDateFactory().create(property().getFirstValue()).toCalendar();
         } catch (org.modeshape.graph.property.ValueFormatException e) {
@@ -98,6 +100,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getDouble()
      */
     public double getDouble() throws RepositoryException {
+        checkSession();
         try {
             return context().getValueFactories().getDoubleFactory().create(property().getFirstValue());
         } catch (org.modeshape.graph.property.ValueFormatException e) {
@@ -111,6 +114,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getLength()
      */
     public long getLength() throws RepositoryException {
+        checkSession();
         return createValue(property().getFirstValue()).getLength();
     }
 
@@ -130,6 +134,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getLong()
      */
     public long getLong() throws RepositoryException {
+        checkSession();
         try {
             return context().getValueFactories().getLongFactory().create(property().getFirstValue());
         } catch (org.modeshape.graph.property.ValueFormatException e) {
@@ -143,6 +148,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getNode()
      */
     public final Node getNode() throws RepositoryException {
+        checkSession();
         try {
             ValueFactories factories = context().getValueFactories();
             Reference dnaReference = factories.getReferenceFactory().create(property().getFirstValue());
@@ -159,6 +165,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getStream()
      */
     public InputStream getStream() throws RepositoryException {
+        checkSession();
         try {
             Binary binary = context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
             return new SelfClosingInputStream(binary);
@@ -173,6 +180,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getString()
      */
     public String getString() throws RepositoryException {
+        checkSession();
         try {
             return context().getValueFactories().getStringFactory().create(property().getFirstValue());
         } catch (org.modeshape.graph.property.ValueFormatException e) {
@@ -186,6 +194,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#getValue()
      */
     public Value getValue() throws RepositoryException {
+        checkSession();
         return createValue(property().getFirstValue());
     }
 
@@ -196,9 +205,10 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public void setValue( Value value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        JcrValue jcrValue = null;
+        checkSession();
         checkForLock();
-        
+        JcrValue jcrValue = null;
+
         if (value instanceof JcrValue) {
             jcrValue = (JcrValue)value;
 
@@ -251,9 +261,10 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
     protected void setValue( JcrValue jcrValue )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         assert jcrValue != null;
-        
+
+        checkSession();
         checkForLock();
-        
+
         editor().setProperty(name(), jcrValue);
     }
 

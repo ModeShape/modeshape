@@ -92,7 +92,7 @@ class JcrQueryManager implements QueryManager {
      * @see javax.jcr.query.QueryManager#createQuery(java.lang.String, java.lang.String)
      */
     public Query createQuery( String statement,
-                              String language ) throws InvalidQueryException {
+                              String language ) throws InvalidQueryException, RepositoryException {
         CheckArg.isNotNull(statement, "statement");
         CheckArg.isNotNull(language, "language");
         return createQuery(statement, language, null);
@@ -108,10 +108,12 @@ class JcrQueryManager implements QueryManager {
      * @param storedAtPath the path at which this query was stored, or null if this is not a stored query
      * @return query the JCR query object; never null
      * @throws InvalidQueryException if expression is invalid or language is unsupported
+     * @throws RepositoryException if the session is no longer live
      */
     public Query createQuery( String expression,
                               String language,
-                              Path storedAtPath ) throws InvalidQueryException {
+                              Path storedAtPath ) throws InvalidQueryException, RepositoryException {
+        session.checkLive();
         // Look for a parser for the specified language ...
         QueryParser parser = session.repository().queryParsers().getParserFor(language);
         if (parser == null) {
@@ -158,8 +160,10 @@ class JcrQueryManager implements QueryManager {
      * @param command the query command; may not be null
      * @return query the JCR query object; never null
      * @throws InvalidQueryException if expression is invalid or language is unsupported
+     * @throws RepositoryException if the session is no longer live
      */
-    public Query createQuery( QueryCommand command ) throws InvalidQueryException {
+    public Query createQuery( QueryCommand command ) throws InvalidQueryException, RepositoryException {
+        session.checkLive();
         if (command == null) {
             // The query is not well-formed and cannot be parsed ...
             throw new InvalidQueryException(JcrI18n.queryInLanguageIsNotValid.text(QueryLanguage.JCR_SQL2, command));
@@ -284,6 +288,7 @@ class JcrQueryManager implements QueryManager {
          * @see javax.jcr.query.Query#storeAsNode(java.lang.String)
          */
         public Node storeAsNode( String absPath ) throws PathNotFoundException, ConstraintViolationException, RepositoryException {
+            session.checkLive();
             NamespaceRegistry namespaces = this.session.namespaces();
 
             Path path;
@@ -374,6 +379,7 @@ class JcrQueryManager implements QueryManager {
          * @see javax.jcr.query.Query#execute()
          */
         public QueryResult execute() throws RepositoryException {
+            session.checkLive();
             // Submit immediately to the workspace graph ...
             Schemata schemata = session.workspace().nodeTypeManager().schemata();
             QueryResults result = session.repository().queryManager().query(session.workspace().getName(),

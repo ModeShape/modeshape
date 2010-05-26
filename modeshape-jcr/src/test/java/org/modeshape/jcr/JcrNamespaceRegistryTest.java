@@ -27,16 +27,14 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.when;
 import javax.jcr.NamespaceException;
-import org.modeshape.graph.ExecutionContext;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.modeshape.graph.ExecutionContext;
 
-/**
- * @author jverhaeg
- */
 public class JcrNamespaceRegistryTest {
 
     private ExecutionContext executionContext;
@@ -48,6 +46,7 @@ public class JcrNamespaceRegistryTest {
     public void before() {
         MockitoAnnotations.initMocks(this);
         executionContext = new ExecutionContext();
+        when(session.isLive()).thenReturn(true);
         registry = new JcrNamespaceRegistry(executionContext.getNamespaceRegistry(), session);
     }
 

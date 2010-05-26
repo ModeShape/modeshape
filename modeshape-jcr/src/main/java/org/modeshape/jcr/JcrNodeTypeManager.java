@@ -96,7 +96,8 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * 
      * @see javax.jcr.nodetype.NodeTypeManager#getAllNodeTypes()
      */
-    public NodeTypeIterator getAllNodeTypes() {
+    public NodeTypeIterator getAllNodeTypes() throws RepositoryException {
+        session.checkLive();
         return new JcrNodeTypeIterator(repositoryTypeManager.getAllNodeTypes());
     }
 
@@ -105,7 +106,8 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * 
      * @see javax.jcr.nodetype.NodeTypeManager#getMixinNodeTypes()
      */
-    public NodeTypeIterator getMixinNodeTypes() {
+    public NodeTypeIterator getMixinNodeTypes() throws RepositoryException {
+        session.checkLive();
         Collection<JcrNodeType> rawTypes = repositoryTypeManager.getMixinNodeTypes();
         List<JcrNodeType> types = new ArrayList<JcrNodeType>(rawTypes.size());
 
@@ -123,6 +125,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * @see javax.jcr.nodetype.NodeTypeManager#getNodeType(java.lang.String)
      */
     public JcrNodeType getNodeType( String nodeTypeName ) throws NoSuchNodeTypeException, RepositoryException {
+        session.checkLive();
         Name ntName = context().getValueFactories().getNameFactory().create(nodeTypeName);
         JcrNodeType type = repositoryTypeManager.getNodeType(ntName);
         if (type != null) {
@@ -180,7 +183,8 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * 
      * @see javax.jcr.nodetype.NodeTypeManager#getPrimaryNodeTypes()
      */
-    public NodeTypeIterator getPrimaryNodeTypes() {
+    public NodeTypeIterator getPrimaryNodeTypes() throws RepositoryException {
+        session.checkLive();
         Collection<JcrNodeType> rawTypes = repositoryTypeManager.getPrimaryNodeTypes();
         List<JcrNodeType> types = new ArrayList<JcrNodeType>(rawTypes.size());
 
@@ -442,6 +446,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
         AccessDeniedException, RepositoryException {
 
+        session.checkLive();
         try {
             session.checkPermission((Path)null, ModeShapePermissions.REGISTER_TYPE);
         } catch (AccessControlException ace) {
@@ -478,6 +483,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
         AccessDeniedException, RepositoryException {
 
+        session.checkLive();
         try {
             session.checkPermission((Path)null, ModeShapePermissions.REGISTER_TYPE);
         } catch (AccessControlException ace) {

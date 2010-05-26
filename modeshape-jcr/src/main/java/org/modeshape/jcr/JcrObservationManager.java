@@ -23,6 +23,22 @@
  */
 package org.modeshape.jcr;
 
+import static org.modeshape.graph.JcrLexicon.MIXIN_TYPES;
+import static org.modeshape.graph.JcrLexicon.PRIMARY_TYPE;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.jcr.RangeIterator;
+import javax.jcr.RepositoryException;
+import javax.jcr.observation.Event;
+import javax.jcr.observation.EventIterator;
+import javax.jcr.observation.EventListener;
+import javax.jcr.observation.EventListenerIterator;
+import javax.jcr.observation.ObservationManager;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
@@ -41,25 +57,6 @@ import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.graph.request.ChangeRequest;
-import org.modeshape.graph.session.InvalidStateException;
-
-import javax.jcr.RangeIterator;
-import javax.jcr.RepositoryException;
-import javax.jcr.observation.Event;
-import javax.jcr.observation.EventIterator;
-import javax.jcr.observation.EventListener;
-import javax.jcr.observation.EventListenerIterator;
-import javax.jcr.observation.ObservationManager;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static org.modeshape.graph.JcrLexicon.MIXIN_TYPES;
-import static org.modeshape.graph.JcrLexicon.PRIMARY_TYPE;
 
 /**
  * The implementation of JCR {@link ObservationManager}.
@@ -113,6 +110,7 @@ final class JcrObservationManager implements ObservationManager {
      * 
      * @see javax.jcr.observation.ObservationManager#addEventListener(javax.jcr.observation.EventListener, int, java.lang.String,
      *      boolean, java.lang.String[], java.lang.String[], boolean)
+     * @throws RepositoryException if the session is no longer live
      * @throws IllegalArgumentException if <code>listener</code> is <code>null</code>
      */
     public synchronized void addEventListener( EventListener listener,
@@ -121,9 +119,9 @@ final class JcrObservationManager implements ObservationManager {
                                                boolean isDeep,
                                                String[] uuid,
                                                String[] nodeTypeName,
-                                               boolean noLocal ) {
-        checkSession(); // make sure session is still active
+                                               boolean noLocal ) throws RepositoryException {
         CheckArg.isNotNull(listener, "listener");
+        checkSession(); // make sure session is still active
 
         // create wrapper and register
         JcrListenerAdapter adapter = new JcrListenerAdapter(listener, eventTypes, absPath, isDeep, uuid, nodeTypeName, noLocal);
@@ -134,12 +132,10 @@ final class JcrObservationManager implements ObservationManager {
     }
 
     /**
-     * @throws InvalidStateException if session is not active
+     * @throws RepositoryException if session is not active
      */
-    void checkSession() throws InvalidStateException {
-        if (!this.session.isLive()) {
-            throw new InvalidStateException(JcrI18n.sessionIsNotActive.text(this.session.sessionId()));
-        }
+    void checkSession() throws RepositoryException {
+        session.checkLive();
     }
 
     /**
@@ -162,7 +158,7 @@ final class JcrObservationManager implements ObservationManager {
      * 
      * @see javax.jcr.observation.ObservationManager#getRegisteredEventListeners()
      */
-    public EventListenerIterator getRegisteredEventListeners() {
+    public EventListenerIterator getRegisteredEventListeners() throws RepositoryException {
         checkSession(); // make sure session is still active
         return new JcrEventListenerIterator(this.listeners.keySet());
     }
@@ -213,7 +209,7 @@ final class JcrObservationManager implements ObservationManager {
      * @see javax.jcr.observation.ObservationManager#removeEventListener(javax.jcr.observation.EventListener)
      * @throws IllegalArgumentException if <code>listener</code> is <code>null</code>
      */
-    public synchronized void removeEventListener( EventListener listener ) {
+    public synchronized void removeEventListener( EventListener listener ) throws RepositoryException {
         checkSession(); // make sure session is still active
         CheckArg.isNotNull(listener, "listener");
 
@@ -587,7 +583,7 @@ final class JcrObservationManager implements ObservationManager {
             if ((this.absPath != null) && (this.absPath.length() != 0)) {
                 Path matchPath = getValueFactories().getPathFactory().create(this.absPath);
                 Path changePath = null;
-                
+
                 if (change.includes(ChangeType.NODE_ADDED, ChangeType.NODE_REMOVED)) {
                     changePath = change.getPath().getParent();
                 } else {

@@ -100,6 +100,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      */
     public final void accept( ItemVisitor visitor ) throws RepositoryException {
         CheckArg.isNotNull(visitor, "visitor");
+        checkSession();
         visitor.visit(this);
     }
 
@@ -139,6 +140,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      * @see javax.jcr.Property#getType()
      */
     public int getType() throws RepositoryException {
+        checkSession();
         return payload().getPropertyType();
     }
 
@@ -148,6 +150,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      * @see javax.jcr.Property#getDefinition()
      */
     public final PropertyDefinition getDefinition() throws RepositoryException {
+        checkSession();
         return cache.session().nodeTypeManager().getPropertyDefinition(payload().getPropertyDefinitionId());
     }
 
@@ -189,6 +192,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      */
     public final boolean isModified() {
         try {
+            checkSession();
             return propertyInfo().isModified();
         } catch (RepositoryException re) {
             throw new IllegalStateException(re);
@@ -202,6 +206,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      */
     public final boolean isNew() {
         try {
+            checkSession();
             return propertyInfo().isNew();
         } catch (RepositoryException re) {
             throw new IllegalStateException(re);
@@ -225,6 +230,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      */
     @Override
     public final boolean isSame( Item otherItem ) throws RepositoryException {
+        checkSession();
         if (otherItem instanceof Property) {
             Property otherProperty = (Property)otherItem;
             // The nodes that own the properties must be the same ...
@@ -251,6 +257,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      * @see javax.jcr.Item#remove()
      */
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
+        checkSession();
         Node parentNode = getParent();
         if (parentNode.isLocked()) {
             Lock parentLock = parentNode.getLock();
@@ -272,6 +279,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      * @see javax.jcr.Item#save()
      */
     public void save() throws RepositoryException {
+        checkSession();
         // This is not a correct implementation, but it's good enough to work around some TCK requirements for version tests
         // Plus, Item.save() has been removed from the JCR 2.0 spec (and deprecated in JCR 2.0's Java API).
         getParent().save();

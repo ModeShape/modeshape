@@ -35,11 +35,11 @@ import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
-import org.modeshape.graph.Graph;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.modeshape.graph.Graph;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 
 /**
  * 
@@ -140,6 +140,7 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
         JcrSession jcrSession2 = mock(JcrSession.class);
         when(jcrSession2.nodeTypeManager()).thenReturn(nodeTypes);
+        when(jcrSession2.isLive()).thenReturn(true);
         SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
 
         Workspace workspace2 = mock(Workspace.class);
@@ -167,6 +168,7 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
         JcrSession jcrSession2 = mock(JcrSession.class);
         when(jcrSession2.nodeTypeManager()).thenReturn(nodeTypes);
+        when(jcrSession2.isLive()).thenReturn(true);
         SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
 
         Workspace workspace2 = mock(Workspace.class);
@@ -200,6 +202,7 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
         JcrSession jcrSession2 = mock(JcrSession.class);
         when(jcrSession2.nodeTypeManager()).thenReturn(nodeTypes);
+        when(jcrSession2.isLive()).thenReturn(true);
         SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
 
         Workspace workspace2 = mock(Workspace.class);
@@ -233,6 +236,7 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         store2.importXmlFrom(AbstractJcrTest.class.getClassLoader().getResourceAsStream("cars.xml")).into("/");
         JcrSession jcrSession2 = mock(JcrSession.class);
         when(jcrSession2.nodeTypeManager()).thenReturn(nodeTypes);
+        when(jcrSession2.isLive()).thenReturn(true);
         SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
 
         Workspace workspace2 = mock(Workspace.class);

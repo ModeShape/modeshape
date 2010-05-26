@@ -47,11 +47,21 @@ abstract class AbstractJcrItem implements Item {
     }
 
     /**
+     * Check that the session is still valid and {@link Session#isLive() live}.
+     * 
+     * @throws RepositoryException if the session is not valid or live
+     */
+    protected final void checkSession() throws RepositoryException {
+        cache.session().checkLive();
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see javax.jcr.Item#getSession()
      */
-    public Session getSession() {
+    public Session getSession() throws RepositoryException {
+        checkSession();
         return cache.session();
     }
 
@@ -119,6 +129,8 @@ abstract class AbstractJcrItem implements Item {
      * @see javax.jcr.Item#getAncestor(int)
      */
     public Item getAncestor( int depth ) throws RepositoryException {
+        checkSession();
+
         if (depth < 0) {
             throw new ItemNotFoundException(JcrI18n.noNegativeDepth.text(depth));
         }
@@ -149,6 +161,7 @@ abstract class AbstractJcrItem implements Item {
      * @see javax.jcr.Item#getDepth()
      */
     public int getDepth() throws RepositoryException {
+        checkSession();
         return path().size();
     }
 
