@@ -45,7 +45,7 @@
       <scope>test</scope>
     </dependency>
     <!-- 
-    JBoss Cache
+    Infinispan
     -->
     <dependency>
       <groupId>org.infinispan</groupId>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="urn:infinispan:config:4.0">
+    <global>
+        <globalJmxStatistics enabled="true" jmxDomain="infinispan" allowDuplicateDomains="true"/>
+        <transport clusterName="local-infinispan-cluster" />
+    </global>
+    <default>
+        <jmxStatistics enabled="true" />
+        <clustering mode="distribution">
+            <sync replTimeout="2000" />
+        </clustering>
+    </default>
+</infinispan>

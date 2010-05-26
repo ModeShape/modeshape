@@ -158,6 +158,21 @@ config.repositorySource("Infinispan Store")
 	<programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml");
  ]]></programlisting>
+ 	<sect1>
+ 		<title>Considerations for Distributed Sources</title>
+ 		<para>
+		The &InfinispanSource; can be used to provide access to an Infinispan cluster, but be sure to use the DIST_SYNC
+		cache mode.  Using other modes will likely lead to data inconsistency.
+ 		</para>
+ 		<para>
+ 		Additionally, some operating systems (e.g., OS X) require you to set either the <code>java.net.preferIPv4Stack</code>
+ 		or the <code>java.net.preferIPv6Addresses</code> system property to <code>true</code>.  These properties are used by
+ 		JGroups, the communications library that underlies Infinispan, to help determine which address type to use.
+ 		</para>
+ 		<note>
+	 		<para>The <code>rootNodeUuid</code> property <emphasis>must</emphasis> be set to the same value for all Infinispan sources in the cluster.</para>
+ 		</note>
+ 	</sect1>
  </chapter>
 
  

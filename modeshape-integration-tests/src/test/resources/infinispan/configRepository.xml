@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!-- 
+    Define the sources for the content.  These sources are directly accessible using the ModeShape-specific Graph API.
+    In fact, this is how the ModeShape JCR implementation works.  You can think of these as being similar to
+    JDBC DataSource objects, except that they expose graph content via the Graph API instead of records via SQL or JDBC. 
+    -->
+    <mode:sources jcr:primaryType="nt:unstructured">
+        <!-- 
+        The 'JCR' repository is an Infinispan source with a single default workspace (though others could be created, too).
+        -->
+        <mode:source jcr:name="Store" 
+        			 mode:classname="org.modeshape.connector.infinispan.InfinispanSource" 
+                     mode:retryLimit="3" 
+                     mode:defaultWorkspaceName="default"
+					 mode:cacheConfigurationName="./src/test/resources/infinispan/infinispan_clustered_config.xml">
+            <predefinedWorkspaceNames>default</predefinedWorkspaceNames>
+            <predefinedWorkspaceNames>otherWorkspace</predefinedWorkspaceNames>
+        </mode:source>    
+    </mode:sources>
+    <!-- 
+    Define the mime type detectors. This is an optional section.  By default, each engine will use the 
+    MIME type detector that uses filename extensions.  So we wouldn't need to define the same detector again,
+    but this is how you'd define another extension.
+    -->
+    <mode:mimeTypeDetectors>
+        <mode:mimeTypeDetector jcr:name="Detector">
+            <mode:description>Standard extension-based MIME type detector</mode:description>        
+            <!-- 
+            Specify the implementation class (required), as a child element or attribute on parent element.
+            -->
+            <mode:classname>org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector</mode:classname>
+            <!-- 
+            Specify the classpath (optional) as an ordered list of 'names', where each name is significant to 
+            the classpath factory.  For example, a name could be an OSGI identifier or a Maven coordinate,
+            depending upon the classpath factory being used.  If there is only one 'name' in the classpath,
+            it may be specified as an attribute on the 'mimeTypeDetector' element.  If there is more than one
+            'name', then they must be specified as child 'classpath' elements. Blank or empty values are ignored. 
+             -->
+            <mode:classpath></mode:classpath>
+        </mode:mimeTypeDetector>
+    </mode:mimeTypeDetectors>
+    <!-- 
+    Define the JCR repositories 
+    -->
+    <mode:repositories>
+        <!-- 
+        Define a JCR repository that accesses the 'JCR' source directly.
+        This of course is optional, since we could access the same content through 'JCR'.
+        -->
+        <mode:repository jcr:name="Test Repository Source">
+            <!-- Specify the source that should be used for the repository -->
+            <mode:source>Store</mode:source>
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names
+-->
+            <mode:options jcr:primaryType="mode:options">
+                <projectNodeTypes jcr:primaryType="mode:option" mode:value="false"/>
+            </mode:options>
+            <jcr:nodeTypes mode:resource="/tck/tck_test_types.cnd" />
+            <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape
+-->
+            <namespaces jcr:primaryType="mode:namespaces">
+                <modetest jcr:primaryType="mode:namespace" mode:uri="http://www.modeshape.org/test/1.0"/>
+            </namespaces>
+        </mode:repository>
+    </mode:repositories>
+</configuration>

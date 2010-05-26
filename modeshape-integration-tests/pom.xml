@@ -80,6 +80,12 @@
 			<artifactId>modeshape-connector-jbosscache</artifactId>
 			<version>${project.version}</version>
 			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>jgroups</groupId>
+					<artifactId>jgroups</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.modeshape</groupId>

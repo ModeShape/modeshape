@@ -107,7 +107,7 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
     protected static final String UPDATES_ALLOWED = "updatesAllowed";
 
     private volatile String name;
-    private volatile UUID rootNodeUuid = UUID.randomUUID();
+    private volatile UUID rootNodeUuid = UUID.fromString("cafebabe-cafe-babe-cafe-babecafebabe");
     private volatile CachePolicy defaultCachePolicy;
     private volatile String cacheConfigurationName;
     private volatile String cacheManagerJndiName;
@@ -380,6 +380,46 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
                                                         capabilities.supportsReferences());
     }
 
+    private CacheManager createCacheManager() {
+        CacheManager cacheManager;
+
+        String configName = getCacheConfigurationName();
+        if (configName == null) {
+            cacheManager = new DefaultCacheManager();
+        } else {
+            /*
+            * First try treating the config name as a classpath resource, then as a file name.
+            */
+            InputStream configStream = getClass().getResourceAsStream(configName);
+            try {
+                if (configStream == null) {
+                    configStream = new FileInputStream(configName);
+                }
+            } catch (IOException ioe) {
+                I18n msg = InfinispanConnectorI18n.configFileNotFound;
+                throw new RepositorySourceException(this.name, msg.text(configName), ioe);
+            }
+
+            try {
+                cacheManager = new DefaultCacheManager(configStream);
+            } catch (IOException ioe) {
+                I18n msg = InfinispanConnectorI18n.configFileNotValid;
+                throw new RepositorySourceException(this.name, msg.text(configName), ioe);
+            } finally {
+                try {
+                    configStream.close();
+                } catch (IOException ioe) {
+                }
+            }
+        }
+
+        return cacheManager;
+    }
+
+    final CacheManager cacheManager() {
+        return repository.getCacheManager();
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -418,36 +458,7 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
                 }
             }
             if (cacheManager == null) {
-                String configName = getCacheConfigurationName();
-                if (configName == null) {
-                    cacheManager = new DefaultCacheManager();
-                } else {
-                    /*
-                     * First try treating the config name as a classpath resource, then as a file name.
-                     */
-                    InputStream configStream = getClass().getResourceAsStream(configName);
-                    try {
-                        if (configStream == null) {
-                            configStream = new FileInputStream(configName);
-                        }
-                    } catch (IOException ioe) {
-                        I18n msg = InfinispanConnectorI18n.configFileNotFound;
-                        throw new RepositorySourceException(this.name, msg.text(configName), ioe);
-                    }
-
-                    try {
-                        cacheManager = new DefaultCacheManager(configStream);
-                    } catch (IOException ioe) {
-                        I18n msg = InfinispanConnectorI18n.configFileNotValid;
-                        throw new RepositorySourceException(this.name, msg.text(configName), ioe);
-                    } finally {
-                        try {
-                            configStream.close();
-                        } catch (IOException ioe) {
-                        }
-                    }
-
-                }
+                cacheManager = createCacheManager();
             }
 
             // Now create the repository ...
