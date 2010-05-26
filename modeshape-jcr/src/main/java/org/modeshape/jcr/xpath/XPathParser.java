@@ -723,7 +723,7 @@ public class XPathParser {
     }
 
     protected Component collapse( Component component ) {
-        return XPathQueryParser.COLLAPSE_INNER_COMPONENTS ? component.collapse() : component;
+        return component.collapse();
     }
 
     /**

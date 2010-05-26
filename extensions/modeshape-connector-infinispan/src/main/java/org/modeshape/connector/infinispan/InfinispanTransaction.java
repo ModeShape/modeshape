@@ -55,6 +55,7 @@ public class InfinispanTransaction extends MapTransaction<InfinispanNode, Infini
      * 
      * @see org.modeshape.graph.connector.base.Transaction#getWorkspaceNames()
      */
+    @Override
     public Set<String> getWorkspaceNames() {
         return repository.getWorkspaceNames();
     }

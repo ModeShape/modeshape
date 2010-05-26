@@ -798,7 +798,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
      */
     public boolean hasCollectionProperty( Property propertyId ) {
         Object value = getProperty(propertyId);
-        return (value instanceof Collection && !((Collection<?>)value).isEmpty());
+        return (value instanceof Collection<?> && !((Collection<?>)value).isEmpty());
     }
 
     /**
@@ -1024,7 +1024,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
                 Object value = entry.getValue();
                 if (value instanceof Visitable) {
                     str.append(Visitors.readable((Visitable)value));
-                } else if (value instanceof Collection) {
+                } else if (value instanceof Collection<?>) {
                     boolean firstItem = true;
                     str.append('[');
                     for (Object item : (Collection<?>)value) {

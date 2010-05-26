@@ -24,8 +24,7 @@ import org.modeshape.graph.property.PathNotFoundException;
 public class InfinispanClusterTest {
 
     private static final String CONFIG_FILE = "./src/test/resources/infinispan_clustered_config.xml";
-    
-    
+
     private final ExecutionContext context = new ExecutionContext();
 
     @Test
@@ -80,6 +79,7 @@ public class InfinispanClusterTest {
                 return null;
             }
 
+            @SuppressWarnings( "synthetic-access" )
             @Override
             public ExecutionContext getExecutionContext() {
                 return context;

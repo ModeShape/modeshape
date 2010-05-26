@@ -24,10 +24,7 @@
 package org.modeshape.jdbc;
 
 import static org.mockito.Mockito.when;
-import org.mockito.Mockito;
-
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -35,7 +32,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -46,19 +42,14 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
-
 import net.jcip.annotations.NotThreadSafe;
-
-
+import org.mockito.Mockito;
 
 /**
- * 
- * 
  * This provides common result set metadata used by various tests
- *
  */
 public class TestUtil {
-    
+
     public static final String STRING = PropertyType.nameFromValue(PropertyType.STRING);
     public static final String DOUBLE = PropertyType.nameFromValue(PropertyType.DOUBLE);
     public static final String LONG = PropertyType.nameFromValue(PropertyType.LONG);
@@ -66,121 +57,116 @@ public class TestUtil {
     public static final String DATE = PropertyType.nameFromValue(PropertyType.DATE);
     public static final String PATH = PropertyType.nameFromValue(PropertyType.PATH);
     public static final String BINARY = PropertyType.nameFromValue(PropertyType.BINARY);
-    
+
     public static final String REFERENCE = PropertyType.nameFromValue(PropertyType.REFERENCE);
 
-    
     public static String[] COLUMN_NAMES;
+
     public static interface COLUMN_NAME_PROPERTIES {
-	public static final String PROP_A ="propA";
-	public static final String PROP_B ="propB";
-	public static final String PROP_C ="propC";
-	public static final String PROP_D ="propD";
-	public static final String PROP_E ="propE";
-	public static final String PROP_F ="propF";
-	public static final String PROP_G ="propG";
-	public static final String PROP_H ="propH";
+        public static final String PROP_A = "propA";
+        public static final String PROP_B = "propB";
+        public static final String PROP_C = "propC";
+        public static final String PROP_D = "propD";
+        public static final String PROP_E = "propE";
+        public static final String PROP_F = "propF";
+        public static final String PROP_G = "propG";
+        public static final String PROP_H = "propH";
 
     }
-    
+
     public static String[] TABLE_NAMES;
     public static String[] TYPE_NAMES;
     public static String[] NODE_NAMES;
 
     public static List<Object[]> TUPLES;
-    
+
     public static final String SQL_SELECT = "Select propA FROM typeA";
-    
+
     static {
-	
-	// The column names must match the number of columns in #TUPLES
-	COLUMN_NAMES = new String[] {COLUMN_NAME_PROPERTIES.PROP_A, 
-		COLUMN_NAME_PROPERTIES.PROP_B,
-		COLUMN_NAME_PROPERTIES.PROP_C,
-		COLUMN_NAME_PROPERTIES.PROP_D,
-		COLUMN_NAME_PROPERTIES.PROP_E,
-		COLUMN_NAME_PROPERTIES.PROP_F,
-		COLUMN_NAME_PROPERTIES.PROP_G,
-		COLUMN_NAME_PROPERTIES.PROP_H};
-	TABLE_NAMES = new String[] {"typeA", "typeB", "typeA", "", "typeA"};
-	// The TYPE_NAMES correspond to the column value types defined in #TUPLES
-	TYPE_NAMES = new String[] {STRING, LONG, PATH, REFERENCE, DOUBLE, BOOLEAN, DATE, BINARY};
 
-	NODE_NAMES = new String[] {"node1", "node2"};
-	// Provides the resultset rows
-	TUPLES = new ArrayList<Object[]>();
-	
-	/*
-	 *  the tuples data types for each column correspond to @see TYPE_NAMES
-	 */
-	TUPLES.add( new Object[] {"r1c1", new Long(1), null, null, new Double(1), new Boolean(true), new Date(), new ByteArrayInputStream(  (new String("Heres my data at r1").getBytes()  ))});
-	TUPLES.add( new Object[] {"r2c1", new Long(2), null, null, new Double(2), new Boolean(false), new Date(), new ByteArrayInputStream(  (new String("Heres my data r2   ").getBytes()  ))});
-	TUPLES.add( new Object[] {"r3c1", new Long(3), null, null, new Double(3), new Boolean(true), new Date(), new ByteArrayInputStream(  (new String("Heres my data at r3  ").getBytes()  ))});
-	TUPLES.add( new Object[] {"r4c1", 4L, null, null, 4D, new Boolean(true).booleanValue(), new Date(), new ByteArrayInputStream(  (new String("Heres  my  data    r4  ").getBytes()  ))});
-	
+        // The column names must match the number of columns in #TUPLES
+        COLUMN_NAMES = new String[] {COLUMN_NAME_PROPERTIES.PROP_A, COLUMN_NAME_PROPERTIES.PROP_B, COLUMN_NAME_PROPERTIES.PROP_C,
+            COLUMN_NAME_PROPERTIES.PROP_D, COLUMN_NAME_PROPERTIES.PROP_E, COLUMN_NAME_PROPERTIES.PROP_F,
+            COLUMN_NAME_PROPERTIES.PROP_G, COLUMN_NAME_PROPERTIES.PROP_H};
+        TABLE_NAMES = new String[] {"typeA", "typeB", "typeA", "", "typeA"};
+        // The TYPE_NAMES correspond to the column value types defined in #TUPLES
+        TYPE_NAMES = new String[] {STRING, LONG, PATH, REFERENCE, DOUBLE, BOOLEAN, DATE, BINARY};
+
+        NODE_NAMES = new String[] {"node1", "node2"};
+        // Provides the resultset rows
+        TUPLES = new ArrayList<Object[]>();
+
+        /*
+         *  the tuples data types for each column correspond to @see TYPE_NAMES
+         */
+        TUPLES.add(new Object[] {"r1c1", new Long(1), null, null, new Double(1), new Boolean(true), new Date(),
+            new ByteArrayInputStream((new String("Heres my data at r1").getBytes()))});
+        TUPLES.add(new Object[] {"r2c1", new Long(2), null, null, new Double(2), new Boolean(false), new Date(),
+            new ByteArrayInputStream((new String("Heres my data r2   ").getBytes()))});
+        TUPLES.add(new Object[] {"r3c1", new Long(3), null, null, new Double(3), new Boolean(true), new Date(),
+            new ByteArrayInputStream((new String("Heres my data at r3  ").getBytes()))});
+        TUPLES.add(new Object[] {"r4c1", 4L, null, null, 4D, new Boolean(true).booleanValue(), new Date(),
+            new ByteArrayInputStream((new String("Heres  my  data    r4  ").getBytes()))});
+
     }
-    
+
     static Node[] createNodes() {
-	Node[] nodes = new Node[NODE_NAMES.length];
-	for (int i=0; i< NODE_NAMES.length; i++) {
-	    
-	         // Create the new definition ...
-	            Node n = Mockito.mock(Node.class);
-	            try {
-			when(n.getName()).thenReturn(NODE_NAMES[i]);
-		    } catch (RepositoryException e) {
-		    }
-		    nodes[i] = n;
+        Node[] nodes = new Node[NODE_NAMES.length];
+        for (int i = 0; i < NODE_NAMES.length; i++) {
 
-	        }
-	return nodes;
+            // Create the new definition ...
+            Node n = Mockito.mock(Node.class);
+            try {
+                when(n.getName()).thenReturn(NODE_NAMES[i]);
+            } catch (RepositoryException e) {
+            }
+            nodes[i] = n;
+
+        }
+        return nodes;
     }
-    
-    
+
     public static QueryResult createQueryResult() {
-	final Node[] nodes = createNodes();
+        final Node[] nodes = createNodes();
 
-	QueryResult qr = new org.modeshape.jcr.api.query.QueryResult() {
- 
-        	@Override
-        	public String[] getColumnNames()  {
-        	    String[] cns = new String[COLUMN_NAMES.length];
-        	    System.arraycopy(COLUMN_NAMES, 0, cns, 0, COLUMN_NAMES.length);
-               	    return cns;
-        	}
-        
-        	@Override
-        	public NodeIterator getNodes()  {
-    			List<Node> nodeArray = new ArrayList<Node>();
-    			for (int i=0; i< nodes.length; i++) {
-    			    nodeArray.add(nodes[i]);
-    			}
-        	    return  new QueryResultNodeIterator(nodeArray);
-        	}
-        
-        	@Override
-        	public RowIterator getRows()  {        	    
-        	    List<Object[]> tuplesArray = new ArrayList<Object[]>(TUPLES);
-         	    RowIterator ri = new QueryResultRowIterator(nodes, 
-        		    				SQL_SELECT,
-        		    				tuplesArray.iterator(),
-        		    				tuplesArray.size());
-        	    return ri;
-        	}
+        QueryResult qr = new org.modeshape.jcr.api.query.QueryResult() {
 
-		@Override
-		public String[] getColumnTypes() {
-		    return null;
-		}
+            @Override
+            public String[] getColumnNames() {
+                String[] cns = new String[COLUMN_NAMES.length];
+                System.arraycopy(COLUMN_NAMES, 0, cns, 0, COLUMN_NAMES.length);
+                return cns;
+            }
 
-		@Override
-		public String[] getSelectorNames() {
-		    return null;
-		}
-	};
-	return qr;
-    }   
- }
+            @Override
+            public NodeIterator getNodes() {
+                List<Node> nodeArray = new ArrayList<Node>();
+                for (int i = 0; i < nodes.length; i++) {
+                    nodeArray.add(nodes[i]);
+                }
+                return new QueryResultNodeIterator(nodeArray);
+            }
+
+            @Override
+            public RowIterator getRows() {
+                List<Object[]> tuplesArray = new ArrayList<Object[]>(TUPLES);
+                RowIterator ri = new QueryResultRowIterator(nodes, SQL_SELECT, tuplesArray.iterator(), tuplesArray.size());
+                return ri;
+            }
+
+            @Override
+            public String[] getColumnTypes() {
+                return null;
+            }
+
+            @Override
+            public String[] getSelectorNames() {
+                return null;
+            }
+        };
+        return qr;
+    }
+}
 
 /**
  */
@@ -343,9 +329,9 @@ class QueryResultRowIterator implements RowIterator {
         if (nextRow != null) {
             return true;
         }
-        
+
         while (tuples.hasNext()) {
-             final Object[] tuple = tuples.next();
+            final Object[] tuple = tuples.next();
             try {
                 // Get the next row ...
                 nextRow = getNextRow(tuple);
@@ -358,11 +344,11 @@ class QueryResultRowIterator implements RowIterator {
         return false;
     }
 
-	/**
-	 * @param tuple 
-	 * @return Row 
-	 * @throws RepositoryException  
-	 */
+    /**
+     * @param tuple
+     * @return Row
+     * @throws RepositoryException
+     */
     private Row getNextRow( Object[] tuple ) throws RepositoryException {
         return new QueryResultRow(this, nodes, tuple);
     }
@@ -386,136 +372,124 @@ class QueryResultRowIterator implements RowIterator {
     }
 }
 
-
 class QueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
     protected final QueryResultRowIterator iterator;
     private Node[] nodes;
     protected final Object[] tuple;
+
     protected QueryResultRow( QueryResultRowIterator iterator,
-            	Node[] nodes,
-            	Object[] tuple ) {
-        			this.iterator = iterator;
-        			this.tuple = tuple;
-        			this.nodes = nodes;
-    	}
+                              Node[] nodes,
+                              Object[] tuple ) {
+        this.iterator = iterator;
+        this.tuple = tuple;
+        this.nodes = nodes;
+    }
 
-    
-	@Override
-	public Node getNode(String selectorName) throws RepositoryException {
-		for (int i=0; i< nodes.length; i++) {
-		    if (nodes[i].getName().equals(selectorName)) {
-			return nodes[i];
-		    }
-		}
+    @Override
+    public Node getNode( String selectorName ) throws RepositoryException {
+        for (int i = 0; i < nodes.length; i++) {
+            if (nodes[i].getName().equals(selectorName)) {
+                return nodes[i];
+            }
+        }
 
-	    return null;
-	}
+        return null;
+    }
 
-	/**
-	 * @throws ItemNotFoundException  
-	 */
-	@Override
-	public Value getValue(String arg0) throws ItemNotFoundException {
-		for (int i=0; i< TestUtil.COLUMN_NAMES.length; i++) {
-		    if (TestUtil.COLUMN_NAMES[i].equals(arg0)) {
-			return createValue(tuple[i]);
-		    }
-		}	    
+    /**
+     * @throws ItemNotFoundException
+     */
+    @Override
+    public Value getValue( String arg0 ) throws ItemNotFoundException {
+        for (int i = 0; i < TestUtil.COLUMN_NAMES.length; i++) {
+            if (TestUtil.COLUMN_NAMES[i].equals(arg0)) {
+                return createValue(tuple[i]);
+            }
+        }
 
-	    throw new ItemNotFoundException("Item " + arg0 + " not found");
-	}
+        throw new ItemNotFoundException("Item " + arg0 + " not found");
+    }
 
-	/**
-	 * @throws RepositoryException  
-	 */
-	@Override
-	public Value[] getValues() throws RepositoryException {
-	    Value[] values = new Value[tuple.length];
-		for (int i=0; i< tuple.length; i++) {
-		    values[i] = createValue(tuple[i]);
-		    
-		} 
-	    return values;
-	}
-	 
-	private Value createValue(final Object value) {
-	    
-	    if (value == null) return null;
-	    
-	    Value rtnvalue = new Value() {
-		final Object valueObject = value;
+    /**
+     * @throws RepositoryException
+     */
+    @Override
+    public Value[] getValues() throws RepositoryException {
+        Value[] values = new Value[tuple.length];
+        for (int i = 0; i < tuple.length; i++) {
+            values[i] = createValue(tuple[i]);
 
-		@Override
-		public boolean getBoolean() throws ValueFormatException,
-			IllegalStateException, RepositoryException {
-		    if (value instanceof Boolean) {
-			return ((Boolean) valueObject).booleanValue();
-		    }
-		    throw new ValueFormatException("Value not a Boolean");
-		}
+        }
+        return values;
+    }
 
-		@Override
-		public Calendar getDate() throws ValueFormatException,
-			IllegalStateException, RepositoryException {
-		    if (value instanceof Date) {
-			Calendar c = Calendar.getInstance();
-			c.setTime( (Date) value);
-			
-			return c;
-		    }
-		    throw new ValueFormatException("Value not instance of Date");
-		}
+    private Value createValue( final Object value ) {
 
-		@Override
-		public double getDouble() throws ValueFormatException,
-			IllegalStateException, RepositoryException {
-		    if (value instanceof Double) {
-			return ((Double) valueObject).doubleValue();
-		    } 
-		 
-		    throw new ValueFormatException("Value not a Double");
-		}
+        if (value == null) return null;
 
-		@Override
-		public long getLong() throws ValueFormatException,
-			IllegalStateException, RepositoryException {
-		    if (value instanceof Long) {
-			return ((Long) valueObject).longValue();
-		    }
-		    throw new ValueFormatException("Value not a Long");
-		}
+        Value rtnvalue = new Value() {
+            final Object valueObject = value;
 
-		@Override
-		public InputStream getStream() throws IllegalStateException,
-			RepositoryException {
-		    if (value == null) return null;
-		    if (value instanceof InputStream) {
-			return ((InputStream) valueObject);
-		    }
-		    throw new ValueFormatException("Value not an InputStream");
-		}
+            @Override
+            public boolean getBoolean() throws ValueFormatException, IllegalStateException, RepositoryException {
+                if (value instanceof Boolean) {
+                    return ((Boolean)valueObject).booleanValue();
+                }
+                throw new ValueFormatException("Value not a Boolean");
+            }
 
-		@Override
-		public String getString() throws ValueFormatException,
-			IllegalStateException, RepositoryException {
-		    if (value == null) return null;
-		    if (value instanceof String) {
-			return (String) valueObject;
-		    } 
-		    
-		    return valueObject.toString();
-		}
+            @Override
+            public Calendar getDate() throws ValueFormatException, IllegalStateException, RepositoryException {
+                if (value instanceof Date) {
+                    Calendar c = Calendar.getInstance();
+                    c.setTime((Date)value);
 
-		@Override
-		public int getType() {
-		    return 1;
-		}
-		
-		
-	    };
+                    return c;
+                }
+                throw new ValueFormatException("Value not instance of Date");
+            }
 
-	    return rtnvalue;
-	    
-	}		
+            @Override
+            public double getDouble() throws ValueFormatException, IllegalStateException, RepositoryException {
+                if (value instanceof Double) {
+                    return ((Double)valueObject).doubleValue();
+                }
+
+                throw new ValueFormatException("Value not a Double");
+            }
+
+            @Override
+            public long getLong() throws ValueFormatException, IllegalStateException, RepositoryException {
+                if (value instanceof Long) {
+                    return ((Long)valueObject).longValue();
+                }
+                throw new ValueFormatException("Value not a Long");
+            }
+
+            @Override
+            public InputStream getStream() throws IllegalStateException, RepositoryException {
+                if (value instanceof InputStream) {
+                    return ((InputStream)valueObject);
+                }
+                throw new ValueFormatException("Value not an InputStream");
+            }
+
+            @Override
+            public String getString() throws IllegalStateException {
+                if (value instanceof String) {
+                    return (String)valueObject;
+                }
+                return valueObject.toString();
+            }
+
+            @Override
+            public int getType() {
+                return 1;
+            }
+
+        };
+
+        return rtnvalue;
+
+    }
 }
-

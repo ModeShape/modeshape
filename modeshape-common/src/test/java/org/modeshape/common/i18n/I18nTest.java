@@ -37,11 +37,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
-import org.modeshape.common.CommonI18n;
-import org.modeshape.common.SystemFailureException;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.common.CommonI18n;
+import org.modeshape.common.SystemFailureException;
 
 /**
  * @author John Verhaeg
@@ -428,6 +428,7 @@ public final class I18nTest {
 
     private static class TestI18nMissingProperty {
 
+        @SuppressWarnings( "unused" )
         public static I18n testMessage;
         public static I18n testMessage1;
     }

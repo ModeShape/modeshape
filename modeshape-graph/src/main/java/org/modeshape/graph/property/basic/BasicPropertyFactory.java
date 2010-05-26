@@ -93,7 +93,7 @@ public class BasicPropertyFactory implements PropertyFactory {
         if (values.length == 1) {
             Object value = values[0];
             // Check whether the sole value was a collection ...
-            if (value instanceof Collection) {
+            if (value instanceof Collection<?>) {
                 // The single value is a collection, so create property with the collection's contents ...
                 return create(name, (Collection<?>)value);
             }

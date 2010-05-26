@@ -281,7 +281,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                 checker = createChecker(context, requiredType, valueConstraints);
                 this.checker = checker;
             }
-            assert checker instanceof RangeConstraintChecker;
+            assert checker instanceof RangeConstraintChecker<?>;
             RangeConstraintChecker<?> rangeChecker = (RangeConstraintChecker<?>)checker;
             return rangeChecker.getMinimum(); // may still be null
         }
@@ -302,7 +302,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
                 checker = createChecker(context, requiredType, valueConstraints);
                 this.checker = checker;
             }
-            assert checker instanceof RangeConstraintChecker;
+            assert checker instanceof RangeConstraintChecker<?>;
             RangeConstraintChecker<?> rangeChecker = (RangeConstraintChecker<?>)checker;
             return rangeChecker.getMaximum(); // may still be null
         }
@@ -784,7 +784,12 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
             JcrValue jcrValue = (JcrValue)value;
             // Need to use the session execution context to handle the remaps
-            Name name = jcrValue.sessionCache().session().getExecutionContext().getValueFactories().getNameFactory().create(jcrValue.value());
+            Name name = jcrValue.sessionCache()
+                                .session()
+                                .getExecutionContext()
+                                .getValueFactories()
+                                .getNameFactory()
+                                .create(jcrValue.value());
 
             for (int i = 0; i < constraints.length; i++) {
                 if (constraints[i].equals(name)) {

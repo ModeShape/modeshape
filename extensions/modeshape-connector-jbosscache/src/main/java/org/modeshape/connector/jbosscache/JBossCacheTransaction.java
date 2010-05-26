@@ -55,6 +55,7 @@ public class JBossCacheTransaction extends MapTransaction<JBossCacheNode, JBossC
      * 
      * @see org.modeshape.graph.connector.base.Transaction#getWorkspaceNames()
      */
+    @Override
     public Set<String> getWorkspaceNames() {
         return repository.getWorkspaceNames();
     }

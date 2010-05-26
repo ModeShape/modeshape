@@ -314,7 +314,7 @@ public class ImmutableAppendedList<T> implements List<T> {
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
-        if (obj instanceof List) {
+        if (obj instanceof List<?>) {
             List<?> that = (List<?>)obj;
             if (this.size() != that.size()) return false;
             Iterator<?> thisIter = this.iterator();

@@ -1236,7 +1236,8 @@ public class GraphSession<Payload, PropertyPayload> {
          * @param batch the workspace graph batch in which computed fields should be created
          * @param node the node form which computed fields will be derived
          */
-        void compute( Graph.Batch batch, Node<NodePayload, PropertyPayload> node );
+        void compute( Graph.Batch batch,
+                      Node<NodePayload, PropertyPayload> node );
     }
 
     @ThreadSafe
@@ -1354,7 +1355,8 @@ public class GraphSession<Payload, PropertyPayload> {
          * 
          * @see GraphSession.Operations#compute(Graph.Batch, GraphSession.Node)
          */
-        public void compute( Graph.Batch batch, Node<Payload, PropertyPayload> node ) {
+        public void compute( Graph.Batch batch,
+                             Node<Payload, PropertyPayload> node ) {
             // do nothing here
         }
 
@@ -1806,6 +1808,7 @@ public class GraphSession<Payload, PropertyPayload> {
                 this.properties = new HashMap<Name, PropertyInfo<PropertyPayload>>(properties);
             }
         }
+
         /**
          * Reconstruct the location object for this node, given the information at the parent.
          * 
@@ -3117,7 +3120,7 @@ public class GraphSession<Payload, PropertyPayload> {
         @Override
         public boolean equals( Object obj ) {
             if (obj == this) return true;
-            if (obj instanceof PropertyInfo) {
+            if (obj instanceof PropertyInfo<?>) {
                 PropertyInfo<?> that = (PropertyInfo<?>)obj;
                 return getName().equals(that.getName());
             }
