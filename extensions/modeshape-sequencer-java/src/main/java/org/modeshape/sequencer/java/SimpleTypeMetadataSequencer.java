@@ -33,7 +33,7 @@ import org.modeshape.sequencer.java.metadata.Variable;
 /**
  * The sequencer of the {@link SimpleTypeFieldMetadata}
  */
-public class SimpleTypeMetadataSequencer implements JavaSourceCndDefinition {
+public class SimpleTypeMetadataSequencer {
 
     private SimpleTypeMetadataSequencer() {
         // prevent construction
@@ -50,9 +50,9 @@ public class SimpleTypeMetadataSequencer implements JavaSourceCndDefinition {
                                                   NameFactory nameFactory,
                                                   PathFactory pathFactory,
                                                   SimpleTypeFieldMetadata simpleTypeFieldMetadata,
-                                                  String methodParamRootPath ) {
+                                                  Path methodParamRootPath ) {
 
-        String methodSimpleTypeFormalParamRootPath = SimpleTypeMetadataSequencer.createRootPath(methodParamRootPath);
+        Path methodSimpleTypeFormalParamRootPath = SimpleTypeMetadataSequencer.createRootPath(pathFactory, methodParamRootPath);
         SimpleTypeMetadataSequencer.sequenceConstructorSimpleTypeName(simpleTypeFieldMetadata,
                                                                       methodSimpleTypeFormalParamRootPath,
                                                                       output,
@@ -68,11 +68,15 @@ public class SimpleTypeMetadataSequencer implements JavaSourceCndDefinition {
     /**
      * the root path.
      * 
+     * @param pathFactory the path factory
      * @param basePath - the base path to use to build a root path.
      * @return the root path, that is compose from other base path.
      */
-    public static String createRootPath( String basePath ) {
-        return JavaMetadataUtil.createPath(basePath + SLASH + JAVA_TYPE_CHILD_NODE + SLASH + JAVA_SIMPLE_TYPE_CHILD_NODE);
+    public static Path createRootPath( PathFactory pathFactory,
+                                       Path basePath ) {
+
+        return pathFactory.create(pathFactory.create(basePath, JavaMetadataLexicon.TYPE_CHILD_NODE),
+                                  JavaMetadataLexicon.SIMPLE_TYPE_CHILD_NODE);
     }
 
     /**
@@ -85,14 +89,14 @@ public class SimpleTypeMetadataSequencer implements JavaSourceCndDefinition {
      * @param pathFactory - the {@link PathFactory}.
      */
     public static void sequenceConstructorSimpleTypeName( SimpleTypeFieldMetadata simpleTypeFieldMetadata,
-                                                          String rootPath,
+                                                          Path rootPath,
                                                           SequencerOutput output,
                                                           NameFactory nameFactory,
                                                           PathFactory pathFactory ) {
 
         Path constructorSimpleTypeParamChildNode = pathFactory.create(rootPath);
         output.setProperty(constructorSimpleTypeParamChildNode,
-                           nameFactory.create(JAVA_SIMPLE_TYPE_NAME),
+                           nameFactory.create(JavaMetadataLexicon.SIMPLE_TYPE_NAME),
                            simpleTypeFieldMetadata.getType());
 
     }
@@ -105,10 +109,9 @@ public class SimpleTypeMetadataSequencer implements JavaSourceCndDefinition {
      * @return the path of a variable node.
      */
     public static Path createSimpleTypeParamPath( PathFactory pathFactory,
-                                                  String rootPath ) {
-        String paramVariablePath = JavaMetadataUtil.createPath(rootPath + SLASH + JAVA_SIMPLE_TYPE_VARIABLE + SLASH
-                                                               + JAVA_VARIABLE);
-        return pathFactory.create(paramVariablePath);
+                                                  Path rootPath ) {
+        return pathFactory.create(pathFactory.create(rootPath, JavaMetadataLexicon.SIMPLE_TYPE_VARIABLE),
+                                  JavaMetadataLexicon.VARIABLE);
     }
 
     /**
@@ -124,13 +127,12 @@ public class SimpleTypeMetadataSequencer implements JavaSourceCndDefinition {
                                                  NameFactory nameFactory,
                                                  PathFactory pathFactory,
                                                  SimpleTypeFieldMetadata simpleTypeFieldMetadata,
-                                                 String methodRootPath ) {
-        String methodReturnSimpleTypePath = JavaMetadataUtil.createPath(methodRootPath + SLASH + JAVA_RETURN_TYPE + SLASH
-                                                                        + JAVA_SIMPLE_TYPE_CHILD_NODE);
-
-        Path methodReturnPrimitiveTypeChildNode = pathFactory.create(methodReturnSimpleTypePath);
+                                                 Path methodRootPath ) {
+        Path methodReturnPrimitiveTypeChildNode = pathFactory.create(pathFactory.create(methodRootPath,
+                                                                                        JavaMetadataLexicon.RETURN_TYPE),
+                                                                     JavaMetadataLexicon.SIMPLE_TYPE_CHILD_NODE);
         output.setProperty(methodReturnPrimitiveTypeChildNode,
-                           nameFactory.create(JAVA_SIMPLE_TYPE_NAME),
+                           nameFactory.create(JavaMetadataLexicon.SIMPLE_TYPE_NAME),
                            simpleTypeFieldMetadata.getType());
     }
 

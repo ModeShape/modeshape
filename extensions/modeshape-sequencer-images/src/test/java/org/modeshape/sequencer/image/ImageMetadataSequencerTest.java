@@ -30,13 +30,12 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import org.modeshape.graph.sequencer.MockSequencerContext;
-import org.modeshape.graph.sequencer.MockSequencerOutput;
-import org.modeshape.graph.sequencer.StreamSequencerContext;
-import org.modeshape.sequencer.image.ImageMetadataSequencer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.graph.sequencer.MockSequencerContext;
+import org.modeshape.graph.sequencer.MockSequencerOutput;
+import org.modeshape.graph.sequencer.StreamSequencerContext;
 
 /**
  * @author Randall Hauch
@@ -57,7 +56,7 @@ public class ImageMetadataSequencerTest {
     public void beforeEach() {
         sequencer = new ImageMetadataSequencer();
         context = new MockSequencerContext();
-        context.getNamespaceRegistry().register("image", "http://jboss.org/dna/images/1.0");
+        context.getNamespaceRegistry().register(ImageMetadataLexicon.Namespace.PREFIX, ImageMetadataLexicon.Namespace.URI);
         output = new MockSequencerOutput(context);
         cautionGif = this.getClass().getClassLoader().getResource("caution.gif");
         cautionJpg = this.getClass().getClassLoader().getResource("caution.jpg");

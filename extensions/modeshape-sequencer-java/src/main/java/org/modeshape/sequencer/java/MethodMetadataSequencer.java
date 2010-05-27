@@ -30,7 +30,7 @@ import org.modeshape.sequencer.java.metadata.MethodMetadata;
 /**
  * Sequencer for a {@link MethodMetadata}.
  */
-public class MethodMetadataSequencer implements JavaSourceCndDefinition {
+public class MethodMetadataSequencer {
 
     /**
      * Create a path of method/constructor parameter.
@@ -40,24 +40,22 @@ public class MethodMetadataSequencer implements JavaSourceCndDefinition {
      * @return the path of the parameter.
      */
     public static Path createMethodParamPath( PathFactory pathFactory,
-                                              String rootPath ) {
-        String methodPrimitiveParamVariablePath = JavaMetadataUtil.createPath(rootPath + SLASH + JAVA_PRIMITIVE_TYPE_VARIABLE
-                                                                              + SLASH + JAVA_VARIABLE);
-        Path methodParamChildNode = pathFactory.create(methodPrimitiveParamVariablePath);
-        return methodParamChildNode;
+                                              Path rootPath ) {
+        return pathFactory.create(pathFactory.create(rootPath, JavaMetadataLexicon.PRIMITIVE_TYPE_VARIABLE),
+                                  JavaMetadataLexicon.VARIABLE);
     }
 
     /**
      * create a root path for method parameter.
      * 
+     * @param pathFactory the path factory to use
      * @param constructorParameterRootPath
      * @return root path for a method parameter.
      */
-    public static String createMethodParamRootPath( String constructorParameterRootPath ) {
-        String constructPrimitiveFormalParamRootPath = JavaMetadataUtil.createPath(constructorParameterRootPath + SLASH
-                                                                                   + JAVA_TYPE_CHILD_NODE + SLASH
-                                                                                   + JAVA_PRIMITIVE_TYPE_CHILD_NODE);
-        return constructPrimitiveFormalParamRootPath;
+    public static Path createMethodParamRootPath( PathFactory pathFactory,
+                                                  Path constructorParameterRootPath ) {
+        return pathFactory.create(pathFactory.create(constructorParameterRootPath, JavaMetadataLexicon.TYPE_CHILD_NODE),
+                                  JavaMetadataLexicon.PRIMITIVE_TYPE_CHILD_NODE);
     }
 
     private MethodMetadataSequencer() {

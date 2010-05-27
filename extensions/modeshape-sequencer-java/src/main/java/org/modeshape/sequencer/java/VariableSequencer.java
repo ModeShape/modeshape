@@ -29,9 +29,9 @@ import org.modeshape.graph.sequencer.SequencerOutput;
 import org.modeshape.sequencer.java.metadata.Variable;
 
 /**
- * Sequencer for variabels.
+ * Sequencer for variables.
  */
-public class VariableSequencer implements JavaSourceCndDefinition {
+public class VariableSequencer {
 
     /**
      * Sequence a variable.
@@ -45,6 +45,6 @@ public class VariableSequencer implements JavaSourceCndDefinition {
                                             NameFactory nameFactory,
                                             Variable variable,
                                             Path path ) {
-        output.setProperty(path, nameFactory.create(JAVA_VARIABLE_NAME), variable.getName());
+        output.setProperty(path, JavaMetadataLexicon.VARIABLE_NAME, variable.getName());
     }
 }

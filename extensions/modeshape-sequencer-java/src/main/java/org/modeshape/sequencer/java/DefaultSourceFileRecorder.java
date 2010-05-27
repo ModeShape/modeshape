@@ -24,6 +24,7 @@
 package org.modeshape.sequencer.java;
 
 import java.util.List;
+import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
@@ -162,7 +163,7 @@ import org.modeshape.sequencer.java.metadata.Variable;
  * </ul>
  * </p>
  */
-public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSourceCndDefinition {
+public class DefaultSourceFileRecorder implements SourceFileRecorder {
 
     public void record( StreamSequencerContext context,
                         SequencerOutput output,
@@ -171,10 +172,8 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
         if (javaMetadata != null) {
-            Path javaCompilationUnitNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE);
-            output.setProperty(javaCompilationUnitNode,
-                               nameFactory.create(JAVA_COMPILATION_UNIT_PRIMARY_TYPE),
-                               "java:compilationUnit");
+            Path javaCompilationUnitNode = pathFactory.create(JavaMetadataLexicon.COMPILATION_UNIT_NODE);
+            output.setProperty(javaCompilationUnitNode, JcrLexicon.PRIMARY_TYPE, JavaMetadataLexicon.COMPILATION_UNIT_NODE);
 
             // sequence package declaration of a unit.
             PackageMetadata packageMetadata = javaMetadata.getPackageMetadata();
@@ -182,11 +181,11 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
                 String packageName = packageMetadata.getName();
                 if (packageName != null && packageName.length() != 0) {
 
-                    Path javaPackageDeclarationChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                              + JAVA_PACKAGE_CHILD_NODE + SLASH
-                                                                              + JAVA_PACKAGE_DECLARATION_CHILD_NODE);
+                    Path javaPackageDeclarationChildNode = pathFactory.createRelativePath(JavaMetadataLexicon.COMPILATION_UNIT_NODE,
+                                                                                          JavaMetadataLexicon.PACKAGE_CHILD_NODE,
+                                                                                          JavaMetadataLexicon.PACKAGE_DECLARATION_CHILD_NODE);
                     output.setProperty(javaPackageDeclarationChildNode,
-                                       nameFactory.create(JAVA_PACKAGE_NAME),
+                                       JavaMetadataLexicon.PACKAGE_NAME,
                                        javaMetadata.getPackageMetadata().getName());
                 }
 
@@ -196,48 +195,54 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
                 for (AnnotationMetadata annotationMetadata : packageMetadata.getAnnotationMetada()) {
                     if (annotationMetadata instanceof MarkerAnnotationMetadata) {
                         MarkerAnnotationMetadata markerAnnotationMetadata = (MarkerAnnotationMetadata)annotationMetadata;
-                        Path markerAnnotationChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                            + JAVA_PACKAGE_CHILD_NODE + SLASH
-                                                                            + JAVA_PACKAGE_DECLARATION_CHILD_NODE + SLASH
-                                                                            + JAVA_ANNOTATION_CHILD_NODE + SLASH
-                                                                            + JAVA_ANNOTATION_DECLARATION_CHILD_NODE + SLASH
-                                                                            + JAVA_ANNOTATION_TYPE_CHILD_NODE + SLASH
-                                                                            + JAVA_MARKER_ANNOTATION_CHILD_NODE + "["
-                                                                            + markerAnnotationIndex + "]");
+                        Path basePath = pathFactory.createRelativePath(JavaMetadataLexicon.COMPILATION_UNIT_NODE,
+                                                                       JavaMetadataLexicon.PACKAGE_CHILD_NODE,
+                                                                       JavaMetadataLexicon.PACKAGE_DECLARATION_CHILD_NODE,
+                                                                       JavaMetadataLexicon.ANNOTATION_CHILD_NODE,
+                                                                       JavaMetadataLexicon.ANNOTATION_DECLARATION_CHILD_NODE,
+                                                                       JavaMetadataLexicon.ANNOTATION_TYPE_CHILD_NODE);
+
+                        Path markerAnnotationChildNode = pathFactory.create(basePath,
+                                                                            pathFactory.createSegment(JavaMetadataLexicon.MARKER_ANNOTATION_CHILD_NODE,
+                                                                                                      markerAnnotationIndex));
                         output.setProperty(markerAnnotationChildNode,
-                                           nameFactory.create(JAVA_MARKER_ANNOTATION_NAME),
+                                           JavaMetadataLexicon.MARKER_ANNOTATION_NAME,
                                            markerAnnotationMetadata.getName());
                         markerAnnotationIndex++;
                     }
                     if (annotationMetadata instanceof SingleMemberAnnotationMetadata) {
                         SingleMemberAnnotationMetadata singleMemberAnnotationMetadata = (SingleMemberAnnotationMetadata)annotationMetadata;
-                        Path singleMemberAnnotationChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                                  + JAVA_PACKAGE_CHILD_NODE + SLASH
-                                                                                  + JAVA_PACKAGE_DECLARATION_CHILD_NODE + SLASH
-                                                                                  + JAVA_ANNOTATION_CHILD_NODE + SLASH
-                                                                                  + JAVA_ANNOTATION_DECLARATION_CHILD_NODE
-                                                                                  + SLASH + JAVA_ANNOTATION_TYPE_CHILD_NODE
-                                                                                  + SLASH
-                                                                                  + JAVA_SINGLE_ELEMENT_ANNOTATION_CHILD_NODE
-                                                                                  + "[" + singleAnnatationIndex + "]");
+
+                        Path basePath = pathFactory.createRelativePath(JavaMetadataLexicon.COMPILATION_UNIT_NODE,
+                                                                       JavaMetadataLexicon.PACKAGE_CHILD_NODE,
+                                                                       JavaMetadataLexicon.PACKAGE_DECLARATION_CHILD_NODE,
+                                                                       JavaMetadataLexicon.ANNOTATION_CHILD_NODE,
+                                                                       JavaMetadataLexicon.ANNOTATION_DECLARATION_CHILD_NODE,
+                                                                       JavaMetadataLexicon.ANNOTATION_TYPE_CHILD_NODE);
+
+                        Path singleMemberAnnotationChildNode = pathFactory.create(basePath,
+                                                                                  pathFactory.createSegment(JavaMetadataLexicon.SINGLE_ELEMENT_ANNOTATION_CHILD_NODE,
+                                                                                                            singleAnnatationIndex));
                         output.setProperty(singleMemberAnnotationChildNode,
-                                           nameFactory.create(JAVA_SINGLE_ANNOTATION_NAME),
+                                           JavaMetadataLexicon.SINGLE_ANNOTATION_NAME,
                                            singleMemberAnnotationMetadata.getName());
                         singleAnnatationIndex++;
                     }
                     if (annotationMetadata instanceof NormalAnnotationMetadata) {
                         NormalAnnotationMetadata normalAnnotationMetadata = (NormalAnnotationMetadata)annotationMetadata;
-                        Path normalAnnotationChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                            + JAVA_PACKAGE_CHILD_NODE + SLASH
-                                                                            + JAVA_PACKAGE_DECLARATION_CHILD_NODE + SLASH
-                                                                            + JAVA_ANNOTATION_CHILD_NODE + SLASH
-                                                                            + JAVA_ANNOTATION_DECLARATION_CHILD_NODE + SLASH
-                                                                            + JAVA_ANNOTATION_TYPE_CHILD_NODE + SLASH
-                                                                            + JAVA_NORMAL_ANNOTATION_CHILD_NODE + "["
-                                                                            + normalAnnotationIndex + "]");
+                        Path basePath = pathFactory.createRelativePath(JavaMetadataLexicon.COMPILATION_UNIT_NODE,
+                                                                       JavaMetadataLexicon.PACKAGE_CHILD_NODE,
+                                                                       JavaMetadataLexicon.PACKAGE_DECLARATION_CHILD_NODE,
+                                                                       JavaMetadataLexicon.ANNOTATION_CHILD_NODE,
+                                                                       JavaMetadataLexicon.ANNOTATION_DECLARATION_CHILD_NODE,
+                                                                       JavaMetadataLexicon.ANNOTATION_TYPE_CHILD_NODE);
+
+                        Path normalAnnotationChildNode = pathFactory.create(basePath,
+                                                                            pathFactory.createSegment(JavaMetadataLexicon.NORMAL_ANNOTATION_CHILD_NODE,
+                                                                                                      normalAnnotationIndex));
 
                         output.setProperty(normalAnnotationChildNode,
-                                           nameFactory.create(JAVA_NORMALANNOTATION_NAME),
+                                           JavaMetadataLexicon.NORMALANNOTATION_NAME,
                                            normalAnnotationMetadata.getName());
                         normalAnnotationIndex++;
                     }
@@ -250,25 +255,33 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
             for (ImportMetadata importMetadata : javaMetadata.getImports()) {
                 if (importMetadata instanceof ImportOnDemandMetadata) {
                     ImportOnDemandMetadata importOnDemandMetadata = (ImportOnDemandMetadata)importMetadata;
-                    Path importOnDemandChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH + JAVA_IMPORT_CHILD_NODE
-                                                                      + SLASH + JAVA_IMPORT_DECLARATION_CHILD_NODE + SLASH
-                                                                      + JAVA_ON_DEMAND_IMPORT_CHILD_NODE + SLASH
-                                                                      + JAVA_ON_DEMAND_IMPORT_TYPE_DECLARATION_CHILD_NODE + "["
-                                                                      + importOnDemandIndex + "]");
+
+                    Path basePath = pathFactory.createRelativePath(JavaMetadataLexicon.COMPILATION_UNIT_NODE,
+                                                                   JavaMetadataLexicon.IMPORT_CHILD_NODE,
+                                                                   JavaMetadataLexicon.IMPORT_DECLARATION_CHILD_NODE,
+                                                                   JavaMetadataLexicon.ON_DEMAND_IMPORT_CHILD_NODE);
+
+                    Path importOnDemandChildNode = pathFactory.create(basePath,
+                                                                      pathFactory.createSegment(JavaMetadataLexicon.ON_DEMAND_IMPORT_TYPE_DECLARATION_CHILD_NODE,
+                                                                                                importOnDemandIndex));
                     output.setProperty(importOnDemandChildNode,
-                                       nameFactory.create(JAVA_ON_DEMAND_IMPORT_NAME),
+                                       JavaMetadataLexicon.ON_DEMAND_IMPORT_NAME,
                                        importOnDemandMetadata.getName());
                     importOnDemandIndex++;
                 }
                 if (importMetadata instanceof SingleImportMetadata) {
                     SingleImportMetadata singleImportMetadata = (SingleImportMetadata)importMetadata;
-                    Path singleImportChildNode = pathFactory.create(JAVA_COMPILATION_UNIT_NODE + SLASH + JAVA_IMPORT_CHILD_NODE
-                                                                    + SLASH + JAVA_IMPORT_DECLARATION_CHILD_NODE + SLASH
-                                                                    + JAVA_SINGLE_IMPORT_CHILD_NODE + SLASH
-                                                                    + JAVA_SINGLE_IMPORT_TYPE_DECLARATION_CHILD_NODE + "["
-                                                                    + singleImportIndex + "]");
+
+                    Path basePath = pathFactory.createRelativePath(JavaMetadataLexicon.COMPILATION_UNIT_NODE,
+                                                                   JavaMetadataLexicon.IMPORT_CHILD_NODE,
+                                                                   JavaMetadataLexicon.IMPORT_DECLARATION_CHILD_NODE,
+                                                                   JavaMetadataLexicon.SINGLE_IMPORT_CHILD_NODE);
+
+                    Path singleImportChildNode = pathFactory.create(basePath,
+                                                                    pathFactory.createSegment(JavaMetadataLexicon.SINGLE_IMPORT_TYPE_DECLARATION_CHILD_NODE,
+                                                                                              importOnDemandIndex));
                     output.setProperty(singleImportChildNode,
-                                       nameFactory.create(JAVA_SINGLE_IMPORT_NAME),
+                                       JavaMetadataLexicon.SINGLE_IMPORT_NAME,
                                        singleImportMetadata.getName());
                     singleImportIndex++;
                 }
@@ -279,26 +292,27 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
                 // class declaration
                 if (typeMetadata instanceof ClassMetadata) {
 
-                    String normalClassRootPath = JAVA_COMPILATION_UNIT_NODE + SLASH + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
-                                                 + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH + JAVA_NORMAL_CLASS_CHILD_NODE
-                                                 + SLASH + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE;
+                    Path normalClassRootPath = pathFactory.createRelativePath(JavaMetadataLexicon.COMPILATION_UNIT_NODE,
+                                                                              JavaMetadataLexicon.UNIT_TYPE_CHILD_NODE,
+                                                                              JavaMetadataLexicon.CLASS_DECLARATION_CHILD_NODE,
+                                                                              JavaMetadataLexicon.NORMAL_CLASS_CHILD_NODE,
+                                                                              JavaMetadataLexicon.NORMAL_CLASS_DECLARATION_CHILD_NODE);
 
                     ClassMetadata classMetadata = (ClassMetadata)typeMetadata;
-                    Path classChildNode = pathFactory.create(normalClassRootPath);
-                    output.setProperty(classChildNode, nameFactory.create(JAVA_NORMAL_CLASS_NAME), classMetadata.getName());
+                    output.setProperty(normalClassRootPath, JavaMetadataLexicon.NORMAL_CLASS_NAME, classMetadata.getName());
 
                     // process modifiers of the class declaration
                     List<ModifierMetadata> classModifiers = classMetadata.getModifiers();
                     int modifierIndex = 1;
                     for (ModifierMetadata modifierMetadata : classModifiers) {
 
-                        Path classModifierChildNode = pathFactory.create(normalClassRootPath + SLASH + JAVA_MODIFIER_CHILD_NODE
-                                                                         + SLASH + JAVA_MODIFIER_DECLARATION_CHILD_NODE + "["
-                                                                         + modifierIndex + "]");
+                        Path basePath = pathFactory.create(normalClassRootPath, JavaMetadataLexicon.MODIFIER_CHILD_NODE);
 
-                        output.setProperty(classModifierChildNode,
-                                           nameFactory.create(JAVA_MODIFIER_NAME),
-                                           modifierMetadata.getName());
+                        Path classModifierChildNode = pathFactory.create(basePath,
+                                                                         pathFactory.createSegment(JavaMetadataLexicon.MODIFIER_DECLARATION_CHILD_NODE,
+                                                                                                   modifierIndex));
+
+                        output.setProperty(classModifierChildNode, JavaMetadataLexicon.MODIFIER_NAME, modifierMetadata.getName());
                     }
 
                     // process fields of the class unit.
@@ -307,45 +321,40 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
                     int parameterizedIndex = 1;
                     int arrayIndex = 1;
                     for (FieldMetadata fieldMetadata : classMetadata.getFields()) {
-                        String fieldMemberDataRootPath = JavaMetadataUtil.createPath(normalClassRootPath + SLASH
-                                                                                     + JAVA_FIELD_CHILD_NODE + SLASH
-                                                                                     + JAVA_FIELD_TYPE_CHILD_NODE + SLASH
-                                                                                     + JAVA_TYPE_CHILD_NODE);
+                        Path fieldMemberDataRootPath = pathFactory.create(normalClassRootPath,
+                                                                          JavaMetadataLexicon.FIELD_CHILD_NODE,
+                                                                          JavaMetadataLexicon.FIELD_TYPE_CHILD_NODE,
+                                                                          JavaMetadataLexicon.TYPE_CHILD_NODE);
                         if (fieldMetadata instanceof PrimitiveFieldMetadata) {
                             // primitive type
                             PrimitiveFieldMetadata primitiveFieldMetadata = (PrimitiveFieldMetadata)fieldMetadata;
-                            String primitiveFieldRootPath = JavaMetadataUtil.createPathWithIndex(fieldMemberDataRootPath + SLASH
-                                                                                                 + JAVA_PRIMITIVE_TYPE_CHILD_NODE,
-                                                                                                 primitiveIndex);
+                            Path primitiveFieldRootPath = pathFactory.create(fieldMemberDataRootPath,
+                                                                             pathFactory.createSegment(JavaMetadataLexicon.PRIMITIVE_TYPE_CHILD_NODE,
+                                                                                                       primitiveIndex));
                             // type
-                            Path primitiveTypeChildNode = pathFactory.create(primitiveFieldRootPath);
-                            output.setProperty(primitiveTypeChildNode,
-                                               nameFactory.create(JAVA_PRIMITIVE_TYPE_NAME),
+                            output.setProperty(primitiveFieldRootPath,
+                                               JavaMetadataLexicon.PRIMITIVE_TYPE_NAME,
                                                primitiveFieldMetadata.getType());
                             // modifiers
                             List<ModifierMetadata> modifiers = primitiveFieldMetadata.getModifiers();
                             int primitiveModifierIndex = 1;
                             for (ModifierMetadata modifierMetadata : modifiers) {
-                                String modifierPath = JavaMetadataUtil.createPathWithIndex(primitiveFieldRootPath + SLASH
-                                                                                           + JAVA_MODIFIER_CHILD_NODE + SLASH
-                                                                                           + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
-                                                                                           primitiveModifierIndex);
-                                Path modifierChildNode = pathFactory.create(modifierPath);
-                                output.setProperty(modifierChildNode,
-                                                   nameFactory.create(JAVA_MODIFIER_NAME),
-                                                   modifierMetadata.getName());
+                                Path modifierPath = pathFactory.create(pathFactory.create(primitiveFieldRootPath,
+                                                                                          JavaMetadataLexicon.MODIFIER_CHILD_NODE),
+                                                                       pathFactory.createSegment(JavaMetadataLexicon.MODIFIER_DECLARATION_CHILD_NODE,
+                                                                                                 primitiveModifierIndex));
+                                output.setProperty(modifierPath, JavaMetadataLexicon.MODIFIER_NAME, modifierMetadata.getName());
                                 primitiveModifierIndex++;
                             }
                             // variables
                             List<Variable> variables = primitiveFieldMetadata.getVariables();
                             int primitiveVariableIndex = 1;
                             for (Variable variable : variables) {
-                                String variablePath = JavaMetadataUtil.createPathWithIndex(primitiveFieldRootPath + SLASH
-                                                                                           + JAVA_PRIMITIVE_TYPE_VARIABLE + SLASH
-                                                                                           + JAVA_VARIABLE,
-                                                                                           primitiveVariableIndex);
-                                Path primitiveChildNode = pathFactory.create(variablePath);
-                                VariableSequencer.sequenceTheVariable(output, nameFactory, variable, primitiveChildNode);
+                                Path variablePath = pathFactory.create(pathFactory.create(primitiveFieldRootPath,
+                                                                                          JavaMetadataLexicon.PRIMITIVE_TYPE_VARIABLE),
+                                                                       pathFactory.createSegment(JavaMetadataLexicon.VARIABLE,
+                                                                                                 primitiveVariableIndex));
+                                VariableSequencer.sequenceTheVariable(output, nameFactory, variable, variablePath);
                                 primitiveVariableIndex++;
                             }
                             primitiveIndex++;
@@ -354,9 +363,9 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
                         // Array type
                         if (fieldMetadata instanceof ArrayTypeFieldMetadata) {
                             ArrayTypeFieldMetadata arrayTypeFieldMetadata = (ArrayTypeFieldMetadata)fieldMetadata;
-                            String arrayTypeRootPath = JavaMetadataUtil.createPathWithIndex(fieldMemberDataRootPath + SLASH
-                                                                                            + JAVA_ARRAY_TYPE_CHILD_NODE,
-                                                                                            arrayIndex);
+                            Path arrayTypeRootPath = pathFactory.create(fieldMemberDataRootPath,
+                                                                        pathFactory.createSegment(JavaMetadataLexicon.ARRAY_TYPE_CHILD_NODE,
+                                                                                                  arrayIndex));
                             ArrayTypeFieldMetadataSequencer.sequenceFieldMemberData(arrayTypeFieldMetadata,
                                                                                     pathFactory,
                                                                                     nameFactory,
@@ -369,40 +378,32 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
                         // Simple type
                         if (fieldMetadata instanceof SimpleTypeFieldMetadata) {
                             SimpleTypeFieldMetadata simpleTypeFieldMetadata = (SimpleTypeFieldMetadata)fieldMetadata;
-                            String simpleTypeFieldRootPath = JavaMetadataUtil.createPathWithIndex(JAVA_COMPILATION_UNIT_NODE
-                                                                                                  + SLASH
-                                                                                                  + JAVA_UNIT_TYPE_CHILD_NODE
-                                                                                                  + SLASH
-                                                                                                  + JAVA_CLASS_DECLARATION_CHILD_NODE
-                                                                                                  + SLASH
-                                                                                                  + JAVA_NORMAL_CLASS_CHILD_NODE
-                                                                                                  + SLASH
-                                                                                                  + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
-                                                                                                  + SLASH + JAVA_FIELD_CHILD_NODE
-                                                                                                  + SLASH
-                                                                                                  + JAVA_FIELD_TYPE_CHILD_NODE
-                                                                                                  + SLASH + JAVA_TYPE_CHILD_NODE
-                                                                                                  + SLASH
-                                                                                                  + JAVA_SIMPLE_TYPE_CHILD_NODE,
-                                                                                                  simpleIndex);
-                            Path simpleTypeFieldChildNode = pathFactory.create(simpleTypeFieldRootPath);
-                            output.setProperty(simpleTypeFieldChildNode,
-                                               nameFactory.create(JAVA_SIMPLE_TYPE_NAME),
+                            Path basePath = pathFactory.createRelativePath(JavaMetadataLexicon.COMPILATION_UNIT_NODE,
+                                                                           JavaMetadataLexicon.UNIT_TYPE_CHILD_NODE,
+                                                                           JavaMetadataLexicon.CLASS_DECLARATION_CHILD_NODE,
+                                                                           JavaMetadataLexicon.NORMAL_CLASS_CHILD_NODE,
+                                                                           JavaMetadataLexicon.NORMAL_CLASS_DECLARATION_CHILD_NODE,
+                                                                           JavaMetadataLexicon.FIELD_CHILD_NODE,
+                                                                           JavaMetadataLexicon.FIELD_TYPE_CHILD_NODE,
+                                                                           JavaMetadataLexicon.TYPE_CHILD_NODE);
+
+                            Path simpleTypeFieldRootPath = pathFactory.create(basePath,
+                                                                              pathFactory.createSegment(JavaMetadataLexicon.SIMPLE_TYPE_CHILD_NODE,
+                                                                                                        simpleIndex));
+                            output.setProperty(simpleTypeFieldRootPath,
+                                               JavaMetadataLexicon.SIMPLE_TYPE_NAME,
                                                simpleTypeFieldMetadata.getType());
 
                             // Simple type modifies
                             List<ModifierMetadata> simpleModifiers = simpleTypeFieldMetadata.getModifiers();
                             int simpleTypeModifierIndex = 1;
                             for (ModifierMetadata modifierMetadata : simpleModifiers) {
-                                String simpleTypeModifierPath = JavaMetadataUtil.createPathWithIndex(simpleTypeFieldRootPath
-                                                                                                     + SLASH
-                                                                                                     + JAVA_SIMPLE_TYPE_MODIFIER_CHILD_NODE
-                                                                                                     + SLASH
-                                                                                                     + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
-                                                                                                     simpleTypeModifierIndex);
-                                Path simpleTypeModifierChildNode = pathFactory.create(simpleTypeModifierPath);
-                                output.setProperty(simpleTypeModifierChildNode,
-                                                   nameFactory.create(JAVA_MODIFIER_NAME),
+                                Path simpleTypeModifierPath = pathFactory.create(pathFactory.create(simpleTypeFieldRootPath,
+                                                                                                    JavaMetadataLexicon.SIMPLE_TYPE_MODIFIER_CHILD_NODE),
+                                                                                 pathFactory.createSegment(JavaMetadataLexicon.MODIFIER_DECLARATION_CHILD_NODE,
+                                                                                                           simpleTypeModifierIndex));
+                                output.setProperty(simpleTypeModifierPath,
+                                                   JavaMetadataLexicon.MODIFIER_NAME,
                                                    modifierMetadata.getName());
                                 simpleTypeModifierIndex++;
                             }
@@ -411,12 +412,11 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
                             List<Variable> variables = simpleTypeFieldMetadata.getVariables();
                             int simpleTypeVariableIndex = 1;
                             for (Variable variable : variables) {
-                                String variablePath = JavaMetadataUtil.createPathWithIndex(simpleTypeFieldRootPath + SLASH
-                                                                                           + JAVA_SIMPLE_TYPE_VARIABLE + SLASH
-                                                                                           + JAVA_VARIABLE,
-                                                                                           simpleTypeVariableIndex);
-                                Path primitiveChildNode = pathFactory.create(variablePath);
-                                VariableSequencer.sequenceTheVariable(output, nameFactory, variable, primitiveChildNode);
+                                Path variablePath = pathFactory.create(pathFactory.create(simpleTypeFieldRootPath,
+                                                                                          JavaMetadataLexicon.SIMPLE_TYPE_VARIABLE),
+                                                                       pathFactory.createSegment(JavaMetadataLexicon.VARIABLE,
+                                                                                                 simpleTypeVariableIndex));
+                                VariableSequencer.sequenceTheVariable(output, nameFactory, variable, variablePath);
                                 simpleTypeVariableIndex++;
                             }
 
@@ -432,18 +432,21 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
                         // Parameterized type
                         if (fieldMetadata instanceof ParameterizedTypeFieldMetadata) {
                             ParameterizedTypeFieldMetadata parameterizedTypeFieldMetadata = (ParameterizedTypeFieldMetadata)fieldMetadata;
-                            String parameterizedTypeFieldRootPath = ParameterizedTypeFieldMetadataSequencer.getParameterizedTypeFieldRootPath(parameterizedIndex);
+                            Path parameterizedTypeFieldRootPath = ParameterizedTypeFieldMetadataSequencer.getParameterizedTypeFieldRootPath(pathFactory,
+                                                                                                                                            parameterizedIndex);
                             ParameterizedTypeFieldMetadataSequencer.sequenceTheParameterizedTypeName(parameterizedTypeFieldMetadata,
                                                                                                      parameterizedTypeFieldRootPath,
                                                                                                      pathFactory,
                                                                                                      nameFactory,
                                                                                                      output);
+
                             // Parameterized type modifiers
                             List<ModifierMetadata> parameterizedTypeModifiers = parameterizedTypeFieldMetadata.getModifiers();
                             int parameterizedTypeModifierIndex = 1;
                             for (ModifierMetadata modifierMetadata : parameterizedTypeModifiers) {
-                                String parameterizedTypeModifierPath = ParameterizedTypeFieldMetadataSequencer.getParameterizedTypeFieldRModifierPath(parameterizedTypeFieldRootPath,
-                                                                                                                                                      parameterizedTypeModifierIndex);
+                                Path parameterizedTypeModifierPath = ParameterizedTypeFieldMetadataSequencer.getParameterizedTypeFieldRModifierPath(pathFactory,
+                                                                                                                                                    parameterizedTypeFieldRootPath,
+                                                                                                                                                    parameterizedTypeModifierIndex);
                                 ParameterizedTypeFieldMetadataSequencer.sequenceTheParameterizedTypeModifier(modifierMetadata,
                                                                                                              parameterizedTypeModifierPath,
                                                                                                              pathFactory,
@@ -479,38 +482,29 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
                         if (methodMetadata.isContructor()) {
                             // process constructor
                             ConstructorMetadata constructorMetadata = (ConstructorMetadata)methodMetadata;
-                            String constructorRootPath = JavaMetadataUtil.createPathWithIndex(JAVA_COMPILATION_UNIT_NODE
-                                                                                              + SLASH
-                                                                                              + JAVA_UNIT_TYPE_CHILD_NODE
-                                                                                              + SLASH
-                                                                                              + JAVA_CLASS_DECLARATION_CHILD_NODE
-                                                                                              + SLASH
-                                                                                              + JAVA_NORMAL_CLASS_CHILD_NODE
-                                                                                              + SLASH
-                                                                                              + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
-                                                                                              + SLASH
-                                                                                              + JAVA_CONSTRUCTOR_CHILD_NODE
-                                                                                              + SLASH
-                                                                                              + JAVA_CONSTRUCTOR_DECLARATION_CHILD_NODE,
-                                                                                              constructorIndex);
-                            Path constructorChildNode = pathFactory.create(constructorRootPath);
-                            output.setProperty(constructorChildNode,
-                                               nameFactory.create(JAVA_CONSTRUCTOR_NAME),
+                            Path basePath = pathFactory.createRelativePath(JavaMetadataLexicon.COMPILATION_UNIT_NODE,
+                                                                           JavaMetadataLexicon.UNIT_TYPE_CHILD_NODE,
+                                                                           JavaMetadataLexicon.CLASS_DECLARATION_CHILD_NODE,
+                                                                           JavaMetadataLexicon.NORMAL_CLASS_CHILD_NODE,
+                                                                           JavaMetadataLexicon.NORMAL_CLASS_DECLARATION_CHILD_NODE,
+                                                                           JavaMetadataLexicon.CONSTRUCTOR_CHILD_NODE);
+                            Path constructorRootPath = pathFactory.create(basePath,
+                                                                          pathFactory.createSegment(JavaMetadataLexicon.CONSTRUCTOR_DECLARATION_CHILD_NODE,
+                                                                                                    constructorIndex));
+                            output.setProperty(constructorRootPath,
+                                               JavaMetadataLexicon.CONSTRUCTOR_NAME,
                                                constructorMetadata.getName());
                             List<ModifierMetadata> modifiers = constructorMetadata.getModifiers();
                             // modifiers
                             int constructorModifierIndex = 1;
                             for (ModifierMetadata modifierMetadata : modifiers) {
-                                String contructorModifierPath = JavaMetadataUtil.createPathWithIndex(constructorRootPath
-                                                                                                     + SLASH
-                                                                                                     + JAVA_MODIFIER_CHILD_NODE
-                                                                                                     + SLASH
-                                                                                                     + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
-                                                                                                     constructorModifierIndex);
+                                Path contructorModifierPath = pathFactory.create(pathFactory.create(constructorRootPath,
+                                                                                                    JavaMetadataLexicon.MODIFIER_CHILD_NODE),
+                                                                                 pathFactory.createSegment(JavaMetadataLexicon.MODIFIER_DECLARATION_CHILD_NODE,
+                                                                                                           constructorModifierIndex));
 
-                                Path constructorModifierChildNode = pathFactory.create(contructorModifierPath);
-                                output.setProperty(constructorModifierChildNode,
-                                                   nameFactory.create(JAVA_MODIFIER_NAME),
+                                output.setProperty(contructorModifierPath,
+                                                   JavaMetadataLexicon.MODIFIER_NAME,
                                                    modifierMetadata.getName());
                                 constructorModifierIndex++;
                             }
@@ -519,21 +513,19 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
                             int constructorParameterIndex = 1;
                             for (FieldMetadata fieldMetadata : constructorMetadata.getParameters()) {
 
-                                String constructorParameterRootPath = JavaMetadataUtil.createPathWithIndex(constructorRootPath
-                                                                                                           + SLASH
-                                                                                                           + JAVA_PARAMETER
-                                                                                                           + SLASH
-                                                                                                           + JAVA_FORMAL_PARAMETER,
-                                                                                                           constructorParameterIndex);
+                                Path constructorParameterRootPath = pathFactory.create(pathFactory.create(constructorRootPath,
+                                                                                                          JavaMetadataLexicon.PARAMETER),
+                                                                                       pathFactory.createSegment(JavaMetadataLexicon.FORMAL_PARAMETER,
+                                                                                                                 constructorParameterIndex));
                                 // primitive type
                                 if (fieldMetadata instanceof PrimitiveFieldMetadata) {
 
                                     PrimitiveFieldMetadata primitiveMetadata = (PrimitiveFieldMetadata)fieldMetadata;
-                                    String constructPrimitiveFormalParamRootPath = MethodMetadataSequencer.createMethodParamRootPath(constructorParameterRootPath);
+                                    Path constructPrimitiveFormalParamRootPath = MethodMetadataSequencer.createMethodParamRootPath(pathFactory,
+                                                                                                                                   constructorParameterRootPath);
                                     // type
-                                    Path constructorPrimitiveTypeParamChildNode = pathFactory.create(constructPrimitiveFormalParamRootPath);
-                                    output.setProperty(constructorPrimitiveTypeParamChildNode,
-                                                       nameFactory.create(JAVA_PRIMITIVE_TYPE_NAME),
+                                    output.setProperty(constructPrimitiveFormalParamRootPath,
+                                                       JavaMetadataLexicon.PRIMITIVE_TYPE_NAME,
                                                        primitiveMetadata.getType());
 
                                     Path constructorPrimitiveParamChildNode = MethodMetadataSequencer.createMethodParamPath(pathFactory,
@@ -569,38 +561,32 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
 
                             constructorIndex++;
                         } else {
-
                             // normal method
                             MethodTypeMemberMetadata methodTypeMemberMetadata = (MethodTypeMemberMetadata)methodMetadata;
-                            String methodRootPath = JavaMetadataUtil.createPathWithIndex(JAVA_COMPILATION_UNIT_NODE
-                                                                                         + SLASH
-                                                                                         + JAVA_UNIT_TYPE_CHILD_NODE
-                                                                                         + SLASH
-                                                                                         + JAVA_CLASS_DECLARATION_CHILD_NODE
-                                                                                         + SLASH
-                                                                                         + JAVA_NORMAL_CLASS_CHILD_NODE
-                                                                                         + SLASH
-                                                                                         + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE
-                                                                                         + SLASH + JAVA_METHOD_CHILD_NODE + SLASH
-                                                                                         + JAVA_METHOD_DECLARATION_CHILD_NODE,
-                                                                                         methodIndex);
-                            Path methodChildNode = pathFactory.create(methodRootPath);
-                            output.setProperty(methodChildNode,
-                                               nameFactory.create(JAVA_METHOD_NAME),
+                            Path basePath = pathFactory.createRelativePath(JavaMetadataLexicon.COMPILATION_UNIT_NODE,
+                                                                           JavaMetadataLexicon.UNIT_TYPE_CHILD_NODE,
+                                                                           JavaMetadataLexicon.CLASS_DECLARATION_CHILD_NODE,
+                                                                           JavaMetadataLexicon.NORMAL_CLASS_CHILD_NODE,
+                                                                           JavaMetadataLexicon.NORMAL_CLASS_DECLARATION_CHILD_NODE,
+                                                                           JavaMetadataLexicon.METHOD_CHILD_NODE);
+
+                            Path methodRootPath = pathFactory.create(basePath,
+                                                                     pathFactory.createSegment(JavaMetadataLexicon.METHOD_DECLARATION_CHILD_NODE,
+                                                                                               methodIndex));
+
+                            output.setProperty(methodRootPath,
+                                               JavaMetadataLexicon.METHOD_NAME,
                                                methodTypeMemberMetadata.getName());
 
                             // method modifiers
                             int methodModierIndex = 1;
                             for (ModifierMetadata modifierMetadata : methodTypeMemberMetadata.getModifiers()) {
-                                String methodModifierPath = JavaMetadataUtil.createPathWithIndex(methodRootPath
-                                                                                                 + SLASH
-                                                                                                 + JAVA_MODIFIER_CHILD_NODE
-                                                                                                 + SLASH
-                                                                                                 + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
-                                                                                                 methodModierIndex);
-                                Path methodModifierChildNode = pathFactory.create(methodModifierPath);
-                                output.setProperty(methodModifierChildNode,
-                                                   nameFactory.create(JAVA_MODIFIER_NAME),
+                                Path methodModifierPath = pathFactory.create(pathFactory.create(methodRootPath,
+                                                                                                JavaMetadataLexicon.MODIFIER_CHILD_NODE),
+                                                                             pathFactory.createSegment(JavaMetadataLexicon.MODIFIER_DECLARATION_CHILD_NODE,
+                                                                                                       methodModierIndex));
+                                output.setProperty(methodModifierPath,
+                                                   JavaMetadataLexicon.MODIFIER_NAME,
                                                    modifierMetadata.getName());
                                 methodModierIndex++;
                             }
@@ -608,20 +594,18 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
                             int methodParameterIndex = 1;
                             for (FieldMetadata fieldMetadata : methodMetadata.getParameters()) {
 
-                                String methodParamRootPath = JavaMetadataUtil.createPathWithIndex(methodRootPath + SLASH
-                                                                                                  + JAVA_PARAMETER + SLASH
-                                                                                                  + JAVA_FORMAL_PARAMETER,
-                                                                                                  methodParameterIndex);
+                                Path methodParamRootPath = pathFactory.create(pathFactory.create(methodRootPath,
+                                                                                                 JavaMetadataLexicon.PARAMETER),
+                                                                              pathFactory.createSegment(JavaMetadataLexicon.FORMAL_PARAMETER,
+                                                                                                        methodParameterIndex));
 
                                 if (fieldMetadata instanceof PrimitiveFieldMetadata) {
 
                                     PrimitiveFieldMetadata primitive = (PrimitiveFieldMetadata)fieldMetadata;
 
-                                    String methodPrimitiveFormalParamRootPath = JavaMetadataUtil.createPath(methodParamRootPath
-                                                                                                            + SLASH
-                                                                                                            + JAVA_TYPE_CHILD_NODE
-                                                                                                            + SLASH
-                                                                                                            + JAVA_PRIMITIVE_TYPE_CHILD_NODE);
+                                    Path methodPrimitiveFormalParamRootPath = pathFactory.create(methodParamRootPath,
+                                                                                                 JavaMetadataLexicon.TYPE_CHILD_NODE,
+                                                                                                 JavaMetadataLexicon.PRIMITIVE_TYPE_CHILD_NODE);
 
                                     Path methodParamChildNode = MethodMetadataSequencer.createMethodParamPath(pathFactory,
                                                                                                               methodPrimitiveFormalParamRootPath);
@@ -632,7 +616,7 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
                                     // type
                                     Path methodPrimitiveTypeParamChildNode = pathFactory.create(methodPrimitiveFormalParamRootPath);
                                     output.setProperty(methodPrimitiveTypeParamChildNode,
-                                                       nameFactory.create(JAVA_PRIMITIVE_TYPE_NAME),
+                                                       JavaMetadataLexicon.PRIMITIVE_TYPE_NAME,
                                                        primitive.getType());
 
                                 }
@@ -647,6 +631,7 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
                                 }
                                 if (fieldMetadata instanceof ArrayTypeFieldMetadata) {
                                     ArrayTypeFieldMetadata arrayTypeFieldMetadata = (ArrayTypeFieldMetadata)fieldMetadata;
+
                                     ArrayTypeFieldMetadataSequencer.sequenceMethodFormalParam(output,
                                                                                               nameFactory,
                                                                                               pathFactory,
@@ -665,14 +650,12 @@ public class DefaultSourceFileRecorder implements SourceFileRecorder, JavaSource
 
                             if (methodReturnType instanceof PrimitiveFieldMetadata) {
                                 PrimitiveFieldMetadata methodReturnPrimitiveType = (PrimitiveFieldMetadata)methodReturnType;
-                                String methodReturnPrimitiveTypePath = JavaMetadataUtil.createPath(methodRootPath
-                                                                                                   + SLASH
-                                                                                                   + JAVA_RETURN_TYPE
-                                                                                                   + SLASH
-                                                                                                   + JAVA_PRIMITIVE_TYPE_CHILD_NODE);
+                                Path methodReturnPrimitiveTypePath = pathFactory.create(pathFactory.create(methodRootPath,
+                                                                                                           JavaMetadataLexicon.RETURN_TYPE),
+                                                                                        JavaMetadataLexicon.PRIMITIVE_TYPE_CHILD_NODE);
                                 Path methodReturnPrimitiveTypeChildNode = pathFactory.create(methodReturnPrimitiveTypePath);
                                 output.setProperty(methodReturnPrimitiveTypeChildNode,
-                                                   nameFactory.create(JAVA_PRIMITIVE_TYPE_NAME),
+                                                   JavaMetadataLexicon.PRIMITIVE_TYPE_NAME,
                                                    methodReturnPrimitiveType.getType());
 
                             }

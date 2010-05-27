@@ -27,15 +27,18 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.InputStream;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NameFactory;
+import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.sequencer.MockSequencerContext;
 import org.modeshape.graph.sequencer.MockSequencerOutput;
 import org.modeshape.graph.sequencer.SequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 public class FixedWidthTextSequencerTest {
     private FixedWidthTextSequencer sequencer;
@@ -213,8 +216,12 @@ public class FixedWidthTextSequencerTest {
         public void recordRow( StreamSequencerContext context,
                             SequencerOutput output,
                             String[] columns ) {
+            PathFactory pathFactory = context.getValueFactories().getPathFactory();
+            NameFactory nameFactory = context.getValueFactories().getNameFactory();
             for (int i = 0; i < columns.length; i++) {
-                output.setProperty("text:row[" + rowNum + "]", "text:data" + i, columns[i]);
+                Path path = pathFactory.createRelativePath(pathFactory.createSegment(TextSequencerLexicon.ROW, rowNum));
+                Name name = nameFactory.create(TextSequencerLexicon.Namespace.URI, "data" + i);
+                output.setProperty(path, name, columns[i]);
             }
 
             rowNum++;

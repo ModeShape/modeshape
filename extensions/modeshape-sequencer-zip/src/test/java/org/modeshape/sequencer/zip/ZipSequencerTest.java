@@ -24,15 +24,22 @@
 
 package org.modeshape.sequencer.zip;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import java.io.InputStream;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.sequencer.StreamSequencerContext;
 import org.junit.After;
 import org.junit.Test;
+import org.modeshape.graph.JcrLexicon;
+import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NameFactory;
+import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.PathFactory;
+import org.modeshape.graph.property.Property;
+import org.modeshape.graph.property.ValueFactory;
+import org.modeshape.graph.sequencer.MockSequencerContext;
+import org.modeshape.graph.sequencer.MockSequencerOutput;
+import org.modeshape.graph.sequencer.StreamSequencerContext;
 
 /**
  * @author Michael Trezzi
@@ -59,13 +66,24 @@ public class ZipSequencerTest {
     public void shouldBeAbleToExtractZip() {
         InputStream is = getTestZip("testzip.zip");
         ZipSequencer zs = new ZipSequencer();
-        SequencingOutputTestClass seqtest = new SequencingOutputTestClass();
-        StreamSequencerContext context = mock(StreamSequencerContext.class);
-        when(context.getValueFactories()).thenReturn(new ExecutionContext().getValueFactories());
+        StreamSequencerContext context = new MockSequencerContext();
+
+        MockSequencerOutput seqtest = new MockSequencerOutput(context);
 
         zs.sequence(is, seqtest, context);
 
-        assertThat(seqtest.properties.get(3).getPath(), is("zip:content/test subfolder/test2.txt/jcr:content"));
+        PathFactory pathFactory = context.getValueFactories().getPathFactory();
+        NameFactory nameFactory = context.getValueFactories().getNameFactory();
+        ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
+        
+        Name folderName = nameFactory.create("test subfolder");
+        Name fileName = nameFactory.create("test2.txt");
+
+        Path nodePath = pathFactory.createRelativePath(ZipLexicon.CONTENT, folderName, fileName, JcrLexicon.CONTENT);
+
+        Property property = seqtest.getProperty(nodePath, JcrLexicon.DATA);
+        assertThat(property, is(notNullValue()));
+        assertThat(stringFactory.create(property.getFirstValue()), is("This is a test content of file2\n"));
     }
 
 }

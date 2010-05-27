@@ -33,26 +33,27 @@ import org.modeshape.sequencer.java.metadata.ParameterizedTypeFieldMetadata;
 /**
  * Sequencer for all paths of a {@link ParameterizedTypeFieldMetadata}.
  */
-public class ParameterizedTypeFieldMetadataSequencer implements JavaSourceCndDefinition {
+public class ParameterizedTypeFieldMetadataSequencer {
 
     /**
      * Create the root path for all path children of a parameterized type.
      * 
+     * @param pathFactory the path factory to use
      * @param parameterizedIndex - index in case of multiple paths.
      * @return a path with a index starting by 1.
      */
-    public static String getParameterizedTypeFieldRootPath( int parameterizedIndex ) {
-        String simpleTypeFieldRootPath = JavaMetadataUtil.createPathWithIndex(JAVA_COMPILATION_UNIT_NODE + SLASH
-                                                                              + JAVA_UNIT_TYPE_CHILD_NODE + SLASH
-                                                                              + JAVA_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                              + JAVA_NORMAL_CLASS_CHILD_NODE + SLASH
-                                                                              + JAVA_NORMAL_CLASS_DECLARATION_CHILD_NODE + SLASH
-                                                                              + JAVA_FIELD_CHILD_NODE + SLASH
-                                                                              + JAVA_FIELD_TYPE_CHILD_NODE + SLASH
-                                                                              + JAVA_TYPE_CHILD_NODE + SLASH
-                                                                              + JAVA_PARAMETERIZED_TYPE_CHILD_NODE,
-                                                                              parameterizedIndex);
-        return simpleTypeFieldRootPath;
+    public static Path getParameterizedTypeFieldRootPath( PathFactory pathFactory,
+                                                          int parameterizedIndex ) {
+        Path basePath = pathFactory.createRelativePath(JavaMetadataLexicon.COMPILATION_UNIT_NODE,
+                                                       JavaMetadataLexicon.UNIT_TYPE_CHILD_NODE,
+                                                       JavaMetadataLexicon.CLASS_DECLARATION_CHILD_NODE,
+                                                       JavaMetadataLexicon.NORMAL_CLASS_CHILD_NODE,
+                                                       JavaMetadataLexicon.NORMAL_CLASS_DECLARATION_CHILD_NODE,
+                                                       JavaMetadataLexicon.FIELD_CHILD_NODE,
+                                                       JavaMetadataLexicon.FIELD_TYPE_CHILD_NODE,
+                                                       JavaMetadataLexicon.TYPE_CHILD_NODE);
+        return pathFactory.create(basePath, pathFactory.createSegment(JavaMetadataLexicon.PARAMETERIZED_TYPE_MODIFIER_CHILD_NODE,
+                                                                      parameterizedIndex));
     }
 
     /**
@@ -65,31 +66,30 @@ public class ParameterizedTypeFieldMetadataSequencer implements JavaSourceCndDef
      * @param nameFactory - the {@link NameFactory}.
      */
     public static void sequenceTheParameterizedTypeName( ParameterizedTypeFieldMetadata parameterizedTypeFieldMetadata,
-                                                         String parameterizedTypeFieldRootPath,
+                                                         Path parameterizedTypeFieldRootPath,
                                                          PathFactory pathFactory,
                                                          NameFactory nameFactory,
                                                          SequencerOutput output ) {
-        Path parameterizedTypeFieldChildNode = pathFactory.create(parameterizedTypeFieldRootPath);
-        output.setProperty(parameterizedTypeFieldChildNode,
-                           nameFactory.create(JAVA_PARAMETERIZED_TYPE_NAME),
+        output.setProperty(parameterizedTypeFieldRootPath,
+                           JavaMetadataLexicon.PARAMETERIZED_TYPE_NAME,
                            parameterizedTypeFieldMetadata.getType());
     }
 
     /**
      * Create a path for the parameterized modifier.
      * 
+     * @param pathFactory the path factory to use
      * @param parameterizedTypeFieldRootPath - the root path to be used.
      * @param parameterizedTypeModifierIndex - index in case of multiple modifiers.
      * @return the path.
      */
-    public static String getParameterizedTypeFieldRModifierPath( String parameterizedTypeFieldRootPath,
+    public static Path getParameterizedTypeFieldRModifierPath( PathFactory pathFactory,
+                                                               Path parameterizedTypeFieldRootPath,
                                                                  int parameterizedTypeModifierIndex ) {
-        String parameterizedTypeModifierPath = JavaMetadataUtil.createPathWithIndex(parameterizedTypeFieldRootPath + SLASH
-                                                                                    + JAVA_PARAMETERIZED_TYPE_MODIFIER_CHILD_NODE
-                                                                                    + SLASH
-                                                                                    + JAVA_MODIFIER_DECLARATION_CHILD_NODE,
-                                                                                    parameterizedTypeModifierIndex);
-        return parameterizedTypeModifierPath;
+        Path basePath = pathFactory.create(parameterizedTypeFieldRootPath,
+                                           JavaMetadataLexicon.PARAMETERIZED_TYPE_MODIFIER_CHILD_NODE);
+        return pathFactory.create(basePath, pathFactory.createSegment(JavaMetadataLexicon.MODIFIER_DECLARATION_CHILD_NODE,
+                                                                      parameterizedTypeModifierIndex));
     }
 
     /**
@@ -102,12 +102,13 @@ public class ParameterizedTypeFieldMetadataSequencer implements JavaSourceCndDef
      * @param output - the {@link SequencerOutput}.
      */
     public static void sequenceTheParameterizedTypeModifier( ModifierMetadata modifierMetadata,
-                                                             String parameterizedTypeModifierPath,
+                                                             Path parameterizedTypeModifierPath,
                                                              PathFactory pathFactory,
                                                              NameFactory nameFactory,
                                                              SequencerOutput output ) {
-        Path parameterizedTypeModifieChildNode = pathFactory.create(parameterizedTypeModifierPath);
-        output.setProperty(parameterizedTypeModifieChildNode, nameFactory.create(JAVA_MODIFIER_NAME), modifierMetadata.getName());
+        output.setProperty(parameterizedTypeModifierPath,
+                           nameFactory.create(JavaMetadataLexicon.MODIFIER_NAME),
+                           modifierMetadata.getName());
     }
 
     /**
@@ -119,13 +120,11 @@ public class ParameterizedTypeFieldMetadataSequencer implements JavaSourceCndDef
      * @return the path of the parameterized variable.
      */
     public static Path getParameterizedTypeFieldVariablePath( PathFactory pathFactory,
-                                                              String parameterizedTypeFieldRootPath,
+                                                              Path parameterizedTypeFieldRootPath,
                                                               int parameterizedTypeVariableIndex ) {
-        String variablePath = JavaMetadataUtil.createPathWithIndex(parameterizedTypeFieldRootPath + SLASH
-                                                                   + JAVA_PARAMETERIZED_TYPE_VARIABLE + SLASH + JAVA_VARIABLE,
-                                                                   parameterizedTypeVariableIndex);
-        Path parameterizedTypeVariableChildNode = pathFactory.create(variablePath);
-        return parameterizedTypeVariableChildNode;
+        Path basePath = pathFactory.create(parameterizedTypeFieldRootPath, JavaMetadataLexicon.PARAMETERIZED_TYPE_VARIABLE);
+        return pathFactory.create(basePath, pathFactory.createSegment(JavaMetadataLexicon.VARIABLE,
+                                                                      parameterizedTypeVariableIndex));
     }
 
     private ParameterizedTypeFieldMetadataSequencer() {

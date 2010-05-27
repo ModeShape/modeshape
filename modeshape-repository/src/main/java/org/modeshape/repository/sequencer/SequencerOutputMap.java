@@ -89,6 +89,10 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
 
     /**
      * {@inheritDoc}
+     * 
+     * @deprecated this method depends on the namespace mappings for the given URIs in the name components of the nodePath and
+     *             propertyName to be mapped in the NamespaceRegistry of the ModeShapeEngine's (or JcrEngine's) ExecutionContext.
+     *             Use {@link #setProperty(Path, Name, Object...)} instead.
      */
     public void setProperty( String nodePath,
                              String property,
@@ -102,6 +106,10 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
 
     /**
      * {@inheritDoc}
+     * 
+     * @deprecated this method depends on the namespace mappings for the given URIs in the name components of the nodePath and
+     *             propertyName to be mapped in the NamespaceRegistry of the ModeShapeEngine's (or JcrEngine's) ExecutionContext.
+     *             Use {@link #setProperty(Path, Name, Object...)} instead.
      */
     public void setReference( String nodePath,
                               String propertyName,

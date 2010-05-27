@@ -24,6 +24,8 @@
 package org.modeshape.sequencer.mp3;
 
 import java.io.InputStream;
+import org.modeshape.graph.JcrLexicon;
+import org.modeshape.graph.property.Path;
 import org.modeshape.graph.sequencer.SequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencer;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
@@ -48,14 +50,6 @@ import org.modeshape.graph.sequencer.StreamSequencerContext;
  */
 public class Mp3MetadataSequencer implements StreamSequencer {
 
-    public static final String METADATA_NODE = "mp3:metadata";
-    public static final String MP3_PRIMARY_TYPE = "jcr:primaryType";
-    public static final String MP3_TITLE = "mp3:title";
-    public static final String MP3_AUTHOR = "mp3:author";
-    public static final String MP3_ALBUM = "mp3:album";
-    public static final String MP3_YEAR = "mp3:year";
-    public static final String MP3_COMMENT = "mp3:comment";
-
     /**
      * {@inheritDoc}
      * 
@@ -68,12 +62,14 @@ public class Mp3MetadataSequencer implements StreamSequencer {
 
         if (metadata != null) {
             // Place the image metadata into the output map ...
-            output.setProperty(METADATA_NODE, MP3_PRIMARY_TYPE, "mp3:metadata");
-            output.setProperty(METADATA_NODE, MP3_TITLE, metadata.getTitle());
-            output.setProperty(METADATA_NODE, MP3_AUTHOR, metadata.getAuthor());
-            output.setProperty(METADATA_NODE, MP3_ALBUM, metadata.getAlbum());
-            output.setProperty(METADATA_NODE, MP3_YEAR, metadata.getYear());
-            output.setProperty(METADATA_NODE, MP3_COMMENT, metadata.getComment());
+            Path metadataNode = context.getValueFactories().getPathFactory().createRelativePath(Mp3MetadataLexicon.METADATA_NODE);
+
+            output.setProperty(metadataNode, JcrLexicon.PRIMARY_TYPE, "mp3:metadata");
+            output.setProperty(metadataNode, Mp3MetadataLexicon.TITLE, metadata.getTitle());
+            output.setProperty(metadataNode, Mp3MetadataLexicon.AUTHOR, metadata.getAuthor());
+            output.setProperty(metadataNode, Mp3MetadataLexicon.ALBUM, metadata.getAlbum());
+            output.setProperty(metadataNode, Mp3MetadataLexicon.YEAR, metadata.getYear());
+            output.setProperty(metadataNode, Mp3MetadataLexicon.COMMENT, metadata.getComment());
         }
     }
 }

@@ -24,7 +24,7 @@
 package org.modeshape.sequencer.image;
 
 import java.io.InputStream;
-import org.modeshape.graph.property.NameFactory;
+import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.sequencer.SequencerOutput;
@@ -65,22 +65,23 @@ import org.modeshape.graph.sequencer.StreamSequencerContext;
  * </p>
  */
 public class ImageMetadataSequencer implements StreamSequencer {
-
-    public static final String METADATA_NODE = "image:metadata";
-    public static final String IMAGE_PRIMARY_TYPE = "jcr:primaryType";
-    public static final String IMAGE_MIXINS = "jcr:mixinTypes";
-    public static final String IMAGE_MIME_TYPE = "jcr:mimeType";
-    public static final String IMAGE_ENCODING = "jcr:encoding";
-    public static final String IMAGE_FORMAT_NAME = "image:formatName";
-    public static final String IMAGE_WIDTH = "image:width";
-    public static final String IMAGE_HEIGHT = "image:height";
-    public static final String IMAGE_BITS_PER_PIXEL = "image:bitsPerPixel";
-    public static final String IMAGE_PROGRESSIVE = "image:progressive";
-    public static final String IMAGE_NUMBER_OF_IMAGES = "image:numberOfImages";
-    public static final String IMAGE_PHYSICAL_WIDTH_DPI = "image:physicalWidthDpi";
-    public static final String IMAGE_PHYSICAL_HEIGHT_DPI = "image:physicalHeightDpi";
-    public static final String IMAGE_PHYSICAL_WIDTH_INCHES = "image:physicalWidthInches";
-    public static final String IMAGE_PHYSICAL_HEIGHT_INCHES = "image:physicalHeightInches";
+    //
+    // public static final String IMAGE_PRIMARY_TYPE = "jcr:primaryType";
+    // public static final String IMAGE_MIXINS = "jcr:mixinTypes";
+    // public static final String IMAGE_MIME_TYPE = "jcr:mimeType";
+    // public static final String IMAGE_ENCODING = "jcr:encoding";
+    //
+    // public static final String METADATA_NODE = "image:metadata";
+    // public static final String IMAGE_FORMAT_NAME = "image:formatName";
+    // public static final String IMAGE_WIDTH = "image:width";
+    // public static final String IMAGE_HEIGHT = "image:height";
+    // public static final String IMAGE_BITS_PER_PIXEL = "image:bitsPerPixel";
+    // public static final String IMAGE_PROGRESSIVE = "image:progressive";
+    // public static final String IMAGE_NUMBER_OF_IMAGES = "image:numberOfImages";
+    // public static final String IMAGE_PHYSICAL_WIDTH_DPI = "image:physicalWidthDpi";
+    // public static final String IMAGE_PHYSICAL_HEIGHT_DPI = "image:physicalHeightDpi";
+    // public static final String IMAGE_PHYSICAL_WIDTH_INCHES = "image:physicalWidthInches";
+    // public static final String IMAGE_PHYSICAL_HEIGHT_INCHES = "image:physicalHeightInches";
 
     /**
      * {@inheritDoc}
@@ -103,26 +104,24 @@ public class ImageMetadataSequencer implements StreamSequencer {
 
         // Generate the output graph if we found useful metadata ...
         if (metadata != null) {
-            NameFactory nameFactory = context.getValueFactories().getNameFactory();
             PathFactory pathFactory = context.getValueFactories().getPathFactory();
-            String metadataNodePath = METADATA_NODE;
-            Path metadataNode = pathFactory.create(metadataNodePath);
+            Path metadataNode = pathFactory.create(ImageMetadataLexicon.METADATA_NODE);
 
             // Place the image metadata into the output map ...
-            output.setProperty(metadataNode, nameFactory.create(IMAGE_PRIMARY_TYPE), "image:metadata");
+            output.setProperty(metadataNode, JcrLexicon.PRIMARY_TYPE, "image:metadata");
             // output.psetProperty(metadataNode, nameFactory.create(IMAGE_MIXINS), "");
-            output.setProperty(metadataNode, nameFactory.create(IMAGE_MIME_TYPE), metadata.getMimeType());
+            output.setProperty(metadataNode, JcrLexicon.MIMETYPE, metadata.getMimeType());
             // output.setProperty(metadataNode, nameFactory.create(IMAGE_ENCODING), "");
-            output.setProperty(metadataNode, nameFactory.create(IMAGE_FORMAT_NAME), metadata.getFormatName());
-            output.setProperty(metadataNode, nameFactory.create(IMAGE_WIDTH), metadata.getWidth());
-            output.setProperty(metadataNode, nameFactory.create(IMAGE_HEIGHT), metadata.getHeight());
-            output.setProperty(metadataNode, nameFactory.create(IMAGE_BITS_PER_PIXEL), metadata.getBitsPerPixel());
-            output.setProperty(metadataNode, nameFactory.create(IMAGE_PROGRESSIVE), metadata.isProgressive());
-            output.setProperty(metadataNode, nameFactory.create(IMAGE_NUMBER_OF_IMAGES), metadata.getNumberOfImages());
-            output.setProperty(metadataNode, nameFactory.create(IMAGE_PHYSICAL_WIDTH_DPI), metadata.getPhysicalWidthDpi());
-            output.setProperty(metadataNode, nameFactory.create(IMAGE_PHYSICAL_HEIGHT_DPI), metadata.getPhysicalHeightDpi());
-            output.setProperty(metadataNode, nameFactory.create(IMAGE_PHYSICAL_WIDTH_INCHES), metadata.getPhysicalWidthInch());
-            output.setProperty(metadataNode, nameFactory.create(IMAGE_PHYSICAL_HEIGHT_INCHES), metadata.getPhysicalHeightInch());
+            output.setProperty(metadataNode, ImageMetadataLexicon.FORMAT_NAME, metadata.getFormatName());
+            output.setProperty(metadataNode, ImageMetadataLexicon.WIDTH, metadata.getWidth());
+            output.setProperty(metadataNode, ImageMetadataLexicon.HEIGHT, metadata.getHeight());
+            output.setProperty(metadataNode, ImageMetadataLexicon.BITS_PER_PIXEL, metadata.getBitsPerPixel());
+            output.setProperty(metadataNode, ImageMetadataLexicon.PROGRESSIVE, metadata.isProgressive());
+            output.setProperty(metadataNode, ImageMetadataLexicon.NUMBER_OF_IMAGES, metadata.getNumberOfImages());
+            output.setProperty(metadataNode, ImageMetadataLexicon.PHYSICAL_WIDTH_DPI, metadata.getPhysicalWidthDpi());
+            output.setProperty(metadataNode, ImageMetadataLexicon.PHYSICAL_HEIGHT_DPI, metadata.getPhysicalHeightDpi());
+            output.setProperty(metadataNode, ImageMetadataLexicon.PHYSICAL_WIDTH_INCHES, metadata.getPhysicalWidthInch());
+            output.setProperty(metadataNode, ImageMetadataLexicon.PHYSICAL_HEIGHT_INCHES, metadata.getPhysicalHeightInch());
         }
     }
 }

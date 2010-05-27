@@ -27,6 +27,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
+import org.modeshape.graph.JcrLexicon;
+import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.sequencer.SequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencer;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
@@ -79,42 +82,6 @@ import org.modeshape.sequencer.msoffice.word.WordMetadataReader;
  */
 public class MSOfficeMetadataSequencer implements StreamSequencer {
 
-    public static final String METADATA_NODE = "msoffice:metadata";
-    public static final String MSOFFICE_PRIMARY_TYPE = "jcr:primaryType";
-    public static final String MSOFFICE_TITLE = "msoffice:title";
-    public static final String MSOFFICE_SUBJECT = "msoffice:subject";
-    public static final String MSOFFICE_AUTHOR = "msoffice:author";
-    public static final String MSOFFICE_KEYWORDS = "msoffice:keywords";
-    public static final String MSOFFICE_COMMENT = "msoffice:comment";
-    public static final String MSOFFICE_TEMPLATE = "msoffice:template";
-    public static final String MSOFFICE_LAST_SAVED_BY = "msoffice:last_saved_by";
-    public static final String MSOFFICE_REVISION = "msoffice:revision";
-    public static final String MSOFFICE_TOTAL_EDITING_TIME = "msoffice:total_editing_time";
-    public static final String MSOFFICE_LAST_PRINTED = "msoffice:last_printed";
-    public static final String MSOFFICE_CREATED = "msoffice:created";
-    public static final String MSOFFICE_SAVED = "msoffice:saved";
-    public static final String MSOFFICE_PAGES = "msoffice:pages";
-    public static final String MSOFFICE_WORDS = "msoffice:words";
-    public static final String MSOFFICE_CHARACTERS = "msoffice:characters";
-    public static final String MSOFFICE_CREATING_APPLICATION = "msoffice:creating_application";
-    public static final String MSOFFICE_THUMBNAIL = "msoffice:thumbnail";
-
-    // PowerPoint specific
-    public static final String POWERPOINT_SLIDE_NODE = "msoffice:slide";
-    public static final String SLIDE_TITLE = "msoffice:title";
-    public static final String SLIDE_TEXT = "msoffice:text";
-    public static final String SLIDE_NOTES = "msoffice:notes";
-    public static final String SLIDE_THUMBNAIL = "msoffice:thumbnail";
-
-    // Excel specific
-    public static final String EXCEL_FULL_CONTENT = "msoffice:full_contents";
-    public static final String EXCEL_SHEET_NAME = "msoffice:sheet_name";
-
-    // Word specific
-    public static final String WORD_HEADING_NODE = "msoffice:heading";
-    public static final String WORD_HEADING_NAME = "msoffice:heading_name";
-    public static final String WORD_HEADING_LEVEL = "msoffice:heading_level";
-
     /**
      * {@inheritDoc}
      */
@@ -125,26 +92,28 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
         MSOfficeMetadata metadata = MSOfficeMetadataReader.instance(stream);
 
         String mimeType = context.getMimeType();
+        PathFactory pathFactory = context.getValueFactories().getPathFactory();
+        Path metadataNode = pathFactory.create(MSOfficeMetadataLexicon.METADATA_NODE);
 
         if (metadata != null) {
-            output.setProperty(METADATA_NODE, MSOFFICE_PRIMARY_TYPE, "msoffice:metadata");
-            output.setProperty(METADATA_NODE, MSOFFICE_TITLE, metadata.getTitle());
-            output.setProperty(METADATA_NODE, MSOFFICE_SUBJECT, metadata.getSubject());
-            output.setProperty(METADATA_NODE, MSOFFICE_AUTHOR, metadata.getAuthor());
-            output.setProperty(METADATA_NODE, MSOFFICE_KEYWORDS, metadata.getKeywords());
-            output.setProperty(METADATA_NODE, MSOFFICE_COMMENT, metadata.getComment());
-            output.setProperty(METADATA_NODE, MSOFFICE_TEMPLATE, metadata.getTemplate());
-            output.setProperty(METADATA_NODE, MSOFFICE_LAST_SAVED_BY, metadata.getLastSavedBy());
-            output.setProperty(METADATA_NODE, MSOFFICE_REVISION, metadata.getRevision());
-            output.setProperty(METADATA_NODE, MSOFFICE_TOTAL_EDITING_TIME, metadata.getTotalEditingTime());
-            output.setProperty(METADATA_NODE, MSOFFICE_LAST_PRINTED, metadata.getLastPrinted());
-            output.setProperty(METADATA_NODE, MSOFFICE_CREATED, metadata.getCreated());
-            output.setProperty(METADATA_NODE, MSOFFICE_SAVED, metadata.getSaved());
-            output.setProperty(METADATA_NODE, MSOFFICE_PAGES, metadata.getPages());
-            output.setProperty(METADATA_NODE, MSOFFICE_WORDS, metadata.getWords());
-            output.setProperty(METADATA_NODE, MSOFFICE_CHARACTERS, metadata.getCharacters());
-            output.setProperty(METADATA_NODE, MSOFFICE_CREATING_APPLICATION, metadata.getCreatingApplication());
-            output.setProperty(METADATA_NODE, MSOFFICE_THUMBNAIL, metadata.getThumbnail());
+            output.setProperty(metadataNode, JcrLexicon.PRIMARY_TYPE, MSOfficeMetadataLexicon.METADATA_NODE);
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.TITLE, metadata.getTitle());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.SUBJECT, metadata.getSubject());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.AUTHOR, metadata.getAuthor());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.KEYWORDS, metadata.getKeywords());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.COMMENT, metadata.getComment());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.TEMPLATE, metadata.getTemplate());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.LAST_SAVED_BY, metadata.getLastSavedBy());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.REVISION, metadata.getRevision());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.TOTAL_EDITING_TIME, metadata.getTotalEditingTime());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.LAST_PRINTED, metadata.getLastPrinted());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.CREATED, metadata.getCreated());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.SAVED, metadata.getSaved());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.PAGES, metadata.getPages());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.WORDS, metadata.getWords());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.CHARACTERS, metadata.getCharacters());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.CREATING_APPLICATION, metadata.getCreatingApplication());
+            output.setProperty(metadataNode, MSOfficeMetadataLexicon.THUMBNAIL, metadata.getThumbnail());
 
         } else {
             return;
@@ -155,11 +124,12 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
             try {
                 List<SlideMetadata> ppt_metadata = PowerPointMetadataReader.instance(stream);
                 if (ppt_metadata != null) {
+                    Path pptPath = pathFactory.create(metadataNode, MSOfficeMetadataLexicon.SLIDE);
                     for (SlideMetadata sm : ppt_metadata) {
-                        output.setProperty(METADATA_NODE + "/" + POWERPOINT_SLIDE_NODE, SLIDE_TITLE, sm.getTitle());
-                        output.setProperty(METADATA_NODE + "/" + POWERPOINT_SLIDE_NODE, SLIDE_TEXT, sm.getText());
-                        output.setProperty(METADATA_NODE + "/" + POWERPOINT_SLIDE_NODE, SLIDE_NOTES, sm.getNotes());
-                        output.setProperty(METADATA_NODE + "/" + POWERPOINT_SLIDE_NODE, SLIDE_THUMBNAIL, sm.getThumbnail());
+                        output.setProperty(pptPath, MSOfficeMetadataLexicon.TITLE, sm.getTitle());
+                        output.setProperty(pptPath, MSOfficeMetadataLexicon.TEXT, sm.getText());
+                        output.setProperty(pptPath, MSOfficeMetadataLexicon.NOTES, sm.getNotes());
+                        output.setProperty(pptPath, MSOfficeMetadataLexicon.THUMBNAIL, sm.getThumbnail());
                     }
                 }
             } catch (IOException e) {
@@ -172,12 +142,13 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
             // Sometime in the future this will sequence WORD Table of contents.
             try {
                 WordMetadata wordMetadata = WordMetadataReader.instance(stream);
+                Path wordPath = pathFactory.create(metadataNode, MSOfficeMetadataLexicon.HEADING_NODE);
 
                 for (Iterator<WordMetadata.WordHeading> iter = wordMetadata.getHeadings().iterator(); iter.hasNext();) {
                     WordMetadata.WordHeading heading = iter.next();
 
-                    output.setProperty(METADATA_NODE + "/" + WORD_HEADING_NODE, WORD_HEADING_NAME, heading.getText());
-                    output.setProperty(METADATA_NODE + "/" + WORD_HEADING_NODE, WORD_HEADING_LEVEL, heading.getHeaderLevel());
+                    output.setProperty(wordPath, MSOfficeMetadataLexicon.HEADING_NAME, heading.getText());
+                    output.setProperty(wordPath, MSOfficeMetadataLexicon.HEADING_LEVEL, heading.getHeaderLevel());
 
                 }
 
@@ -192,9 +163,9 @@ public class MSOfficeMetadataSequencer implements StreamSequencer {
             try {
                 ExcelMetadata excel_metadata = ExcelMetadataReader.instance(stream);
                 if (excel_metadata != null) {
-                    output.setProperty(METADATA_NODE, EXCEL_FULL_CONTENT, excel_metadata.getText());
+                    output.setProperty(metadataNode, MSOfficeMetadataLexicon.FULL_CONTENT, excel_metadata.getText());
                     for (String sheet : excel_metadata.getSheets()) {
-                        output.setProperty(METADATA_NODE, EXCEL_SHEET_NAME, sheet);
+                        output.setProperty(metadataNode, MSOfficeMetadataLexicon.SHEET_NAME, sheet);
                     }
                 }
             } catch (IOException e) {

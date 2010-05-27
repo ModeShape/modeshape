@@ -46,6 +46,9 @@ public interface SequencerOutput {
      * @param nodePath the path to the node containing the property; may not be null
      * @param propertyName the name of the property to be set
      * @param values the value(s) for the property; may be empty if any existing property is to be removed
+     * @deprecated this method depends on the namespace mappings for the given URIs in the name components of the nodePath and
+     *             propertyName to be mapped in the NamespaceRegistry of the ModeShapeEngine's (or JcrEngine's) ExecutionContext.
+     *             Use {@link #setProperty(Path, Name, Object...)} instead.
      */
     void setProperty( String nodePath,
                       String propertyName,
@@ -62,6 +65,9 @@ public interface SequencerOutput {
      * @param propertyName the name of the property to be set
      * @param paths the paths to the referenced property, which may be absolute paths or relative to the sequencer output node;
      *        may be empty if any existing property is to be removed
+     * @deprecated this method depends on the namespace mappings for the given URIs in the name components of the nodePath and
+     *             propertyName to be mapped in the NamespaceRegistry of the ModeShapeEngine's (or JcrEngine's) ExecutionContext.
+     *             Use {@link #setProperty(Path, Name, Object...)} instead.
      */
     void setReference( String nodePath,
                        String propertyName,
