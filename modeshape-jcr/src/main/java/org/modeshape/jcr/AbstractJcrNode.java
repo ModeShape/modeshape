@@ -24,7 +24,6 @@
 package org.modeshape.jcr;
 
 import java.io.InputStream;
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -52,7 +51,6 @@ import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
@@ -84,6 +82,7 @@ import org.modeshape.graph.session.GraphSession.PropertyInfo;
 import org.modeshape.jcr.SessionCache.JcrNodePayload;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
 import org.modeshape.jcr.SessionCache.NodeEditor;
+import org.modeshape.jcr.api.Lock;
 
 /**
  * An abstract implementation of the JCR {@link javax.jcr.Node} interface. Instances of this class are created and managed by the
@@ -120,6 +119,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
     final Path.Segment segment() throws RepositoryException {
         return nodeInfo().getSegment();
+    }
+
+    JcrLockManager lockManager() {
+        return session().lockManager();
     }
 
     final Node<JcrNodePayload, JcrPropertyPayload> nodeInfo()
@@ -524,14 +527,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         // Execute a query that will report all nodes referencing this node ...
         String uuid = getUUID();
         QueryBuilder builder = new QueryBuilder(context().getValueFactories().getTypeSystem());
-        QueryCommand query = builder.select("jcr:primaryType")
-                                    .fromAllNodesAs("allNodes")
-                                    .where()
-                                    .referenceValue("allNodes")
-                                    .isEqualTo(uuid)
-                                    .end()
-                                    .limit(maxNumberOfNodes)
-                                    .query();
+        QueryCommand query = builder.select("jcr:primaryType").fromAllNodesAs("allNodes").where().referenceValue("allNodes").isEqualTo(uuid).end().limit(maxNumberOfNodes).query();
         Query jcrQuery = session().workspace().queryManager().createQuery(query);
         QueryResult result = jcrQuery.execute();
         return result.getNodes();
@@ -993,7 +989,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         JcrNodeType mixinCandidateType = cache.nodeTypes().getNodeType(mixinName);
 
         // Check this separately since it throws a different type of exception
-        if (this.isLocked() && !holdsLock()) {
+        if (this.isLocked() && !getLock().isLockOwningSession()) {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
         }
 
@@ -1029,7 +1025,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final void removeMixin( String mixinName ) throws RepositoryException {
         checkSession();
 
-        if (this.isLocked() && !holdsLock()) {
+        if (this.isLocked() && !getLock().isLockOwningSession()) {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
         }
 
@@ -1158,7 +1154,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         throws NoSuchNodeTypeException, VersionException, ConstraintViolationException, LockException, RepositoryException {
         checkSession();
 
-        if (this.isLocked() && !holdsLock()) {
+        if (this.isLocked() && !getLock().isLockOwningSession()) {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
         }
 
@@ -1224,7 +1220,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         RepositoryException {
         checkSession();
 
-        if (isLocked() && !holdsLock()) {
+        if (isLocked() && !getLock().isLockOwningSession()) {
             throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
         }
 
@@ -1320,7 +1316,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         CheckArg.isNotEmpty(relPath, relPath);
         checkSession();
 
-        if (isLocked() && !holdsLock()) {
+        if (isLocked() && !getLock().isLockOwningSession()) {
             return false;
         }
 
@@ -1785,9 +1781,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final boolean holdsLock() throws RepositoryException {
         checkSession();
-        WorkspaceLockManager.ModeShapeLock lock = session().workspace().lockManager().lockFor(session(), this.location);
-
-        return lock != null && cache.session().lockTokens().contains(lock.getLockToken());
+        return lockManager().holdsLock(this);
     }
 
     /**
@@ -1797,7 +1791,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#isLocked()
      */
     public final boolean isLocked() throws LockException, RepositoryException {
-        return lock() != null;
+        return lockManager().isLocked(this);
     }
 
     /**
@@ -1808,37 +1802,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final Lock lock( boolean isDeep,
                             boolean isSessionScoped ) throws LockException, RepositoryException {
         checkSession();
-        if (!isLockable()) {
-            throw new LockException(JcrI18n.nodeNotLockable.text(getPath()));
-        }
-
-        if (isLocked()) {
-            throw new LockException(JcrI18n.alreadyLocked.text(this.location));
-        }
-
-        if (isDeep) {
-            LinkedList<Node<JcrNodePayload, JcrPropertyPayload>> nodesToVisit = new LinkedList<Node<JcrNodePayload, JcrPropertyPayload>>();
-            nodesToVisit.add(nodeInfo());
-
-            while (!nodesToVisit.isEmpty()) {
-                Node<JcrNodePayload, JcrPropertyPayload> node = nodesToVisit.remove(nodesToVisit.size() - 1);
-                if (session().workspace().lockManager().lockFor(session(), node.getLocation()) != null) throw new LockException(
-                                                                                                                                JcrI18n.parentAlreadyLocked.text(this.location,
-                                                                                                                                                                 node.getLocation()));
-
-                for (Node<JcrNodePayload, JcrPropertyPayload> child : node.getChildren()) {
-                    nodesToVisit.add(child);
-                }
-            }
-        }
-
-        WorkspaceLockManager.ModeShapeLock lock = session().workspace().lockManager().lock(session(),
-                                                                                           this.location,
-                                                                                           isDeep,
-                                                                                           isSessionScoped);
-
-        cache.session().addLockToken(lock.getLockToken());
-        return lock.lockFor(cache);
+        return lockManager().lock(this, isDeep, isSessionScoped, -1L, null);
     }
 
     /**
@@ -1848,43 +1812,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final void unlock() throws LockException, RepositoryException {
         checkSession();
-        WorkspaceLockManager.ModeShapeLock lock = session().workspace().lockManager().lockFor(session(), this.location);
-
-        if (lock == null) {
-            throw new LockException(JcrI18n.notLocked.text(this.location));
-        }
-
-        if (!session().lockTokens().contains(lock.getLockToken())) {
-            try {
-                // See if the user has the permission to break someone else's lock
-                session().checkPermission(cache.workspaceName(), null, ModeShapePermissions.UNLOCK_ANY);
-            } catch (AccessControlException iae) {
-                throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
-            }
-        }
-
-        session().workspace().lockManager().unlock(session().getExecutionContext(), lock);
-        session().removeLockToken(lock.getLockToken());
-    }
-
-    private final WorkspaceLockManager.ModeShapeLock lock() throws RepositoryException {
-        // This can only happen in mocked testing.
-        if (session() == null || session().workspace() == null) return null;
-
-        WorkspaceLockManager lockManager = session().workspace().lockManager();
-        WorkspaceLockManager.ModeShapeLock lock = lockManager.lockFor(session(), this.location);
-        if (lock != null) return lock;
-
-        AbstractJcrNode parent = this;
-        while (!parent.isRoot()) {
-            parent = parent.getParent();
-
-            WorkspaceLockManager.ModeShapeLock parentLock = lockManager.lockFor(session(), parent.location);
-            if (parentLock != null && parentLock.isLive()) {
-                return parentLock.isDeep() ? parentLock : null;
-            }
-        }
-        return null;
+        lockManager().unlock(this);
     }
 
     /**
@@ -1894,10 +1822,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final Lock getLock() throws LockException, RepositoryException {
         checkSession();
-        WorkspaceLockManager.ModeShapeLock lock = lock();
-
-        if (lock == null) throw new LockException(JcrI18n.notLocked.text(this.location));
-        return lock.lockFor(cache);
+        return lockManager().getLock(this);
     }
 
     /**
@@ -2023,8 +1948,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (destChildRelPath != null) {
             Path destPath = pathFactory.create(destChildRelPath);
             if (destPath.isAbsolute() || destPath.size() != 1) {
-                throw new ItemNotFoundException(JcrI18n.pathNotFound.text(destPath.getString(cache.context()
-                                                                                                  .getNamespaceRegistry()),
+                throw new ItemNotFoundException(
+                                                JcrI18n.pathNotFound.text(destPath.getString(cache.context().getNamespaceRegistry()),
                                                                           cache.session().workspace().getName()));
             }
 

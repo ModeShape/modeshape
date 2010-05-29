@@ -1,3 +1,26 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
 package org.modeshape.jcr;
 
 import java.util.Collection;
@@ -6,12 +29,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import javax.jcr.Item;
 import javax.jcr.Node;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.i18n.I18n;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
@@ -24,7 +46,6 @@ import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.ValueFactory;
-import org.modeshape.jcr.SessionCache.NodeEditor;
 
 /**
  * Manages the locks for a particular workspace in a repository. Locks are stored in a {@code Map<UUID, DnaLock>} while they exist
@@ -51,7 +72,10 @@ class WorkspaceLockManager {
         this.workspaceLocksByNodeUuid = new ConcurrentHashMap<UUID, ModeShapeLock>();
 
         Property locksPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.LOCKS);
-        repository.createSystemGraph(context).create(locksPath, locksPrimaryType).ifAbsent().and();
+
+        if (locksPath != null) {
+            repository.createSystemGraph(context).create(locksPath, locksPrimaryType).ifAbsent().and();
+        }
     }
 
     /**
@@ -70,9 +94,9 @@ class WorkspaceLockManager {
      * @throws RepositoryException if an error occurs updating the graph state
      */
     ModeShapeLock lock( JcrSession session,
-                  Location nodeLocation,
-                  boolean isDeep,
-                  boolean isSessionScoped ) throws RepositoryException {
+                        Location nodeLocation,
+                        boolean isDeep,
+                        boolean isSessionScoped ) throws RepositoryException {
         assert nodeLocation != null;
 
         UUID lockUuid = UUID.randomUUID();
@@ -110,17 +134,8 @@ class WorkspaceLockManager {
                      lockIsDeepProp).ifAbsent().and();
         batch.execute();
 
-        SessionCache cache = session.cache();
-        AbstractJcrNode lockedNode = cache.findJcrNode(Location.create(nodeUuid));
-        NodeEditor editor = cache.getEditorFor(lockedNode.nodeInfo());
-
-        // Set the properties in the cache...
-        editor.setProperty(JcrLexicon.LOCK_OWNER,
-                           (JcrValue)cache.session().getValueFactory().createValue(lockOwner, PropertyType.STRING),
-                           false);
-        editor.setProperty(JcrLexicon.LOCK_IS_DEEP, (JcrValue)cache.session().getValueFactory().createValue(isDeep), false);
-
         lockNodeInRepository(session, nodeUuid, lockOwnerProp, lockIsDeepProp, lock, isDeep);
+        session.cache().refreshProperties(Location.create(nodeUuid));
         workspaceLocksByNodeUuid.put(nodeUuid, lock);
 
         return lock;
@@ -132,10 +147,10 @@ class WorkspaceLockManager {
 
     /* Factory method added to facilitate mocked testing */
     ModeShapeLock createLock( String lockOwner,
-                        UUID lockUuid,
-                        UUID nodeUuid,
-                        boolean isDeep,
-                        boolean isSessionScoped ) {
+                              UUID lockUuid,
+                              UUID nodeUuid,
+                              boolean isDeep,
+                              boolean isSessionScoped ) {
         return new ModeShapeLock(lockOwner, lockUuid, nodeUuid, isDeep, isSessionScoped);
     }
 
@@ -253,20 +268,25 @@ class WorkspaceLockManager {
      * @param session the session on behalf of which the lock query is being performed
      * @param lockToken the lock token to check; may not be null
      * @return true if a session currently holds the lock token, false otherwise
+     * @throws LockException if the lock token doesn't exist
      */
     boolean isHeldBySession( JcrSession session,
-                             String lockToken ) {
+                             String lockToken ) throws LockException {
         assert lockToken != null;
 
         ExecutionContext context = session.getExecutionContext();
         ValueFactory<Boolean> booleanFactory = context.getValueFactories().getBooleanFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
-        org.modeshape.graph.Node lockNode = repository.createSystemGraph(context)
-                                                      .getNodeAt(pathFactory.create(locksPath,
-                                                                                    pathFactory.createSegment(lockToken)));
+        try {
+            org.modeshape.graph.Node lockNode = repository.createSystemGraph(context).getNodeAt(pathFactory.create(locksPath,
+                                                                                                                   pathFactory.createSegment(lockToken)));
 
-        return booleanFactory.create(lockNode.getProperty(ModeShapeLexicon.IS_HELD_BY_SESSION).getFirstValue());
+            return booleanFactory.create(lockNode.getProperty(ModeShapeLexicon.IS_HELD_BY_SESSION).getFirstValue());
+        } catch (PathNotFoundException pnfe) {
+            I18n msg = JcrI18n.invalidLockToken;
+            throw new LockException(msg.text(lockToken));
+        }
 
     }
 
@@ -288,9 +308,8 @@ class WorkspaceLockManager {
         PropertyFactory propFactory = context.getPropertyFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
-        repository.createSystemGraph(context)
-                  .set(propFactory.create(ModeShapeLexicon.IS_HELD_BY_SESSION, value))
-                  .on(pathFactory.create(locksPath, pathFactory.createSegment(lockToken)));
+        repository.createSystemGraph(context).set(propFactory.create(ModeShapeLexicon.IS_HELD_BY_SESSION, value)).on(pathFactory.create(locksPath,
+                                                                                                                                        pathFactory.createSegment(lockToken)));
     }
 
     /**
@@ -319,8 +338,18 @@ class WorkspaceLockManager {
      * @return the corresponding lock, possibly null if there is no such lock
      */
     ModeShapeLock lockFor( JcrSession session,
-                     Location nodeLocation ) {
+                           Location nodeLocation ) {
         UUID nodeUuid = uuidFor(session, nodeLocation);
+        return lockFor(nodeUuid);
+    }
+
+    /**
+     * Returns the lock that corresponds to the given UUID
+     * 
+     * @param nodeUuid the node UUID
+     * @return the corresponding lock, possibly null if there is no such lock
+     */
+    ModeShapeLock lockFor( UUID nodeUuid ) {
         if (nodeUuid == null) return null;
         return workspaceLocksByNodeUuid.get(nodeUuid);
     }
@@ -354,7 +383,7 @@ class WorkspaceLockManager {
      */
     void cleanLocks( JcrSession session ) {
         ExecutionContext context = session.getExecutionContext();
-        Collection<String> lockTokens = session.lockTokens();
+        Collection<String> lockTokens = session.lockManager().lockTokens();
         for (String lockToken : lockTokens) {
             ModeShapeLock lock = lockFor(lockToken);
             if (lock != null && lock.isSessionScoped()) {
@@ -403,10 +432,10 @@ class WorkspaceLockManager {
         }
 
         ModeShapeLock( String lockOwner,
-                 UUID lockUuid,
-                 UUID nodeUuid,
-                 boolean deep,
-                 boolean sessionScoped ) {
+                       UUID lockUuid,
+                       UUID nodeUuid,
+                       boolean deep,
+                       boolean sessionScoped ) {
             super();
             this.lockOwner = lockOwner;
             this.lockUuid = lockUuid;
@@ -441,17 +470,18 @@ class WorkspaceLockManager {
         }
 
         @SuppressWarnings( "synthetic-access" )
-        public Lock lockFor( SessionCache cache ) throws RepositoryException {
+        public org.modeshape.jcr.api.Lock lockFor( SessionCache cache ) throws RepositoryException {
             final AbstractJcrNode node = cache.findJcrNode(Location.create(nodeUuid));
             final JcrSession session = cache.session();
-            return new Lock() {
+            return new org.modeshape.jcr.api.Lock() {
                 public String getLockOwner() {
                     return lockOwner;
                 }
 
                 public String getLockToken() {
+                    if (sessionScoped) return null;
                     String uuidString = lockUuid.toString();
-                    return session.lockTokens().contains(uuidString) ? uuidString : null;
+                    return session.lockManager().lockTokens().contains(uuidString) ? uuidString : null;
                 }
 
                 public Node getNode() {
@@ -471,12 +501,24 @@ class WorkspaceLockManager {
                 }
 
                 public void refresh() throws LockException {
-                    if (getLockToken() == null) {
+                    String uuidString = lockUuid.toString();
+                    if (!session.lockManager().lockTokens().contains(uuidString)) {
                         throw new LockException(JcrI18n.notLocked.text(node.location));
                     }
                 }
+
+                @Override
+                public long getSecondsRemaining() throws RepositoryException {
+                    return isLockOwningSession() ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+                }
+
+                @Override
+                public boolean isLockOwningSession() {
+                    String uuidString = lockUuid.toString();
+                    return session.lockManager().lockTokens().contains(uuidString);
+                }
+
             };
         }
-
     }
 }

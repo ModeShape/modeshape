@@ -56,6 +56,8 @@ public abstract class AbstractJcrTest {
     protected SessionCache cache;
     protected JcrSession jcrSession;
     protected JcrNodeTypeManager nodeTypes;
+    protected WorkspaceLockManager lockManager;
+    protected JcrLockManager jcrLockManager;
     protected Workspace workspace;
 
     /**
@@ -117,11 +119,17 @@ public abstract class AbstractJcrTest {
         // Stub the session, workspace, and repository; then stub some critical methods ...
         jcrSession = mock(JcrSession.class);
         workspace = mock(Workspace.class);
+        String workspaceName = "workspace1";
         when(jcrSession.getExecutionContext()).thenReturn(context);
         when(jcrSession.getWorkspace()).thenReturn(workspace);
         when(jcrSession.getRepository()).thenReturn(repository);
-        when(workspace.getName()).thenReturn("workspace1");
+        when(workspace.getName()).thenReturn(workspaceName);
         when(jcrSession.isLive()).thenReturn(true);
+
+        lockManager = new WorkspaceLockManager(context, repository, workspaceName, null);
+        jcrLockManager = new JcrLockManager(jcrSession, lockManager);
+
+        when(jcrSession.lockManager()).thenReturn(jcrLockManager);
 
         // Create the node type manager for the session ...
         // no need to stub the 'JcrSession.checkPermission' methods, since we're never calling 'register' on the

@@ -205,6 +205,7 @@ public final class JcrI18n {
     public static I18n notLocked;
     public static I18n lockTokenNotHeld;
     public static I18n lockTokenAlreadyHeld;
+    public static I18n invalidLockToken;
     public static I18n uuidRequiredForLock;
 
     // JcrObservationManager messages

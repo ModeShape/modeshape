@@ -172,10 +172,14 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
 
         Workspace workspace2 = mock(Workspace.class);
-        Repository repository2 = mock(Repository.class);
+        JcrRepository repository2 = mock(JcrRepository.class);
         when(jcrSession2.getWorkspace()).thenReturn(workspace2);
         when(jcrSession2.getRepository()).thenReturn(repository2);
         when(workspace2.getName()).thenReturn("workspace2");
+
+        WorkspaceLockManager lockManager = new WorkspaceLockManager(context, repository2, "workspace2", null);
+        JcrLockManager jcrLockManager = new JcrLockManager(jcrSession2, lockManager);
+        when(jcrSession2.lockManager()).thenReturn(jcrLockManager);
 
         // Use the same id and location; use 'Toyota Prius'
         // since the UUID is defined in 'cars.xml' and therefore will be the same
@@ -206,10 +210,14 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
 
         Workspace workspace2 = mock(Workspace.class);
-        Repository repository2 = mock(Repository.class);
+        JcrRepository repository2 = mock(JcrRepository.class);
         when(jcrSession2.getWorkspace()).thenReturn(workspace2);
         when(jcrSession2.getRepository()).thenReturn(repository2);
         when(workspace2.getName()).thenReturn("workspace1");
+
+        WorkspaceLockManager lockManager = new WorkspaceLockManager(context, repository2, "workspace2", null);
+        JcrLockManager jcrLockManager = new JcrLockManager(jcrSession2, lockManager);
+        when(jcrSession2.lockManager()).thenReturn(jcrLockManager);
 
         // Use the same id and location; use 'Nissan Altima'
         // since the UUIDs will be different (cars.xml doesn't define on this node) ...
@@ -243,6 +251,10 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         when(jcrSession2.getWorkspace()).thenReturn(workspace2);
         when(jcrSession2.getRepository()).thenReturn(repository);
         when(workspace2.getName()).thenReturn("workspace1");
+
+        WorkspaceLockManager lockManager = new WorkspaceLockManager(context, repository, "workspace2", null);
+        JcrLockManager jcrLockManager = new JcrLockManager(jcrSession2, lockManager);
+        when(jcrSession2.lockManager()).thenReturn(jcrLockManager);
 
         // Use the same id and location ...
         javax.jcr.Node prius2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));

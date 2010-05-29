@@ -32,7 +32,6 @@ import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
-import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.PropertyDefinition;
@@ -45,6 +44,7 @@ import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.session.GraphSession.PropertyInfo;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
 import org.modeshape.jcr.SessionCache.NodeEditor;
+import org.modeshape.jcr.api.Lock;
 
 /**
  * An abstract {@link Property JCR Property} implementation.
@@ -84,7 +84,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      */
     protected final void checkForLock() throws LockException, RepositoryException {
 
-        if (this.getParent().isLocked()) {
+        if (this.getParent().isLocked() && !getParent().getLock().isLockOwningSession()) {
             Lock parentLock = this.getParent().getLock();
             if (parentLock != null && parentLock.getLockToken() == null) {
                 throw new LockException(JcrI18n.lockTokenNotHeld.text(this.getParent().location));
@@ -258,10 +258,10 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      */
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         checkSession();
-        Node parentNode = getParent();
+        AbstractJcrNode parentNode = getParent();
         if (parentNode.isLocked()) {
-            Lock parentLock = parentNode.getLock();
-            if (parentLock != null && parentLock.getLockToken() == null) {
+            Lock parentLock = parentNode.lockManager().getLock(parentNode);
+            if (parentLock != null && !parentLock.isLockOwningSession()) {
                 throw new LockException(JcrI18n.lockTokenNotHeld.text(getPath()));
             }
         }

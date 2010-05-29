@@ -78,6 +78,7 @@ import org.modeshape.jcr.JcrContentHandler.SaveMode;
 import org.modeshape.jcr.SessionCache.JcrNodePayload;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
 import org.modeshape.jcr.WorkspaceLockManager.ModeShapeLock;
+import org.modeshape.jcr.api.LockManager;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -145,7 +146,7 @@ class JcrWorkspace implements Workspace {
      */
     private final JcrObservationManager observationManager;
 
-    private final WorkspaceLockManager lockManager;
+    private final JcrLockManager lockManager;
 
     /**
      * The {@link Session} instance that this corresponds with this workspace.
@@ -163,7 +164,6 @@ class JcrWorkspace implements Workspace {
         assert repository != null;
         this.name = workspaceName;
         this.repository = repository;
-        this.lockManager = repository.getLockManager(workspaceName);
 
         // Create an execution context for this session, which should use the local namespace registry ...
         NamespaceRegistry globalRegistry = context.getNamespaceRegistry();
@@ -189,6 +189,7 @@ class JcrWorkspace implements Workspace {
         //
         // Set up and initialize the persistent JCR namespace registry ...
         this.workspaceRegistry = new JcrNamespaceRegistry(this.repository.getPersistentRegistry(), this.session);
+        this.lockManager = new JcrLockManager(session, repository.getLockManager(workspaceName));
 
     }
 
@@ -208,7 +209,7 @@ class JcrWorkspace implements Workspace {
         return this.context;
     }
 
-    final WorkspaceLockManager lockManager() {
+    final JcrLockManager lockManager() {
         return this.lockManager;
     }
 
@@ -284,6 +285,13 @@ class JcrWorkspace implements Workspace {
     }
 
     /**
+     * @return the lock manager for this workspace and session
+     */
+    public LockManager getLockManager() {
+        return lockManager;
+    }
+
+    /**
      * {@inheritDoc}
      */
     public final QueryManager getQueryManager() {
@@ -349,7 +357,7 @@ class JcrWorkspace implements Workspace {
             if (uuidProp != null) {
                 UUID sourceUuid = this.context.getValueFactories().getUuidFactory().create(uuidProp.getFirstValue());
 
-                ModeShapeLock sourceLock = lockManager().lockFor(session, Location.create(sourceUuid));
+                ModeShapeLock sourceLock = lockManager().lockFor(sourceUuid);
                 if (sourceLock != null && sourceLock.getLockToken() == null) {
                     throw new LockException(JcrI18n.lockTokenNotHeld.text(srcAbsPath));
                 }
@@ -509,7 +517,7 @@ class JcrWorkspace implements Workspace {
             if (uuidProp != null) {
                 UUID sourceUuid = this.context.getValueFactories().getUuidFactory().create(uuidProp.getFirstValue());
 
-                ModeShapeLock sourceLock = lockManager().lockFor(session, Location.create(sourceUuid));
+                ModeShapeLock sourceLock = lockManager().lockFor(sourceUuid);
                 if (sourceLock != null && sourceLock.getLockToken() == null) {
                     throw new LockException(srcAbsPath);
                 }

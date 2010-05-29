@@ -29,7 +29,6 @@ import java.io.OutputStream;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -88,7 +87,6 @@ import org.modeshape.jcr.JcrContentHandler.SaveMode;
 import org.modeshape.jcr.JcrNamespaceRegistry.Behavior;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
-import org.modeshape.jcr.WorkspaceLockManager.ModeShapeLock;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -137,8 +135,6 @@ class JcrSession implements Session {
 
     private final SessionCache cache;
 
-    private final Set<String> lockTokens;
-
     /**
      * A cached instance of the root path.
      */
@@ -180,11 +176,8 @@ class JcrSession implements Session {
 
         this.cache = new SessionCache(this);
         this.isLive = true;
-        this.lockTokens = new HashSet<String>();
 
-        this.performReferentialIntegrityChecks = Boolean.valueOf(repository.getOptions()
-                                                                           .get(Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS))
-                                                        .booleanValue();
+        this.performReferentialIntegrityChecks = Boolean.valueOf(repository.getOptions().get(Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS)).booleanValue();
 
         assert this.sessionAttributes != null;
         assert this.workspace != null;
@@ -228,6 +221,10 @@ class JcrSession implements Session {
         return this.executionContext.getId();
     }
 
+    JcrLockManager lockManager() {
+        return workspace.lockManager();
+    }
+
     JcrNodeTypeManager nodeTypeManager() {
         return this.workspace.nodeTypeManager();
     }
@@ -247,10 +244,6 @@ class JcrSession implements Session {
 
     JcrRepository repository() {
         return this.repository;
-    }
-
-    final Collection<String> lockTokens() {
-        return lockTokens;
     }
 
     Graph.Batch createBatch() {
@@ -357,17 +350,11 @@ class JcrSession implements Session {
     public void addLockToken( String lt ) throws LockException {
         CheckArg.isNotNull(lt, "lock token");
 
-        // Trivial case of giving a token back to ourself
-        if (lockTokens.contains(lt)) {
-            return;
+        try {
+            lockManager().addLockToken(lt);
+        } catch (LockException le) {
+            // For backwards compatibility (and API compatibility), the LockExceptions from the LockManager need to get swallowed
         }
-
-        if (workspace().lockManager().isHeldBySession(this, lt)) {
-            throw new LockException(JcrI18n.lockTokenAlreadyHeld.text(lt));
-        }
-
-        workspace().lockManager().setHeldBySession(this, lt, true);
-        lockTokens.add(lt);
     }
 
     /**
@@ -751,7 +738,7 @@ class JcrSession implements Session {
      * @see javax.jcr.Session#getLockTokens()
      */
     public String[] getLockTokens() {
-        return lockTokens.toArray(new String[lockTokens.size()]);
+        return lockManager().getLockTokens();
     }
 
     /**
@@ -1014,7 +1001,7 @@ class JcrSession implements Session {
 
         isLive = false;
         this.workspace().observationManager().removeAllEventListeners();
-        this.workspace().lockManager().cleanLocks(this);
+        this.lockManager().cleanLocks();
         this.repository.sessionLoggedOut(this);
         this.executionContext.getSecurityContext().logout();
     }
@@ -1041,14 +1028,14 @@ class JcrSession implements Session {
         AbstractJcrNode sourceNode = getNode(pathFactory.create(srcAbsPath));
         AbstractJcrNode newParentNode = getNode(destPath.getParent());
 
-        if (sourceNode.isLocked()) {
+        if (sourceNode.isLocked() && !sourceNode.getLock().isLockOwningSession()) {
             javax.jcr.lock.Lock sourceLock = sourceNode.getLock();
             if (sourceLock != null && sourceLock.getLockToken() == null) {
                 throw new LockException(JcrI18n.lockTokenNotHeld.text(srcAbsPath));
             }
         }
 
-        if (newParentNode.isLocked()) {
+        if (newParentNode.isLocked() && !newParentNode.getLock().isLockOwningSession()) {
             javax.jcr.lock.Lock newParentLock = newParentNode.getLock();
             if (newParentLock != null && newParentLock.getLockToken() == null) {
                 throw new LockException(JcrI18n.lockTokenNotHeld.text(destAbsPath));
@@ -1080,27 +1067,14 @@ class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#removeLockToken(java.lang.String)
      */
-    public void removeLockToken( String lt ) {
-        CheckArg.isNotNull(lt, "lock token");
+    public void removeLockToken( String lockToken ) {
+        CheckArg.isNotNull(lockToken, "lock token");
         // A LockException is thrown if the lock associated with the specified lock token is session-scoped.
-        /*
-         * The JCR API library that we're using diverges from the spec in that it doesn't declare
-         * this method to throw a LockException.  We'll throw a runtime exception for now.
-         */
-
-        ModeShapeLock lock = workspace().lockManager().lockFor(lt);
-        if (lock == null) {
-            // The lock is no longer valid
-            lockTokens.remove(lt);
-            return;
+        try {
+            lockManager().removeLockToken(lockToken);
+        } catch (LockException le) {
+            // For backwards compatibility (and API compatibility), the LockExceptions from the LockManager need to get swallowed
         }
-
-        if (lock.isSessionScoped()) {
-            throw new IllegalStateException(JcrI18n.cannotRemoveLockToken.text(lt));
-        }
-
-        workspace().lockManager().setHeldBySession(this, lt, false);
-        lockTokens.remove(lt);
     }
 
     void recordRemoval( Location location ) throws RepositoryException {
@@ -1121,13 +1095,8 @@ class JcrSession implements Session {
 
         TypeSystem typeSystem = executionContext.getValueFactories().getTypeSystem();
         QueryBuilder builder = new QueryBuilder(typeSystem);
-        QueryCommand query = builder.select("jcr:uuid")
-                                    .from("mix:referenceable AS referenceable")
-                                    .where()
-                                    .path("referenceable")
-                                    .isLike(pathStr + "%")
-                                    .end()
-                                    .query();
+        QueryCommand query = builder.select("jcr:uuid").from("mix:referenceable AS referenceable").where().path("referenceable").isLike(pathStr
+                                                                                                                                        + "%").end().query();
         JcrQueryManager queryManager = workspace().queryManager();
         Query jcrQuery = queryManager.createQuery(query);
         QueryResult result = jcrQuery.execute();
@@ -1220,24 +1189,10 @@ class JcrSession implements Session {
             QueryBuilder builder = new QueryBuilder(typeSystem);
             QueryCommand query = null;
             if (subgraphPath != null) {
-                query = builder.select("jcr:primaryType")
-                               .fromAllNodesAs("allNodes")
-                               .where()
-                               .referenceValue("allNodes")
-                               .isIn(someUuidsInBranch)
-                               .and()
-                               .path("allNodes")
-                               .isLike(subgraphPath + "%")
-                               .end()
-                               .query();
+                query = builder.select("jcr:primaryType").fromAllNodesAs("allNodes").where().referenceValue("allNodes").isIn(someUuidsInBranch).and().path("allNodes").isLike(subgraphPath
+                                                                                                                                                                              + "%").end().query();
             } else {
-                query = builder.select("jcr:primaryType")
-                               .fromAllNodesAs("allNodes")
-                               .where()
-                               .referenceValue("allNodes")
-                               .isIn(someUuidsInBranch)
-                               .end()
-                               .query();
+                query = builder.select("jcr:primaryType").fromAllNodesAs("allNodes").where().referenceValue("allNodes").isIn(someUuidsInBranch).end().query();
             }
             Query jcrQuery = workspace().queryManager().createQuery(query);
             // The nodes that have been (transiently) deleted will not appear in these results ...
