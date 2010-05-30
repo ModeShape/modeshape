@@ -65,23 +65,6 @@ import org.modeshape.graph.sequencer.StreamSequencerContext;
  * </p>
  */
 public class ImageMetadataSequencer implements StreamSequencer {
-    //
-    // public static final String IMAGE_PRIMARY_TYPE = "jcr:primaryType";
-    // public static final String IMAGE_MIXINS = "jcr:mixinTypes";
-    // public static final String IMAGE_MIME_TYPE = "jcr:mimeType";
-    // public static final String IMAGE_ENCODING = "jcr:encoding";
-    //
-    // public static final String METADATA_NODE = "image:metadata";
-    // public static final String IMAGE_FORMAT_NAME = "image:formatName";
-    // public static final String IMAGE_WIDTH = "image:width";
-    // public static final String IMAGE_HEIGHT = "image:height";
-    // public static final String IMAGE_BITS_PER_PIXEL = "image:bitsPerPixel";
-    // public static final String IMAGE_PROGRESSIVE = "image:progressive";
-    // public static final String IMAGE_NUMBER_OF_IMAGES = "image:numberOfImages";
-    // public static final String IMAGE_PHYSICAL_WIDTH_DPI = "image:physicalWidthDpi";
-    // public static final String IMAGE_PHYSICAL_HEIGHT_DPI = "image:physicalHeightDpi";
-    // public static final String IMAGE_PHYSICAL_WIDTH_INCHES = "image:physicalWidthInches";
-    // public static final String IMAGE_PHYSICAL_HEIGHT_INCHES = "image:physicalHeightInches";
 
     /**
      * {@inheritDoc}
@@ -105,7 +88,7 @@ public class ImageMetadataSequencer implements StreamSequencer {
         // Generate the output graph if we found useful metadata ...
         if (metadata != null) {
             PathFactory pathFactory = context.getValueFactories().getPathFactory();
-            Path metadataNode = pathFactory.create(ImageMetadataLexicon.METADATA_NODE);
+            Path metadataNode = pathFactory.createRelativePath(ImageMetadataLexicon.METADATA_NODE);
 
             // Place the image metadata into the output map ...
             output.setProperty(metadataNode, JcrLexicon.PRIMARY_TYPE, "image:metadata");

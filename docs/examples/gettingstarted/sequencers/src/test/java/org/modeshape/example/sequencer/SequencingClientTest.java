@@ -31,6 +31,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
@@ -40,9 +43,6 @@ import org.modeshape.sequencer.classfile.ClassFileSequencerLexicon;
 import org.modeshape.sequencer.java.JavaMetadataSequencer;
 import org.modeshape.sequencer.mp3.Mp3MetadataSequencer;
 import org.modeshape.sequencer.zip.ZipSequencer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author Randall Hauch
