@@ -12,11 +12,16 @@ import javax.jcr.Repository;
 import javax.jcr.Session;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 
+/*
+ * This test is currently ignored. See MODE-764 for details.
+ */
+@Ignore
 public class InfinispanClusterTest {
 
     private JcrEngine engine1;
