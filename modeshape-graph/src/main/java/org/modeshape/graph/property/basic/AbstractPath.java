@@ -144,6 +144,15 @@ public abstract class AbstractPath implements Path {
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.graph.property.Path#isIdentifier()
+     */
+    public boolean isIdentifier() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.modeshape.graph.property.Path#getCanonicalPath()
      */
     public Path getCanonicalPath() {

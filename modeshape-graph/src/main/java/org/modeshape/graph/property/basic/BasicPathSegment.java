@@ -105,6 +105,15 @@ public class BasicPathSegment implements Path.Segment {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.property.Path.Segment#isIdentifier()
+     */
+    public boolean isIdentifier() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public int compareTo( Path.Segment that ) {
         if (this == that) return 0;

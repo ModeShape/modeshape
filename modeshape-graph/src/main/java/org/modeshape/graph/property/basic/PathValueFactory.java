@@ -40,6 +40,7 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.DateTime;
+import org.modeshape.graph.property.InvalidPathException;
 import org.modeshape.graph.property.IoException;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
@@ -125,12 +126,25 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         if (length == 0) {
             return BasicPath.EMPTY_RELATIVE;
         }
-        if (Path.DELIMITER_STR.equals(trimmedValue)) return RootPath.INSTANCE;
-        if (Path.SELF.equals(trimmedValue)) return BasicPath.SELF_PATH;
-        if (Path.PARENT.equals(trimmedValue)) return BasicPath.PARENT_PATH;
+        if (length == 1) {
+            if (Path.DELIMITER_STR.equals(trimmedValue)) return RootPath.INSTANCE;
+            if (Path.SELF.equals(trimmedValue)) return BasicPath.SELF_PATH;
+        } else if (length == 2) {
+            if (Path.PARENT.equals(trimmedValue)) return BasicPath.PARENT_PATH;
+        }
+
+        // Check for an identifier ...
+        char firstChar = trimmedValue.charAt(0);
+        if (firstChar == Path.IDENTIFIER_LEADING_TERMINAL && trimmedValue.charAt(length - 1) == Path.IDENTIFIER_TRAILING_TERMINAL) {
+            // This is an identifier path, so read the identifier ...
+            String id = trimmedValue.substring(1, length - 1);
+            // And create a name and segment ...
+            Name idName = this.nameValueFactory.create(id);
+            return new IdentifierPath(new IdentifierPathSegment(idName));
+        }
 
         // Remove the leading delimiter ...
-        if (trimmedValue.charAt(0) == Path.DELIMITER) {
+        if (firstChar == Path.DELIMITER) {
             trimmedValue = length > 1 ? trimmedValue.substring(1) : "";
             --length;
             absolute = true;
@@ -373,6 +387,11 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
             if (segment == null) {
                 CheckArg.containsNoNulls(segments, "segments");
             }
+            assert segment != null;
+            if (segment.isIdentifier()) {
+                throw new InvalidPathException(
+                                               GraphI18n.unableToCreateRelativePathWithIdentifierSegment.text(segments.toString()));
+            }
             segmentsList.add(segment);
         }
         return new BasicPath(segmentsList, false);
@@ -388,6 +407,11 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         for (Segment segment : segments) {
             if (segment == null) {
                 CheckArg.containsNoNulls(segments, "segments");
+            }
+            assert segment != null;
+            if (segment.isIdentifier()) {
+                throw new InvalidPathException(
+                                               GraphI18n.unableToCreateRelativePathWithIdentifierSegment.text(segments.toString()));
             }
             segmentsList.add(segment);
         }
@@ -473,6 +497,15 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         CheckArg.isNotNull(parentPath, "parent path");
         if (segments == null || segments.length == 0) return RootPath.INSTANCE;
         if (segments.length == 1 && segments[0] != null) {
+            if (parentPath.isIdentifier()) {
+                throw new InvalidPathException(GraphI18n.unableToCreatePathBasedUponIdentifierPath.text(parentPath,
+                                                                                                        segments.toString()));
+            }
+            if (segments[0].isIdentifier()) {
+                throw new InvalidPathException(
+                                               GraphI18n.unableToCreatePathUsingIdentifierPathAndAnotherPath.text(parentPath,
+                                                                                                                  segments.toString()));
+            }
             return new ChildPath(parentPath, segments[0]);
         }
 
@@ -481,6 +514,12 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         for (Segment segment : segments) {
             if (segment == null) {
                 CheckArg.containsNoNulls(segments, "segments");
+            }
+            assert segment != null;
+            if (segment.isIdentifier()) {
+                throw new InvalidPathException(
+                                               GraphI18n.unableToCreatePathUsingIdentifierPathAndAnotherPath.text(parentPath,
+                                                                                                                  segments.toString()));
             }
             segmentsList.add(segment);
         }
@@ -495,12 +534,22 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     public Path create( Path parentPath,
                         Iterable<Segment> segments ) {
         CheckArg.isNotNull(parentPath, "parent path");
+        if (parentPath.isIdentifier()) {
+            throw new InvalidPathException(GraphI18n.unableToCreatePathBasedUponIdentifierPath.text(parentPath,
+                                                                                                    segments.toString()));
+        }
 
         List<Segment> segmentsList = new LinkedList<Segment>();
         segmentsList.addAll(parentPath.getSegmentsList());
         for (Segment segment : segments) {
             if (segment == null) {
                 CheckArg.containsNoNulls(segments, "segments");
+            }
+            assert segment != null;
+            if (segment.isIdentifier()) {
+                throw new InvalidPathException(
+                                               GraphI18n.unableToCreatePathUsingIdentifierPathAndAnotherPath.text(parentPath,
+                                                                                                                  segments.toString()));
             }
             segmentsList.add(segment);
         }
@@ -518,6 +567,9 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
                         String subpath ) {
         CheckArg.isNotNull(parentPath, "parentPath");
         CheckArg.isNotNull(subpath, "subpath");
+        if (parentPath.isIdentifier()) {
+            throw new InvalidPathException(GraphI18n.unableToCreatePathBasedUponIdentifierPath.text(parentPath, subpath));
+        }
         subpath = subpath.trim();
         boolean singleChild = subpath.indexOf(Path.DELIMITER) == -1;
         if (!singleChild && subpath.startsWith("./")) {
@@ -529,6 +581,10 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         if (singleChild) {
             try {
                 Path.Segment childSegment = createSegment(subpath);
+                if (childSegment.isIdentifier()) {
+                    throw new InvalidPathException(GraphI18n.unableToCreatePathUsingIdentifierPathAndAnotherPath.text(parentPath,
+                                                                                                                      subpath));
+                }
                 return new ChildPath(parentPath, childSegment);
             } catch (IllegalArgumentException t) {
                 // Catch and eat, letting the slower implementation catch anything ...
@@ -589,6 +645,11 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         int endBracketNdx = segmentName.indexOf(']', startBracketNdx);
         if (endBracketNdx < 0) {
             throw new IllegalArgumentException(GraphI18n.missingEndBracketInSegmentName.text(segmentName));
+        }
+        if (startBracketNdx == 0 && endBracketNdx == (segmentName.length() - 1)) {
+            // This is an identifier segment ...
+            Name id = this.nameValueFactory.create(segmentName.substring(1, endBracketNdx));
+            return new IdentifierPathSegment(id);
         }
         String ndx = segmentName.substring(startBracketNdx + 1, endBracketNdx);
         try {

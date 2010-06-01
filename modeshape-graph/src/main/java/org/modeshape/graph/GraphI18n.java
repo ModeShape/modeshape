@@ -47,6 +47,10 @@ public final class GraphI18n {
     public static I18n pathIsAlreadyAbsolute;
     public static I18n pathIsNotAbsolute;
     public static I18n pathIsNotRelative;
+    public static I18n unableToResolvePathRelativeToIdentifierPath;
+    public static I18n unableToCreateRelativePathWithIdentifierSegment;
+    public static I18n unableToCreatePathBasedUponIdentifierPath;
+    public static I18n unableToCreatePathUsingIdentifierPathAndAnotherPath;
     public static I18n repositoryConnectionPoolIsNotRunning;
     public static I18n unableToCreateSubpathBeginIndexGreaterThanOrEqualToEndingIndex;
     public static I18n unableToCreateSubpathBeginIndexGreaterThanOrEqualToSize;

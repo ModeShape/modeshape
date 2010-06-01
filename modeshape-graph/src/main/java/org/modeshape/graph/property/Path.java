@@ -121,6 +121,16 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
     public static final char DELIMITER = '/';
 
     /**
+     * The character used to begin an identifier segment within a path.
+     */
+    public static final char IDENTIFIER_LEADING_TERMINAL = '[';
+
+    /**
+     * The character used to end an identifier segment within a path.
+     */
+    public static final char IDENTIFIER_TRAILING_TERMINAL = ']';
+
+    /**
      * String form of the delimiter used to separate segments within a path.
      */
     public static final String DELIMITER_STR = new String(new char[] {DELIMITER});
@@ -184,6 +194,13 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
         public boolean isParentReference();
 
         /**
+         * Return whether this segment is an identifier segment.
+         * 
+         * @return true if the segment is an identifier segment, or false otherwise.
+         */
+        public boolean isIdentifier();
+
+        /**
          * Get the raw string form of the segment using the {@link Path#NO_OP_ENCODER no-op encoder}. This is equivalent to
          * calling <code>getString(Path.NO_OP_ENCODER)</code>.
          * 
@@ -228,8 +245,17 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
     public boolean isRoot();
 
     /**
+     * Returns whether this path represents an identifier path. An identifier path is absolute, and contains a single
+     * {@link Segment#isIdentifier() identifier Segment} that contains an identifier in the name.
+     * 
+     * @return true if this path is an identifier path, or false otherwise.
+     */
+    public boolean isIdentifier();
+
+    /**
      * Determine whether this path represents the same as the supplied path. This is equivalent to calling <code>
-     * this.compareTo(other) == 0 </code>.
+     * this.compareTo(other) == 0 </code>
+     * .
      * 
      * @param other the other path to compare with this path; may be null
      * @return true if the paths are equivalent, or false otherwise
@@ -356,10 +382,10 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
 
     /**
      * Return the path to the ancestor of the supplied degree. An ancestor of degree <code>x</code> is the path that is <code>x
-     * </code> levels up along the path. For example, <code>degree = 0</code> returns this path, while <code>degree = 1</code>
-     * returns the parent of this path, <code>degree = 2</code> returns the grandparent of this path, and so on. Note that the
-     * result may be unexpected if this path is not {@link #isNormalized() normalized}, as a non-normalized path contains ".." and
-     * "." segments.
+     * </code>
+     * levels up along the path. For example, <code>degree = 0</code> returns this path, while <code>degree = 1</code> returns the
+     * parent of this path, <code>degree = 2</code> returns the grandparent of this path, and so on. Note that the result may be
+     * unexpected if this path is not {@link #isNormalized() normalized}, as a non-normalized path contains ".." and "." segments.
      * 
      * @param degree
      * @return the ancestor of the supplied degree
@@ -429,13 +455,15 @@ public interface Path extends Comparable<Path>, Iterable<Path.Segment>, Serializ
      * @param beginIndex the beginning index, inclusive.
      * @return the specified subpath
      * @exception IndexOutOfBoundsException if the <code>beginIndex</code> is negative or larger than the length of this <code>
-     *            Path</code> object
+     *            Path</code>
+     *            object
      */
     public Path subpath( int beginIndex );
 
     /**
      * Return a new path consisting of the segments between the <code>beginIndex</code> index (inclusive) and the <code>endIndex
-     * </code> index (exclusive).
+     * </code> index
+     * (exclusive).
      * 
      * @param beginIndex the beginning index, inclusive.
      * @param endIndex the ending index, exclusive.
