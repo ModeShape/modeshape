@@ -47,6 +47,8 @@ public final class GraphI18n {
     public static I18n pathIsAlreadyAbsolute;
     public static I18n pathIsNotAbsolute;
     public static I18n pathIsNotRelative;
+    public static I18n identifierPathContainedUnsupportedIdentifierFormat;
+    public static I18n identifierPathDoesNotMatchSuppliedUuid;
     public static I18n unableToResolvePathRelativeToIdentifierPath;
     public static I18n unableToCreateRelativePathWithIdentifierSegment;
     public static I18n unableToCreatePathBasedUponIdentifierPath;

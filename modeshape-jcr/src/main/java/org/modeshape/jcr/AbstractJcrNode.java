@@ -210,6 +210,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         return isNodeType(JcrMixLexicon.LOCKABLE);
     }
 
+    /**
+     * Get the UUID of this node, regardless of whether this node is referenceable.
+     * 
+     * @return the UUID of this node; never null
+     * @throws RepositoryException if there is an error accessing the UUID of the node
+     */
     UUID uuid() throws RepositoryException {
         PropertyInfo<JcrPropertyPayload> uuidProp = nodeInfo().getProperty(JcrLexicon.UUID);
         if (uuidProp == null) {
@@ -218,6 +224,26 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         assert uuidProp != null;
         assert !uuidProp.getProperty().isEmpty();
         return context().getValueFactories().getUuidFactory().create(uuidProp.getProperty().getFirstValue());
+    }
+
+    /**
+     * Get the JCR 2.0-compatible identifier of this node, regardless of whether this node is referenceable.
+     * 
+     * @return the JCR 2.0 identifier of this node; never null
+     * @throws RepositoryException if there is an error accessing the identifier of the node
+     */
+    String identifier() throws RepositoryException {
+        return uuid().toString();
+    }
+
+    /**
+     * Get the absolute and normalized identifier path for this node, regardless of whether this node is referenceable.
+     * 
+     * @return the node's identifier path; never null
+     * @throws RepositoryException if there is an error accessing the identifier of this node
+     */
+    String identifierPath() throws RepositoryException {
+        return "[" + uuid() + "]";
     }
 
     /**
@@ -425,7 +451,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final boolean hasProperty( String relativePath ) throws RepositoryException {
         CheckArg.isNotEmpty(relativePath, "relativePath");
         checkSession();
-        if (relativePath.indexOf('/') >= 0) {
+        if (relativePath.indexOf('/') >= 0 || relativePath.startsWith("[")) {
             try {
                 getProperty(relativePath);
                 return true;
@@ -527,7 +553,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         // Execute a query that will report all nodes referencing this node ...
         String uuid = getUUID();
         QueryBuilder builder = new QueryBuilder(context().getValueFactories().getTypeSystem());
-        QueryCommand query = builder.select("jcr:primaryType").fromAllNodesAs("allNodes").where().referenceValue("allNodes").isEqualTo(uuid).end().limit(maxNumberOfNodes).query();
+        QueryCommand query = builder.select("jcr:primaryType")
+                                    .fromAllNodesAs("allNodes")
+                                    .where()
+                                    .referenceValue("allNodes")
+                                    .isEqualTo(uuid)
+                                    .end()
+                                    .limit(maxNumberOfNodes)
+                                    .query();
         Query jcrQuery = session().workspace().queryManager().createQuery(query);
         QueryResult result = jcrQuery.execute();
         return result.getNodes();
@@ -644,7 +677,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         CheckArg.isNotEmpty(relativePath, "relativePath");
         checkSession();
         int indexOfFirstSlash = relativePath.indexOf('/');
-        if (indexOfFirstSlash == 0) {
+        if (indexOfFirstSlash == 0 || relativePath.startsWith("[")) {
             // Not a relative path ...
             throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(relativePath, "relativePath"));
         }
@@ -652,6 +685,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (indexOfFirstSlash != -1) {
             // We know it's a relative path with more than one segment ...
             Path path = pathFrom(relativePath).getNormalizedPath();
+            assert !path.isIdentifier();
             if (path.size() > 1) {
                 try {
                     AbstractJcrItem item = cache.findJcrItem(nodeId, location.getPath(), path);
@@ -688,7 +722,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (relativePath.equals(".")) return true;
         if (relativePath.equals("..")) return isRoot() ? false : true;
         int indexOfFirstSlash = relativePath.indexOf('/');
-        if (indexOfFirstSlash == 0) {
+        if (indexOfFirstSlash == 0 || relativePath.startsWith("[")) {
             // Not a relative path ...
             throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(relativePath, "relativePath"));
         }
@@ -750,7 +784,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (relativePath.equals(".")) return this;
         if (relativePath.equals("..")) return this.getParent();
         int indexOfFirstSlash = relativePath.indexOf('/');
-        if (indexOfFirstSlash == 0) {
+        if (indexOfFirstSlash == 0 || relativePath.startsWith("[")) {
             // Not a relative path ...
             throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(relativePath, "relativePath"));
         }
@@ -764,17 +798,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             }
             // We know it's a resolved relative path with more than one segment ...
             if (path.size() > 1) {
-                AbstractJcrItem item = cache.findJcrNode(nodeId, location.getPath(), path);
-                if (item instanceof javax.jcr.Node) {
-                    return (AbstractJcrNode)item;
-                }
-                I18n msg = JcrI18n.nodeNotFoundAtPathRelativeToReferenceNode;
-                throw new PathNotFoundException(msg.text(relativePath, getPath(), cache.workspaceName()));
+                return cache.findJcrNode(nodeId, location.getPath(), path);
             }
             segment = path.getLastSegment();
         } else {
             segment = segmentFrom(relativePath);
         }
+        assert !segment.isIdentifier();
         // It's just a name, so look for a child ...
         try {
             return nodeInfo().getChild(segment).getPayload().getJcrNode();
@@ -1235,6 +1265,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (path.size() == 0) {
             throw new RepositoryException(JcrI18n.invalidPathParameter.text(relPath, "relPath"));
         }
+        if (path.isIdentifier()) {
+            throw new RepositoryException(JcrI18n.invalidPathParameter.text(relPath, "relPath"));
+        }
         if (path.getLastSegment().getIndex() > 1 || relPath.endsWith("]")) {
             throw new RepositoryException(JcrI18n.invalidPathParameter.text(relPath, "relPath"));
         }
@@ -1328,6 +1361,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             return false;
         }
         if (path.size() == 0) {
+            return false;
+        }
+        if (path.isIdentifier()) {
             return false;
         }
         if (path.getLastSegment().getIndex() > 1 || relPath.endsWith("]")) {
@@ -1930,6 +1966,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
         PathFactory pathFactory = this.cache.pathFactory();
         Path srcPath = pathFactory.create(srcChildRelPath);
+        if (srcPath.isAbsolute()) {
+            // Not a relative path ...
+            throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(srcChildRelPath, "relativePath"));
+        }
         if (srcPath.isAbsolute() || srcPath.size() != 1) {
             throw new ItemNotFoundException(JcrI18n.pathNotFound.text(srcPath.getString(cache.context().getNamespaceRegistry()),
                                                                       cache.session().workspace().getName()));
@@ -1947,9 +1987,13 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
         if (destChildRelPath != null) {
             Path destPath = pathFactory.create(destChildRelPath);
-            if (destPath.isAbsolute() || destPath.size() != 1) {
-                throw new ItemNotFoundException(
-                                                JcrI18n.pathNotFound.text(destPath.getString(cache.context().getNamespaceRegistry()),
+            if (destPath.isAbsolute()) {
+                // Not a relative path ...
+                throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(destChildRelPath, "relativePath"));
+            }
+            if (destPath.size() != 1) {
+                throw new ItemNotFoundException(JcrI18n.pathNotFound.text(destPath.getString(cache.context()
+                                                                                                  .getNamespaceRegistry()),
                                                                           cache.session().workspace().getName()));
             }
 

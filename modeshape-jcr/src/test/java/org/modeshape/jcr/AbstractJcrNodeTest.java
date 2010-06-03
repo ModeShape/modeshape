@@ -33,6 +33,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import javax.jcr.Item;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.ItemVisitor;
@@ -61,6 +62,8 @@ import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
  * 
  */
 public class AbstractJcrNodeTest extends AbstractJcrTest {
+
+    private static final String ID_PATH = "[" + UUID.randomUUID() + "]";
 
     private AbstractJcrNode rootNode;
     private AbstractJcrNode cars;
@@ -166,6 +169,11 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         prius.getProperty("../bogus/path");
     }
 
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToReturnPropertyFromGetPropertyWithIdentifierPath() throws Exception {
+        prius.getProperty(ID_PATH);
+    }
+
     @Test
     public void shouldReturnPropertyFromGetPropertyWithRelativePathToPropertyOnOtherNode() throws Exception {
         javax.jcr.Property property = prius.getProperty("../Nissan Altima/vehix:model");
@@ -220,6 +228,16 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
     }
 
     @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowHasNodeWithIdentifierPath() throws Exception {
+        prius.hasNode(ID_PATH);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowHasNodeWithAbsolutePath() throws Exception {
+        prius.hasNode("/something");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowHasPropertyWithAbsolutePath() throws Exception {
         prius.hasProperty("/Cars/Hybrid/Toyota Prius/vehix:model");
     }
@@ -232,6 +250,11 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowHasPropertyWithEmptyPath() throws Exception {
         prius.hasProperty("");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowHasPropertyWithIdentifierPath() throws Exception {
+        prius.hasProperty(ID_PATH);
     }
 
     @Test
@@ -307,6 +330,16 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowGetNodeWithNoPath() throws Exception {
         prius.getNode((String)null);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowGetNodeWithIdentifierPath() throws Exception {
+        prius.getNode(ID_PATH);
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowGetNodeWithAbsolutePath() throws Exception {
+        prius.getNode("/something");
     }
 
     @Test
@@ -553,6 +586,16 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         hybrid.orderBefore(null, null);
     }
 
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowOrderBeforeWithIdentifierPathAsFirstParameter() throws Exception {
+        hybrid.orderBefore(ID_PATH, "/something");
+    }
+
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowOrderBeforeWithIdentifierPathAsSecondParameter() throws Exception {
+        hybrid.orderBefore("/something", ID_PATH);
+    }
+
     /*
      * Primary-type and -item methods
      */
@@ -664,7 +707,7 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         WorkspaceLockManager lockManager = new WorkspaceLockManager(context, repository2, "workspace2", null);
         JcrLockManager jcrLockManager = new JcrLockManager(jcrSession2, lockManager);
         when(jcrSession2.lockManager()).thenReturn(jcrLockManager);
-        
+
         // Use the same id and location; use 'Toyota Prius'
         // since the UUID is defined in 'cars.xml' and therefore will be the same
         javax.jcr.Node prius2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));

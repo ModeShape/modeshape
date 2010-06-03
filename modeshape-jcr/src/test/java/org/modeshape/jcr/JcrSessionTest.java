@@ -234,6 +234,49 @@ public class JcrSessionTest extends AbstractSessionTest {
     }
 
     @Test
+    public void shouldGetItemByIdentifierPath() throws Exception {
+        // Look up the node by the identifier path ...
+        Item item = session.getItem(identifierPathFor("/a"));
+        assertThat(item, instanceOf(Node.class));
+        assertThat(item.getPath(), is("/a"));
+
+        item = session.getItem(identifierPathFor("/a/b"));
+        assertThat(item, instanceOf(Node.class));
+        assertThat(item.getPath(), is("/a/b"));
+
+        item = session.getItem(identifierPathFor("/"));
+        assertThat(item, instanceOf(Node.class));
+        assertThat(item.getPath(), is("/"));
+    }
+
+    @Test
+    public void shouldGetNodeByIdentifierPath() throws Exception {
+        // Look up the node by the identifier path ...
+        Node node = session.getNode(identifierPathFor("/a"));
+        assertThat(node.getPath(), is("/a"));
+
+        node = session.getNode(identifierPathFor("/a/b"));
+        assertThat(node.getPath(), is("/a/b"));
+
+        node = session.getNode(identifierPathFor("/"));
+        assertThat(node.getPath(), is("/"));
+    }
+
+    @Test
+    public void shouldCorrectlyDetermineIfItemExistsUsingPath() throws Exception {
+        assertThat(session.itemExists("/"), is(true));
+        assertThat(session.itemExists("/a"), is(true));
+        assertThat(session.itemExists("/a/b"), is(true));
+    }
+
+    @Test
+    public void shouldCorrectlyDetermineIfItemExistsUsingIdentifierPath() throws Exception {
+        assertThat(session.itemExists(identifierPathFor("/")), is(true));
+        assertThat(session.itemExists(identifierPathFor("/a")), is(true));
+        assertThat(session.itemExists(identifierPathFor("/a/b")), is(true));
+    }
+
+    @Test
     public void shouldProvidePropertiesByPath() throws Exception {
         Item item = session.getItem("/a/b/booleanProperty");
         assertThat(item, instanceOf(Property.class));

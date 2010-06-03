@@ -43,6 +43,7 @@ import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.UuidFactory;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
+import org.modeshape.graph.property.Path.Segment;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#URI} values.
@@ -190,6 +191,21 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
      * {@inheritDoc}
      */
     public UUID create( Path value ) {
+        if (value.isIdentifier()) {
+            // Get the identifier segment ...
+            Segment segment = value.getLastSegment();
+            assert segment.isIdentifier();
+            try {
+                // The local part of the segment's name should be the identifier, though it may not be a UUID ...
+                String id = segment.getName().getLocalName();
+                return UUID.fromString(id);
+            } catch (IllegalArgumentException err) {
+                throw new ValueFormatException(value, PropertyType.UUID,
+                                               GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                  Path.class.getSimpleName(),
+                                                                                  value));
+            }
+        }
         throw new ValueFormatException(value, PropertyType.UUID, GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                                                     Path.class.getSimpleName(),
                                                                                                     value));

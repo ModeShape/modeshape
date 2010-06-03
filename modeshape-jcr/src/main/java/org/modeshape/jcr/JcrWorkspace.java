@@ -338,15 +338,25 @@ class JcrWorkspace implements Workspace {
         }
 
         // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
-        if (destAbsPath.endsWith("]")) {
+        if (!destPath.isIdentifier() && destAbsPath.endsWith("]")) {
             throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
         }
 
         try {
             // Use the session to verify that the node location has a definition and is valid with the new cloned child.
             // This also performs the check permission for reading the parent ...
-            Name newNodeName = destPath.getLastSegment().getName();
             SessionCache cache = this.session.cache();
+            AbstractJcrNode parentNode = null;
+            Name newNodeName = null;
+            if (destPath.isIdentifier()) {
+                AbstractJcrNode existingDestNode = cache.findJcrNode(Location.create(destPath));
+                parentNode = existingDestNode.getParent();
+                newNodeName = existingDestNode.name();
+                destPath = factory.create(parentNode.path(), newNodeName);
+            } else {
+                parentNode = cache.findJcrNode(null, destPath.getParent());
+                newNodeName = destPath.getLastSegment().getName();
+            }
 
             /*
              * Find the UUID for the source node.  Have to go directly against the graph.
@@ -363,8 +373,6 @@ class JcrWorkspace implements Workspace {
                 }
             }
 
-            AbstractJcrNode parentNode = cache.findJcrNode(Location.create(destPath.getParent()));
-
             if (parentNode.isLocked()) {
                 Lock newParentLock = parentNode.getLock();
                 if (newParentLock != null && newParentLock.getLockToken() == null) {
@@ -376,7 +384,7 @@ class JcrWorkspace implements Workspace {
                 throw new VersionException(JcrI18n.nodeIsCheckedIn.text(parentNode.getPath()));
             }
 
-            Node<JcrNodePayload, JcrPropertyPayload> parent = cache.findNode(null, destPath.getParent());
+            Node<JcrNodePayload, JcrPropertyPayload> parent = cache.findNode(parentNode.nodeId, parentNode.path());
             cache.findBestNodeDefinition(parent, newNodeName, parent.getPayload().getPrimaryTypeName());
 
             if (removeExisting) {
@@ -440,7 +448,8 @@ class JcrWorkspace implements Workspace {
         String existingWorkspace = graph.getCurrentWorkspaceName();
         try {
             graph.useWorkspace(workspace);
-            Subgraph subgraph = graph.getSubgraphOfDepth(ReadBranchRequest.NO_MAXIMUM_DEPTH).at(sourcePath);
+            Location location = Location.create(sourcePath);
+            Subgraph subgraph = graph.getSubgraphOfDepth(ReadBranchRequest.NO_MAXIMUM_DEPTH).at(location);
             // Collect up the UUIDs; we use UUID here because that's what JCR requires ...
             Set<UUID> uuids = new HashSet<UUID>();
             for (SubgraphNode nodeInSubgraph : subgraph) {
@@ -498,15 +507,25 @@ class JcrWorkspace implements Workspace {
         }
 
         // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
-        if (destAbsPath.endsWith("]")) {
+        if (!destPath.isIdentifier() && destAbsPath.endsWith("]")) {
             throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
         }
 
         try {
             // Use the session to verify that the node location has a definition and is valid with the new cloned child.
             // This also performs the check permission for reading the parent ...
-            Name newNodeName = destPath.getLastSegment().getName();
             SessionCache cache = this.session.cache();
+            AbstractJcrNode parentNode = null;
+            Name newNodeName = null;
+            if (destPath.isIdentifier()) {
+                AbstractJcrNode existingDestNode = cache.findJcrNode(Location.create(destPath));
+                parentNode = existingDestNode.getParent();
+                newNodeName = existingDestNode.name();
+                destPath = factory.create(parentNode.path(), newNodeName);
+            } else {
+                parentNode = cache.findJcrNode(null, destPath.getParent());
+                newNodeName = destPath.getLastSegment().getName();
+            }
 
             /*
              * Find the UUID for the source node.  Have to go directly against the graph.
@@ -528,8 +547,6 @@ class JcrWorkspace implements Workspace {
              */
             Property primaryTypeProp = sourceNode.getProperty(JcrLexicon.PRIMARY_TYPE);
             Name primaryTypeName = this.context.getValueFactories().getNameFactory().create(primaryTypeProp.getFirstValue());
-
-            AbstractJcrNode parentNode = cache.findJcrNode(Location.create(destPath.getParent()));
 
             if (parentNode.isLocked()) {
                 Lock newParentLock = parentNode.getLock();
@@ -589,9 +606,7 @@ class JcrWorkspace implements Workspace {
 
         CheckArg.isNotNull(parentAbsPath, "parentAbsPath");
         session.checkLive();
-
         Path parentPath = this.context.getValueFactories().getPathFactory().create(parentAbsPath);
-
         return new JcrContentHandler(this.session, parentPath, uuidBehavior, SaveMode.WORKSPACE);
     }
 
@@ -657,16 +672,26 @@ class JcrWorkspace implements Workspace {
         }
 
         // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
-        if (destAbsPath.endsWith("]")) {
+        if (!destPath.isIdentifier() && destAbsPath.endsWith("]")) {
             throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
         }
 
         try {
             // Use the session to verify that the node location has a definition and is valid with the new cloned child.
             // This also performs the check permission for reading the parent ...
-            Name newNodeName = destPath.getLastSegment().getName();
             SessionCache cache = this.session.cache();
-            Node<JcrNodePayload, JcrPropertyPayload> newParent = cache.findNode(null, destPath.getParent());
+            Node<JcrNodePayload, JcrPropertyPayload> newParent = null;
+            Name newNodeName = null;
+            if (destPath.isIdentifier()) {
+                Node<JcrNodePayload, JcrPropertyPayload> existingDestNode = cache.findNodeWith(Location.create(destPath));
+                newParent = existingDestNode.getParent();
+                newNodeName = existingDestNode.getName();
+                destPath = factory.create(newParent.getPath(), newNodeName);
+            } else {
+                newParent = cache.findNode(null, destPath.getParent());
+                newNodeName = destPath.getLastSegment().getName();
+            }
+
             cache.findBestNodeDefinition(newParent, newNodeName, newParent.getPayload().getPrimaryTypeName());
 
             AbstractJcrNode sourceNode = cache.findJcrNode(Location.create(srcPath));
@@ -678,7 +703,7 @@ class JcrWorkspace implements Workspace {
                 }
             }
 
-            AbstractJcrNode parentNode = cache.findJcrNode(Location.create(destPath.getParent()));
+            AbstractJcrNode parentNode = cache.findJcrNode(newParent.getNodeId(), newParent.getPath());
 
             if (parentNode.isLocked()) {
                 Lock newParentLock = parentNode.getLock();

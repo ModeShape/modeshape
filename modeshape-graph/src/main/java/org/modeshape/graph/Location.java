@@ -40,6 +40,7 @@ import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
+import org.modeshape.graph.property.Path.Segment;
 
 /**
  * The location of a node, as specified by either its path, UUID, and/or identification properties. Hash codes are not implemented
@@ -101,7 +102,24 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
      */
     public static Location create( Path path ) {
         CheckArg.isNotNull(path, "path");
+        UUID id = identifierFor(path);
+        if (id != null) return new LocationWithUuid(id);
         return new LocationWithPath(path);
+    }
+
+    protected static UUID identifierFor( Path identifierPath ) {
+        if (!identifierPath.isIdentifier()) return null;
+        // Get the identifier segment ...
+        Segment segment = identifierPath.getLastSegment();
+        assert segment.isIdentifier();
+        String id = segment.getName().getLocalName();
+        try {
+            // The local part of the segment's name should be the identifier, though it may not be a UUID ...
+            return UUID.fromString(id);
+        } catch (IllegalArgumentException err) {
+            String pathStr = "[" + id + "]";
+            throw new IllegalArgumentException(GraphI18n.identifierPathContainedUnsupportedIdentifierFormat.text(pathStr));
+        }
     }
 
     /**
@@ -130,6 +148,14 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
                                    UUID uuid ) {
         if (path == null) return create(uuid);
         if (uuid == null) return create(path);
+        UUID id = identifierFor(path);
+        if (id != null) {
+            if (!id.equals(uuid)) {
+                String pathStr = "[" + id + "]";
+                throw new IllegalArgumentException(GraphI18n.identifierPathDoesNotMatchSuppliedUuid.text(pathStr, uuid));
+            }
+            return new LocationWithUuid(id);
+        }
         return new LocationWithPathAndUuid(path, uuid);
     }
 
@@ -148,6 +174,14 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
         if (ModeShapeLexicon.UUID.equals(idProperty.getName()) && idProperty.isSingle()) {
             Object uuid = idProperty.getFirstValue();
             assert uuid instanceof UUID;
+            UUID id = identifierFor(path);
+            if (id != null) {
+                if (!id.equals(uuid)) {
+                    String pathStr = "[" + id + "]";
+                    throw new IllegalArgumentException(GraphI18n.identifierPathDoesNotMatchSuppliedUuid.text(pathStr, uuid));
+                }
+                return new LocationWithUuid(id);
+            }
             return new LocationWithPathAndUuid(path, (UUID)uuid);
         }
         return new LocationWithPathAndProperty(path, idProperty);

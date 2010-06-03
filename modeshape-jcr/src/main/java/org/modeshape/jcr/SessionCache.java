@@ -464,6 +464,29 @@ class SessionCache {
     }
 
     /**
+     * Find the session's node for the given location.
+     * 
+     * @param location the location for the node
+     * @return the existing node implementation
+     * @throws IllegalArgumentException if the identifier and path are both node
+     * @throws ItemNotFoundException if a node with the supplied identifier and path could not be found
+     * @throws AccessDeniedException if the caller does not have privilege to read the node
+     * @throws RepositoryException if an error resulting in finding this node in the repository
+     */
+    public Node<JcrNodePayload, JcrPropertyPayload> findNodeWith( Location location )
+        throws ItemNotFoundException, AccessDeniedException, RepositoryException {
+        try {
+            return graphSession.findNodeWith(location);
+        } catch (org.modeshape.graph.property.PathNotFoundException e) {
+            throw new ItemNotFoundException(e.getMessage(), e);
+        } catch (RepositorySourceException e) {
+            throw new RepositoryException(e.getMessage(), e);
+        } catch (AccessControlException e) {
+            throw new AccessDeniedException(e.getMessage(), e);
+        }
+    }
+
+    /**
      * Find the session's node for the given identifier and path.
      * 
      * @param from the identifier of the reference node; may be null if the root node is to be used as the reference

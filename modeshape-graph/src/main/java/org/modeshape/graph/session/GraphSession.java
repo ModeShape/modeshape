@@ -324,6 +324,7 @@ public class GraphSession<Payload, PropertyPayload> {
      */
     public Node<Payload, PropertyPayload> findNodeWith( Path path ) throws PathNotFoundException, AccessControlException {
         if (path.isRoot()) return getRoot();
+        if (path.isIdentifier()) return findNodeWith(Location.create(path));
         return findNodeRelativeTo(root, path.relativeTo(root.getPath()), true);
     }
 
@@ -343,6 +344,7 @@ public class GraphSession<Payload, PropertyPayload> {
                                                            boolean loadIfRequired )
         throws PathNotFoundException, AccessControlException {
         if (path.isRoot()) return getRoot();
+        if (path.isIdentifier()) return findNodeWith(Location.create(path));
         return findNodeRelativeTo(root, path.relativeTo(root.getPath()), loadIfRequired);
     }
 

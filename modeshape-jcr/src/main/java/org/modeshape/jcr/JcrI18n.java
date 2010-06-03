@@ -89,6 +89,8 @@ public final class JcrI18n {
     public static I18n itemAlreadyExistsWithUuid;
     public static I18n itemNotFoundAtPath;
     public static I18n itemNotFoundAtPathRelativeToReferenceNode;
+    public static I18n identifierPathContainedUnsupportedIdentifierFormat;
+    public static I18n identifierPathNeverReferencesProperty;
     public static I18n propertyNotFoundOnNode;
     public static I18n propertyNotFoundAtPathRelativeToReferenceNode;
     public static I18n nodeNotFoundAtPathRelativeToReferenceNode;

@@ -177,7 +177,9 @@ class JcrSession implements Session {
         this.cache = new SessionCache(this);
         this.isLive = true;
 
-        this.performReferentialIntegrityChecks = Boolean.valueOf(repository.getOptions().get(Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS)).booleanValue();
+        this.performReferentialIntegrityChecks = Boolean.valueOf(repository.getOptions()
+                                                                           .get(Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS))
+                                                        .booleanValue();
 
         assert this.sessionAttributes != null;
         assert this.workspace != null;
@@ -421,7 +423,6 @@ class JcrSession implements Session {
 
         String pathAsString = path != null ? path.getString(this.namespaces()) : "<unknown>";
         throw new AccessControlException(JcrI18n.permissionDenied.text(pathAsString, actions));
-
     }
 
     /**
@@ -461,7 +462,6 @@ class JcrSession implements Session {
                 hasPermission &= hasRole(ModeShapeRoles.ADMIN, workspaceName) || hasRole(ModeShapeRoles.READWRITE, workspaceName);
             }
         }
-
         return hasPermission;
     }
 
@@ -496,11 +496,9 @@ class JcrSession implements Session {
                     CheckArg.isInstanceOf(arguments[1], String.class, "arguments[1]");
                     primaryNodeTypeName = (String)arguments[1];
                 }
-
                 return node.canAddNode(relPath, primaryNodeTypeName);
             }
         }
-
         return true;
     }
 
@@ -515,12 +513,9 @@ class JcrSession implements Session {
                                     boolean noRecurse ) throws RepositoryException, SAXException {
         CheckArg.isNotNull(absPath, "absPath");
         CheckArg.isNotNull(contentHandler, "contentHandler");
-
         Path exportRootPath = executionContext.getValueFactories().getPathFactory().create(absPath);
         Node exportRootNode = getNode(exportRootPath);
-
         AbstractJcrExporter exporter = new JcrDocumentViewExporter(this);
-
         exporter.exportView(exportRootNode, contentHandler, skipBinary, noRecurse);
     }
 
@@ -535,12 +530,9 @@ class JcrSession implements Session {
                                     boolean noRecurse ) throws RepositoryException {
         CheckArg.isNotNull(absPath, "absPath");
         CheckArg.isNotNull(out, "out");
-
         Path exportRootPath = executionContext.getValueFactories().getPathFactory().create(absPath);
         Node exportRootNode = getNode(exportRootPath);
-
         AbstractJcrExporter exporter = new JcrDocumentViewExporter(this);
-
         exporter.exportView(exportRootNode, out, skipBinary, noRecurse);
     }
 
@@ -555,12 +547,9 @@ class JcrSession implements Session {
                                   boolean noRecurse ) throws RepositoryException, SAXException {
         CheckArg.isNotNull(absPath, "absPath");
         CheckArg.isNotNull(contentHandler, "contentHandler");
-
         Path exportRootPath = executionContext.getValueFactories().getPathFactory().create(absPath);
         Node exportRootNode = getNode(exportRootPath);
-
         AbstractJcrExporter exporter = new JcrSystemViewExporter(this);
-
         exporter.exportView(exportRootNode, contentHandler, skipBinary, noRecurse);
     }
 
@@ -575,12 +564,9 @@ class JcrSession implements Session {
                                   boolean noRecurse ) throws RepositoryException {
         CheckArg.isNotNull(absPath, "absPath");
         CheckArg.isNotNull(out, "out");
-
         Path exportRootPath = executionContext.getValueFactories().getPathFactory().create(absPath);
         Node exportRootNode = getNode(exportRootPath);
-
         AbstractJcrExporter exporter = new JcrSystemViewExporter(this);
-
         exporter.exportView(exportRootNode, out, skipBinary, noRecurse);
     }
 
@@ -592,7 +578,6 @@ class JcrSession implements Session {
     public ContentHandler getImportContentHandler( String parentAbsPath,
                                                    int uuidBehavior ) throws PathNotFoundException, RepositoryException {
         Path parentPath = this.executionContext.getValueFactories().getPathFactory().create(parentAbsPath);
-
         return new JcrContentHandler(this, parentPath, uuidBehavior, SaveMode.SESSION);
     }
 
@@ -610,7 +595,7 @@ class JcrSession implements Session {
             return getRootNode();
         }
         // Since we don't know whether path refers to a node or a property, look to see if we can tell it's a node ...
-        if (path.getLastSegment().hasIndex()) {
+        if (path.isIdentifier() || path.getLastSegment().hasIndex()) {
             return getNode(path);
         }
         // We can't tell from the name, so ask for an item ...
@@ -655,7 +640,6 @@ class JcrSession implements Session {
         if (path.isRoot()) {
             return true;
         }
-
         try {
             cache.findJcrNode(null, path);
             return true;
@@ -678,6 +662,9 @@ class JcrSession implements Session {
         Path path = executionContext.getValueFactories().getPathFactory().create(absolutePath);
         if (path.isRoot()) {
             throw new PathNotFoundException(JcrI18n.rootNodeIsNotProperty.text());
+        }
+        if (path.isIdentifier()) {
+            throw new PathNotFoundException(JcrI18n.identifierPathNeverReferencesProperty.text());
         }
 
         Segment lastSegment = path.getLastSegment();
@@ -708,7 +695,7 @@ class JcrSession implements Session {
         CheckArg.isNotEmpty(absolutePath, "absolutePath");
         // Return root node if path is "/"
         Path path = executionContext.getValueFactories().getPathFactory().create(absolutePath);
-        if (path.isRoot()) {
+        if (path.isRoot() || path.isIdentifier()) {
             return false;
         }
 
@@ -728,7 +715,6 @@ class JcrSession implements Session {
 
     public void removeItem( String absolutePath ) throws RepositoryException {
         Item item = getItem(absolutePath);
-
         item.remove();
     }
 
@@ -752,6 +738,17 @@ class JcrSession implements Session {
     AbstractJcrNode getNode( Path path ) throws RepositoryException, PathNotFoundException {
         if (path.isRoot()) return cache.findJcrRootNode();
         try {
+            if (path.isIdentifier()) {
+                // Convert the path to a UUID ...
+                try {
+                    UUID uuid = executionContext.getValueFactories().getUuidFactory().create(path);
+                    return cache.findJcrNode(Location.create(uuid));
+                } catch (org.modeshape.graph.property.ValueFormatException e) {
+                    // The identifier path didn't contain a UUID (but another identifier form) ...
+                    String pathStr = executionContext.getValueFactories().getStringFactory().create(path);
+                    throw new PathNotFoundException(JcrI18n.identifierPathContainedUnsupportedIdentifierFormat.text(pathStr));
+                }
+            }
             return cache.findJcrNode(null, path);
         } catch (ItemNotFoundException e) {
             throw new PathNotFoundException(e.getMessage());
@@ -764,9 +761,7 @@ class JcrSession implements Session {
      * @see javax.jcr.Session#getNodeByUUID(java.lang.String)
      */
     public AbstractJcrNode getNodeByUUID( String uuid ) throws ItemNotFoundException, RepositoryException {
-        AbstractJcrNode node = cache.findJcrNode(Location.create(UUID.fromString(uuid)));
-
-        return node;
+        return cache.findJcrNode(Location.create(UUID.fromString(uuid)));
     }
 
     /**
@@ -1019,14 +1014,22 @@ class JcrSession implements Session {
         PathFactory pathFactory = executionContext.getValueFactories().getPathFactory();
         Path destPath = pathFactory.create(destAbsPath);
 
-        Path.Segment newNodeName = destPath.getSegment(destPath.size() - 1);
         // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
         if (destAbsPath.endsWith("]")) {
             throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
         }
 
+        Path.Segment newNodeName = null;
         AbstractJcrNode sourceNode = getNode(pathFactory.create(srcAbsPath));
-        AbstractJcrNode newParentNode = getNode(destPath.getParent());
+        AbstractJcrNode newParentNode = null;
+        if (destPath.isIdentifier()) {
+            AbstractJcrNode existingDestNode = getNode(destPath);
+            newParentNode = existingDestNode.getParent();
+            newNodeName = existingDestNode.segment();
+        } else {
+            newParentNode = getNode(destPath.getParent());
+            newNodeName = destPath.getSegment(destPath.size() - 1);
+        }
 
         if (sourceNode.isLocked() && !sourceNode.getLock().isLockOwningSession()) {
             javax.jcr.lock.Lock sourceLock = sourceNode.getLock();
@@ -1095,8 +1098,13 @@ class JcrSession implements Session {
 
         TypeSystem typeSystem = executionContext.getValueFactories().getTypeSystem();
         QueryBuilder builder = new QueryBuilder(typeSystem);
-        QueryCommand query = builder.select("jcr:uuid").from("mix:referenceable AS referenceable").where().path("referenceable").isLike(pathStr
-                                                                                                                                        + "%").end().query();
+        QueryCommand query = builder.select("jcr:uuid")
+                                    .from("mix:referenceable AS referenceable")
+                                    .where()
+                                    .path("referenceable")
+                                    .isLike(pathStr + "%")
+                                    .end()
+                                    .query();
         JcrQueryManager queryManager = workspace().queryManager();
         Query jcrQuery = queryManager.createQuery(query);
         QueryResult result = jcrQuery.execute();
@@ -1189,10 +1197,24 @@ class JcrSession implements Session {
             QueryBuilder builder = new QueryBuilder(typeSystem);
             QueryCommand query = null;
             if (subgraphPath != null) {
-                query = builder.select("jcr:primaryType").fromAllNodesAs("allNodes").where().referenceValue("allNodes").isIn(someUuidsInBranch).and().path("allNodes").isLike(subgraphPath
-                                                                                                                                                                              + "%").end().query();
+                query = builder.select("jcr:primaryType")
+                               .fromAllNodesAs("allNodes")
+                               .where()
+                               .referenceValue("allNodes")
+                               .isIn(someUuidsInBranch)
+                               .and()
+                               .path("allNodes")
+                               .isLike(subgraphPath + "%")
+                               .end()
+                               .query();
             } else {
-                query = builder.select("jcr:primaryType").fromAllNodesAs("allNodes").where().referenceValue("allNodes").isIn(someUuidsInBranch).end().query();
+                query = builder.select("jcr:primaryType")
+                               .fromAllNodesAs("allNodes")
+                               .where()
+                               .referenceValue("allNodes")
+                               .isIn(someUuidsInBranch)
+                               .end()
+                               .query();
             }
             Query jcrQuery = workspace().queryManager().createQuery(query);
             // The nodes that have been (transiently) deleted will not appear in these results ...

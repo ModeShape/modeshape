@@ -23,6 +23,8 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
@@ -198,5 +200,14 @@ public abstract class AbstractSessionTest {
         options = new EnumMap<JcrRepository.Option, String>(JcrRepository.Option.class);
         options.put(JcrRepository.Option.PROJECT_NODE_TYPES, Boolean.FALSE.toString());
 
+    }
+
+    protected String identifierPathFor( String pathToNode ) throws Exception {
+        AbstractJcrNode node = session.getNode(pathToNode);
+        if (node.isNodeType("mix:referenceable")) {
+            // Make sure that the identifier matches the UUID ...
+            assertThat(node.getUUID(), is(node.identifier()));
+        }
+        return node.identifierPath();
     }
 }
