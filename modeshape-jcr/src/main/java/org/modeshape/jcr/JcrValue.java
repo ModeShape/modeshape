@@ -66,7 +66,8 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
         assert valueFactories != null;
         assert type == PropertyType.BINARY || type == PropertyType.BOOLEAN || type == PropertyType.DATE
                || type == PropertyType.DOUBLE || type == PropertyType.LONG || type == PropertyType.NAME
-               || type == PropertyType.PATH || type == PropertyType.REFERENCE || type == PropertyType.STRING;
+               || type == PropertyType.PATH || type == PropertyType.REFERENCE || type == PropertyType.STRING
+               || type == PropertyType.DECIMAL;
 
         // Leaving this assertion out for now so that values can be created in node type sources, which are created outside
         // the context of any particular session.

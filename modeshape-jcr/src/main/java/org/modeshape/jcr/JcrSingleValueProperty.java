@@ -111,6 +111,16 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         }
     }
 
+    @Override
+    public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
+        checkSession();
+        try {
+            return context().getValueFactories().getDecimalFactory().create(property().getFirstValue());
+        } catch (org.modeshape.graph.property.ValueFormatException e) {
+            throw new ValueFormatException(e.getMessage(), e);
+        }
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -293,7 +303,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
                 setValue(value.getString());
                 break;
             case PropertyType.BINARY:
-                setValue(value.getStream());
+                setValue(value.getBinary());
                 break;
             case PropertyType.BOOLEAN:
                 setValue(value.getBoolean());
@@ -303,6 +313,9 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
                 break;
             case PropertyType.DOUBLE:
                 setValue(value.getDouble());
+                break;
+            case PropertyType.DECIMAL:
+                setValue(value.getDecimal());
                 break;
             case PropertyType.LONG:
                 setValue(value.getLong());
@@ -419,8 +432,36 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             throw new ValueFormatException(JcrI18n.nodeNotReferenceable.text());
         }
 
-        String uuid = value.getUUID();
+        String uuid = value.getIdentifier();
         setValue(createValue(uuid, PropertyType.REFERENCE).asType(this.getType()));
+    }
+
+    @Override
+    public void setValue( javax.jcr.Binary value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        // Get the Graph Binary object out of the value ...
+        if (value == null) {
+            this.remove();
+            return;
+        }
+        Binary binary = null;
+        if (value instanceof JcrBinary) {
+            binary = ((JcrBinary)value).binary();
+        } else {
+            // Otherwise, this isn't our instance, so copy the data ...
+            binary = session().executionContext.getValueFactories().getBinaryFactory().create(getStream(), value.getSize());
+        }
+        setValue(createValue(binary, PropertyType.BINARY).asType(this.getType()));
+    }
+
+    @Override
+    public void setValue( BigDecimal value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        if (value == null) {
+            this.remove();
+            return;
+        }
+        setValue(createValue(value, PropertyType.DECIMAL).asType(this.getType()));
     }
 
     /**
@@ -449,26 +490,6 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public void setValue( String[] values ) throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForSingleValuedProperty.text());
-    }
-
-    @Override
-    public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public void setValue( BigDecimal value )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void setValue( javax.jcr.Binary value )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
-        // TODO Auto-generated method stub
-
     }
 
 }

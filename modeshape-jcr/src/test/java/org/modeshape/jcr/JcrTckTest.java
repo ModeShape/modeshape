@@ -73,15 +73,18 @@ import org.apache.jackrabbit.test.api.SetPropertyAssumeTypeTest;
 import org.apache.jackrabbit.test.api.SetPropertyBooleanTest;
 import org.apache.jackrabbit.test.api.SetPropertyCalendarTest;
 import org.apache.jackrabbit.test.api.SetPropertyConstraintViolationExceptionTest;
+import org.apache.jackrabbit.test.api.SetPropertyDecimalTest;
 import org.apache.jackrabbit.test.api.SetPropertyDoubleTest;
 import org.apache.jackrabbit.test.api.SetPropertyInputStreamTest;
 import org.apache.jackrabbit.test.api.SetPropertyLongTest;
 import org.apache.jackrabbit.test.api.SetPropertyNodeTest;
 import org.apache.jackrabbit.test.api.SetPropertyStringTest;
 import org.apache.jackrabbit.test.api.SetPropertyValueTest;
+import org.apache.jackrabbit.test.api.SetValueBinaryTest;
 import org.apache.jackrabbit.test.api.SetValueBooleanTest;
 import org.apache.jackrabbit.test.api.SetValueConstraintViolationExceptionTest;
 import org.apache.jackrabbit.test.api.SetValueDateTest;
+import org.apache.jackrabbit.test.api.SetValueDecimalTest;
 import org.apache.jackrabbit.test.api.SetValueDoubleTest;
 import org.apache.jackrabbit.test.api.SetValueLongTest;
 import org.apache.jackrabbit.test.api.SetValueReferenceTest;
@@ -216,7 +219,6 @@ public class JcrTckTest {
         suite.addTestSuite(PropertyTypeTest.class);
         suite.addTestSuite(NodeDiscoveringNodeTypesTest.class);
 
-        // These all have one unimplemented method
         suite.addTestSuite(BinaryPropertyTest.class);
         suite.addTestSuite(BooleanPropertyTest.class);
         suite.addTestSuite(DatePropertyTest.class);
@@ -294,10 +296,10 @@ public class JcrTckTest {
         suite.addTestSuite(NodeOrderableChildNodesTest.class);
         suite.addTestSuite(PropertyTest.class);
 
-        // suite.addTestSuite(SetValueBinaryTest.class);
+        suite.addTestSuite(SetValueBinaryTest.class);
         suite.addTestSuite(SetValueBooleanTest.class);
         suite.addTestSuite(SetValueDateTest.class);
-        // suite.addTestSuite(SetValueDecimalTest.class);
+        suite.addTestSuite(SetValueDecimalTest.class);
         suite.addTestSuite(SetValueDoubleTest.class);
         suite.addTestSuite(SetValueLongTest.class);
         suite.addTestSuite(SetValueReferenceTest.class);
@@ -308,7 +310,7 @@ public class JcrTckTest {
 
         suite.addTestSuite(SetPropertyBooleanTest.class);
         suite.addTestSuite(SetPropertyCalendarTest.class);
-        // suite.addTestSuite(SetPropertyDecimalTest.class);
+        suite.addTestSuite(SetPropertyDecimalTest.class);
         suite.addTestSuite(SetPropertyDoubleTest.class);
         suite.addTestSuite(SetPropertyInputStreamTest.class);
         suite.addTestSuite(SetPropertyLongTest.class);
