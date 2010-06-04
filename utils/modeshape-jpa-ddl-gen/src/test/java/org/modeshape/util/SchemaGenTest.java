@@ -8,8 +8,11 @@ import java.io.IOException;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.connector.store.jpa.JpaSource.Models;
 
 public class SchemaGenTest {
+
+    public static final String MODEL_NAME = Models.SIMPLE.getName();
 
     private static final File outputPath = new File("target");
 
@@ -37,28 +40,28 @@ public class SchemaGenTest {
 
     @Test
     public void shouldCreateSchemaForHSqlDialect() throws IOException {
-        SchemaGen main = new SchemaGen("org.hibernate.dialect.HSQLDialect", "Basic", outputPath);
+        SchemaGen main = new SchemaGen("org.hibernate.dialect.HSQLDialect", MODEL_NAME, outputPath);
         main.generate();
         checkFiles();
     }
 
     @Test
     public void shouldCreateSchemaForOracleDialect() throws IOException {
-        SchemaGen main = new SchemaGen("org.hibernate.dialect.Oracle10gDialect", "Basic", outputPath);
+        SchemaGen main = new SchemaGen("org.hibernate.dialect.Oracle10gDialect", MODEL_NAME, outputPath);
         main.generate();
         checkFiles();
     }
 
     @Test
     public void shouldCreateSchemaForDialectThatIsNotFullyQualified() throws IOException {
-        SchemaGen main = new SchemaGen("HSQLDialect", "Basic", outputPath);
+        SchemaGen main = new SchemaGen("HSQLDialect", MODEL_NAME, outputPath);
         main.generate();
         checkFiles();
     }
 
     @Test
     public void shouldCreateSchemaForShortFormDialect() throws IOException {
-        SchemaGen main = new SchemaGen("HSQL", "Basic", outputPath);
+        SchemaGen main = new SchemaGen("HSQL", MODEL_NAME, outputPath);
         main.generate();
         checkFiles();
     }
