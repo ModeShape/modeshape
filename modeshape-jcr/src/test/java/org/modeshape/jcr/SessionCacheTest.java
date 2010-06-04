@@ -39,11 +39,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import javax.jcr.Binary;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Property;
@@ -51,8 +54,6 @@ import org.modeshape.graph.session.GraphSession.Node;
 import org.modeshape.graph.session.GraphSession.PropertyInfo;
 import org.modeshape.jcr.SessionCache.JcrNodePayload;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 
@@ -278,8 +279,10 @@ public class SessionCacheTest extends AbstractJcrTest {
         assertReferenceable(highlander);
     }
 
+    @SuppressWarnings( "deprecation" )
     protected void assertNotReferenceable( AbstractJcrNode node ) throws RepositoryException {
         assertThat(node.isReferenceable(), is(false));
+        assertThat(node.getIdentifier(), is(notNullValue()));
         try {
             node.getUUID();
             fail("should not return UUID if the node is not referenceable");
@@ -291,8 +294,10 @@ public class SessionCacheTest extends AbstractJcrTest {
         assertThat(node.getProperty(JcrLexicon.UUID), is(nullValue()));
     }
 
+    @SuppressWarnings( "deprecation" )
     protected void assertReferenceable( AbstractJcrNode node ) throws RepositoryException {
         assertThat(node.isReferenceable(), is(true));
+        assertThat(node.getIdentifier(), is(notNullValue()));
         String uuidValue = null;
         try {
             uuidValue = node.getUUID();
@@ -305,6 +310,7 @@ public class SessionCacheTest extends AbstractJcrTest {
         javax.jcr.Property uuidProp = node.getProperty(JcrLexicon.UUID);
         assertThat(uuidProp, is(notNullValue()));
         assertThat(uuidProp.getString(), is(uuidValue));
+        assertThat(node.getIdentifier(), is(uuidValue));
     }
 
     protected void assertProperty( AbstractJcrProperty property,
@@ -356,12 +362,17 @@ public class SessionCacheTest extends AbstractJcrTest {
                                          int expectedType ) throws Exception {
         switch (expectedType) {
             case PropertyType.BINARY:
-                InputStream stream = value.getStream();
-                assertThat(stream, is(notNullValue()));
+                Binary binary = value.getBinary();
                 try {
-                    stream.read();
+                    InputStream stream = binary.getStream();
+                    assertThat(stream, is(notNullValue()));
+                    try {
+                        stream.read();
+                    } finally {
+                        stream.close();
+                    }
                 } finally {
-                    stream.close();
+                    binary.dispose();
                 }
                 break;
             case PropertyType.BOOLEAN:

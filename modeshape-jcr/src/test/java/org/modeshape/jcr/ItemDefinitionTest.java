@@ -192,6 +192,7 @@ public class ItemDefinitionTest extends AbstractSessionTest {
     *      modetest:singleProp2 of type LONG (note the double-definition)
     */
 
+    @SuppressWarnings( "unchecked" )
     @Override
     protected List<NodeTypeTemplate> getTestTypes() throws ConstraintViolationException {
         NodeTypeTemplate nodeA = new JcrNodeTypeTemplate(context);

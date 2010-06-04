@@ -712,8 +712,8 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         javax.jcr.Node prius2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));
         prius2.addMixin("mix:referenceable");
         prius.addMixin("mix:referenceable");
-        String priusUuid2 = prius2.getUUID();
-        String priusUuid = prius.getUUID();
+        String priusUuid2 = prius2.getIdentifier();
+        String priusUuid = prius.getIdentifier();
         assertThat(priusUuid, is(priusUuid2));
         assertThat(prius2.isSame(prius), is(false));
     }
@@ -745,8 +745,8 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         javax.jcr.Node altima2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
         altima2.addMixin("mix:referenceable");
         altima.addMixin("mix:referenceable");
-        String altimaUuid = altima.getUUID();
-        String altimaUuid2 = altima2.getUUID();
+        String altimaUuid = altima.getIdentifier();
+        String altimaUuid2 = altima2.getIdentifier();
         assertThat(altimaUuid, is(not(altimaUuid2)));
         assertThat(altima2.isSame(altima), is(false));
     }
@@ -776,8 +776,8 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         javax.jcr.Node prius2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));
         prius2.addMixin("mix:referenceable");
         prius.addMixin("mix:referenceable");
-        String priusUuid = prius.getUUID();
-        String priusUuid2 = prius2.getUUID();
+        String priusUuid = prius.getIdentifier();
+        String priusUuid2 = prius2.getIdentifier();
         assertThat(priusUuid, is(priusUuid2));
         assertThat(prius2.isSame(prius), is(true));
     }
@@ -785,7 +785,7 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
     @Test
     public void shouldAlwaysHaveCorrespondenceIdForRootNodeThatContainsSelfPath() throws Exception {
         CorrespondenceId id = rootNode.getCorrespondenceId();
-        assertThat(id.getReferenceableId(), is(rootNode.getUUID()));
+        assertThat(id.getReferenceableId(), is(rootNode.getIdentifier()));
         assertThat(id.getRelativePath().size(), is(1));
         assertThat(id.getRelativePath().getLastSegment().isSelfReference(), is(true));
     }
@@ -794,20 +794,20 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
     public void shouldAlwaysHaveCorrespondenceId() throws Exception {
         assertThat(cars.isReferenceable(), is(false));
         CorrespondenceId id = cars.getCorrespondenceId();
-        assertThat(id.getReferenceableId(), is(rootNode.getUUID()));
+        assertThat(id.getReferenceableId(), is(rootNode.getIdentifier()));
         assertThat(id.getRelativePath().size(), is(1));
         assertThat(id.getRelativePath(), is(path("Cars")));
 
         assertThat(hybrid.isReferenceable(), is(false));
         id = hybrid.getCorrespondenceId();
-        assertThat(id.getReferenceableId(), is(rootNode.getUUID()));
+        assertThat(id.getReferenceableId(), is(rootNode.getIdentifier()));
         assertThat(id.getRelativePath().size(), is(2));
         assertThat(id.getRelativePath(), is(path("Cars/Hybrid")));
 
         altima.addMixin("mix:referenceable");
         assertThat(altima.isReferenceable(), is(true));
         id = altima.getCorrespondenceId();
-        assertThat(id.getReferenceableId(), is(altima.getUUID()));
+        assertThat(id.getReferenceableId(), is(altima.getIdentifier()));
         assertThat(id.getRelativePath().size(), is(1));
         assertThat(id.getRelativePath(), is(path(".")));
     }
@@ -824,6 +824,7 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         rootNode.addNode("Cars/nonExistant/CreateThis", "nt:unstructured");
     }
 
+    @SuppressWarnings( "unchecked" )
     private void registerTestNodeType() throws Exception {
         try {
             nodeTypes.getNodeType("autocreateTest");

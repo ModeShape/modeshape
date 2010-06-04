@@ -142,44 +142,45 @@ public class JcrWorkspaceTest extends AbstractSessionTest {
         assertThat(workspace.getQueryManager(), notNullValue());
     }
 
+    @Test
     public void shouldCreateQuery() throws Exception {
-        String statement = "Some query syntax";
+        String statement = "SELECT * FROM [nt:unstructured]";
 
         QueryManager queryManager = workspace.getQueryManager();
-        Query query = queryManager.createQuery(statement, Query.XPATH);
+        Query query = queryManager.createQuery(statement, Query.JCR_SQL2);
 
         assertThat(query, is(notNullValue()));
-        assertThat(query.getLanguage(), is(Query.XPATH));
+        assertThat(query.getLanguage(), is(Query.JCR_SQL2));
         assertThat(query.getStatement(), is(statement));
     }
 
     @Test
     public void shouldStoreQueryAsNode() throws Exception {
-        String statement = "Some query syntax";
+        String statement = "SELECT * FROM [nt:unstructured]";
 
         QueryManager queryManager = workspace.getQueryManager();
-        Query query = queryManager.createQuery(statement, Query.XPATH);
+        Query query = queryManager.createQuery(statement, Query.JCR_SQL2);
 
         Node node = query.storeAsNode("/storedQuery");
         assertThat(node, is(notNullValue()));
         assertThat(node.getPrimaryNodeType().getName(), is("nt:query"));
-        assertThat(node.getProperty("jcr:language").getString(), is(Query.XPATH));
+        assertThat(node.getProperty("jcr:language").getString(), is(Query.JCR_SQL2));
         assertThat(node.getProperty("jcr:statement").getString(), is(statement));
     }
 
     @Test
     public void shouldLoadStoredQuery() throws Exception {
-        String statement = "Some query syntax";
+        String statement = "SELECT * FROM [nt:unstructured]";
 
         QueryManager queryManager = workspace.getQueryManager();
-        Query query = queryManager.createQuery(statement, Query.XPATH);
+        Query query = queryManager.createQuery(statement, Query.JCR_SQL2);
 
         Node node = query.storeAsNode("/storedQuery");
 
         Query loaded = queryManager.getQuery(node);
 
         assertThat(loaded, is(notNullValue()));
-        assertThat(loaded.getLanguage(), is(Query.XPATH));
+        assertThat(loaded.getLanguage(), is(Query.JCR_SQL2));
         assertThat(loaded.getStatement(), is(statement));
         assertThat(loaded.getStoredQueryPath(), is(node.getPath()));
     }

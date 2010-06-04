@@ -807,8 +807,20 @@ class JcrSession implements Session {
                 if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(JcrSession.this.namespaces()))) {
                     throw new RepositoryException(JcrI18n.nodeNotReferenceable.text());
                 }
-                String uuid = valueFactories.getStringFactory().create(value.getUUID());
+                String uuid = valueFactories.getStringFactory().create(value.getIdentifier());
                 return new JcrValue(valueFactories, sessionCache, PropertyType.REFERENCE, uuid);
+            }
+
+            @Override
+            public Value createValue( Node value,
+                                      boolean weak ) throws RepositoryException {
+                // TODO Auto-generated method stub
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Value createValue( javax.jcr.Binary value ) {
+                return new JcrValue(valueFactories, sessionCache, PropertyType.BINARY, value);
             }
 
             public Value createValue( InputStream value ) {
@@ -846,18 +858,6 @@ class JcrSession implements Session {
             @Override
             public Value createValue( BigDecimal value ) {
                 return new JcrValue(valueFactories, sessionCache, PropertyType.DECIMAL, value);
-            }
-
-            @Override
-            public Value createValue( javax.jcr.Binary value ) {
-                return new JcrValue(valueFactories, sessionCache, PropertyType.BINARY, value);
-            }
-
-            @Override
-            public Value createValue( Node value,
-                                      boolean weak ) throws RepositoryException {
-                // TODO Auto-generated method stub
-                throw new UnsupportedOperationException();
             }
 
             Object convertValueToType( Object value,

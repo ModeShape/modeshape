@@ -42,6 +42,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.UUID;
+import javax.jcr.Binary;
 import javax.jcr.Item;
 import javax.jcr.NamespaceException;
 import javax.jcr.Node;
@@ -215,11 +216,14 @@ public class JcrSessionTest extends AbstractSessionTest {
         }
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldProvideRootNode() throws Exception {
         Node root = session.getRootNode();
         assertThat(root, notNullValue());
-        String uuid = root.getUUID();
+        String uuid = root.getIdentifier();
+        assertThat(root.isNodeType("mix:referenceable"), is(true));
+        assertThat(root.getUUID(), is(uuid));
         assertThat(uuid, notNullValue());
     }
 
@@ -316,29 +320,38 @@ public class JcrSessionTest extends AbstractSessionTest {
         session.getProperty("/a/b/argleBargle");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldProvideValueFactory() throws Exception {
         InputStream stream = new ByteArrayInputStream("something".getBytes());
         ValueFactory factory = session.getValueFactory();
+        Binary binary = factory.createBinary(new ByteArrayInputStream("something".getBytes()));
         assertThat(factory, notNullValue());
         assertThat(factory.createValue(false), notNullValue());
         assertThat(factory.createValue(Calendar.getInstance()), notNullValue());
         assertThat(factory.createValue(0.0), notNullValue());
+        assertThat(factory.createValue(binary), notNullValue());
         assertThat(factory.createValue(stream), notNullValue());
         assertThat(factory.createValue(0L), notNullValue());
         Node node = Mockito.mock(Node.class);
-        when(node.getUUID()).thenReturn(UUID.randomUUID().toString());
+        String uuid = UUID.randomUUID().toString();
+        when(node.getUUID()).thenReturn(uuid);
+        when(node.getIdentifier()).thenReturn(uuid);
         when(node.isNodeType("mix:referenceable")).thenReturn(true);
         assertThat(factory.createValue(node), notNullValue());
         assertThat(factory.createValue(""), notNullValue());
         assertThat(factory.createValue("", PropertyType.BINARY), notNullValue());
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test( expected = RepositoryException.class )
     public void shouldNotCreateValueForNonReferenceableNode() throws Exception {
         ValueFactory factory = session.getValueFactory();
         Node node = Mockito.mock(Node.class);
-        when(node.getUUID()).thenReturn(UUID.randomUUID().toString());
+        String uuid = UUID.randomUUID().toString();
+        when(node.getUUID()).thenReturn(uuid);
+        when(node.getIdentifier()).thenReturn(uuid);
+        when(node.isNodeType("mix:referenceable")).thenReturn(false);
         factory.createValue(node);
     }
 
@@ -471,19 +484,33 @@ public class JcrSessionTest extends AbstractSessionTest {
      * this test.
      */
 
+    @Test
+    public void shouldProvideIdentifierEvenIfNotReferenceable() throws Exception {
+        // The b node was not set up to be referenceable in this test, but does have a mixin type
+        Node node = session.getRootNode().getNode("a").getNode("b").getNode("c");
+        assertThat(node.getIdentifier(), is(notNullValue()));
+    }
+
+    @Test
+    public void shouldProvideIdentifierEvenIfNoMixinTypes() throws Exception {
+        // The b node was not set up to be referenceable in this test, but does have a mixin type
+        Node node = session.getRootNode().getNode("a").getNode("b").getNode("c");
+        assertThat(node.getIdentifier(), is(notNullValue()));
+    }
+
+    @SuppressWarnings( "deprecation" )
     @Test( expected = UnsupportedRepositoryOperationException.class )
     public void shouldNotProvideUuidIfNotReferenceable() throws Exception {
         // The b node was not set up to be referenceable in this test, but does have a mixin type
         Node node = session.getRootNode().getNode("a").getNode("b").getNode("c");
-
         node.getUUID();
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test( expected = UnsupportedRepositoryOperationException.class )
     public void shouldNotProvideUuidIfNoMixinTypes() throws Exception {
         // The c node was not set up to be referenceable in this test and has no mixin types
         Node node = session.getRootNode().getNode("a").getNode("b").getNode("c");
-
         node.getUUID();
     }
 

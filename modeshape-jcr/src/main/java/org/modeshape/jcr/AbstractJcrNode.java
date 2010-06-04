@@ -228,13 +228,18 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @throws RepositoryException if there is an error accessing the UUID of the node
      */
     UUID uuid() throws RepositoryException {
-        PropertyInfo<JcrPropertyPayload> uuidProp = nodeInfo().getProperty(JcrLexicon.UUID);
-        if (uuidProp == null) {
-            uuidProp = nodeInfo().getProperty(ModeShapeLexicon.UUID);
+        UUID uuid = nodeInfo().getLocation().getUuid();
+        if (uuid == null) {
+            PropertyInfo<JcrPropertyPayload> uuidProp = nodeInfo().getProperty(JcrLexicon.UUID);
+            if (uuidProp == null) {
+                uuidProp = nodeInfo().getProperty(ModeShapeLexicon.UUID);
+            }
+            assert uuidProp != null;
+            assert !uuidProp.getProperty().isEmpty();
+            uuid = context().getValueFactories().getUuidFactory().create(uuidProp.getProperty().getFirstValue());
         }
-        assert uuidProp != null;
-        assert !uuidProp.getProperty().isEmpty();
-        return context().getValueFactories().getUuidFactory().create(uuidProp.getProperty().getFirstValue());
+        assert uuid != null;
+        return uuid;
     }
 
     /**
@@ -261,7 +266,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * {@inheritDoc}
      * 
      * @see javax.jcr.Node#getUUID()
+     * @deprecated As of JCR 2.0, {@link #getIdentifier()} should be used instead.
      */
+    @Deprecated
     public String getUUID() throws RepositoryException {
         // Return "jcr:uuid" only if node is referenceable
         if (!isReferenceable()) {

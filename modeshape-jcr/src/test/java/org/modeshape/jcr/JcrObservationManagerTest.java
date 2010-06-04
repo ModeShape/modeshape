@@ -175,8 +175,10 @@ public final class JcrObservationManagerTest extends TestSuite {
         final String SOURCE = "store";
 
         JcrConfiguration config = new JcrConfiguration();
-        config.repositorySource("store").usingClass(InMemoryRepositorySource.class).setRetryLimit(100).setProperty("defaultWorkspaceName",
-                                                                                                                   WORKSPACE);
+        config.repositorySource("store")
+              .usingClass(InMemoryRepositorySource.class)
+              .setRetryLimit(100)
+              .setProperty("defaultWorkspaceName", WORKSPACE);
         config.repository(REPOSITORY).setSource(SOURCE).setOption(Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
         config.save();
 
@@ -580,9 +582,8 @@ public final class JcrObservationManagerTest extends TestSuite {
 
         // make sure same listener isn't added again
         getObservationManager().addEventListener(listener, ALL_EVENTS, null, false, null, null, false);
-        assertThat("The same listener should not be added more than once.",
-                   getObservationManager().getRegisteredEventListeners().getSize(),
-                   is(2L));
+        assertThat("The same listener should not be added more than once.", getObservationManager().getRegisteredEventListeners()
+                                                                                                   .getSize(), is(2L));
     }
 
     /**
@@ -626,7 +627,7 @@ public final class JcrObservationManagerTest extends TestSuite {
         TestListener listener = addListener(2, Event.PROPERTY_ADDED, null, false, null, null, false);
 
         // lock node (no save needed)
-        lockable.lock(false, true);
+        session.getWorkspace().getLockManager().lock(lockable.getPath(), false, true, 1L, "me");
 
         // event handling
         listener.waitForEvents();
@@ -649,13 +650,13 @@ public final class JcrObservationManagerTest extends TestSuite {
         Node lockable = getRoot().addNode(node1, UNSTRUCTURED);
         lockable.addMixin(LOCK_MIXIN);
         save();
-        lockable.lock(false, true);
+        session.getWorkspace().getLockManager().lock(lockable.getPath(), false, true, 1L, "me");
 
         // register listener
         TestListener listener = addListener(2, Event.PROPERTY_REMOVED, null, false, null, null, false);
 
         // lock node (no save needed)
-        lockable.unlock();
+        session.getWorkspace().getLockManager().unlock(lockable.getPath());
 
         // event handling
         listener.waitForEvents();
@@ -1145,8 +1146,8 @@ public final class JcrObservationManagerTest extends TestSuite {
 
         // tests
         checkResults(listener);
-        assertTrue("Path for jrc:primaryType property was not found.",
-                   containsPath(listener, node.getProperty("jcr:primaryType").getPath()));
+        assertTrue("Path for jrc:primaryType property was not found.", containsPath(listener, node.getProperty("jcr:primaryType")
+                                                                                                  .getPath()));
     }
 
     // ===========================================================================================================================
@@ -1513,7 +1514,7 @@ public final class JcrObservationManagerTest extends TestSuite {
                                             Event.PROPERTY_ADDED,
                                             getRoot().getPath(),
                                             true,
-                                            new String[] {n1.getUUID()},
+                                            new String[] {n1.getIdentifier()},
                                             null,
                                             false);
 

@@ -452,7 +452,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     }
 
-    public void testAdminUserCanBreakOthersLocks() throws Exception {
+    @SuppressWarnings( "deprecation" )
+    public void testAdminUserCanBreakOthersLocksUsingDeprecatedNodeLockAndUnlockMethods() throws Exception {
         String lockNodeName = "lockTestNode";
         session = getHelper().getReadWriteSession();
         Node root = session.getRootNode();
@@ -469,6 +470,28 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         assertThat(lockNode.isLocked(), is(true));
         lockNode.unlock();
+        assertThat(lockNode.isLocked(), is(false));
+        superuser.logout();
+
+    }
+
+    public void testAdminUserCanBreakOthersLocks() throws Exception {
+        String lockNodeName = "lockTestNode2";
+        session = getHelper().getReadWriteSession();
+        Node root = session.getRootNode();
+        Node lockNode = root.addNode(lockNodeName);
+        lockNode.addMixin("mix:lockable");
+        session.save();
+
+        session.getWorkspace().getLockManager().lock(lockNode.getPath(), false, false, 1L, "me");
+        assertThat(lockNode.isLocked(), is(true));
+
+        Session superuser = getHelper().getSuperuserSession();
+        root = superuser.getRootNode();
+        lockNode = root.getNode(lockNodeName);
+
+        assertThat(lockNode.isLocked(), is(true));
+        session.getWorkspace().getLockManager().unlock(lockNode.getPath());
         assertThat(lockNode.isLocked(), is(false));
         superuser.logout();
 
@@ -821,6 +844,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     }
 
+    @SuppressWarnings( "unchecked" )
     public void testShouldBeAbleToReferToUnsavedReferenceNode() throws Exception {
         // q.v., MODE-720
 

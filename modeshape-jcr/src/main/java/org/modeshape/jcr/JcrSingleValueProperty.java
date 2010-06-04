@@ -176,6 +176,17 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
         }
     }
 
+    @Override
+    public javax.jcr.Binary getBinary() throws ValueFormatException, RepositoryException {
+        checkSession();
+        try {
+            Binary binary = context().getValueFactories().getBinaryFactory().create(property().getFirstValue());
+            return new JcrBinary(binary);
+        } catch (org.modeshape.graph.property.ValueFormatException e) {
+            throw new ValueFormatException(e.getMessage(), e);
+        }
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -388,12 +399,6 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      */
     public void setValue( String[] values ) throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForSingleValuedProperty.text());
-    }
-
-    @Override
-    public javax.jcr.Binary getBinary() throws ValueFormatException, RepositoryException {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override

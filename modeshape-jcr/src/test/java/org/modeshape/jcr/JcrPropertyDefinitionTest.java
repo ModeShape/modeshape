@@ -569,6 +569,7 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
         assertThat(satisfiesConstraints(prop, new Value[] {value}), is(false));
     }
 
+    @SuppressWarnings( "unchecked" )
     @Override
     protected List<NodeTypeTemplate> getTestTypes() throws ConstraintViolationException {
         NodeTypeTemplate constrainedType = new JcrNodeTypeTemplate(this.context);

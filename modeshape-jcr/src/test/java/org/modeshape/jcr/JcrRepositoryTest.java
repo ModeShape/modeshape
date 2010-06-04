@@ -327,11 +327,18 @@ public class JcrRepositoryTest {
         });
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldHaveRootNode() throws Exception {
         session = createSession();
         javax.jcr.Node root = session.getRootNode();
-        String uuid = root.getUUID();
+        String uuid = root.getIdentifier();
+
+        // Should be referenceable ...
+        assertThat(root.isNodeType("mix:referenceable"), is(true));
+
+        // Should have a UUID ...
+        assertThat(root.getUUID(), is(uuid));
 
         // Get the root via the direct graph ...
         Node dnaRoot = sourceGraph.getNodeAt("/");
@@ -541,7 +548,7 @@ public class JcrRepositoryTest {
         locker.save();
 
         // Create a session-scoped lock (not deep)
-        lockedNode.lock(false, true);
+        locker.getWorkspace().getLockManager().lock(lockedNode.getPath(), false, true, 1L, "me");
         assertThat(lockedNode.isLocked(), is(true));
 
         Session reader = repository.login();

@@ -27,11 +27,11 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
-import org.modeshape.graph.property.Path;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.modeshape.graph.property.Path;
 
 public class AbstractJcrItemTest {
 
@@ -115,6 +115,7 @@ public class AbstractJcrItemTest {
         item.remove();
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test( expected = UnsupportedOperationException.class )
     public void shouldNotAllowSave() throws Exception {
         item.save();

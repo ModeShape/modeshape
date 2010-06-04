@@ -71,8 +71,7 @@ class JcrBinary implements javax.jcr.Binary, org.modeshape.jcr.api.Binary {
      */
     @Override
     public InputStream getStream() {
-        this.binary.acquire();
-        return this.binary.getStream();
+        return new SelfClosingInputStream(this.binary);
     }
 
     /**

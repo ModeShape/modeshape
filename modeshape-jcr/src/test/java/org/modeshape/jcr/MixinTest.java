@@ -244,7 +244,7 @@ public class MixinTest extends AbstractSessionTest {
 
         assertThat(nodeA.canAddMixin(MIXIN_TYPE_WITH_AUTO_CHILD.getString(registry)), is(true));
         nodeA.addMixin(MIXIN_TYPE_WITH_AUTO_CHILD.getString(registry));
-        nodeA.save();
+        session.save();
 
         Node newRootNode = session.getRootNode();
         Node newNodeA = newRootNode.getNode("a");
@@ -273,7 +273,7 @@ public class MixinTest extends AbstractSessionTest {
         nodeA.addMixin(MIXIN_TYPE_B.getString(registry));
 
         nodeA.setProperty(PROPERTY_B.getString(registry), "some string");
-        nodeA.save();
+        session.save();
 
         rootNode = session.getRootNode();
         nodeA = rootNode.getNode("a");
@@ -296,7 +296,7 @@ public class MixinTest extends AbstractSessionTest {
         nodeA.addMixin(MIXIN_TYPE_B.getString(registry));
 
         nodeA.addNode(CHILD_NODE_B.getString(registry));
-        nodeA.save();
+        session.save();
 
         Node newRootNode = session.getRootNode();
         Node newNodeA = newRootNode.getNode("a");
@@ -315,7 +315,7 @@ public class MixinTest extends AbstractSessionTest {
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
         nodeA.removeMixin(MIXIN_TYPE_B.getString(registry));
-        nodeA.save();
+        session.save();
 
         rootNode = session.getRootNode();
         nodeA = rootNode.getNode("a");
@@ -333,7 +333,7 @@ public class MixinTest extends AbstractSessionTest {
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
         nodeA.removeMixin(MIXIN_TYPE_B.getString(registry));
-        nodeA.save();
+        session.save();
 
         rootNode = session.getRootNode();
         nodeA = rootNode.getNode("a");
@@ -351,7 +351,7 @@ public class MixinTest extends AbstractSessionTest {
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
         nodeA.removeMixin(MIXIN_TYPE_B.getString(registry));
-        nodeA.save();
+        session.save();
 
         rootNode = session.getRootNode();
         nodeA = rootNode.getNode("a");
@@ -470,8 +470,7 @@ public class MixinTest extends AbstractSessionTest {
         primaryTypeA.getPropertyDefinitionTemplates().add(propertyA);
 
         return Arrays.asList(new javax.jcr.nodetype.NodeTypeTemplate[] {mixinTypeA, mixinTypeB, mixinTypeC,
-            mixinTypeWithAutoChild,
-            mixinTypeWithAutoProperty, primaryTypeA,});
+            mixinTypeWithAutoChild, mixinTypeWithAutoProperty, primaryTypeA,});
     }
 
 }

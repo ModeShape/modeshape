@@ -267,6 +267,7 @@ public class JcrMultiValuePropertyTest extends AbstractJcrTest {
         prop.getLong();
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test( expected = ValueFormatException.class )
     public void shouldNotProvideStreamForMultiValuedProperty() throws Exception {
         prop = cars.getProperty("binaryProperty");

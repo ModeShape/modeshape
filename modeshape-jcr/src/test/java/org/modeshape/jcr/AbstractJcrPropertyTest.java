@@ -186,8 +186,8 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         javax.jcr.Node prius2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));
         prius2.addMixin("mix:referenceable");
         prius.addMixin("mix:referenceable");
-        String priusUuid2 = prius2.getUUID();
-        String priusUuid = prius.getUUID();
+        String priusUuid2 = prius2.getIdentifier();
+        String priusUuid = prius.getIdentifier();
         assertThat(priusUuid, is(priusUuid2));
         assertThat(prius2.isSame(prius), is(false));
 
@@ -224,8 +224,8 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         javax.jcr.Node altima2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Nissan Altima"));
         altima2.addMixin("mix:referenceable");
         altima.addMixin("mix:referenceable");
-        String altimaUuid = altima.getUUID();
-        String altimaUuid2 = altima2.getUUID();
+        String altimaUuid = altima.getIdentifier();
+        String altimaUuid2 = altima2.getIdentifier();
         assertThat(altimaUuid, is(not(altimaUuid2)));
         assertThat(altima2.isSame(altima), is(false));
 
@@ -260,8 +260,8 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         javax.jcr.Node prius2 = cache2.findJcrNode(null, path("/Cars/Hybrid/Toyota Prius"));
         prius2.addMixin("mix:referenceable");
         prius.addMixin("mix:referenceable");
-        String priusUuid = prius.getUUID();
-        String priusUuid2 = prius2.getUUID();
+        String priusUuid = prius.getIdentifier();
+        String priusUuid2 = prius2.getIdentifier();
         assertThat(priusUuid, is(priusUuid2));
         assertThat(prius2.isSame(prius), is(true));
 

@@ -172,6 +172,7 @@ public abstract class AbstractSessionTest {
 
         // Set up the parsers for the repository (we only need the XPath parsers at the moment) ...
         parsers = new QueryParsers(new XPathQueryParser());
+        parsers = new QueryParsers(new JcrSql2QueryParser());
         when(repository.queryParsers()).thenReturn(parsers);
 
         // Set up the session attributes ...
@@ -188,6 +189,7 @@ public abstract class AbstractSessionTest {
         registry = session.getExecutionContext().getNamespaceRegistry();
     }
 
+    @SuppressWarnings( "unused" )
     protected List<NodeTypeTemplate> getTestTypes() throws ConstraintViolationException {
         return Collections.emptyList();
     }
@@ -203,6 +205,7 @@ public abstract class AbstractSessionTest {
 
     }
 
+    @SuppressWarnings( "deprecation" )
     protected String identifierPathFor( String pathToNode ) throws Exception {
         AbstractJcrNode node = session.getNode(pathToNode);
         if (node.isNodeType("mix:referenceable")) {

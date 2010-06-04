@@ -96,6 +96,7 @@ public class JcrQueryManagerTest {
     private Session session;
     private boolean print;
 
+    @SuppressWarnings( "deprecation" )
     @BeforeClass
     public static void beforeAll() throws Exception {
         configuration = new JcrConfiguration();
@@ -149,7 +150,7 @@ public class JcrQueryManagerTest {
 
             // Prime creating a first XPath query and SQL query ...
             session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
-            session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", JcrRepository.QueryLanguage.JCR_SQL2);
+            session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", Query.JCR_SQL2);
         } finally {
             session.logout();
         }
@@ -297,7 +298,7 @@ public class JcrQueryManagerTest {
 
     @Test
     public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllNodes() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", QueryLanguage.JCR_SQL2);
+        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -307,7 +308,7 @@ public class JcrQueryManagerTest {
 
     @Test
     public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllCarNodes() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [car:Car]", QueryLanguage.JCR_SQL2);
+        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [car:Car]", Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -318,7 +319,7 @@ public class JcrQueryManagerTest {
     @Test
     public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllCarNodesOrderedByYear() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [car:Car] ORDER BY [car:year]",
-                                                                           QueryLanguage.JCR_SQL2);
+                                                                           Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -329,7 +330,7 @@ public class JcrQueryManagerTest {
     @Test
     public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllCarNodesOrderedByMsrp() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [car:Car] ORDER BY [car:msrp] DESC",
-                                                                           QueryLanguage.JCR_SQL2);
+                                                                           Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -346,7 +347,7 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace()
                              .getQueryManager()
                              .createQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%'",
-                                          QueryLanguage.JCR_SQL2);
+                                          Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -363,7 +364,7 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace()
                              .getQueryManager()
                              .createQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid'",
-                                          QueryLanguage.JCR_SQL2);
+                                          Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -373,8 +374,7 @@ public class JcrQueryManagerTest {
 
     @Test
     public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllUnstructuredNodes() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:unstructured]",
-                                                                           QueryLanguage.JCR_SQL2);
+        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:unstructured]", Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -439,6 +439,7 @@ public class JcrQueryManagerTest {
     // XPath Queries
     // ----------------------------------------------------------------------------------------------------------------
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToCreateXPathQuery() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,car:Car)", Query.XPATH);
@@ -450,6 +451,7 @@ public class JcrQueryManagerTest {
         assertResults(query, query.execute(), 22);
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindAllNodes() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:base)", Query.XPATH);
@@ -459,6 +461,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindAllUnstructuredNodes() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
@@ -469,6 +472,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindAllUnstructuredNodesOrderedByPropertyValue() throws RepositoryException {
         QueryManager manager = session.getWorkspace().getQueryManager();
@@ -487,6 +491,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "car:year", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderNode() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root/Cars/Hybrid/*", Query.XPATH);
@@ -497,6 +502,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderNodeAndWithProperty() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root/Cars/Hybrid/*[@car:year]", Query.XPATH);
@@ -507,6 +513,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderNodeAndWithPropertyOrderedByProperty() throws RepositoryException {
         Query query = session.getWorkspace()
@@ -519,6 +526,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "car:year", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderPath() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root/Cars//*", Query.XPATH);
@@ -530,6 +538,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderPathAndWithProperty() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root/Cars//*[@car:year]", Query.XPATH);
@@ -540,6 +549,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderPathAndWithPropertyOrderedByProperty() throws RepositoryException {
         Query query = session.getWorkspace()
@@ -552,6 +562,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "car:year", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindAllUnstructuredNodesOrderedByScore() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured) order by jcr:score()",
@@ -563,6 +574,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindSameNameSiblingsByIndex() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Other/NodeA", Query.XPATH);
@@ -582,6 +594,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindAllCarNodes() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,car:Car)", Query.XPATH);
@@ -606,6 +619,7 @@ public class JcrQueryManagerTest {
                                  "car:msrp");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindRootNode() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root", Query.XPATH);
@@ -615,6 +629,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindChildOfRootNode() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Cars", Query.XPATH);
@@ -625,6 +640,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindChildOfRootNodeWithTypeCriteria() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Cars[@jcr:primaryType]", Query.XPATH);
@@ -635,6 +651,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindNodeWithPathAndAttrbuteCriteria() throws RepositoryException {
         Query query = session.getWorkspace()
@@ -647,6 +664,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindNodeWithAttrbuteCriteria() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("//Infiniti_x0020_G37[@car:year='2008']", Query.XPATH);
@@ -658,6 +676,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindNodeWithPathUnderRootAndAttrbuteCriteria() throws RepositoryException {
         Query query = session.getWorkspace()
@@ -670,6 +689,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindAnywhereNodeWithNameAndAttrbuteCriteriaMatchingUrl()
         throws RepositoryException {
@@ -683,6 +703,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindNodeWithNameMatch() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("//NodeB", Query.XPATH);
@@ -711,6 +732,7 @@ public class JcrQueryManagerTest {
         }
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithContainsCriteria() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., 'liter')]", Query.XPATH);
@@ -721,6 +743,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteria() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., '\"liter V 12\"')]",
@@ -732,6 +755,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithElementTestForChildrenOfRoot() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/element()", Query.XPATH);
@@ -742,6 +766,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithElementTestForAllNodesBelowRoot() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//element()", Query.XPATH);
@@ -752,6 +777,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithElementTestForChildOfRootWithName() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/element(Cars)", Query.XPATH);
@@ -762,6 +788,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithElementTestForSingleNodeBelowRootWithName() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//element(Utility)", Query.XPATH);
@@ -772,6 +799,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithElementTestForChildrenOfRootWithName() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Other/element(NodeA)", Query.XPATH);
@@ -782,6 +810,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithElementTestForMultipleNodesBelowRootWithName() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//element(NodeA)", Query.XPATH);
@@ -792,6 +821,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithRangeCriteria() throws RepositoryException {
         Query query = session.getWorkspace()
@@ -804,6 +834,7 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithNewlyRegisteredNamespace() throws RepositoryException {
         session.getWorkspace().getNamespaceRegistry().registerNamespace("newPrefix", "newUri");
@@ -815,6 +846,7 @@ public class JcrQueryManagerTest {
 
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldNotReturnNodesWithNoPropertyForPropertyCriterion() throws Exception {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Cars//*[@car:wheelbaseInInches]",
@@ -828,6 +860,7 @@ public class JcrQueryManagerTest {
         }
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldNotReturnNodesWithNoPropertyForLikeCriterion() throws Exception {
         Query query = session.getWorkspace()

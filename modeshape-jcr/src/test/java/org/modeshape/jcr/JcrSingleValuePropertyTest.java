@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
@@ -190,11 +191,11 @@ public class JcrSingleValuePropertyTest extends AbstractJcrTest {
     public void shouldProvideDate() throws Exception {
         prop = cars.getProperty("dateProperty");
         // see ModeShape-527 for reasons asserts are commented
-//        assertThat(prop.getDate(), is(dateValue.toCalendar()));
+        // assertThat(prop.getDate(), is(dateValue.toCalendar()));
         assertThat(prop.getLong(), is(dateValue.getMilliseconds()));
-//        assertThat(prop.getString(), is(stringFactory.create(dateValue)));
+        // assertThat(prop.getString(), is(stringFactory.create(dateValue)));
         assertThat(prop.getType(), is(PropertyType.DATE));
-//        assertThat(prop.getLength(), is((long)stringFactory.create(dateValue).length()));
+        // assertThat(prop.getLength(), is((long)stringFactory.create(dateValue).length()));
         checkValue(prop);
     }
 
@@ -203,8 +204,8 @@ public class JcrSingleValuePropertyTest extends AbstractJcrTest {
         prop = cars.getProperty("referenceProperty");
         assertThat(prop.getNode(), is((Node)altima));
         assertThat(prop.getType(), is(PropertyType.REFERENCE));
-        assertThat(prop.getString(), is(altima.getUUID()));
-        assertThat(prop.getLength(), is((long)altima.getUUID().length()));
+        assertThat(prop.getString(), is(altima.getIdentifier()));
+        assertThat(prop.getLength(), is((long)altima.getIdentifier().length()));
         checkValue(prop);
     }
 
@@ -228,6 +229,7 @@ public class JcrSingleValuePropertyTest extends AbstractJcrTest {
         checkValue(prop);
     }
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldProvideStream() throws Exception {
         prop = cars.getProperty("binaryProperty");
@@ -242,6 +244,25 @@ public class JcrSingleValuePropertyTest extends AbstractJcrTest {
         }
         assertThat(prop.getString(), is(stringFactory.create(binaryValue)));
         assertThat(prop.getLength(), is((long)binaryValue.length)); // note this value!!
+        checkValue(prop);
+    }
+
+    @Test
+    public void shouldProvideBinary() throws Exception {
+        prop = cars.getProperty("binaryProperty");
+        assertThat(prop.getType(), is(PropertyType.BINARY));
+        Binary binary = prop.getBinary();
+        InputStream stream = binary.getStream();
+        try {
+            assertThat(stream, notNullValue());
+        } finally {
+            if (stream != null) {
+                stream.close();
+            }
+        }
+        assertThat(prop.getString(), is(stringFactory.create(binaryValue)));
+        assertThat(prop.getLength(), is((long)binaryValue.length)); // note this value!!
+        assertThat(binary.getSize(), is((long)binaryValue.length)); // note this value!!
         checkValue(prop);
     }
 

@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.query.Query;
 import org.modeshape.graph.query.parse.SqlQueryParser;
 
 /**
@@ -30,7 +31,7 @@ import org.modeshape.graph.query.parse.SqlQueryParser;
  */
 public class JcrSql2QueryParser extends SqlQueryParser {
 
-    public static final String LANGUAGE = "JCR-SQL2";
+    public static final String LANGUAGE = Query.JCR_SQL2;
 
     public JcrSql2QueryParser() {
         super();

@@ -355,27 +355,21 @@ public class JcrRepository implements Repository {
         /**
          * The standard JCR 1.0 XPath query language.
          */
+        @SuppressWarnings( "deprecation" )
         public static final String XPATH = Query.XPATH;
 
         /**
          * The SQL dialect that is based upon an enhanced version of the JCR-SQL query language defined by the JCR 1.0.1
          * specification.
          */
+        @SuppressWarnings( "deprecation" )
         public static final String JCR_SQL = Query.SQL;
 
         /**
          * The SQL dialect that is based upon an enhanced version of the JCR-SQL2 query language defined by the JCR 2.0
          * specification.
          */
-        public static final String JCR_SQL2 = JcrSql2QueryParser.LANGUAGE;
-        /**
-         * The SQL dialect that is based upon an enhanced version of the JCR-SQL2 query language defined by the JCR 2.0
-         * specification.
-         * 
-         * @deprecated use {@link #JCR_SQL2} instead
-         */
-        @Deprecated
-        public static final String SQL = JCR_SQL2;
+        public static final String JCR_SQL2 = Query.JCR_SQL2;
         /**
          * The full-text search language defined as part of the abstract query model, in Section 6.7.19 of the JCR 2.0
          * specification.
@@ -1243,8 +1237,7 @@ public class JcrRepository implements Repository {
         repoDescriptors.put(Repository.QUERY_XPATH_POS_INDEX, valueFor(factories, true));
 
         repoDescriptors.put(Repository.WRITE_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.IDENTIFIER_STABILITY, valueFor(factories,
-                                                                        Repository.IDENTIFIER_STABILITY_METHOD_DURATION));
+        repoDescriptors.put(Repository.IDENTIFIER_STABILITY, valueFor(factories, Repository.IDENTIFIER_STABILITY_METHOD_DURATION));
         repoDescriptors.put(Repository.OPTION_XML_IMPORT_SUPPORTED, valueFor(factories, true));
         repoDescriptors.put(Repository.OPTION_XML_EXPORT_SUPPORTED, valueFor(factories, true));
         repoDescriptors.put(Repository.OPTION_UNFILED_CONTENT_SUPPORTED, valueFor(factories, false));
@@ -1263,7 +1256,7 @@ public class JcrRepository implements Repository {
         repoDescriptors.put(Repository.OPTION_SHAREABLE_NODES_SUPPORTED, valueFor(factories, false));
         repoDescriptors.put(Repository.OPTION_NODE_TYPE_MANAGEMENT_SUPPORTED, valueFor(factories, true));
         repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_INHERITANCE,
-                              valueFor(factories, Repository.NODE_TYPE_MANAGEMENT_INHERITANCE_MULTIPLE));
+                            valueFor(factories, Repository.NODE_TYPE_MANAGEMENT_INHERITANCE_MULTIPLE));
         repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_PRIMARY_ITEM_NAME_SUPPORTED, valueFor(factories, true));
         repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_ORDERABLE_CHILD_NODES_SUPPORTED, valueFor(factories, true));
         repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_RESIDUAL_DEFINITIONS_SUPPORTED, valueFor(factories, true));
@@ -1285,23 +1278,20 @@ public class JcrRepository implements Repository {
 
         if (!repoDescriptors.containsKey(Repository.REP_NAME_DESC)) {
             repoDescriptors.put(Repository.REP_NAME_DESC,
-                                valueFor(factories,
-                                                                 JcrRepository.getBundleProperty(Repository.REP_NAME_DESC, true)));
+                                valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_NAME_DESC, true)));
         }
         if (!repoDescriptors.containsKey(Repository.REP_VENDOR_DESC)) {
             repoDescriptors.put(Repository.REP_VENDOR_DESC, valueFor(factories,
-                                                                   JcrRepository.getBundleProperty(Repository.REP_VENDOR_DESC,
-                                                                                                   true)));
+                                                                     JcrRepository.getBundleProperty(Repository.REP_VENDOR_DESC,
+                                                                                                     true)));
         }
         if (!repoDescriptors.containsKey(Repository.REP_VENDOR_URL_DESC)) {
             repoDescriptors.put(Repository.REP_VENDOR_URL_DESC,
-                              valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VENDOR_URL_DESC, true)));
+                                valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VENDOR_URL_DESC, true)));
         }
         if (!repoDescriptors.containsKey(Repository.REP_VERSION_DESC)) {
             repoDescriptors.put(Repository.REP_VERSION_DESC,
-                                valueFor(factories,
-                                                                    JcrRepository.getBundleProperty(Repository.REP_VERSION_DESC,
-                                                                                                    true)));
+                                valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VERSION_DESC, true)));
         }
 
         return Collections.unmodifiableMap(repoDescriptors);

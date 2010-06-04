@@ -64,6 +64,7 @@ public class Vehicles {
 
     }
 
+    @SuppressWarnings( "unchecked" )
     public static List<NodeTypeTemplate> getNodeTypes( ExecutionContext context ) throws ConstraintViolationException {
         JcrPropertyDefinitionTemplate property;
 
