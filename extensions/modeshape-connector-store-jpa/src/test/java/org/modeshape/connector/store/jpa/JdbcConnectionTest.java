@@ -25,16 +25,14 @@ package org.modeshape.connector.store.jpa;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import org.hibernate.ejb.Ejb3Configuration;
-import org.modeshape.connector.store.jpa.model.basic.BasicModel;
-import org.modeshape.connector.store.jpa.model.basic.NodeId;
-import org.modeshape.connector.store.jpa.model.basic.PropertiesEntity;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.connector.store.jpa.model.common.WorkspaceEntity;
+import org.modeshape.connector.store.jpa.model.simple.SimpleModel;
 
 /**
  * Simple unit test that simply verifies the database connection.
@@ -43,11 +41,11 @@ public class JdbcConnectionTest {
 
     private EntityManagerFactory factory;
     private EntityManager manager;
-    private BasicModel model;
+    private SimpleModel model;
 
     @Before
     public void beforeEach() throws Exception {
-        model = new BasicModel();
+        model = new SimpleModel();
     }
 
     @After
@@ -90,19 +88,16 @@ public class JdbcConnectionTest {
     }
 
     @Test
-    public void shouldConnectToDatabaseAndPersistBasicProperty() {
+    public void shouldConnectToDatabaseAndPersistWorkspace() {
         startEntityManager();
 
-        Long workspaceId = 10L;
-        NodeId nodeId = new NodeId(workspaceId, UUID.randomUUID().toString());
-        PropertiesEntity prop = new PropertiesEntity();
-        prop.setCompressed(true);
-        prop.setData("Hello, World".getBytes());
-        prop.setId(nodeId);
+        WorkspaceEntity workspace = new WorkspaceEntity();
+        workspace.setName("connection test");
+
         manager.getTransaction().begin();
         try {
             // Save a properties entity (with compressed data) ...
-            manager.persist(prop);
+            manager.persist(workspace);
             manager.getTransaction().commit();
         } catch (RuntimeException t) {
             manager.getTransaction().rollback();
@@ -111,10 +106,8 @@ public class JdbcConnectionTest {
         // Look up the object ...
         manager.getTransaction().begin();
         try {
-            PropertiesEntity prop2 = manager.find(PropertiesEntity.class, nodeId);
-            assertThat(prop2.isCompressed(), is(prop.isCompressed()));
-            assertThat(prop2.getId(), is(prop.getId()));
-            assertThat(prop2.getData(), is(prop.getData()));
+            WorkspaceEntity workspace2 = manager.find(WorkspaceEntity.class, workspace.getId());
+            assertThat(workspace2.getName(), is(workspace.getName()));
         } finally {
             manager.getTransaction().rollback();
         }

@@ -51,7 +51,6 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.connector.store.jpa.model.basic.BasicModel;
 import org.modeshape.connector.store.jpa.model.simple.SimpleModel;
 import org.modeshape.connector.store.jpa.util.StoreOptionEntity;
 import org.modeshape.connector.store.jpa.util.StoreOptions;
@@ -79,9 +78,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * @author Randall Hauch
      */
     public static class Models {
-        public static final Model BASIC = new BasicModel();
         public static final Model SIMPLE = new SimpleModel();
-        private static final Model[] ALL_ARRAY = new Model[] {BASIC, SIMPLE};
+        private static final Model[] ALL_ARRAY = new Model[] {SIMPLE};
         private static final List<Model> MODIFIABLE_MODELS = new ArrayList<Model>(Arrays.asList(ALL_ARRAY));
         public static final Collection<Model> ALL = Collections.unmodifiableCollection(MODIFIABLE_MODELS);
         public static final Model DEFAULT = SIMPLE;
