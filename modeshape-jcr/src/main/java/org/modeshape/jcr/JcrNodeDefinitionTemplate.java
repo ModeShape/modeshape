@@ -60,6 +60,7 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
      * Set the name of the primary type that should be used by default when creating children using this node definition
      * 
      * @param defaultPrimaryType the default primary type for this child node
+     * @throws ConstraintViolationException
      */
     public void setDefaultPrimaryTypeName( String defaultPrimaryType ) throws ConstraintViolationException {
         try {

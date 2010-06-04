@@ -112,6 +112,7 @@ public class JcrNodeTypeTemplate implements NodeTypeDefinition, NodeTypeTemplate
      * Set the direct supertypes for this node type.
      * 
      * @param names the names of the direct supertypes, or empty or null if there are none.
+     * @throws ConstraintViolationException
      */
     public void setDeclaredSuperTypeNames( String[] names ) throws ConstraintViolationException {
         if (names == null) {
