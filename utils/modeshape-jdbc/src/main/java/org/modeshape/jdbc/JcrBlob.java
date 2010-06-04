@@ -29,11 +29,11 @@ import java.io.OutputStream;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import javax.jcr.Binary;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import net.jcip.annotations.Immutable;
-import org.modeshape.jcr.api.Binary;
 
 /**
  * The JDBC {@link Blob} wrapper around a JCR binary {@link Value} object.
@@ -69,7 +69,7 @@ public class JcrBlob implements Blob {
         if (value instanceof org.modeshape.jcr.api.Value) {
             try {
                 // Get the binary value ...
-                Binary binary = ((org.modeshape.jcr.api.Value)value).getBinary();
+                Binary binary = value.getBinary();
                 binary.dispose();
             } catch (RepositoryException e) {
                 throw new SQLException(e.getLocalizedMessage(), e);
@@ -86,7 +86,7 @@ public class JcrBlob implements Blob {
     @Override
     public InputStream getBinaryStream() throws SQLException {
         try {
-            return value.getStream();
+            return value.getBinary().getStream();
         } catch (RepositoryException e) {
             throw new SQLException(e.getLocalizedMessage(), e);
         }

@@ -27,12 +27,9 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
-import javax.jcr.observation.Event;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -98,14 +95,14 @@ public class ModeShapeEngineTest {
         InMemoryRepositorySource configSource = new InMemoryRepositorySource();
         configSource.setName("config repo");
         engine = new ModeShapeConfiguration().loadFrom(configSource)
-                                       .and()
-                                       .repositorySource("JCR")
-                                       .usingClass(InMemoryRepositorySource.class)
-                                       .setDescription("Backing Repository for JCR Implementation")
-                                       .setProperty("name", "JCR")
-                                       .and()
-                                       .save()
-                                       .build();
+                                             .and()
+                                             .repositorySource("JCR")
+                                             .usingClass(InMemoryRepositorySource.class)
+                                             .setDescription("Backing Repository for JCR Implementation")
+                                             .setProperty("name", "JCR")
+                                             .and()
+                                             .save()
+                                             .build();
         // Start the engine ...
         engine.start();
 
@@ -129,17 +126,17 @@ public class ModeShapeEngineTest {
         InMemoryRepositorySource configSource = new InMemoryRepositorySource();
         configSource.setName("config repo");
         engine = new ModeShapeConfiguration().loadFrom(configSource)
-                                       .and()
-                                       .repositorySource("JCR")
-                                       .usingClass(InMemoryRepositorySource.class)
-                                       .setDescription("Backing Repository for JCR Implementation")
-                                       .setProperty("name", "JCR")
-                                       .and()
-                                       .mimeTypeDetector("default")
-                                       .usingClass(ExtensionBasedMimeTypeDetector.class)
-                                       .setDescription("Default MimeTypeDetector")
-                                       .and()
-                                       .build();
+                                             .and()
+                                             .repositorySource("JCR")
+                                             .usingClass(InMemoryRepositorySource.class)
+                                             .setDescription("Backing Repository for JCR Implementation")
+                                             .setProperty("name", "JCR")
+                                             .and()
+                                             .mimeTypeDetector("default")
+                                             .usingClass(ExtensionBasedMimeTypeDetector.class)
+                                             .setDescription("Default MimeTypeDetector")
+                                             .and()
+                                             .build();
         engine.start();
 
         assertThat(engine.getRepositorySource("config repo"), is(notNullValue()));
@@ -154,19 +151,19 @@ public class ModeShapeEngineTest {
         InMemoryRepositorySource configSource = new InMemoryRepositorySource();
         configSource.setName("config repo");
         engine = new ModeShapeConfiguration().loadFrom(configSource)
-                                       .and()
-                                       .repositorySource("JCR")
-                                       .usingClass(InMemoryRepositorySource.class)
-                                       .setDescription("Backing Repository for JCR Implementation")
-                                       .setProperty("name", "JCR")
-                                       .and()
-                                       .sequencer("Mock Sequencer A")
-                                       .usingClass(MockStreamSequencerA.class)
-                                       .setDescription("A Mock Sequencer")
-                                       .sequencingFrom("/**")
-                                       .andOutputtingTo("/")
-                                       .and()
-                                       .build();
+                                             .and()
+                                             .repositorySource("JCR")
+                                             .usingClass(InMemoryRepositorySource.class)
+                                             .setDescription("Backing Repository for JCR Implementation")
+                                             .setProperty("name", "JCR")
+                                             .and()
+                                             .sequencer("Mock Sequencer A")
+                                             .usingClass(MockStreamSequencerA.class)
+                                             .setDescription("A Mock Sequencer")
+                                             .sequencingFrom("/**")
+                                             .andOutputtingTo("/")
+                                             .and()
+                                             .build();
         engine.start();
 
         assertThat(engine.getRepositorySource("config repo"), is(notNullValue()));
@@ -175,10 +172,10 @@ public class ModeShapeEngineTest {
         SequencingService sequencer = engine.getSequencingService();
         assertThat(sequencer.getStatistics().getNumberOfNodesSequenced(), is(0L));
 
-        Event e1 = mock(Event.class);
-        when(e1.getType()).thenReturn(Event.NODE_ADDED);
-        when(e1.getPath()).thenReturn("/test");
-        when(e1.getUserID()).thenReturn("Test");
+        // Event e1 = mock(Event.class);
+        // when(e1.getType()).thenReturn(Event.NODE_ADDED);
+        // when(e1.getPath()).thenReturn("/test");
+        // when(e1.getUserID()).thenReturn("Test");
 
         // changes = NodeChanges.create("", Arrays.asList(new Event[] { e1, }));
         // sequencer.onNodeChanges(changes);

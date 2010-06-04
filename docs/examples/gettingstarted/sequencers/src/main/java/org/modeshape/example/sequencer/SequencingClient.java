@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -49,7 +50,6 @@ import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrTools;
 import org.modeshape.jcr.SecurityContextCredentials;
 import org.modeshape.repository.sequencer.SequencingService;
-import org.modeshape.repository.util.SessionFactory;
 import org.modeshape.sequencer.classfile.ClassFileSequencer;
 import org.modeshape.sequencer.classfile.ClassFileSequencerLexicon;
 
@@ -78,8 +78,7 @@ public class SequencingClient {
         // Set up the JCR repository to use the source ...
         config.repository(repositoryId)
               .addNodeTypes("sequencing.cnd")
-              .registerNamespace(ClassFileSequencerLexicon.Namespace.PREFIX,
-                                 ClassFileSequencerLexicon.Namespace.URI)              
+              .registerNamespace(ClassFileSequencerLexicon.Namespace.PREFIX, ClassFileSequencerLexicon.Namespace.URI)
               .setSource("store");
         // Set up the image sequencer ...
         config.sequencer("Image Sequencer")
@@ -121,10 +120,10 @@ public class SequencingClient {
               .loadedFromClasspath()
               .setDescription("Sequences fixed width files to extract the contents")
               .setProperty("commentMarker", "#")
-              .setProperty("columnStartPositions", new int[] { 10, 20, 30, 40})
+              .setProperty("columnStartPositions", new int[] {10, 20, 30, 40})
               .sequencingFrom("//(*.txt[*])/jcr:content[@jcr:data]")
               .andOutputtingTo("/txt/$1");
-        
+
         // Now start the client and tell it which repository and workspace to use ...
         SequencingClient client = new SequencingClient(config, repositoryId, workspaceName);
         client.setUserInterface(new ConsoleInput(client));
@@ -226,10 +225,11 @@ public class SequencingClient {
             Node node = tools.findOrCreateNode(session, nodePath, "nt:folder", "nt:file");
 
             // Upload the file to that node ...
-            Node contentNode = tools.findOrCreateChild( node, "jcr:content", "nt:resource");
+            Node contentNode = tools.findOrCreateChild(node, "jcr:content", "nt:resource");
             contentNode.setProperty("jcr:mimeType", mimeType);
             contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
-            contentNode.setProperty("jcr:data", url.openStream());
+            Binary binaryValue = session.getValueFactory().createBinary(url.openStream());
+            contentNode.setProperty("jcr:data", binaryValue);
 
             // Save the session ...
             session.save();
@@ -237,7 +237,7 @@ public class SequencingClient {
             session.logout();
         }
     }
-    
+
     /**
      * Perform a search of the repository for all image metadata automatically created by the image sequencer.
      * 
@@ -250,7 +250,7 @@ public class SequencingClient {
         try {
             // Find the node ...
             Node root = session.getRootNode();
-            
+
             if (root.hasNode("images") || root.hasNode("mp3s")) {
                 Node mediasNode;
                 if (root.hasNode("images")) {
@@ -370,7 +370,7 @@ public class SequencingClient {
                         props.put("constructors", node.getNode("class:constructors").getNodes().getSize());
                         props.put("methods", node.getNode("class:methods").getNodes().getSize());
                         props.put("fields", node.getNode("class:fields").getNodes().getSize());
-                        
+
                         infos.add(new MediaInfo(node.getPath(), node.getName(), "class", props));
 
                     } else {
@@ -552,7 +552,7 @@ public class SequencingClient {
     }
 
     /**
-     * Utility method to create a new JCR session from the execution context's {@link SessionFactory}.
+     * Utility method to create a new JCR session.
      * 
      * @return the session
      * @throws RepositoryException

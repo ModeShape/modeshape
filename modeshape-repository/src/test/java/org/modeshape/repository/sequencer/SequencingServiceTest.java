@@ -32,25 +32,21 @@ import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItem;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
-import javax.jcr.observation.Event;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.property.Path;
 import org.modeshape.repository.RepositoryLibrary;
 import org.modeshape.repository.service.ServiceAdministrator;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 
 /**
  * @author Randall Hauch
  */
 public class SequencingServiceTest {
-
-    public static final int ALL_EVENT_TYPES = Event.NODE_ADDED | Event.NODE_REMOVED | Event.PROPERTY_ADDED
-                                              | Event.PROPERTY_CHANGED | Event.PROPERTY_REMOVED;
 
     public static final String REPOSITORY_SOURCE_NAME = "repository";
     public static final String REPOSITORY_WORKSPACE_NAME = "testRepository-Workspace";

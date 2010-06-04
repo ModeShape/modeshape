@@ -26,12 +26,14 @@ package org.modeshape.jdbc;
 import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import javax.jcr.Binary;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -385,6 +387,17 @@ class QueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
         this.nodes = nodes;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.query.Row#getNode()
+     */
+    @Override
+    public Node getNode() throws RepositoryException {
+        if (nodes.length == 1) return nodes[0];
+        throw new RepositoryException("More than one selector");
+    }
+
     @Override
     public Node getNode( String selectorName ) throws RepositoryException {
         for (int i = 0; i < nodes.length; i++) {
@@ -392,8 +405,53 @@ class QueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
                 return nodes[i];
             }
         }
-
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.query.Row#getPath()
+     */
+    @Override
+    public String getPath() throws RepositoryException {
+        if (nodes.length == 1) return nodes[0].getPath();
+        throw new RepositoryException("More than one selector");
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.query.Row#getPath(java.lang.String)
+     */
+    @Override
+    public String getPath( String selectorName ) throws RepositoryException {
+        for (int i = 0; i < nodes.length; i++) {
+            if (nodes[i].getName().equals(selectorName)) {
+                return nodes[i].getPath();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.query.Row#getScore()
+     */
+    @Override
+    public double getScore() /*throws RepositoryException*/{
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.query.Row#getScore(java.lang.String)
+     */
+    @Override
+    public double getScore( String selectorName ) /* throws RepositoryException */{
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -466,8 +524,37 @@ class QueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
                 throw new ValueFormatException("Value not a Long");
             }
 
+            /**
+             * {@inheritDoc}
+             * 
+             * @see javax.jcr.Value#getBinary()
+             */
+            @Override
+            public Binary getBinary() throws RepositoryException {
+                if (value instanceof Binary) {
+                    return ((Binary)valueObject);
+                }
+                throw new ValueFormatException("Value not a Binary");
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see javax.jcr.Value#getDecimal()
+             */
+            @Override
+            public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
+                if (value instanceof BigDecimal) {
+                    return ((BigDecimal)valueObject);
+                }
+                throw new ValueFormatException("Value not a Decimal");
+            }
+
             @Override
             public InputStream getStream() throws IllegalStateException, RepositoryException {
+                if (value instanceof Binary) {
+                    return ((Binary)valueObject).getStream();
+                }
                 if (value instanceof InputStream) {
                     return ((InputStream)valueObject);
                 }
