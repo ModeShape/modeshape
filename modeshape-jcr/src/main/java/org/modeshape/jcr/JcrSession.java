@@ -771,6 +771,21 @@ class JcrSession implements Session {
     /**
      * {@inheritDoc}
      * 
+     * @see javax.jcr.Session#getNodeByIdentifier(java.lang.String)
+     */
+    @Override
+    public Node getNodeByIdentifier( String id ) throws ItemNotFoundException, RepositoryException {
+        // Attempt to create a UUID from the identifier ...
+        try {
+            return cache.findJcrNode(Location.create(UUID.fromString(id)));
+        } catch (IllegalArgumentException e) {
+            throw new RepositoryException(JcrI18n.identifierPathContainedUnsupportedIdentifierFormat.text(id));
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see javax.jcr.Session#getRootNode()
      */
     public AbstractJcrNode getRootNode() throws RepositoryException {
@@ -1311,12 +1326,6 @@ class JcrSession implements Session {
 
     @Override
     public AccessControlManager getAccessControlManager() throws UnsupportedRepositoryOperationException, RepositoryException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Node getNodeByIdentifier( String id ) throws ItemNotFoundException, RepositoryException {
         // TODO Auto-generated method stub
         return null;
     }

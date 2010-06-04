@@ -29,6 +29,7 @@ import java.util.Calendar;
 import java.util.UUID;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -41,7 +42,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.Reference;
+import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.ValueFactories;
 
 /**
@@ -149,16 +150,65 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * 
      * @see javax.jcr.Property#getNode()
      */
-    public final Node getNode() throws RepositoryException {
+    public final Node getNode() throws ItemNotFoundException, ValueFormatException, RepositoryException {
         checkSession();
+        ValueFactories factories = context().getValueFactories();
+        Object value = property().getFirstValue();
         try {
-            ValueFactories factories = context().getValueFactories();
-            Reference dnaReference = factories.getReferenceFactory().create(property().getFirstValue());
-            UUID uuid = factories.getUuidFactory().create(dnaReference);
-            return cache.findJcrNode(Location.create(uuid));
+            try {
+                // REFERENCE and WEAKREFERENCE values will be convertable to UUIDs ...
+                UUID uuid = factories.getUuidFactory().create(value);
+                return session().getNodeByIdentifier(uuid.toString());
+            } catch (org.modeshape.graph.property.ValueFormatException e) {
+                // It's not a UUID, so just continue ...
+            }
+            // STRING, PATH and NAME values will be convertable to a graph Path object ...
+            Path path = factories.getPathFactory().create(value);
+            // We're throwing a PathNotFoundException here because that's what the TCK unit tests expect.
+            // See https://issues.apache.org/jira/browse/JCR-2648 for details
+            return path.isAbsolute() ? session().getNode(path) : getParent().getNode(path);
         } catch (org.modeshape.graph.property.ValueFormatException e) {
             throw new ValueFormatException(e.getMessage(), e);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Property#getProperty()
+     */
+    @Override
+    public Property getProperty() throws ItemNotFoundException, ValueFormatException, RepositoryException {
+        checkSession();
+        Path path = null;
+        try {
+            // Convert this property to a PATH to a property ...
+            path = context().getValueFactories().getPathFactory().create(property().getFirstValue());
+        } catch (org.modeshape.graph.property.ValueFormatException e) {
+            throw new ValueFormatException(e.getMessage(), e);
+        }
+        // Find the parent node of the referenced property ...
+        AbstractJcrNode referencedNode = null;
+        Path nodePath = path.getParent();
+        if (path.isAbsolute()) {
+            referencedNode = cache.findJcrNode(Location.create(nodePath));
+        } else {
+            referencedNode = cache.findJcrNode(node.internalId(), node.path(), nodePath);
+        }
+        // Now get the property from the referenced node ...
+        Name propertyName = path.getLastSegment().getName();
+        if (!referencedNode.hasProperty(propertyName)) {
+            String readablePath = path.getString(namespaces());
+            String workspaceName = session().workspace().getName();
+            String msg = null;
+            if (path.isAbsolute()) {
+                msg = JcrI18n.pathNotFound.text(readablePath, workspaceName);
+            } else {
+                msg = JcrI18n.pathNotFoundRelativeTo.text(readablePath, node.getPath(), workspaceName);
+            }
+            throw new PathNotFoundException(msg);
+        }
+        return referencedNode.getProperty(propertyName);
     }
 
     /**
@@ -403,12 +453,6 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
 
     @Override
     public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Property getProperty() throws ItemNotFoundException, ValueFormatException, RepositoryException {
         // TODO Auto-generated method stub
         return null;
     }

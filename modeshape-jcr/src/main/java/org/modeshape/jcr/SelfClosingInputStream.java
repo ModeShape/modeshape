@@ -35,8 +35,8 @@ import org.modeshape.graph.property.Binary;
  * an exception or when the instance is {@link #close() closed}.
  * <p>
  * The draft version of the JSR-283 specification outlines a new mechanism for obtaining a lock on a binary value, and in fact
- * this mechanism was used as the baseline for the design of ModeShape's Binary value. Therefore, when ModeShape's JCR implementation supports
- * JCR-283, this class will probably no longer be needed.
+ * this mechanism was used as the baseline for the design of ModeShape's Binary value. Therefore, when ModeShape's JCR
+ * implementation supports JCR-283, this class will probably no longer be needed.
  * </p>
  */
 @NotThreadSafe
@@ -146,7 +146,12 @@ class SelfClosingInputStream extends InputStream {
                      int off,
                      int len ) throws IOException {
         try {
-            return stream.read(b, off, len);
+            int result = stream.read(b, off, len);
+            if (result == -1) {
+                // the end of the stream has been reached ...
+                this.binary.release();
+            }
+            return result;
         } catch (IOException e) {
             this.binary.release();
             throw e;
@@ -164,7 +169,12 @@ class SelfClosingInputStream extends InputStream {
     @Override
     public int read( byte[] b ) throws IOException {
         try {
-            return stream.read(b);
+            int result = stream.read(b);
+            if (result == -1) {
+                // the end of the stream has been reached ...
+                this.binary.release();
+            }
+            return result;
         } catch (IOException e) {
             this.binary.release();
             throw e;
@@ -182,7 +192,12 @@ class SelfClosingInputStream extends InputStream {
     @Override
     public int read() throws IOException {
         try {
-            return stream.read();
+            int result = stream.read();
+            if (result == -1) {
+                // the end of the stream has been reached ...
+                this.binary.release();
+            }
+            return result;
         } catch (IOException e) {
             this.binary.release();
             throw e;

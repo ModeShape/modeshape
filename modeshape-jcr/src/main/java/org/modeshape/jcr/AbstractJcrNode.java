@@ -800,6 +800,17 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     }
 
     /**
+     * A non-standard method to obtain a child node given the {@link Path ModeShape relative path} object.
+     * 
+     * @param relativePath the relative path
+     * @return the child node with the supplied name, or null if no child node exists with that name
+     * @throws RepositoryException if there is an error finding the child node with the supplied name
+     */
+    public final AbstractJcrNode getNode( Path relativePath ) throws RepositoryException {
+        return getNode(relativePath.getString(namespaces()));
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @throws IllegalArgumentException if <code>relativePath</code> is empty or <code>null</code>.
@@ -2022,15 +2033,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(srcChildRelPath, "relativePath"));
         }
         if (srcPath.isAbsolute() || srcPath.size() != 1) {
-            throw new ItemNotFoundException(JcrI18n.pathNotFound.text(srcPath.getString(cache.context().getNamespaceRegistry()),
-                                                                      cache.session().workspace().getName()));
+            throw new ItemNotFoundException(JcrI18n.pathNotFound.text(srcPath.getString(namespaces()), cache.workspaceName()));
         }
         // getLastSegment should return the only segment, since we verified that size() == 1
         Path.Segment sourceSegment = srcPath.getLastSegment();
         try {
             nodeInfo().getChild(sourceSegment);
         } catch (org.modeshape.graph.property.PathNotFoundException e) {
-            String workspaceName = this.cache.session().getWorkspace().getName();
+            String workspaceName = this.cache.workspaceName();
             throw new ItemNotFoundException(JcrI18n.pathNotFound.text(srcPath, workspaceName));
         }
 
@@ -2043,9 +2053,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                 throw new IllegalArgumentException(JcrI18n.invalidPathParameter.text(destChildRelPath, "relativePath"));
             }
             if (destPath.size() != 1) {
-                throw new ItemNotFoundException(JcrI18n.pathNotFound.text(destPath.getString(cache.context()
-                                                                                                  .getNamespaceRegistry()),
-                                                                          cache.session().workspace().getName()));
+                throw new ItemNotFoundException(
+                                                JcrI18n.pathNotFound.text(destPath.getString(namespaces()), cache.workspaceName()));
             }
 
             destSegment = destPath.getLastSegment();

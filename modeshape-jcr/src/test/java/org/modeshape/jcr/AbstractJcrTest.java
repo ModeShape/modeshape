@@ -23,15 +23,20 @@
  */
 package org.modeshape.jcr;
 
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.io.IOException;
+import java.util.UUID;
 import javax.jcr.RepositoryException;
 import javax.jcr.Workspace;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySourceException;
@@ -139,6 +144,14 @@ public abstract class AbstractJcrTest {
 
         cache = new SessionCache(jcrSession, store.getCurrentWorkspaceName(), context, nodeTypes, store);
 
+        when(jcrSession.getNodeByIdentifier(anyString())).thenAnswer(new Answer<AbstractJcrNode>() {
+            @Override
+            public AbstractJcrNode answer( InvocationOnMock invocation ) throws Throwable {
+                String uuidStr = invocation.getArguments()[0].toString();
+                Location location = Location.create(UUID.fromString(uuidStr));
+                return cache.findJcrNode(location);
+            }
+        });
     }
 
     protected String getResourceNameOfXmlFileToImport() {

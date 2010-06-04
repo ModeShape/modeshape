@@ -32,14 +32,14 @@ import java.util.Date;
 import java.util.UUID;
 import javax.jcr.PropertyType;
 import javax.jcr.ValueFormatException;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.basic.StandardValueFactories;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Mock;
 
 /**
  * @author jverhaeg
@@ -64,14 +64,14 @@ public class JcrValueTest {
         assertThat(value.getType(), is(PropertyType.BOOLEAN));
     }
 
-    @Test( expected = IllegalStateException.class )
-    public void shouldNotAllowConsumingInputStreamAfterConsumingNonInputStream() throws Exception {
+    @Test
+    public void shouldAllowConsumingInputStreamAfterConsumingNonInputStream() throws Exception {
         value.getBoolean();
         value.getStream();
     }
 
-    @Test( expected = IllegalStateException.class )
-    public void shouldNotAllowConsumingNonInputStreamAfterConsumingInputStream() throws Exception {
+    @Test
+    public void shouldAllowConsumingNonInputStreamAfterConsumingInputStream() throws Exception {
         value.getBoolean();
         value.getStream();
     }
@@ -142,8 +142,8 @@ public class JcrValueTest {
         String expectedValue = "2008-08-18T12:00:00.000";
         assertThat(new JcrValue(factories, cache, PropertyType.DATE, date).getString().substring(0, expectedValue.length()),
                    is(expectedValue));
-        assertThat(new JcrValue(factories, cache, PropertyType.DATE, date.getTime()).getString().substring(0,
-                                                                                                           expectedValue.length()),
+        assertThat(new JcrValue(factories, cache, PropertyType.DATE, date.getTime()).getString()
+                                                                                    .substring(0, expectedValue.length()),
                    is(expectedValue));
     }
 
@@ -156,7 +156,8 @@ public class JcrValueTest {
     public void shouldProvideDateForDouble() throws Exception {
         Calendar expectedValue = Calendar.getInstance();
         expectedValue.setTime(new Date(0L));
-        assertThat(new JcrValue(factories, cache, PropertyType.DOUBLE, 0.0).getDate().getTimeInMillis(), is(expectedValue.getTimeInMillis()));
+        assertThat(new JcrValue(factories, cache, PropertyType.DOUBLE, 0.0).getDate().getTimeInMillis(),
+                   is(expectedValue.getTimeInMillis()));
     }
 
     @Test
@@ -189,7 +190,8 @@ public class JcrValueTest {
     public void shouldProvideDateForLong() throws Exception {
         Calendar expectedValue = Calendar.getInstance();
         expectedValue.setTime(new Date(0L));
-        assertThat(new JcrValue(factories, cache, PropertyType.LONG, 0L).getDate().getTimeInMillis(), is(expectedValue.getTimeInMillis()));
+        assertThat(new JcrValue(factories, cache, PropertyType.LONG, 0L).getDate().getTimeInMillis(),
+                   is(expectedValue.getTimeInMillis()));
     }
 
     @Test

@@ -79,8 +79,6 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
         this.value = value;
     }
 
-    private State state = State.NEVER_CONSUMED;
-
     private ValueFormatException createValueFormatException( Class<?> type ) {
         return new ValueFormatException(JcrI18n.cannotConvertValue.text(value.getClass().getSimpleName(), type.getSimpleName()));
     }
@@ -114,10 +112,8 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
      * @see javax.jcr.Value#getBoolean()
      */
     public boolean getBoolean() throws ValueFormatException {
-        nonInputStreamConsumed();
         try {
             boolean convertedValue = valueFactories.getBooleanFactory().create(value);
-            state = State.NON_INPUT_STREAM_CONSUMED;
             return convertedValue;
         } catch (RuntimeException error) {
             throw createValueFormatException(boolean.class);
@@ -130,10 +126,8 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
      * @see javax.jcr.Value#getDate()
      */
     public Calendar getDate() throws ValueFormatException {
-        nonInputStreamConsumed();
         try {
             Calendar convertedValue = valueFactories.getDateFactory().create(value).toCalendar();
-            state = State.NON_INPUT_STREAM_CONSUMED;
             return convertedValue;
         } catch (RuntimeException error) {
             throw createValueFormatException(Calendar.class);
@@ -147,10 +141,8 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
      */
     @Override
     public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
-        nonInputStreamConsumed();
         try {
             BigDecimal convertedValue = valueFactories.getDecimalFactory().create(value);
-            state = State.NON_INPUT_STREAM_CONSUMED;
             return convertedValue;
         } catch (RuntimeException error) {
             throw createValueFormatException(double.class);
@@ -163,10 +155,8 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
      * @see javax.jcr.Value#getDouble()
      */
     public double getDouble() throws ValueFormatException {
-        nonInputStreamConsumed();
         try {
             double convertedValue = valueFactories.getDoubleFactory().create(value);
-            state = State.NON_INPUT_STREAM_CONSUMED;
             return convertedValue;
         } catch (RuntimeException error) {
             throw createValueFormatException(double.class);
@@ -186,10 +176,8 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
      * @see javax.jcr.Value#getLong()
      */
     public long getLong() throws ValueFormatException {
-        nonInputStreamConsumed();
         try {
             long convertedValue = valueFactories.getLongFactory().create(value);
-            state = State.NON_INPUT_STREAM_CONSUMED;
             return convertedValue;
         } catch (RuntimeException error) {
             throw createValueFormatException(long.class);
@@ -202,14 +190,10 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
      * @see javax.jcr.Value#getStream()
      */
     public InputStream getStream() throws ValueFormatException {
-        if (state == State.NON_INPUT_STREAM_CONSUMED) {
-            throw new IllegalStateException(JcrI18n.nonInputStreamConsumed.text());
-        }
         try {
             if (asStream == null) {
                 Binary binary = valueFactories.getBinaryFactory().create(value);
                 asStream = new SelfClosingInputStream(binary);
-                state = State.INPUT_STREAM_CONSUMED;
             }
             return asStream;
         } catch (RuntimeException error) {
@@ -224,9 +208,8 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
      */
     public javax.jcr.Binary getBinary() throws RepositoryException {
         try {
-            // Binary binary = valueFactories.getBinaryFactory().create(value);
-            // return new JcrBinary(binary);
-            return null;
+            Binary binary = valueFactories.getBinaryFactory().create(value);
+            return new JcrBinary(binary);
         } catch (RuntimeException error) {
             throw createValueFormatException(InputStream.class);
         }
@@ -238,10 +221,8 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
      * @see javax.jcr.Value#getString()
      */
     public String getString() throws ValueFormatException {
-        nonInputStreamConsumed();
         try {
             String convertedValue = valueFactories.getStringFactory().create(value);
-            state = State.NON_INPUT_STREAM_CONSUMED;
             return convertedValue;
         } catch (RuntimeException error) {
             throw createValueFormatException(String.class);
@@ -469,12 +450,6 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
                 assert false : "Unexpected JCR property type " + type;
                 // This should still throw an exception even if assertions are turned off
                 throw new IllegalStateException("Invalid property type " + type);
-        }
-    }
-
-    void nonInputStreamConsumed() {
-        if (state == State.INPUT_STREAM_CONSUMED) {
-            throw new IllegalStateException(JcrI18n.inputStreamConsumed.text());
         }
     }
 

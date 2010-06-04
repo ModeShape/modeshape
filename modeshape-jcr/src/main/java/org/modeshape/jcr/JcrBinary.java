@@ -60,8 +60,12 @@ class JcrBinary implements javax.jcr.Binary, org.modeshape.jcr.api.Binary {
      */
     @Override
     public long getSize() {
-        this.binary.acquire();
-        return this.binary.getSize();
+        try {
+            this.binary.acquire();
+            return this.binary.getSize();
+        } finally {
+            this.binary.release();
+        }
     }
 
     /**
@@ -82,12 +86,19 @@ class JcrBinary implements javax.jcr.Binary, org.modeshape.jcr.api.Binary {
     @Override
     public int read( byte[] b,
                      long position ) throws IOException {
-        this.binary.acquire();
+        if (getSize() <= position) return -1;
         InputStream stream = null;
         IOException error = null;
         try {
-            stream = this.binary.getStream();
-            return stream.read(b, (int)position, b.length);
+            stream = getStream();
+            // Read/skip the next 'position' bytes ...
+            long skip = position;
+            while (skip > 0) {
+                long skipped = stream.skip(skip);
+                if (skipped <= 0) return -1;
+                skip -= skipped;
+            }
+            return stream.read(b);
         } catch (IOException e) {
             error = e;
             throw e;

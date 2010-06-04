@@ -30,7 +30,6 @@ import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 import javax.jcr.Binary;
-import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -346,7 +345,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
     }
 
     @Override
-    public javax.jcr.Property getProperty() throws ItemNotFoundException, ValueFormatException, RepositoryException {
+    public javax.jcr.Property getProperty() throws ValueFormatException, RepositoryException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 

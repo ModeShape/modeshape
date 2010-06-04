@@ -781,7 +781,7 @@ public class JcrRequestProcessor extends RequestProcessor {
             try {
                 switch (value.getType()) {
                     case javax.jcr.PropertyType.BINARY:
-                        return factories.getBinaryFactory().create(value.getStream(), 0);
+                        return factories.getBinaryFactory().create(value.getBinary().getStream(), 0);
                     case javax.jcr.PropertyType.BOOLEAN:
                         return factories.getBooleanFactory().create(value.getBoolean());
                     case javax.jcr.PropertyType.DATE:
@@ -835,11 +835,13 @@ public class JcrRequestProcessor extends RequestProcessor {
             Path path = factories.getPathFactory().create(pathStr);
 
             // Does the node have a UUID ...
-            if (node.isNodeType("mix:referenceable")) {
-                String uuidStr = node.getUUID();
-                if (uuidStr != null) {
+            String uuidStr = node.getIdentifier();
+            if (uuidStr != null) {
+                try {
                     UUID uuid = UUID.fromString(uuidStr);
                     return Location.create(path, uuid);
+                } catch (IllegalArgumentException e) {
+                    // Ignore, since the identifier is not a valid UUID
                 }
             }
             return Location.create(path);
@@ -863,7 +865,7 @@ public class JcrRequestProcessor extends RequestProcessor {
             UUID uuid = location.getUuid();
             if (uuid != null) {
                 try {
-                    return session.getNodeByUUID(uuid.toString());
+                    return session.getNodeByIdentifier(uuid.toString());
                 } catch (ItemNotFoundException e) {
                     if (!location.hasPath()) {
                         String msg = JcrConnectorI18n.unableToFindNodeWithUuid.text(getSourceName(), uuid);
@@ -969,7 +971,7 @@ public class JcrRequestProcessor extends RequestProcessor {
         }
 
         protected Value convertToJcrValue( PropertyType graphType,
-                                           Object graphValue ) {
+                                           Object graphValue ) throws RepositoryException {
             if (graphValue == null) return null;
             switch (graphType) {
                 case DECIMAL:
@@ -998,7 +1000,8 @@ public class JcrRequestProcessor extends RequestProcessor {
                     Binary binary = factories.getBinaryFactory().create(graphValue);
                     try {
                         binary.acquire();
-                        return jcrValueFactory.createValue(binary.getStream());
+                        javax.jcr.Binary jcrBinary = jcrValueFactory.createBinary(binary.getStream());
+                        return jcrValueFactory.createValue(jcrBinary);
                     } finally {
                         binary.release();
                     }

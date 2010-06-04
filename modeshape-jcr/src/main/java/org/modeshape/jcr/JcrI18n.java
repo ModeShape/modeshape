@@ -43,8 +43,6 @@ public final class JcrI18n {
     public static I18n mustBeInPrivilegedAction;
     public static I18n credentialsMustReturnLoginContext;
     public static I18n defaultWorkspaceName;
-    public static I18n inputStreamConsumed;
-    public static I18n nonInputStreamConsumed;
     public static I18n pathNotFound;
     public static I18n pathNotFoundRelativeTo;
     public static I18n pathCannotHaveSameNameSiblingIndex;
