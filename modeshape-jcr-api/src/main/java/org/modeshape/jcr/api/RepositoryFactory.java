@@ -1,11 +1,15 @@
 package org.modeshape.jcr.api;
 
 import java.util.Map;
+<<<<<<< HEAD
 import java.util.concurrent.TimeUnit;
+=======
+>>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
 
 public interface RepositoryFactory {
 
     public javax.jcr.Repository getRepository( Map<String, String> parameters );
+<<<<<<< HEAD
 
     /**
      * Begin the shutdown process for all the {@code JcrEngine JcrEngines} created by calls to {@link #getRepository(Map)}.
@@ -55,4 +59,6 @@ public interface RepositoryFactory {
     public boolean shutdown( long timeout,
                           TimeUnit unit ) throws InterruptedException;
 
+=======
+>>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
 }

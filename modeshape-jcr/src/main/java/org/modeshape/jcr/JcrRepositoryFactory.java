@@ -1,15 +1,27 @@
 package org.modeshape.jcr;
 
+<<<<<<< HEAD
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+=======
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+>>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
+<<<<<<< HEAD
 import java.util.concurrent.TimeUnit;
+=======
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+>>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.naming.InitialContext;
@@ -23,6 +35,7 @@ import org.xml.sax.SAXException;
 /**
  * Service provider for the JCR2 {@code RepositoryFactory} interface. This class provides a single public method,
  * {@link #getRepository(Map)}, that allows for a runtime link to a ModeShape JCR repository.
+<<<<<<< HEAD
  * <p>
  * The canonical way to get a reference to this class is to use the ServiceLocator:
  * 
@@ -53,6 +66,8 @@ import org.xml.sax.SAXException;
  * file:src/test/resources/configRepository.xml?repositoryName=MyRepository}) OR a {@link JcrEngine} stored in the JNDI tree
  * (e.g., {@code jndi://name/of/JcrEngine/resource?repositoryName=MyRepository}).
  * </p>
+=======
+>>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
  * 
  * @see #getRepository(Map)
  * @see RepositoryFactory#getRepository(Map)
@@ -62,6 +77,12 @@ public class JcrRepositoryFactory implements RepositoryFactory {
 
     private static final Logger LOG = Logger.getLogger(JcrRepositoryFactory.class);
 
+<<<<<<< HEAD
+=======
+    /** The pattern for performing a partial parsing of the ModeShape JCR URL */
+    private static final Pattern URL_PATTERN = Pattern.compile("(\\w+):(\\w+):(\\w+):\\/\\/(.*)");
+
+>>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
     /**
      * A map of configuration file locations to existing engines. This map helps ensure that JcrEngines are not recreated with
      * every call to {@link #getRepository(Map)}.
@@ -71,17 +92,26 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     /** The name of the key for the ModeShape JCR URL in the parameter map */
     public static final String URL = "org.modeshape.jcr.URL";
 
+<<<<<<< HEAD
     /** The name of the URL parameter that specifies the repository name. */
     public static final String REPOSITORY_NAME_PARAM = "repositoryName";
 
+=======
+>>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
     /**
      * Returns a reference to the appropriate repository for the given parameter map, if one exists. Although the {@code
      * parameters} map can have any number of entries, this method only considers the entry with the key JcrRepositoryFactory#URL.
      * <p>
+<<<<<<< HEAD
      * The value of this key is treated as a URL with the format {@code PROTOCOL://PATH[?repositoryName=REPOSITORY_NAME]} where
      * PROTOCOL is "jndi" or "file", PATH is the JNDI name of the JcrEngine or the path to the configuration file, and
      * REPOSITORY_NAME is the name of the repository to return if there is more than one JCR repository in the given JcrEngine or
      * configuration file.
+=======
+     * The value of this key is treated as a URL with the format {@code jcr:modeshape:TYPE://PATH[?REPOSITORY_NAME]} where TYPE is
+     * "jndi" or "file", PATH is the JNDI name of the JcrEngine or the path to the configuration file, and REPOSITORY_NAME is the
+     * name of the repository to return if there is more than one JCR repository in the given JcrEngine or configuration file.
+>>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
      * </p>
      * 
      * @param parameters a map of parameters to use to look up the repository; may be null
@@ -107,6 +137,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
             return null;
         }
 
+<<<<<<< HEAD
         URL url;
         try {
             url = new URL(rawUrl);
@@ -146,6 +177,42 @@ public class JcrRepositoryFactory implements RepositoryFactory {
             }
         }
 
+=======
+        ParsedUrl parsedUrl = parse(rawUrl);
+        if (parsedUrl == null) {
+            LOG.debug("Could not parse provided URL: " + rawUrl);
+            return null;
+        }
+
+        if (!"jcr".equals(parsedUrl.protocol)) {
+            LOG.debug("Invalid protocol '" + parsedUrl.protocol + "', expected 'jcr'");
+            return null;
+        }
+        if (!"modeshape".equals(parsedUrl.vendor)) {
+            LOG.debug("Invalid vendor '" + parsedUrl.vendor + "', expected 'modeshape'");
+            return null;
+        }
+
+        JcrEngine engine = null;
+
+        if ("jndi".equals(parsedUrl.type)) {
+            engine = getEngineFromJndi(parsedUrl.path, parameters);
+            if (engine == null) {
+                LOG.debug("Could not find engine in JNDI with name: " + parsedUrl.path);
+            }
+        } else if ("file".equals(parsedUrl.type)) {
+            engine = getEngineFromConfigFile(parsedUrl.path);
+            if (engine == null) {
+                LOG.debug("Could not load configuration file from file system or claspath with path: " + parsedUrl.path);
+            }
+        } else {
+            LOG.debug("Invalid type '" + parsedUrl.type + "', expected 'file' or 'jndi'");
+        }
+
+        if (engine == null) return null;
+
+        String repositoryName = parsedUrl.repositoryName;
+>>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
         if (repositoryName == null) {
             Set<String> repositoryNames = engine.getRepositoryNames();
 
@@ -173,6 +240,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * If a {@link JcrEngine} has already been loaded by this class for the given configuration file, that engine will be reused.
      * </p>
      * 
+<<<<<<< HEAD
      * @param configUrl the URL to the file in the file system or relative to the classpath; may not be null
      * @return a {@code JcrEngine} that was initialized from the given configuration file or null if no engine could be
      *         initialized from that file without errors.
@@ -233,6 +301,53 @@ public class JcrRepositoryFactory implements RepositoryFactory {
             ENGINES.put(configKey, engine);
             return engine;
         }
+=======
+     * @param configFile the path to the file in the file system or relative to the classpath; may not be null
+     * @return a {@code JcrEngine} that was initalized from the given configuration file or null if no engine could be initialized
+     *         from that file without errors.
+     */
+    private static synchronized JcrEngine getEngineFromConfigFile( String configFile ) {
+        JcrEngine engine = ENGINES.get(configFile);
+        if (engine != null) return engine;
+
+        JcrConfiguration config = new JcrConfiguration();
+        InputStream in = JcrRepositoryFactory.class.getResourceAsStream(configFile);
+        try {
+            if (in == null) {
+                File file = new File(configFile);
+                if (!file.exists()) return null;
+
+                in = new FileInputStream(file);
+            }
+
+            config.loadFrom(in);
+        } catch (IOException ioe) {
+            LOG.warn(ioe, JcrI18n.couldNotStartEngine);
+        } catch (SAXException se) {
+            LOG.warn(se, JcrI18n.couldNotStartEngine);
+        } finally {
+            try {
+                if (in != null) in.close();
+            } catch (IOException ignore) {
+            }
+
+        }
+        engine = config.build();
+        engine.start();
+
+        if (engine.getProblems().hasProblems()) {
+            LOG.warn(JcrI18n.couldNotStartEngine);
+            for (Problem problem : engine.getProblems()) {
+                LOG.warn(problem.getMessage(), problem.getParameters());
+            }
+
+            engine.shutdown();
+            return null;
+        }
+
+        ENGINES.put(configFile, engine);
+        return engine;
+>>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
     }
 
     /**
@@ -275,6 +390,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         }
     }
 
+<<<<<<< HEAD
     @Override
     public void shutdown() {
         synchronized (ENGINES) {
@@ -302,5 +418,39 @@ public class JcrRepositoryFactory implements RepositoryFactory {
             ENGINES.clear();
             return allShutDownClean;
         }
+=======
+    private ParsedUrl parse( String url ) {
+        Matcher match = URL_PATTERN.matcher(url);
+
+        if (!match.matches()) return null;
+
+        ParsedUrl results = new ParsedUrl();
+        results.protocol = match.group(1);
+        results.vendor = match.group(2);
+        results.type = match.group(3);
+
+        String rawPath = match.group(4);
+        int ind = rawPath.indexOf('?');
+        if (ind > -1) {
+            results.path = rawPath.substring(0, ind);
+
+            if (ind < rawPath.length() - 1) {
+                results.repositoryName = rawPath.substring(ind + 1);
+            }
+        } else {
+            results.path = rawPath;
+            results.repositoryName = null;
+        }
+
+        return results;
+    }
+
+    protected class ParsedUrl {
+        protected String vendor;
+        protected String protocol;
+        protected String type;
+        protected String path;
+        protected String repositoryName;
+>>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
     }
 }
