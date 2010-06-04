@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.nodetype;
 
-import javax.jcr.RepositoryException;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.property.Name;
@@ -32,7 +31,7 @@ import org.modeshape.graph.property.Name;
  * An exception that captures the error condition that a referenced node type already exists.
  */
 @Immutable
-public class NodeTypeExistsException extends RepositoryException {
+public class NodeTypeExistsException extends javax.jcr.nodetype.NodeTypeExistsException {
 
     /**
      */

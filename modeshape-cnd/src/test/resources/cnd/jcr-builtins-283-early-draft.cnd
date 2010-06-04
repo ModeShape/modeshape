@@ -1,13 +1,18 @@
 <jcr='http://www.jcp.org/jcr/1.0'>
 <nt='http://www.jcp.org/jcr/nt/1.0'>
 <mix='http://www.jcp.org/jcr/mix/1.0'>
-<sv='http://www.jcp.org/jcr/sv/1.0'>
+<mode = "http://www.modeshape.org/1.0">
+<modeint = "http://www.modeshape.org/internal/1.0">
 
 // ------------------------------------------------------------------------
 //                             Pre-defined Node Types
 // ------------------------------------------------------------------------
 
-[nt:base] abstract 
+[mode:defined] mixin
+- modeint:nodeDefinition (string) protected ignore
+- modeint:multiValuedProperties (string) multiple protected ignore
+
+[nt:base] > mode:defined abstract
   - jcr:primaryType (name) mandatory autocreated 
       protected compute 
   - jcr:mixinTypes (name) protected multiple compute

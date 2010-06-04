@@ -31,6 +31,7 @@ import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.i18n.I18n;
@@ -470,10 +471,10 @@ class WorkspaceLockManager {
         }
 
         @SuppressWarnings( "synthetic-access" )
-        public org.modeshape.jcr.api.Lock lockFor( SessionCache cache ) throws RepositoryException {
+        public Lock lockFor( SessionCache cache ) throws RepositoryException {
             final AbstractJcrNode node = cache.findJcrNode(Location.create(nodeUuid));
             final JcrSession session = cache.session();
-            return new org.modeshape.jcr.api.Lock() {
+            return new Lock() {
                 public String getLockOwner() {
                     return lockOwner;
                 }

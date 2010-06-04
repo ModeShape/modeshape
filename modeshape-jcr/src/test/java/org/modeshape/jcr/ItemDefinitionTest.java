@@ -33,13 +33,14 @@ import java.util.Collections;
 import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NameFactory;
-import org.modeshape.graph.property.basic.BasicName;
-import org.modeshape.jcr.nodetype.NodeTypeTemplate;
+import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NameFactory;
+import org.modeshape.graph.property.basic.BasicName;
 
 /**
  * BDD test cases for property and child node definition inheritance. Could be part of RepositoryNodeTypeManagerTest, but split
@@ -192,7 +193,7 @@ public class ItemDefinitionTest extends AbstractSessionTest {
     */
 
     @Override
-    protected List<NodeTypeTemplate> getTestTypes() {
+    protected List<NodeTypeTemplate> getTestTypes() throws ConstraintViolationException {
         NodeTypeTemplate nodeA = new JcrNodeTypeTemplate(context);
         nodeA.setName("modetest:nodeA");
 
@@ -216,7 +217,7 @@ public class ItemDefinitionTest extends AbstractSessionTest {
 
         NodeTypeTemplate nodeC = new JcrNodeTypeTemplate(context);
         nodeC.setName("modetest:nodeC");
-        nodeC.setDeclaredSupertypeNames(new String[] {"modetest:nodeB"});
+        nodeC.setDeclaredSuperTypeNames(new String[] {"modetest:nodeB"});
 
         JcrPropertyDefinitionTemplate nodeCSingleProp1 = new JcrPropertyDefinitionTemplate(context);
         nodeCSingleProp1.setName("modetest:singleProp1");

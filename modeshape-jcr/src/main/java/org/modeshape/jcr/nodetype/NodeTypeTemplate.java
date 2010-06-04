@@ -32,7 +32,7 @@ import net.jcip.annotations.NotThreadSafe;
  * adds setter methods for the various attributes.
  */
 @NotThreadSafe
-public interface NodeTypeTemplate extends NodeTypeDefinition {
+public interface NodeTypeTemplate extends javax.jcr.nodetype.NodeTypeTemplate {
 
     /**
      * Set the name of the node type

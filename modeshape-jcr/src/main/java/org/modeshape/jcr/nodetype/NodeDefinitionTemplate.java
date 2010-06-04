@@ -24,7 +24,6 @@
 package org.modeshape.jcr.nodetype;
 
 import javax.jcr.Node;
-import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.version.OnParentVersionAction;
 import net.jcip.annotations.NotThreadSafe;
 
@@ -33,10 +32,10 @@ import net.jcip.annotations.NotThreadSafe;
  * href="http://jcp.org/en/jsr/detail?id=283">JSR-283</a>. This interface extends the standard {@link NodeTypeDefinition}
  * interface and adds setter methods for the various attributes.
  * 
- * @see NodeTypeTemplate#getDeclaredNodeDefinitions()
+ * @see javax.jcr.nodetype.NodeTypeTemplate#getNodeDefinitionTemplates()
  */
 @NotThreadSafe
-public interface NodeDefinitionTemplate extends NodeDefinition {
+public interface NodeDefinitionTemplate extends javax.jcr.nodetype.NodeDefinitionTemplate {
 
     /**
      * Set the name of this child node definition.

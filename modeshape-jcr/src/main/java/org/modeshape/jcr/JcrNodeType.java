@@ -727,4 +727,5 @@ class JcrNodeType implements NodeType {
 
         return false;
     }
+
 }

@@ -42,15 +42,18 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Workspace;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
+import javax.jcr.lock.LockManager;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.observation.ObservationManager;
 import javax.jcr.query.QueryManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
+import javax.jcr.version.VersionManager;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
@@ -78,7 +81,6 @@ import org.modeshape.jcr.JcrContentHandler.SaveMode;
 import org.modeshape.jcr.SessionCache.JcrNodePayload;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
 import org.modeshape.jcr.WorkspaceLockManager.ModeShapeLock;
-import org.modeshape.jcr.api.LockManager;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -744,6 +746,30 @@ class JcrWorkspace implements Workspace {
         }
 
         versionManager().restore(versions, removeExisting);
+    }
+
+    @Override
+    public void createWorkspace( String name,
+                                 String srcWorkspace )
+        throws AccessDeniedException, UnsupportedRepositoryOperationException, NoSuchWorkspaceException, RepositoryException {
+        throw new UnsupportedRepositoryOperationException();
+    }
+
+    @Override
+    public void createWorkspace( String name )
+        throws AccessDeniedException, UnsupportedRepositoryOperationException, RepositoryException {
+        throw new UnsupportedRepositoryOperationException();
+    }
+
+    @Override
+    public void deleteWorkspace( String name )
+        throws AccessDeniedException, UnsupportedRepositoryOperationException, NoSuchWorkspaceException, RepositoryException {
+        throw new UnsupportedRepositoryOperationException();
+    }
+
+    @Override
+    public VersionManager getVersionManager() throws UnsupportedRepositoryOperationException, RepositoryException {
+        return versionManager;
     }
 
 }

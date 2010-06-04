@@ -31,16 +31,17 @@ import java.util.Collections;
 import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinition;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.jcr.nodetype.NodeTypeTemplate;
-import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
+import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NamespaceRegistry;
 
 /**
  * Indirectly tests the JcrConstaintCheckerFactory through {@link JcrPropertyDefinition#satisfiesConstraints(Value)}, which
@@ -569,7 +570,7 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
     }
 
     @Override
-    protected List<NodeTypeTemplate> getTestTypes() {
+    protected List<NodeTypeTemplate> getTestTypes() throws ConstraintViolationException {
         NodeTypeTemplate constrainedType = new JcrNodeTypeTemplate(this.context);
         constrainedType.setName("modetest:constrainedType");
 

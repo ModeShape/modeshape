@@ -24,6 +24,7 @@
 package org.modeshape.jcr;
 
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -36,7 +37,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import javax.jcr.AccessDeniedException;
+import javax.jcr.Binary;
 import javax.jcr.InvalidItemStateException;
+import javax.jcr.InvalidLifecycleTransitionException;
 import javax.jcr.Item;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
@@ -51,6 +54,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
@@ -67,7 +71,6 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
@@ -82,7 +85,6 @@ import org.modeshape.graph.session.GraphSession.PropertyInfo;
 import org.modeshape.jcr.SessionCache.JcrNodePayload;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
 import org.modeshape.jcr.SessionCache.NodeEditor;
-import org.modeshape.jcr.api.Lock;
 
 /**
  * An abstract implementation of the JCR {@link javax.jcr.Node} interface. Instances of this class are created and managed by the
@@ -172,7 +174,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
     final JcrValue valueFrom( InputStream value ) {
         ValueFactories factories = cache.factories();
-        Binary binary = factories.getBinaryFactory().create(value);
+        org.modeshape.graph.property.Binary binary = factories.getBinaryFactory().create(value);
         return new JcrValue(factories, cache, PropertyType.DATE, binary);
     }
 
@@ -1417,6 +1419,30 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     /**
      * {@inheritDoc}
      * 
+     * @see javax.jcr.Node#setProperty(java.lang.String, Binary)
+     */
+    @Override
+    public Property setProperty( String name,
+                                 Binary value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return editor().setProperty(nameFrom(name), valueFrom(PropertyType.BINARY, value));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#setProperty(java.lang.String, BigDecimal)
+     */
+    @Override
+    public Property setProperty( String name,
+                                 BigDecimal value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        return editor().setProperty(nameFrom(name), valueFrom(PropertyType.DECIMAL, value));
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see javax.jcr.Node#setProperty(java.lang.String, java.util.Calendar)
      */
     public final Property setProperty( String name,
@@ -2129,5 +2155,54 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     @Override
     public int hashCode() {
         return HashCode.compute(cache, location);
+    }
+
+    @Override
+    public void followLifecycleTransition( String transition )
+        throws UnsupportedRepositoryOperationException, InvalidLifecycleTransitionException, RepositoryException {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public String[] getAllowedLifecycleTransistions() throws UnsupportedRepositoryOperationException, RepositoryException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getIdentifier() throws RepositoryException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public NodeIterator getSharedSet() throws RepositoryException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PropertyIterator getWeakReferences() throws RepositoryException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public PropertyIterator getWeakReferences( String name ) throws RepositoryException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void removeShare() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void removeSharedSet() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
+        // TODO Auto-generated method stub
+
     }
 }

@@ -39,6 +39,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.query.InvalidQueryException;
@@ -47,6 +48,7 @@ import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
+import javax.jcr.query.qom.QueryObjectModelFactory;
 import javax.jcr.version.VersionException;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
@@ -406,6 +408,27 @@ class JcrQueryManager implements QueryManager {
             return language + " -> " + statement + "\n" + StringUtil.createString(' ', Math.min(language.length() - 3, 0))
                    + "AQM -> " + query;
         }
+
+        @Override
+        public void bindValue( String varName,
+                               Value value ) throws IllegalArgumentException, RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public String[] getBindVariableNames() throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public void setLimit( long limit ) {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public void setOffset( long offset ) {
+            throw new IllegalStateException();
+        }
     }
 
     @NotThreadSafe
@@ -453,6 +476,27 @@ class JcrQueryManager implements QueryManager {
         @Override
         public String toString() {
             return language + " -> " + statement;
+        }
+
+        @Override
+        public void bindValue( String varName,
+                               Value value ) throws IllegalArgumentException, RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public String[] getBindVariableNames() throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public void setLimit( long limit ) {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public void setOffset( long offset ) {
+            throw new IllegalStateException();
         }
     }
 
@@ -944,6 +988,31 @@ class JcrQueryManager implements QueryManager {
             }
             return values;
         }
+
+        @Override
+        public Node getNode() throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public String getPath() throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public String getPath( String selectorName ) throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public double getScore() throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public double getScore( String selectorName ) throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
     }
 
     protected static class MultiSelectorQueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
@@ -1021,6 +1090,31 @@ class JcrQueryManager implements QueryManager {
                 }
             }
             return values;
+        }
+
+        @Override
+        public Node getNode() throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public String getPath() throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public String getPath( String selectorName ) throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public double getScore() throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public double getScore( String selectorName ) throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
         }
     }
 
@@ -1208,5 +1302,10 @@ class JcrQueryManager implements QueryManager {
             }
             return super.getValue(columnName);
         }
+    }
+
+    @Override
+    public QueryObjectModelFactory getQOMFactory() {
+        throw new IllegalStateException();
     }
 }

@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.ServiceLoader;
 import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 import org.junit.Test;
 import org.modeshape.jcr.api.RepositoryFactory;
 
@@ -19,11 +20,7 @@ public class JcrRepositoryFactoryTest {
 
     @Test
     public void shouldReturnRepositoryFromConfigurationFile() {
-<<<<<<< HEAD
         url = "file:src/test/resources/tck/default/configRepository.xml?repositoryName=Test Repository Source";
-=======
-        url = "jcr:modeshape:file://src/test/resources/tck/default/configRepository.xml?Test Repository Source";
->>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
         params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
 
         repository = repositoryFor(params);
@@ -32,11 +29,7 @@ public class JcrRepositoryFactoryTest {
 
     @Test
     public void shouldReturnRepositoryFromConfigurationClasspathResource() {
-<<<<<<< HEAD
         url = "file:///tck/default/configRepository.xml?repositoryName=Test Repository Source";
-=======
-        url = "jcr:modeshape:file:///tck/default/configRepository.xml?Test Repository Source";
->>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
         params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
 
         repository = repositoryFor(params);
@@ -45,11 +38,7 @@ public class JcrRepositoryFactoryTest {
 
     @Test
     public void shouldReturnSameRepositoryFromSameConfigurationFile() {
-<<<<<<< HEAD
         url = "file:src/test/resources/tck/default/configRepository.xml?repositoryName=Test Repository Source";
-=======
-        url = "jcr:modeshape:file://src/test/resources/tck/default/configRepository.xml?Test Repository Source";
->>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
         params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
 
         repository = repositoryFor(params);
@@ -63,39 +52,19 @@ public class JcrRepositoryFactoryTest {
 
     @Test
     public void shouldNotReturnRepositoryForInvalidUrl() {
-<<<<<<< HEAD
         url = "file:?Test Repository Source";
         assertThat(repositoryFor(Collections.singletonMap(JcrRepositoryFactory.URL, url)), is(nullValue()));
 
         url = "file:src/test/resources/tck/default/nonExistentFile";
         assertThat(repositoryFor(Collections.singletonMap(JcrRepositoryFactory.URL, url)), is(nullValue()));
-=======
-        url = "jcr:modeshape:file://?Test Repository Source";
-        assertThat(repositoryFor(Collections.singletonMap(JcrRepositoryFactory.URL, url)), is(nullValue()));
 
-        url = "jcr:modeshape:file://src/test/resources/tck/default/nonExistentFile";
+        url = "file:src/test/resources/tck/default/nonExistentFile";
         assertThat(repositoryFor(Collections.singletonMap(JcrRepositoryFactory.URL, url)), is(nullValue()));
-
-        url = "jcr:modeshape:badProtocol://src/test/resources/tck/default/configRepository.xml";
-        assertThat(repositoryFor(Collections.singletonMap(JcrRepositoryFactory.URL, url)), is(nullValue()));
-
-        url = "jcr:wrongVendor:file://src/test/resources/tck/default/configRepository.xml";
-        assertThat(repositoryFor(Collections.singletonMap(JcrRepositoryFactory.URL, url)), is(nullValue()));
-
-        url = "other:modeshape:file://src/test/resources/tck/default/configRepository.xml";
-        assertThat(repositoryFor(Collections.singletonMap(JcrRepositoryFactory.URL, url)), is(nullValue()));
-
-        
->>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
     }
 
     @Test
     public void shouldReturnRepositoryWithoutNameIfOnlyOneRepositoryInEngine() {
-<<<<<<< HEAD
         url = "file:src/test/resources/tck/default/configRepository.xml";
-=======
-        url = "jcr:modeshape:file://src/test/resources/tck/default/configRepository.xml";
->>>>>>> MODE-770 Add Support for JCR2 RepositoryFactory
         params = Collections.singletonMap(JcrRepositoryFactory.URL, url);
 
         repository = repositoryFor(params);
@@ -106,8 +75,12 @@ public class JcrRepositoryFactoryTest {
     protected Repository repositoryFor( Map<String, String> parameters ) {
         Repository repository;
         for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
-            repository = factory.getRepository(parameters);
-            if (repository != null) return repository;
+            try {
+                repository = factory.getRepository(parameters);
+                if (repository != null) return repository;
+            } catch (RepositoryException re) {
+                throw new IllegalStateException(re);
+            }
         }
 
         return null;

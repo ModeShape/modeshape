@@ -23,20 +23,11 @@
  */
 package org.modeshape.jcr.api;
 
-import javax.jcr.RepositoryException;
 
 /**
  * Replicates JCR 2.0's javax.jcr.Value interface with the ability to return a Binary representation.
  */
 public interface Value extends javax.jcr.Value {
 
-    /**
-     * Returns a Binary representation of this value. The Binary object in turn provides methods to access the binary data itself.
-     * Uses the standard conversion to binary (see JCR specification).
-     * 
-     * @return a Binary representation of this value.
-     * @throws RepositoryException if an error occurs
-     */
-    Binary getBinary() throws RepositoryException;
 
 }

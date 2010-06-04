@@ -22,13 +22,13 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeTypeTemplate;
+import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.jackrabbit.test.AbstractJCRTest;
-import org.modeshape.jcr.nodetype.NodeTypeTemplate;
-import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
 
 /**
  * Additional ModeShape tests that check for JCR compliance.
@@ -103,7 +103,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     private void testRemoveProperty( Session session ) throws Exception {
-        Session localAdmin = helper.getRepository().login(helper.getSuperuserCredentials(), session.getWorkspace().getName());
+        Session localAdmin = getHelper().getRepository().login(getHelper().getSuperuserCredentials(),
+                                                               session.getWorkspace().getName());
 
         assertEquals(session.getWorkspace().getName(), superuser.getWorkspace().getName());
 
@@ -160,7 +161,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      * @throws Exception
      */
     public void testShouldAllowReadOnlySessionToRead() throws Exception {
-        session = helper.getReadOnlySession();
+        session = getHelper().getReadOnlySession();
         testRead(session);
     }
 
@@ -170,7 +171,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      * @throws Exception
      */
     public void testShouldNotAllowReadOnlySessionToWrite() throws Exception {
-        session = helper.getReadOnlySession();
+        session = getHelper().getReadOnlySession();
         try {
             testAddNode(session);
             fail("Read-only sessions should not be able to add nodes");
@@ -199,7 +200,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      * @throws Exception
      */
     public void testShouldNotAllowReadOnlySessionToAdmin() throws Exception {
-        session = helper.getReadOnlySession();
+        session = getHelper().getReadOnlySession();
         try {
             testRegisterNamespace(session);
             fail("Read-only sessions should not be able to register namespaces");
@@ -218,7 +219,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      * @throws Exception
      */
     public void testShouldAllowReadWriteSessionToRead() throws Exception {
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
         testRead(session);
     }
 
@@ -228,7 +229,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      * @throws Exception
      */
     public void testShouldAllowReadWriteSessionToWrite() throws Exception {
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
         testWrite(session);
     }
 
@@ -238,7 +239,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      * @throws Exception
      */
     public void testShouldNotAllowReadWriteSessionToAdmin() throws Exception {
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
         try {
             testRegisterNamespace(session);
             fail("Read-write sessions should not be able to register namespaces");
@@ -257,7 +258,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      * @throws Exception
      */
     public void testShouldAllowAdminSessionToRead() throws Exception {
-        session = helper.getSuperuserSession();
+        session = getHelper().getSuperuserSession();
         testRead(session);
     }
 
@@ -267,7 +268,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      * @throws Exception
      */
     public void testShouldAllowAdminSessionToWrite() throws Exception {
-        session = helper.getSuperuserSession();
+        session = getHelper().getSuperuserSession();
         testWrite(session);
     }
 
@@ -277,7 +278,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      * @throws Exception
      */
     public void testShouldAllowAdminSessionToAdmin() throws Exception {
-        session = helper.getSuperuserSession();
+        session = getHelper().getSuperuserSession();
         testAdmin(session);
     }
 
@@ -289,7 +290,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      */
     public void testShouldMapReadRolesToWorkspacesWhenSpecified() throws Exception {
         Credentials creds = new SimpleCredentials("defaultonly", "defaultonly".toCharArray());
-        session = helper.getRepository().login(creds);
+        session = getHelper().getRepository().login(creds);
 
         testRead(session);
 
@@ -298,7 +299,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         // If the repo only supports one workspace, stop here
         if ("default".equals(this.workspaceName)) return;
 
-        session = helper.getRepository().login(creds, this.workspaceName);
+        session = getHelper().getRepository().login(creds, this.workspaceName);
         testRead(session);
         try {
             testWrite(session);
@@ -316,14 +317,14 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      */
     public void testShouldMapWriteRolesToWorkspacesWhenSpecified() throws Exception {
         Credentials creds = new SimpleCredentials("defaultonly", "defaultonly".toCharArray());
-        session = helper.getRepository().login(creds);
+        session = getHelper().getRepository().login(creds);
 
         testRead(session);
         testWrite(session);
 
         session.logout();
 
-        session = helper.getRepository().login(creds, "otherWorkspace");
+        session = getHelper().getRepository().login(creds, "otherWorkspace");
         testRead(session);
         try {
             testWrite(session);
@@ -343,7 +344,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         Credentials creds = new SimpleCredentials("noaccess", "noaccess".toCharArray());
 
         try {
-            session = helper.getRepository().login(creds);
+            session = getHelper().getRepository().login(creds);
             fail("User 'noaccess' with no access to the default workspace should not be able to log into that workspace");
         } catch (LoginException le) {
             // Expected
@@ -352,7 +353,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         // If the repo only supports one workspace, stop here
         if ("default".equals(this.workspaceName)) return;
 
-        session = helper.getRepository().login(creds, this.workspaceName);
+        session = getHelper().getRepository().login(creds, this.workspaceName);
 
         String[] workspaceNames = session.getWorkspace().getAccessibleWorkspaceNames();
 
@@ -363,7 +364,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     public void testShouldCopyFromAnotherWorkspace() throws Exception {
-        session = helper.getSuperuserSession("otherWorkspace");
+        session = getHelper().getSuperuserSession("otherWorkspace");
         String nodetype1 = this.getProperty("nodetype");
         Node node1 = session.getRootNode().addNode(nodeName1, nodetype1);
         node1.addNode(nodeName2, nodetype1);
@@ -389,7 +390,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
      * @throws Exception if an error occurs
      */
     public void testShouldNotCloneIfItWouldViolateTypeSemantics() throws Exception {
-        session = helper.getSuperuserSession("otherWorkspace");
+        session = getHelper().getSuperuserSession("otherWorkspace");
         assertThat(session.getWorkspace().getName(), is("otherWorkspace"));
 
         String nodetype1 = this.getProperty("nodetype");
@@ -453,7 +454,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     public void testAdminUserCanBreakOthersLocks() throws Exception {
         String lockNodeName = "lockTestNode";
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
         Node root = session.getRootNode();
         Node lockNode = root.addNode(lockNodeName);
         lockNode.addMixin("mix:lockable");
@@ -462,7 +463,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         lockNode.lock(false, false);
         assertThat(lockNode.isLocked(), is(true));
 
-        Session superuser = helper.getSuperuserSession();
+        Session superuser = getHelper().getSuperuserSession();
         root = superuser.getRootNode();
         lockNode = root.getNode(lockNodeName);
 
@@ -474,7 +475,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     public void testShouldCreateProperVersionHistoryWhenSavingVersionedNode() throws Exception {
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
         Node node = session.getRootNode().addNode("/test", "nt:unstructured");
         node.addMixin("mix:versionable");
         session.save();
@@ -503,7 +504,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     public void testShouldCreateProperStructureForPropertiesOnTheFirstCheckInOfANode() throws Exception {
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
         Node node = session.getRootNode().addNode("/checkInTest", "modetest:versionTest");
         session.getRootNode().save();
 
@@ -566,7 +567,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     public void testShouldCreateProperHistoryForNodeWithCopySemantics() throws Exception {
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
         Node node = session.getRootNode().addNode("/checkInTest", "modetest:versionTest");
         session.getRootNode().save();
 
@@ -608,7 +609,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     public void testShouldIgnoreAbortSemanticsOfChildNode() throws Exception {
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
         Node node = session.getRootNode().addNode("/checkInTest", "modetest:versionTest");
         session.save();
 
@@ -640,7 +641,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     public void testShouldCreateProperHistoryForVersionableChildOfNodeWithVersionSemantics() throws Exception {
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
         Node node = session.getRootNode().addNode("/checkInTest", "modetest:versionTest");
         session.save();
 
@@ -685,7 +686,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     public void testShouldRestorePropertiesOnVersionableNode() throws Exception {
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
         Node node = session.getRootNode().addNode("/checkInTest", "modetest:versionTest");
         session.getRootNode().save();
 
@@ -732,7 +733,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     public void testShouldAllowDeletingNodesWhenLargePropertyIsPresent() throws Exception {
         // q.v. MODE-693
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
 
         Node root = session.getRootNode();
 
@@ -771,7 +772,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     public void testShouldReturnSilentlyWhenCheckingOutACheckedOutNode() throws Exception {
         // q.v., MODE-704
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
 
         Node root = session.getRootNode();
 
@@ -792,7 +793,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     public void testShouldCreateVersionStorageForWhenVersionableNodesCopied() throws Exception {
         // q.v., MODE-709
 
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
 
         Node root = session.getRootNode();
 
@@ -823,7 +824,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     public void testShouldBeAbleToReferToUnsavedReferenceNode() throws Exception {
         // q.v., MODE-720
 
-        session = helper.getSuperuserSession();
+        session = getHelper().getSuperuserSession();
 
         JcrNodeTypeManager nodeTypes = (JcrNodeTypeManager)session.getWorkspace().getNodeTypeManager();
 
@@ -862,7 +863,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     public void testShouldBeAbleToImportAutocreatedChildNodeWithoutDuplication() throws Exception {
         // q.v., MODE-701
 
-        session = helper.getSuperuserSession();
+        session = getHelper().getSuperuserSession();
 
         /*
          * Add a node that would satisfy the constraint
@@ -884,7 +885,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     public void testShouldAllowCheckoutAfterMove() throws Exception {
         // q.v., MODE-???
 
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
 
         Node root = session.getRootNode();
         Node sourceNode = root.addNode("versionableSource", "nt:unstructured");
@@ -900,7 +901,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     public void testShouldNotAllowLockedNodeToBeRemoved() throws Exception {
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
 
         Node root = session.getRootNode();
         Node parentNode = root.addNode("lockedParent");
@@ -911,7 +912,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         parentNode.lock(true, true);
 
-        Session session2 = helper.getReadWriteSession();
+        Session session2 = getHelper().getReadWriteSession();
         Node targetNode2 = (Node)session2.getItem("/lockedParent/lockedTarget");
 
         try {
@@ -926,7 +927,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     public void testShouldNotAllowPropertyOfLockedNodeToBeRemoved() throws Exception {
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
 
         Node root = session.getRootNode();
         Node parentNode = root.addNode("lockedPropParent");
@@ -938,7 +939,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         parentNode.lock(true, true);
 
-        Session session2 = helper.getReadWriteSession();
+        Session session2 = getHelper().getReadWriteSession();
         Property targetProp2 = (Property)session2.getItem("/lockedPropParent/lockedTarget/foo");
 
         try {
@@ -953,7 +954,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     public void testShouldNotAllowCheckedInNodeToBeRemoved() throws Exception {
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
 
         Node root = session.getRootNode();
         Node parentNode = root.addNode("checkedInParent");
@@ -977,7 +978,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     public void testShouldNotAllowPropertyOfCheckedInNodeToBeRemoved() throws Exception {
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
 
         Node root = session.getRootNode();
         Node parentNode = root.addNode("checkedInPropParent");
@@ -1002,7 +1003,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     }
 
     public void testGetPathOnRemovedNodeShouldThrowException() throws Exception {
-        session = helper.getReadWriteSession();
+        session = getHelper().getReadWriteSession();
 
         Node root = session.getRootNode();
         Node parentNode = root.addNode("invalidItemStateTest");

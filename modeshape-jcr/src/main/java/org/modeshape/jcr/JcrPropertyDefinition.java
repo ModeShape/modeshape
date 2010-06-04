@@ -881,4 +881,11 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             return false;
         }
     }
+
+    @Override
+    public String[] getAvailableQueryOperators() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

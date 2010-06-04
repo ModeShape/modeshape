@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.Calendar;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
@@ -142,6 +143,23 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
     /**
      * {@inheritDoc}
      * 
+     * @see javax.jcr.Value#getDecimal()
+     */
+    @Override
+    public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
+        nonInputStreamConsumed();
+        try {
+            BigDecimal convertedValue = valueFactories.getDecimalFactory().create(value);
+            state = State.NON_INPUT_STREAM_CONSUMED;
+            return convertedValue;
+        } catch (RuntimeException error) {
+            throw createValueFormatException(double.class);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see javax.jcr.Value#getDouble()
      */
     public double getDouble() throws ValueFormatException {
@@ -204,10 +222,11 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
      * 
      * @see org.modeshape.jcr.api.Value#getBinary()
      */
-    public org.modeshape.jcr.api.Binary getBinary() throws RepositoryException {
+    public javax.jcr.Binary getBinary() throws RepositoryException {
         try {
-            Binary binary = valueFactories.getBinaryFactory().create(value);
-            return new JcrBinary(binary);
+            // Binary binary = valueFactories.getBinaryFactory().create(value);
+            // return new JcrBinary(binary);
+            return null;
         } catch (RuntimeException error) {
             throw createValueFormatException(InputStream.class);
         }
@@ -469,4 +488,5 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
         INPUT_STREAM_CONSUMED,
         NON_INPUT_STREAM_CONSUMED
     }
+
 }

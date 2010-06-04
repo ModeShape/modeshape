@@ -35,12 +35,12 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
+import javax.jcr.lock.LockManager;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.session.GraphSession.Node;
 import org.modeshape.jcr.SessionCache.JcrNodePayload;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
 import org.modeshape.jcr.WorkspaceLockManager.ModeShapeLock;
-import org.modeshape.jcr.api.LockManager;
 
 /**
  * A per-session lock manager for a given workspace. This class encapsulates the session-specific locking logic and checks that do
@@ -82,7 +82,7 @@ public class JcrLockManager implements LockManager {
         return getLock(node);
     }
 
-    org.modeshape.jcr.api.Lock getLock( AbstractJcrNode node )
+    Lock getLock( AbstractJcrNode node )
         throws PathNotFoundException, LockException, AccessDeniedException, RepositoryException {
         WorkspaceLockManager.ModeShapeLock lock = lockFor(node);
         if (lock != null) return lock.lockFor(node.cache);
@@ -140,11 +140,11 @@ public class JcrLockManager implements LockManager {
         return lock(node, isDeep, isSessionScoped, timeoutHint, ownerInfo);
     }
 
-    org.modeshape.jcr.api.Lock lock( AbstractJcrNode node,
-                                     boolean isDeep,
-                                     boolean isSessionScoped,
-                                     long timeoutHint,
-                                     String ownerInfo )
+    Lock lock( AbstractJcrNode node,
+               boolean isDeep,
+               boolean isSessionScoped,
+               long timeoutHint,
+               String ownerInfo )
         throws LockException, PathNotFoundException, AccessDeniedException, InvalidItemStateException, RepositoryException {
         if (!node.isLockable()) {
             throw new LockException(JcrI18n.nodeNotLockable.text(node.getPath()));

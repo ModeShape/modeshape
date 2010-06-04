@@ -48,15 +48,14 @@ import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
+import javax.jcr.nodetype.NodeDefinitionTemplate;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.jcr.nodetype.NodeDefinitionTemplate;
-import org.modeshape.jcr.nodetype.NodeTypeTemplate;
-import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
 
 /**
  * 
@@ -833,7 +832,7 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         }
 
         NodeTypeTemplate ntt = nodeTypes.createNodeTypeTemplate();
-        PropertyDefinitionTemplate pdt = nodeTypes.createPropertyDefinitionTemplate();
+        JcrPropertyDefinitionTemplate pdt = (JcrPropertyDefinitionTemplate)nodeTypes.createPropertyDefinitionTemplate();
         NodeDefinitionTemplate ndt = nodeTypes.createNodeDefinitionTemplate();
 
         pdt.setName("autoProp");
@@ -842,8 +841,8 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
         pdt.setAutoCreated(true);
 
         ndt.setName("autoChild");
-        ndt.setRequiredPrimaryTypes(new String[] {"nt:base"});
-        ndt.setDefaultPrimaryType("nt:unstructured");
+        ndt.setRequiredPrimaryTypeNames(new String[] {"nt:base"});
+        ndt.setDefaultPrimaryTypeName("nt:unstructured");
         ndt.setAutoCreated(true);
 
         ntt.setName("autocreateTest");

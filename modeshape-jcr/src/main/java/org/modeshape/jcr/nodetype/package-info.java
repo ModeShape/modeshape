@@ -28,7 +28,7 @@
  * {@link org.modeshape.jcr.JcrNodeTypeManager#createNodeDefinitionTemplate() node definition templates},
  * {@link org.modeshape.jcr.JcrNodeTypeManager#createNodeTypeTemplate() node type templates},
  * and {@link org.modeshape.jcr.JcrNodeTypeManager#createPropertyDefinitionTemplate() property definition templates},
- * and to then {@link org.modeshape.jcr.JcrNodeTypeManager#registerNodeType(NodeTypeDefinition, boolean) register} the new node types.
+ * and to then {@link org.modeshape.jcr.JcrNodeTypeManager#registerNodeType(javax.jcr.nodetype.NodeTypeDefinition, boolean) register} the new node types.
  * <p>
  * This design is patterned after the similar funcationality in the JCR 2.0 Public Final Draft (PFD), and will
  * eventually be migrated to implement the specification when ModeShape supports the final JCR 2.0 final specification.

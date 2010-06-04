@@ -29,22 +29,36 @@ import org.apache.jackrabbit.test.JCRTestSuite;
 import org.apache.jackrabbit.test.api.AddNodeTest;
 import org.apache.jackrabbit.test.api.CheckPermissionTest;
 import org.apache.jackrabbit.test.api.DocumentViewImportTest;
+import org.apache.jackrabbit.test.api.ExportDocViewTest;
+import org.apache.jackrabbit.test.api.ExportSysViewTest;
+import org.apache.jackrabbit.test.api.HasPermissionTest;
 import org.apache.jackrabbit.test.api.ImpersonateTest;
+import org.apache.jackrabbit.test.api.LifecycleTest;
+import org.apache.jackrabbit.test.api.NamespaceRegistryReadMethodsTest;
 import org.apache.jackrabbit.test.api.NamespaceRegistryTest;
-import org.apache.jackrabbit.test.api.NodeAddMixinTest;
-import org.apache.jackrabbit.test.api.NodeCanAddMixinTest;
+import org.apache.jackrabbit.test.api.NodeDiscoveringNodeTypesTest;
 import org.apache.jackrabbit.test.api.NodeItemIsModifiedTest;
 import org.apache.jackrabbit.test.api.NodeItemIsNewTest;
+import org.apache.jackrabbit.test.api.NodeIteratorTest;
 import org.apache.jackrabbit.test.api.NodeOrderableChildNodesTest;
+import org.apache.jackrabbit.test.api.NodeReadMethodsTest;
 import org.apache.jackrabbit.test.api.NodeRemoveMixinTest;
+import org.apache.jackrabbit.test.api.NodeSetPrimaryTypeTest;
 import org.apache.jackrabbit.test.api.NodeTest;
 import org.apache.jackrabbit.test.api.NodeUUIDTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsModifiedTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsNewTest;
+import org.apache.jackrabbit.test.api.PropertyReadMethodsTest;
 import org.apache.jackrabbit.test.api.PropertyTest;
+import org.apache.jackrabbit.test.api.PropertyTypeTest;
+import org.apache.jackrabbit.test.api.ReferenceableRootNodesTest;
 import org.apache.jackrabbit.test.api.ReferencesTest;
+import org.apache.jackrabbit.test.api.RepositoryDescriptorTest;
+import org.apache.jackrabbit.test.api.RepositoryFactoryTest;
 import org.apache.jackrabbit.test.api.RepositoryLoginTest;
+import org.apache.jackrabbit.test.api.RootNodeTest;
 import org.apache.jackrabbit.test.api.SerializationTest;
+import org.apache.jackrabbit.test.api.SessionRemoveItemTest;
 import org.apache.jackrabbit.test.api.SessionTest;
 import org.apache.jackrabbit.test.api.SessionUUIDTest;
 import org.apache.jackrabbit.test.api.SetPropertyAssumeTypeTest;
@@ -57,7 +71,6 @@ import org.apache.jackrabbit.test.api.SetPropertyLongTest;
 import org.apache.jackrabbit.test.api.SetPropertyNodeTest;
 import org.apache.jackrabbit.test.api.SetPropertyStringTest;
 import org.apache.jackrabbit.test.api.SetPropertyValueTest;
-import org.apache.jackrabbit.test.api.SetValueBinaryTest;
 import org.apache.jackrabbit.test.api.SetValueBooleanTest;
 import org.apache.jackrabbit.test.api.SetValueConstraintViolationExceptionTest;
 import org.apache.jackrabbit.test.api.SetValueDateTest;
@@ -67,6 +80,7 @@ import org.apache.jackrabbit.test.api.SetValueReferenceTest;
 import org.apache.jackrabbit.test.api.SetValueStringTest;
 import org.apache.jackrabbit.test.api.SetValueValueFormatExceptionTest;
 import org.apache.jackrabbit.test.api.SetValueVersionExceptionTest;
+import org.apache.jackrabbit.test.api.ShareableNodeTest;
 import org.apache.jackrabbit.test.api.ValueFactoryTest;
 import org.apache.jackrabbit.test.api.WorkspaceCloneReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceCloneSameNameSibsTest;
@@ -84,6 +98,24 @@ import org.apache.jackrabbit.test.api.WorkspaceMoveReferenceableTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
+import org.apache.jackrabbit.test.api.WorkspaceReadMethodsTest;
+import org.apache.jackrabbit.test.api.nodetype.CanAddChildNodeCallWithNodeTypeTest;
+import org.apache.jackrabbit.test.api.nodetype.CanAddChildNodeCallWithoutNodeTypeTest;
+import org.apache.jackrabbit.test.api.nodetype.CanRemoveItemTest;
+import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyBinaryTest;
+import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyBooleanTest;
+import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyDateTest;
+import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyDoubleTest;
+import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyLongTest;
+import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyMultipleTest;
+import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyNameTest;
+import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyPathTest;
+import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyStringTest;
+import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyTest;
+import org.apache.jackrabbit.test.api.nodetype.NodeDefTest;
+import org.apache.jackrabbit.test.api.nodetype.NodeTypeManagerTest;
+import org.apache.jackrabbit.test.api.nodetype.NodeTypeTest;
+import org.apache.jackrabbit.test.api.nodetype.PropertyDefTest;
 import org.apache.jackrabbit.test.api.observation.AddEventListenerTest;
 import org.apache.jackrabbit.test.api.observation.EventIteratorTest;
 import org.apache.jackrabbit.test.api.observation.EventTest;
@@ -143,8 +175,8 @@ public class JcrTckTest {
         // Or uncomment the following lines to execute the different sets/suites of tests ...
         TestSuite suite = new TestSuite("JCR 1.0 API tests");
 
-        suite.addTest(new LevelOneFeatureTests());
-        suite.addTest(new LevelTwoFeatureTests());
+        suite.addTest(levelOneSuite());
+        suite.addTest(levelTwoSuite());
         suite.addTest(new OptionalFeatureTests());
 
         return suite;
@@ -156,148 +188,184 @@ public class JcrTckTest {
      * @return a new instance of {@link JCRTestSuite}.
      */
     public static Test readOnlySuite() {
-        // Uncomment this to execute all tests
-        // return new JCRTestSuite();
+        return levelOneSuite();
+    }
 
-        // Or uncomment the following lines to execute the different sets/suites of tests ...
-        TestSuite suite = new TestSuite("JCR 1.0 API tests");
+    /**
+     * Test suite that includes the Level 1 JCR TCK API tests from the Jackrabbit project.
+     * 
+     * @return a new test suite
+     */
+    private static TestSuite levelOneSuite() {
+        TestSuite suite = new TestSuite("JCR Level 1 API Tests");
 
-        suite.addTest(new LevelOneFeatureTests());
+        // level 1 tests
+        suite.addTestSuite(RootNodeTest.class);
+        suite.addTestSuite(NodeReadMethodsTest.class);
+        suite.addTestSuite(PropertyTypeTest.class);
+        suite.addTestSuite(NodeDiscoveringNodeTypesTest.class);
+
+        // These all have one unimplemented method
+        // suite.addTestSuite(BinaryPropertyTest.class);
+        // suite.addTestSuite(BooleanPropertyTest.class);
+        // suite.addTestSuite(DatePropertyTest.class);
+        // suite.addTestSuite(DoublePropertyTest.class);
+        // suite.addTestSuite(LongPropertyTest.class);
+        // suite.addTestSuite(NamePropertyTest.class);
+        // suite.addTestSuite(PathPropertyTest.class);
+        // suite.addTestSuite(ReferencePropertyTest.class);
+        // suite.addTestSuite(StringPropertyTest.class);
+        // suite.addTestSuite(UndefinedPropertyTest.class);
+
+        suite.addTestSuite(NamespaceRegistryReadMethodsTest.class);
+        // suite.addTestSuite(NamespaceRemappingTest.class);
+        suite.addTestSuite(NodeIteratorTest.class);
+        suite.addTestSuite(PropertyReadMethodsTest.class);
+        suite.addTestSuite(RepositoryDescriptorTest.class);
+        // suite.addTestSuite(SessionReadMethodsTest.class);
+        suite.addTestSuite(WorkspaceReadMethodsTest.class);
+        suite.addTestSuite(ReferenceableRootNodesTest.class);
+
+        suite.addTestSuite(ExportSysViewTest.class);
+        suite.addTestSuite(ExportDocViewTest.class);
+
+        // This test can't be verified on the the FS Connector or the JDCB Metadata Connector.
+        // suite.addTestSuite(NameTest.class);
+        // suite.addTestSuite(PathTest.class);
+
+        // The tests in this suite are level one
+        // suite.addTest(org.apache.jackrabbit.test.api.nodetype.TestAll.suite());
+
+        suite.addTestSuite(NodeDefTest.class);
+        suite.addTestSuite(NodeTypeManagerTest.class);
+        suite.addTestSuite(NodeTypeTest.class);
+        suite.addTestSuite(PropertyDefTest.class);
+
+        // suite.addTestSuite(PredefinedNodeTypeTest.class);
+
+        suite.addTestSuite(CanSetPropertyBinaryTest.class);
+        suite.addTestSuite(CanSetPropertyBooleanTest.class);
+        suite.addTestSuite(CanSetPropertyDateTest.class);
+        suite.addTestSuite(CanSetPropertyDoubleTest.class);
+        suite.addTestSuite(CanSetPropertyLongTest.class);
+        suite.addTestSuite(CanSetPropertyMultipleTest.class);
+        suite.addTestSuite(CanSetPropertyNameTest.class);
+        suite.addTestSuite(CanSetPropertyPathTest.class);
+        suite.addTestSuite(CanSetPropertyStringTest.class);
+        suite.addTestSuite(CanSetPropertyTest.class);
+
+        suite.addTestSuite(CanAddChildNodeCallWithNodeTypeTest.class);
+        suite.addTestSuite(CanAddChildNodeCallWithoutNodeTypeTest.class);
+
+        suite.addTestSuite(CanRemoveItemTest.class);
+
+        // JCR 2.0
+
+        // suite.addTestSuite(NodeTypeCreationTest.class);
 
         return suite;
     }
 
     /**
-     * Test suite that includes the Level 1 JCR TCK API tests from the Jackrabbit project.
-     */
-    private static class LevelOneFeatureTests extends TestSuite {
-        protected LevelOneFeatureTests() {
-            super("JCR Level 1 API Tests");
-
-            addTestSuite(org.apache.jackrabbit.test.api.RootNodeTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.NodeReadMethodsTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.PropertyTypeTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.NodeDiscoveringNodeTypesTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.BinaryPropertyTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.BooleanPropertyTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.DatePropertyTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.DoublePropertyTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.LongPropertyTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.NamePropertyTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.PathPropertyTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.ReferencePropertyTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.StringPropertyTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.UndefinedPropertyTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.NamespaceRegistryReadMethodsTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.NamespaceRemappingTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.NodeIteratorTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.PropertyReadMethodsTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.RepositoryDescriptorTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.SessionReadMethodsTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.WorkspaceReadMethodsTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.ReferenceableRootNodesTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.ExportSysViewTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.ExportDocViewTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.RepositoryLoginTest.class);
-
-            addTestSuite(org.apache.jackrabbit.test.api.query.XPathPosIndexTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.XPathDocOrderTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.XPathOrderByTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.XPathJcrPathTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.DerefQueryLevel1Test.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.GetLanguageTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.GetPersistentQueryPathLevel1Test.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.GetStatementTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.GetSupportedQueryLanguagesTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.GetPropertyNamesTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.PredicatesTest.class);
-            addTestSuite(org.apache.jackrabbit.test.api.query.SimpleSelectionTest.class);
-
-            // The tests in this suite are level one
-            addTest(org.apache.jackrabbit.test.api.nodetype.TestAll.suite());
-        }
-    }
-
-    /**
      * Test suite that includes the Level 2 JCR TCK API tests from the Jackrabbit project.
+     * 
+     * @return a new test suite
      */
-    private static class LevelTwoFeatureTests extends TestSuite {
-        protected LevelTwoFeatureTests() {
-            super("JCR Level 2 API Tests");
+    private static TestSuite levelTwoSuite() {
+        TestSuite suite = new TestSuite("JCR Level 2 API Tests");
+        // level 2 tests
+        suite.addTestSuite(AddNodeTest.class);
+        suite.addTestSuite(NamespaceRegistryTest.class);
+        suite.addTestSuite(ReferencesTest.class);
+        suite.addTestSuite(SessionTest.class);
+        suite.addTestSuite(SessionUUIDTest.class);
+        suite.addTestSuite(NodeTest.class);
+        suite.addTestSuite(NodeUUIDTest.class);
+        suite.addTestSuite(NodeOrderableChildNodesTest.class);
+        suite.addTestSuite(PropertyTest.class);
 
-            // level 2 tests
-            addTestSuite(AddNodeTest.class);
-            addTestSuite(NamespaceRegistryTest.class);
-            addTestSuite(ReferencesTest.class);
-            addTestSuite(SessionTest.class);
-            addTestSuite(SessionUUIDTest.class);
-            addTestSuite(NodeTest.class);
-            addTestSuite(NodeUUIDTest.class);
-            addTestSuite(NodeOrderableChildNodesTest.class);
-            addTestSuite(PropertyTest.class);
+        // suite.addTestSuite(SetValueBinaryTest.class);
+        suite.addTestSuite(SetValueBooleanTest.class);
+        suite.addTestSuite(SetValueDateTest.class);
+        // suite.addTestSuite(SetValueDecimalTest.class);
+        suite.addTestSuite(SetValueDoubleTest.class);
+        suite.addTestSuite(SetValueLongTest.class);
+        suite.addTestSuite(SetValueReferenceTest.class);
+        suite.addTestSuite(SetValueStringTest.class);
+        suite.addTestSuite(SetValueConstraintViolationExceptionTest.class);
+        suite.addTestSuite(SetValueValueFormatExceptionTest.class);
+        suite.addTestSuite(SetValueVersionExceptionTest.class);
 
-            addTestSuite(SetValueBinaryTest.class);
-            addTestSuite(SetValueBooleanTest.class);
-            addTestSuite(SetValueDateTest.class);
-            addTestSuite(SetValueDoubleTest.class);
-            addTestSuite(SetValueLongTest.class);
-            addTestSuite(SetValueReferenceTest.class);
-            addTestSuite(SetValueStringTest.class);
-            addTestSuite(SetValueConstraintViolationExceptionTest.class);
-            addTestSuite(SetValueValueFormatExceptionTest.class);
-            addTestSuite(SetValueVersionExceptionTest.class);
+        suite.addTestSuite(SetPropertyBooleanTest.class);
+        suite.addTestSuite(SetPropertyCalendarTest.class);
+        // suite.addTestSuite(SetPropertyDecimalTest.class);
+        suite.addTestSuite(SetPropertyDoubleTest.class);
+        suite.addTestSuite(SetPropertyInputStreamTest.class);
+        suite.addTestSuite(SetPropertyLongTest.class);
+        suite.addTestSuite(SetPropertyNodeTest.class);
+        suite.addTestSuite(SetPropertyStringTest.class);
+        suite.addTestSuite(SetPropertyValueTest.class);
+        suite.addTestSuite(SetPropertyConstraintViolationExceptionTest.class);
+        suite.addTestSuite(SetPropertyAssumeTypeTest.class);
 
-            addTestSuite(SetPropertyBooleanTest.class);
-            addTestSuite(SetPropertyCalendarTest.class);
-            addTestSuite(SetPropertyDoubleTest.class);
-            addTestSuite(SetPropertyInputStreamTest.class);
-            addTestSuite(SetPropertyLongTest.class);
-            addTestSuite(SetPropertyNodeTest.class);
-            addTestSuite(SetPropertyStringTest.class);
-            addTestSuite(SetPropertyValueTest.class);
-            addTestSuite(SetPropertyConstraintViolationExceptionTest.class);
-            addTestSuite(SetPropertyAssumeTypeTest.class);
+        suite.addTestSuite(NodeItemIsModifiedTest.class);
+        suite.addTestSuite(NodeItemIsNewTest.class);
+        suite.addTestSuite(PropertyItemIsModifiedTest.class);
+        suite.addTestSuite(PropertyItemIsNewTest.class);
 
-            addTestSuite(NodeItemIsModifiedTest.class);
-            addTestSuite(NodeItemIsNewTest.class);
-            addTestSuite(PropertyItemIsModifiedTest.class);
-            addTestSuite(PropertyItemIsNewTest.class);
+        // suite.addTestSuite(NodeAddMixinTest.class);
+        // suite.addTestSuite(NodeCanAddMixinTest.class);
+        suite.addTestSuite(NodeRemoveMixinTest.class);
 
-            addTestSuite(NodeAddMixinTest.class);
-            addTestSuite(NodeCanAddMixinTest.class);
-            addTestSuite(NodeRemoveMixinTest.class);
+        suite.addTestSuite(NodeSetPrimaryTypeTest.class);
 
-            addTestSuite(WorkspaceCloneReferenceableTest.class);
-            addTestSuite(WorkspaceCloneSameNameSibsTest.class);
-            addTestSuite(WorkspaceCloneTest.class);
-            addTestSuite(WorkspaceCloneVersionableTest.class);
-            addTestSuite(WorkspaceCopyBetweenWorkspacesReferenceableTest.class);
-            addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
-            addTestSuite(WorkspaceCopyBetweenWorkspacesTest.class);
-            addTestSuite(WorkspaceCopyBetweenWorkspacesVersionableTest.class);
-            addTestSuite(WorkspaceCopyReferenceableTest.class);
-            addTestSuite(WorkspaceCopySameNameSibsTest.class);
-            addTestSuite(WorkspaceCopyTest.class);
-            addTestSuite(WorkspaceCopyVersionableTest.class);
-            addTestSuite(WorkspaceMoveReferenceableTest.class);
-            addTestSuite(WorkspaceMoveSameNameSibsTest.class);
-            addTestSuite(WorkspaceMoveTest.class);
-            addTestSuite(WorkspaceMoveVersionableTest.class);
+        suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
+        suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
+        suite.addTestSuite(WorkspaceCloneTest.class);
+        suite.addTestSuite(WorkspaceCloneVersionableTest.class);
+        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesReferenceableTest.class);
+        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
+        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesTest.class);
+        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesVersionableTest.class);
+        suite.addTestSuite(WorkspaceCopyReferenceableTest.class);
+        suite.addTestSuite(WorkspaceCopySameNameSibsTest.class);
+        suite.addTestSuite(WorkspaceCopyTest.class);
+        suite.addTestSuite(WorkspaceCopyVersionableTest.class);
+        suite.addTestSuite(WorkspaceMoveReferenceableTest.class);
+        suite.addTestSuite(WorkspaceMoveSameNameSibsTest.class);
+        suite.addTestSuite(WorkspaceMoveTest.class);
+        suite.addTestSuite(WorkspaceMoveVersionableTest.class);
 
-            addTestSuite(RepositoryLoginTest.class);
-            addTestSuite(ImpersonateTest.class);
-            addTestSuite(CheckPermissionTest.class);
+        suite.addTestSuite(RepositoryLoginTest.class);
+        suite.addTestSuite(ImpersonateTest.class);
+        suite.addTestSuite(CheckPermissionTest.class);
 
-            addTestSuite(DocumentViewImportTest.class);
-            addTestSuite(SerializationTest.class);
+        suite.addTestSuite(DocumentViewImportTest.class);
+        suite.addTestSuite(SerializationTest.class);
 
-            addTestSuite(ValueFactoryTest.class);
-            addTestSuite(GetPersistentQueryPathTest.class);
-            addTestSuite(QueryResultNodeIteratorTest.class);
-            addTestSuite(SaveTest.class);
-            addTestSuite(XPathQueryLevel2Test.class);
-            addTestSuite(ElementTest.class);
-        }
+        suite.addTestSuite(ValueFactoryTest.class);
+
+        // JCR 2.0
+
+        // // new node types
+        // suite.addTestSuite(GetWeakReferencesTest.class);
+
+        // // new Session features
+        suite.addTestSuite(SessionRemoveItemTest.class);
+        suite.addTestSuite(HasPermissionTest.class);
+
+        // // new Workspace features
+        // suite.addTestSuite(WorkspaceTest.class);
+
+        // // shareable nodes
+        suite.addTestSuite(ShareableNodeTest.class);
+
+        // repository factory
+        suite.addTestSuite(RepositoryFactoryTest.class);
+
+        // lifecycle management
+        suite.addTestSuite(LifecycleTest.class);
+        return suite;
     }
 
     /**

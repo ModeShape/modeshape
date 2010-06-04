@@ -37,14 +37,14 @@ import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
-import org.modeshape.graph.property.DateTime;
-import org.modeshape.graph.property.ValueFactory;
-import org.modeshape.jcr.nodetype.NodeTypeDefinition;
-import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.graph.property.DateTime;
+import org.modeshape.graph.property.ValueFactory;
+import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
 
 public class JcrSingleValuePropertyTest extends AbstractJcrTest {
 

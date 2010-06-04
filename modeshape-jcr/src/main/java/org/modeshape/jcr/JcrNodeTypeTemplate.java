@@ -32,6 +32,7 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
 import org.modeshape.jcr.nodetype.NodeDefinitionTemplate;
+import org.modeshape.jcr.nodetype.NodeTypeDefinition;
 import org.modeshape.jcr.nodetype.NodeTypeTemplate;
 import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
 
@@ -39,7 +40,7 @@ import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
  * ModeShape implementation of the JCR NodeTypeTemplate interface
  */
 @NotThreadSafe
-public class JcrNodeTypeTemplate implements NodeTypeTemplate {
+public class JcrNodeTypeTemplate implements NodeTypeDefinition, NodeTypeTemplate {
 
     private final ExecutionContext context;
     private final List<NodeDefinitionTemplate> nodeDefinitionTemplates = new ArrayList<NodeDefinitionTemplate>();
@@ -95,8 +96,7 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
     }
 
     /**
-     * {@inheritDoc}
-     * 
+     * @param names the names of the supertypes
      * @see org.modeshape.jcr.nodetype.NodeTypeTemplate#setDeclaredSupertypeNames(java.lang.String[])
      * @deprecated Use {@link #setDeclaredSuperTypeNames(String[])} instead
      */
@@ -161,8 +161,7 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
     }
 
     /**
-     * {@inheritDoc}
-     * 
+     * @return the list of node definitions
      * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getDeclaredNodeDefinitions()
      * @deprecated use {@link #getDeclaredChildNodeDefinitions()} instead
      */
@@ -193,8 +192,7 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
     }
 
     /**
-     * {@inheritDoc}
-     * 
+     * @return the names of the declared supertypes
      * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getDeclaredSupertypes()
      * @deprecated Use {@link #getDeclaredSupertypeNames()} instead
      */
@@ -280,5 +278,4 @@ public class JcrNodeTypeTemplate implements NodeTypeTemplate {
     public void setQueryable( boolean queryable ) {
         this.queryable = queryable;
     }
-
 }

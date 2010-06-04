@@ -26,6 +26,7 @@ package org.modeshape.jcr;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -51,6 +52,7 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 import javax.jcr.ValueFormatException;
@@ -61,6 +63,8 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
+import javax.jcr.retention.RetentionManager;
+import javax.jcr.security.AccessControlManager;
 import javax.jcr.version.VersionException;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
@@ -349,7 +353,7 @@ class JcrSession implements Session {
      * 
      * @see javax.jcr.Session#addLockToken(java.lang.String)
      */
-    public void addLockToken( String lt ) throws LockException {
+    public void addLockToken( String lt ) {
         CheckArg.isNotNull(lt, "lock token");
 
         try {
@@ -833,6 +837,31 @@ class JcrSession implements Session {
                 return new JcrValue(valueFactories, sessionCache, PropertyType.STRING, value);
             }
 
+            @Override
+            public javax.jcr.Binary createBinary( InputStream stream ) throws RepositoryException {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public Value createValue( BigDecimal value ) {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public Value createValue( javax.jcr.Binary value ) {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public Value createValue( Node value,
+                                      boolean weak ) throws RepositoryException {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
             Object convertValueToType( Object value,
                                        int toType ) throws ValueFormatException {
                 switch (toType) {
@@ -1280,6 +1309,24 @@ class JcrSession implements Session {
     @Override
     public String toString() {
         return getSnapshot().toString();
+    }
+
+    @Override
+    public AccessControlManager getAccessControlManager() throws UnsupportedRepositoryOperationException, RepositoryException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Node getNodeByIdentifier( String id ) throws ItemNotFoundException, RepositoryException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public RetentionManager getRetentionManager() throws UnsupportedRepositoryOperationException, RepositoryException {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     @Immutable

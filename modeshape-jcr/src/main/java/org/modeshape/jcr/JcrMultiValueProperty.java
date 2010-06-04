@@ -24,10 +24,13 @@
 package org.modeshape.jcr;
 
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
+import javax.jcr.Binary;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -62,7 +65,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see org.modeshape.jcr.AbstractJcrProperty#isMultiple()
      */
     @Override
-    boolean isMultiple() {
+    public boolean isMultiple() {
         return true;
     }
 
@@ -329,6 +332,33 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
      * @see javax.jcr.Property#setValue(javax.jcr.Node)
      */
     public final void setValue( Node value ) throws ValueFormatException {
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
+    }
+
+    @Override
+    public Binary getBinary() throws ValueFormatException, RepositoryException {
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
+    }
+
+    @Override
+    public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
+    }
+
+    @Override
+    public javax.jcr.Property getProperty() throws ItemNotFoundException, ValueFormatException, RepositoryException {
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
+    }
+
+    @Override
+    public void setValue( BigDecimal value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
+    }
+
+    @Override
+    public void setValue( Binary value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
 

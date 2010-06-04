@@ -26,11 +26,12 @@ package org.modeshape.jcr;
 import java.util.Arrays;
 import java.util.List;
 import javax.jcr.PropertyType;
+import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.version.OnParentVersionAction;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.basic.BasicName;
-import org.modeshape.jcr.nodetype.NodeTypeTemplate;
 
 /**
  * Define the node types for the "vehix" namespace.
@@ -63,7 +64,7 @@ public class Vehicles {
 
     }
 
-    public static List<NodeTypeTemplate> getNodeTypes( ExecutionContext context ) {
+    public static List<NodeTypeTemplate> getNodeTypes( ExecutionContext context ) throws ConstraintViolationException {
         JcrPropertyDefinitionTemplate property;
 
         NodeTypeTemplate car = new JcrNodeTypeTemplate(context);
@@ -146,7 +147,7 @@ public class Vehicles {
 
         NodeTypeTemplate aircraft = new JcrNodeTypeTemplate(context);
         aircraft.setName("vehix:aircraft");
-        aircraft.setDeclaredSupertypeNames(new String[] {"nt:unstructured"});
+        aircraft.setDeclaredSuperTypeNames(new String[] {"nt:unstructured"});
         aircraft.setOrderableChildNodes(true);
 
         property = new JcrPropertyDefinitionTemplate(context);

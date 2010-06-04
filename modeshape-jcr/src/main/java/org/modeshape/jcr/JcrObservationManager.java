@@ -34,8 +34,10 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.jcr.RangeIterator;
 import javax.jcr.RepositoryException;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
+import javax.jcr.observation.EventJournal;
 import javax.jcr.observation.EventListener;
 import javax.jcr.observation.EventListenerIterator;
 import javax.jcr.observation.ObservationManager;
@@ -419,6 +421,26 @@ final class JcrObservationManager implements ObservationManager {
             return this.userId;
         }
 
+        @Override
+        public long getDate() throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public String getIdentifier() throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public Map getInfo() throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
+        @Override
+        public String getUserData() throws RepositoryException {
+            throw new UnsupportedRepositoryOperationException();
+        }
+
         /**
          * {@inheritDoc}
          * 
@@ -768,6 +790,25 @@ final class JcrObservationManager implements ObservationManager {
         private boolean shouldCheckNodeType() {
             return ((this.nodeTypeNames != null) && (this.nodeTypeNames.length != 0));
         }
+    }
+
+    @Override
+    public EventJournal getEventJournal() throws RepositoryException {
+        throw new UnsupportedRepositoryOperationException();
+    }
+
+    @Override
+    public EventJournal getEventJournal( int eventTypes,
+                                         String absPath,
+                                         boolean isDeep,
+                                         String[] uuid,
+                                         String[] nodeTypeName ) throws RepositoryException {
+        throw new UnsupportedRepositoryOperationException();
+    }
+
+    @Override
+    public void setUserData( String userData ) throws RepositoryException {
+        throw new UnsupportedRepositoryOperationException();
     }
 
 }

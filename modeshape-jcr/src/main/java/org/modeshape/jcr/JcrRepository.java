@@ -1101,6 +1101,7 @@ public class JcrRepository implements Repository {
      */
     Set<JcrSession> activeSessions() {
         Set<JcrSession> activeSessions;
+
         synchronized (this.activeSessions) {
             activeSessions = new HashSet<JcrSession>(this.activeSessions.keySet());
         }

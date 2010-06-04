@@ -24,7 +24,11 @@
 package org.modeshape.jcr;
 
 import java.io.InputStream;
+import java.security.Principal;
 import java.util.Properties;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import org.apache.jackrabbit.test.NotExecutableException;
 import org.apache.jackrabbit.test.RepositoryStub;
 import org.jboss.security.config.IDTrustConfiguration;
 import org.modeshape.common.collection.Problem;
@@ -163,6 +167,18 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
         if (value != null) return value;
 
         return super.getProperty(name);
+    }
+
+    @Override
+    public Principal getKnownPrincipal( Session session ) throws RepositoryException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Principal getUnknownPrincipal( Session session ) throws RepositoryException, NotExecutableException {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

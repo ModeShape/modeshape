@@ -35,6 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
@@ -52,7 +54,6 @@ import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.query.parse.QueryParsers;
-import org.modeshape.jcr.nodetype.NodeTypeTemplate;
 import org.modeshape.jcr.xpath.XPathQueryParser;
 
 /**
@@ -187,7 +188,7 @@ public abstract class AbstractSessionTest {
         registry = session.getExecutionContext().getNamespaceRegistry();
     }
 
-    protected List<NodeTypeTemplate> getTestTypes() {
+    protected List<NodeTypeTemplate> getTestTypes() throws ConstraintViolationException {
         return Collections.emptyList();
     }
 

@@ -24,8 +24,10 @@
 package org.modeshape.jcr;
 
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.UUID;
+import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
@@ -62,7 +64,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
      * @see org.modeshape.jcr.AbstractJcrProperty#isMultiple()
      */
     @Override
-    boolean isMultiple() {
+    public boolean isMultiple() {
         return false;
     }
 
@@ -387,4 +389,37 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
     public void setValue( String[] values ) throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForSingleValuedProperty.text());
     }
+
+    @Override
+    public javax.jcr.Binary getBinary() throws ValueFormatException, RepositoryException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Property getProperty() throws ItemNotFoundException, ValueFormatException, RepositoryException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void setValue( BigDecimal value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void setValue( javax.jcr.Binary value )
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+        // TODO Auto-generated method stub
+
+    }
+
 }

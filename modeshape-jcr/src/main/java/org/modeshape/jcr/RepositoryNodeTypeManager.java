@@ -42,6 +42,8 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeDefinition;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.query.InvalidQueryException;
 import javax.jcr.version.OnParentVersionAction;
@@ -73,9 +75,7 @@ import org.modeshape.graph.query.parse.QueryParser;
 import org.modeshape.graph.query.parse.SqlQueryParser;
 import org.modeshape.graph.query.validate.Schemata;
 import org.modeshape.jcr.nodetype.InvalidNodeTypeDefinitionException;
-import org.modeshape.jcr.nodetype.NodeTypeDefinition;
 import org.modeshape.jcr.nodetype.NodeTypeExistsException;
-import org.modeshape.jcr.nodetype.NodeTypeTemplate;
 
 /**
  * The {@link RepositoryNodeTypeManager} is the maintainer of node type information for the entire repository at run-time. The

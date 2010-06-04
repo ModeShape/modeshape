@@ -37,7 +37,7 @@ import net.jcip.annotations.NotThreadSafe;
  * @see NodeTypeTemplate#getDeclaredPropertyDefinitions()
  */
 @NotThreadSafe
-public interface PropertyDefinitionTemplate extends PropertyDefinition {
+public interface PropertyDefinitionTemplate extends javax.jcr.nodetype.PropertyDefinitionTemplate {
 
     /**
      * Set the name of the property definition

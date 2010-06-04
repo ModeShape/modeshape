@@ -25,8 +25,8 @@ package org.modeshape.cnd;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.modeshape.graph.IsNodeWithProperty.hasProperty;
 import static org.junit.Assert.assertThat;
+import static org.modeshape.graph.IsNodeWithProperty.hasProperty;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,15 +34,17 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.text.ParsingException;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.io.Destination;
@@ -50,8 +52,6 @@ import org.modeshape.graph.io.GraphBatchDestination;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 
@@ -361,7 +361,7 @@ public class CndImporterTest {
         // [nt:base]
         // - jcr:primaryType (name) mandatory autocreated protected compute
         // - jcr:mixinTypes (name) protected multiple compute
-        assertNodeType("nt:base", NO_SUPERTYPES, NO_PRIMARY_NAME, NodeOptions.Abstract);
+        assertNodeType("nt:base", new String[] {"mode:defined"}, NO_PRIMARY_NAME, NodeOptions.Abstract);
         assertProperty("nt:base", "jcr:primaryType", "Name", NO_DEFAULTS, new PropertyOptions[] {PropertyOptions.Mandatory,
             PropertyOptions.Autocreated, PropertyOptions.Protected}, OnParentVersion.Compute);
         assertProperty("nt:base", "jcr:mixinTypes", "Name", NO_DEFAULTS, new PropertyOptions[] {PropertyOptions.Multiple,

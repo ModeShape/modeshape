@@ -34,15 +34,15 @@ import javax.jcr.PropertyType;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.OnParentVersionAction;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.basic.BasicName;
 import org.modeshape.jcr.nodetype.NodeDefinitionTemplate;
 import org.modeshape.jcr.nodetype.NodeTypeTemplate;
 import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 public class MixinTest extends AbstractSessionTest {
 
@@ -382,7 +382,7 @@ public class MixinTest extends AbstractSessionTest {
     }
 
     @Override
-    protected List<NodeTypeTemplate> getTestTypes() {
+    protected List<javax.jcr.nodetype.NodeTypeTemplate> getTestTypes() throws ConstraintViolationException {
         NodeTypeTemplate mixinTypeA = new JcrNodeTypeTemplate(this.context);
         mixinTypeA.setName("mixinTypeA");
         mixinTypeA.setMixin(true);
@@ -404,7 +404,7 @@ public class MixinTest extends AbstractSessionTest {
 
         NodeDefinitionTemplate childNodeB = new JcrNodeDefinitionTemplate(this.context);
         childNodeB.setName("nodeB");
-        childNodeB.setDefaultPrimaryType("nt:base");
+        childNodeB.setDefaultPrimaryTypeName("nt:base");
         childNodeB.setOnParentVersion(OnParentVersionAction.IGNORE);
         mixinTypeB.getNodeDefinitionTemplates().add(childNodeB);
 
@@ -438,8 +438,8 @@ public class MixinTest extends AbstractSessionTest {
         childNodeB.setOnParentVersion(OnParentVersionAction.IGNORE);
         childNodeB.setMandatory(true);
         childNodeB.setAutoCreated(true);
-        childNodeB.setDefaultPrimaryType("nt:unstructured");
-        childNodeB.setRequiredPrimaryTypes(new String[] {"nt:unstructured"});
+        childNodeB.setDefaultPrimaryTypeName("nt:unstructured");
+        childNodeB.setRequiredPrimaryTypeNames(new String[] {"nt:unstructured"});
         mixinTypeWithAutoChild.getNodeDefinitionTemplates().add(childNodeB);
 
         NodeTypeTemplate mixinTypeWithAutoProperty = new JcrNodeTypeTemplate(this.context);
@@ -469,7 +469,8 @@ public class MixinTest extends AbstractSessionTest {
         propertyA.setRequiredType(PropertyType.STRING);
         primaryTypeA.getPropertyDefinitionTemplates().add(propertyA);
 
-        return Arrays.asList(new NodeTypeTemplate[] {mixinTypeA, mixinTypeB, mixinTypeC, mixinTypeWithAutoChild,
+        return Arrays.asList(new javax.jcr.nodetype.NodeTypeTemplate[] {mixinTypeA, mixinTypeB, mixinTypeC,
+            mixinTypeWithAutoChild,
             mixinTypeWithAutoProperty, primaryTypeA,});
     }
 

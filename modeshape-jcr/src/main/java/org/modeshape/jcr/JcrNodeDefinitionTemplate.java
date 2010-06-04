@@ -108,7 +108,7 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
         return null;
     }
 
-    String getDefaultPrimaryTypeName() {
+    public String getDefaultPrimaryTypeName() {
         return defaultPrimaryType;
     }
 
@@ -121,8 +121,7 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
         return null;
     }
 
-    String[] getRequiredPrimaryTypeNames() {
+    public String[] getRequiredPrimaryTypeNames() {
         return requiredPrimaryTypes;
     }
-
 }

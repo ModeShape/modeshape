@@ -322,6 +322,26 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         versionLabels.refresh(false);
     }
 
+    @Override
+    public NodeIterator getAllFrozenNodes() throws RepositoryException {
+        throw new UnsupportedRepositoryOperationException();
+    }
+
+    @Override
+    public NodeIterator getAllLinearFrozenNodes() throws RepositoryException {
+        throw new UnsupportedRepositoryOperationException();
+    }
+
+    @Override
+    public VersionIterator getAllLinearVersions() throws RepositoryException {
+        throw new UnsupportedRepositoryOperationException();
+    }
+
+    @Override
+    public String getVersionableIdentifier() throws RepositoryException {
+        throw new UnsupportedRepositoryOperationException();
+    }
+
     /**
      * Iterator over the versions within a version history. This class wraps the {@link JcrChildNodeIterator node iterator} for
      * all nodes of the {@link JcrVersionHistoryNode version history}, silently ignoring the {@code jcr:rootVersion} and {@code

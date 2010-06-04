@@ -29,6 +29,7 @@ import java.util.List;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.version.Version;
 import org.modeshape.graph.property.Name;
@@ -70,7 +71,7 @@ class JcrVersionNode extends JcrNode implements Version {
      *         for root versions in a version history.
      * @throws RepositoryException if an error occurs accessing the repository
      */
-    AbstractJcrNode getFrozenNode() throws RepositoryException {
+    public AbstractJcrNode getFrozenNode() throws RepositoryException {
         return getNode(JcrLexicon.FROZEN_NODE);
     }
 
@@ -127,4 +128,15 @@ class JcrVersionNode extends JcrNode implements Version {
 
         return false;
     }
+
+    @Override
+    public Version getLinearPredecessor() throws RepositoryException {
+        throw new UnsupportedRepositoryOperationException();
+    }
+
+    @Override
+    public Version getLinearSuccessor() throws RepositoryException {
+        throw new UnsupportedRepositoryOperationException();
+    }
+
 }

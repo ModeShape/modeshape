@@ -23,14 +23,13 @@
  */
 package org.modeshape.jcr.nodetype;
 
-import javax.jcr.RepositoryException;
 import net.jcip.annotations.Immutable;
 
 /**
  * Exception representing that a node type definition is somehow invalid
  */
 @Immutable
-public class InvalidNodeTypeDefinitionException extends RepositoryException {
+public class InvalidNodeTypeDefinitionException extends javax.jcr.nodetype.InvalidNodeTypeDefinitionException {
 
     /**
      */

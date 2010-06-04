@@ -81,7 +81,7 @@
       <dependency>
         <groupId>javax.jcr</groupId>
         <artifactId>jcr</artifactId>
-        <version>2.0</version>
+        <version>1.0.1</version>
         <scope>compile</scope>
       </dependency>
       <!-- Testing (note the scope) -->

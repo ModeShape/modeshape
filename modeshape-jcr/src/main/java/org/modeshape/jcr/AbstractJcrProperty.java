@@ -32,6 +32,7 @@ import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.PropertyDefinition;
@@ -44,7 +45,6 @@ import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.session.GraphSession.PropertyInfo;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
 import org.modeshape.jcr.SessionCache.NodeEditor;
-import org.modeshape.jcr.api.Lock;
 
 /**
  * An abstract {@link Property JCR Property} implementation.
@@ -69,7 +69,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
         return node.editor();
     }
 
-    abstract boolean isMultiple();
+    public abstract boolean isMultiple();
 
     /**
      * Checks that this property's parent node is not already locked by another session. If the parent node is not locked or the

@@ -26,13 +26,13 @@ package org.modeshape.jcr;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.version.VersionException;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.session.GraphSession.NodeId;
-import org.modeshape.jcr.api.Lock;
 
 /**
  * A concrete {@link Node JCR Node} implementation.

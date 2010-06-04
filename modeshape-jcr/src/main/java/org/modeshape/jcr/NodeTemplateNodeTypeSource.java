@@ -29,6 +29,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.OnParentVersionAction;
 import net.jcip.annotations.NotThreadSafe;
@@ -46,7 +47,6 @@ import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.jcr.nodetype.InvalidNodeTypeDefinitionException;
-import org.modeshape.jcr.nodetype.NodeTypeTemplate;
 
 /**
  * Class to convert one or more {@link NodeTypeTemplate node type templates} containing custom node type definitions into a format
