@@ -823,6 +823,7 @@
 							<value>${basedir}/target</value>
 						</property>
 					</systemProperties>
+					<argLine>-Xmx128M</argLine>
 				</configuration>
 			</plugin>
 			

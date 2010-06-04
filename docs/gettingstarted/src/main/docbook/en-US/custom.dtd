@@ -53,6 +53,7 @@
 <!-- Types in JCR API -->
 
 <!ENTITY Repository					       		"<interface>Repository</interface>">
+<!ENTITY RepositoryFactory					       		"<interface>RepositoryFactory</interface>">
 <!ENTITY Session						       		"<interface>Session</interface>">
 <!ENTITY Credentials					       	"<interface>Credentials</interface>">
 <!ENTITY SimpleCredentials					  "<interface>SimpleCredentials</interface>">
@@ -129,6 +130,7 @@
 <!ENTITY JcrEngine					       		"<ulink url='&API;jcr/JcrEngine.html'><classname>JcrEngine</classname></ulink>">
 <!ENTITY JcrConfiguration		       		"<ulink url='&API;jcr/JcrConfiguration.html'><classname>JcrConfiguration</classname></ulink>">
 <!ENTITY JcrRepository			       		"<ulink url='&API;jcr/JcrRepository.html'><classname>JcrRepository</classname></ulink>">
+<!ENTITY JcrRepositoryFactory			       		"<ulink url='&API;jcr/JcrRepositoryFactory.html'><classname>JcrRepositoryFactory</classname></ulink>">
 <!ENTITY JcrSession					       		"<ulink url='&API;jcr/JcrSession.html'><classname>JcrSession</classname></ulink>">
 <!ENTITY JndiRepositoryFactory			  "<ulink url='&API;jcr/JcrRepository.html'><classname>JndiRepositoryFactory</classname></ulink>">
 

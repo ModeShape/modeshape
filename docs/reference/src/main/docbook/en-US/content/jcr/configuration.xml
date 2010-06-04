@@ -33,7 +33,8 @@
 	<para>Using ModeShape within your application is actually quite straightforward.  As you'll see in this chapter,
 		the first step is setting up ModeShape and starting the <code>JcrEngine</code>.  After that, you obtain the
 		<code>javax.jcr.Repository</code> instance for a named repository and just use the standard JCR API throughout your
-		application.
+		application.  Alternatively, you can use the ModeShape implementation of the &RepositoryFactory; interface to access
+		your repository.
 	</para>
 	<sect1 id="jcr_engine">
 		<title>ModeShape's JcrEngine</title>
@@ -412,6 +413,103 @@ configuration.storeTo(pathToFile);
 			</para>
 		</sect2>
 	</sect1>
+	<sect1 id="repository_factory">
+		<title>JcrRepositoryFactory</title>
+		<para>
+			ModeShape provides the &JcrRepositoryFactory; class, an implementation of the &RepositoryFactory; interface, that can return a reference to a named repository
+			based on a provided configuration file.  In addition to providing the <code>getRepository(Map)</code> method from the 
+			<ulink url="&JSR283;">JSR-283</ulink> API, ModeShape also provides an extended API for this class in the <code>org.modeshape.jcr.api.RepositoryFactory</code> interface.
+		</para>
+		<sect2 id="jcr_repository_factory_from_file">
+			<title>Accessing Repositories from Configuration Files</title>
+			<para>
+				The simplest way to use the &JcrRepositoryFactory; to access a &Repository; is to provide it a URL that points to a configuration file.
+				This can be done with the following sample code:
+			</para>
+    <programlisting role="JAVA"><![CDATA[
+String configUrl = ... ; // URL that points to your configuration file
+Map params = Collections.singletonMap("org.modeshape.jcr.URL", configUrl);
+
+Repository repository;
+
+for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
+    repository = factory.getRepository(parameters);
+    if (repository != null) break;
+}]]></programlisting>
+			<para>
+				Alternatively, if you know that you will be using ModeShape as your JCR API in the future and want to condense code at the expense of tighter coupling, you can
+				instantiate a &JcrRepositoryFactory; directly.
+			</para>
+    <programlisting role="JAVA"><![CDATA[
+    
+RepositoryFactory repoFactory = new JcrRepositoryFactory();    
+String configUrl = ... ; // URL that points to your configuration file
+Map params = Collections.singletonMap(JcrRepositoryFactory.URL, configUrl);
+
+Repository repository = repoFactory.getRepository(params);]]></programlisting>
+			<para>
+				The value of <code>configUrl</code> in the code snippets above would be something like <code>file:relativePathToConfigFile?repositoryName=yourRepositoryName</code>.  
+				In this example, the configuration file that specifies the repository setup will be loaded from the file path <code>relativePathToConfigFile</code> and 
+				the repository named <code>yourRepositoryName</code> will be returned.  If there is no repository with that name or the configuration file does not exist 
+				at that path, <code>getRepository(Map)</code> will return null.  The format for the configuration file is <link linkend="loading_from_file">the same as used above</link> 
+				when loading a &JcrConfiguration; object from a configuration file.
+			</para>
+			<para>
+				If an absolute path to the configuration file works better, a value for <code>configUrl</code> like <code>file:///absolutePathToConfigFile?repositoryName=yourRepositoryName</code>
+				could have been used instead.  Note the addition of the three forward slashes after the protocol portion of the URL (i.e., <code>file:</code>).  this indicates that the 
+				following path is an absolute path.
+			</para>
+			<para>
+				This method can be used to load files from the file system or from the classpath.  If there is no file found at the given path, the same path will be used to try
+				to load the configuration file as a resource through the classloader.
+			</para>
+			<para>
+				Behind the scenes, the &JcrRepositoryFactory; is checking to see if it has already configured and started a &JcrEngine; for the named configuration file.  If it 
+				has already created a &JcrEngine; for this configuration, then that &JcrEngine; is reused.  Otherwise, a new &JcrEngine; is created and configured based on the given
+				configuration file.  Either way, the &JcrEngine; is used to get the reference to the returned &Repository;.
+			</para>
+		</sect2>
+		<sect2>
+			<title>Accessing Repositories from JNDI</title>
+			<para>
+				Given a slightly different URL, the same code used above can be reused to get a &Repository; from a &JcrEngine; that has been previously deployed through JNDI.
+				JNDI URLs take the form <code>jndi:///nameOfJndiResource?repositoryName=yourRepositoryName</code>.  The <code>nameOfJndiResource</code> is passed directly to
+				a JNDI <code>lookup</code>.  If no &JcrEngine; exists at the given name, the <code>getRepository(Map)</code> method will return <code>null</code>.  Also, any additional
+				parameters besides <code>JcrRepositoryFactory.URL</code> that are provided in the parameters map in the <code>getRepository(Map)</code> method will be used
+				in the constructor for the <code>InitialContext</code> used to look up the JNDI reference.
+			</para>
+			<para>
+				Accessing a repository through JNDI differs slightly from accessing a repository from a configuration file in that the &JcrRepositoryFactory; will never create a
+				new &JcrEngine; instance in response to a <code>getRepository</code> invocation with a JNDI URL.
+			</para>
+		</sect2>
+		<sect2>
+			<title>Cleaning Up after JcrRepositoryFactory</title>
+			<para>
+				As a <link linkend="jcr_repository_factory_from_file">preceding section</link> notes, it is possible for the &JcrRepositoryFactory; to create one or more &JcrEngine; instances.  Although the 
+				<ulink url="&JSR283;">JSR-283</ulink> specification does not specify a way to shutdown engines or repositories created as a side effect of &JcrRepositoryFactory; use, ModeShape has an extension to the
+				<ulink url="&JSR283;">JSR-283</ulink> API that provides this capability.
+			</para>
+    <programlisting role="JAVA"><![CDATA[
+org.modeshape.jcr.api.RepositoryFactory repoFactory = JcrRepositoryFactory();
+
+// Create any number of JcrEngines by calling repoFactory.getRepository(params);
+
+// Do some stuff with the repository
+
+// Now clean up the repository when finished
+
+repoFactory.shutdown(30, TimeUnit.SECONDS);
+
+]]></programlisting>
+			<para>
+				The code listed above will instantiate a new JcrRepositoryFactory and use a ModeShape-specific method to shutdown any &JcrEngine;s created by &JcrRepositoryFactory;
+				and wait for up to 30 seconds for each of them to shutdown gracefully.  Behind the scenes, the <code>shutdown(long, TimeUnit)</code> method is iterating over an internal 
+				collection of &JcrEngine;s and calling <code>shutdown</code> and <code>awaitTermination(long, TimeUnit)</code> on each engine.
+			</para>
+		</sect2>
+		</sect1>
+	
 	<sect1 id="modeshape_and_jndi">
 		<title>Deploying ModeShape via JNDI</title>
 		<para>
@@ -436,7 +534,8 @@ try {
   // Look up the JCR Repository object ...
 	InitialContext initCtx = new InitialContext();
 	Context envCtx = (Context) initCtx.lookup("java:comp/env");
-	Repository repo = (Repository) envCtx.lookup("jcr/local");		// name in JNDI is defined by configuration
+	// name in JNDI is defined by configuration
+	Repository repo = (Repository) envCtx.lookup("jcr/local");	
 
 	// Obtain a JCR Session using simple authentication
 	// (or use anonymous authentication if desired)
