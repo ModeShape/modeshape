@@ -66,6 +66,7 @@ import org.apache.jackrabbit.test.api.RepositoryFactoryTest;
 import org.apache.jackrabbit.test.api.RepositoryLoginTest;
 import org.apache.jackrabbit.test.api.RootNodeTest;
 import org.apache.jackrabbit.test.api.SerializationTest;
+import org.apache.jackrabbit.test.api.SessionReadMethodsTest;
 import org.apache.jackrabbit.test.api.SessionRemoveItemTest;
 import org.apache.jackrabbit.test.api.SessionTest;
 import org.apache.jackrabbit.test.api.SessionUUIDTest;
@@ -235,7 +236,7 @@ public class JcrTckTest {
         suite.addTestSuite(NodeIteratorTest.class);
         suite.addTestSuite(PropertyReadMethodsTest.class);
         suite.addTestSuite(RepositoryDescriptorTest.class);
-        // suite.addTestSuite(SessionReadMethodsTest.class);
+        suite.addTestSuite(SessionReadMethodsTest.class);
         suite.addTestSuite(WorkspaceReadMethodsTest.class);
         suite.addTestSuite(ReferenceableRootNodesTest.class);
 
