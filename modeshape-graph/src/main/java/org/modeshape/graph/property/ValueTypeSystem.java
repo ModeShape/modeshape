@@ -49,6 +49,7 @@ public class ValueTypeSystem implements TypeSystem {
     private final TypeFactory<Boolean> booleanFactory;
     private final TypeFactory<Long> longFactory;
     private final TypeFactory<Double> doubleFactory;
+    private final TypeFactory<BigDecimal> decimalFactory;
     private final TypeFactory<?> dateFactory;
     private final TypeFactory<?> pathFactory;
     private final TypeFactory<?> referenceFactory;
@@ -89,6 +90,7 @@ public class ValueTypeSystem implements TypeSystem {
         this.booleanFactory = new Factory<Boolean>(valueFactories.getBooleanFactory());
         this.longFactory = new Factory<Long>(valueFactories.getLongFactory());
         this.doubleFactory = new Factory<Double>(valueFactories.getDoubleFactory());
+        this.decimalFactory = new Factory<BigDecimal>(valueFactories.getDecimalFactory());
         this.dateFactory = new Factory<DateTime>(valueFactories.getDateFactory()) {
 
             /**
@@ -217,6 +219,15 @@ public class ValueTypeSystem implements TypeSystem {
      */
     public TypeFactory<Double> getDoubleFactory() {
         return doubleFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.TypeSystem#getDecimalFactory()
+     */
+    public TypeFactory<BigDecimal> getDecimalFactory() {
+        return decimalFactory;
     }
 
     /**

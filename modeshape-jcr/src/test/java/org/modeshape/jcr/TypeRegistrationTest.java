@@ -837,9 +837,9 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         assertThat(nodeType, is(notNullValue()));
         assertThat(nodeType.getName(), is(template.getName()));
-        assertThat(nodeType.getDeclaredSupertypes().length, is(template.getDeclaredSupertypes().length));
-        for (int i = 0; i < template.getDeclaredSupertypes().length; i++) {
-            assertThat(template.getDeclaredSupertypes()[i], is(nodeType.getDeclaredSupertypes()[i].getName()));
+        assertThat(nodeType.getDeclaredSupertypes().length, is(template.getDeclaredSupertypeNames().length));
+        for (int i = 0; i < template.getDeclaredSupertypeNames().length; i++) {
+            assertThat(template.getDeclaredSupertypeNames()[i], is(nodeType.getDeclaredSupertypes()[i].getName()));
         }
         assertThat(template.isMixin(), is(nodeType.isMixin()));
         assertThat(template.hasOrderableChildNodes(), is(nodeType.hasOrderableChildNodes()));

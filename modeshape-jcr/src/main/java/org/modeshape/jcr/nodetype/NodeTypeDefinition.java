@@ -23,8 +23,6 @@
  */
 package org.modeshape.jcr.nodetype;
 
-import javax.jcr.nodetype.NodeDefinition;
-import javax.jcr.nodetype.PropertyDefinition;
 import net.jcip.annotations.NotThreadSafe;
 
 /**
@@ -32,77 +30,5 @@ import net.jcip.annotations.NotThreadSafe;
  * href="http://jcp.org/en/jsr/detail?id=283">JSR-283</a>.
  */
 @NotThreadSafe
-public interface NodeTypeDefinition {
-
-    /**
-     * Get the name of the node type being defined
-     * 
-     * @return the name
-     */
-    public String getName();
-
-    /**
-     * Get the direct supertypes for this node type.
-     * 
-     * @return the names of the direct supertypes, or an empty array if there are none
-     */
-    public String[] getDeclaredSupertypes();
-
-    /**
-     * Get the direct supertypes for this node type.
-     * 
-     * @return the names of the direct supertypes, or an empty array if there are none
-     */
-    public String[] getDeclaredSupertypeNames();
-
-    /**
-     * Get whether this node type is abstract.
-     * 
-     * @return true if this node type is abstract, or false if it is concrete
-     */
-    public boolean isAbstract();
-
-    /**
-     * Get whether this node type is abstract.
-     * 
-     * @return true if this node type is abstract, or false if it is concrete
-     */
-    public boolean isQueryable();
-
-    /**
-     * Get whether this node type is a mixin.
-     * 
-     * @return true if this node type is a mixin, or false if it is concrete
-     */
-    public boolean isMixin();
-
-    /**
-     * Get whether this node type supports orderable child nodes.
-     * 
-     * @return true if this node type supports orderable child nodes, or false otherwise
-     */
-    public boolean hasOrderableChildNodes();
-
-    /**
-     * Get the name of the primary item for this node type
-     * 
-     * @return the name of the child node or property that represents the primary item for nodes that use this type, or null if
-     *         there is none
-     */
-    public String getPrimaryItemName();
-
-    /**
-     * Get the array of property definition templates for this node type.
-     * 
-     * @return the node type's list of property definitions; never null
-     */
-    public PropertyDefinition[] getDeclaredPropertyDefinitions();
-
-    /**
-     * Get the array of child node definition templates for this node type
-     * 
-     * @return the node type's list of child node definitions; never null
-     */
-
-    public NodeDefinition[] getDeclaredNodeDefinitions();
+public interface NodeTypeDefinition extends javax.jcr.nodetype.NodeTypeDefinition {
 }

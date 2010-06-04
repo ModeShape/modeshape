@@ -655,7 +655,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * @throws RepositoryException if another error occurs
      */
     public NodeTypeTemplate createNodeTypeTemplate( NodeTypeDefinition ntd ) throws RepositoryException {
-        NodeTypeTemplate ntt = createNodeTypeTemplate();
+        NodeTypeTemplate ntt = new JcrNodeTypeTemplate(context(), true);
 
         if (ntd != null) {
             ntt.setName(ntd.getName());
@@ -667,6 +667,39 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             ntt.setQueryable(ntd.isQueryable());
 
             // copy child nodes and props
+            for (NodeDefinition nodeDefinition : ntd.getDeclaredChildNodeDefinitions()) {
+                JcrNodeDefinitionTemplate ndt = new JcrNodeDefinitionTemplate(context());
+
+                ndt.setAutoCreated(nodeDefinition.isAutoCreated());
+                ndt.setDefaultPrimaryType(ndt.getDefaultPrimaryTypeName());
+                ndt.setMandatory(ndt.isMandatory());
+                ndt.setName(ndt.getName());
+                ndt.setOnParentVersion(ndt.getOnParentVersion());
+                ndt.setProtected(ndt.isProtected());
+                ndt.setRequiredPrimaryTypeNames(ndt.getRequiredPrimaryTypeNames());
+                ndt.setSameNameSiblings(ndt.allowsSameNameSiblings());
+
+                ntt.getNodeDefinitionTemplates().add(ndt);
+            }
+
+            for (PropertyDefinition propertyDefinition : ntd.getDeclaredPropertyDefinitions()) {
+                JcrPropertyDefinitionTemplate pdt = new JcrPropertyDefinitionTemplate(context());
+
+                pdt.setAutoCreated(propertyDefinition.isAutoCreated());
+                pdt.setAvailableQueryOperators(propertyDefinition.getAvailableQueryOperators());
+                pdt.setDefaultValues(propertyDefinition.getDefaultValues());
+                pdt.setFullTextSearchable(propertyDefinition.isFullTextSearchable());
+                pdt.setMandatory(propertyDefinition.isMandatory());
+                pdt.setMultiple(propertyDefinition.isMultiple());
+                pdt.setName(propertyDefinition.getName());
+                pdt.setOnParentVersion(propertyDefinition.getOnParentVersion());
+                pdt.setProtected(propertyDefinition.isProtected());
+                pdt.setQueryOrderable(propertyDefinition.isQueryOrderable());
+                pdt.setRequiredType(propertyDefinition.getRequiredType());
+                pdt.setValueConstraints(propertyDefinition.getValueConstraints());
+
+                ntt.getPropertyDefinitionTemplates().add(pdt);
+            }
         }
 
         return ntt;

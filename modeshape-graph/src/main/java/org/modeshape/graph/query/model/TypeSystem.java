@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.query.model;
 
+import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Set;
 import net.jcip.annotations.Immutable;
@@ -77,6 +78,13 @@ public interface TypeSystem {
      * @return the double factory; never null
      */
     TypeFactory<Double> getDoubleFactory();
+
+    /**
+     * Get the type factory for decimal types.
+     * 
+     * @return the decimal factory; never null
+     */
+    TypeFactory<BigDecimal> getDecimalFactory();
 
     /**
      * Get the type factory for date-time objects.

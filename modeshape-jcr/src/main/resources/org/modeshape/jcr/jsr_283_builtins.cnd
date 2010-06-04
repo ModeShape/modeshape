@@ -93,10 +93,9 @@
   - jcr:defaultPrimaryType (name) protected
   - jcr:sameNameSiblings (boolean) mandatory protected 
 
-/* Need full support for weakreference type for jcr:copiedFrom property */
 [nt:versionHistory] > mix:referenceable 
   - jcr:versionableUuid (string) mandatory autocreated protected abort 
-  - jcr:copiedFrom (reference) protected abort < 'nt:version' 
+  - jcr:copiedFrom (weakreference) protected abort < 'nt:version' 
   + jcr:rootVersion (nt:version) = nt:version mandatory autocreated protected abort 
   + jcr:versionLabels (nt:versionLabels) = nt:versionLabels mandatory autocreated protected abort 
   + * (nt:version) = nt:version protected abort
@@ -146,7 +145,6 @@
 [nt:configuration] > mix:versionable 
   - jcr:root (reference) mandatory autocreated protected
 
-/* Need full support for weakreference type to use this
 [nt:address] 
   - jcr:protocol (string) 
   - jcr:host (string)  
@@ -155,7 +153,6 @@
   - jcr:workspace (string) 
   - jcr:path (path) 
   - jcr:id (weakreference)
-*/
 
 [nt:naturalText] 
   - jcr:text (string) 

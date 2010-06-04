@@ -157,6 +157,7 @@ public final class JcrI18n {
 
     // Type registration messages
     public static I18n invalidNodeTypeName;
+    public static I18n badNodeTypeName;
     public static I18n noSuchNodeType;
     public static I18n nodeTypeAlreadyExists;
     public static I18n invalidPrimaryTypeName;

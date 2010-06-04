@@ -102,12 +102,15 @@ class NodeTypeSchemata implements Schemata {
         types.put(PropertyType.BINARY, typeSystem.getBinaryFactory().getTypeName());
         types.put(PropertyType.BOOLEAN, typeSystem.getBooleanFactory().getTypeName());
         types.put(PropertyType.DATE, typeSystem.getDateTimeFactory().getTypeName());
+        types.put(PropertyType.DECIMAL, typeSystem.getDecimalFactory().getTypeName());
         types.put(PropertyType.DOUBLE, typeSystem.getDoubleFactory().getTypeName());
         types.put(PropertyType.LONG, typeSystem.getLongFactory().getTypeName());
         types.put(PropertyType.PATH, typeSystem.getPathFactory().getTypeName());
         types.put(PropertyType.REFERENCE, typeSystem.getReferenceFactory().getTypeName());
+        types.put(PropertyType.WEAKREFERENCE, typeSystem.getReferenceFactory().getTypeName());
         types.put(PropertyType.STRING, typeSystem.getStringFactory().getTypeName());
         types.put(PropertyType.NAME, typeSystem.getStringFactory().getTypeName());
+        types.put(PropertyType.URI, typeSystem.getStringFactory().getTypeName());
 
         // Create the "ALLNODES" table, which will contain all possible properties ...
         IndexRules.Builder indexRulesBuilder = IndexRules.createBuilder(LuceneSearchEngine.DEFAULT_RULES);
@@ -163,6 +166,7 @@ class NodeTypeSchemata implements Schemata {
             boolean canBeReference = false;
             switch (defn.getRequiredType()) {
                 case PropertyType.REFERENCE:
+                case PropertyType.WEAKREFERENCE:
                 case PropertyType.UNDEFINED:
                     canBeReference = true;
             }

@@ -60,14 +60,14 @@ import org.apache.jackrabbit.test.api.observation.PropertyAddedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyChangedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
 import org.apache.jackrabbit.test.api.observation.WorkspaceOperationTest;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.jcr.JcrRepository.Option;
 import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.JcrRepository.Option;
 
 /**
  * The {@link JcrObservationManager} test class.
@@ -1432,7 +1432,7 @@ public final class JcrObservationManagerTest extends TestSuite {
 
         // trigger events
         String node3 = "node3";
-        Node n3 = n1.addNode(node3, NT_BASE);
+        Node n3 = n1.addNode(node3, UNSTRUCTURED);
         n2.addNode(node3, UNSTRUCTURED);
         save();
 

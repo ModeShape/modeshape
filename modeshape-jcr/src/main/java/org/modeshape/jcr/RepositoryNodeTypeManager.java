@@ -100,13 +100,16 @@ class RepositoryNodeTypeManager {
         temp.put(PropertyType.TYPENAME_BINARY.toUpperCase(), PropertyType.BINARY);
         temp.put(PropertyType.TYPENAME_BOOLEAN.toUpperCase(), PropertyType.BOOLEAN);
         temp.put(PropertyType.TYPENAME_DATE.toUpperCase(), PropertyType.DATE);
+        temp.put(PropertyType.TYPENAME_DECIMAL.toUpperCase(), PropertyType.DECIMAL);
         temp.put(PropertyType.TYPENAME_DOUBLE.toUpperCase(), PropertyType.DOUBLE);
         temp.put(PropertyType.TYPENAME_LONG.toUpperCase(), PropertyType.LONG);
         temp.put(PropertyType.TYPENAME_NAME.toUpperCase(), PropertyType.NAME);
         temp.put(PropertyType.TYPENAME_PATH.toUpperCase(), PropertyType.PATH);
         temp.put(PropertyType.TYPENAME_STRING.toUpperCase(), PropertyType.STRING);
         temp.put(PropertyType.TYPENAME_REFERENCE.toUpperCase(), PropertyType.REFERENCE);
+        temp.put(PropertyType.TYPENAME_WEAKREFERENCE.toUpperCase(), PropertyType.WEAKREFERENCE);
         temp.put(PropertyType.TYPENAME_UNDEFINED.toUpperCase(), PropertyType.UNDEFINED);
+        temp.put(PropertyType.TYPENAME_URI.toUpperCase(), PropertyType.URI);
 
         PROPERTY_TYPE_VALUES_FROM_NAME = Collections.unmodifiableMap(temp);
     }

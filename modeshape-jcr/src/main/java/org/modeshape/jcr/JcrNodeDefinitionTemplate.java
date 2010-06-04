@@ -23,9 +23,14 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NameFactory;
+import org.modeshape.graph.property.NamespaceRegistry;
+import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.jcr.nodetype.NodeDefinitionTemplate;
 
 /**
@@ -34,8 +39,8 @@ import org.modeshape.jcr.nodetype.NodeDefinitionTemplate;
 @NotThreadSafe
 class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements NodeDefinitionTemplate {
 
-    private String defaultPrimaryType;
-    private String[] requiredPrimaryTypes;
+    private Name defaultPrimaryType;
+    private Name[] requiredPrimaryTypes;
     private boolean allowSameNameSiblings;
 
     JcrNodeDefinitionTemplate( ExecutionContext context ) {
@@ -47,7 +52,7 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
      * 
      * @see org.modeshape.jcr.nodetype.NodeDefinitionTemplate#setDefaultPrimaryType(String)
      */
-    public void setDefaultPrimaryType( String defaultPrimaryType ) {
+    public void setDefaultPrimaryType( String defaultPrimaryType ) throws ConstraintViolationException {
         setDefaultPrimaryTypeName(defaultPrimaryType);
     }
 
@@ -56,8 +61,12 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
      * 
      * @param defaultPrimaryType the default primary type for this child node
      */
-    public void setDefaultPrimaryTypeName( String defaultPrimaryType ) {
-        this.defaultPrimaryType = defaultPrimaryType;
+    public void setDefaultPrimaryTypeName( String defaultPrimaryType ) throws ConstraintViolationException {
+        try {
+            this.defaultPrimaryType = getContext().getValueFactories().getNameFactory().create(defaultPrimaryType);
+        } catch (ValueFormatException vfe) {
+            throw new ConstraintViolationException(vfe);
+        }
     }
 
     /**
@@ -67,18 +76,31 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
      * @deprecated Use {@link #setRequiredPrimaryTypeNames(String[])} instead
      */
     @SuppressWarnings( "dep-ann" )
-    public void setRequiredPrimaryTypes( String[] requiredPrimaryTypes ) {
+    public void setRequiredPrimaryTypes( String[] requiredPrimaryTypes ) throws ConstraintViolationException {
         setRequiredPrimaryTypeNames(requiredPrimaryTypes);
     }
 
     /**
-     * SSet the names of the primary types that must appear on the child(ren) described by this definition
+     * {@inheritDoc}
      * 
-     * @param requiredPrimaryTypes the names of the required primary types, or null or empty if there are no requirements for the
-     *        primary types of the children described by this definition
+     * @see NodeDefinitionTemplate#setRequiredPrimaryTypeNames(String[])
      */
-    public void setRequiredPrimaryTypeNames( String[] requiredPrimaryTypes ) {
-        this.requiredPrimaryTypes = requiredPrimaryTypes;
+    public void setRequiredPrimaryTypeNames( String[] requiredPrimaryTypes ) throws ConstraintViolationException {
+        if (requiredPrimaryTypes == null) {
+            throw new ConstraintViolationException(JcrI18n.badNodeTypeName.text("requiredPrimaryTypes"));
+        }
+
+        NameFactory nameFactory = getContext().getValueFactories().getNameFactory();
+        Name[] rpts = new Name[requiredPrimaryTypes.length];
+        for (int i = 0; i < requiredPrimaryTypes.length; i++) {
+            try {
+                rpts[i] = nameFactory.create(requiredPrimaryTypes[i]);
+            } catch (ValueFormatException vfe) {
+                throw new ConstraintViolationException(vfe);
+            }
+        }
+
+        this.requiredPrimaryTypes = rpts;
     }
 
     /**
@@ -109,7 +131,8 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
     }
 
     public String getDefaultPrimaryTypeName() {
-        return defaultPrimaryType;
+        if (defaultPrimaryType == null) return null;
+        return defaultPrimaryType.getString(getContext().getNamespaceRegistry());
     }
 
     /**
@@ -122,6 +145,13 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
     }
 
     public String[] getRequiredPrimaryTypeNames() {
-        return requiredPrimaryTypes;
+        if (requiredPrimaryTypes == null) return null;
+
+        NamespaceRegistry registry = getContext().getNamespaceRegistry();
+        String[] rpts = new String[requiredPrimaryTypes.length];
+        for (int i = 0; i < requiredPrimaryTypes.length; i++) {
+            rpts[i] = requiredPrimaryTypes[i].getString(registry);
+        }
+        return rpts;
     }
 }

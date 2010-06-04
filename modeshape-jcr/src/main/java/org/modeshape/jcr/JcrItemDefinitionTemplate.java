@@ -23,13 +23,14 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.ItemDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.OnParentVersionAction;
 import net.jcip.annotations.NotThreadSafe;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.ValueFormatException;
 
 /**
  * ModeShape convenience implementation to support the JCR 2 NodeDefinitionTemplate and PropertyDefinitionTemplate classes.
@@ -125,9 +126,15 @@ abstract class JcrItemDefinitionTemplate implements ItemDefinition {
         this.isProtected = isProtected;
     }
 
-    public void setName( String name ) {
-        CheckArg.isNotEmpty(name, "name");
-        this.name = context.getValueFactories().getNameFactory().create(name);
+    public void setName( String name ) throws ConstraintViolationException {
+        if (name == null) {
+            throw new ConstraintViolationException();
+        }
+        try {
+            this.name = context.getValueFactories().getNameFactory().create(name);
+        } catch (ValueFormatException vfe) {
+            throw new ConstraintViolationException(vfe);
+        }
     }
 
     public void setOnParentVersion( int onParentVersion ) {

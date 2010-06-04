@@ -89,8 +89,10 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
      */
     public void setRequiredType( int requiredType ) {
         assert requiredType == PropertyType.BINARY || requiredType == PropertyType.BOOLEAN || requiredType == PropertyType.DATE
-               || requiredType == PropertyType.DOUBLE || requiredType == PropertyType.LONG || requiredType == PropertyType.NAME
-               || requiredType == PropertyType.PATH || requiredType == PropertyType.REFERENCE
+               || requiredType == PropertyType.DOUBLE || requiredType == PropertyType.DECIMAL
+               || requiredType == PropertyType.LONG || requiredType == PropertyType.NAME || requiredType == PropertyType.PATH
+               || requiredType == PropertyType.REFERENCE || requiredType == PropertyType.WEAKREFERENCE
+               || requiredType == PropertyType.URI
                || requiredType == PropertyType.STRING || requiredType == PropertyType.UNDEFINED;
         this.requiredType = requiredType;
     }

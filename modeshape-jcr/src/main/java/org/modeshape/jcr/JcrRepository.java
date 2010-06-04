@@ -557,7 +557,7 @@ public class JcrRepository implements Repository {
             // this.repositoryTypeManager = new RepositoryNodeTypeManager(this, includeInheritedProperties);
             this.repositoryTypeManager = new RepositoryNodeTypeManager(this, includeInheritedProperties);
             this.repositoryTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {
-                "/org/modeshape/jcr/jsr_170_builtins.cnd", "/org/modeshape/jcr/dna_builtins.cnd"}));
+                "/org/modeshape/jcr/jsr_283_builtins.cnd", "/org/modeshape/jcr/dna_builtins.cnd"}));
         } catch (RepositoryException re) {
             re.printStackTrace();
             throw new IllegalStateException("Could not load node type definition files", re);

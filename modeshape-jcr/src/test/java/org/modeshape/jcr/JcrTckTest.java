@@ -99,7 +99,6 @@ import org.apache.jackrabbit.test.api.WorkspaceMoveSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceReadMethodsTest;
-import org.apache.jackrabbit.test.api.nodetype.CanAddChildNodeCallWithNodeTypeTest;
 import org.apache.jackrabbit.test.api.nodetype.CanAddChildNodeCallWithoutNodeTypeTest;
 import org.apache.jackrabbit.test.api.nodetype.CanRemoveItemTest;
 import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyBinaryTest;
@@ -113,8 +112,10 @@ import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyPathTest;
 import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyStringTest;
 import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyTest;
 import org.apache.jackrabbit.test.api.nodetype.NodeDefTest;
+import org.apache.jackrabbit.test.api.nodetype.NodeTypeCreationTest;
 import org.apache.jackrabbit.test.api.nodetype.NodeTypeManagerTest;
 import org.apache.jackrabbit.test.api.nodetype.NodeTypeTest;
+import org.apache.jackrabbit.test.api.nodetype.PredefinedNodeTypeTest;
 import org.apache.jackrabbit.test.api.nodetype.PropertyDefTest;
 import org.apache.jackrabbit.test.api.observation.AddEventListenerTest;
 import org.apache.jackrabbit.test.api.observation.EventIteratorTest;
@@ -241,7 +242,7 @@ public class JcrTckTest {
         suite.addTestSuite(NodeTypeTest.class);
         suite.addTestSuite(PropertyDefTest.class);
 
-        // suite.addTestSuite(PredefinedNodeTypeTest.class);
+        suite.addTestSuite(PredefinedNodeTypeTest.class);
 
         suite.addTestSuite(CanSetPropertyBinaryTest.class);
         suite.addTestSuite(CanSetPropertyBooleanTest.class);
@@ -254,14 +255,13 @@ public class JcrTckTest {
         suite.addTestSuite(CanSetPropertyStringTest.class);
         suite.addTestSuite(CanSetPropertyTest.class);
 
-        suite.addTestSuite(CanAddChildNodeCallWithNodeTypeTest.class);
+        // suite.addTestSuite(CanAddChildNodeCallWithNodeTypeTest.class);
         suite.addTestSuite(CanAddChildNodeCallWithoutNodeTypeTest.class);
 
         suite.addTestSuite(CanRemoveItemTest.class);
 
         // JCR 2.0
-
-        // suite.addTestSuite(NodeTypeCreationTest.class);
+        suite.addTestSuite(NodeTypeCreationTest.class);
 
         return suite;
     }

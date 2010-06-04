@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.nodetype;
 
-import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
 
 /**
@@ -33,76 +32,5 @@ import net.jcip.annotations.NotThreadSafe;
  */
 @NotThreadSafe
 public interface NodeTypeTemplate extends javax.jcr.nodetype.NodeTypeTemplate {
-
-    /**
-     * Set the name of the node type
-     * 
-     * @param name the name
-     */
-    public void setName( String name );
-
-    /**
-     * Set the direct supertypes for this node type.
-     * 
-     * @param names the names of the direct supertypes, or empty or null if there are none.
-     */
-    public void setDeclaredSupertypeNames( String[] names );
-
-    /**
-     * Set the direct supertypes for this node type.
-     * 
-     * @param names the names of the direct supertypes, or empty or null if there are none.
-     */
-    public void setDeclaredSuperTypeNames( String[] names );
-
-    /**
-     * Set whether this node type is abstract.
-     * 
-     * @param isAbstract true if this node type is to be abstract, or false if it is concrete
-     */
-    public void setAbstract( boolean isAbstract );
-
-    /**
-     * Sets whether this node is queryable
-     * 
-     * @param queryable true if the node should be included in query results; false otherwise
-     */
-    public void setQueryable( boolean queryable );
-
-    /**
-     * Set whether this node type is a mixin.
-     * 
-     * @param mixin true if this node type is a mixin, or false otherwise
-     */
-    public void setMixin( boolean mixin );
-
-    /**
-     * Set whether this node type supports orderable child nodes.
-     * 
-     * @param orderable true if this node type supports orderable child nodes, or false otherwise
-     */
-    public void setOrderableChildNodes( boolean orderable );
-
-    /**
-     * Set the name of the primary item for this node type
-     * 
-     * @param name the name of the child node or property that represents the primary item for nodes that use this type, or null
-     *        if there is none
-     */
-    public void setPrimaryItemName( String name );
-
-    /**
-     * Get the modifiable list of property definition templates for this node type.
-     * 
-     * @return the node type's list of property definition templates; never null
-     */
-    public List<PropertyDefinitionTemplate> getPropertyDefinitionTemplates();
-
-    /**
-     * Get the modifiable list of child node definition templates for this node type
-     * 
-     * @return the node type's list of child node definition templates; never null
-     */
-    public List<NodeDefinitionTemplate> getNodeDefinitionTemplates();
 
 }

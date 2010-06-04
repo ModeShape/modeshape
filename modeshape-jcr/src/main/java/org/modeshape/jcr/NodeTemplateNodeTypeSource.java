@@ -166,12 +166,11 @@ class NodeTemplateNodeTypeSource implements JcrNodeTypeSource {
      * @return the path to the newly created node
      * @throws InvalidNodeTypeDefinitionException
      */
-    @SuppressWarnings( "deprecation" )
     protected Path createNodeType( JcrNodeTypeTemplate nodeType,
                                    Path parentPath ) throws InvalidNodeTypeDefinitionException {
 
         Name name = nameFrom(nodeType.getName());
-        Name[] supertypes = namesFrom(nodeType.getDeclaredSupertypes());
+        Name[] supertypes = namesFrom(nodeType.declaredSupertypeNames());
         boolean isAbstract = booleanFrom(nodeType.isAbstract(), false);
         boolean hasOrderableChildNodes = booleanFrom(nodeType.hasOrderableChildNodes(), false);
         boolean isMixin = booleanFrom(nodeType.isMixin(), false);

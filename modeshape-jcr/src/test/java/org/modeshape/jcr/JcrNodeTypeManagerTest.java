@@ -202,7 +202,7 @@ public final class JcrNodeTypeManagerTest extends TestSuite {
         testNode.addNode("hierarchyNode", "nt:folder");
 
         // This residual definition comes from mgnl:content
-        testNode.addNode("baseNode", "nt:base");
+        testNode.addNode("baseNode", "nt:unstructured");
 
         session.save();
     }
