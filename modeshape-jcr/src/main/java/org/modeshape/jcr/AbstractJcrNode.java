@@ -163,6 +163,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
     final JcrValue valueFrom( int propertyType,
                               Object value ) {
+        if (value instanceof JcrBinary) {
+            value = ((JcrBinary)value).binary();
+        }
         return new JcrValue(cache.factories(), cache, propertyType, value);
     }
 
@@ -178,9 +181,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         return new JcrValue(factories, cache, PropertyType.DATE, binary);
     }
 
+    final JcrValue valueFrom( Binary value ) {
+        ValueFactories factories = cache.factories();
+        org.modeshape.graph.property.Binary binary = ((JcrBinary)value).binary();
+        return new JcrValue(factories, cache, PropertyType.DATE, binary);
+    }
+
     final JcrValue valueFrom( javax.jcr.Node value ) throws UnsupportedRepositoryOperationException, RepositoryException {
         ValueFactories factories = cache.factories();
-        String uuid = factories.getStringFactory().create(value.getUUID());
+        String uuid = factories.getStringFactory().create(value.getIdentifier());
         return new JcrValue(factories, cache, PropertyType.REFERENCE, uuid);
     }
 
@@ -258,8 +267,17 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (!isReferenceable()) {
             throw new UnsupportedRepositoryOperationException(JcrI18n.nodeNotReferenceable.text());
         }
+        return identifier();
+    }
 
-        return uuid().toString();
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#getIdentifier()
+     */
+    @Override
+    public String getIdentifier() throws RepositoryException {
+        return identifier();
     }
 
     /**
@@ -2166,12 +2184,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
     @Override
     public String[] getAllowedLifecycleTransistions() throws UnsupportedRepositoryOperationException, RepositoryException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getIdentifier() throws RepositoryException {
         // TODO Auto-generated method stub
         return null;
     }

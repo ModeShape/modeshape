@@ -838,28 +838,26 @@ class JcrSession implements Session {
             }
 
             @Override
-            public javax.jcr.Binary createBinary( InputStream stream ) throws RepositoryException {
-                // TODO Auto-generated method stub
-                return null;
+            public javax.jcr.Binary createBinary( InputStream value ) {
+                Binary binary = valueFactories.getBinaryFactory().create(value);
+                return new JcrBinary(binary);
             }
 
             @Override
             public Value createValue( BigDecimal value ) {
-                // TODO Auto-generated method stub
-                return null;
+                return new JcrValue(valueFactories, sessionCache, PropertyType.DECIMAL, value);
             }
 
             @Override
             public Value createValue( javax.jcr.Binary value ) {
-                // TODO Auto-generated method stub
-                return null;
+                return new JcrValue(valueFactories, sessionCache, PropertyType.BINARY, value);
             }
 
             @Override
             public Value createValue( Node value,
                                       boolean weak ) throws RepositoryException {
                 // TODO Auto-generated method stub
-                return null;
+                throw new UnsupportedOperationException();
             }
 
             Object convertValueToType( Object value,
