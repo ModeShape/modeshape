@@ -557,24 +557,28 @@ class JcrQueryManager implements QueryManager {
         public String[] getColumnTypes() {
             if (columnTypes == null) {
                 // Discover the types ...
-                Columns columns = results.getColumns();
-                List<String> types = new ArrayList<String>(columns.getColumnCount());
-                for (Column column : columns) {
-                    String typeName = null;
-                    Table table = schemata.getTable(column.getSelectorName());
-                    if (table != null) {
-                        Schemata.Column typedColumn = table.getColumn(column.getPropertyName());
-                        typeName = typedColumn.getPropertyType();
-                    }
-                    if (typeName == null) {
-                        // Might be fabricated column, so just assume string ...
-                        typeName = PropertyType.nameFromValue(PropertyType.STRING);
-                    }
-                    types.add(typeName);
-                }
-                columnTypes = types;
+        	columnTypes = loadColumnTypes(results.getColumns());
             }
             return columnTypes.toArray(new String[columnTypes.size()]);
+        }
+        
+        protected List<String> loadColumnTypes(Columns columns) {
+            List<String> types = new ArrayList<String>(columns.getColumnCount());
+            for (Column column : columns) {
+                String typeName = null;
+                Table table = schemata.getTable(column.getSelectorName());
+                if (table != null) {
+                    Schemata.Column typedColumn = table.getColumn(column.getPropertyName());
+                    typeName = typedColumn.getPropertyType();
+                }
+                if (typeName == null) {
+                    // Might be fabricated column, so just assume string ...
+                    typeName = PropertyType.nameFromValue(PropertyType.STRING);
+                }
+                types.add(typeName);
+            }
+            
+            return types;
         }
 
         /**
@@ -1213,7 +1217,10 @@ class JcrQueryManager implements QueryManager {
     }
 
     protected static class JcrSqlQueryResult extends JcrQueryResult {
-        private final List<String> columnNames;
+
+	private final List<String> columnNames;
+	private boolean addedScoreColumn;
+	private boolean addedPathColumn;
 
         protected JcrSqlQueryResult( JcrSession session,
                                      String query,
@@ -1221,8 +1228,14 @@ class JcrQueryManager implements QueryManager {
                                      Schemata schemata ) {
             super(session, query, graphResults, schemata);
             List<String> columnNames = new LinkedList<String>(graphResults.getColumns().getColumnNames());
-            if (!columnNames.contains(JCR_SCORE_COLUMN_NAME)) columnNames.add(0, JCR_SCORE_COLUMN_NAME);
-            if (!columnNames.contains(JCR_PATH_COLUMN_NAME)) columnNames.add(0, JCR_PATH_COLUMN_NAME);
+            if (!columnNames.contains(JCR_SCORE_COLUMN_NAME)) {
+        	columnNames.add(0, JCR_SCORE_COLUMN_NAME);
+        	addedScoreColumn = true;
+            }
+            if (!columnNames.contains(JCR_PATH_COLUMN_NAME)) {
+        	columnNames.add(0, JCR_PATH_COLUMN_NAME);
+        	addedPathColumn = true;
+            }
             this.columnNames = Collections.unmodifiableList(columnNames);
         }
 
@@ -1234,6 +1247,30 @@ class JcrQueryManager implements QueryManager {
         @Override
         public List<String> getColumnNameList() {
             return columnNames;
+        }
+        
+        @Override
+        protected List<String> loadColumnTypes(Columns columns) {
+            List<String> types = new ArrayList<String>(columns.getColumnCount() + (addedScoreColumn ? 1 : 0) + (addedPathColumn ? 1 : 0) );
+            String stringtype = PropertyType.nameFromValue(PropertyType.STRING);
+            if (addedScoreColumn) types.add(0,stringtype);
+            if (addedPathColumn) types.add(0,stringtype);
+            
+            for (Column column : columns) {
+                String typeName = null;
+                Table table = schemata.getTable(column.getSelectorName());
+                if (table != null) {
+                    Schemata.Column typedColumn = table.getColumn(column.getPropertyName());
+                    typeName = typedColumn.getPropertyType();
+                }
+                if (typeName == null) {
+                    // Might be fabricated column, so just assume string ...
+                    typeName = stringtype;
+                }
+                types.add(typeName);
+            }
+            
+            return types;
         }
 
         /**
