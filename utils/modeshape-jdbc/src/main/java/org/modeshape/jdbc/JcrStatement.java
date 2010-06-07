@@ -34,7 +34,6 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.CommonI18n;
-
 /**
  * 
  */
@@ -54,6 +53,8 @@ class JcrStatement implements Statement {
     private int fetchDirection = ResultSet.FETCH_FORWARD;
     private boolean poolable;
     private int moreResults = 0;
+    
+    private String sqlLanguage = JCR_SQL2;
 
     JcrStatement( JcrConnection connection,
                   Session session ) {
@@ -65,6 +66,10 @@ class JcrStatement implements Statement {
 
     JcrConnection connection() {
         return this.connection;
+    }
+    
+    public void setJcrSqlLanguage(String jcrSQL) {
+	this.sqlLanguage = jcrSQL;
     }
 
     /**
@@ -432,7 +437,7 @@ class JcrStatement implements Statement {
             // Convert the supplied SQL into JCR-SQL2 ...
             String jcrSql2 = connection.nativeSQL(sql);
             // Create the query ...
-            jcrQuery = session.getWorkspace().getQueryManager().createQuery(jcrSql2, JCR_SQL2);
+            jcrQuery = session.getWorkspace().getQueryManager().createQuery(jcrSql2, sqlLanguage);
             jcrResults = jcrQuery.execute();
             results = new JcrResultSet(this, jcrResults);
             moreResults = 1;

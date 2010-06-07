@@ -124,12 +124,12 @@ public class JcrMetaDataTest {
 
     @Test
     public void shouldHaveMajorVersion() {
-        assertThat(metadata.getDriverMajorVersion(), is(1));
+        assertThat(metadata.getDriverMajorVersion(), is(TestUtil.majorVersion()));
     }
 
     @Test
     public void shouldHaveMinorVersion() {
-        assertThat(metadata.getDriverMinorVersion() > 1, is(true));
+        assertThat(metadata.getDriverMinorVersion() > 1, is(TestUtil.hasMinorVersion()));
     }
 
     @Test

@@ -106,12 +106,12 @@ public class JcrDriverTest {
 
     @Test
     public void shouldHaveMajorVersion() {
-        assertThat(driver.getMajorVersion(), is(1));
+        assertThat(driver.getMajorVersion(), is(TestUtil.majorVersion()));
     }
 
     @Test
     public void shouldHaveMinorVersion() {
-        assertThat(driver.getMinorVersion() > 1, is(true));
+        assertThat(driver.getMinorVersion() > 1, is(TestUtil.hasMinorVersion()));
     }
 
     @Test

@@ -41,6 +41,7 @@ import java.sql.Statement;
 
 import org.modeshape.jdbc.util.ResultSetReader;
 import org.modeshape.jdbc.util.StringLineReader;
+import org.modeshape.jcr.JcrRepository.QueryLanguage;
 
 
 
@@ -53,7 +54,7 @@ class DriverTestUtil {
 	
     protected Connection internalConnection = null;
     protected JcrResultSet internalResultSet = null;
-    protected Statement internalStatement = null;
+    protected JcrStatement internalStatement = null;
     private SQLException internalException = null;
     protected int updateCount = -1;
     protected String DELIMITER = "    "; //$NON-NLS-1$ 
@@ -63,12 +64,14 @@ class DriverTestUtil {
     private DriverTestUtil(Connection conn) {
         this.internalConnection = conn;     
     }
-        
-    public static void executeTest(Connection conn, String sql, String expected) throws SQLException{
+    
+    public static void executeTest(Connection conn, String sql, String expected, int expectedRowCount, String jcrSQL) throws SQLException{
 	DriverTestUtil util = new DriverTestUtil(conn);
 	try {
-    		util.execute(sql);
+    		util.execute(sql, jcrSQL);
     		util.assertResultsSetEquals(expected);
+    		
+    		util.assertRowCount(expectedRowCount);
     	
 	} finally {
 	    util.closeResultSet();
@@ -76,12 +79,35 @@ class DriverTestUtil {
 	}
     }
 	
-    public static  void executeTest(Connection conn, String sql, String[] expected) throws SQLException{
+    public static  void executeTest(Connection conn, String sql, String[] expected, int expectedRowCount, String jcrSQL) throws SQLException{
 	DriverTestUtil util = new DriverTestUtil(conn);
 	try {
-	    util.execute(sql);
-	    util.assertResultsSetEquals(expected);   		
+	    util.execute(sql, jcrSQL);
+	    util.assertResultsSetEquals(expected); 
+	    
+	    util.assertRowCount(expectedRowCount);
     	
+	} finally {
+	    util.closeResultSet();
+	    util.closeStatement();
+	}
+    }
+        
+    public static void executeTest(Connection conn, String sql, String expected, int expectedRowCount) throws SQLException{
+	executeTest(conn,sql,expected, expectedRowCount, QueryLanguage.JCR_SQL2);
+
+    }
+	
+    public static  void executeTest(Connection conn, String sql, String[] expected, int expectedRowCount) throws SQLException{
+	executeTest(conn,sql,expected, expectedRowCount, QueryLanguage.JCR_SQL2);
+
+    }	
+    
+    public static void executeTestAndPrint(Connection conn, String sql, String jcrSQL) throws SQLException{
+	DriverTestUtil util = new DriverTestUtil(conn);
+	try {
+	    util.execute(sql, jcrSQL);
+	    util.printResults();
 	} finally {
 	    util.closeResultSet();
 	    util.closeStatement();
@@ -89,28 +115,22 @@ class DriverTestUtil {
     }	
     
     public static void executeTestAndPrint(Connection conn, String sql) throws SQLException{
-	DriverTestUtil util = new DriverTestUtil(conn);
-	try {
-	    util.execute(sql);
-	    util.printResults();
-	} finally {
-	    util.closeResultSet();
-	    util.closeStatement();
-	}
-    }	
+	executeTestAndPrint(conn, sql, QueryLanguage.JCR_SQL2);
+    }
           
-    private boolean execute(String sql) throws SQLException{
-        return execute(sql, new Object[] {});
+    private boolean execute(String sql, String jcrSQL) throws SQLException{
+        return execute(sql, new Object[] {}, jcrSQL);
     }
     
-    private boolean execute(String sql, Object[] params) throws SQLException{
+    private boolean execute(String sql, Object[] params, String jcrSQL) throws SQLException{
 	this.updateCount = -1;
 
 	    assertNotNull(this.internalConnection);
 	    assertTrue(!this.internalConnection.isClosed());
 	    boolean result = false;
 
-	    this.internalStatement = createStatement();
+	    this.internalStatement = (JcrStatement)createStatement();
+	    this.internalStatement.setJcrSqlLanguage(jcrSQL);
 	    result = this.internalStatement.execute(sql);
 	    assertTrue(result);
 	    
@@ -276,8 +296,6 @@ class DriverTestUtil {
         if (this.internalStatement != null){
             try {
                 this.internalStatement.close();
-            } catch(SQLException e) {
-            	throw new RuntimeException(e);
             } finally {
                 this.internalStatement = null;
             }

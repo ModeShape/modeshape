@@ -83,6 +83,8 @@ public class TestUtil {
     public static List<Object[]> TUPLES;
 
     public static final String SQL_SELECT = "Select propA FROM typeA";
+    
+    public static final String DRIVER_VERSION = JdbcI18n.driverVersion.text();
 
     static {
 
@@ -109,8 +111,10 @@ public class TestUtil {
             new ByteArrayInputStream((new String("Heres my data at r3  ").getBytes()))});
         TUPLES.add(new Object[] {"r4c1", 4L, null, null, 4D, new Boolean(true).booleanValue(), new Date(),
             new ByteArrayInputStream((new String("Heres  my  data    r4  ").getBytes()))});
-
+        
     }
+    
+    
 
     static Node[] createNodes() {
         Node[] nodes = new Node[NODE_NAMES.length];
@@ -126,6 +130,24 @@ public class TestUtil {
 
         }
         return nodes;
+    }
+    
+    public static boolean hasMinorVersion() {
+
+        String[] coords = DRIVER_VERSION.split("[.-]");
+	final int major = Integer.parseInt(coords[0]);
+	final int minor = Integer.parseInt(coords[1]);
+		
+	return ( minor != 0);
+	
+    }
+    
+    public static int majorVersion() {
+	String[] coords = DRIVER_VERSION.split("[.-]");
+	final int major = Integer.parseInt(coords[0]);
+
+	return major;
+	
     }
 
     public static QueryResult createQueryResult() {
