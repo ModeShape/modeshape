@@ -412,7 +412,7 @@ public class JcrDriverIntegrationTest {
     }
 
     /**
-     * JIRA:  MODE-772
+     * JIRA: https://jira.jboss.org/browse/MODE-772
      * 
      * @throws SQLException
      */
@@ -476,5 +476,26 @@ public class JcrDriverIntegrationTest {
 	
 
   }
+
+    /**
+     * Tests that the child nodes (but no grandchild nodes) are returned.
+     * 
+     * @throws SQLException
+     */
+    @Test
+    public void shouldBeAbleToExecuteSqlQueryWithContainsCriteria()
+	    throws SQLException {
+	String[] expected = {
+		"jcr:path[String]    jcr:score[String]    jcr:primaryType[STRING]",
+		"/Cars/Utility    1.0    nt:unstructured",
+		"/Cars/Hybrid    1.0    nt:unstructured",
+		"/Cars/Sports    1.0    nt:unstructured",
+		"/Cars/Luxury    1.0    nt:unstructured"
+		};
+
+	DriverTestUtil.executeTest(this.connection,
+			"SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'", expected, 4, QueryLanguage.JCR_SQL);
+
+    }
     
 }
