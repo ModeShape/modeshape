@@ -113,10 +113,15 @@ public final class JcrObservationManagerTest extends TestSuite {
     // ===========================================================================================================================
     // Fields
     // ===========================================================================================================================
+    protected static final String WORKSPACE = "ws1";
+    protected static final String WORKSPACE2 = "ws2";
+    protected static final String REPOSITORY = "r1";
+    protected static final String SOURCE = "store";
 
     private JcrEngine engine;
     private Session session;
     private Node testRootNode;
+    private List<Session> sessions;
 
     // ===========================================================================================================================
     // Methods
@@ -140,26 +145,49 @@ public final class JcrObservationManagerTest extends TestSuite {
                               String[] uuids,
                               String[] nodeTypeNames,
                               boolean noLocal ) throws Exception {
+        return addListener(this.session, eventsExpected, numIterators, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
+    }
+
+    TestListener addListener( Session session,
+                              int eventsExpected,
+                              int eventTypes,
+                              String absPath,
+                              boolean isDeep,
+                              String[] uuids,
+                              String[] nodeTypeNames,
+                              boolean noLocal ) throws Exception {
+        return addListener(session, eventsExpected, 1, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
+    }
+
+    TestListener addListener( Session session,
+                              int eventsExpected,
+                              int numIterators,
+                              int eventTypes,
+                              String absPath,
+                              boolean isDeep,
+                              String[] uuids,
+                              String[] nodeTypeNames,
+                              boolean noLocal ) throws Exception {
         TestListener listener = new TestListener(eventsExpected, numIterators, eventTypes);
-        this.session.getWorkspace().getObservationManager().addEventListener(listener,
-                                                                             eventTypes,
-                                                                             absPath,
-                                                                             isDeep,
-                                                                             uuids,
-                                                                             nodeTypeNames,
-                                                                             noLocal);
+        session.getWorkspace().getObservationManager().addEventListener(listener,
+                                                                        eventTypes,
+                                                                        absPath,
+                                                                        isDeep,
+                                                                        uuids,
+                                                                        nodeTypeNames,
+                                                                        noLocal);
         return listener;
     }
 
     @After
     public void afterEach() {
         try {
-            if (this.session != null) {
-                this.session.logout();
+            for (Session session : sessions) {
+                if (session != null && session.isLive()) session.logout();
             }
         } finally {
             this.session = null;
-
+            this.sessions.clear();
             try {
                 this.engine.shutdown();
             } finally {
@@ -170,14 +198,13 @@ public final class JcrObservationManagerTest extends TestSuite {
 
     @Before
     public void beforeEach() throws RepositoryException {
-        final String WORKSPACE = "ws1";
-        final String REPOSITORY = "r1";
-        final String SOURCE = "store";
+        sessions = new ArrayList<Session>();
 
         JcrConfiguration config = new JcrConfiguration();
         config.repositorySource("store")
               .usingClass(InMemoryRepositorySource.class)
               .setRetryLimit(100)
+              .setProperty("predefinedWorkspaceNames", new String[] {WORKSPACE, WORKSPACE2})
               .setProperty("defaultWorkspaceName", WORKSPACE);
         config.repository(REPOSITORY).setSource(SOURCE).setOption(Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
         config.save();
@@ -187,12 +214,23 @@ public final class JcrObservationManagerTest extends TestSuite {
         this.engine.start();
 
         // Create repository and session
-        Repository repository = this.engine.getRepository(REPOSITORY);
-        Credentials credentials = new SimpleCredentials(USER_ID, USER_ID.toCharArray());
-        this.session = repository.login(credentials, WORKSPACE);
+        this.session = login(REPOSITORY, WORKSPACE, USER_ID, USER_ID.toCharArray());
 
         this.testRootNode = this.session.getRootNode().addNode("testroot", UNSTRUCTURED);
         save();
+    }
+
+    protected Session login( String repositoryName,
+                             String workspaceName,
+                             String userId,
+                             char[] password ) throws RepositoryException {
+        Repository repository = this.engine.getRepository(repositoryName);
+        Credentials credentials = new SimpleCredentials(userId, password);
+        Session session = repository.login(credentials, workspaceName);
+        if (session != null) {
+            sessions.add(session);
+        }
+        return session;
     }
 
     void checkResults( TestListener listener ) {
@@ -1641,6 +1679,42 @@ public final class JcrObservationManagerTest extends TestSuite {
                    + renamedPath, containsPath(addNodeListener, renamedPath));
         assertTrue("Path for old name of renamed node is wrong: actual=" + removeNodeListener.getEvents().get(0).getPath()
                    + ", expected=" + oldPath, containsPath(removeNodeListener, oldPath));
+    }
+
+    @Test
+    public void shouldNotReceiveEventsFromOtherWorkspaces() throws Exception {
+        // Log into a second workspace ...
+        Session session2 = login(REPOSITORY, "ws2", USER_ID, USER_ID.toCharArray());
+
+        // Register 2 listeners in the first session ...
+        TestListener listener1 = addListener(session, 4, ALL_EVENTS, "/", true, null, null, false);
+        TestListener addListener1 = addListener(session, 1, Event.NODE_ADDED, "/", true, null, null, false);
+
+        // Register 2 listeners in the second session ...
+        TestListener listener2 = addListener(session2, 0, ALL_EVENTS, "/", true, null, null, false);
+        TestListener addListener2 = addListener(session2, 0, Event.NODE_ADDED, "/", true, null, null, false);
+
+        // Add a node to the first session ...
+        session.getRootNode().addNode("nodeA", "nt:unstructured");
+        session.save();
+
+        // Wait for the events on the first session's listeners (that should get the events) ...
+        listener1.waitForEvents();
+        addListener1.waitForEvents();
+        removeListener(listener1);
+        removeListener(addListener1);
+
+        // Wait for the events on the second session's listeners (that should NOT get the events) ...
+        listener2.waitForEvents();
+        // addListener2.waitForEvents();
+        removeListener(listener2);
+        removeListener(addListener2);
+
+        // Verify the expected events were received ...
+        checkResults(listener1);
+        checkResults(addListener1);
+        checkResults(listener2);
+        checkResults(addListener2);
     }
 
     // ===========================================================================================================================

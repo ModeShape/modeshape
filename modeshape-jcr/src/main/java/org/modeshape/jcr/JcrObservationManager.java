@@ -91,6 +91,11 @@ final class JcrObservationManager implements ObservationManager {
     private final ValueFactories valueFactories;
 
     /**
+     * The name of the session's workspace; cached for performance reasons.
+     */
+    private final String workspaceName;
+
+    /**
      * @param session the owning session (never <code>null</code>)
      * @param repositoryObservable the repository observable used to register JCR listeners (never <code>null</code>)
      * @throws IllegalArgumentException if either parameter is <code>null</code>
@@ -105,6 +110,7 @@ final class JcrObservationManager implements ObservationManager {
         this.listeners = new ConcurrentHashMap<EventListener, JcrListenerAdapter>();
         this.namespaceRegistry = this.session.getExecutionContext().getNamespaceRegistry();
         this.valueFactories = this.session.getExecutionContext().getValueFactories();
+        this.workspaceName = this.session.getWorkspace().getName();
     }
 
     /**
@@ -191,6 +197,13 @@ final class JcrObservationManager implements ObservationManager {
      */
     String getSessionId() {
         return this.session.sessionId();
+    }
+
+    /**
+     * @return workspaceName
+     */
+    final String getWorkspaceName() {
+        return workspaceName;
     }
 
     /**
@@ -698,6 +711,10 @@ final class JcrObservationManager implements ObservationManager {
 
                     // loop through changes saving the parent locations of the changed locations
                     for (ChangeRequest request : changes.getChangeRequests()) {
+                        // ignore all events other than those on this workspace ...
+                        if (!getWorkspaceName().equals(request.changedWorkspace())) {
+                            continue;
+                        }
                         Path changedPath = request.changedLocation().getPath();
                         Path parentPath = changedPath.getParent();
                         changedLocations.add(Location.create(parentPath));
@@ -725,6 +742,11 @@ final class JcrObservationManager implements ObservationManager {
             Collection<Event> events = new ArrayList<Event>();
 
             for (NetChange change : netChanges.getNetChanges()) {
+                // ignore all events other than those on this workspace ...
+                if (!getWorkspaceName().equals(change.getRepositoryWorkspaceName())) {
+                    continue;
+                }
+
                 // ignore if lock/unlock
                 if (change.includes(ChangeType.NODE_LOCKED) || change.includes(ChangeType.NODE_UNLOCKED)) {
                     continue;

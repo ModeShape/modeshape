@@ -78,3 +78,6 @@
 /extensions/modeshape-sequencer-zip/target
 
 /tools/org.modeshape.eclipse.jcr.rest.client/bin
+
+# Directory created by Eclipse
+/RemoteSystemsTempFiles
