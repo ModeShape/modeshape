@@ -118,7 +118,7 @@ class ColumnExpression {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         if (selectorName != null) {
-            sb.append(selectorName.getName());
+            sb.append(selectorName.name());
             sb.append('.');
         }
         sb.append(propertyName);

@@ -57,10 +57,10 @@ import org.junit.Test;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path.Segment;
-import org.modeshape.jcr.JcrQueryManager.JcrQueryResult;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
 import org.modeshape.jcr.nodetype.InvalidNodeTypeDefinitionException;
+import org.modeshape.jcr.query.JcrQueryResult;
 
 /**
  * This is a test suite that operates against a complete JcrRepository instance created and managed using the JcrEngine.

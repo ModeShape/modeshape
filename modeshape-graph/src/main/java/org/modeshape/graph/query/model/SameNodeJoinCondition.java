@@ -33,7 +33,7 @@ import org.modeshape.common.util.ObjectUtil;
  * path from the nearest ancestor with an identifiers).
  */
 @Immutable
-public class SameNodeJoinCondition extends JoinCondition {
+public class SameNodeJoinCondition implements JoinCondition {
     private static final long serialVersionUID = 1L;
 
     private final SelectorName selector1Name;
@@ -85,7 +85,7 @@ public class SameNodeJoinCondition extends JoinCondition {
      * 
      * @return the name of the first selector; never null
      */
-    public final SelectorName getSelector1Name() {
+    public final SelectorName selector1Name() {
         return selector1Name;
     }
 
@@ -94,7 +94,7 @@ public class SameNodeJoinCondition extends JoinCondition {
      * 
      * @return the name of the second selector; never null
      */
-    public final SelectorName getSelector2Name() {
+    public final SelectorName selector2Name() {
         return selector2Name;
     }
 
@@ -103,7 +103,7 @@ public class SameNodeJoinCondition extends JoinCondition {
      * 
      * @return the relative path to the node; may be null if the second selector is the node being used
      */
-    public final String getSelector2Path() {
+    public final String selector2Path() {
         return selector2Path;
     }
 

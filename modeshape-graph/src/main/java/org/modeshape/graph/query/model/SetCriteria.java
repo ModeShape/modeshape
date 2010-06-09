@@ -33,7 +33,7 @@ import org.modeshape.common.util.CheckArg;
  * A constraint that evaluates to true when the defined operation evaluates to true.
  */
 @Immutable
-public class SetCriteria extends Constraint {
+public class SetCriteria implements Constraint {
     private static final long serialVersionUID = 1L;
 
     private final DynamicOperand left;
@@ -62,7 +62,7 @@ public class SetCriteria extends Constraint {
      * 
      * @return the dynamic operand; never null
      */
-    public final DynamicOperand getLeftOperand() {
+    public final DynamicOperand leftOperand() {
         return left;
     }
 
@@ -71,7 +71,7 @@ public class SetCriteria extends Constraint {
      * 
      * @return the right-hand-side static operands; never null and never empty
      */
-    public final Collection<StaticOperand> getRightOperands() {
+    public final Collection<StaticOperand> rightOperands() {
         return setOperands;
     }
 

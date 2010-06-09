@@ -47,7 +47,7 @@ public enum ArithmeticOperator {
     static {
         Map<String, ArithmeticOperator> opsBySymbol = new HashMap<String, ArithmeticOperator>();
         for (ArithmeticOperator operator : ArithmeticOperator.values()) {
-            opsBySymbol.put(operator.getSymbol(), operator);
+            opsBySymbol.put(operator.symbol(), operator);
         }
         OPERATORS_BY_SYMBOL = Collections.unmodifiableMap(opsBySymbol);
     }
@@ -69,7 +69,7 @@ public enum ArithmeticOperator {
      * 
      * @return the symbolic representation; never null
      */
-    public String getSymbol() {
+    public String symbol() {
         return symbol;
     }
 
@@ -80,7 +80,7 @@ public enum ArithmeticOperator {
      * @see #isUnary()
      * @see #isBinary()
      */
-    public Arity getArity() {
+    public Arity arity() {
         return arity;
     }
 
@@ -88,7 +88,7 @@ public enum ArithmeticOperator {
      * Return whether this is an unary operator.
      * 
      * @return true if this operator is unary, or false otherwise
-     * @see #getArity()
+     * @see #arity()
      * @see #isBinary()
      */
     public boolean isUnary() {
@@ -99,7 +99,7 @@ public enum ArithmeticOperator {
      * Return whether this is an binary operator.
      * 
      * @return true if this operator is binary, or false otherwise
-     * @see #getArity()
+     * @see #arity()
      * @see #isUnary()
      */
     public boolean isBinary() {

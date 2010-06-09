@@ -24,6 +24,9 @@
 package org.modeshape.graph.query.model;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.util.CheckArg;
 
@@ -46,7 +49,7 @@ public class SelectorName implements Readable, Serializable {
      * 
      * @return the raw name; never null and never empty
      */
-    public String getName() {
+    public String name() {
         return name;
     }
 
@@ -89,8 +92,30 @@ public class SelectorName implements Readable, Serializable {
         if (obj == this) return true;
         if (obj instanceof SelectorName) {
             SelectorName that = (SelectorName)obj;
-            return this.name.equals(that.getName());
+            return this.name.equals(that.name());
         }
         return false;
+    }
+
+    public static Set<SelectorName> nameSetFrom( SelectorName name ) {
+        return Collections.singleton(name);
+    }
+
+    public static Set<SelectorName> nameSetFrom( SelectorName firstName,
+                                                 SelectorName... names ) {
+        Set<SelectorName> result = new LinkedHashSet<SelectorName>();
+        result.add(firstName);
+        for (SelectorName name : names) {
+            if (name != null) result.add(name);
+        }
+        return Collections.unmodifiableSet(result);
+    }
+
+    public static Set<SelectorName> nameSetFrom( Set<SelectorName> firstSet,
+                                                 Set<SelectorName> secondSet ) {
+        Set<SelectorName> result = new LinkedHashSet<SelectorName>();
+        result.addAll(firstSet);
+        if (secondSet != null) result.addAll(secondSet);
+        return Collections.unmodifiableSet(result);
     }
 }

@@ -31,7 +31,7 @@ import org.modeshape.common.util.HashCode;
  * A constraint that evaluates to true when the value defined by the dynamic operand evaluates to be within the specified range.
  */
 @Immutable
-public class Between extends Constraint {
+public class Between implements Constraint {
 
     private static final long serialVersionUID = 1L;
 
@@ -88,7 +88,7 @@ public class Between extends Constraint {
      * 
      * @return the dynamic operand; never null
      */
-    public final DynamicOperand getOperand() {
+    public DynamicOperand operand() {
         return operand;
     }
 
@@ -97,7 +97,7 @@ public class Between extends Constraint {
      * 
      * @return the lower bound; never null
      */
-    public StaticOperand getLowerBound() {
+    public StaticOperand lowerBound() {
         return lowerBound;
     }
 
@@ -106,14 +106,14 @@ public class Between extends Constraint {
      * 
      * @return the upper bound; never null
      */
-    public StaticOperand getUpperBound() {
+    public StaticOperand upperBound() {
         return upperBound;
     }
 
     /**
      * Return whether the lower bound is to be included in the results.
      * 
-     * @return true if the {@link #getLowerBound() lower bound} is to be included, or false otherwise
+     * @return true if the {@link #lowerBound() lower bound} is to be included, or false otherwise
      */
     public boolean isLowerBoundIncluded() {
         return includeLowerBound;
@@ -122,7 +122,7 @@ public class Between extends Constraint {
     /**
      * Return whether the upper bound is to be included in the results.
      * 
-     * @return true if the {@link #getUpperBound() upper bound} is to be included, or false otherwise
+     * @return true if the {@link #upperBound() upper bound} is to be included, or false otherwise
      */
     public boolean isUpperBoundIncluded() {
         return includeUpperBound;

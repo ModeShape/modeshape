@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr;
+package org.modeshape.jcr.query;
 
 import static org.modeshape.common.text.TokenStream.ANY_VALUE;
 import java.util.ArrayList;
@@ -63,6 +63,7 @@ import org.modeshape.graph.query.model.Visitor;
 import org.modeshape.graph.query.model.TypeSystem.TypeFactory;
 import org.modeshape.graph.query.parse.FullTextSearchParser;
 import org.modeshape.graph.query.parse.SqlQueryParser;
+import org.modeshape.jcr.JcrI18n;
 
 /**
  * Parser for JCR-SQL queries that produces {@link org.modeshape.graph.query.model abstract query model (AQM)} objects.
@@ -411,6 +412,7 @@ import org.modeshape.graph.query.parse.SqlQueryParser;
  */
 public class JcrSqlQueryParser extends SqlQueryParser {
 
+    @SuppressWarnings( "deprecation" )
     public static final String LANGUAGE = javax.jcr.query.Query.SQL;
 
     /**
@@ -440,11 +442,11 @@ public class JcrSqlQueryParser extends SqlQueryParser {
                                 TypeSystem typeSystem ) {
         Query query = super.parseQuery(tokens, typeSystem);
         // See if we have to rewrite the JCR-SQL-style join ...
-        if (query.getSource() instanceof JoinableSources) {
-            JoinableSources joinableSources = (JoinableSources)query.getSource();
+        if (query.source() instanceof JoinableSources) {
+            JoinableSources joinableSources = (JoinableSources)query.source();
             // Rewrite the joins ...
             Source newSource = rewrite(joinableSources);
-            query = new Query(newSource, query.getConstraint(), query.getOrderings(), query.getColumns(), query.getLimits(),
+            query = new Query(newSource, query.constraint(), query.orderings(), query.columns(), query.limits(),
                               query.isDistinct());
         }
         return query;
@@ -578,7 +580,7 @@ public class JcrSqlQueryParser extends SqlQueryParser {
                     String msg = GraphI18n.mustBeScopedAtLineAndColumn.text(firstWord, pos.getLine(), pos.getColumn());
                     throw new ParsingException(pos, msg);
                 }
-                selectorName = ((Selector)source).getName();
+                selectorName = ((Selector)source).name();
                 propertyName = firstWord;
             }
             if (tokens.canConsume("IS", "NOT", "NULL")) {
@@ -593,10 +595,10 @@ public class JcrSqlQueryParser extends SqlQueryParser {
     protected SelectorName getSelectorNameFor( Source source ) {
         // Since JCR-SQL only allows ISSAMENODE join constraints, it doesn't matter which source we select ...
         if (source instanceof JoinableSources) {
-            return ((JoinableSources)source).getSelectors().values().iterator().next().getAliasOrName();
+            return ((JoinableSources)source).getSelectors().values().iterator().next().aliasOrName();
         }
         if (source instanceof Selector) {
-            return ((Selector)source).getAliasOrName();
+            return ((Selector)source).aliasOrName();
         }
         assert false;
         return null;
@@ -605,34 +607,34 @@ public class JcrSqlQueryParser extends SqlQueryParser {
     protected Constraint rewriteConstraint( Constraint constraint ) {
         if (constraint instanceof Comparison) {
             Comparison comparison = (Comparison)constraint;
-            DynamicOperand left = comparison.getOperand1();
+            DynamicOperand left = comparison.operand1();
             if (left instanceof PropertyValue) {
                 PropertyValue propValue = (PropertyValue)left;
-                if ("jcr:path".equals(propValue.getPropertyName())) {
+                if ("jcr:path".equals(propValue.propertyName())) {
                     // Rewrite this constraint as a PATH criteria ...
-                    NodePath path = new NodePath(propValue.getSelectorName());
-                    return new Comparison(path, comparison.getOperator(), comparison.getOperand2());
+                    NodePath path = new NodePath(propValue.selectorName());
+                    return new Comparison(path, comparison.operator(), comparison.operand2());
                 }
-                if ("jcr:score".equals(propValue.getPropertyName())) {
+                if ("jcr:score".equals(propValue.propertyName())) {
                     // Rewrite this constraint as a SCORE criteria ...
-                    FullTextSearchScore score = new FullTextSearchScore(propValue.getSelectorName());
-                    return new Comparison(score, comparison.getOperator(), comparison.getOperand2());
+                    FullTextSearchScore score = new FullTextSearchScore(propValue.selectorName());
+                    return new Comparison(score, comparison.operator(), comparison.operand2());
                 }
             }
         } else if (constraint instanceof FullTextSearch) {
             FullTextSearch search = (FullTextSearch)constraint;
-            if (".".equals(search.getPropertyName())) {
+            if (".".equals(search.propertyName())) {
                 // JCR-SQL's use of CONTAINS allows a '.' to be used to represent the search is to be
                 // performed on all properties of the node(s). However, JCR-SQL2 and our AQM
                 // expect a '*' to be used instead ...
-                return new FullTextSearch(search.getSelectorName(), search.getFullTextSearchExpression());
+                return new FullTextSearch(search.selectorName(), search.fullTextSearchExpression());
             }
         } else if (constraint instanceof And) {
             And and = (And)constraint;
-            constraint = new And(rewriteConstraint(and.getLeft()), rewriteConstraint(and.getRight()));
+            constraint = new And(rewriteConstraint(and.left()), rewriteConstraint(and.right()));
         } else if (constraint instanceof Or) {
             Or or = (Or)constraint;
-            constraint = new Or(rewriteConstraint(or.getLeft()), rewriteConstraint(or.getRight()));
+            constraint = new Or(rewriteConstraint(or.left()), rewriteConstraint(or.right()));
         }
         return constraint;
     }
@@ -710,18 +712,18 @@ public class JcrSqlQueryParser extends SqlQueryParser {
         // Find the order of the joins ...
         List<Join> joins = new LinkedList<Join>();
         for (SameNodeJoinCondition joinCondition : joinableSources.getJoinConditions()) {
-            SelectorName selector1 = joinCondition.getSelector1Name();
-            SelectorName selector2 = joinCondition.getSelector2Name();
+            SelectorName selector1 = joinCondition.selector1Name();
+            SelectorName selector2 = joinCondition.selector2Name();
             boolean found = false;
             ListIterator<Join> iter = joins.listIterator();
             while (iter.hasNext()) {
                 Join next = iter.next();
                 Join replacement = null;
                 if (usesSelector(next, selector1)) {
-                    Source right = joinableSources.getSelectors().get(selector2.getName());
+                    Source right = joinableSources.getSelectors().get(selector2.name());
                     replacement = new Join(next, JoinType.INNER, right, joinCondition);
                 } else if (usesSelector(next, selector2)) {
-                    Source left = joinableSources.getSelectors().get(selector1.getName());
+                    Source left = joinableSources.getSelectors().get(selector1.name());
                     replacement = new Join(left, JoinType.INNER, next, joinCondition);
                 }
                 if (replacement != null) {
@@ -734,18 +736,18 @@ public class JcrSqlQueryParser extends SqlQueryParser {
             }
             if (!found) {
                 // Nothing matched, so add a new join ...
-                Source left = joinableSources.getSelectors().get(selector1.getName());
-                Source right = joinableSources.getSelectors().get(selector2.getName());
+                Source left = joinableSources.getSelectors().get(selector1.name());
+                Source right = joinableSources.getSelectors().get(selector2.name());
                 if (left == null) {
                     Position pos = joinableSources.getJoinCriteriaPosition();
-                    String msg = JcrI18n.selectorUsedInEquiJoinCriteriaDoesNotExistInQuery.text(selector1.getName(),
+                    String msg = JcrI18n.selectorUsedInEquiJoinCriteriaDoesNotExistInQuery.text(selector1.name(),
                                                                                                 pos.getLine(),
                                                                                                 pos.getColumn());
                     throw new ParsingException(pos, msg);
                 }
                 if (right == null) {
                     Position pos = joinableSources.getJoinCriteriaPosition();
-                    String msg = JcrI18n.selectorUsedInEquiJoinCriteriaDoesNotExistInQuery.text(selector2.getName(),
+                    String msg = JcrI18n.selectorUsedInEquiJoinCriteriaDoesNotExistInQuery.text(selector2.name(),
                                                                                                 pos.getLine(),
                                                                                                 pos.getColumn());
                     throw new ParsingException(pos, msg);
@@ -762,16 +764,16 @@ public class JcrSqlQueryParser extends SqlQueryParser {
 
     protected boolean usesSelector( Join join,
                                     SelectorName selector ) {
-        Source left = join.getLeft();
-        if (left instanceof Selector && selector.equals(((Selector)left).getAliasOrName())) return true;
+        Source left = join.left();
+        if (left instanceof Selector && selector.equals(((Selector)left).aliasOrName())) return true;
         if (left instanceof Join && usesSelector((Join)left, selector)) return true;
-        Source right = join.getRight();
-        if (right instanceof Selector && selector.equals(((Selector)right).getAliasOrName())) return true;
+        Source right = join.right();
+        if (right instanceof Selector && selector.equals(((Selector)right).aliasOrName())) return true;
         if (right instanceof Join && usesSelector((Join)right, selector)) return true;
         return false;
     }
 
-    protected static class JoinableSources extends Source {
+    protected static class JoinableSources implements Source {
         private static final long serialVersionUID = 1L;
         private transient Map<String, Selector> selectors = new LinkedHashMap<String, Selector>();
         private transient List<SameNodeJoinCondition> joinConditions = new ArrayList<SameNodeJoinCondition>();
@@ -785,7 +787,7 @@ public class JcrSqlQueryParser extends SqlQueryParser {
 
         public void add( Selector selector,
                          Position position ) {
-            selectors.put(selector.getAliasOrName().getName(), selector);
+            selectors.put(selector.aliasOrName().name(), selector);
             selectorPositions.add(position);
         }
 

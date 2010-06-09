@@ -100,7 +100,7 @@ public class CanonicalPlannerTest {
         assertThat(columns.size(), is(columnNames.length));
         for (int i = 0; i != columns.size(); ++i) {
             Column column = columns.get(i);
-            assertThat(column.getColumnName(), is(columnNames[i]));
+            assertThat(column.columnName(), is(columnNames[i]));
         }
     }
 

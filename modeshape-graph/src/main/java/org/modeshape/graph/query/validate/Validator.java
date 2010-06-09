@@ -96,7 +96,7 @@ public class Validator extends AbstractVisitor {
     @Override
     public void visit( AllNodes obj ) {
         // this table doesn't have to be in the list of selected tables
-        verifyTable(obj.getName());
+        verifyTable(obj.name());
     }
 
     /**
@@ -106,8 +106,8 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( ArithmeticOperand obj ) {
-        verifyArithmeticOperand(obj.getLeft());
-        verifyArithmeticOperand(obj.getRight());
+        verifyArithmeticOperand(obj.left());
+        verifyArithmeticOperand(obj.right());
     }
 
     protected void verifyArithmeticOperand( DynamicOperand operand ) {
@@ -122,8 +122,8 @@ public class Validator extends AbstractVisitor {
             // good to go
         } else if (operand instanceof PropertyValue) {
             PropertyValue value = (PropertyValue)operand;
-            SelectorName selector = value.getSelectorName();
-            String propertyName = value.getPropertyName();
+            SelectorName selector = value.selectorName();
+            String propertyName = value.propertyName();
             Schemata.Column column = verify(selector, propertyName, this.validateColumnExistence);
             if (column != null) {
                 // Check the type ...
@@ -153,7 +153,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( ChildNode obj ) {
-        verify(obj.getSelectorName());
+        verify(obj.selectorName());
     }
 
     /**
@@ -163,8 +163,8 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( ChildNodeJoinCondition obj ) {
-        verify(obj.getParentSelectorName());
-        verify(obj.getChildSelectorName());
+        verify(obj.parentSelectorName());
+        verify(obj.childSelectorName());
     }
 
     /**
@@ -174,7 +174,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( Column obj ) {
-        verify(obj.getSelectorName(), obj.getPropertyName(), this.validateColumnExistence); // don't care about the alias
+        verify(obj.selectorName(), obj.propertyName(), this.validateColumnExistence); // don't care about the alias
     }
 
     /**
@@ -184,7 +184,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( DescendantNode obj ) {
-        verify(obj.getSelectorName());
+        verify(obj.selectorName());
     }
 
     /**
@@ -194,8 +194,8 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( DescendantNodeJoinCondition obj ) {
-        verify(obj.getAncestorSelectorName());
-        verify(obj.getDescendantSelectorName());
+        verify(obj.ancestorSelectorName());
+        verify(obj.descendantSelectorName());
     }
 
     /**
@@ -205,8 +205,8 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( EquiJoinCondition obj ) {
-        verify(obj.getSelector1Name(), obj.getProperty1Name(), this.validateColumnExistence);
-        verify(obj.getSelector2Name(), obj.getProperty2Name(), this.validateColumnExistence);
+        verify(obj.selector1Name(), obj.property1Name(), this.validateColumnExistence);
+        verify(obj.selector2Name(), obj.property2Name(), this.validateColumnExistence);
     }
 
     /**
@@ -216,9 +216,9 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( FullTextSearch obj ) {
-        SelectorName selectorName = obj.getSelectorName();
-        if (obj.getPropertyName() != null) {
-            Schemata.Column column = verify(selectorName, obj.getPropertyName(), this.validateColumnExistence);
+        SelectorName selectorName = obj.selectorName();
+        if (obj.propertyName() != null) {
+            Schemata.Column column = verify(selectorName, obj.propertyName(), this.validateColumnExistence);
             if (column != null) {
                 // Make sure the column is full-text searchable ...
                 if (!column.isFullTextSearchable()) {
@@ -251,7 +251,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( FullTextSearchScore obj ) {
-        verify(obj.getSelectorName());
+        verify(obj.selectorName());
     }
 
     /**
@@ -261,7 +261,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( Length obj ) {
-        verify(obj.getSelectorName());
+        verify(obj.selectorName());
     }
 
     /**
@@ -271,7 +271,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( LowerCase obj ) {
-        verify(obj.getSelectorName());
+        verify(obj.selectorName());
     }
 
     /**
@@ -281,7 +281,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( NamedSelector obj ) {
-        verify(obj.getAliasOrName());
+        verify(obj.aliasOrName());
     }
 
     /**
@@ -291,7 +291,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( NodeDepth obj ) {
-        verify(obj.getSelectorName());
+        verify(obj.selectorName());
     }
 
     /**
@@ -301,7 +301,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( NodeLocalName obj ) {
-        verify(obj.getSelectorName());
+        verify(obj.selectorName());
     }
 
     /**
@@ -311,7 +311,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( NodeName obj ) {
-        verify(obj.getSelectorName());
+        verify(obj.selectorName());
     }
 
     /**
@@ -321,7 +321,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( NodePath obj ) {
-        verify(obj.getSelectorName());
+        verify(obj.selectorName());
     }
 
     /**
@@ -331,7 +331,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( PropertyExistence obj ) {
-        verify(obj.getSelectorName(), obj.getPropertyName(), this.validateColumnExistence);
+        verify(obj.selectorName(), obj.propertyName(), this.validateColumnExistence);
     }
 
     /**
@@ -341,7 +341,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( PropertyValue obj ) {
-        verify(obj.getSelectorName(), obj.getPropertyName(), this.validateColumnExistence);
+        verify(obj.selectorName(), obj.propertyName(), this.validateColumnExistence);
     }
 
     /**
@@ -351,11 +351,11 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( ReferenceValue obj ) {
-        String propName = obj.getPropertyName();
+        String propName = obj.propertyName();
         if (propName != null) {
-            verify(obj.getSelectorName(), propName, this.validateColumnExistence);
+            verify(obj.selectorName(), propName, this.validateColumnExistence);
         } else {
-            verify(obj.getSelectorName());
+            verify(obj.selectorName());
         }
     }
 
@@ -368,13 +368,13 @@ public class Validator extends AbstractVisitor {
     public void visit( Query obj ) {
         // Collect the map of columns by alias for this query ...
         this.columnsByAlias.clear();
-        for (Column column : obj.getColumns()) {
+        for (Column column : obj.columns()) {
             // Find the schemata column ...
-            Table table = tableWithNameOrAlias(column.getSelectorName());
+            Table table = tableWithNameOrAlias(column.selectorName());
             if (table != null) {
-                Schemata.Column tableColumn = table.getColumn(column.getPropertyName());
+                Schemata.Column tableColumn = table.getColumn(column.propertyName());
                 if (tableColumn != null) {
-                    this.columnsByAlias.put(column.getColumnName(), tableColumn);
+                    this.columnsByAlias.put(column.columnName(), tableColumn);
                 }
             }
         }
@@ -388,7 +388,7 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( SameNode obj ) {
-        verify(obj.getSelectorName());
+        verify(obj.selectorName());
     }
 
     /**
@@ -398,8 +398,8 @@ public class Validator extends AbstractVisitor {
      */
     @Override
     public void visit( SameNodeJoinCondition obj ) {
-        verify(obj.getSelector1Name());
-        verify(obj.getSelector2Name());
+        verify(obj.selector1Name());
+        verify(obj.selector2Name());
     }
 
     protected Table tableWithNameOrAlias( SelectorName tableName ) {
@@ -414,7 +414,7 @@ public class Validator extends AbstractVisitor {
     protected Table verify( SelectorName selectorName ) {
         Table table = tableWithNameOrAlias(selectorName);
         if (table == null) {
-            problems.addError(GraphI18n.tableDoesNotExist, selectorName.getName());
+            problems.addError(GraphI18n.tableDoesNotExist, selectorName.name());
         }
         return table;
     }
@@ -422,7 +422,7 @@ public class Validator extends AbstractVisitor {
     protected Table verifyTable( SelectorName tableName ) {
         Table table = tableWithNameOrAlias(tableName);
         if (table == null) {
-            problems.addError(GraphI18n.tableDoesNotExist, tableName.getName());
+            problems.addError(GraphI18n.tableDoesNotExist, tableName.name());
         }
         return table;
     }
@@ -432,7 +432,7 @@ public class Validator extends AbstractVisitor {
                                       boolean columnIsRequired ) {
         Table table = tableWithNameOrAlias(selectorName);
         if (table == null) {
-            problems.addError(GraphI18n.tableDoesNotExist, selectorName.getName());
+            problems.addError(GraphI18n.tableDoesNotExist, selectorName.name());
             return null;
         }
         Schemata.Column column = table.getColumn(propertyName);
@@ -440,7 +440,7 @@ public class Validator extends AbstractVisitor {
             // Maybe the supplied property name is really an alias ...
             column = this.columnsByAlias.get(propertyName);
             if (column == null && columnIsRequired) {
-                problems.addError(GraphI18n.columnDoesNotExistOnTable, propertyName, selectorName.getName());
+                problems.addError(GraphI18n.columnDoesNotExistOnTable, propertyName, selectorName.name());
             }
         }
         return column; // may be null

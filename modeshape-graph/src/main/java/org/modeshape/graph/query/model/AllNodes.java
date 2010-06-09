@@ -66,7 +66,7 @@ public class AllNodes extends Selector {
      */
     @Override
     public int hashCode() {
-        return getName().hashCode();
+        return name().hashCode();
     }
 
     /**
@@ -79,8 +79,8 @@ public class AllNodes extends Selector {
         if (obj == this) return true;
         if (obj instanceof Selector) {
             Selector that = (Selector)obj;
-            return ObjectUtil.isEqualWithNulls(this.getName(), that.getName())
-                   && ObjectUtil.isEqualWithNulls(this.getAlias(), that.getAlias());
+            return ObjectUtil.isEqualWithNulls(this.name(), that.name())
+                   && ObjectUtil.isEqualWithNulls(this.alias(), that.alias());
         }
         return false;
     }

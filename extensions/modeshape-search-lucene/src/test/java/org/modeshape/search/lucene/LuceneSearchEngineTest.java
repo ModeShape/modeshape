@@ -202,8 +202,8 @@ public class LuceneSearchEngineTest {
         if (constraint != null) {
             if (constraint instanceof And) {
                 And and = (And)constraint;
-                getAndedConstraint(and.getLeft(), andedConstraints);
-                getAndedConstraint(and.getRight(), andedConstraints);
+                getAndedConstraint(and.left(), andedConstraints);
+                getAndedConstraint(and.right(), andedConstraints);
             } else {
                 andedConstraints.add(constraint);
             }
@@ -216,13 +216,13 @@ public class LuceneSearchEngineTest {
         QueryCommand command = this.sql.parseQuery(sql, typeSystem);
         assertThat(command, is(instanceOf(Query.class)));
         Query query = (Query)command;
-        Source source = query.getSource();
+        Source source = query.source();
         assertThat(source, is(instanceOf(Selector.class)));
-        SelectorName tableName = ((Selector)source).getName();
-        Constraint constraint = query.getConstraint();
-        Columns resultColumns = new QueryResultColumns(query.getColumns(), QueryResultColumns.includeFullTextScores(constraint));
+        SelectorName tableName = ((Selector)source).name();
+        Constraint constraint = query.constraint();
+        Columns resultColumns = new QueryResultColumns(query.columns(), QueryResultColumns.includeFullTextScores(constraint));
         List<Constraint> andedConstraints = getAndedConstraint(constraint, new ArrayList<Constraint>());
-        Limit limit = query.getLimits();
+        Limit limit = query.limits();
         RequestProcessor processor = engine.createProcessor(context, null, true);
         try {
             AccessQueryRequest request = new AccessQueryRequest(workspaceName, tableName, resultColumns, andedConstraints, limit,

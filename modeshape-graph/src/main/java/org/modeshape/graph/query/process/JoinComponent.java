@@ -249,37 +249,37 @@ public abstract class JoinComponent extends ProcessingComponent {
                                                      JoinCondition condition ) {
         if (condition instanceof ChildNodeJoinCondition) {
             ChildNodeJoinCondition joinCondition = (ChildNodeJoinCondition)condition;
-            String childSelectorName = joinCondition.getChildSelectorName().getName();
+            String childSelectorName = joinCondition.childSelectorName().name();
             if (source.getColumns().hasSelector(childSelectorName)) {
                 return selectPath(source, childSelectorName);
             }
-            String parentSelectorName = joinCondition.getParentSelectorName().getName();
+            String parentSelectorName = joinCondition.parentSelectorName().name();
             return selectPath(source, parentSelectorName);
         } else if (condition instanceof SameNodeJoinCondition) {
             SameNodeJoinCondition joinCondition = (SameNodeJoinCondition)condition;
-            String selector1Name = joinCondition.getSelector1Name().getName();
+            String selector1Name = joinCondition.selector1Name().name();
             if (source.getColumns().hasSelector(selector1Name)) {
                 return selectPath(source, selector1Name);
             }
-            String selector2Name = joinCondition.getSelector2Name().getName();
+            String selector2Name = joinCondition.selector2Name().name();
             return selectPath(source, selector2Name);
         } else if (condition instanceof DescendantNodeJoinCondition) {
             DescendantNodeJoinCondition joinCondition = (DescendantNodeJoinCondition)condition;
-            String ancestorSelectorName = joinCondition.getAncestorSelectorName().getName();
+            String ancestorSelectorName = joinCondition.ancestorSelectorName().name();
             if (source.getColumns().hasSelector(ancestorSelectorName)) {
                 return selectPath(source, ancestorSelectorName);
             }
-            String descendantSelectorName = joinCondition.getDescendantSelectorName().getName();
+            String descendantSelectorName = joinCondition.descendantSelectorName().name();
             return selectPath(source, descendantSelectorName);
         } else if (condition instanceof EquiJoinCondition) {
             EquiJoinCondition joinCondition = (EquiJoinCondition)condition;
-            SelectorName selector1Name = joinCondition.getSelector1Name();
-            String propName1 = joinCondition.getProperty1Name();
-            if (source.getColumns().hasSelector(selector1Name.getName())) {
+            SelectorName selector1Name = joinCondition.selector1Name();
+            String propName1 = joinCondition.property1Name();
+            if (source.getColumns().hasSelector(selector1Name.name())) {
                 return selectValue(source, selector1Name, propName1);
             }
-            SelectorName selector2Name = joinCondition.getSelector2Name();
-            String propName2 = joinCondition.getProperty2Name();
+            SelectorName selector2Name = joinCondition.selector2Name();
+            String propName2 = joinCondition.property2Name();
             return selectValue(source, selector2Name, propName2);
         }
         throw new IllegalArgumentException();
@@ -299,7 +299,7 @@ public abstract class JoinComponent extends ProcessingComponent {
     private static ValueSelector selectValue( ProcessingComponent component,
                                               SelectorName selectorName,
                                               String propertyName ) {
-        final int index = component.getColumns().getColumnIndexForProperty(selectorName.getName(), propertyName);
+        final int index = component.getColumns().getColumnIndexForProperty(selectorName.name(), propertyName);
         return new ValueSelector() {
             public Object evaluate( Object[] tuple ) {
                 return tuple[index];
@@ -351,7 +351,7 @@ public abstract class JoinComponent extends ProcessingComponent {
             };
         } else if (condition instanceof ChildNodeJoinCondition) {
             ChildNodeJoinCondition joinCondition = (ChildNodeJoinCondition)condition;
-            String childSelectorName = joinCondition.getChildSelectorName().getName();
+            String childSelectorName = joinCondition.childSelectorName().name();
             if (left.getColumns().hasSelector(childSelectorName)) {
                 // The child is on the left ...
                 return new Joinable() {
@@ -374,7 +374,7 @@ public abstract class JoinComponent extends ProcessingComponent {
             };
         } else if (condition instanceof DescendantNodeJoinCondition) {
             DescendantNodeJoinCondition joinCondition = (DescendantNodeJoinCondition)condition;
-            String ancestorSelectorName = joinCondition.getAncestorSelectorName().getName();
+            String ancestorSelectorName = joinCondition.ancestorSelectorName().name();
             if (left.getColumns().hasSelector(ancestorSelectorName)) {
                 // The ancestor is on the left ...
                 return new Joinable() {
@@ -426,7 +426,7 @@ public abstract class JoinComponent extends ProcessingComponent {
         }
         if (condition instanceof ChildNodeJoinCondition) {
             ChildNodeJoinCondition joinCondition = (ChildNodeJoinCondition)condition;
-            String childSelectorName = joinCondition.getChildSelectorName().getName();
+            String childSelectorName = joinCondition.childSelectorName().name();
             if (left.getColumns().hasSelector(childSelectorName)) {
                 // The child is on the left ...
                 return new Comparator<Object>() {
@@ -454,10 +454,10 @@ public abstract class JoinComponent extends ProcessingComponent {
         }
         if (condition instanceof EquiJoinCondition) {
             EquiJoinCondition joinCondition = (EquiJoinCondition)condition;
-            SelectorName leftSelectorName = joinCondition.getSelector1Name();
-            SelectorName rightSelectorName = joinCondition.getSelector2Name();
-            String leftPropertyName = joinCondition.getProperty1Name();
-            String rightPropertyName = joinCondition.getProperty2Name();
+            SelectorName leftSelectorName = joinCondition.selector1Name();
+            SelectorName rightSelectorName = joinCondition.selector2Name();
+            String leftPropertyName = joinCondition.property1Name();
+            String rightPropertyName = joinCondition.property2Name();
 
             Schemata schemata = context.getSchemata();
             Schemata.Table leftTable = schemata.getTable(leftSelectorName);

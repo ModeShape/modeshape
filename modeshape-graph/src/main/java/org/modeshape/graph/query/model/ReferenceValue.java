@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.query.model;
 
+import java.util.Set;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.util.HashCode;
 
@@ -31,9 +32,10 @@ import org.modeshape.common.util.HashCode;
  * {@link Comparison} constraint.
  */
 @Immutable
-public class ReferenceValue extends DynamicOperand {
+public class ReferenceValue implements DynamicOperand {
     private static final long serialVersionUID = 1L;
 
+    private final Set<SelectorName> selectorNames;
     private final String propertyName;
     private final int hc;
 
@@ -44,7 +46,7 @@ public class ReferenceValue extends DynamicOperand {
      * @throws IllegalArgumentException if the selector name is null
      */
     public ReferenceValue( SelectorName selectorName ) {
-        super(selectorName);
+        this.selectorNames = SelectorName.nameSetFrom(selectorName);
         this.propertyName = null;
         this.hc = HashCode.compute(selectorName, this.propertyName);
     }
@@ -59,7 +61,7 @@ public class ReferenceValue extends DynamicOperand {
      */
     public ReferenceValue( SelectorName selectorName,
                            String propertyName ) {
-        super(selectorName);
+        this.selectorNames = SelectorName.nameSetFrom(selectorName);
         this.propertyName = propertyName;
         this.hc = HashCode.compute(selectorName, this.propertyName);
     }
@@ -69,8 +71,17 @@ public class ReferenceValue extends DynamicOperand {
      * 
      * @return the one selector names used by this operand; never null
      */
-    public SelectorName getSelectorName() {
-        return getSelectorNames().iterator().next();
+    public SelectorName selectorName() {
+        return selectorNames().iterator().next();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.DynamicOperand#selectorNames()
+     */
+    public Set<SelectorName> selectorNames() {
+        return selectorNames;
     }
 
     /**
@@ -78,7 +89,7 @@ public class ReferenceValue extends DynamicOperand {
      * 
      * @return the property name; or null if this operand applies to any reference property
      */
-    public final String getPropertyName() {
+    public final String propertyName() {
         return propertyName;
     }
 
@@ -113,7 +124,7 @@ public class ReferenceValue extends DynamicOperand {
         if (obj instanceof ReferenceValue) {
             ReferenceValue that = (ReferenceValue)obj;
             if (this.hc != that.hc) return false;
-            if (!this.getSelectorNames().equals(that.getSelectorNames())) return false;
+            if (!this.selectorNames().equals(that.selectorNames())) return false;
             if (this.propertyName != null) {
                 return this.propertyName.equals(that.propertyName);
             }

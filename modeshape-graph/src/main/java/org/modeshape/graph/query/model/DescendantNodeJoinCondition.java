@@ -31,7 +31,7 @@ import org.modeshape.common.util.HashCode;
  * A join condition that evaluates to true only when the named node is a descendant of another named node.
  */
 @Immutable
-public class DescendantNodeJoinCondition extends JoinCondition {
+public class DescendantNodeJoinCondition implements JoinCondition {
     private static final long serialVersionUID = 1L;
 
     private final SelectorName descendantSelectorName;
@@ -59,7 +59,7 @@ public class DescendantNodeJoinCondition extends JoinCondition {
      * 
      * @return the selector name of the descendant node; never null
      */
-    public final SelectorName getDescendantSelectorName() {
+    public final SelectorName descendantSelectorName() {
         return descendantSelectorName;
     }
 
@@ -68,7 +68,7 @@ public class DescendantNodeJoinCondition extends JoinCondition {
      * 
      * @return the selector name of the ancestor node; never null
      */
-    public final SelectorName getAncestorSelectorName() {
+    public final SelectorName ancestorSelectorName() {
         return ancestorSelectorName;
     }
 

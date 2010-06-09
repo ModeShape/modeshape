@@ -31,7 +31,7 @@ import org.modeshape.common.util.HashCode;
  * A constraint requiring that the selected node is a child of the node reachable by the supplied absolute path
  */
 @Immutable
-public class ChildNode extends Constraint {
+public class ChildNode implements Constraint {
     private static final long serialVersionUID = 1L;
 
     private final SelectorName selectorName;
@@ -59,7 +59,7 @@ public class ChildNode extends Constraint {
      * 
      * @return the selector name; never null
      */
-    public final SelectorName getSelectorName() {
+    public final SelectorName selectorName() {
         return selectorName;
     }
 
@@ -68,7 +68,7 @@ public class ChildNode extends Constraint {
      * 
      * @return the parent path; never null
      */
-    public final String getParentPath() {
+    public final String parentPath() {
         return parentPath;
     }
 

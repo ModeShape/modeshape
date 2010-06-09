@@ -71,10 +71,10 @@ public class CopyCriteria implements OptimizerRule {
             JoinCondition joinCondition = join.getProperty(Property.JOIN_CONDITION, JoinCondition.class);
             if (joinCondition instanceof EquiJoinCondition) {
                 EquiJoinCondition equiJoinCondition = (EquiJoinCondition)joinCondition;
-                SelectorName selector1 = equiJoinCondition.getSelector1Name();
-                SelectorName selector2 = equiJoinCondition.getSelector2Name();
-                String property1 = equiJoinCondition.getProperty1Name();
-                String property2 = equiJoinCondition.getProperty2Name();
+                SelectorName selector1 = equiJoinCondition.selector1Name();
+                SelectorName selector2 = equiJoinCondition.selector2Name();
+                String property1 = equiJoinCondition.property1Name();
+                String property2 = equiJoinCondition.property2Name();
 
                 // Walk up the tree looking for SELECT nodes that apply to one of the sides ...
                 PlanNode node = join.getParent();
@@ -153,8 +153,8 @@ public class CopyCriteria implements OptimizerRule {
         Set<Column> columns = getColumnsReferencedBy(constraint);
         if (columns.size() != 1) return null;
         Column column = columns.iterator().next();
-        if (!column.getSelectorName().equals(selectorName)) return null;
-        if (!column.getPropertyName().equals(propertyName)) return null;
+        if (!column.selectorName().equals(selectorName)) return null;
+        if (!column.propertyName().equals(propertyName)) return null;
 
         // We know that this constraint ONLY applies to the referenced selector and property,
         // so we will duplicate this constraint ...
@@ -185,8 +185,8 @@ public class CopyCriteria implements OptimizerRule {
      * Get the set of Column objects that represent those columns referenced by the visitable object.
      * 
      * @param visitable the object to be visited
-     * @return the set of Column objects, with column names that always are the string-form of the
-     *         {@link Column#getPropertyName() property name}; never null
+     * @return the set of Column objects, with column names that always are the string-form of the {@link Column#propertyName()
+     *         property name}; never null
      */
     public static Set<Column> getColumnsReferencedBy( Visitable visitable ) {
         if (visitable == null) return Collections.emptySet();
@@ -205,25 +205,25 @@ public class CopyCriteria implements OptimizerRule {
 
             @Override
             public void visit( EquiJoinCondition joinCondition ) {
-                addColumnFor(joinCondition.getSelector1Name(), joinCondition.getProperty1Name());
-                addColumnFor(joinCondition.getSelector2Name(), joinCondition.getProperty2Name());
+                addColumnFor(joinCondition.selector1Name(), joinCondition.property1Name());
+                addColumnFor(joinCondition.selector2Name(), joinCondition.property2Name());
             }
 
             @Override
             public void visit( PropertyExistence prop ) {
-                addColumnFor(prop.getSelectorName(), prop.getPropertyName());
+                addColumnFor(prop.selectorName(), prop.propertyName());
             }
 
             @Override
             public void visit( PropertyValue prop ) {
-                addColumnFor(prop.getSelectorName(), prop.getPropertyName());
+                addColumnFor(prop.selectorName(), prop.propertyName());
             }
 
             @Override
             public void visit( ReferenceValue ref ) {
-                String propertyName = ref.getPropertyName();
+                String propertyName = ref.propertyName();
                 if (propertyName != null) {
-                    addColumnFor(ref.getSelectorName(), propertyName);
+                    addColumnFor(ref.selectorName(), propertyName);
                 }
             }
         });

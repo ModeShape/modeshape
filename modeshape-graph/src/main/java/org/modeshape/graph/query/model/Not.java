@@ -30,7 +30,7 @@ import org.modeshape.common.util.CheckArg;
  * A constraint that negates another constraint.
  */
 @Immutable
-public class Not extends Constraint {
+public class Not implements Constraint {
     private static final long serialVersionUID = 1L;
 
     private final Constraint constraint;
@@ -51,7 +51,7 @@ public class Not extends Constraint {
      * 
      * @return the constraint; never null
      */
-    public final Constraint getConstraint() {
+    public Constraint constraint() {
         return constraint;
     }
 
@@ -72,7 +72,7 @@ public class Not extends Constraint {
      */
     @Override
     public int hashCode() {
-        return getConstraint().hashCode();
+        return constraint().hashCode();
     }
 
     /**

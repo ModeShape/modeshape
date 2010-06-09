@@ -23,14 +23,17 @@
  */
 package org.modeshape.graph.query.model;
 
+import java.util.Set;
 import net.jcip.annotations.Immutable;
 
 /**
  * A dynamic operand that evaluates to the local name of a node given by a selector, used in a {@link Comparison} constraint.
  */
 @Immutable
-public class NodeLocalName extends DynamicOperand {
+public class NodeLocalName implements DynamicOperand {
     private static final long serialVersionUID = 1L;
+
+    private final Set<SelectorName> selectorNames;
 
     /**
      * Create a dynamic operand that evaluates to the local name of the node identified by the selector.
@@ -38,7 +41,7 @@ public class NodeLocalName extends DynamicOperand {
      * @param selectorName the name of the selector
      */
     public NodeLocalName( SelectorName selectorName ) {
-        super(selectorName);
+        this.selectorNames = SelectorName.nameSetFrom(selectorName);
     }
 
     /**
@@ -46,8 +49,17 @@ public class NodeLocalName extends DynamicOperand {
      * 
      * @return the one selector names used by this operand; never null
      */
-    public SelectorName getSelectorName() {
-        return getSelectorNames().iterator().next();
+    public SelectorName selectorName() {
+        return selectorNames.iterator().next();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.DynamicOperand#selectorNames()
+     */
+    public Set<SelectorName> selectorNames() {
+        return selectorNames;
     }
 
     /**
@@ -67,7 +79,7 @@ public class NodeLocalName extends DynamicOperand {
      */
     @Override
     public int hashCode() {
-        return getSelectorNames().hashCode();
+        return selectorNames().hashCode();
     }
 
     /**
@@ -80,7 +92,7 @@ public class NodeLocalName extends DynamicOperand {
         if (obj == this) return true;
         if (obj instanceof NodeLocalName) {
             NodeLocalName that = (NodeLocalName)obj;
-            return this.getSelectorNames().equals(that.getSelectorNames());
+            return this.selectorNames().equals(that.selectorNames());
         }
         return false;
     }

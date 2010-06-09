@@ -37,7 +37,7 @@ import org.modeshape.graph.query.parse.FullTextSearchParser;
  * property name is supplied, then the search is limited to the value(s) of the named property on the node(s) in the search scope.
  */
 @Immutable
-public class FullTextSearch extends Constraint {
+public class FullTextSearch implements Constraint {
     private static final long serialVersionUID = 1L;
 
     private final SelectorName selectorName;
@@ -62,6 +62,7 @@ public class FullTextSearch extends Constraint {
         CheckArg.isNotEmpty(fullTextSearchExpression, "fullTextSearchExpression");
         this.selectorName = selectorName;
         this.propertyName = propertyName;
+        this.term = term;
         this.fullTextSearchExpression = fullTextSearchExpression;
         this.hc = HashCode.compute(this.selectorName, this.propertyName, this.fullTextSearchExpression);
     }
@@ -97,6 +98,7 @@ public class FullTextSearch extends Constraint {
         CheckArg.isNotEmpty(fullTextSearchExpression, "fullTextSearchExpression");
         this.selectorName = selectorName;
         this.propertyName = null;
+        this.term = null;
         this.fullTextSearchExpression = fullTextSearchExpression;
         this.hc = HashCode.compute(this.selectorName, this.propertyName, this.fullTextSearchExpression);
     }
@@ -106,7 +108,7 @@ public class FullTextSearch extends Constraint {
      * 
      * @return the selector name; never null
      */
-    public final SelectorName getSelectorName() {
+    public final SelectorName selectorName() {
         return selectorName;
     }
 
@@ -115,7 +117,7 @@ public class FullTextSearch extends Constraint {
      * 
      * @return the property name; or null if the full-text search is to be performed across all searchable properties
      */
-    public final String getPropertyName() {
+    public final String propertyName() {
         return propertyName;
     }
 
@@ -124,7 +126,7 @@ public class FullTextSearch extends Constraint {
      * 
      * @return the search expression; never null
      */
-    public final String getFullTextSearchExpression() {
+    public final String fullTextSearchExpression() {
         return fullTextSearchExpression;
     }
 

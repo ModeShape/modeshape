@@ -184,7 +184,7 @@ public interface QueryResults extends Serializable {
          * 
          * @return the immutable list of columns, with size equal to {@link #getColumnCount()}; never null
          */
-        public List<Column> getColumns();
+        public List<? extends Column> getColumns();
 
         /**
          * Get the names of the columns.

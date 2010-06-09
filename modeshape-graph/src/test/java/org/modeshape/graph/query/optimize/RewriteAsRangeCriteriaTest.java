@@ -118,9 +118,9 @@ public class RewriteAsRangeCriteriaTest extends AbstractQueryTest {
         assertThat(newSelect.getSelectors(), is(access.getSelectors()));
         assertThat(newSelect.getParent(), is(sameInstance(project)));
         Between between = newSelect.getProperty(Property.SELECT_CRITERIA, Between.class);
-        assertThat(between.getOperand(), is(select2.getProperty(Property.SELECT_CRITERIA, Comparison.class).getOperand1()));
-        assertThat(between.getLowerBound(), is(select3.getProperty(Property.SELECT_CRITERIA, Comparison.class).getOperand2()));
-        assertThat(between.getUpperBound(), is(select2.getProperty(Property.SELECT_CRITERIA, Comparison.class).getOperand2()));
+        assertThat(between.operand(), is(select2.getProperty(Property.SELECT_CRITERIA, Comparison.class).operand1()));
+        assertThat(between.lowerBound(), is(select3.getProperty(Property.SELECT_CRITERIA, Comparison.class).operand2()));
+        assertThat(between.upperBound(), is(select2.getProperty(Property.SELECT_CRITERIA, Comparison.class).operand2()));
         assertThat(between.isLowerBoundIncluded(), is(false));
         assertThat(between.isUpperBoundIncluded(), is(false));
         assertChildren(newSelect, select1);
@@ -179,9 +179,9 @@ public class RewriteAsRangeCriteriaTest extends AbstractQueryTest {
         assertThat(newSelect.getSelectors(), is(access.getSelectors()));
         assertThat(newSelect.getParent(), is(sameInstance(project)));
         Between between = newSelect.getProperty(Property.SELECT_CRITERIA, Between.class);
-        assertThat(between.getOperand(), is(select2.getProperty(Property.SELECT_CRITERIA, Comparison.class).getOperand1()));
-        assertThat(between.getLowerBound(), is(select3.getProperty(Property.SELECT_CRITERIA, Comparison.class).getOperand2()));
-        assertThat(between.getUpperBound(), is(select2.getProperty(Property.SELECT_CRITERIA, Comparison.class).getOperand2()));
+        assertThat(between.operand(), is(select2.getProperty(Property.SELECT_CRITERIA, Comparison.class).operand1()));
+        assertThat(between.lowerBound(), is(select3.getProperty(Property.SELECT_CRITERIA, Comparison.class).operand2()));
+        assertThat(between.upperBound(), is(select2.getProperty(Property.SELECT_CRITERIA, Comparison.class).operand2()));
         assertThat(between.isLowerBoundIncluded(), is(true));
         assertThat(between.isUpperBoundIncluded(), is(true));
         assertChildren(newSelect, select1);
@@ -343,9 +343,9 @@ public class RewriteAsRangeCriteriaTest extends AbstractQueryTest {
         assertThat(newSelect.getSelectors(), is(access.getSelectors()));
         assertThat(newSelect.getParent(), is(sameInstance(project)));
         Comparison equality = newSelect.getProperty(Property.SELECT_CRITERIA, Comparison.class);
-        assertThat(equality.getOperand1(), is(select2.getProperty(Property.SELECT_CRITERIA, Comparison.class).getOperand1()));
-        assertThat(equality.getOperator(), is(Operator.EQUAL_TO));
-        assertThat(equality.getOperand2(), is(select2.getProperty(Property.SELECT_CRITERIA, Comparison.class).getOperand2()));
+        assertThat(equality.operand1(), is(select2.getProperty(Property.SELECT_CRITERIA, Comparison.class).operand1()));
+        assertThat(equality.operator(), is(Operator.EQUAL_TO));
+        assertThat(equality.operand2(), is(select2.getProperty(Property.SELECT_CRITERIA, Comparison.class).operand2()));
         assertChildren(newSelect, select1);
         assertChildren(select1, source);
     }

@@ -71,9 +71,9 @@ public abstract class AbstractQueryResultsTest extends AbstractQueryTest {
             final SelectorName selector = selector(selectorName);
             int i = 0;
             for (Column column : columns.getColumns()) {
-                final String name = column.getColumnName();
+                final String name = column.columnName();
                 final PropertyType type = types != null && types.length > i && types[i] != null ? types[i] : PropertyType.STRING;
-                if (column.getSelectorName().equals(selector)) {
+                if (column.selectorName().equals(selector)) {
                     builder.addColumn(selectorName, name, type.getName().toUpperCase());
                     ++i;
                 }
@@ -195,7 +195,7 @@ public abstract class AbstractQueryResultsTest extends AbstractQueryTest {
 
     protected Ordering orderByPropertyValue( Column column,
                                              Order order ) {
-        return new Ordering(new PropertyValue(column.getSelectorName(), column.getPropertyName()), order);
+        return new Ordering(new PropertyValue(column.selectorName(), column.propertyName()), order);
     }
 
     protected Ordering orderByPropertyLength( Column column ) {
@@ -204,7 +204,7 @@ public abstract class AbstractQueryResultsTest extends AbstractQueryTest {
 
     protected Ordering orderByPropertyLength( Column column,
                                               Order order ) {
-        return new Ordering(new Length(new PropertyValue(column.getSelectorName(), column.getPropertyName())), order);
+        return new Ordering(new Length(new PropertyValue(column.selectorName(), column.propertyName())), order);
     }
 
     protected Ordering orderByNodeDepth( String selectorName ) {

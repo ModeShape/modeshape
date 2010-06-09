@@ -88,8 +88,8 @@ public class RewriteAsRangeCriteria implements OptimizerRule {
                 // Look for Comparison constraints that use a range operator
                 if (constraint instanceof Comparison) {
                     Comparison comparison = (Comparison)constraint;
-                    if (comparison.getOperator().isRangeOperator()) {
-                        selectNodeByOperand.put(comparison.getOperand1(), select);
+                    if (comparison.operator().isRangeOperator()) {
+                        selectNodeByOperand.put(comparison.operand1(), select);
                     }
                 }
             }
@@ -191,7 +191,7 @@ public class RewriteAsRangeCriteria implements OptimizerRule {
         List<Comparison> notNeeded = new LinkedList<Comparison>();
         boolean inclusive = false;
         for (Comparison comparison : comparisons) {
-            switch (comparison.getOperator()) {
+            switch (comparison.operator()) {
                 case GREATER_THAN_OR_EQUAL_TO:
                     inclusive = true;
                 case GREATER_THAN:
@@ -233,7 +233,7 @@ public class RewriteAsRangeCriteria implements OptimizerRule {
             if (inclusive) {
                 // At least one of the sides was inclusive, meaning the constraints were something
                 // like 'x >= 2 AND x < 2', so we can replace these with an equality constraint ...
-                result = new Comparison(lessThan.getOperand1(), Operator.EQUAL_TO, lessThan.getOperand2());
+                result = new Comparison(lessThan.operand1(), Operator.EQUAL_TO, lessThan.operand2());
                 notNeeded.add(lessThan);
                 notNeeded.add(greaterThan);
             } else {
@@ -244,10 +244,9 @@ public class RewriteAsRangeCriteria implements OptimizerRule {
             }
         } else if (diff < 0) {
             // The range is valid as is ...
-            boolean lowerInclusive = greaterThan.getOperator() == Operator.GREATER_THAN_OR_EQUAL_TO;
-            boolean upperInclusive = lessThan.getOperator() == Operator.LESS_THAN_OR_EQUAL_TO;
-            result = new Between(lessThan.getOperand1(), greaterThan.getOperand2(), lessThan.getOperand2(), lowerInclusive,
-                                 upperInclusive);
+            boolean lowerInclusive = greaterThan.operator() == Operator.GREATER_THAN_OR_EQUAL_TO;
+            boolean upperInclusive = lessThan.operator() == Operator.LESS_THAN_OR_EQUAL_TO;
+            result = new Between(lessThan.operand1(), greaterThan.operand2(), lessThan.operand2(), lowerInclusive, upperInclusive);
             notNeeded.add(lessThan);
             notNeeded.add(greaterThan);
         } else {
@@ -300,8 +299,8 @@ public class RewriteAsRangeCriteria implements OptimizerRule {
     protected int compareStaticOperands( QueryContext context,
                                          Comparison comparison1,
                                          Comparison comparison2 ) {
-        Object value1 = getValue(context, comparison1.getOperand2());
-        Object value2 = getValue(context, comparison2.getOperand2());
+        Object value1 = getValue(context, comparison1.operand2());
+        Object value2 = getValue(context, comparison2.operand2());
         return ValueComparators.OBJECT_COMPARATOR.compare(value1, value2);
     }
 
@@ -339,9 +338,9 @@ public class RewriteAsRangeCriteria implements OptimizerRule {
                                StaticOperand operand ) {
         if (operand instanceof Literal) {
             Literal literal = (Literal)operand;
-            return literal.getValue();
+            return literal.value();
         }
         BindVariableName variable = (BindVariableName)operand;
-        return context.getVariables().get(variable.getVariableName());
+        return context.getVariables().get(variable.variableName());
     }
 }

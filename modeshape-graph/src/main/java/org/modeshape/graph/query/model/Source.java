@@ -29,6 +29,5 @@ import net.jcip.annotations.Immutable;
  * The source that represents a set of node tuples. The {@link Selector} and {@link Join} are the two concrete types of sources.
  */
 @Immutable
-public abstract class Source implements LanguageObject {
-    private static final long serialVersionUID = 1L;
+public interface Source extends LanguageObject {
 }

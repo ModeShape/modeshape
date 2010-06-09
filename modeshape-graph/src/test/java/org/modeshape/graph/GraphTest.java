@@ -46,6 +46,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentMatcher;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
@@ -99,11 +104,6 @@ import org.modeshape.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 import org.modeshape.graph.request.LockBranchRequest.LockScope;
 import org.modeshape.graph.request.processor.RequestProcessor;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentMatcher;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Mock;
 
 /**
  * @author Randall Hauch
@@ -399,7 +399,7 @@ public class GraphTest {
         assertThat(request, is(instanceOf(AccessQueryRequest.class)));
         AccessQueryRequest access = (AccessQueryRequest)request;
         assertThat(access.workspace(), is(workspaceName));
-        assertThat(access.selectorName().getName(), is(tableName));
+        assertThat(access.selectorName().name(), is(tableName));
         assertThat(access.resultColumns(), is(columns));
         assertThat(access.limit(), is(limit));
         assertThat(access.andedConstraints(), is(Arrays.asList(andedConstraints)));

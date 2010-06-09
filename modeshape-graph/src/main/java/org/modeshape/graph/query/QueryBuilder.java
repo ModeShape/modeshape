@@ -337,7 +337,7 @@ public class QueryBuilder {
         } else {
             if (source instanceof Selector) {
                 Selector selector = (Selector)source;
-                name = selector.hasAlias() ? selector.getAlias() : selector.getName();
+                name = selector.hasAlias() ? selector.alias() : selector.name();
                 propertyName = parts[0];
                 columnName = parts[0];
             } else {
@@ -415,12 +415,12 @@ public class QueryBuilder {
      */
     public QueryBuilder fromAllNodesAs( String alias ) {
         AllNodes allNodes = new AllNodes(selector(alias));
-        SelectorName oldName = this.source instanceof Selector ? ((Selector)source).getName() : null;
+        SelectorName oldName = this.source instanceof Selector ? ((Selector)source).name() : null;
         // Go through the columns and change the selector name to use the new alias ...
         for (int i = 0; i != columns.size(); ++i) {
             Column old = columns.get(i);
-            if (old.getSelectorName().equals(oldName)) {
-                columns.set(i, new Column(allNodes.getAliasOrName(), old.getPropertyName(), old.getColumnName()));
+            if (old.selectorName().equals(oldName)) {
+                columns.set(i, new Column(allNodes.aliasOrName(), old.propertyName(), old.columnName()));
             }
         }
         this.source = allNodes;
@@ -436,12 +436,12 @@ public class QueryBuilder {
      */
     public QueryBuilder from( String tableNameWithOptionalAlias ) {
         Selector selector = namedSelector(tableNameWithOptionalAlias);
-        SelectorName oldName = this.source instanceof Selector ? ((Selector)source).getName() : null;
+        SelectorName oldName = this.source instanceof Selector ? ((Selector)source).name() : null;
         // Go through the columns and change the selector name to use the new alias ...
         for (int i = 0; i != columns.size(); ++i) {
             Column old = columns.get(i);
-            if (old.getSelectorName().equals(oldName)) {
-                columns.set(i, new Column(selector.getAliasOrName(), old.getPropertyName(), old.getColumnName()));
+            if (old.selectorName().equals(oldName)) {
+                columns.set(i, new Column(selector.aliasOrName(), old.propertyName(), old.columnName()));
             }
         }
         this.source = selector;
@@ -730,10 +730,10 @@ public class QueryBuilder {
             // an INTERSECT or UNION SetQuery, the result should be applied to the RHS of the previous set ...
             if (firstQuery instanceof SetQuery && firstQuerySetOperation == Operation.EXCEPT) {
                 SetQuery setQuery = (SetQuery)firstQuery;
-                QueryCommand left = setQuery.getLeft();
-                QueryCommand right = setQuery.getRight();
+                QueryCommand left = setQuery.left();
+                QueryCommand right = setQuery.right();
                 SetQuery exceptQuery = new SetQuery(right, Operation.EXCEPT, result, firstQueryAll);
-                result = new SetQuery(left, setQuery.getOperation(), exceptQuery, setQuery.isAll());
+                result = new SetQuery(left, setQuery.operation(), exceptQuery, setQuery.isAll());
             } else {
                 result = new SetQuery(this.firstQuery, this.firstQuerySetOperation, result, this.firstQueryAll);
             }
@@ -1060,18 +1060,18 @@ public class QueryBuilder {
         protected SelectorName nameOf( String tableName ) {
             final SelectorName name = new SelectorName(tableName);
             // Look at the right source ...
-            if (rightSource.getAliasOrName().equals(name)) return name;
+            if (rightSource.aliasOrName().equals(name)) return name;
             // Look through the left source ...
             final AtomicBoolean notFound = new AtomicBoolean(true);
             Visitors.visitAll(source, new Visitors.AbstractVisitor() {
                 @Override
                 public void visit( AllNodes selector ) {
-                    if (notFound.get() && selector.getAliasOrName().equals(name)) notFound.set(false);
+                    if (notFound.get() && selector.aliasOrName().equals(name)) notFound.set(false);
                 }
 
                 @Override
                 public void visit( NamedSelector selector ) {
-                    if (notFound.get() && selector.getAliasOrName().equals(name)) notFound.set(false);
+                    if (notFound.get() && selector.aliasOrName().equals(name)) notFound.set(false);
                 }
             });
             if (notFound.get()) {
@@ -1138,11 +1138,11 @@ public class QueryBuilder {
 
         protected QueryBuilder createJoin( JoinCondition condition ) {
             // CROSS joins have a higher precedence, so we may need to adjust the existing left side in this case...
-            if (type == JoinType.CROSS && source instanceof Join && ((Join)source).getType() != JoinType.CROSS) {
+            if (type == JoinType.CROSS && source instanceof Join && ((Join)source).type() != JoinType.CROSS) {
                 // A CROSS join follows a non-CROSS join, so the CROSS join becomes precendent ...
                 Join left = (Join)source;
-                Join cross = new Join(left.getRight(), type, rightSource, condition);
-                source = new Join(left.getLeft(), left.getType(), cross, left.getJoinCondition());
+                Join cross = new Join(left.right(), type, rightSource, condition);
+                source = new Join(left.left(), left.type(), cross, left.joinCondition());
             } else {
                 // Otherwise, just create using usual precedence ...
                 source = new Join(source, type, rightSource, condition);
@@ -1361,7 +1361,7 @@ public class QueryBuilder {
                     // If the left constraint is an OR, we need to rearrange things since AND is higher precedence ...
                     if (left instanceof Or && implicitParentheses) {
                         Or previous = (Or)left;
-                        constraint = new Or(previous.getLeft(), new And(previous.getRight(), constraint));
+                        constraint = new Or(previous.left(), new And(previous.right(), constraint));
                     } else {
                         constraint = new And(left, constraint);
                     }
@@ -1586,8 +1586,8 @@ public class QueryBuilder {
         @Override
         protected ConstraintBuilder setConstraint( Constraint constraint ) {
             Comparison comparison = (Comparison)constraint;
-            return delegate.setConstraint(new Comparison(new UpperCase(comparison.getOperand1()), comparison.getOperator(),
-                                                         comparison.getOperand2()));
+            return delegate.setConstraint(new Comparison(new UpperCase(comparison.operand1()), comparison.operator(),
+                                                         comparison.operand2()));
         }
     }
 
@@ -1606,8 +1606,8 @@ public class QueryBuilder {
         @Override
         protected ConstraintBuilder setConstraint( Constraint constraint ) {
             Comparison comparison = (Comparison)constraint;
-            return delegate.setConstraint(new Comparison(new LowerCase(comparison.getOperand1()), comparison.getOperator(),
-                                                         comparison.getOperand2()));
+            return delegate.setConstraint(new Comparison(new LowerCase(comparison.operand1()), comparison.operator(),
+                                                         comparison.operand2()));
         }
     }
 
@@ -2654,11 +2654,11 @@ public class QueryBuilder {
             // If the left operand is an arithmetic operand, then we need to check the operator precedence ...
             if (left instanceof ArithmeticOperand) {
                 ArithmeticOperand leftArith = (ArithmeticOperand)left;
-                ArithmeticOperator operator = leftArith.getOperator();
+                ArithmeticOperator operator = leftArith.operator();
                 if (this.operator.precedes(operator)) {
                     // Need to do create an operand with leftArith.right and right
-                    DynamicOperand inner = new ArithmeticOperand(leftArith.getRight(), this.operator, right);
-                    leftOperand = new ArithmeticOperand(leftArith.getLeft(), operator, inner);
+                    DynamicOperand inner = new ArithmeticOperand(leftArith.right(), this.operator, right);
+                    leftOperand = new ArithmeticOperand(leftArith.left(), operator, inner);
                 } else {
                     // the left preceds this, so we can add the new operand on top ...
                     leftOperand = new ArithmeticOperand(leftArith, operator, right);

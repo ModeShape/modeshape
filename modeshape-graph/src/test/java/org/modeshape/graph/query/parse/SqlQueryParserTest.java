@@ -283,14 +283,14 @@ public class SqlQueryParserTest {
         Between between = (Between)constraint;
         assertThat(between.isLowerBoundIncluded(), is(true));
         assertThat(between.isUpperBoundIncluded(), is(true));
-        assertThat(between.getOperand(), is(instanceOf(PropertyValue.class)));
-        PropertyValue operand = (PropertyValue)between.getOperand();
-        assertThat(operand.getSelectorName(), is(selector.getName()));
-        assertThat(operand.getPropertyName(), is("id"));
-        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
-        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
+        assertThat(between.operand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue operand = (PropertyValue)between.operand();
+        assertThat(operand.selectorName(), is(selector.name()));
+        assertThat(operand.propertyName(), is("id"));
+        assertThat(between.lowerBound(), is(instanceOf(Literal.class)));
+        assertThat(between.lowerBound(), is(instanceOf(Literal.class)));
+        assertThat((Literal)between.lowerBound(), is(literal("lower")));
+        assertThat((Literal)between.upperBound(), is(literal("upper")));
     }
 
     @Test
@@ -303,14 +303,14 @@ public class SqlQueryParserTest {
         Between between = (Between)constraint;
         assertThat(between.isLowerBoundIncluded(), is(false));
         assertThat(between.isUpperBoundIncluded(), is(false));
-        assertThat(between.getOperand(), is(instanceOf(PropertyValue.class)));
-        PropertyValue operand = (PropertyValue)between.getOperand();
-        assertThat(operand.getSelectorName(), is(selector.getName()));
-        assertThat(operand.getPropertyName(), is("id"));
-        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
-        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
+        assertThat(between.operand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue operand = (PropertyValue)between.operand();
+        assertThat(operand.selectorName(), is(selector.name()));
+        assertThat(operand.propertyName(), is("id"));
+        assertThat(between.lowerBound(), is(instanceOf(Literal.class)));
+        assertThat(between.lowerBound(), is(instanceOf(Literal.class)));
+        assertThat((Literal)between.lowerBound(), is(literal("lower")));
+        assertThat((Literal)between.upperBound(), is(literal("upper")));
     }
 
     @Test
@@ -323,14 +323,14 @@ public class SqlQueryParserTest {
         Between between = (Between)constraint;
         assertThat(between.isLowerBoundIncluded(), is(true));
         assertThat(between.isUpperBoundIncluded(), is(false));
-        assertThat(between.getOperand(), is(instanceOf(PropertyValue.class)));
-        PropertyValue operand = (PropertyValue)between.getOperand();
-        assertThat(operand.getSelectorName(), is(selector.getName()));
-        assertThat(operand.getPropertyName(), is("id"));
-        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
-        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
+        assertThat(between.operand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue operand = (PropertyValue)between.operand();
+        assertThat(operand.selectorName(), is(selector.name()));
+        assertThat(operand.propertyName(), is("id"));
+        assertThat(between.lowerBound(), is(instanceOf(Literal.class)));
+        assertThat(between.lowerBound(), is(instanceOf(Literal.class)));
+        assertThat((Literal)between.lowerBound(), is(literal("lower")));
+        assertThat((Literal)between.upperBound(), is(literal("upper")));
     }
 
     @Test
@@ -343,14 +343,14 @@ public class SqlQueryParserTest {
         Between between = (Between)constraint;
         assertThat(between.isLowerBoundIncluded(), is(false));
         assertThat(between.isUpperBoundIncluded(), is(true));
-        assertThat(between.getOperand(), is(instanceOf(PropertyValue.class)));
-        PropertyValue operand = (PropertyValue)between.getOperand();
-        assertThat(operand.getSelectorName(), is(selector.getName()));
-        assertThat(operand.getPropertyName(), is("id"));
-        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
-        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
+        assertThat(between.operand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue operand = (PropertyValue)between.operand();
+        assertThat(operand.selectorName(), is(selector.name()));
+        assertThat(operand.propertyName(), is("id"));
+        assertThat(between.lowerBound(), is(instanceOf(Literal.class)));
+        assertThat(between.lowerBound(), is(instanceOf(Literal.class)));
+        assertThat((Literal)between.lowerBound(), is(literal("lower")));
+        assertThat((Literal)between.upperBound(), is(literal("upper")));
     }
 
     @Test
@@ -358,19 +358,19 @@ public class SqlQueryParserTest {
         NamedSelector selector = new NamedSelector(selectorName("tableA"));
         Constraint constraint = parser.parseConstraint(tokens("tableA.id NOT BETWEEN 'lower' AND 'upper'"), typeSystem, selector);
         assertThat(constraint, is(instanceOf(Not.class)));
-        constraint = ((Not)constraint).getConstraint();
+        constraint = ((Not)constraint).constraint();
         assertThat(constraint, is(instanceOf(Between.class)));
         Between between = (Between)constraint;
         assertThat(between.isLowerBoundIncluded(), is(true));
         assertThat(between.isUpperBoundIncluded(), is(true));
-        assertThat(between.getOperand(), is(instanceOf(PropertyValue.class)));
-        PropertyValue operand = (PropertyValue)between.getOperand();
-        assertThat(operand.getSelectorName(), is(selector.getName()));
-        assertThat(operand.getPropertyName(), is("id"));
-        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
-        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
+        assertThat(between.operand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue operand = (PropertyValue)between.operand();
+        assertThat(operand.selectorName(), is(selector.name()));
+        assertThat(operand.propertyName(), is("id"));
+        assertThat(between.lowerBound(), is(instanceOf(Literal.class)));
+        assertThat(between.lowerBound(), is(instanceOf(Literal.class)));
+        assertThat((Literal)between.lowerBound(), is(literal("lower")));
+        assertThat((Literal)between.upperBound(), is(literal("upper")));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -383,8 +383,8 @@ public class SqlQueryParserTest {
         Constraint constraint = parser.parseConstraint(tokens("( ISSAMENODE('/a/b') )"), typeSystem, selector);
         assertThat(constraint, is(instanceOf(SameNode.class)));
         SameNode same = (SameNode)constraint;
-        assertThat(same.getSelectorName(), is(selectorName("tableA")));
-        assertThat(same.getPath(), is("/a/b"));
+        assertThat(same.selectorName(), is(selectorName("tableA")));
+        assertThat(same.path(), is("/a/b"));
     }
 
     @Test
@@ -393,8 +393,8 @@ public class SqlQueryParserTest {
         Constraint constraint = parser.parseConstraint(tokens("((( ISSAMENODE('/a/b') )))"), typeSystem, selector);
         assertThat(constraint, is(instanceOf(SameNode.class)));
         SameNode same = (SameNode)constraint;
-        assertThat(same.getSelectorName(), is(selectorName("tableA")));
-        assertThat(same.getPath(), is("/a/b"));
+        assertThat(same.selectorName(), is(selectorName("tableA")));
+        assertThat(same.path(), is("/a/b"));
     }
 
     @Test
@@ -406,23 +406,23 @@ public class SqlQueryParserTest {
         assertThat(constraint, is(instanceOf(Or.class)));
         Or or = (Or)constraint;
 
-        assertThat(or.getLeft(), is(instanceOf(SameNode.class)));
-        SameNode first = (SameNode)or.getLeft();
-        assertThat(first.getSelectorName(), is(selectorName("tableA")));
-        assertThat(first.getPath(), is("/a/b"));
+        assertThat(or.left(), is(instanceOf(SameNode.class)));
+        SameNode first = (SameNode)or.left();
+        assertThat(first.selectorName(), is(selectorName("tableA")));
+        assertThat(first.path(), is("/a/b"));
 
-        assertThat(or.getRight(), is(instanceOf(And.class)));
-        And and = (And)or.getRight();
+        assertThat(or.right(), is(instanceOf(And.class)));
+        And and = (And)or.right();
 
-        assertThat(and.getLeft(), is(instanceOf(SameNode.class)));
-        SameNode second = (SameNode)and.getLeft();
-        assertThat(second.getSelectorName(), is(selectorName("tableA")));
-        assertThat(second.getPath(), is("/c/d"));
+        assertThat(and.left(), is(instanceOf(SameNode.class)));
+        SameNode second = (SameNode)and.left();
+        assertThat(second.selectorName(), is(selectorName("tableA")));
+        assertThat(second.path(), is("/c/d"));
 
-        assertThat(and.getRight(), is(instanceOf(SameNode.class)));
-        SameNode third = (SameNode)and.getRight();
-        assertThat(third.getSelectorName(), is(selectorName("tableA")));
-        assertThat(third.getPath(), is("/e/f"));
+        assertThat(and.right(), is(instanceOf(SameNode.class)));
+        SameNode third = (SameNode)and.right();
+        assertThat(third.selectorName(), is(selectorName("tableA")));
+        assertThat(third.path(), is("/e/f"));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -438,16 +438,16 @@ public class SqlQueryParserTest {
         assertThat(constraint, is(instanceOf(And.class)));
         And and = (And)constraint;
 
-        assertThat(and.getLeft(), is(instanceOf(SameNode.class)));
-        SameNode same = (SameNode)and.getLeft();
-        assertThat(same.getSelectorName(), is(selectorName("tableA")));
-        assertThat(same.getPath(), is("/a/b/c"));
+        assertThat(and.left(), is(instanceOf(SameNode.class)));
+        SameNode same = (SameNode)and.left();
+        assertThat(same.selectorName(), is(selectorName("tableA")));
+        assertThat(same.path(), is("/a/b/c"));
 
-        assertThat(and.getRight(), is(instanceOf(FullTextSearch.class)));
-        FullTextSearch search = (FullTextSearch)and.getRight();
-        assertThat(search.getSelectorName(), is(selectorName("tableA")));
-        assertThat(search.getPropertyName(), is("p1"));
-        assertThat(search.getFullTextSearchExpression(), is("term1"));
+        assertThat(and.right(), is(instanceOf(FullTextSearch.class)));
+        FullTextSearch search = (FullTextSearch)and.right();
+        assertThat(search.selectorName(), is(selectorName("tableA")));
+        assertThat(search.propertyName(), is("p1"));
+        assertThat(search.fullTextSearchExpression(), is("term1"));
     }
 
     @Test
@@ -459,25 +459,25 @@ public class SqlQueryParserTest {
         assertThat(constraint, is(instanceOf(And.class)));
         And and = (And)constraint;
 
-        assertThat(and.getLeft(), is(instanceOf(SameNode.class)));
-        SameNode same = (SameNode)and.getLeft();
-        assertThat(same.getSelectorName(), is(selectorName("tableA")));
-        assertThat(same.getPath(), is("/a/b/c"));
+        assertThat(and.left(), is(instanceOf(SameNode.class)));
+        SameNode same = (SameNode)and.left();
+        assertThat(same.selectorName(), is(selectorName("tableA")));
+        assertThat(same.path(), is("/a/b/c"));
 
-        assertThat(and.getRight(), is(instanceOf(And.class)));
-        And secondAnd = (And)and.getRight();
+        assertThat(and.right(), is(instanceOf(And.class)));
+        And secondAnd = (And)and.right();
 
-        assertThat(secondAnd.getLeft(), is(instanceOf(FullTextSearch.class)));
-        FullTextSearch search1 = (FullTextSearch)secondAnd.getLeft();
-        assertThat(search1.getSelectorName(), is(selectorName("tableA")));
-        assertThat(search1.getPropertyName(), is("p1"));
-        assertThat(search1.getFullTextSearchExpression(), is("term1"));
+        assertThat(secondAnd.left(), is(instanceOf(FullTextSearch.class)));
+        FullTextSearch search1 = (FullTextSearch)secondAnd.left();
+        assertThat(search1.selectorName(), is(selectorName("tableA")));
+        assertThat(search1.propertyName(), is("p1"));
+        assertThat(search1.fullTextSearchExpression(), is("term1"));
 
-        assertThat(secondAnd.getRight(), is(instanceOf(FullTextSearch.class)));
-        FullTextSearch search2 = (FullTextSearch)secondAnd.getRight();
-        assertThat(search2.getSelectorName(), is(selectorName("tableA")));
-        assertThat(search2.getPropertyName(), is("p2"));
-        assertThat(search2.getFullTextSearchExpression(), is("term2"));
+        assertThat(secondAnd.right(), is(instanceOf(FullTextSearch.class)));
+        FullTextSearch search2 = (FullTextSearch)secondAnd.right();
+        assertThat(search2.selectorName(), is(selectorName("tableA")));
+        assertThat(search2.propertyName(), is("p2"));
+        assertThat(search2.fullTextSearchExpression(), is("term2"));
     }
 
     @Test( expected = ParsingException.class )
@@ -497,16 +497,16 @@ public class SqlQueryParserTest {
         assertThat(constraint, is(instanceOf(Or.class)));
         Or or = (Or)constraint;
 
-        assertThat(or.getLeft(), is(instanceOf(SameNode.class)));
-        SameNode same = (SameNode)or.getLeft();
-        assertThat(same.getSelectorName(), is(selectorName("tableA")));
-        assertThat(same.getPath(), is("/a/b/c"));
+        assertThat(or.left(), is(instanceOf(SameNode.class)));
+        SameNode same = (SameNode)or.left();
+        assertThat(same.selectorName(), is(selectorName("tableA")));
+        assertThat(same.path(), is("/a/b/c"));
 
-        assertThat(or.getRight(), is(instanceOf(FullTextSearch.class)));
-        FullTextSearch search = (FullTextSearch)or.getRight();
-        assertThat(search.getSelectorName(), is(selectorName("tableA")));
-        assertThat(search.getPropertyName(), is("p1"));
-        assertThat(search.getFullTextSearchExpression(), is("term1"));
+        assertThat(or.right(), is(instanceOf(FullTextSearch.class)));
+        FullTextSearch search = (FullTextSearch)or.right();
+        assertThat(search.selectorName(), is(selectorName("tableA")));
+        assertThat(search.propertyName(), is("p1"));
+        assertThat(search.fullTextSearchExpression(), is("term1"));
 
     }
 
@@ -525,10 +525,10 @@ public class SqlQueryParserTest {
         Constraint constraint = parser.parseConstraint(tokens("NOT(ISSAMENODE(tableA,'/a/b/c'))"), typeSystem, mock(Source.class));
         assertThat(constraint, is(instanceOf(Not.class)));
         Not not = (Not)constraint;
-        assertThat(not.getConstraint(), is(instanceOf(SameNode.class)));
-        SameNode same = (SameNode)not.getConstraint();
-        assertThat(same.getSelectorName(), is(selectorName("tableA")));
-        assertThat(same.getPath(), is("/a/b/c"));
+        assertThat(not.constraint(), is(instanceOf(SameNode.class)));
+        SameNode same = (SameNode)not.constraint();
+        assertThat(same.selectorName(), is(selectorName("tableA")));
+        assertThat(same.path(), is("/a/b/c"));
     }
 
     @Test( expected = ParsingException.class )
@@ -551,9 +551,9 @@ public class SqlQueryParserTest {
         Constraint constraint = parser.parseConstraint(tokens("CONTAINS(propertyA,'term1 term2 -term3')"), typeSystem, selector);
         assertThat(constraint, is(instanceOf(FullTextSearch.class)));
         FullTextSearch search = (FullTextSearch)constraint;
-        assertThat(search.getSelectorName(), is(selectorName("tableA")));
-        assertThat(search.getPropertyName(), is("propertyA"));
-        assertThat(search.getFullTextSearchExpression(), is("term1 term2 -term3"));
+        assertThat(search.selectorName(), is(selectorName("tableA")));
+        assertThat(search.propertyName(), is("propertyA"));
+        assertThat(search.fullTextSearchExpression(), is("term1 term2 -term3"));
     }
 
     @Test
@@ -563,9 +563,9 @@ public class SqlQueryParserTest {
                                                        mock(Source.class));
         assertThat(constraint, is(instanceOf(FullTextSearch.class)));
         FullTextSearch search = (FullTextSearch)constraint;
-        assertThat(search.getSelectorName(), is(selectorName("tableA")));
-        assertThat(search.getPropertyName(), is("propertyA"));
-        assertThat(search.getFullTextSearchExpression(), is("term1 term2 -term3"));
+        assertThat(search.selectorName(), is(selectorName("tableA")));
+        assertThat(search.propertyName(), is("propertyA"));
+        assertThat(search.fullTextSearchExpression(), is("term1 term2 -term3"));
     }
 
     @Test
@@ -575,9 +575,9 @@ public class SqlQueryParserTest {
                                                        mock(Source.class));
         assertThat(constraint, is(instanceOf(FullTextSearch.class)));
         FullTextSearch search = (FullTextSearch)constraint;
-        assertThat(search.getSelectorName(), is(selectorName("tableA")));
-        assertThat(search.getPropertyName(), is(nullValue()));
-        assertThat(search.getFullTextSearchExpression(), is("term1 term2 -term3"));
+        assertThat(search.selectorName(), is(selectorName("tableA")));
+        assertThat(search.propertyName(), is(nullValue()));
+        assertThat(search.fullTextSearchExpression(), is("term1 term2 -term3"));
     }
 
     @Test( expected = ParsingException.class )
@@ -610,8 +610,8 @@ public class SqlQueryParserTest {
         Constraint constraint = parser.parseConstraint(tokens("ISSAMENODE('/a/b/c')"), typeSystem, selector);
         assertThat(constraint, is(instanceOf(SameNode.class)));
         SameNode same = (SameNode)constraint;
-        assertThat(same.getSelectorName(), is(selectorName("tableA")));
-        assertThat(same.getPath(), is("/a/b/c"));
+        assertThat(same.selectorName(), is(selectorName("tableA")));
+        assertThat(same.path(), is("/a/b/c"));
     }
 
     @Test
@@ -619,8 +619,8 @@ public class SqlQueryParserTest {
         Constraint constraint = parser.parseConstraint(tokens("ISSAMENODE(tableA,'/a/b/c')"), typeSystem, mock(Source.class));
         assertThat(constraint, is(instanceOf(SameNode.class)));
         SameNode same = (SameNode)constraint;
-        assertThat(same.getSelectorName(), is(selectorName("tableA")));
-        assertThat(same.getPath(), is("/a/b/c"));
+        assertThat(same.selectorName(), is(selectorName("tableA")));
+        assertThat(same.path(), is("/a/b/c"));
     }
 
     @Test( expected = ParsingException.class )
@@ -653,8 +653,8 @@ public class SqlQueryParserTest {
         Constraint constraint = parser.parseConstraint(tokens("ISCHILDNODE('/a/b/c')"), typeSystem, selector);
         assertThat(constraint, is(instanceOf(ChildNode.class)));
         ChildNode child = (ChildNode)constraint;
-        assertThat(child.getSelectorName(), is(selectorName("tableA")));
-        assertThat(child.getParentPath(), is("/a/b/c"));
+        assertThat(child.selectorName(), is(selectorName("tableA")));
+        assertThat(child.parentPath(), is("/a/b/c"));
     }
 
     @Test
@@ -662,8 +662,8 @@ public class SqlQueryParserTest {
         Constraint constraint = parser.parseConstraint(tokens("ISCHILDNODE(tableA,'/a/b/c')"), typeSystem, mock(Source.class));
         assertThat(constraint, is(instanceOf(ChildNode.class)));
         ChildNode child = (ChildNode)constraint;
-        assertThat(child.getSelectorName(), is(selectorName("tableA")));
-        assertThat(child.getParentPath(), is("/a/b/c"));
+        assertThat(child.selectorName(), is(selectorName("tableA")));
+        assertThat(child.parentPath(), is("/a/b/c"));
     }
 
     @Test( expected = ParsingException.class )
@@ -696,8 +696,8 @@ public class SqlQueryParserTest {
         Constraint constraint = parser.parseConstraint(tokens("ISDESCENDANTNODE('/a/b/c')"), typeSystem, selector);
         assertThat(constraint, is(instanceOf(DescendantNode.class)));
         DescendantNode descendant = (DescendantNode)constraint;
-        assertThat(descendant.getSelectorName(), is(selectorName("tableA")));
-        assertThat(descendant.getAncestorPath(), is("/a/b/c"));
+        assertThat(descendant.selectorName(), is(selectorName("tableA")));
+        assertThat(descendant.ancestorPath(), is("/a/b/c"));
     }
 
     @Test
@@ -707,8 +707,8 @@ public class SqlQueryParserTest {
                                                        mock(Source.class));
         assertThat(constraint, is(instanceOf(DescendantNode.class)));
         DescendantNode descendant = (DescendantNode)constraint;
-        assertThat(descendant.getSelectorName(), is(selectorName("tableA")));
-        assertThat(descendant.getAncestorPath(), is("/a/b/c"));
+        assertThat(descendant.selectorName(), is(selectorName("tableA")));
+        assertThat(descendant.ancestorPath(), is("/a/b/c"));
     }
 
     @Test( expected = ParsingException.class )
@@ -826,15 +826,15 @@ public class SqlQueryParserTest {
     public void shouldParseComparisonOperator() {
         // Same case
         for (Operator operator : Operator.values()) {
-            assertThat(parser.parseComparisonOperator(tokens(operator.getSymbol())), is(operator));
+            assertThat(parser.parseComparisonOperator(tokens(operator.symbol())), is(operator));
         }
         // Upper case
         for (Operator operator : Operator.values()) {
-            assertThat(parser.parseComparisonOperator(tokens(operator.getSymbol().toUpperCase())), is(operator));
+            assertThat(parser.parseComparisonOperator(tokens(operator.symbol().toUpperCase())), is(operator));
         }
         // Lower case
         for (Operator operator : Operator.values()) {
-            assertThat(parser.parseComparisonOperator(tokens(operator.getSymbol().toLowerCase())), is(operator));
+            assertThat(parser.parseComparisonOperator(tokens(operator.symbol().toLowerCase())), is(operator));
         }
     }
 
@@ -852,8 +852,8 @@ public class SqlQueryParserTest {
         List<Ordering> orderBy = parser.parseOrderBy(tokens("ORDER BY NAME(tableA) ASC"), typeSystem, mock(Source.class));
         assertThat(orderBy.size(), is(1));
         Ordering first = orderBy.get(0);
-        assertThat(first.getOperand(), is(instanceOf(NodeName.class)));
-        assertThat(first.getOrder(), is(Order.ASCENDING));
+        assertThat(first.operand(), is(instanceOf(NodeName.class)));
+        assertThat(first.order(), is(Order.ASCENDING));
     }
 
     @Test
@@ -863,11 +863,11 @@ public class SqlQueryParserTest {
                                                      mock(Source.class));
         assertThat(orderBy.size(), is(2));
         Ordering first = orderBy.get(0);
-        assertThat(first.getOperand(), is(instanceOf(NodeName.class)));
-        assertThat(first.getOrder(), is(Order.ASCENDING));
+        assertThat(first.operand(), is(instanceOf(NodeName.class)));
+        assertThat(first.order(), is(Order.ASCENDING));
         Ordering second = orderBy.get(1);
-        assertThat(second.getOperand(), is(instanceOf(FullTextSearchScore.class)));
-        assertThat(second.getOrder(), is(Order.DESCENDING));
+        assertThat(second.operand(), is(instanceOf(FullTextSearchScore.class)));
+        assertThat(second.order(), is(Order.DESCENDING));
     }
 
     @Test
@@ -877,14 +877,14 @@ public class SqlQueryParserTest {
                                                      mock(Source.class));
         assertThat(orderBy.size(), is(3));
         Ordering first = orderBy.get(0);
-        assertThat(first.getOperand(), is(instanceOf(NodeName.class)));
-        assertThat(first.getOrder(), is(Order.ASCENDING));
+        assertThat(first.operand(), is(instanceOf(NodeName.class)));
+        assertThat(first.order(), is(Order.ASCENDING));
         Ordering second = orderBy.get(1);
-        assertThat(second.getOperand(), is(instanceOf(FullTextSearchScore.class)));
-        assertThat(second.getOrder(), is(Order.DESCENDING));
+        assertThat(second.operand(), is(instanceOf(FullTextSearchScore.class)));
+        assertThat(second.order(), is(Order.DESCENDING));
         Ordering third = orderBy.get(2);
-        assertThat(third.getOperand(), is(instanceOf(Length.class)));
-        assertThat(third.getOrder(), is(Order.ASCENDING));
+        assertThat(third.operand(), is(instanceOf(Length.class)));
+        assertThat(third.order(), is(Order.ASCENDING));
     }
 
     @Test( expected = ParsingException.class )
@@ -904,22 +904,22 @@ public class SqlQueryParserTest {
     @Test
     public void shouldParseOrderingFromDynamicOperandFollowedByAscendingKeyword() {
         Ordering ordering = parser.parseOrdering(tokens("NAME(tableA) ASC"), typeSystem, mock(Source.class));
-        assertThat(ordering.getOperand(), is(instanceOf(NodeName.class)));
-        assertThat(ordering.getOrder(), is(Order.ASCENDING));
+        assertThat(ordering.operand(), is(instanceOf(NodeName.class)));
+        assertThat(ordering.order(), is(Order.ASCENDING));
     }
 
     @Test
     public void shouldParseOrderingFromDynamicOperandFollowedByDecendingKeyword() {
         Ordering ordering = parser.parseOrdering(tokens("NAME(tableA) DESC"), typeSystem, mock(Source.class));
-        assertThat(ordering.getOperand(), is(instanceOf(NodeName.class)));
-        assertThat(ordering.getOrder(), is(Order.DESCENDING));
+        assertThat(ordering.operand(), is(instanceOf(NodeName.class)));
+        assertThat(ordering.order(), is(Order.DESCENDING));
     }
 
     @Test
     public void shouldParseOrderingFromDynamicOperandAndDefaultToAscendingWhenNotFollowedByAscendingOrDescendingKeyword() {
         Ordering ordering = parser.parseOrdering(tokens("NAME(tableA) OTHER"), typeSystem, mock(Source.class));
-        assertThat(ordering.getOperand(), is(instanceOf(NodeName.class)));
-        assertThat(ordering.getOrder(), is(Order.ASCENDING));
+        assertThat(ordering.operand(), is(instanceOf(NodeName.class)));
+        assertThat(ordering.order(), is(Order.ASCENDING));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -933,8 +933,8 @@ public class SqlQueryParserTest {
                                                               mock(Source.class));
         assertThat(constraint, is(instanceOf(PropertyExistence.class)));
         PropertyExistence p = (PropertyExistence)constraint;
-        assertThat(p.getPropertyName(), is("property1"));
-        assertThat(p.getSelectorName(), is(selectorName("tableA")));
+        assertThat(p.propertyName(), is("property1"));
+        assertThat(p.selectorName(), is(selectorName("tableA")));
     }
 
     @Test
@@ -943,8 +943,8 @@ public class SqlQueryParserTest {
         Constraint constraint = parser.parsePropertyExistance(tokens("property1 IS NOT NULL"), typeSystem, source);
         assertThat(constraint, is(instanceOf(PropertyExistence.class)));
         PropertyExistence p = (PropertyExistence)constraint;
-        assertThat(p.getPropertyName(), is("property1"));
-        assertThat(p.getSelectorName(), is(selectorName("tableA")));
+        assertThat(p.propertyName(), is("property1"));
+        assertThat(p.selectorName(), is(selectorName("tableA")));
     }
 
     @Test( expected = ParsingException.class )
@@ -957,10 +957,10 @@ public class SqlQueryParserTest {
         Constraint constraint = parser.parsePropertyExistance(tokens("tableA.property1 IS NULL"), typeSystem, mock(Source.class));
         assertThat(constraint, is(instanceOf(Not.class)));
         Not not = (Not)constraint;
-        assertThat(not.getConstraint(), is(instanceOf(PropertyExistence.class)));
-        PropertyExistence p = (PropertyExistence)not.getConstraint();
-        assertThat(p.getPropertyName(), is("property1"));
-        assertThat(p.getSelectorName(), is(selectorName("tableA")));
+        assertThat(not.constraint(), is(instanceOf(PropertyExistence.class)));
+        PropertyExistence p = (PropertyExistence)not.constraint();
+        assertThat(p.propertyName(), is("property1"));
+        assertThat(p.selectorName(), is(selectorName("tableA")));
     }
 
     @Test
@@ -980,7 +980,7 @@ public class SqlQueryParserTest {
         StaticOperand operand = parser.parseStaticOperand(tokens("$VAR"), typeSystem);
         assertThat(operand, is(instanceOf(BindVariableName.class)));
         BindVariableName var = (BindVariableName)operand;
-        assertThat(var.getVariableName(), is("VAR"));
+        assertThat(var.variableName(), is("VAR"));
     }
 
     @Test( expected = ParsingException.class )
@@ -998,7 +998,7 @@ public class SqlQueryParserTest {
         StaticOperand operand = parser.parseStaticOperand(tokens("CAST(123 AS DOUBLE)"), typeSystem);
         assertThat(operand, is(instanceOf(Literal.class)));
         Literal literal = (Literal)operand;
-        assertThat((Double)literal.getValue(), is(typeSystem.getDoubleFactory().create("123")));
+        assertThat((Double)literal.value(), is(typeSystem.getDoubleFactory().create("123")));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -1007,17 +1007,12 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseLiteralFromStringWithCastBooleanLiteralToString() {
-        assertThat((String)parser.parseLiteral(tokens("CAST(true AS STRING)"), typeSystem).getValue(),
-                   is(Boolean.TRUE.toString()));
-        assertThat((String)parser.parseLiteral(tokens("CAST(false AS STRING)"), typeSystem).getValue(),
-                   is(Boolean.FALSE.toString()));
-        assertThat((String)parser.parseLiteral(tokens("CAST(TRUE AS STRING)"), typeSystem).getValue(),
-                   is(Boolean.TRUE.toString()));
-        assertThat((String)parser.parseLiteral(tokens("CAST(FALSE AS STRING)"), typeSystem).getValue(),
-                   is(Boolean.FALSE.toString()));
-        assertThat((String)parser.parseLiteral(tokens("CAST('true' AS stRinG)"), typeSystem).getValue(),
-                   is(Boolean.TRUE.toString()));
-        assertThat((String)parser.parseLiteral(tokens("CAST(\"false\" AS string)"), typeSystem).getValue(),
+        assertThat((String)parser.parseLiteral(tokens("CAST(true AS STRING)"), typeSystem).value(), is(Boolean.TRUE.toString()));
+        assertThat((String)parser.parseLiteral(tokens("CAST(false AS STRING)"), typeSystem).value(), is(Boolean.FALSE.toString()));
+        assertThat((String)parser.parseLiteral(tokens("CAST(TRUE AS STRING)"), typeSystem).value(), is(Boolean.TRUE.toString()));
+        assertThat((String)parser.parseLiteral(tokens("CAST(FALSE AS STRING)"), typeSystem).value(), is(Boolean.FALSE.toString()));
+        assertThat((String)parser.parseLiteral(tokens("CAST('true' AS stRinG)"), typeSystem).value(), is(Boolean.TRUE.toString()));
+        assertThat((String)parser.parseLiteral(tokens("CAST(\"false\" AS string)"), typeSystem).value(),
                    is(Boolean.FALSE.toString()));
     }
 
@@ -1025,12 +1020,12 @@ public class SqlQueryParserTest {
     public void shouldParseLiteralFromStringWithCastBooleanLiteralToBinary() {
         Binary binaryTrue = (Binary)typeSystem.getTypeFactory(PropertyType.BINARY.getName()).create(true);
         Binary binaryFalse = (Binary)typeSystem.getTypeFactory(PropertyType.BINARY.getName()).create(false);
-        assertThat((Binary)parser.parseLiteral(tokens("CAST(true AS BINARY)"), typeSystem).getValue(), is(binaryTrue));
-        assertThat((Binary)parser.parseLiteral(tokens("CAST(false AS BINARY)"), typeSystem).getValue(), is(binaryFalse));
-        assertThat((Binary)parser.parseLiteral(tokens("CAST(TRUE AS BINARY)"), typeSystem).getValue(), is(binaryTrue));
-        assertThat((Binary)parser.parseLiteral(tokens("CAST(FALSE AS BINARY)"), typeSystem).getValue(), is(binaryFalse));
-        assertThat((Binary)parser.parseLiteral(tokens("CAST('true' AS biNarY)"), typeSystem).getValue(), is(binaryTrue));
-        assertThat((Binary)parser.parseLiteral(tokens("CAST(\"false\" AS binary)"), typeSystem).getValue(), is(binaryFalse));
+        assertThat((Binary)parser.parseLiteral(tokens("CAST(true AS BINARY)"), typeSystem).value(), is(binaryTrue));
+        assertThat((Binary)parser.parseLiteral(tokens("CAST(false AS BINARY)"), typeSystem).value(), is(binaryFalse));
+        assertThat((Binary)parser.parseLiteral(tokens("CAST(TRUE AS BINARY)"), typeSystem).value(), is(binaryTrue));
+        assertThat((Binary)parser.parseLiteral(tokens("CAST(FALSE AS BINARY)"), typeSystem).value(), is(binaryFalse));
+        assertThat((Binary)parser.parseLiteral(tokens("CAST('true' AS biNarY)"), typeSystem).value(), is(binaryTrue));
+        assertThat((Binary)parser.parseLiteral(tokens("CAST(\"false\" AS binary)"), typeSystem).value(), is(binaryFalse));
     }
 
     @Test( expected = ParsingException.class )
@@ -1050,78 +1045,78 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseLiteralFromStringWithCastLongLiteralToString() {
-        assertThat((String)parser.parseLiteral(tokens("CAST(123 AS STRING)"), typeSystem).getValue(), is("123"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(+123 AS STRING)"), typeSystem).getValue(), is("123"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(-123 AS STRING)"), typeSystem).getValue(), is("-123"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(0 AS STRING)"), typeSystem).getValue(), is("0"));
+        assertThat((String)parser.parseLiteral(tokens("CAST(123 AS STRING)"), typeSystem).value(), is("123"));
+        assertThat((String)parser.parseLiteral(tokens("CAST(+123 AS STRING)"), typeSystem).value(), is("123"));
+        assertThat((String)parser.parseLiteral(tokens("CAST(-123 AS STRING)"), typeSystem).value(), is("-123"));
+        assertThat((String)parser.parseLiteral(tokens("CAST(0 AS STRING)"), typeSystem).value(), is("0"));
     }
 
     @Test
     public void shouldParseLiteralFromStringWithCastLongLiteralToLong() {
-        assertThat((Long)parser.parseLiteral(tokens("CAST(123 AS LONG)"), typeSystem).getValue(), is(123L));
-        assertThat((Long)parser.parseLiteral(tokens("CAST(+123 AS LONG)"), typeSystem).getValue(), is(123L));
-        assertThat((Long)parser.parseLiteral(tokens("CAST(-123 AS LONG)"), typeSystem).getValue(), is(-123L));
-        assertThat((Long)parser.parseLiteral(tokens("CAST(0 AS LONG)"), typeSystem).getValue(), is(0L));
+        assertThat((Long)parser.parseLiteral(tokens("CAST(123 AS LONG)"), typeSystem).value(), is(123L));
+        assertThat((Long)parser.parseLiteral(tokens("CAST(+123 AS LONG)"), typeSystem).value(), is(123L));
+        assertThat((Long)parser.parseLiteral(tokens("CAST(-123 AS LONG)"), typeSystem).value(), is(-123L));
+        assertThat((Long)parser.parseLiteral(tokens("CAST(0 AS LONG)"), typeSystem).value(), is(0L));
     }
 
     @Test
     public void shouldParseLiteralFromStringWithCastDoubleLiteralToString() {
-        assertThat((String)parser.parseLiteral(tokens("CAST(1.23 AS STRING)"), typeSystem).getValue(), is("1.23"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(+1.23 AS STRING)"), typeSystem).getValue(), is("1.23"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(-1.23 AS STRING)"), typeSystem).getValue(), is("-1.23"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(1.23e10 AS STRING)"), typeSystem).getValue(), is("1.23E10"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(1.23e+10 AS STRING)"), typeSystem).getValue(), is("1.23E10"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(1.23e-10 AS STRING)"), typeSystem).getValue(), is("1.23E-10"));
+        assertThat((String)parser.parseLiteral(tokens("CAST(1.23 AS STRING)"), typeSystem).value(), is("1.23"));
+        assertThat((String)parser.parseLiteral(tokens("CAST(+1.23 AS STRING)"), typeSystem).value(), is("1.23"));
+        assertThat((String)parser.parseLiteral(tokens("CAST(-1.23 AS STRING)"), typeSystem).value(), is("-1.23"));
+        assertThat((String)parser.parseLiteral(tokens("CAST(1.23e10 AS STRING)"), typeSystem).value(), is("1.23E10"));
+        assertThat((String)parser.parseLiteral(tokens("CAST(1.23e+10 AS STRING)"), typeSystem).value(), is("1.23E10"));
+        assertThat((String)parser.parseLiteral(tokens("CAST(1.23e-10 AS STRING)"), typeSystem).value(), is("1.23E-10"));
     }
 
     @Test
     public void shouldParseLiteralFromStringWithCastDateLiteralToString() {
-        assertThat((String)parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.345Z AS STRING)"), typeSystem).getValue(),
+        assertThat((String)parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.345Z AS STRING)"), typeSystem).value(),
                    is("2009-03-22T03:22:45.345Z"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.345UTC AS STRING)"), typeSystem).getValue(),
+        assertThat((String)parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.345UTC AS STRING)"), typeSystem).value(),
                    is("2009-03-22T03:22:45.345Z"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.3-01:00 AS STRING)"), typeSystem).getValue(),
+        assertThat((String)parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.3-01:00 AS STRING)"), typeSystem).value(),
                    is("2009-03-22T04:22:45.300Z"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.345+01:00 AS STRING)"), typeSystem).getValue(),
+        assertThat((String)parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.345+01:00 AS STRING)"), typeSystem).value(),
                    is("2009-03-22T02:22:45.345Z"));
     }
 
     @Test
     public void shouldParseLiteralFromStringWithCastStringLiteralToName() {
-        assertThat((Name)parser.parseLiteral(tokens("CAST([mode:name] AS NAME)"), typeSystem).getValue(), is(name("mode:name")));
-        assertThat((Name)parser.parseLiteral(tokens("CAST('mode:name' AS NAME)"), typeSystem).getValue(), is(name("mode:name")));
-        assertThat((Name)parser.parseLiteral(tokens("CAST(\"mode:name\" AS NAME)"), typeSystem).getValue(), is(name("mode:name")));
+        assertThat((Name)parser.parseLiteral(tokens("CAST([mode:name] AS NAME)"), typeSystem).value(), is(name("mode:name")));
+        assertThat((Name)parser.parseLiteral(tokens("CAST('mode:name' AS NAME)"), typeSystem).value(), is(name("mode:name")));
+        assertThat((Name)parser.parseLiteral(tokens("CAST(\"mode:name\" AS NAME)"), typeSystem).value(), is(name("mode:name")));
     }
 
     @Test
     public void shouldParseLiteralFromStringWithCastStringLiteralToPath() {
-        assertThat((Path)parser.parseLiteral(tokens("CAST([/mode:name/a/b] AS PATH)"), typeSystem).getValue(),
+        assertThat((Path)parser.parseLiteral(tokens("CAST([/mode:name/a/b] AS PATH)"), typeSystem).value(),
                    is(path("/mode:name/a/b")));
     }
 
     @Test
     public void shouldParseLiteralFromStringWithUncastLiteralValueAndRepresentValueAsStringRepresentation() {
-        assertThat(parser.parseLiteral(tokens("true"), typeSystem).getValue(), is((Object)Boolean.TRUE.toString()));
-        assertThat(parser.parseLiteral(tokens("false"), typeSystem).getValue(), is((Object)Boolean.FALSE.toString()));
-        assertThat(parser.parseLiteral(tokens("TRUE"), typeSystem).getValue(), is((Object)Boolean.TRUE.toString()));
-        assertThat(parser.parseLiteral(tokens("FALSE"), typeSystem).getValue(), is((Object)Boolean.FALSE.toString()));
-        assertThat(parser.parseLiteral(tokens("123"), typeSystem).getValue(), is((Object)"123"));
-        assertThat(parser.parseLiteral(tokens("+123"), typeSystem).getValue(), is((Object)"123"));
-        assertThat(parser.parseLiteral(tokens("-123"), typeSystem).getValue(), is((Object)"-123"));
-        assertThat(parser.parseLiteral(tokens("1.23"), typeSystem).getValue(), is((Object)"1.23"));
-        assertThat(parser.parseLiteral(tokens("+1.23"), typeSystem).getValue(), is((Object)"1.23"));
-        assertThat(parser.parseLiteral(tokens("-1.23"), typeSystem).getValue(), is((Object)"-1.23"));
-        assertThat(parser.parseLiteral(tokens("1.23e10"), typeSystem).getValue(), is((Object)"1.23E10"));
-        assertThat(parser.parseLiteral(tokens("1.23e+10"), typeSystem).getValue(), is((Object)"1.23E10"));
-        assertThat(parser.parseLiteral(tokens("1.23e-10"), typeSystem).getValue(), is((Object)"1.23E-10"));
-        assertThat(parser.parseLiteral(tokens("0"), typeSystem).getValue(), is((Object)"0"));
-        assertThat(parser.parseLiteral(tokens("2009-03-22T03:22:45.345Z"), typeSystem).getValue(),
+        assertThat(parser.parseLiteral(tokens("true"), typeSystem).value(), is((Object)Boolean.TRUE.toString()));
+        assertThat(parser.parseLiteral(tokens("false"), typeSystem).value(), is((Object)Boolean.FALSE.toString()));
+        assertThat(parser.parseLiteral(tokens("TRUE"), typeSystem).value(), is((Object)Boolean.TRUE.toString()));
+        assertThat(parser.parseLiteral(tokens("FALSE"), typeSystem).value(), is((Object)Boolean.FALSE.toString()));
+        assertThat(parser.parseLiteral(tokens("123"), typeSystem).value(), is((Object)"123"));
+        assertThat(parser.parseLiteral(tokens("+123"), typeSystem).value(), is((Object)"123"));
+        assertThat(parser.parseLiteral(tokens("-123"), typeSystem).value(), is((Object)"-123"));
+        assertThat(parser.parseLiteral(tokens("1.23"), typeSystem).value(), is((Object)"1.23"));
+        assertThat(parser.parseLiteral(tokens("+1.23"), typeSystem).value(), is((Object)"1.23"));
+        assertThat(parser.parseLiteral(tokens("-1.23"), typeSystem).value(), is((Object)"-1.23"));
+        assertThat(parser.parseLiteral(tokens("1.23e10"), typeSystem).value(), is((Object)"1.23E10"));
+        assertThat(parser.parseLiteral(tokens("1.23e+10"), typeSystem).value(), is((Object)"1.23E10"));
+        assertThat(parser.parseLiteral(tokens("1.23e-10"), typeSystem).value(), is((Object)"1.23E-10"));
+        assertThat(parser.parseLiteral(tokens("0"), typeSystem).value(), is((Object)"0"));
+        assertThat(parser.parseLiteral(tokens("2009-03-22T03:22:45.345Z"), typeSystem).value(),
                    is((Object)"2009-03-22T03:22:45.345Z"));
-        assertThat(parser.parseLiteral(tokens("2009-03-22T03:22:45.345UTC"), typeSystem).getValue(),
+        assertThat(parser.parseLiteral(tokens("2009-03-22T03:22:45.345UTC"), typeSystem).value(),
                    is((Object)"2009-03-22T03:22:45.345Z"));
-        assertThat(parser.parseLiteral(tokens("2009-03-22T03:22:45.3-01:00"), typeSystem).getValue(),
+        assertThat(parser.parseLiteral(tokens("2009-03-22T03:22:45.3-01:00"), typeSystem).value(),
                    is((Object)"2009-03-22T04:22:45.300Z"));
-        assertThat(parser.parseLiteral(tokens("2009-03-22T03:22:45.345+01:00"), typeSystem).getValue(),
+        assertThat(parser.parseLiteral(tokens("2009-03-22T03:22:45.345+01:00"), typeSystem).value(),
                    is((Object)"2009-03-22T02:22:45.345Z"));
     }
 
@@ -1280,17 +1275,17 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("LENGTH(tableA.property)"), typeSystem, mock(Source.class));
         assertThat(operand, is(instanceOf(Length.class)));
         Length length = (Length)operand;
-        assertThat(length.getPropertyValue().getPropertyName(), is("property"));
-        assertThat(length.getPropertyValue().getSelectorName(), is(selectorName("tableA")));
-        assertThat(length.getSelectorName(), is(selectorName("tableA")));
+        assertThat(length.propertyValue().propertyName(), is("property"));
+        assertThat(length.propertyValue().selectorName(), is(selectorName("tableA")));
+        assertThat(length.selectorName(), is(selectorName("tableA")));
 
         Source source = new NamedSelector(selectorName("tableA"));
         operand = parser.parseDynamicOperand(tokens("LENGTH(property)"), typeSystem, source);
         assertThat(operand, is(instanceOf(Length.class)));
         length = (Length)operand;
-        assertThat(length.getPropertyValue().getPropertyName(), is("property"));
-        assertThat(length.getPropertyValue().getSelectorName(), is(selectorName("tableA")));
-        assertThat(length.getSelectorName(), is(selectorName("tableA")));
+        assertThat(length.propertyValue().propertyName(), is("property"));
+        assertThat(length.propertyValue().selectorName(), is(selectorName("tableA")));
+        assertThat(length.selectorName(), is(selectorName("tableA")));
     }
 
     @Test( expected = ParsingException.class )
@@ -1312,21 +1307,21 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("LOWER(tableA.property)"), typeSystem, mock(Source.class));
         assertThat(operand, is(instanceOf(LowerCase.class)));
         LowerCase lower = (LowerCase)operand;
-        assertThat(lower.getSelectorName(), is(selectorName("tableA")));
-        assertThat(lower.getOperand(), is(instanceOf(PropertyValue.class)));
-        PropertyValue value = (PropertyValue)lower.getOperand();
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(lower.selectorName(), is(selectorName("tableA")));
+        assertThat(lower.operand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue value = (PropertyValue)lower.operand();
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
 
         Source source = new NamedSelector(selectorName("tableA"));
         operand = parser.parseDynamicOperand(tokens("LOWER(property)"), typeSystem, source);
         assertThat(operand, is(instanceOf(LowerCase.class)));
         lower = (LowerCase)operand;
-        assertThat(lower.getSelectorName(), is(selectorName("tableA")));
-        assertThat(lower.getOperand(), is(instanceOf(PropertyValue.class)));
-        value = (PropertyValue)lower.getOperand();
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(lower.selectorName(), is(selectorName("tableA")));
+        assertThat(lower.operand(), is(instanceOf(PropertyValue.class)));
+        value = (PropertyValue)lower.operand();
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
     }
 
     @Test
@@ -1336,14 +1331,14 @@ public class SqlQueryParserTest {
                                                             mock(Source.class));
         assertThat(operand, is(instanceOf(LowerCase.class)));
         LowerCase lower = (LowerCase)operand;
-        assertThat(lower.getSelectorName(), is(selectorName("tableA")));
-        assertThat(lower.getOperand(), is(instanceOf(UpperCase.class)));
-        UpperCase upper = (UpperCase)lower.getOperand();
-        assertThat(upper.getSelectorName(), is(selectorName("tableA")));
-        assertThat(upper.getOperand(), is(instanceOf(PropertyValue.class)));
-        PropertyValue value = (PropertyValue)upper.getOperand();
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(lower.selectorName(), is(selectorName("tableA")));
+        assertThat(lower.operand(), is(instanceOf(UpperCase.class)));
+        UpperCase upper = (UpperCase)lower.operand();
+        assertThat(upper.selectorName(), is(selectorName("tableA")));
+        assertThat(upper.operand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue value = (PropertyValue)upper.operand();
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
     }
 
     @Test( expected = ParsingException.class )
@@ -1365,21 +1360,21 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("UPPER(tableA.property)"), typeSystem, mock(Source.class));
         assertThat(operand, is(instanceOf(UpperCase.class)));
         UpperCase upper = (UpperCase)operand;
-        assertThat(upper.getSelectorName(), is(selectorName("tableA")));
-        assertThat(upper.getOperand(), is(instanceOf(PropertyValue.class)));
-        PropertyValue value = (PropertyValue)upper.getOperand();
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(upper.selectorName(), is(selectorName("tableA")));
+        assertThat(upper.operand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue value = (PropertyValue)upper.operand();
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
 
         Source source = new NamedSelector(selectorName("tableA"));
         operand = parser.parseDynamicOperand(tokens("UPPER(property)"), typeSystem, source);
         assertThat(operand, is(instanceOf(UpperCase.class)));
         upper = (UpperCase)operand;
-        assertThat(upper.getSelectorName(), is(selectorName("tableA")));
-        assertThat(upper.getOperand(), is(instanceOf(PropertyValue.class)));
-        value = (PropertyValue)upper.getOperand();
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(upper.selectorName(), is(selectorName("tableA")));
+        assertThat(upper.operand(), is(instanceOf(PropertyValue.class)));
+        value = (PropertyValue)upper.operand();
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
     }
 
     @Test
@@ -1389,14 +1384,14 @@ public class SqlQueryParserTest {
                                                             mock(Source.class));
         assertThat(operand, is(instanceOf(UpperCase.class)));
         UpperCase upper = (UpperCase)operand;
-        assertThat(upper.getSelectorName(), is(selectorName("tableA")));
-        assertThat(upper.getOperand(), is(instanceOf(LowerCase.class)));
-        LowerCase lower = (LowerCase)upper.getOperand();
-        assertThat(lower.getSelectorName(), is(selectorName("tableA")));
-        assertThat(lower.getOperand(), is(instanceOf(PropertyValue.class)));
-        PropertyValue value = (PropertyValue)lower.getOperand();
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(upper.selectorName(), is(selectorName("tableA")));
+        assertThat(upper.operand(), is(instanceOf(LowerCase.class)));
+        LowerCase lower = (LowerCase)upper.operand();
+        assertThat(lower.selectorName(), is(selectorName("tableA")));
+        assertThat(lower.operand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue value = (PropertyValue)lower.operand();
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
     }
 
     @Test( expected = ParsingException.class )
@@ -1418,7 +1413,7 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("DEPTH(tableA)"), typeSystem, mock(Source.class));
         assertThat(operand, is(instanceOf(NodeDepth.class)));
         NodeDepth depth = (NodeDepth)operand;
-        assertThat(depth.getSelectorName(), is(selectorName("tableA")));
+        assertThat(depth.selectorName(), is(selectorName("tableA")));
     }
 
     @Test
@@ -1427,7 +1422,7 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("DEPTH()"), typeSystem, source);
         assertThat(operand, is(instanceOf(NodeDepth.class)));
         NodeDepth depth = (NodeDepth)operand;
-        assertThat(depth.getSelectorName(), is(selectorName("tableA")));
+        assertThat(depth.selectorName(), is(selectorName("tableA")));
     }
 
     @Test( expected = ParsingException.class )
@@ -1459,7 +1454,7 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("PATH(tableA)"), typeSystem, mock(Source.class));
         assertThat(operand, is(instanceOf(NodePath.class)));
         NodePath path = (NodePath)operand;
-        assertThat(path.getSelectorName(), is(selectorName("tableA")));
+        assertThat(path.selectorName(), is(selectorName("tableA")));
     }
 
     @Test
@@ -1468,7 +1463,7 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("PATH()"), typeSystem, source);
         assertThat(operand, is(instanceOf(NodePath.class)));
         NodePath path = (NodePath)operand;
-        assertThat(path.getSelectorName(), is(selectorName("tableA")));
+        assertThat(path.selectorName(), is(selectorName("tableA")));
     }
 
     @Test( expected = ParsingException.class )
@@ -1500,7 +1495,7 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("NAME(tableA)"), typeSystem, mock(Source.class));
         assertThat(operand, is(instanceOf(NodeName.class)));
         NodeName name = (NodeName)operand;
-        assertThat(name.getSelectorName(), is(selectorName("tableA")));
+        assertThat(name.selectorName(), is(selectorName("tableA")));
     }
 
     @Test
@@ -1509,7 +1504,7 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("NAME()"), typeSystem, source);
         assertThat(operand, is(instanceOf(NodeName.class)));
         NodeName name = (NodeName)operand;
-        assertThat(name.getSelectorName(), is(selectorName("tableA")));
+        assertThat(name.selectorName(), is(selectorName("tableA")));
     }
 
     @Test( expected = ParsingException.class )
@@ -1541,7 +1536,7 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("LOCALNAME(tableA)"), typeSystem, mock(Source.class));
         assertThat(operand, is(instanceOf(NodeLocalName.class)));
         NodeLocalName name = (NodeLocalName)operand;
-        assertThat(name.getSelectorName(), is(selectorName("tableA")));
+        assertThat(name.selectorName(), is(selectorName("tableA")));
     }
 
     @Test
@@ -1550,7 +1545,7 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("LOCALNAME()"), typeSystem, source);
         assertThat(operand, is(instanceOf(NodeLocalName.class)));
         NodeLocalName name = (NodeLocalName)operand;
-        assertThat(name.getSelectorName(), is(selectorName("tableA")));
+        assertThat(name.selectorName(), is(selectorName("tableA")));
     }
 
     @Test( expected = ParsingException.class )
@@ -1582,7 +1577,7 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("SCORE(tableA)"), typeSystem, mock(Source.class));
         assertThat(operand, is(instanceOf(FullTextSearchScore.class)));
         FullTextSearchScore score = (FullTextSearchScore)operand;
-        assertThat(score.getSelectorName(), is(selectorName("tableA")));
+        assertThat(score.selectorName(), is(selectorName("tableA")));
     }
 
     @Test
@@ -1591,7 +1586,7 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("SCORE()"), typeSystem, source);
         assertThat(operand, is(instanceOf(FullTextSearchScore.class)));
         FullTextSearchScore score = (FullTextSearchScore)operand;
-        assertThat(score.getSelectorName(), is(selectorName("tableA")));
+        assertThat(score.selectorName(), is(selectorName("tableA")));
     }
 
     @Test( expected = ParsingException.class )
@@ -1623,8 +1618,8 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("tableA.property"), typeSystem, mock(Join.class));
         assertThat(operand, is(instanceOf(PropertyValue.class)));
         PropertyValue value = (PropertyValue)operand;
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
     }
 
     @Test
@@ -1632,8 +1627,8 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("[mode:tableA].property"), typeSystem, mock(Join.class));
         assertThat(operand, is(instanceOf(PropertyValue.class)));
         PropertyValue value = (PropertyValue)operand;
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("mode:tableA")));
     }
 
     @Test
@@ -1641,8 +1636,8 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("[mode:tableA].[mode:property]"), typeSystem, mock(Join.class));
         assertThat(operand, is(instanceOf(PropertyValue.class)));
         PropertyValue value = (PropertyValue)operand;
-        assertThat(value.getPropertyName(), is("mode:property"));
-        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
+        assertThat(value.propertyName(), is("mode:property"));
+        assertThat(value.selectorName(), is(selectorName("mode:tableA")));
     }
 
     @Test
@@ -1651,8 +1646,8 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("property"), typeSystem, source);
         assertThat(operand, is(instanceOf(PropertyValue.class)));
         PropertyValue value = (PropertyValue)operand;
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
     }
 
     @Test( expected = ParsingException.class )
@@ -1674,8 +1669,8 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("REFERENCE(tableA)"), typeSystem, mock(Source.class));
         assertThat(operand, is(instanceOf(ReferenceValue.class)));
         ReferenceValue value = (ReferenceValue)operand;
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
-        assertThat(value.getPropertyName(), is(nullValue()));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is(nullValue()));
     }
 
     @Test
@@ -1684,8 +1679,8 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("REFERENCE()"), typeSystem, source);
         assertThat(operand, is(instanceOf(ReferenceValue.class)));
         ReferenceValue value = (ReferenceValue)operand;
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
-        assertThat(value.getPropertyName(), is(nullValue()));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is(nullValue()));
     }
 
     @Test
@@ -1694,8 +1689,8 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("REFERENCE(property) other"), typeSystem, source);
         assertThat(operand, is(instanceOf(ReferenceValue.class)));
         ReferenceValue value = (ReferenceValue)operand;
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
-        assertThat(value.getPropertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is("property"));
     }
 
     @Test
@@ -1704,8 +1699,8 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("REFERENCE(tableA.property) other"), typeSystem, source);
         assertThat(operand, is(instanceOf(ReferenceValue.class)));
         ReferenceValue value = (ReferenceValue)operand;
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
-        assertThat(value.getPropertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is("property"));
     }
 
     @Test
@@ -1714,8 +1709,8 @@ public class SqlQueryParserTest {
         DynamicOperand operand = parser.parseDynamicOperand(tokens("REFERENCE(tableA) other"), typeSystem, source);
         assertThat(operand, is(instanceOf(ReferenceValue.class)));
         ReferenceValue value = (ReferenceValue)operand;
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
-        assertThat(value.getPropertyName(), is(nullValue()));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is(nullValue()));
     }
 
     @Test( expected = ParsingException.class )
@@ -1730,8 +1725,8 @@ public class SqlQueryParserTest {
                                                             mock(Source.class));
         assertThat(operand, is(instanceOf(ReferenceValue.class)));
         ReferenceValue value = (ReferenceValue)operand;
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
-        assertThat(value.getPropertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is("property"));
     }
 
     @Test( expected = ParsingException.class )
@@ -1756,30 +1751,30 @@ public class SqlQueryParserTest {
     @Test
     public void shouldParsePropertyValueFromStringWithUnquotedSelectorNameAndUnquotedPropertyName() {
         PropertyValue value = parser.parsePropertyValue(tokens("tableA.property"), typeSystem, mock(Join.class));
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
     }
 
     @Test
     public void shouldParsePropertyValueFromStringWithQuotedSelectorNameAndUnquotedPropertyName() {
         PropertyValue value = parser.parsePropertyValue(tokens("[mode:tableA].property"), typeSystem, mock(Join.class));
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("mode:tableA")));
     }
 
     @Test
     public void shouldParsePropertyValueFromStringWithQuotedSelectorNameAndQuotedPropertyName() {
         PropertyValue value = parser.parsePropertyValue(tokens("[mode:tableA].[mode:property]"), typeSystem, mock(Join.class));
-        assertThat(value.getPropertyName(), is("mode:property"));
-        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
+        assertThat(value.propertyName(), is("mode:property"));
+        assertThat(value.selectorName(), is(selectorName("mode:tableA")));
     }
 
     @Test
     public void shouldParsePropertyValueFromStringWithOnlyPropertyNameIfSourceIsSelector() {
         Source source = new NamedSelector(selectorName("tableA"));
         PropertyValue value = parser.parsePropertyValue(tokens("property"), typeSystem, source);
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
     }
 
     @Test( expected = ParsingException.class )
@@ -1799,61 +1794,61 @@ public class SqlQueryParserTest {
     @Test
     public void shouldParseReferenceValueFromStringWithUnquotedSelectorNameAndUnquotedPropertyName() {
         ReferenceValue value = parser.parseReferenceValue(tokens("tableA.property"), typeSystem, mock(Join.class));
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
 
         Source source = new NamedSelector(selectorName("tableA"));
         value = parser.parseReferenceValue(tokens("tableA.property"), typeSystem, source);
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
     }
 
     @Test
     public void shouldParseReferenceValueFromStringWithQuotedSelectorNameAndUnquotedPropertyName() {
         ReferenceValue value = parser.parseReferenceValue(tokens("[mode:tableA].property"), typeSystem, mock(Join.class));
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("mode:tableA")));
 
         Source source = new NamedSelector(selectorName("mode:tableA"));
         value = parser.parseReferenceValue(tokens("[mode:tableA].property"), typeSystem, source);
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("mode:tableA")));
     }
 
     @Test
     public void shouldParseReferenceValueFromStringWithQuotedSelectorNameAndQuotedPropertyName() {
         ReferenceValue value = parser.parseReferenceValue(tokens("[mode:tableA].[mode:property]"), typeSystem, mock(Join.class));
-        assertThat(value.getPropertyName(), is("mode:property"));
-        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
+        assertThat(value.propertyName(), is("mode:property"));
+        assertThat(value.selectorName(), is(selectorName("mode:tableA")));
 
         Source source = new NamedSelector(selectorName("mode:tableA"));
         value = parser.parseReferenceValue(tokens("[mode:tableA].[mode:property]"), typeSystem, source);
-        assertThat(value.getPropertyName(), is("mode:property"));
-        assertThat(value.getSelectorName(), is(selectorName("mode:tableA")));
+        assertThat(value.propertyName(), is("mode:property"));
+        assertThat(value.selectorName(), is(selectorName("mode:tableA")));
     }
 
     @Test
     public void shouldParseReferenceValueFromStringWithOnlyPropertyNameIfSourceIsSelector() {
         Source source = new NamedSelector(selectorName("tableA"));
         ReferenceValue value = parser.parseReferenceValue(tokens("property)"), typeSystem, source);
-        assertThat(value.getPropertyName(), is("property"));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
     }
 
     @Test
     public void shouldParseReferenceValueFromStringWithMatchingSelectorNameIfSourceIsSelector() {
         Source source = new NamedSelector(selectorName("tableA"));
         ReferenceValue value = parser.parseReferenceValue(tokens("tableA)"), typeSystem, source);
-        assertThat(value.getPropertyName(), is(nullValue()));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is(nullValue()));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
     }
 
     @Test
     public void shouldParseReferenceValueFromStringWithOnlySelectorNameIfSourceIsNotSelector() {
         Source source = mock(Join.class);
         ReferenceValue value = parser.parseReferenceValue(tokens("tableA)"), typeSystem, source);
-        assertThat(value.getPropertyName(), is(nullValue()));
-        assertThat(value.getSelectorName(), is(selectorName("tableA")));
+        assertThat(value.propertyName(), is(nullValue()));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
     }
 
     @Test( expected = ParsingException.class )
@@ -1868,30 +1863,30 @@ public class SqlQueryParserTest {
     @Test
     public void shouldParseLimitFromFormWithJustOneNumber() {
         Limit limit = parser.parseLimit(tokens("LIMIT 10"));
-        assertThat(limit.getRowLimit(), is(10));
-        assertThat(limit.getOffset(), is(0));
+        assertThat(limit.rowLimit(), is(10));
+        assertThat(limit.offset(), is(0));
 
         limit = parser.parseLimit(tokens("LIMIT 10 NONOFFSET"));
-        assertThat(limit.getRowLimit(), is(10));
-        assertThat(limit.getOffset(), is(0));
+        assertThat(limit.rowLimit(), is(10));
+        assertThat(limit.offset(), is(0));
     }
 
     @Test
     public void shouldParseLimitFromFormWithRowLimitAndOffset() {
         Limit limit = parser.parseLimit(tokens("LIMIT 10 OFFSET 30"));
-        assertThat(limit.getRowLimit(), is(10));
-        assertThat(limit.getOffset(), is(30));
+        assertThat(limit.rowLimit(), is(10));
+        assertThat(limit.offset(), is(30));
 
         limit = parser.parseLimit(tokens("LIMIT 10 OFFSET 30 OTHER"));
-        assertThat(limit.getRowLimit(), is(10));
-        assertThat(limit.getOffset(), is(30));
+        assertThat(limit.rowLimit(), is(10));
+        assertThat(limit.offset(), is(30));
     }
 
     @Test
     public void shouldParseLimitFromFormWithTwoCommaSeparatedNumbers() {
         Limit limit = parser.parseLimit(tokens("LIMIT 10,30"));
-        assertThat(limit.getRowLimit(), is(20));
-        assertThat(limit.getOffset(), is(10));
+        assertThat(limit.rowLimit(), is(20));
+        assertThat(limit.offset(), is(10));
     }
 
     @Test
@@ -1927,33 +1922,33 @@ public class SqlQueryParserTest {
     @Test
     public void shouldParseNamedSelectorFromUnquotedNameWithNoAlias() {
         NamedSelector selector = parser.parseNamedSelector(tokens("name"), typeSystem);
-        assertThat(selector.getName(), is(selectorName("name")));
-        assertThat(selector.getAlias(), is(nullValue()));
-        assertThat(selector.getAliasOrName(), is(selectorName("name")));
+        assertThat(selector.name(), is(selectorName("name")));
+        assertThat(selector.alias(), is(nullValue()));
+        assertThat(selector.aliasOrName(), is(selectorName("name")));
     }
 
     @Test
     public void shouldParseNamedSelectorFromUnquotedNameWithUnquotedAlias() {
         NamedSelector selector = parser.parseNamedSelector(tokens("name AS alias"), typeSystem);
-        assertThat(selector.getName(), is(selectorName("name")));
-        assertThat(selector.getAlias(), is(selectorName("alias")));
-        assertThat(selector.getAliasOrName(), is(selectorName("alias")));
+        assertThat(selector.name(), is(selectorName("name")));
+        assertThat(selector.alias(), is(selectorName("alias")));
+        assertThat(selector.aliasOrName(), is(selectorName("alias")));
     }
 
     @Test
     public void shouldParseNamedSelectorFromQuotedNameWithUnquotedAlias() {
         NamedSelector selector = parser.parseNamedSelector(tokens("'name' AS alias"), typeSystem);
-        assertThat(selector.getName(), is(selectorName("name")));
-        assertThat(selector.getAlias(), is(selectorName("alias")));
-        assertThat(selector.getAliasOrName(), is(selectorName("alias")));
+        assertThat(selector.name(), is(selectorName("name")));
+        assertThat(selector.alias(), is(selectorName("alias")));
+        assertThat(selector.aliasOrName(), is(selectorName("alias")));
     }
 
     @Test
     public void shouldParseNamedSelectorFromQuotedNameWithQuotedAlias() {
         NamedSelector selector = parser.parseNamedSelector(tokens("'name' AS [alias]"), typeSystem);
-        assertThat(selector.getName(), is(selectorName("name")));
-        assertThat(selector.getAlias(), is(selectorName("alias")));
-        assertThat(selector.getAliasOrName(), is(selectorName("alias")));
+        assertThat(selector.name(), is(selectorName("name")));
+        assertThat(selector.alias(), is(selectorName("alias")));
+        assertThat(selector.aliasOrName(), is(selectorName("alias")));
     }
 
     @Test( expected = ParsingException.class )

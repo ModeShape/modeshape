@@ -227,7 +227,7 @@ class ImmutableTable implements Table {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(name.getName());
+        StringBuilder sb = new StringBuilder(name.name());
         sb.append('(');
         boolean first = true;
         for (Column column : columns) {

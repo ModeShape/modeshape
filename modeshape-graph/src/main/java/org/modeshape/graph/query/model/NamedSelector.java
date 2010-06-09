@@ -72,7 +72,7 @@ public class NamedSelector extends Selector {
      */
     @Override
     public int hashCode() {
-        return getName().hashCode();
+        return name().hashCode();
     }
 
     /**
@@ -85,8 +85,8 @@ public class NamedSelector extends Selector {
         if (obj == this) return true;
         if (obj instanceof Selector) {
             Selector that = (Selector)obj;
-            if (!this.getName().equals(that.getName())) return false;
-            if (!ObjectUtil.isEqualWithNulls(this.getAlias(), that.getAlias())) return false;
+            if (!this.name().equals(that.name())) return false;
+            if (!ObjectUtil.isEqualWithNulls(this.alias(), that.alias())) return false;
             return true;
         }
         return false;

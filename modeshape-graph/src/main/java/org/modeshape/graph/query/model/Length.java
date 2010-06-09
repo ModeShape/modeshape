@@ -23,15 +23,17 @@
  */
 package org.modeshape.graph.query.model;
 
+import java.util.Set;
 import net.jcip.annotations.Immutable;
 
 /**
  * A dynamic operand that evaluates to the length of the supplied propety values, used in a {@link Comparison} constraint.
  */
 @Immutable
-public class Length extends DynamicOperand {
+public class Length implements DynamicOperand {
     private static final long serialVersionUID = 1L;
 
+    private final Set<SelectorName> selectorNames;
     private final PropertyValue propertyValue;
 
     /**
@@ -40,8 +42,17 @@ public class Length extends DynamicOperand {
      * @param propertyValue the property value operand
      */
     public Length( PropertyValue propertyValue ) {
-        super(propertyValue);
+        this.selectorNames = SelectorName.nameSetFrom(propertyValue.selectorName());
         this.propertyValue = propertyValue;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.DynamicOperand#selectorNames()
+     */
+    public Set<SelectorName> selectorNames() {
+        return selectorNames;
     }
 
     /**
@@ -49,7 +60,7 @@ public class Length extends DynamicOperand {
      * 
      * @return the property value being constrained; never null
      */
-    public final PropertyValue getPropertyValue() {
+    public final PropertyValue propertyValue() {
         return propertyValue;
     }
 
@@ -58,8 +69,8 @@ public class Length extends DynamicOperand {
      * 
      * @return the one selector names used by this operand; never null
      */
-    public SelectorName getSelectorName() {
-        return getSelectorNames().iterator().next();
+    public SelectorName selectorName() {
+        return selectorNames().iterator().next();
     }
 
     /**
@@ -79,7 +90,7 @@ public class Length extends DynamicOperand {
      */
     @Override
     public int hashCode() {
-        return getPropertyValue().hashCode();
+        return propertyValue().hashCode();
     }
 
     /**

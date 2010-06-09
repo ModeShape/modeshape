@@ -148,7 +148,7 @@ class NodeTypeSchemata implements Schemata {
         NamespaceRegistry registry = context.getNamespaceRegistry();
         TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
 
-        String tableName = AllNodes.ALL_NODES_NAME.getName();
+        String tableName = AllNodes.ALL_NODES_NAME.name();
         boolean first = true;
         Map<String, String> typesForNames = new HashMap<String, String>();
         Set<String> fullTextSearchableNames = new HashSet<String>();
@@ -414,7 +414,7 @@ class NodeTypeSchemata implements Schemata {
             Table table = schemata.getTable(name);
             if (table == null) {
                 // Try getting it ...
-                Name nodeTypeName = nameFactory.create(name.getName());
+                Name nodeTypeName = nameFactory.create(name.name());
                 JcrNodeType nodeType = getNodeType(nodeTypeName);
                 if (nodeType == null) return null;
                 addView(builder, context, nodeType);

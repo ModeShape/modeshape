@@ -43,7 +43,7 @@ public enum Order implements Readable {
      * 
      * @return the symbolic representation; never null
      */
-    public String getSymbol() {
+    public String symbol() {
         return symbol;
     }
 
@@ -66,8 +66,8 @@ public enum Order implements Readable {
      */
     public static Order forSymbol( String symbol ) {
         CheckArg.isNotNull(symbol, "symbol");
-        if (ASCENDING.getSymbol().equalsIgnoreCase(symbol)) return ASCENDING;
-        if (DESCENDING.getSymbol().equalsIgnoreCase(symbol)) return DESCENDING;
+        if (ASCENDING.symbol().equalsIgnoreCase(symbol)) return ASCENDING;
+        if (DESCENDING.symbol().equalsIgnoreCase(symbol)) return DESCENDING;
         return null;
     }
 
@@ -77,6 +77,6 @@ public enum Order implements Readable {
      * @see org.modeshape.graph.query.model.Readable#getString()
      */
     public String getString() {
-        return getSymbol();
+        return symbol();
     }
 }

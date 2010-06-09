@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr;
+package org.modeshape.jcr.query;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -138,128 +138,128 @@ public class JcrSqlQueryParserTest {
     @Test
     public void shouldParseSelectStarFromSingleSourceWithWhereContainingPathLikeConstraint() {
         query = parse("SELECT * FROM mgnl:content WHERE jcr:path LIKE '/modules/%/templates'");
-        assertThat(query.getSource(), is(instanceOf(NamedSelector.class)));
+        assertThat(query.source(), is(instanceOf(NamedSelector.class)));
         // SELECT * ...
-        assertThat(query.getColumns().isEmpty(), is(true));
+        assertThat(query.columns().isEmpty(), is(true));
         // FROM ...
-        NamedSelector selector = (NamedSelector)query.getSource();
-        assertThat(selector.getName(), is(selectorName("mgnl:content")));
-        assertThat(selector.getAliasOrName(), is(selectorName("mgnl:content")));
-        assertThat(selector.getAlias(), is(nullValue()));
+        NamedSelector selector = (NamedSelector)query.source();
+        assertThat(selector.name(), is(selectorName("mgnl:content")));
+        assertThat(selector.aliasOrName(), is(selectorName("mgnl:content")));
+        assertThat(selector.alias(), is(nullValue()));
         // WHERE ...
-        Comparison comparison = isComparison(query.getConstraint());
-        assertThat(comparison.getOperand1(), is((DynamicOperand)nodePath(selectorName("mgnl:content"))));
-        assertThat(comparison.getOperand2(), is((StaticOperand)literal("/modules/%/templates")));
+        Comparison comparison = isComparison(query.constraint());
+        assertThat(comparison.operand1(), is((DynamicOperand)nodePath(selectorName("mgnl:content"))));
+        assertThat(comparison.operand2(), is((StaticOperand)literal("/modules/%/templates")));
     }
 
     @Test
     public void shouldParseSelectStarFromSingleSourceWithWhereContainingTwoPathLikeConstraints() {
         query = parse("SELECT * FROM mgnl:content WHERE jcr:path LIKE '/modules/%/templates' or jcr:path like '/modules/%/other'");
-        assertThat(query.getSource(), is(instanceOf(NamedSelector.class)));
+        assertThat(query.source(), is(instanceOf(NamedSelector.class)));
         // SELECT * ...
-        assertThat(query.getColumns().isEmpty(), is(true));
+        assertThat(query.columns().isEmpty(), is(true));
         // FROM ...
-        NamedSelector selector = (NamedSelector)query.getSource();
-        assertThat(selector.getName(), is(selectorName("mgnl:content")));
-        assertThat(selector.getAliasOrName(), is(selectorName("mgnl:content")));
-        assertThat(selector.getAlias(), is(nullValue()));
+        NamedSelector selector = (NamedSelector)query.source();
+        assertThat(selector.name(), is(selectorName("mgnl:content")));
+        assertThat(selector.aliasOrName(), is(selectorName("mgnl:content")));
+        assertThat(selector.alias(), is(nullValue()));
         // WHERE ...
-        Or and = isOr(query.getConstraint());
-        Comparison comparison1 = isComparison(and.getLeft());
-        assertThat(comparison1.getOperand1(), is((DynamicOperand)nodePath(selectorName("mgnl:content"))));
-        assertThat(comparison1.getOperand2(), is((StaticOperand)literal("/modules/%/templates")));
-        Comparison comparison2 = isComparison(and.getRight());
-        assertThat(comparison2.getOperand1(), is((DynamicOperand)nodePath(selectorName("mgnl:content"))));
-        assertThat(comparison2.getOperand2(), is((StaticOperand)literal("/modules/%/other")));
+        Or and = isOr(query.constraint());
+        Comparison comparison1 = isComparison(and.left());
+        assertThat(comparison1.operand1(), is((DynamicOperand)nodePath(selectorName("mgnl:content"))));
+        assertThat(comparison1.operand2(), is((StaticOperand)literal("/modules/%/templates")));
+        Comparison comparison2 = isComparison(and.right());
+        assertThat(comparison2.operand1(), is((DynamicOperand)nodePath(selectorName("mgnl:content"))));
+        assertThat(comparison2.operand2(), is((StaticOperand)literal("/modules/%/other")));
     }
 
     @Test
     public void shouldParseSelectStarFromTwoJoinedSourcesWithWhereContainingJoinCriteria() {
         query = parse("SELECT * FROM mgnl:content, acme:stuff WHERE mgnl:content.jcr:path = acme:stuff.jcr:path");
         // SELECT * ...
-        assertThat(query.getColumns().isEmpty(), is(true));
+        assertThat(query.columns().isEmpty(), is(true));
         // FROM ...
-        Join join = isJoin(query.getSource());
-        assertThat(join.getLeft(), is((Source)namedSelector(selectorName("mgnl:content"))));
-        assertThat(join.getRight(), is((Source)namedSelector(selectorName("acme:stuff"))));
-        assertThat(join.getType(), is(JoinType.INNER));
-        SameNodeJoinCondition joinCondition = isSameNodeJoinCondition(join.getJoinCondition());
-        assertThat(joinCondition.getSelector1Name(), is(selectorName("mgnl:content")));
-        assertThat(joinCondition.getSelector2Name(), is(selectorName("acme:stuff")));
-        assertThat(joinCondition.getSelector2Path(), is(nullValue()));
+        Join join = isJoin(query.source());
+        assertThat(join.left(), is((Source)namedSelector(selectorName("mgnl:content"))));
+        assertThat(join.right(), is((Source)namedSelector(selectorName("acme:stuff"))));
+        assertThat(join.type(), is(JoinType.INNER));
+        SameNodeJoinCondition joinCondition = isSameNodeJoinCondition(join.joinCondition());
+        assertThat(joinCondition.selector1Name(), is(selectorName("mgnl:content")));
+        assertThat(joinCondition.selector2Name(), is(selectorName("acme:stuff")));
+        assertThat(joinCondition.selector2Path(), is(nullValue()));
         // WHERE ...
-        assertThat(query.getConstraint(), is(nullValue()));
+        assertThat(query.constraint(), is(nullValue()));
     }
 
     @Test
     public void shouldParseSelectStarFromThreeJoinedSourcesWithWhereContainingJoinCriteria() {
         query = parse("SELECT * FROM mgnl:content, acme:stuff, foo:bar WHERE mgnl:content.jcr:path = acme:stuff.jcr:path AND mgnl:content.jcr:path = foo:bar.jcr:path");
         // SELECT * ...
-        assertThat(query.getColumns().isEmpty(), is(true));
+        assertThat(query.columns().isEmpty(), is(true));
         // FROM ...
-        Join join = isJoin(query.getSource());
-        Join join2 = isJoin(join.getLeft());
-        assertThat(join2.getLeft(), is((Source)namedSelector(selectorName("mgnl:content"))));
-        assertThat(join2.getRight(), is((Source)namedSelector(selectorName("acme:stuff"))));
-        assertThat(join2.getType(), is(JoinType.INNER));
-        SameNodeJoinCondition joinCondition2 = isSameNodeJoinCondition(join2.getJoinCondition());
-        assertThat(joinCondition2.getSelector1Name(), is(selectorName("mgnl:content")));
-        assertThat(joinCondition2.getSelector2Name(), is(selectorName("acme:stuff")));
-        assertThat(joinCondition2.getSelector2Path(), is(nullValue()));
+        Join join = isJoin(query.source());
+        Join join2 = isJoin(join.left());
+        assertThat(join2.left(), is((Source)namedSelector(selectorName("mgnl:content"))));
+        assertThat(join2.right(), is((Source)namedSelector(selectorName("acme:stuff"))));
+        assertThat(join2.type(), is(JoinType.INNER));
+        SameNodeJoinCondition joinCondition2 = isSameNodeJoinCondition(join2.joinCondition());
+        assertThat(joinCondition2.selector1Name(), is(selectorName("mgnl:content")));
+        assertThat(joinCondition2.selector2Name(), is(selectorName("acme:stuff")));
+        assertThat(joinCondition2.selector2Path(), is(nullValue()));
 
-        assertThat(join.getRight(), is((Source)namedSelector(selectorName("foo:bar"))));
-        assertThat(join.getType(), is(JoinType.INNER));
-        SameNodeJoinCondition joinCondition = isSameNodeJoinCondition(join.getJoinCondition());
-        assertThat(joinCondition.getSelector1Name(), is(selectorName("mgnl:content")));
-        assertThat(joinCondition.getSelector2Name(), is(selectorName("foo:bar")));
-        assertThat(joinCondition.getSelector2Path(), is(nullValue()));
+        assertThat(join.right(), is((Source)namedSelector(selectorName("foo:bar"))));
+        assertThat(join.type(), is(JoinType.INNER));
+        SameNodeJoinCondition joinCondition = isSameNodeJoinCondition(join.joinCondition());
+        assertThat(joinCondition.selector1Name(), is(selectorName("mgnl:content")));
+        assertThat(joinCondition.selector2Name(), is(selectorName("foo:bar")));
+        assertThat(joinCondition.selector2Path(), is(nullValue()));
 
         // WHERE ...
-        assertThat(query.getConstraint(), is(nullValue()));
+        assertThat(query.constraint(), is(nullValue()));
     }
 
     @Test
     public void shouldParseSelectStarFromEquijoinAndAdditionalCriteria() {
         query = parse("SELECT * FROM modetest:queryable, mix:referenceable WHERE modetest:queryable.jcr:path = mix:referenceable.jcr:path AND jcr:path LIKE '/testroot/someQueryableNodeD/%'");
         // SELECT * ...
-        assertThat(query.getColumns().isEmpty(), is(true));
+        assertThat(query.columns().isEmpty(), is(true));
         // FROM ...
-        Join join = isJoin(query.getSource());
-        assertThat(join.getLeft(), is((Source)namedSelector(selectorName("modetest:queryable"))));
-        assertThat(join.getRight(), is((Source)namedSelector(selectorName("mix:referenceable"))));
-        assertThat(join.getType(), is(JoinType.INNER));
-        SameNodeJoinCondition joinCondition = isSameNodeJoinCondition(join.getJoinCondition());
-        assertThat(joinCondition.getSelector1Name(), is(selectorName("modetest:queryable")));
-        assertThat(joinCondition.getSelector2Name(), is(selectorName("mix:referenceable")));
-        assertThat(joinCondition.getSelector2Path(), is(nullValue()));
+        Join join = isJoin(query.source());
+        assertThat(join.left(), is((Source)namedSelector(selectorName("modetest:queryable"))));
+        assertThat(join.right(), is((Source)namedSelector(selectorName("mix:referenceable"))));
+        assertThat(join.type(), is(JoinType.INNER));
+        SameNodeJoinCondition joinCondition = isSameNodeJoinCondition(join.joinCondition());
+        assertThat(joinCondition.selector1Name(), is(selectorName("modetest:queryable")));
+        assertThat(joinCondition.selector2Name(), is(selectorName("mix:referenceable")));
+        assertThat(joinCondition.selector2Path(), is(nullValue()));
         // WHERE ...
-        Comparison comparison = isComparison(query.getConstraint());
-        assertThat(comparison.getOperand1(), is((DynamicOperand)nodePath(selectorName("modetest:queryable"))));
-        assertThat(comparison.getOperand2(), is((StaticOperand)literal("/testroot/someQueryableNodeD/%")));
+        Comparison comparison = isComparison(query.constraint());
+        assertThat(comparison.operand1(), is((DynamicOperand)nodePath(selectorName("modetest:queryable"))));
+        assertThat(comparison.operand2(), is((StaticOperand)literal("/testroot/someQueryableNodeD/%")));
     }
 
     @Test
     public void shouldParseSelectWithOrderByClause() {
         query = parse("SELECT car:model FROM car:Car WHERE car:model IS NOT NULL ORDER BY car:model ASC");
         // SELECT car:model ...
-        assertThat(query.getColumns().size(), is(1));
-        assertThat(query.getColumns().get(0).getSelectorName(), is(selectorName("car:Car")));
-        assertThat(query.getColumns().get(0).getColumnName(), is("car:model"));
-        assertThat(query.getColumns().get(0).getPropertyName(), is("car:model"));
+        assertThat(query.columns().size(), is(1));
+        assertThat(query.columns().get(0).selectorName(), is(selectorName("car:Car")));
+        assertThat(query.columns().get(0).columnName(), is("car:model"));
+        assertThat(query.columns().get(0).propertyName(), is("car:model"));
         // FROM ...
-        NamedSelector selector = (NamedSelector)query.getSource();
-        assertThat(selector.getName(), is(selectorName("car:Car")));
-        assertThat(selector.getAliasOrName(), is(selectorName("car:Car")));
-        assertThat(selector.getAlias(), is(nullValue()));
+        NamedSelector selector = (NamedSelector)query.source();
+        assertThat(selector.name(), is(selectorName("car:Car")));
+        assertThat(selector.aliasOrName(), is(selectorName("car:Car")));
+        assertThat(selector.alias(), is(nullValue()));
         // WHERE ...
-        PropertyExistence constraint = isPropertyExistence(query.getConstraint());
-        assertThat(constraint.getPropertyName(), is("car:model"));
-        assertThat(constraint.getSelectorName(), is(selectorName("car:Car")));
+        PropertyExistence constraint = isPropertyExistence(query.constraint());
+        assertThat(constraint.propertyName(), is("car:model"));
+        assertThat(constraint.selectorName(), is(selectorName("car:Car")));
         // ORDER BY ...
-        assertThat(query.getOrderings().size(), is(1));
-        Ordering ordering = query.getOrderings().get(0);
-        assertThat(ordering.getOrder(), is(Order.ASCENDING));
-        assertThat(ordering.getOperand(), is((DynamicOperand)propertyValue(selectorName("car:Car"), "car:model")));
+        assertThat(query.orderings().size(), is(1));
+        Ordering ordering = query.orderings().get(0);
+        assertThat(ordering.order(), is(Order.ASCENDING));
+        assertThat(ordering.operand(), is((DynamicOperand)propertyValue(selectorName("car:Car"), "car:model")));
     }
 
     /**
@@ -269,21 +269,21 @@ public class JcrSqlQueryParserTest {
     public void shouldParseSelectWithChildAxisCriteria() {
         query = parse("SELECT * FROM nt:base WHERE jcr:path LIKE '/a/b/%' AND NOT jcr:path LIKE '/a/b/%/%'");
         // SELECT * ...
-        assertThat(query.getColumns().isEmpty(), is(true));
+        assertThat(query.columns().isEmpty(), is(true));
         // FROM ...
-        NamedSelector selector = (NamedSelector)query.getSource();
-        assertThat(selector.getName(), is(selectorName("nt:base")));
-        assertThat(selector.getAliasOrName(), is(selectorName("nt:base")));
-        assertThat(selector.getAlias(), is(nullValue()));
+        NamedSelector selector = (NamedSelector)query.source();
+        assertThat(selector.name(), is(selectorName("nt:base")));
+        assertThat(selector.aliasOrName(), is(selectorName("nt:base")));
+        assertThat(selector.alias(), is(nullValue()));
         // WHERE ...
-        And and = isAnd(query.getConstraint());
-        Comparison comparison1 = isComparison(and.getLeft());
-        assertThat(comparison1.getOperand1(), is((DynamicOperand)nodePath(selectorName("nt:base"))));
-        assertThat(comparison1.getOperand2(), is((StaticOperand)literal("/a/b/%")));
-        Not not = isNot(and.getRight());
-        Comparison comparison2a = isComparison(not.getConstraint());
-        assertThat(comparison2a.getOperand1(), is((DynamicOperand)nodePath(selectorName("nt:base"))));
-        assertThat(comparison2a.getOperand2(), is((StaticOperand)literal("/a/b/%/%")));
+        And and = isAnd(query.constraint());
+        Comparison comparison1 = isComparison(and.left());
+        assertThat(comparison1.operand1(), is((DynamicOperand)nodePath(selectorName("nt:base"))));
+        assertThat(comparison1.operand2(), is((StaticOperand)literal("/a/b/%")));
+        Not not = isNot(and.right());
+        Comparison comparison2a = isComparison(not.constraint());
+        assertThat(comparison2a.operand1(), is((DynamicOperand)nodePath(selectorName("nt:base"))));
+        assertThat(comparison2a.operand2(), is((StaticOperand)literal("/a/b/%/%")));
     }
 
     protected Join isJoin( Source source ) {

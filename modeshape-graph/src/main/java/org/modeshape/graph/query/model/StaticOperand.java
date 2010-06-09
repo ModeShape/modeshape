@@ -29,6 +29,5 @@ import net.jcip.annotations.Immutable;
  * A static operand used in a {@link Comparison} constraint.
  */
 @Immutable
-public abstract class StaticOperand implements LanguageObject {
-    private static final long serialVersionUID = 1L;
+public interface StaticOperand extends LanguageObject {
 }

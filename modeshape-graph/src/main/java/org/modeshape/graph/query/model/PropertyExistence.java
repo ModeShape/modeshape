@@ -31,7 +31,7 @@ import org.modeshape.common.util.HashCode;
  * A constraint that evaluates to true only when a named property exists on a node.
  */
 @Immutable
-public class PropertyExistence extends Constraint {
+public class PropertyExistence implements Constraint {
     private static final long serialVersionUID = 1L;
 
     private final SelectorName selectorName;
@@ -58,7 +58,7 @@ public class PropertyExistence extends Constraint {
      * 
      * @return the selector name; never null
      */
-    public final SelectorName getSelectorName() {
+    public final SelectorName selectorName() {
         return selectorName;
     }
 
@@ -67,7 +67,7 @@ public class PropertyExistence extends Constraint {
      * 
      * @return the property name; never null
      */
-    public final String getPropertyName() {
+    public final String propertyName() {
         return propertyName;
     }
 

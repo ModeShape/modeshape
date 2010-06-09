@@ -679,8 +679,8 @@ public class LuceneSearchSession implements WorkspaceSession {
                                 Object value ) {
         assert propertyLength != null;
         assert value != null;
-        PropertyValue propertyValue = propertyLength.getPropertyValue();
-        String field = processor.stringFactory.create(propertyValue.getPropertyName());
+        PropertyValue propertyValue = propertyLength.propertyValue();
+        String field = processor.stringFactory.create(propertyValue.propertyName());
         ValueFactories factories = processor.valueFactories;
         int length = factories.getLongFactory().create(value).intValue();
         switch (operator) {
@@ -710,7 +710,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                                 Object value,
                                 boolean caseSensitive ) {
         ValueFactory<String> stringFactory = processor.stringFactory;
-        String field = stringFactory.create(propertyValue.getPropertyName());
+        String field = stringFactory.create(propertyValue.propertyName());
         Name fieldName = processor.nameFactory.create(field);
         ValueFactories factories = processor.valueFactories;
         IndexRules.Rule rule = workspace.rules.getRule(fieldName);
@@ -954,7 +954,7 @@ public class LuceneSearchSession implements WorkspaceSession {
     public Query findNodesWith( ReferenceValue referenceValue,
                                 Operator operator,
                                 Object value ) {
-        String field = referenceValue.getPropertyName();
+        String field = referenceValue.propertyName();
         if (field == null) field = LuceneSearchWorkspace.ContentIndex.REFERENCES;
         ValueFactories factories = processor.valueFactories;
         String stringValue = processor.stringFactory.create(value);
@@ -982,7 +982,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                                             Object upperValue,
                                             boolean includesLower,
                                             boolean includesUpper ) {
-        String field = processor.stringFactory.create(propertyValue.getPropertyName());
+        String field = processor.stringFactory.create(propertyValue.propertyName());
         return findNodesWithNumericRange(field, lowerValue, upperValue, includesLower, includesUpper);
     }
 

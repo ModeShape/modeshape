@@ -82,7 +82,7 @@ class ImmutableView extends ImmutableTable implements View {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(getName().getName());
+        StringBuilder sb = new StringBuilder(getName().name());
         sb.append('(');
         boolean first = true;
         for (Column column : getColumns()) {

@@ -181,8 +181,8 @@ public class ChooseJoinAlgorithm implements OptimizerRule {
                                                    List<Object> rightSortBy ) {
         if (condition instanceof SameNodeJoinCondition) {
             SameNodeJoinCondition joinCondition = (SameNodeJoinCondition)condition;
-            SelectorName name1 = joinCondition.getSelector1Name();
-            SelectorName name2 = joinCondition.getSelector2Name();
+            SelectorName name1 = joinCondition.selector1Name();
+            SelectorName name2 = joinCondition.selector2Name();
             if (leftSelectors.contains(name1)) {
                 leftSortBy.add(name1);
                 rightSortBy.add(name2);
@@ -192,8 +192,8 @@ public class ChooseJoinAlgorithm implements OptimizerRule {
             }
         } else if (condition instanceof ChildNodeJoinCondition) {
             ChildNodeJoinCondition joinCondition = (ChildNodeJoinCondition)condition;
-            SelectorName childName = joinCondition.getChildSelectorName();
-            SelectorName parentName = joinCondition.getParentSelectorName();
+            SelectorName childName = joinCondition.childSelectorName();
+            SelectorName parentName = joinCondition.parentSelectorName();
             if (leftSelectors.contains(childName)) {
                 leftSortBy.add(childName);
                 rightSortBy.add(parentName);
@@ -203,10 +203,10 @@ public class ChooseJoinAlgorithm implements OptimizerRule {
             }
         } else if (condition instanceof EquiJoinCondition) {
             EquiJoinCondition joinCondition = (EquiJoinCondition)condition;
-            SelectorName selector1 = joinCondition.getSelector1Name();
-            SelectorName selector2 = joinCondition.getSelector2Name();
-            String property1 = joinCondition.getProperty1Name();
-            String property2 = joinCondition.getProperty2Name();
+            SelectorName selector1 = joinCondition.selector1Name();
+            SelectorName selector2 = joinCondition.selector2Name();
+            String property1 = joinCondition.property1Name();
+            String property2 = joinCondition.property2Name();
 
             // Create the Ordering for the first selector/property pair ...
             DynamicOperand operand1 = new PropertyValue(selector1, property1);

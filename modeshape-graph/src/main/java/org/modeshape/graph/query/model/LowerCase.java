@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.query.model;
 
+import java.util.Set;
 import net.jcip.annotations.Immutable;
 
 /**
@@ -30,7 +31,7 @@ import net.jcip.annotations.Immutable;
  * constraint.
  */
 @Immutable
-public class LowerCase extends DynamicOperand {
+public class LowerCase implements DynamicOperand {
     private static final long serialVersionUID = 1L;
 
     private final DynamicOperand operand;
@@ -41,7 +42,6 @@ public class LowerCase extends DynamicOperand {
      * @param operand the operand that is to be lower-cased
      */
     public LowerCase( DynamicOperand operand ) {
-        super(operand);
         this.operand = operand;
     }
 
@@ -50,7 +50,7 @@ public class LowerCase extends DynamicOperand {
      * 
      * @return the dynamic operand; never null
      */
-    public final DynamicOperand getOperand() {
+    public final DynamicOperand operand() {
         return operand;
     }
 
@@ -59,8 +59,17 @@ public class LowerCase extends DynamicOperand {
      * 
      * @return the one selector names used by this operand; never null
      */
-    public SelectorName getSelectorName() {
-        return getSelectorNames().iterator().next();
+    public SelectorName selectorName() {
+        return operand.selectorNames().iterator().next();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.DynamicOperand#selectorNames()
+     */
+    public Set<SelectorName> selectorNames() {
+        return operand.selectorNames();
     }
 
     /**

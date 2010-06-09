@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.query.model;
 
+import java.util.Set;
 import net.jcip.annotations.Immutable;
 
 /**
@@ -30,7 +31,7 @@ import net.jcip.annotations.Immutable;
  * constraint.
  */
 @Immutable
-public class UpperCase extends DynamicOperand {
+public class UpperCase implements DynamicOperand {
     private static final long serialVersionUID = 1L;
 
     private final DynamicOperand operand;
@@ -41,7 +42,6 @@ public class UpperCase extends DynamicOperand {
      * @param operand the operand that is to be lower-cased
      */
     public UpperCase( DynamicOperand operand ) {
-        super(operand);
         this.operand = operand;
     }
 
@@ -50,8 +50,17 @@ public class UpperCase extends DynamicOperand {
      * 
      * @return the one selector names used by this operand; never null
      */
-    public SelectorName getSelectorName() {
-        return getSelectorNames().iterator().next();
+    public SelectorName selectorName() {
+        return operand.selectorNames().iterator().next();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.DynamicOperand#selectorNames()
+     */
+    public Set<SelectorName> selectorNames() {
+        return operand.selectorNames();
     }
 
     /**
@@ -59,7 +68,7 @@ public class UpperCase extends DynamicOperand {
      * 
      * @return the operand being uppercased; never null
      */
-    public final DynamicOperand getOperand() {
+    public final DynamicOperand operand() {
         return operand;
     }
 
@@ -80,7 +89,7 @@ public class UpperCase extends DynamicOperand {
      */
     @Override
     public int hashCode() {
-        return getOperand().hashCode();
+        return operand().hashCode();
     }
 
     /**

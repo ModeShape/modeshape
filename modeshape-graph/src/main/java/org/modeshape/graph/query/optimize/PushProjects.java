@@ -112,7 +112,7 @@ public class PushProjects implements OptimizerRule {
     protected Set<SelectorName> getSelectorsFor( List<Column> columns ) {
         Set<SelectorName> selectors = new HashSet<SelectorName>();
         for (Column column : columns) {
-            selectors.add(column.getSelectorName());
+            selectors.add(column.selectorName());
         }
         return selectors;
     }

@@ -44,7 +44,7 @@ public enum Operator {
     static {
         Map<String, Operator> opsBySymbol = new HashMap<String, Operator>();
         for (Operator operator : Operator.values()) {
-            opsBySymbol.put(operator.getSymbol().toUpperCase(), operator);
+            opsBySymbol.put(operator.symbol().toUpperCase(), operator);
         }
         opsBySymbol.put("<>", NOT_EQUAL_TO);
         OPERATORS_BY_SYMBOL = Collections.unmodifiableMap(opsBySymbol);
@@ -61,7 +61,7 @@ public enum Operator {
      * 
      * @return the symbolic representation; never null
      */
-    public String getSymbol() {
+    public String symbol() {
         return symbol;
     }
 
@@ -70,7 +70,7 @@ public enum Operator {
      * 
      * @return the reverse operator; never null
      */
-    public Operator getReverse() {
+    public Operator reverse() {
         switch (this) {
             case GREATER_THAN:
                 return LESS_THAN;

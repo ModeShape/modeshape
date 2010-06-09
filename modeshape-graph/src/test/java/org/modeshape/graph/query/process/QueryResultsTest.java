@@ -28,10 +28,10 @@ import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import org.modeshape.graph.query.QueryResults.Columns;
-import org.modeshape.graph.query.model.Column;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.graph.query.QueryResults.Columns;
+import org.modeshape.graph.query.model.Column;
 
 /**
  * 
@@ -95,8 +95,8 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
 
     @Test
     public void shouldReturnColumns() {
-        assertThat(columnsWithScores.getColumns(), is(columnList));
-        assertThat(columnsWithoutScores.getColumns(), is(columnList));
+        assertThat(new ArrayList<Column>(columnsWithScores.getColumns()), is(columnList));
+        assertThat(new ArrayList<Column>(columnsWithoutScores.getColumns()), is(columnList));
     }
 
     @Test( expected = UnsupportedOperationException.class )
@@ -109,7 +109,7 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
     public void shouldReturnColumnNames() {
         List<String> names = new ArrayList<String>();
         for (Column column : columnList) {
-            names.add(column.getColumnName());
+            names.add(column.columnName());
         }
         assertThat(columnsWithScores.getColumnNames(), is(names));
         assertThat(columnsWithoutScores.getColumnNames(), is(names));
@@ -118,15 +118,15 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
     @Test
     public void shouldReturnCorrectIndexOfColumnGivenColumnName() {
         for (Column column : columnList) {
-            assertThat(columnsWithoutScores.getColumnIndexForName(column.getColumnName()), is(columnList.indexOf(column)));
+            assertThat(columnsWithoutScores.getColumnIndexForName(column.columnName()), is(columnList.indexOf(column)));
         }
     }
 
     @Test
     public void shouldReturnCorrectIndexOfColumnGivenColumnSelectorAndPropertyName() {
         for (Column column : columnList) {
-            assertThat(columnsWithoutScores.getColumnIndexForProperty(column.getSelectorName().getName(),
-                                                                      column.getPropertyName()), is(columnList.indexOf(column)));
+            assertThat(columnsWithoutScores.getColumnIndexForProperty(column.selectorName().name(), column.propertyName()),
+                       is(columnList.indexOf(column)));
         }
     }
 
@@ -320,7 +320,7 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
     public void shouldBeUnionCompatibleWithEquivalentColumns() {
         List<Column> columnListCopy = new ArrayList<Column>();
         for (Column column : columnsWithScores.getColumns()) {
-            columnListCopy.add(new Column(column.getSelectorName(), column.getPropertyName(), column.getColumnName()));
+            columnListCopy.add(new Column(column.selectorName(), column.propertyName(), column.columnName()));
         }
         Columns other = new QueryResultColumns(columnListCopy, columnsWithScores.hasFullTextSearchScores());
         assertThat(columnsWithScores.isUnionCompatible(other), is(true));
@@ -330,7 +330,7 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
     public void shouldNotBeUnionCompatibleWithSubsetOfColumns() {
         List<Column> columnListCopy = new ArrayList<Column>();
         for (Column column : columnsWithScores.getColumns()) {
-            columnListCopy.add(new Column(column.getSelectorName(), column.getPropertyName(), column.getColumnName()));
+            columnListCopy.add(new Column(column.selectorName(), column.propertyName(), column.columnName()));
         }
         columnListCopy.remove(3);
         Columns other = new QueryResultColumns(columnListCopy, columnsWithScores.hasFullTextSearchScores());
@@ -341,7 +341,7 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
     public void shouldNotBeUnionCompatibleWithExtraColumns() {
         List<Column> columnListCopy = new ArrayList<Column>();
         for (Column column : columnsWithScores.getColumns()) {
-            columnListCopy.add(new Column(column.getSelectorName(), column.getPropertyName(), column.getColumnName()));
+            columnListCopy.add(new Column(column.selectorName(), column.propertyName(), column.columnName()));
         }
         columnListCopy.add(new Column(selector("table2"), "colZ", "colZ"));
         Columns other = new QueryResultColumns(columnListCopy, columnsWithScores.hasFullTextSearchScores());

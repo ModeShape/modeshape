@@ -23,53 +23,46 @@
  */
 package org.modeshape.graph.query.model;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
  * Represents the abstract base class for all query commands. Subclasses include {@link Query} and {@link SetQuery}.
  */
-public abstract class QueryCommand extends Command {
-    private static final long serialVersionUID = 1L;
-
-    private final List<Ordering> orderings;
-    private final Limit limits;
-
-    /**
-     * Create a new query command.
-     */
-    protected QueryCommand() {
-        this(null, null);
-    }
-
-    /**
-     * Create a new query command that uses the supplied orderings and limits.
-     * 
-     * @param orderings the specifications of how the results are to be ordered, or null if the order is to be implementation
-     *        determined result columns are to be implementation determiend
-     * @param limit the limit for the results, or null if all of the results are to be included
-     */
-    protected QueryCommand( List<Ordering> orderings,
-                            Limit limit ) {
-        this.orderings = orderings != null ? orderings : Collections.<Ordering>emptyList();
-        this.limits = limit != null ? limit : Limit.NONE;
-    }
-
+public interface QueryCommand extends Command {
     /**
      * Return the orderings for this query.
      * 
      * @return the list of orderings; never null
      */
-    public final List<Ordering> getOrderings() {
-        return orderings;
-    }
+    public List<? extends Ordering> orderings();
 
     /**
      * Get the limits associated with this query.
      * 
      * @return the limits; never null but possibly {@link Limit#isUnlimited() unlimited}
      */
-    public final Limit getLimits() {
-        return limits;
-    }
+    public Limit limits();
+
+    /**
+     * Return the columns defining the query results. If there are no columns, then the columns are implementation determined.
+     * 
+     * @return the list of columns; never null
+     */
+    public List<? extends Column> columns();
+
+    /**
+     * Create a copy of this query, but one that uses the supplied limit on the number of result rows.
+     * 
+     * @param rowLimit the limit that should be used; must be a positive number
+     * @return the copy of the query that uses the supplied limit; never null
+     */
+    public QueryCommand withLimit( int rowLimit );
+
+    /**
+     * Create a copy of this query, but one that uses the supplied offset.
+     * 
+     * @param offset the limit that should be used; may not be negative
+     * @return the copy of the query that uses the supplied offset; never null
+     */
+    public QueryCommand withOffset( int offset );
 }

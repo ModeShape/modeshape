@@ -109,13 +109,13 @@ public class SortValuesComponent extends DelegatingComponent {
         final DynamicOperation operation = createDynamicOperation(context.getTypeSystem(),
                                                                   context.getSchemata(),
                                                                   columns,
-                                                                  ordering.getOperand());
+                                                                  ordering.operand());
         final TypeSystem typeSystem = context.getTypeSystem();
         final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(operation.getExpectedType());
         assert typeFactory != null;
         final Comparator<Object> typeComparator = (Comparator<Object>)typeFactory.getComparator();
         assert typeComparator != null;
-        if (ordering.getOrder() == Order.DESCENDING) {
+        if (ordering.order() == Order.DESCENDING) {
             return new Comparator<Object[]>() {
                 public int compare( Object[] tuple1,
                                     Object[] tuple2 ) {

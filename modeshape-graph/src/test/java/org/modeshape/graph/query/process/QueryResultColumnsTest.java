@@ -29,6 +29,10 @@ import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.query.QueryContext;
@@ -37,10 +41,6 @@ import org.modeshape.graph.query.QueryResults.Cursor;
 import org.modeshape.graph.query.QueryResults.Statistics;
 import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.validate.Schemata;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Mock;
 
 /**
  * 
@@ -130,12 +130,12 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
             Object[] tuple = expectedIter.next();
             // Check the column values by column name and index ...
             for (Column column : results.getColumns().getColumns()) {
-                String columnName = column.getColumnName();
+                String columnName = column.columnName();
                 int columnIndex = columns.getColumnIndexForName(columnName);
                 assertThat(cursor.getValue(columnName), is(tuple[columnIndex]));
                 assertThat(cursor.getValue(columnIndex), is(tuple[columnIndex]));
                 // Get the location for this column ...
-                int locationIndex = columns.getLocationIndex(column.getSelectorName().getName());
+                int locationIndex = columns.getLocationIndex(column.selectorName().name());
                 Location location = (Location)tuple[locationIndex];
                 assertThat(cursor.getLocation(columnIndex), is(location));
             }

@@ -30,7 +30,7 @@ import org.modeshape.common.util.CheckArg;
  * A constraint requiring that the selected node is a descendant of the node reachable by the supplied absolute path
  */
 @Immutable
-public class DescendantNode extends Constraint {
+public class DescendantNode implements Constraint {
     private static final long serialVersionUID = 1L;
 
     private final SelectorName selectorName;
@@ -56,7 +56,7 @@ public class DescendantNode extends Constraint {
      * 
      * @return the selector name; never null
      */
-    public final SelectorName getSelectorName() {
+    public final SelectorName selectorName() {
         return selectorName;
     }
 
@@ -65,7 +65,7 @@ public class DescendantNode extends Constraint {
      * 
      * @return the path of the ancestor node; never null
      */
-    public final String getAncestorPath() {
+    public final String ancestorPath() {
         return ancestorPath;
     }
 
@@ -86,7 +86,7 @@ public class DescendantNode extends Constraint {
      */
     @Override
     public int hashCode() {
-        return getSelectorName().hashCode();
+        return selectorName().hashCode();
     }
 
     /**

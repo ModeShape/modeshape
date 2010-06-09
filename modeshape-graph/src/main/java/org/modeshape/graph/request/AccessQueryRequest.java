@@ -143,8 +143,8 @@ public class AccessQueryRequest extends SearchRequest {
     }
 
     /**
-     * Get the limit of the result tuples, which can specify a {@link Limit#getRowLimit() maximum number of rows} as well as an
-     * {@link Limit#getOffset() initial offset} for the first row.
+     * Get the limit of the result tuples, which can specify a {@link Limit#rowLimit() maximum number of rows} as well as an
+     * {@link Limit#offset() initial offset} for the first row.
      * 
      * @return the limit; never null but may be {@link Limit#isUnlimited() unlimited} if there is no effective limit
      */
@@ -210,7 +210,7 @@ public class AccessQueryRequest extends SearchRequest {
             else sb.append(", ");
             sb.append(column);
         }
-        sb.append(" FROM ").append(selectorName().getName());
+        sb.append(" FROM ").append(selectorName().name());
         if (!andedConstraints.isEmpty()) {
             sb.append(" WHERE ");
             first = true;

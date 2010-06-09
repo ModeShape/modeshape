@@ -117,8 +117,8 @@ public class RewriteIdentityJoins implements OptimizerRule {
                     context.getProblems().addError(GraphI18n.tableDoesNotExist, leftTableName);
                     continue;
                 }
-                String leftColumnName = equiJoin.getProperty1Name();
-                String rightColumnName = equiJoin.getProperty2Name();
+                String leftColumnName = equiJoin.property1Name();
+                String rightColumnName = equiJoin.property2Name();
                 Schemata.Column leftColumn = table.getColumn(leftColumnName);
                 Schemata.Column rightColumn = table.getColumn(rightColumnName);
                 if (leftColumn == null) {
@@ -138,8 +138,8 @@ public class RewriteIdentityJoins implements OptimizerRule {
                 }
             } else if (condition instanceof SameNodeJoinCondition) {
                 SameNodeJoinCondition sameNodeCondition = (SameNodeJoinCondition)condition;
-                if (sameNodeCondition.getSelector1Name().equals(sameNodeCondition.getSelector2Name())
-                    && sameNodeCondition.getSelector2Path() == null) {
+                if (sameNodeCondition.selector1Name().equals(sameNodeCondition.selector2Name())
+                    && sameNodeCondition.selector2Path() == null) {
                     // It meets all the criteria, so rewrite this join node ...
                     if (rewrittenSelectors == null) rewrittenSelectors = new HashMap<SelectorName, SelectorName>();
                     rewriteJoinNode(context, joinNode, rewrittenSelectors);

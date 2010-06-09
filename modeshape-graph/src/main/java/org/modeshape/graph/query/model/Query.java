@@ -36,14 +36,16 @@ import org.modeshape.common.util.ObjectUtil;
  * 
  */
 @Immutable
-public class Query extends QueryCommand {
+public class Query implements QueryCommand {
     private static final long serialVersionUID = 1L;
 
     public static final boolean IS_DISTINCT_DEFAULT = false;
 
+    private final List<? extends Ordering> orderings;
+    private final Limit limits;
     private final Source source;
     private final Constraint constraint;
-    private final List<Column> columns;
+    private final List<? extends Column> columns;
     private final boolean distinct;
     private final int hc;
 
@@ -56,6 +58,8 @@ public class Query extends QueryCommand {
     public Query( Source source ) {
         super();
         CheckArg.isNotNull(source, "source");
+        this.orderings = Collections.<Ordering>emptyList();
+        this.limits = Limit.NONE;
         this.source = source;
         this.constraint = null;
         this.columns = Collections.<Column>emptyList();
@@ -78,17 +82,36 @@ public class Query extends QueryCommand {
      */
     public Query( Source source,
                   Constraint constraint,
-                  List<Ordering> orderings,
-                  List<Column> columns,
+                  List<? extends Ordering> orderings,
+                  List<? extends Column> columns,
                   Limit limit,
                   boolean isDistinct ) {
-        super(orderings, limit);
         CheckArg.isNotNull(source, "source");
         this.source = source;
         this.constraint = constraint;
         this.columns = columns != null ? columns : Collections.<Column>emptyList();
         this.distinct = isDistinct;
+        this.orderings = orderings != null ? orderings : Collections.<Ordering>emptyList();
+        this.limits = limit != null ? limit : Limit.NONE;
         this.hc = HashCode.compute(this.source, this.constraint, this.columns, this.distinct);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.QueryCommand#limits()
+     */
+    public Limit limits() {
+        return limits;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.QueryCommand#orderings()
+     */
+    public List<? extends Ordering> orderings() {
+        return orderings;
     }
 
     /**
@@ -96,7 +119,7 @@ public class Query extends QueryCommand {
      * 
      * @return the query source; never null
      */
-    public final Source getSource() {
+    public Source source() {
         return source;
     }
 
@@ -105,16 +128,16 @@ public class Query extends QueryCommand {
      * 
      * @return the constraint; may be null
      */
-    public final Constraint getConstraint() {
+    public Constraint constraint() {
         return constraint;
     }
 
     /**
-     * Return the columns defining the query results. If there are no columns, then the columns are implementation determined.
+     * {@inheritDoc}
      * 
-     * @return the list of columns; never null
+     * @see org.modeshape.graph.query.model.QueryCommand#columns()
      */
-    public final List<Column> getColumns() {
+    public List<? extends Column> columns() {
         return columns;
     }
 
@@ -133,7 +156,7 @@ public class Query extends QueryCommand {
      * @return the copy of the query with no duplicate result rows; never null
      */
     public Query distinct() {
-        return new Query(source, constraint, getOrderings(), columns, getLimits(), true);
+        return new Query(source, constraint, orderings(), columns, limits(), true);
     }
 
     /**
@@ -142,7 +165,7 @@ public class Query extends QueryCommand {
      * @return the copy of the query with potentially duplicate result rows; never null
      */
     public Query noDistinct() {
-        return new Query(source, constraint, getOrderings(), columns, getLimits(), false);
+        return new Query(source, constraint, orderings(), columns, limits(), false);
     }
 
     /**
@@ -152,7 +175,7 @@ public class Query extends QueryCommand {
      * @return the copy of the query that uses the supplied constraint; never null
      */
     public Query constrainedBy( Constraint constraint ) {
-        return new Query(source, constraint, getOrderings(), columns, getLimits(), distinct);
+        return new Query(source, constraint, orderings(), columns, limits(), distinct);
     }
 
     /**
@@ -162,27 +185,27 @@ public class Query extends QueryCommand {
      * @return the copy of the query that uses the supplied ordering; never null
      */
     public Query orderedBy( List<Ordering> orderings ) {
-        return new Query(source, constraint, orderings, columns, getLimits(), distinct);
+        return new Query(source, constraint, orderings, columns, limits(), distinct);
     }
 
     /**
-     * Create a copy of this query, but one that uses the supplied limit on the number of result rows.
+     * {@inheritDoc}
      * 
-     * @param rowLimit the limit that should be used; must be a positive number
-     * @return the copy of the query that uses the supplied limit; never null
+     * @see org.modeshape.graph.query.model.QueryCommand#withLimit(int)
      */
     public Query withLimit( int rowLimit ) {
-        return new Query(source, constraint, getOrderings(), columns, getLimits().withRowLimit(rowLimit), distinct);
+        if (limits().rowLimit() == rowLimit) return this; // nothing to change
+        return new Query(source, constraint, orderings(), columns, limits().withRowLimit(rowLimit), distinct);
     }
 
     /**
-     * Create a copy of this query, but one that uses the supplied offset.
+     * {@inheritDoc}
      * 
-     * @param offset the limit that should be used; may not be negative
-     * @return the copy of the query that uses the supplied offset; never null
+     * @see org.modeshape.graph.query.model.QueryCommand#withOffset(int)
      */
     public Query withOffset( int offset ) {
-        return new Query(source, constraint, getOrderings(), columns, getLimits().withOffset(offset), distinct);
+        if (limits().offset() == offset) return this; // nothing to change
+        return new Query(source, constraint, orderings(), columns, limits().withOffset(offset), distinct);
     }
 
     /**
@@ -192,27 +215,27 @@ public class Query extends QueryCommand {
      * @return the copy of the query returning the supplied result columns; never null
      */
     public Query returning( List<Column> columns ) {
-        return new Query(source, constraint, getOrderings(), columns, getLimits(), distinct);
+        return new Query(source, constraint, orderings(), columns, limits(), distinct);
     }
 
     /**
-     * Create a copy of this query, but that returns results that are ordered by the {@link #getOrderings() orderings} of this
-     * column as well as those supplied.
+     * Create a copy of this query, but that returns results that are ordered by the {@link #orderings() orderings} of this column
+     * as well as those supplied.
      * 
      * @param orderings the additional orderings of the result rows; may no be null
      * @return the copy of the query returning the supplied result columns; never null
      */
     public Query adding( Ordering... orderings ) {
         List<Ordering> newOrderings = null;
-        if (this.getOrderings() != null) {
-            newOrderings = new ArrayList<Ordering>(getOrderings());
+        if (this.orderings() != null) {
+            newOrderings = new ArrayList<Ordering>(orderings());
             for (Ordering ordering : orderings) {
                 newOrderings.add(ordering);
             }
         } else {
             newOrderings = Arrays.asList(orderings);
         }
-        return new Query(source, constraint, newOrderings, columns, getLimits(), distinct);
+        return new Query(source, constraint, newOrderings, columns, limits(), distinct);
     }
 
     /**
@@ -232,7 +255,7 @@ public class Query extends QueryCommand {
         } else {
             newColumns = Arrays.asList(columns);
         }
-        return new Query(source, constraint, getOrderings(), newColumns, getLimits(), distinct);
+        return new Query(source, constraint, orderings(), newColumns, limits(), distinct);
     }
 
     /**
@@ -268,10 +291,10 @@ public class Query extends QueryCommand {
             if (this.hc != that.hc) return false;
             if (this.distinct != that.distinct) return false;
             if (!this.source.equals(that.source)) return false;
-            if (!ObjectUtil.isEqualWithNulls(this.getLimits(), that.getLimits())) return false;
+            if (!ObjectUtil.isEqualWithNulls(this.limits(), that.limits())) return false;
             if (!ObjectUtil.isEqualWithNulls(this.constraint, that.constraint)) return false;
             if (!ObjectUtil.isEqualWithNulls(this.columns, that.columns)) return false;
-            if (!ObjectUtil.isEqualWithNulls(this.getOrderings(), that.getOrderings())) return false;
+            if (!ObjectUtil.isEqualWithNulls(this.orderings(), that.orderings())) return false;
             return true;
         }
         return false;

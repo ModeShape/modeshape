@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.query.model;
 
+import java.util.Set;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
@@ -32,9 +33,10 @@ import org.modeshape.common.util.HashCode;
  * and {@link Ordering} components.
  */
 @Immutable
-public class ArithmeticOperand extends DynamicOperand {
+public class ArithmeticOperand implements DynamicOperand {
     private static final long serialVersionUID = 1L;
 
+    private final Set<SelectorName> selectorNames;
     private final ArithmeticOperator operator;
     private final DynamicOperand left;
     private final DynamicOperand right;
@@ -51,8 +53,8 @@ public class ArithmeticOperand extends DynamicOperand {
     public ArithmeticOperand( DynamicOperand left,
                               ArithmeticOperator operator,
                               DynamicOperand right ) {
-        super(left, right);
         CheckArg.isNotNull(operator, "operator");
+        this.selectorNames = SelectorName.nameSetFrom(left.selectorNames(), right.selectorNames());
         this.operator = operator;
         this.left = left;
         this.right = right;
@@ -60,11 +62,20 @@ public class ArithmeticOperand extends DynamicOperand {
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.DynamicOperand#selectorNames()
+     */
+    public Set<SelectorName> selectorNames() {
+        return selectorNames;
+    }
+
+    /**
      * Get the operator for this binary operand.
      * 
      * @return the operator; never null
      */
-    public ArithmeticOperator getOperator() {
+    public ArithmeticOperator operator() {
         return operator;
     }
 
@@ -73,7 +84,7 @@ public class ArithmeticOperand extends DynamicOperand {
      * 
      * @return the left-hand operator; never null
      */
-    public DynamicOperand getLeft() {
+    public DynamicOperand left() {
         return left;
     }
 
@@ -82,7 +93,7 @@ public class ArithmeticOperand extends DynamicOperand {
      * 
      * @return the right-hand operator; never null
      */
-    public DynamicOperand getRight() {
+    public DynamicOperand right() {
         return right;
     }
 
@@ -116,8 +127,7 @@ public class ArithmeticOperand extends DynamicOperand {
         if (obj == this) return true;
         if (obj instanceof ArithmeticOperand) {
             ArithmeticOperand that = (ArithmeticOperand)obj;
-            return this.getOperator() == that.getOperator() && this.getLeft().equals(that.getLeft())
-                   && this.getRight().equals(that.getRight());
+            return this.operator() == that.operator() && this.left().equals(that.left()) && this.right().equals(that.right());
         }
         return false;
     }

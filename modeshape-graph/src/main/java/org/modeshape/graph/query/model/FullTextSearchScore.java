@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.query.model;
 
+import java.util.Set;
 import net.jcip.annotations.Immutable;
 
 /**
@@ -30,8 +31,10 @@ import net.jcip.annotations.Immutable;
  * constraint and {@link Ordering}s.
  */
 @Immutable
-public class FullTextSearchScore extends DynamicOperand {
+public class FullTextSearchScore implements DynamicOperand {
     private static final long serialVersionUID = 1L;
+
+    private final Set<SelectorName> selectorNames;
 
     /**
      * Create a dynamic operand that evaluates to the full-text search score of the node identified by the selector.
@@ -39,7 +42,7 @@ public class FullTextSearchScore extends DynamicOperand {
      * @param selectorName the name of the selector
      */
     public FullTextSearchScore( SelectorName selectorName ) {
-        super(selectorName);
+        this.selectorNames = SelectorName.nameSetFrom(selectorName);
     }
 
     /**
@@ -47,8 +50,17 @@ public class FullTextSearchScore extends DynamicOperand {
      * 
      * @return the one selector names used by this operand; never null
      */
-    public SelectorName getSelectorName() {
-        return getSelectorNames().iterator().next();
+    public SelectorName selectorName() {
+        return selectorNames().iterator().next();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.DynamicOperand#selectorNames()
+     */
+    public Set<SelectorName> selectorNames() {
+        return selectorNames;
     }
 
     /**
@@ -68,7 +80,7 @@ public class FullTextSearchScore extends DynamicOperand {
      */
     @Override
     public int hashCode() {
-        return getSelectorNames().hashCode();
+        return selectorNames().hashCode();
     }
 
     /**
@@ -81,7 +93,7 @@ public class FullTextSearchScore extends DynamicOperand {
         if (obj == this) return true;
         if (obj instanceof FullTextSearchScore) {
             FullTextSearchScore that = (FullTextSearchScore)obj;
-            if (!this.getSelectorNames().equals(that.getSelectorNames())) return false;
+            if (!this.selectorNames().equals(that.selectorNames())) return false;
             return true;
         }
         return false;

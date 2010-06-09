@@ -65,8 +65,8 @@ public class SelectComponent extends DelegatingComponent {
      * fashion, essentially operating upon the tuple values themselves.
      * <p>
      * For example, the {@link SameNode} constraint is satisfied when the selected node has the same path as the constraint's
-     * {@link SameNode#getPath() path}. And the {@link PropertyExistence} constraint is satisfied when the
-     * {@link PropertyExistence#getPropertyName() property} is represented in the tuple with a non-null value. Similarly,
+     * {@link SameNode#path() path}. And the {@link PropertyExistence} constraint is satisfied when the
+     * {@link PropertyExistence#propertyName() property} is represented in the tuple with a non-null value. Similarly,
      * {@link FullTextSearch} always evaluates to true. Obviously these implementations will likely not be sufficient for many
      * purposes. But in cases where these particular constraints are handled in other ways (and thus not expected to be seen by
      * this processor), this form may be sufficient.
@@ -244,8 +244,8 @@ public class SelectComponent extends DelegatingComponent {
                                                final Analyzer analyzer ) {
         if (constraint instanceof Or) {
             Or orConstraint = (Or)constraint;
-            final ConstraintChecker left = createChecker(types, schemata, columns, orConstraint.getLeft(), variables, analyzer);
-            final ConstraintChecker right = createChecker(types, schemata, columns, orConstraint.getRight(), variables, analyzer);
+            final ConstraintChecker left = createChecker(types, schemata, columns, orConstraint.left(), variables, analyzer);
+            final ConstraintChecker right = createChecker(types, schemata, columns, orConstraint.right(), variables, analyzer);
             return new ConstraintChecker() {
                 public boolean satisfiesConstraints( Object[] tuple ) {
                     return left.satisfiesConstraints(tuple) || right.satisfiesConstraints(tuple);
@@ -257,7 +257,7 @@ public class SelectComponent extends DelegatingComponent {
             final ConstraintChecker original = createChecker(types,
                                                              schemata,
                                                              columns,
-                                                             notConstraint.getConstraint(),
+                                                             notConstraint.constraint(),
                                                              variables,
                                                              analyzer);
             return new ConstraintChecker() {
@@ -268,8 +268,8 @@ public class SelectComponent extends DelegatingComponent {
         }
         if (constraint instanceof And) {
             And andConstraint = (And)constraint;
-            final ConstraintChecker left = createChecker(types, schemata, columns, andConstraint.getLeft(), variables, analyzer);
-            final ConstraintChecker right = createChecker(types, schemata, columns, andConstraint.getRight(), variables, analyzer);
+            final ConstraintChecker left = createChecker(types, schemata, columns, andConstraint.left(), variables, analyzer);
+            final ConstraintChecker right = createChecker(types, schemata, columns, andConstraint.right(), variables, analyzer);
             return new ConstraintChecker() {
                 public boolean satisfiesConstraints( Object[] tuple ) {
                     return left.satisfiesConstraints(tuple) && right.satisfiesConstraints(tuple);
@@ -278,8 +278,8 @@ public class SelectComponent extends DelegatingComponent {
         }
         if (constraint instanceof ChildNode) {
             ChildNode childConstraint = (ChildNode)constraint;
-            final int locationIndex = columns.getLocationIndex(childConstraint.getSelectorName().getName());
-            final String parentPath = childConstraint.getParentPath();
+            final int locationIndex = columns.getLocationIndex(childConstraint.selectorName().name());
+            final String parentPath = childConstraint.parentPath();
             return new ConstraintChecker() {
                 public boolean satisfiesConstraints( Object[] tuple ) {
                     Location location = (Location)tuple[locationIndex];
@@ -290,8 +290,8 @@ public class SelectComponent extends DelegatingComponent {
         }
         if (constraint instanceof DescendantNode) {
             DescendantNode descendantNode = (DescendantNode)constraint;
-            final int locationIndex = columns.getLocationIndex(descendantNode.getSelectorName().getName());
-            final String ancestorPath = descendantNode.getAncestorPath();
+            final int locationIndex = columns.getLocationIndex(descendantNode.selectorName().name());
+            final String ancestorPath = descendantNode.ancestorPath();
             return new ConstraintChecker() {
                 public boolean satisfiesConstraints( Object[] tuple ) {
                     Location location = (Location)tuple[locationIndex];
@@ -302,8 +302,8 @@ public class SelectComponent extends DelegatingComponent {
         }
         if (constraint instanceof SameNode) {
             SameNode sameNode = (SameNode)constraint;
-            final int locationIndex = columns.getLocationIndex(sameNode.getSelectorName().getName());
-            final String path = sameNode.getPath();
+            final int locationIndex = columns.getLocationIndex(sameNode.selectorName().name());
+            final String path = sameNode.path();
             if (analyzer != null) {
                 return new ConstraintChecker() {
                     public boolean satisfiesConstraints( Object[] tuple ) {
@@ -322,8 +322,8 @@ public class SelectComponent extends DelegatingComponent {
         }
         if (constraint instanceof PropertyExistence) {
             PropertyExistence propertyExistance = (PropertyExistence)constraint;
-            String selectorName = propertyExistance.getSelectorName().getName();
-            final String propertyName = propertyExistance.getPropertyName();
+            String selectorName = propertyExistance.selectorName().name();
+            final String propertyName = propertyExistance.propertyName();
             if (analyzer != null) {
                 final int locationIndex = columns.getLocationIndex(selectorName);
                 return new ConstraintChecker() {
@@ -343,9 +343,9 @@ public class SelectComponent extends DelegatingComponent {
         if (constraint instanceof FullTextSearch) {
             if (analyzer != null) {
                 FullTextSearch search = (FullTextSearch)constraint;
-                String selectorName = search.getSelectorName().getName();
+                String selectorName = search.selectorName().name();
                 final int locationIndex = columns.getLocationIndex(selectorName);
-                final String expression = search.getFullTextSearchExpression();
+                final String expression = search.fullTextSearchExpression();
                 if (expression == null) {
                     return new ConstraintChecker() {
                         public boolean satisfiesConstraints( Object[] tuple ) {
@@ -353,7 +353,7 @@ public class SelectComponent extends DelegatingComponent {
                         }
                     };
                 }
-                final String propertyName = search.getPropertyName(); // may be null
+                final String propertyName = search.propertyName(); // may be null
                 final int scoreIndex = columns.getFullTextSearchScoreIndexFor(selectorName);
                 assert scoreIndex >= 0 : "Columns do not have room for the search scores";
                 if (propertyName != null) {
@@ -397,17 +397,17 @@ public class SelectComponent extends DelegatingComponent {
             Comparison comparison = (Comparison)constraint;
 
             // Create the correct dynamic operation ...
-            DynamicOperation dynamicOperation = createDynamicOperation(types, schemata, columns, comparison.getOperand1());
-            Operator operator = comparison.getOperator();
-            StaticOperand staticOperand = comparison.getOperand2();
+            DynamicOperation dynamicOperation = createDynamicOperation(types, schemata, columns, comparison.operand1());
+            Operator operator = comparison.operator();
+            StaticOperand staticOperand = comparison.operand2();
             return createChecker(types, schemata, columns, dynamicOperation, operator, staticOperand);
         }
         if (constraint instanceof SetCriteria) {
             SetCriteria setCriteria = (SetCriteria)constraint;
-            DynamicOperation dynamicOperation = createDynamicOperation(types, schemata, columns, setCriteria.getLeftOperand());
+            DynamicOperation dynamicOperation = createDynamicOperation(types, schemata, columns, setCriteria.leftOperand());
             Operator operator = Operator.EQUAL_TO;
             final List<ConstraintChecker> checkers = new LinkedList<ConstraintChecker>();
-            for (StaticOperand setValue : setCriteria.getRightOperands()) {
+            for (StaticOperand setValue : setCriteria.rightOperands()) {
                 ConstraintChecker rightChecker = createChecker(types, schemata, columns, dynamicOperation, operator, setValue);
                 assert rightChecker != null;
                 checkers.add(rightChecker);
@@ -446,11 +446,11 @@ public class SelectComponent extends DelegatingComponent {
         Object literalValue = null;
         if (staticOperand instanceof BindVariableName) {
             BindVariableName bindVariable = (BindVariableName)staticOperand;
-            String variableName = bindVariable.getVariableName();
+            String variableName = bindVariable.variableName();
             literalValue = variables.get(variableName); // may be null
         } else {
             Literal literal = (Literal)staticOperand;
-            literalValue = literal.getValue();
+            literalValue = literal.value();
         }
         // Create the correct comparator ...
         final TypeFactory<?> typeFactory = types.getTypeFactory(expectedType);

@@ -30,7 +30,7 @@ import org.modeshape.common.util.CheckArg;
  * 
  */
 @Immutable
-public abstract class Selector extends Source {
+public abstract class Selector implements Source {
     private static final long serialVersionUID = 1L;
 
     private final SelectorName name;
@@ -67,7 +67,7 @@ public abstract class Selector extends Source {
      * 
      * @return the selector name; never null
      */
-    public SelectorName getName() {
+    public SelectorName name() {
         return name;
     }
 
@@ -76,7 +76,7 @@ public abstract class Selector extends Source {
      * 
      * @return the alias name, or null if there is none.
      */
-    public SelectorName getAlias() {
+    public SelectorName alias() {
         return alias;
     }
 
@@ -85,7 +85,7 @@ public abstract class Selector extends Source {
      * 
      * @return the alias or name; never null
      */
-    public SelectorName getAliasOrName() {
+    public SelectorName aliasOrName() {
         return alias != null ? alias : name;
     }
 

@@ -275,7 +275,7 @@ public class XPathToQueryTranslator {
         }
         // Try building this query, because we need to check the # of columns selected and the # of sources ...
         Query query = (Query)builder.query();
-        if (query.getColumns().isEmpty() && query.getSource() instanceof AllNodes) {
+        if (query.columns().isEmpty() && query.source() instanceof AllNodes) {
             // This is basically 'SELECT * FROM __ALLNODES__", which means that no type was explicitly specified and
             // nothing was selected from that type. According to JCR 1.0 Section 6.6.3.1, this equates to
             // 'SELECT * FROM [nt:base]', and since there is just one property on nt:base (but many on __ALLNODES__)
@@ -497,7 +497,7 @@ public class XPathToQueryTranslator {
                 Component temp = left;
                 left = right;
                 right = temp;
-                operator = operator.getReverse();
+                operator = operator.reverse();
             }
             if (left instanceof AttributeNameTest) {
                 AttributeNameTest attribute = (AttributeNameTest)left;

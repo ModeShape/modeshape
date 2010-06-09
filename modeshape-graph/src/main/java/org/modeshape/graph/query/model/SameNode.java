@@ -31,7 +31,7 @@ import org.modeshape.common.util.HashCode;
  * A constraint requiring that the selected node is reachable by the supplied absolute path
  */
 @Immutable
-public class SameNode extends Constraint {
+public class SameNode implements Constraint {
     private static final long serialVersionUID = 1L;
 
     private final SelectorName selectorName;
@@ -59,7 +59,7 @@ public class SameNode extends Constraint {
      * 
      * @return the selector name; never null
      */
-    public final SelectorName getSelectorName() {
+    public final SelectorName selectorName() {
         return selectorName;
     }
 
@@ -68,7 +68,7 @@ public class SameNode extends Constraint {
      * 
      * @return the absolute path; never null
      */
-    public final String getPath() {
+    public final String path() {
         return path;
     }
 

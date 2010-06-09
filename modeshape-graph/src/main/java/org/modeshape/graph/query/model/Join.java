@@ -31,7 +31,7 @@ import org.modeshape.common.util.HashCode;
  * 
  */
 @Immutable
-public class Join extends Source {
+public class Join implements Source {
     private static final long serialVersionUID = 1L;
 
     private final Source left;
@@ -69,7 +69,7 @@ public class Join extends Source {
      * 
      * @return the left-side source; never null
      */
-    public final Source getLeft() {
+    public Source left() {
         return left;
     }
 
@@ -78,7 +78,7 @@ public class Join extends Source {
      * 
      * @return the right-side source; never null
      */
-    public final Source getRight() {
+    public Source right() {
         return right;
     }
 
@@ -87,7 +87,7 @@ public class Join extends Source {
      * 
      * @return the join type; never null
      */
-    public final JoinType getType() {
+    public final JoinType type() {
         return type;
     }
 
@@ -96,7 +96,7 @@ public class Join extends Source {
      * 
      * @return the join condition; never null
      */
-    public final JoinCondition getJoinCondition() {
+    public JoinCondition joinCondition() {
         return joinCondition;
     }
 

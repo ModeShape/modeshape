@@ -185,7 +185,7 @@ public class PlanUtil {
          */
         @Override
         public void visit( PropertyExistence existence ) {
-            requireColumn(existence.getSelectorName(), existence.getPropertyName());
+            requireColumn(existence.selectorName(), existence.propertyName());
         }
 
         /**
@@ -195,7 +195,7 @@ public class PlanUtil {
          */
         @Override
         public void visit( PropertyValue value ) {
-            requireColumn(value.getSelectorName(), value.getPropertyName());
+            requireColumn(value.selectorName(), value.propertyName());
         }
 
         /**
@@ -205,9 +205,9 @@ public class PlanUtil {
          */
         @Override
         public void visit( ReferenceValue value ) {
-            String propertyName = value.getPropertyName();
+            String propertyName = value.propertyName();
             if (propertyName != null) {
-                requireColumn(value.getSelectorName(), propertyName);
+                requireColumn(value.selectorName(), propertyName);
             }
         }
 
@@ -218,8 +218,8 @@ public class PlanUtil {
          */
         @Override
         public void visit( EquiJoinCondition condition ) {
-            requireColumn(condition.getSelector1Name(), condition.getProperty1Name());
-            requireColumn(condition.getSelector2Name(), condition.getProperty2Name());
+            requireColumn(condition.selector1Name(), condition.property1Name());
+            requireColumn(condition.selector2Name(), condition.property2Name());
         }
 
         /**
@@ -229,7 +229,7 @@ public class PlanUtil {
          */
         @Override
         public void visit( Column column ) {
-            requireColumn(column.getSelectorName(), column.getPropertyName(), column.getColumnName());
+            requireColumn(column.selectorName(), column.propertyName(), column.columnName());
         }
 
         protected void requireColumn( SelectorName selector,
@@ -273,9 +273,9 @@ public class PlanUtil {
                 List<Column> columns = planNode.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
                 for (int i = 0; i != columns.size(); ++i) {
                     Column column = columns.get(i);
-                    SelectorName replacement = rewrittenSelectors.get(column.getSelectorName());
+                    SelectorName replacement = rewrittenSelectors.get(column.selectorName());
                     if (replacement != null) {
-                        columns.set(i, new Column(replacement, column.getPropertyName(), column.getColumnName()));
+                        columns.set(i, new Column(replacement, column.propertyName(), column.columnName()));
                     }
                 }
                 break;
@@ -300,7 +300,7 @@ public class PlanUtil {
                     } else {
                         for (int i = 0; i != orderBys.size(); ++i) {
                             Ordering ordering = (Ordering)orderBys.get(i);
-                            DynamicOperand operand = ordering.getOperand();
+                            DynamicOperand operand = ordering.operand();
                             orderBys.set(i, replaceReferencesToRemovedSource(context, operand, rewrittenSelectors));
                         }
                     }
@@ -360,62 +360,62 @@ public class PlanUtil {
                                                                    Map<SelectorName, SelectorName> rewrittenSelectors ) {
         if (operand instanceof FullTextSearchScore) {
             FullTextSearchScore score = (FullTextSearchScore)operand;
-            SelectorName replacement = rewrittenSelectors.get(score.getSelectorName());
+            SelectorName replacement = rewrittenSelectors.get(score.selectorName());
             if (replacement == null) return score;
             return new FullTextSearchScore(replacement);
         }
         if (operand instanceof Length) {
             Length operation = (Length)operand;
-            PropertyValue wrapped = operation.getPropertyValue();
-            SelectorName replacement = rewrittenSelectors.get(wrapped.getSelectorName());
+            PropertyValue wrapped = operation.propertyValue();
+            SelectorName replacement = rewrittenSelectors.get(wrapped.selectorName());
             if (replacement == null) return operand;
-            return new Length(new PropertyValue(replacement, wrapped.getPropertyName()));
+            return new Length(new PropertyValue(replacement, wrapped.propertyName()));
         }
         if (operand instanceof LowerCase) {
             LowerCase operation = (LowerCase)operand;
-            SelectorName replacement = rewrittenSelectors.get(operation.getSelectorName());
+            SelectorName replacement = rewrittenSelectors.get(operation.selectorName());
             if (replacement == null) return operand;
-            return new LowerCase(replaceReferencesToRemovedSource(context, operation.getOperand(), rewrittenSelectors));
+            return new LowerCase(replaceReferencesToRemovedSource(context, operation.operand(), rewrittenSelectors));
         }
         if (operand instanceof UpperCase) {
             UpperCase operation = (UpperCase)operand;
-            SelectorName replacement = rewrittenSelectors.get(operation.getSelectorName());
+            SelectorName replacement = rewrittenSelectors.get(operation.selectorName());
             if (replacement == null) return operand;
-            return new UpperCase(replaceReferencesToRemovedSource(context, operation.getOperand(), rewrittenSelectors));
+            return new UpperCase(replaceReferencesToRemovedSource(context, operation.operand(), rewrittenSelectors));
         }
         if (operand instanceof NodeName) {
             NodeName name = (NodeName)operand;
-            SelectorName replacement = rewrittenSelectors.get(name.getSelectorName());
+            SelectorName replacement = rewrittenSelectors.get(name.selectorName());
             if (replacement == null) return name;
             return new NodeName(replacement);
         }
         if (operand instanceof NodeLocalName) {
             NodeLocalName name = (NodeLocalName)operand;
-            SelectorName replacement = rewrittenSelectors.get(name.getSelectorName());
+            SelectorName replacement = rewrittenSelectors.get(name.selectorName());
             if (replacement == null) return name;
             return new NodeLocalName(replacement);
         }
         if (operand instanceof PropertyValue) {
             PropertyValue value = (PropertyValue)operand;
-            SelectorName replacement = rewrittenSelectors.get(value.getSelectorName());
+            SelectorName replacement = rewrittenSelectors.get(value.selectorName());
             if (replacement == null) return operand;
-            return new PropertyValue(replacement, value.getPropertyName());
+            return new PropertyValue(replacement, value.propertyName());
         }
         if (operand instanceof ReferenceValue) {
             ReferenceValue value = (ReferenceValue)operand;
-            SelectorName replacement = rewrittenSelectors.get(value.getSelectorName());
+            SelectorName replacement = rewrittenSelectors.get(value.selectorName());
             if (replacement == null) return operand;
-            return new ReferenceValue(replacement, value.getPropertyName());
+            return new ReferenceValue(replacement, value.propertyName());
         }
         if (operand instanceof NodeDepth) {
             NodeDepth depth = (NodeDepth)operand;
-            SelectorName replacement = rewrittenSelectors.get(depth.getSelectorName());
+            SelectorName replacement = rewrittenSelectors.get(depth.selectorName());
             if (replacement == null) return operand;
             return new NodeDepth(replacement);
         }
         if (operand instanceof NodePath) {
             NodePath path = (NodePath)operand;
-            SelectorName replacement = rewrittenSelectors.get(path.getSelectorName());
+            SelectorName replacement = rewrittenSelectors.get(path.selectorName());
             if (replacement == null) return operand;
             return new NodePath(replacement);
         }
@@ -427,70 +427,70 @@ public class PlanUtil {
                                                                Map<SelectorName, SelectorName> rewrittenSelectors ) {
         if (constraint instanceof And) {
             And and = (And)constraint;
-            Constraint left = replaceReferencesToRemovedSource(context, and.getLeft(), rewrittenSelectors);
-            Constraint right = replaceReferencesToRemovedSource(context, and.getRight(), rewrittenSelectors);
-            if (left == and.getLeft() && right == and.getRight()) return and;
+            Constraint left = replaceReferencesToRemovedSource(context, and.left(), rewrittenSelectors);
+            Constraint right = replaceReferencesToRemovedSource(context, and.right(), rewrittenSelectors);
+            if (left == and.left() && right == and.right()) return and;
             return new And(left, right);
         }
         if (constraint instanceof Or) {
             Or or = (Or)constraint;
-            Constraint left = replaceReferencesToRemovedSource(context, or.getLeft(), rewrittenSelectors);
-            Constraint right = replaceReferencesToRemovedSource(context, or.getRight(), rewrittenSelectors);
-            if (left == or.getLeft() && right == or.getRight()) return or;
+            Constraint left = replaceReferencesToRemovedSource(context, or.left(), rewrittenSelectors);
+            Constraint right = replaceReferencesToRemovedSource(context, or.right(), rewrittenSelectors);
+            if (left == or.left() && right == or.right()) return or;
             return new Or(left, right);
         }
         if (constraint instanceof Not) {
             Not not = (Not)constraint;
-            Constraint wrapped = replaceReferencesToRemovedSource(context, not.getConstraint(), rewrittenSelectors);
-            if (wrapped == not.getConstraint()) return not;
+            Constraint wrapped = replaceReferencesToRemovedSource(context, not.constraint(), rewrittenSelectors);
+            if (wrapped == not.constraint()) return not;
             return new Not(wrapped);
         }
         if (constraint instanceof SameNode) {
             SameNode sameNode = (SameNode)constraint;
-            SelectorName replacement = rewrittenSelectors.get(sameNode.getSelectorName());
+            SelectorName replacement = rewrittenSelectors.get(sameNode.selectorName());
             if (replacement == null) return sameNode;
-            return new SameNode(replacement, sameNode.getPath());
+            return new SameNode(replacement, sameNode.path());
         }
         if (constraint instanceof ChildNode) {
             ChildNode childNode = (ChildNode)constraint;
-            SelectorName replacement = rewrittenSelectors.get(childNode.getSelectorName());
+            SelectorName replacement = rewrittenSelectors.get(childNode.selectorName());
             if (replacement == null) return childNode;
-            return new ChildNode(replacement, childNode.getParentPath());
+            return new ChildNode(replacement, childNode.parentPath());
         }
         if (constraint instanceof DescendantNode) {
             DescendantNode descendantNode = (DescendantNode)constraint;
-            SelectorName replacement = rewrittenSelectors.get(descendantNode.getSelectorName());
+            SelectorName replacement = rewrittenSelectors.get(descendantNode.selectorName());
             if (replacement == null) return descendantNode;
-            return new DescendantNode(replacement, descendantNode.getAncestorPath());
+            return new DescendantNode(replacement, descendantNode.ancestorPath());
         }
         if (constraint instanceof PropertyExistence) {
             PropertyExistence existence = (PropertyExistence)constraint;
-            SelectorName replacement = rewrittenSelectors.get(existence.getSelectorName());
+            SelectorName replacement = rewrittenSelectors.get(existence.selectorName());
             if (replacement == null) return existence;
-            return new PropertyExistence(replacement, existence.getPropertyName());
+            return new PropertyExistence(replacement, existence.propertyName());
         }
         if (constraint instanceof FullTextSearch) {
             FullTextSearch search = (FullTextSearch)constraint;
-            SelectorName replacement = rewrittenSelectors.get(search.getSelectorName());
+            SelectorName replacement = rewrittenSelectors.get(search.selectorName());
             if (replacement == null) return search;
-            return new FullTextSearch(replacement, search.getPropertyName(), search.getFullTextSearchExpression());
+            return new FullTextSearch(replacement, search.propertyName(), search.fullTextSearchExpression());
         }
         if (constraint instanceof Between) {
             Between between = (Between)constraint;
-            DynamicOperand lhs = between.getOperand();
-            StaticOperand lower = between.getLowerBound(); // Current only a literal; therefore, no reference to selector
-            StaticOperand upper = between.getUpperBound(); // Current only a literal; therefore, no reference to selector
+            DynamicOperand lhs = between.operand();
+            StaticOperand lower = between.lowerBound(); // Current only a literal; therefore, no reference to selector
+            StaticOperand upper = between.upperBound(); // Current only a literal; therefore, no reference to selector
             DynamicOperand newLhs = replaceReferencesToRemovedSource(context, lhs, rewrittenSelectors);
             if (lhs == newLhs) return between;
             return new Between(newLhs, lower, upper, between.isLowerBoundIncluded(), between.isUpperBoundIncluded());
         }
         if (constraint instanceof Comparison) {
             Comparison comparison = (Comparison)constraint;
-            DynamicOperand lhs = comparison.getOperand1();
-            StaticOperand rhs = comparison.getOperand2(); // Current only a literal; therefore, no reference to selector
+            DynamicOperand lhs = comparison.operand1();
+            StaticOperand rhs = comparison.operand2(); // Current only a literal; therefore, no reference to selector
             DynamicOperand newLhs = replaceReferencesToRemovedSource(context, lhs, rewrittenSelectors);
             if (lhs == newLhs) return comparison;
-            return new Comparison(newLhs, comparison.getOperator(), rhs);
+            return new Comparison(newLhs, comparison.operator(), rhs);
         }
         return constraint;
     }
@@ -500,30 +500,30 @@ public class PlanUtil {
                                                                   Map<SelectorName, SelectorName> rewrittenSelectors ) {
         if (joinCondition instanceof EquiJoinCondition) {
             EquiJoinCondition condition = (EquiJoinCondition)joinCondition;
-            SelectorName replacement1 = rewrittenSelectors.get(condition.getSelector1Name());
-            SelectorName replacement2 = rewrittenSelectors.get(condition.getSelector2Name());
-            if (replacement1 == condition.getSelector1Name() && replacement2 == condition.getSelector2Name()) return condition;
-            return new EquiJoinCondition(replacement1, condition.getProperty1Name(), replacement2, condition.getProperty2Name());
+            SelectorName replacement1 = rewrittenSelectors.get(condition.selector1Name());
+            SelectorName replacement2 = rewrittenSelectors.get(condition.selector2Name());
+            if (replacement1 == condition.selector1Name() && replacement2 == condition.selector2Name()) return condition;
+            return new EquiJoinCondition(replacement1, condition.property1Name(), replacement2, condition.property2Name());
         }
         if (joinCondition instanceof SameNodeJoinCondition) {
             SameNodeJoinCondition condition = (SameNodeJoinCondition)joinCondition;
-            SelectorName replacement1 = rewrittenSelectors.get(condition.getSelector1Name());
-            SelectorName replacement2 = rewrittenSelectors.get(condition.getSelector2Name());
-            if (replacement1 == condition.getSelector1Name() && replacement2 == condition.getSelector2Name()) return condition;
-            return new SameNodeJoinCondition(replacement1, replacement2, condition.getSelector2Path());
+            SelectorName replacement1 = rewrittenSelectors.get(condition.selector1Name());
+            SelectorName replacement2 = rewrittenSelectors.get(condition.selector2Name());
+            if (replacement1 == condition.selector1Name() && replacement2 == condition.selector2Name()) return condition;
+            return new SameNodeJoinCondition(replacement1, replacement2, condition.selector2Path());
         }
         if (joinCondition instanceof ChildNodeJoinCondition) {
             ChildNodeJoinCondition condition = (ChildNodeJoinCondition)joinCondition;
-            SelectorName childSelector = rewrittenSelectors.get(condition.getChildSelectorName());
-            SelectorName parentSelector = rewrittenSelectors.get(condition.getParentSelectorName());
-            if (childSelector == condition.getChildSelectorName() && parentSelector == condition.getParentSelectorName()) return condition;
+            SelectorName childSelector = rewrittenSelectors.get(condition.childSelectorName());
+            SelectorName parentSelector = rewrittenSelectors.get(condition.parentSelectorName());
+            if (childSelector == condition.childSelectorName() && parentSelector == condition.parentSelectorName()) return condition;
             return new ChildNodeJoinCondition(parentSelector, childSelector);
         }
         if (joinCondition instanceof DescendantNodeJoinCondition) {
             DescendantNodeJoinCondition condition = (DescendantNodeJoinCondition)joinCondition;
-            SelectorName ancestor = rewrittenSelectors.get(condition.getAncestorSelectorName());
-            SelectorName descendant = rewrittenSelectors.get(condition.getDescendantSelectorName());
-            if (ancestor == condition.getAncestorSelectorName() && descendant == condition.getDescendantSelectorName()) return condition;
+            SelectorName ancestor = rewrittenSelectors.get(condition.ancestorSelectorName());
+            SelectorName descendant = rewrittenSelectors.get(condition.descendantSelectorName());
+            if (ancestor == condition.ancestorSelectorName() && descendant == condition.descendantSelectorName()) return condition;
             return new ChildNodeJoinCondition(ancestor, descendant);
         }
         return joinCondition;
@@ -548,18 +548,18 @@ public class PlanUtil {
                         if (columns != null) {
                             for (int i = 0; i != columns.size(); ++i) {
                                 Column column = columns.get(i);
-                                if (column.getSelectorName().equals(viewName)) {
+                                if (column.selectorName().equals(viewName)) {
                                     // This column references the view ...
-                                    String columnName = column.getPropertyName();
-                                    String columnAlias = column.getColumnName();
+                                    String columnName = column.propertyName();
+                                    String columnAlias = column.columnName();
                                     // Find the source column that this view column corresponds to ...
                                     Column sourceColumn = mappings.getMappedColumn(columnName);
                                     if (sourceColumn != null) {
-                                        SelectorName sourceName = sourceColumn.getSelectorName();
+                                        SelectorName sourceName = sourceColumn.selectorName();
                                         // Replace the view column with one that uses the same alias but that references the
                                         // source
                                         // column ...
-                                        columns.set(i, new Column(sourceName, sourceColumn.getPropertyName(), columnAlias));
+                                        columns.set(i, new Column(sourceName, sourceColumn.propertyName(), columnAlias));
                                         node.addSelector(sourceName);
                                     } else {
                                         if (mappings.getMappedSelectorNames().size() == 1) {
@@ -568,14 +568,14 @@ public class PlanUtil {
                                                 columns.set(i, new Column(sourceName, columnName, columnAlias));
                                                 node.addSelector(sourceName);
                                             } else {
-                                                node.addSelector(column.getSelectorName());
+                                                node.addSelector(column.selectorName());
                                             }
                                         } else {
-                                            node.addSelector(column.getSelectorName());
+                                            node.addSelector(column.selectorName());
                                         }
                                     }
                                 } else {
-                                    node.addSelector(column.getSelectorName());
+                                    node.addSelector(column.selectorName());
                                 }
                             }
                         }
@@ -623,10 +623,10 @@ public class PlanUtil {
                         List<Ordering> newOrderings = new ArrayList<Ordering>(orderings.size());
                         node.getSelectors().clear();
                         for (Ordering ordering : orderings) {
-                            DynamicOperand operand = ordering.getOperand();
+                            DynamicOperand operand = ordering.operand();
                             DynamicOperand newOperand = replaceViewReferences(context, operand, mappings, node);
                             if (newOperand != operand) {
-                                ordering = new Ordering(newOperand, ordering.getOrder());
+                                ordering = new Ordering(newOperand, ordering.order());
                             }
                             node.addSelectors(Visitors.getSelectorsReferencedBy(ordering));
                             newOrderings.add(ordering);
@@ -670,98 +670,97 @@ public class PlanUtil {
                                                 PlanNode node ) {
         if (constraint instanceof And) {
             And and = (And)constraint;
-            Constraint left = replaceReferences(context, and.getLeft(), mapping, node);
-            Constraint right = replaceReferences(context, and.getRight(), mapping, node);
-            if (left == and.getLeft() && right == and.getRight()) return and;
+            Constraint left = replaceReferences(context, and.left(), mapping, node);
+            Constraint right = replaceReferences(context, and.right(), mapping, node);
+            if (left == and.left() && right == and.right()) return and;
             return new And(left, right);
         }
         if (constraint instanceof Or) {
             Or or = (Or)constraint;
-            Constraint left = replaceReferences(context, or.getLeft(), mapping, node);
-            Constraint right = replaceReferences(context, or.getRight(), mapping, node);
-            if (left == or.getLeft() && right == or.getRight()) return or;
+            Constraint left = replaceReferences(context, or.left(), mapping, node);
+            Constraint right = replaceReferences(context, or.right(), mapping, node);
+            if (left == or.left() && right == or.right()) return or;
             return new Or(left, right);
         }
         if (constraint instanceof Not) {
             Not not = (Not)constraint;
-            Constraint wrapped = replaceReferences(context, not.getConstraint(), mapping, node);
-            return wrapped == not.getConstraint() ? not : new Not(wrapped);
+            Constraint wrapped = replaceReferences(context, not.constraint(), mapping, node);
+            return wrapped == not.constraint() ? not : new Not(wrapped);
         }
         if (constraint instanceof SameNode) {
             SameNode sameNode = (SameNode)constraint;
-            if (!mapping.getOriginalName().equals(sameNode.getSelectorName())) return sameNode;
+            if (!mapping.getOriginalName().equals(sameNode.selectorName())) return sameNode;
             if (!mapping.isMappedToSingleSelector()) return sameNode;
             SelectorName selector = mapping.getSingleMappedSelectorName();
             node.addSelector(selector);
-            return new SameNode(selector, sameNode.getPath());
+            return new SameNode(selector, sameNode.path());
         }
         if (constraint instanceof ChildNode) {
             ChildNode childNode = (ChildNode)constraint;
-            if (!mapping.getOriginalName().equals(childNode.getSelectorName())) return childNode;
+            if (!mapping.getOriginalName().equals(childNode.selectorName())) return childNode;
             if (!mapping.isMappedToSingleSelector()) return childNode;
             SelectorName selector = mapping.getSingleMappedSelectorName();
             node.addSelector(selector);
-            return new ChildNode(selector, childNode.getParentPath());
+            return new ChildNode(selector, childNode.parentPath());
         }
         if (constraint instanceof DescendantNode) {
             DescendantNode descendantNode = (DescendantNode)constraint;
-            if (!mapping.getOriginalName().equals(descendantNode.getSelectorName())) return descendantNode;
+            if (!mapping.getOriginalName().equals(descendantNode.selectorName())) return descendantNode;
             if (!mapping.isMappedToSingleSelector()) return descendantNode;
             SelectorName selector = mapping.getSingleMappedSelectorName();
             node.addSelector(selector);
-            return new DescendantNode(selector, descendantNode.getAncestorPath());
+            return new DescendantNode(selector, descendantNode.ancestorPath());
         }
         if (constraint instanceof PropertyExistence) {
             PropertyExistence existence = (PropertyExistence)constraint;
-            if (!mapping.getOriginalName().equals(existence.getSelectorName())) return existence;
-            Column sourceColumn = mapping.getMappedColumn(existence.getPropertyName());
+            if (!mapping.getOriginalName().equals(existence.selectorName())) return existence;
+            Column sourceColumn = mapping.getMappedColumn(existence.propertyName());
             if (sourceColumn == null) return existence;
-            node.addSelector(sourceColumn.getSelectorName());
-            return new PropertyExistence(sourceColumn.getSelectorName(), sourceColumn.getPropertyName());
+            node.addSelector(sourceColumn.selectorName());
+            return new PropertyExistence(sourceColumn.selectorName(), sourceColumn.propertyName());
         }
         if (constraint instanceof FullTextSearch) {
             FullTextSearch search = (FullTextSearch)constraint;
-            if (!mapping.getOriginalName().equals(search.getSelectorName())) return search;
-            Column sourceColumn = mapping.getMappedColumn(search.getPropertyName());
+            if (!mapping.getOriginalName().equals(search.selectorName())) return search;
+            Column sourceColumn = mapping.getMappedColumn(search.propertyName());
             if (sourceColumn == null) {
-                if (search.getPropertyName() == null && mapping.getMappedSelectorNames().size() == 1) {
+                if (search.propertyName() == null && mapping.getMappedSelectorNames().size() == 1) {
                     SelectorName newSelectorName = mapping.getSingleMappedSelectorName();
                     if (newSelectorName != null) {
                         node.addSelector(newSelectorName);
-                        return new FullTextSearch(newSelectorName, search.getFullTextSearchExpression());
+                        return new FullTextSearch(newSelectorName, search.fullTextSearchExpression());
                     }
                 }
                 return search;
             }
-            node.addSelector(sourceColumn.getSelectorName());
-            return new FullTextSearch(sourceColumn.getSelectorName(), sourceColumn.getPropertyName(),
-                                      search.getFullTextSearchExpression());
+            node.addSelector(sourceColumn.selectorName());
+            return new FullTextSearch(sourceColumn.selectorName(), sourceColumn.propertyName(), search.fullTextSearchExpression());
         }
         if (constraint instanceof SetCriteria) {
             SetCriteria set = (SetCriteria)constraint;
-            DynamicOperand oldLeft = set.getLeftOperand();
-            Set<SelectorName> selectorNames = oldLeft.getSelectorNames();
+            DynamicOperand oldLeft = set.leftOperand();
+            Set<SelectorName> selectorNames = oldLeft.selectorNames();
             if (selectorNames.size() == 1 && !selectorNames.contains(mapping.getOriginalName())) return set;
             DynamicOperand newLeft = replaceViewReferences(context, oldLeft, mapping, node);
             if (newLeft == oldLeft) return set;
-            return new SetCriteria(newLeft, set.getRightOperands());
+            return new SetCriteria(newLeft, set.rightOperands());
         }
         if (constraint instanceof Between) {
             Between between = (Between)constraint;
-            DynamicOperand lhs = between.getOperand();
-            StaticOperand lower = between.getLowerBound(); // Current only a literal; therefore, no reference to selector
-            StaticOperand upper = between.getUpperBound(); // Current only a literal; therefore, no reference to selector
+            DynamicOperand lhs = between.operand();
+            StaticOperand lower = between.lowerBound(); // Current only a literal; therefore, no reference to selector
+            StaticOperand upper = between.upperBound(); // Current only a literal; therefore, no reference to selector
             DynamicOperand newLhs = replaceViewReferences(context, lhs, mapping, node);
             if (lhs == newLhs) return between;
             return new Between(newLhs, lower, upper, between.isLowerBoundIncluded(), between.isUpperBoundIncluded());
         }
         if (constraint instanceof Comparison) {
             Comparison comparison = (Comparison)constraint;
-            DynamicOperand lhs = comparison.getOperand1();
-            StaticOperand rhs = comparison.getOperand2(); // Current only a literal; therefore, no reference to selector
+            DynamicOperand lhs = comparison.operand1();
+            StaticOperand rhs = comparison.operand2(); // Current only a literal; therefore, no reference to selector
             DynamicOperand newLhs = replaceViewReferences(context, lhs, mapping, node);
             if (lhs == newLhs) return comparison;
-            return new Comparison(newLhs, comparison.getOperator(), rhs);
+            return new Comparison(newLhs, comparison.operator(), rhs);
         }
         return constraint;
     }
@@ -772,13 +771,13 @@ public class PlanUtil {
                                                         PlanNode node ) {
         if (operand instanceof ArithmeticOperand) {
             ArithmeticOperand arith = (ArithmeticOperand)operand;
-            DynamicOperand newLeft = replaceViewReferences(context, arith.getLeft(), mapping, node);
-            DynamicOperand newRight = replaceViewReferences(context, arith.getRight(), mapping, node);
-            return new ArithmeticOperand(newLeft, arith.getOperator(), newRight);
+            DynamicOperand newLeft = replaceViewReferences(context, arith.left(), mapping, node);
+            DynamicOperand newRight = replaceViewReferences(context, arith.right(), mapping, node);
+            return new ArithmeticOperand(newLeft, arith.operator(), newRight);
         }
         if (operand instanceof FullTextSearchScore) {
             FullTextSearchScore score = (FullTextSearchScore)operand;
-            if (!mapping.getOriginalName().equals(score.getSelectorName())) return score;
+            if (!mapping.getOriginalName().equals(score.selectorName())) return score;
             if (mapping.isMappedToSingleSelector()) {
                 return new FullTextSearchScore(mapping.getSingleMappedSelectorName());
             }
@@ -796,65 +795,65 @@ public class PlanUtil {
         }
         if (operand instanceof Length) {
             Length operation = (Length)operand;
-            return new Length((PropertyValue)replaceViewReferences(context, operation.getPropertyValue(), mapping, node));
+            return new Length((PropertyValue)replaceViewReferences(context, operation.propertyValue(), mapping, node));
         }
         if (operand instanceof LowerCase) {
             LowerCase operation = (LowerCase)operand;
-            return new LowerCase(replaceViewReferences(context, operation.getOperand(), mapping, node));
+            return new LowerCase(replaceViewReferences(context, operation.operand(), mapping, node));
         }
         if (operand instanceof UpperCase) {
             UpperCase operation = (UpperCase)operand;
-            return new UpperCase(replaceViewReferences(context, operation.getOperand(), mapping, node));
+            return new UpperCase(replaceViewReferences(context, operation.operand(), mapping, node));
         }
         if (operand instanceof NodeName) {
             NodeName name = (NodeName)operand;
-            if (!mapping.getOriginalName().equals(name.getSelectorName())) return name;
+            if (!mapping.getOriginalName().equals(name.selectorName())) return name;
             if (!mapping.isMappedToSingleSelector()) return name;
             node.addSelector(mapping.getSingleMappedSelectorName());
             return new NodeName(mapping.getSingleMappedSelectorName());
         }
         if (operand instanceof NodeLocalName) {
             NodeLocalName name = (NodeLocalName)operand;
-            if (!mapping.getOriginalName().equals(name.getSelectorName())) return name;
+            if (!mapping.getOriginalName().equals(name.selectorName())) return name;
             if (!mapping.isMappedToSingleSelector()) return name;
             node.addSelector(mapping.getSingleMappedSelectorName());
             return new NodeLocalName(mapping.getSingleMappedSelectorName());
         }
         if (operand instanceof PropertyValue) {
             PropertyValue value = (PropertyValue)operand;
-            if (!mapping.getOriginalName().equals(value.getSelectorName())) return value;
-            Column sourceColumn = mapping.getMappedColumn(value.getPropertyName());
+            if (!mapping.getOriginalName().equals(value.selectorName())) return value;
+            Column sourceColumn = mapping.getMappedColumn(value.propertyName());
             if (sourceColumn == null) {
                 if (mapping.getMappedSelectorNames().size() == 1) {
                     SelectorName newSelectorName = mapping.getSingleMappedSelectorName();
                     if (newSelectorName != null) {
                         node.addSelector(newSelectorName);
-                        return new PropertyValue(newSelectorName, value.getPropertyName());
+                        return new PropertyValue(newSelectorName, value.propertyName());
                     }
                 }
                 return value;
             }
-            node.addSelector(sourceColumn.getSelectorName());
-            return new PropertyValue(sourceColumn.getSelectorName(), sourceColumn.getPropertyName());
+            node.addSelector(sourceColumn.selectorName());
+            return new PropertyValue(sourceColumn.selectorName(), sourceColumn.propertyName());
         }
         if (operand instanceof ReferenceValue) {
             ReferenceValue value = (ReferenceValue)operand;
-            if (!mapping.getOriginalName().equals(value.getSelectorName())) return value;
-            Column sourceColumn = mapping.getMappedColumn(value.getPropertyName());
+            if (!mapping.getOriginalName().equals(value.selectorName())) return value;
+            Column sourceColumn = mapping.getMappedColumn(value.propertyName());
             if (sourceColumn == null) return value;
-            node.addSelector(sourceColumn.getSelectorName());
-            return new ReferenceValue(sourceColumn.getSelectorName(), sourceColumn.getPropertyName());
+            node.addSelector(sourceColumn.selectorName());
+            return new ReferenceValue(sourceColumn.selectorName(), sourceColumn.propertyName());
         }
         if (operand instanceof NodeDepth) {
             NodeDepth depth = (NodeDepth)operand;
-            if (!mapping.getOriginalName().equals(depth.getSelectorName())) return depth;
+            if (!mapping.getOriginalName().equals(depth.selectorName())) return depth;
             if (!mapping.isMappedToSingleSelector()) return depth;
             node.addSelector(mapping.getSingleMappedSelectorName());
             return new NodeDepth(mapping.getSingleMappedSelectorName());
         }
         if (operand instanceof NodePath) {
             NodePath path = (NodePath)operand;
-            if (!mapping.getOriginalName().equals(path.getSelectorName())) return path;
+            if (!mapping.getOriginalName().equals(path.selectorName())) return path;
             if (!mapping.isMappedToSingleSelector()) return path;
             node.addSelector(mapping.getSingleMappedSelectorName());
             return new NodePath(mapping.getSingleMappedSelectorName());
@@ -868,25 +867,25 @@ public class PlanUtil {
                                                        PlanNode node ) {
         if (joinCondition instanceof EquiJoinCondition) {
             EquiJoinCondition condition = (EquiJoinCondition)joinCondition;
-            SelectorName replacement1 = condition.getSelector1Name();
-            SelectorName replacement2 = condition.getSelector2Name();
-            String property1 = condition.getProperty1Name();
-            String property2 = condition.getProperty2Name();
+            SelectorName replacement1 = condition.selector1Name();
+            SelectorName replacement2 = condition.selector2Name();
+            String property1 = condition.property1Name();
+            String property2 = condition.property2Name();
             if (replacement1.equals(mapping.getOriginalName())) {
                 Column sourceColumn = mapping.getMappedColumn(property1);
                 if (sourceColumn != null) {
-                    replacement1 = sourceColumn.getSelectorName();
-                    property1 = sourceColumn.getPropertyName();
+                    replacement1 = sourceColumn.selectorName();
+                    property1 = sourceColumn.propertyName();
                 }
             }
             if (replacement2.equals(mapping.getOriginalName())) {
                 Column sourceColumn = mapping.getMappedColumn(property2);
                 if (sourceColumn != null) {
-                    replacement2 = sourceColumn.getSelectorName();
-                    property2 = sourceColumn.getPropertyName();
+                    replacement2 = sourceColumn.selectorName();
+                    property2 = sourceColumn.propertyName();
                 }
             }
-            if (replacement1 == condition.getSelector1Name() && replacement2 == condition.getSelector2Name()) return condition;
+            if (replacement1 == condition.selector1Name() && replacement2 == condition.selector2Name()) return condition;
             node.addSelector(replacement1, replacement2);
             return new EquiJoinCondition(replacement1, property1, replacement2, property2);
         }
@@ -899,32 +898,32 @@ public class PlanUtil {
 
         if (joinCondition instanceof SameNodeJoinCondition) {
             SameNodeJoinCondition condition = (SameNodeJoinCondition)joinCondition;
-            SelectorName replacement1 = condition.getSelector1Name();
-            SelectorName replacement2 = condition.getSelector2Name();
+            SelectorName replacement1 = condition.selector1Name();
+            SelectorName replacement2 = condition.selector2Name();
             if (replacement1.equals(viewName)) replacement1 = sourceName;
             if (replacement2.equals(viewName)) replacement2 = sourceName;
-            if (replacement1 == condition.getSelector1Name() && replacement2 == condition.getSelector2Name()) return condition;
+            if (replacement1 == condition.selector1Name() && replacement2 == condition.selector2Name()) return condition;
             node.addSelector(replacement1, replacement2);
-            if (condition.getSelector2Path() == null) return new SameNodeJoinCondition(replacement1, replacement2);
-            return new SameNodeJoinCondition(replacement1, replacement2, condition.getSelector2Path());
+            if (condition.selector2Path() == null) return new SameNodeJoinCondition(replacement1, replacement2);
+            return new SameNodeJoinCondition(replacement1, replacement2, condition.selector2Path());
         }
         if (joinCondition instanceof ChildNodeJoinCondition) {
             ChildNodeJoinCondition condition = (ChildNodeJoinCondition)joinCondition;
-            SelectorName childSelector = condition.getChildSelectorName();
-            SelectorName parentSelector = condition.getParentSelectorName();
+            SelectorName childSelector = condition.childSelectorName();
+            SelectorName parentSelector = condition.parentSelectorName();
             if (childSelector.equals(viewName)) childSelector = sourceName;
             if (parentSelector.equals(viewName)) parentSelector = sourceName;
-            if (childSelector == condition.getChildSelectorName() && parentSelector == condition.getParentSelectorName()) return condition;
+            if (childSelector == condition.childSelectorName() && parentSelector == condition.parentSelectorName()) return condition;
             node.addSelector(childSelector, parentSelector);
             return new ChildNodeJoinCondition(parentSelector, childSelector);
         }
         if (joinCondition instanceof DescendantNodeJoinCondition) {
             DescendantNodeJoinCondition condition = (DescendantNodeJoinCondition)joinCondition;
-            SelectorName ancestor = condition.getAncestorSelectorName();
-            SelectorName descendant = condition.getDescendantSelectorName();
+            SelectorName ancestor = condition.ancestorSelectorName();
+            SelectorName descendant = condition.descendantSelectorName();
             if (ancestor.equals(viewName)) ancestor = sourceName;
             if (descendant.equals(viewName)) descendant = sourceName;
-            if (ancestor == condition.getAncestorSelectorName() && descendant == condition.getDescendantSelectorName()) return condition;
+            if (ancestor == condition.ancestorSelectorName() && descendant == condition.descendantSelectorName()) return condition;
             node.addSelector(ancestor, descendant);
             return new ChildNodeJoinCondition(ancestor, descendant);
         }
@@ -993,11 +992,11 @@ public class PlanUtil {
         for (int i = 0; i != projectedColumns.size(); ++i) {
             Column projectedColumn = projectedColumns.get(i);
             Column projectedColumnInTable = projectedColumns.get(i).with(table.getName());
-            org.modeshape.graph.query.validate.Schemata.Column column = table.getColumn(projectedColumnInTable.getPropertyName());
+            org.modeshape.graph.query.validate.Schemata.Column column = table.getColumn(projectedColumnInTable.propertyName());
             mapping.map(column.getName(), projectedColumnInTable);
-            if (projectedColumn.getColumnName() != null) {
+            if (projectedColumn.columnName() != null) {
                 // The projected column has an alias, so add a mapping for it, too
-                mapping.map(projectedColumn.getColumnName(), projectedColumnInTable);
+                mapping.map(projectedColumn.columnName(), projectedColumnInTable);
             }
         }
         return mapping;
@@ -1018,7 +1017,7 @@ public class PlanUtil {
         public void map( String originalColumnName,
                          Column projectedColumn ) {
             mappedColumnsByOriginalColumnName.put(originalColumnName, projectedColumn);
-            mappedSelectorNames.add(projectedColumn.getSelectorName());
+            mappedSelectorNames.add(projectedColumn.selectorName());
         }
 
         public SelectorName getOriginalName() {

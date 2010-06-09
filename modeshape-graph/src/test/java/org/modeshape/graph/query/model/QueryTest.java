@@ -40,8 +40,8 @@ public class QueryTest extends AbstractQueryObjectTest {
     private Query query;
     private Source source;
     private Constraint constraint;
-    private List<Ordering> orderings;
-    private List<Column> columns;
+    private List<? extends Ordering> orderings;
+    private List<? extends Column> columns;
     private Limit limits;
     private boolean distinct;
 
@@ -68,10 +68,10 @@ public class QueryTest extends AbstractQueryObjectTest {
         columns = Collections.emptyList();
         limits = null;
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(query.getSource(), is(sameInstance(source)));
-        assertThat(query.getConstraint(), is(nullValue()));
-        assertThat(query.getOrderings(), is(sameInstance(orderings)));
-        assertThat(query.getColumns(), is(sameInstance(columns)));
+        assertThat(query.source(), is(sameInstance(source)));
+        assertThat(query.constraint(), is(nullValue()));
+        assertThat(query.orderings() == orderings, is(true));
+        assertThat(query.columns() == columns, is(true));
     }
 
     @Test
@@ -82,10 +82,10 @@ public class QueryTest extends AbstractQueryObjectTest {
         columns = Collections.emptyList();
         limits = null;
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(query.getSource(), is(sameInstance(source)));
-        assertThat(query.getConstraint(), is(sameInstance(constraint)));
-        assertThat(query.getOrderings().isEmpty(), is(true));
-        assertThat(query.getColumns(), is(sameInstance(columns)));
+        assertThat(query.source(), is(sameInstance(source)));
+        assertThat(query.constraint(), is(sameInstance(constraint)));
+        assertThat(query.orderings().isEmpty(), is(true));
+        assertThat(query.columns() == columns, is(true));
     }
 
     @Test
@@ -96,10 +96,10 @@ public class QueryTest extends AbstractQueryObjectTest {
         columns = null;
         limits = null;
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(query.getSource(), is(sameInstance(source)));
-        assertThat(query.getConstraint(), is(sameInstance(constraint)));
-        assertThat(query.getOrderings(), is(sameInstance(orderings)));
-        assertThat(query.getColumns().isEmpty(), is(true));
+        assertThat(query.source(), is(sameInstance(source)));
+        assertThat(query.constraint(), is(sameInstance(constraint)));
+        assertThat(query.orderings() == orderings, is(true));
+        assertThat(query.columns().isEmpty(), is(true));
     }
 
     @Test
@@ -110,10 +110,10 @@ public class QueryTest extends AbstractQueryObjectTest {
         columns = Collections.emptyList();
         limits = null;
         query = new Query(source, constraint, orderings, columns, limits, distinct);
-        assertThat(query.getSource(), is(sameInstance(source)));
-        assertThat(query.getConstraint(), is(sameInstance(constraint)));
-        assertThat(query.getOrderings(), is(sameInstance(orderings)));
-        assertThat(query.getColumns(), is(sameInstance(columns)));
+        assertThat(query.source(), is(sameInstance(source)));
+        assertThat(query.constraint(), is(sameInstance(constraint)));
+        assertThat(query.orderings() == orderings, is(true));
+        assertThat(query.columns() == columns, is(true));
     }
 
     @Test

@@ -100,6 +100,9 @@ import org.modeshape.graph.query.parse.QueryParsers;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.jcr.RepositoryQueryManager.PushDown;
 import org.modeshape.jcr.api.Repository;
+import org.modeshape.jcr.query.JcrQomQueryParser;
+import org.modeshape.jcr.query.JcrSql2QueryParser;
+import org.modeshape.jcr.query.JcrSqlQueryParser;
 import org.modeshape.jcr.xpath.XPathQueryParser;
 
 /**
@@ -432,6 +435,7 @@ public class JcrRepository implements Repository {
      * @throws IllegalArgumentException If <code>executionContext</code>, <code>connectionFactory</code>,
      *         <code>repositorySourceName</code>, or <code>repositoryObservable</code> is <code>null</code>.
      */
+    @SuppressWarnings( "deprecation" )
     JcrRepository( ExecutionContext executionContext,
                    RepositoryConnectionFactory connectionFactory,
                    String repositorySourceName,
@@ -512,8 +516,12 @@ public class JcrRepository implements Repository {
 
         // Set up the query parsers, which we have to have even though queries might be disabled ...
         this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(), new FullTextSearchParser(),
-                                             new JcrSqlQueryParser());
+                                             new JcrSqlQueryParser(), new JcrQomQueryParser());
         assert this.queryParsers.getParserFor(Query.XPATH) != null;
+        assert this.queryParsers.getParserFor(Query.SQL) != null;
+        assert this.queryParsers.getParserFor(Query.JCR_SQL2) != null;
+        assert this.queryParsers.getParserFor(Query.JCR_JQOM) != null;
+        assert this.queryParsers.getParserFor(QueryLanguage.SEARCH) != null;
 
         this.systemWorkspaceName = systemWorkspaceName;
         this.systemSourceName = systemSourceName;
@@ -1217,6 +1225,7 @@ public class JcrRepository implements Repository {
      * @param customDescriptors the custom descriptors; may be null
      * @return the custom descriptors (if any) combined with the default repository descriptors; never null or empty
      */
+    @SuppressWarnings( "deprecation" )
     private static Map<String, Object> initializeDescriptors( ValueFactories factories,
                                                               Map<String, String> customDescriptors ) {
         if (customDescriptors == null) customDescriptors = Collections.emptyMap();
@@ -1268,11 +1277,12 @@ public class JcrRepository implements Repository {
         repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_MULTIPLE_BINARY_PROPERTIES_SUPPORTED, valueFor(factories, true));
         repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_VALUE_CONSTRAINTS_SUPPORTED, valueFor(factories, true));
         repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_UPDATE_IN_USE_SUPORTED, valueFor(factories, false));
-        repoDescriptors.put(Repository.QUERY_LANGUAGES, new JcrValue[] {valueFor(factories, Query.XPATH),
-            valueFor(factories, JcrSql2QueryParser.LANGUAGE), valueFor(factories, Query.SQL)});
+        repoDescriptors.put(Repository.QUERY_LANGUAGES,
+                            new JcrValue[] {valueFor(factories, Query.XPATH), valueFor(factories, JcrSql2QueryParser.LANGUAGE),
+                                valueFor(factories, Query.SQL), valueFor(factories, Query.JCR_JQOM)});
         repoDescriptors.put(Repository.QUERY_STORED_QUERIES_SUPPORTED, valueFor(factories, true));
         repoDescriptors.put(Repository.QUERY_FULL_TEXT_SEARCH_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.QUERY_JOINS, valueFor(factories, Repository.QUERY_JOINS_INNER));
+        repoDescriptors.put(Repository.QUERY_JOINS, valueFor(factories, Repository.QUERY_JOINS_INNER_OUTER));
         repoDescriptors.put(Repository.SPEC_NAME_DESC, valueFor(factories, JcrI18n.SPEC_NAME_DESC.text()));
         repoDescriptors.put(Repository.SPEC_VERSION_DESC, valueFor(factories, "1.0"));
 

@@ -1010,7 +1010,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
             for (SelectorName symbol : selectors) {
                 if (first) first = false;
                 else str.append(',');
-                str.append(symbol.getName());
+                str.append(symbol.name());
             }
             str.append(']');
         }

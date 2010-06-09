@@ -70,7 +70,7 @@ public class Limit implements LanguageObject {
      * 
      * @return the offset; always 0 or a positive number
      */
-    public final int getOffset() {
+    public final int offset() {
         return offset;
     }
 
@@ -79,7 +79,7 @@ public class Limit implements LanguageObject {
      * 
      * @return the maximum number of rows; always positive, or equal to {@link Integer#MAX_VALUE} if there is no limit
      */
-    public final int getRowLimit() {
+    public final int rowLimit() {
         return rowLimit;
     }
 

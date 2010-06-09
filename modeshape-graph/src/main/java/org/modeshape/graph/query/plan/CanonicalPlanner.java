@@ -122,16 +122,16 @@ public class CanonicalPlanner implements Planner {
 
         // Process the source of the query ...
         Map<SelectorName, Table> usedSources = new HashMap<SelectorName, Table>();
-        plan = createPlanNode(context, query.getSource(), usedSources);
+        plan = createPlanNode(context, query.source(), usedSources);
 
         // Attach criteria (on top) ...
-        plan = attachCriteria(context, plan, query.getConstraint());
+        plan = attachCriteria(context, plan, query.constraint());
 
         // Attach groupbys (on top) ...
         // plan = attachGrouping(context,plan,query.getGroupBy());
 
         // Attach the project ...
-        plan = attachProject(context, plan, query.getColumns(), usedSources);
+        plan = attachProject(context, plan, query.columns(), usedSources);
 
         // Attach duplicate removal ...
         if (query.isDistinct()) {
@@ -139,8 +139,8 @@ public class CanonicalPlanner implements Planner {
         }
 
         // Process the orderings and limits ...
-        plan = attachSorting(context, plan, query.getOrderings());
-        plan = attachLimits(context, plan, query.getLimits());
+        plan = attachSorting(context, plan, query.orderings());
+        plan = attachLimits(context, plan, query.limits());
 
         // Validate that all the parts of the query are resolvable ...
         validate(context, query, usedSources);
@@ -172,18 +172,18 @@ public class CanonicalPlanner implements Planner {
     protected PlanNode createCanonicalPlan( QueryContext context,
                                             SetQuery query ) {
         // Process the left and right parts of the query ...
-        PlanNode left = createPlan(context, query.getLeft());
-        PlanNode right = createPlan(context, query.getRight());
+        PlanNode left = createPlan(context, query.left());
+        PlanNode right = createPlan(context, query.right());
 
         // Wrap in a set operation node ...
         PlanNode plan = new PlanNode(Type.SET_OPERATION);
         plan.addChildren(left, right);
-        plan.setProperty(Property.SET_OPERATION, query.getOperation());
+        plan.setProperty(Property.SET_OPERATION, query.operation());
         plan.setProperty(Property.SET_USE_ALL, query.isAll());
 
         // Process the orderings and limits ...
-        plan = attachSorting(context, plan, query.getOrderings());
-        plan = attachLimits(context, plan, query.getLimits());
+        plan = attachSorting(context, plan, query.orderings());
+        plan = attachLimits(context, plan, query.limits());
         return plan;
     }
 
@@ -204,23 +204,23 @@ public class CanonicalPlanner implements Planner {
             Selector selector = (Selector)source;
             PlanNode node = new PlanNode(Type.SOURCE);
             if (selector.hasAlias()) {
-                node.addSelector(selector.getAlias());
-                node.setProperty(Property.SOURCE_ALIAS, selector.getAlias());
-                node.setProperty(Property.SOURCE_NAME, selector.getName());
+                node.addSelector(selector.alias());
+                node.setProperty(Property.SOURCE_ALIAS, selector.alias());
+                node.setProperty(Property.SOURCE_NAME, selector.name());
             } else {
-                node.addSelector(selector.getName());
-                node.setProperty(Property.SOURCE_NAME, selector.getName());
+                node.addSelector(selector.name());
+                node.setProperty(Property.SOURCE_NAME, selector.name());
             }
             // Validate the source name and set the available columns ...
-            Table table = context.getSchemata().getTable(selector.getName());
+            Table table = context.getSchemata().getTable(selector.name());
             if (table != null) {
                 if (table instanceof View) context.getHints().hasView = true;
-                if (usedSelectors.put(selector.getAliasOrName(), table) != null) {
+                if (usedSelectors.put(selector.aliasOrName(), table) != null) {
                     // There was already a table with this alias or name ...
                 }
                 node.setProperty(Property.SOURCE_COLUMNS, table.getColumns());
             } else {
-                context.getProblems().addError(GraphI18n.tableDoesNotExist, selector.getName());
+                context.getProblems().addError(GraphI18n.tableDoesNotExist, selector.name());
             }
             return node;
         }
@@ -228,17 +228,17 @@ public class CanonicalPlanner implements Planner {
             Join join = (Join)source;
             // Set up new join node corresponding to this join predicate
             PlanNode node = new PlanNode(Type.JOIN);
-            node.setProperty(Property.JOIN_TYPE, join.getType());
+            node.setProperty(Property.JOIN_TYPE, join.type());
             node.setProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.NESTED_LOOP);
-            node.setProperty(Property.JOIN_CONDITION, join.getJoinCondition());
+            node.setProperty(Property.JOIN_CONDITION, join.joinCondition());
 
             context.getHints().hasJoin = true;
-            if (join.getType() == JoinType.LEFT_OUTER) {
+            if (join.type() == JoinType.LEFT_OUTER) {
                 context.getHints().hasOptionalJoin = true;
             }
 
             // Handle each child
-            Source[] clauses = new Source[] {join.getLeft(), join.getRight()};
+            Source[] clauses = new Source[] {join.left(), join.right()};
             for (int i = 0; i < 2; i++) {
                 PlanNode sourceNode = createPlanNode(context, clauses[i], usedSelectors);
                 node.addLastChild(sourceNode);
@@ -313,8 +313,8 @@ public class CanonicalPlanner implements Planner {
         assert andableConstraints != null;
         if (constraint instanceof And) {
             And and = (And)constraint;
-            separateAndConstraints(and.getLeft(), andableConstraints);
-            separateAndConstraints(and.getRight(), andableConstraints);
+            separateAndConstraints(and.left(), andableConstraints);
+            separateAndConstraints(and.right(), andableConstraints);
         } else {
             andableConstraints.add(constraint);
         }
@@ -330,7 +330,7 @@ public class CanonicalPlanner implements Planner {
      */
     protected PlanNode attachSorting( QueryContext context,
                                       PlanNode plan,
-                                      List<Ordering> orderings ) {
+                                      List<? extends Ordering> orderings ) {
         if (orderings.isEmpty()) return plan;
         PlanNode sortNode = new PlanNode(Type.SORT);
 
@@ -360,12 +360,12 @@ public class CanonicalPlanner implements Planner {
         PlanNode limitNode = new PlanNode(Type.LIMIT);
 
         boolean attach = false;
-        if (limit.getOffset() != 0) {
-            limitNode.setProperty(Property.LIMIT_OFFSET, limit.getOffset());
+        if (limit.offset() != 0) {
+            limitNode.setProperty(Property.LIMIT_OFFSET, limit.offset());
             attach = true;
         }
         if (!limit.isUnlimited()) {
-            limitNode.setProperty(Property.LIMIT_COUNT, limit.getRowLimit());
+            limitNode.setProperty(Property.LIMIT_COUNT, limit.rowLimit());
             attach = true;
         }
         if (attach) {
@@ -386,13 +386,13 @@ public class CanonicalPlanner implements Planner {
      */
     protected PlanNode attachProject( QueryContext context,
                                       PlanNode plan,
-                                      List<Column> columns,
+                                      List<? extends Column> columns,
                                       Map<SelectorName, Table> selectors ) {
         if (columns == null) columns = Collections.emptyList();
         PlanNode projectNode = new PlanNode(Type.PROJECT);
 
         if (columns.isEmpty()) {
-            columns = new LinkedList<Column>();
+            List<Column> newColumns = new LinkedList<Column>();
             // SELECT *, so find all of the columns that are available from all the sources ...
             for (Map.Entry<SelectorName, Table> entry : selectors.entrySet()) {
                 SelectorName tableName = entry.getKey();
@@ -403,13 +403,15 @@ public class CanonicalPlanner implements Planner {
                 for (Schemata.Column column : table.getColumns()) {
                     String columnName = column.getName();
                     String propertyName = columnName;
-                    columns.add(new Column(tableName, propertyName, columnName));
+                    Column newColumn = new Column(tableName, propertyName, columnName);
+                    newColumns.add(newColumn);
                 }
             }
+            columns = newColumns;
         } else {
             // Add the selector used by each column ...
             for (Column column : columns) {
-                SelectorName tableName = column.getSelectorName();
+                SelectorName tableName = column.selectorName();
                 // Add the selector that is being used ...
                 projectNode.addSelector(tableName);
 
@@ -419,7 +421,7 @@ public class CanonicalPlanner implements Planner {
                     context.getProblems().addError(GraphI18n.tableDoesNotExist, tableName);
                 } else {
                     // Make sure that the column is in the table ...
-                    String columnName = column.getPropertyName();
+                    String columnName = column.propertyName();
                     String name = columnName;
                     if (table.getColumn(name) == null && context.getHints().validateColumnExistance) {
                         context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable, name, tableName);

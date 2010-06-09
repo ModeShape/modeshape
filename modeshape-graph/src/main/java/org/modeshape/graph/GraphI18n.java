@@ -179,6 +179,7 @@ public final class GraphI18n {
     public static I18n expectingLiteralAndUnableToParseAsDouble;
     public static I18n expectingLiteralAndUnableToParseAsDate;
     public static I18n unexpectedClosingParenthesis;
+    public static I18n leftAndRightQueriesInSetQueryMustHaveUnionableColumns;
 
     /* Search */
     public static I18n interruptedWhileClosingChannel;

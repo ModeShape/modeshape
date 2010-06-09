@@ -39,7 +39,7 @@ public enum JoinType implements Readable {
     static {
         Map<String, JoinType> typesBySymbol = new HashMap<String, JoinType>();
         for (JoinType type : JoinType.values()) {
-            typesBySymbol.put(type.getSymbol().toUpperCase(), type);
+            typesBySymbol.put(type.symbol().toUpperCase(), type);
         }
         TYPE_BY_SYMBOL = Collections.unmodifiableMap(typesBySymbol);
     }
@@ -53,7 +53,7 @@ public enum JoinType implements Readable {
     /**
      * @return symbol
      */
-    public String getSymbol() {
+    public String symbol() {
         return symbol;
     }
 
@@ -94,6 +94,6 @@ public enum JoinType implements Readable {
      * @see org.modeshape.graph.query.model.Readable#getString()
      */
     public String getString() {
-        return getSymbol();
+        return symbol();
     }
 }

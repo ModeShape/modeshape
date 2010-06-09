@@ -31,7 +31,7 @@ import org.modeshape.common.util.HashCode;
  * A join condition that evaluates to true only when the named child node is indeed a child of the named parent node.
  */
 @Immutable
-public class ChildNodeJoinCondition extends JoinCondition {
+public class ChildNodeJoinCondition implements JoinCondition {
     private static final long serialVersionUID = 1L;
 
     private final SelectorName childSelectorName;
@@ -59,7 +59,7 @@ public class ChildNodeJoinCondition extends JoinCondition {
      * 
      * @return the selector name of the child node; never null
      */
-    public final SelectorName getChildSelectorName() {
+    public final SelectorName childSelectorName() {
         return childSelectorName;
     }
 
@@ -68,7 +68,7 @@ public class ChildNodeJoinCondition extends JoinCondition {
      * 
      * @return the selector name of the parent node; never null
      */
-    public final SelectorName getParentSelectorName() {
+    public final SelectorName parentSelectorName() {
         return parentSelectorName;
     }
 

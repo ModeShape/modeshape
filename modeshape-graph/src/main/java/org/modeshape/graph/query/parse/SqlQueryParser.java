@@ -534,7 +534,7 @@ public class SqlQueryParser implements QueryParser {
         Source source = parseFrom(tokens, typeSystem);
         Constraint constraint = parseWhere(tokens, typeSystem, source);
         // Parse the order by and limit (can be in any order) ...
-        List<Ordering> orderings = parseOrderBy(tokens, typeSystem, source);
+        List<? extends Ordering> orderings = parseOrderBy(tokens, typeSystem, source);
         Limit limit = parseLimit(tokens);
         if (orderings == null) parseOrderBy(tokens, typeSystem, source);
 
@@ -545,17 +545,17 @@ public class SqlQueryParser implements QueryParser {
             String propertyName = expression.getPropertyName();
             if (selectorName == null) {
                 if (source instanceof Selector) {
-                    selectorName = ((Selector)source).getName();
+                    selectorName = ((Selector)source).name();
                 } else {
                     Position pos = expression.getPosition();
                     String msg = GraphI18n.mustBeScopedAtLineAndColumn.text(expression, pos.getLine(), pos.getColumn());
                     throw new ParsingException(pos, msg);
                 }
             }
-            columns.add(new Column(selectorName, propertyName, expression.getColumnName()));
+            columns.add(column(selectorName, propertyName, expression.getColumnName()));
         }
         // Now create the query ...
-        return new Query(source, constraint, orderings, columns, limit, isDistinct.get());
+        return query(source, constraint, orderings, columns, limit, isDistinct.get());
     }
 
     protected SetQuery parseSetQuery( TokenStream tokens,
@@ -573,7 +573,7 @@ public class SqlQueryParser implements QueryParser {
         boolean all = tokens.canConsume("ALL");
         // Parse the next select
         QueryCommand rightQuery = parseQuery(tokens, typeSystem);
-        return new SetQuery(leftHandSide, operation, rightQuery, all);
+        return setQuery(leftHandSide, operation, rightQuery, all);
     }
 
     protected List<ColumnExpression> parseSelect( TokenStream tokens,
@@ -626,7 +626,7 @@ public class SqlQueryParser implements QueryParser {
             // Read the join condition ...
             JoinCondition joinCondition = parseJoinCondition(tokens, typeSystem);
             // Create the join ...
-            source = new Join(source, joinType, right, joinCondition);
+            source = join(source, joinType, right, joinCondition);
         }
         return source;
     }
@@ -641,24 +641,24 @@ public class SqlQueryParser implements QueryParser {
             if (tokens.canConsume('.')) {
                 String path = parsePath(tokens, typeSystem);
                 tokens.consume(')');
-                return new SameNodeJoinCondition(selector1Name, selector2Name, path);
+                return sameNodeJoinCondition(selector1Name, selector2Name, path);
             }
             tokens.consume(')');
-            return new SameNodeJoinCondition(selector1Name, selector2Name);
+            return sameNodeJoinCondition(selector1Name, selector2Name);
         }
         if (tokens.canConsume("ISCHILDNODE", "(")) {
             SelectorName child = parseSelectorName(tokens, typeSystem);
             tokens.consume(',');
             SelectorName parent = parseSelectorName(tokens, typeSystem);
             tokens.consume(')');
-            return new ChildNodeJoinCondition(parent, child);
+            return childNodeJoinCondition(parent, child);
         }
         if (tokens.canConsume("ISDESCENDANTNODE", "(")) {
             SelectorName descendant = parseSelectorName(tokens, typeSystem);
             tokens.consume(',');
             SelectorName ancestor = parseSelectorName(tokens, typeSystem);
             tokens.consume(')');
-            return new DescendantNodeJoinCondition(ancestor, descendant);
+            return descendantNodeJoinCondition(ancestor, descendant);
         }
         SelectorName selector1 = parseSelectorName(tokens, typeSystem);
         tokens.consume('.');
@@ -667,7 +667,7 @@ public class SqlQueryParser implements QueryParser {
         SelectorName selector2 = parseSelectorName(tokens, typeSystem);
         tokens.consume('.');
         String property2 = parseName(tokens, typeSystem);
-        return new EquiJoinCondition(selector1, property1, selector2, property2);
+        return equiJoinCondition(selector1, property1, selector2, property2);
     }
 
     protected Constraint parseWhere( TokenStream tokens,
@@ -689,7 +689,7 @@ public class SqlQueryParser implements QueryParser {
             tokens.consume(")");
         } else if (tokens.canConsume("NOT")) {
             tokens.canConsume('(');
-            constraint = new Not(parseConstraint(tokens, typeSystem, source));
+            constraint = not(parseConstraint(tokens, typeSystem, source));
             tokens.canConsume(')');
         } else if (tokens.canConsume("CONTAINS", "(")) {
             // Either 'selectorName.propertyName', or 'selectorName.*' or 'propertyName' ...
@@ -706,7 +706,7 @@ public class SqlQueryParser implements QueryParser {
                     String msg = GraphI18n.functionIsAmbiguous.text("CONTAINS()", pos.getLine(), pos.getColumn());
                     throw new ParsingException(pos, msg);
                 }
-                selectorName = ((Selector)source).getName();
+                selectorName = ((Selector)source).name();
                 propertyName = first;
             }
             tokens.consume(',');
@@ -715,7 +715,7 @@ public class SqlQueryParser implements QueryParser {
             String expression = removeBracketsAndQuotes(tokens.consume());
             Term term = parseFullTextSearchExpression(expression, tokens.previousPosition());
             tokens.consume(")");
-            constraint = new FullTextSearch(selectorName, propertyName, expression, term);
+            constraint = fullTextSearch(selectorName, propertyName, expression, term);
         } else if (tokens.canConsume("ISSAMENODE", "(")) {
             SelectorName selectorName = null;
             if (tokens.matches(ANY_VALUE, ")")) {
@@ -723,14 +723,14 @@ public class SqlQueryParser implements QueryParser {
                     String msg = GraphI18n.functionIsAmbiguous.text("ISSAMENODE()", pos.getLine(), pos.getColumn());
                     throw new ParsingException(pos, msg);
                 }
-                selectorName = ((Selector)source).getName();
+                selectorName = ((Selector)source).name();
             } else {
                 selectorName = parseSelectorName(tokens, typeSystem);
                 tokens.consume(',');
             }
             String path = parsePath(tokens, typeSystem);
             tokens.consume(')');
-            constraint = new SameNode(selectorName, path);
+            constraint = sameNode(selectorName, path);
         } else if (tokens.canConsume("ISCHILDNODE", "(")) {
             SelectorName selectorName = null;
             if (tokens.matches(ANY_VALUE, ")")) {
@@ -738,14 +738,14 @@ public class SqlQueryParser implements QueryParser {
                     String msg = GraphI18n.functionIsAmbiguous.text("ISCHILDNODE()", pos.getLine(), pos.getColumn());
                     throw new ParsingException(pos, msg);
                 }
-                selectorName = ((Selector)source).getName();
+                selectorName = ((Selector)source).name();
             } else {
                 selectorName = parseSelectorName(tokens, typeSystem);
                 tokens.consume(',');
             }
             String path = parsePath(tokens, typeSystem);
             tokens.consume(')');
-            constraint = new ChildNode(selectorName, path);
+            constraint = childNode(selectorName, path);
         } else if (tokens.canConsume("ISDESCENDANTNODE", "(")) {
             SelectorName selectorName = null;
             if (tokens.matches(ANY_VALUE, ")")) {
@@ -753,14 +753,14 @@ public class SqlQueryParser implements QueryParser {
                     String msg = GraphI18n.functionIsAmbiguous.text("ISDESCENDANTNODE()", pos.getLine(), pos.getColumn());
                     throw new ParsingException(pos, msg);
                 }
-                selectorName = ((Selector)source).getName();
+                selectorName = ((Selector)source).name();
             } else {
                 selectorName = parseSelectorName(tokens, typeSystem);
                 tokens.consume(',');
             }
             String path = parsePath(tokens, typeSystem);
             tokens.consume(')');
-            constraint = new DescendantNode(selectorName, path);
+            constraint = descendantNode(selectorName, path);
         } else {
             // First try a property existance ...
             Position pos2 = tokens.nextPosition();
@@ -771,7 +771,7 @@ public class SqlQueryParser implements QueryParser {
                 if (left != null) {
                     if (tokens.matches('(') && left instanceof PropertyValue) {
                         // This was probably a bad function that we parsed as the start of a dynamic operation ...
-                        String name = ((PropertyValue)left).getPropertyName(); // this may be the function name
+                        String name = ((PropertyValue)left).propertyName(); // this may be the function name
                         String msg = GraphI18n.expectingConstraintCondition.text(name, pos2.getLine(), pos2.getColumn());
                         throw new ParsingException(pos, msg);
                     }
@@ -779,7 +779,7 @@ public class SqlQueryParser implements QueryParser {
                         boolean not = tokens.canConsume("NOT");
                         Collection<StaticOperand> staticOperands = parseInClause(tokens, typeSystem);
                         constraint = new SetCriteria(left, staticOperands);
-                        if (not) constraint = new Not(constraint);
+                        if (not) constraint = not(constraint);
                     } else if (tokens.matches("BETWEEN") || tokens.matches("NOT", "BETWEEN")) {
                         boolean not = tokens.canConsume("NOT");
                         tokens.consume("BETWEEN");
@@ -789,11 +789,11 @@ public class SqlQueryParser implements QueryParser {
                         StaticOperand upperBound = parseStaticOperand(tokens, typeSystem);
                         boolean upperInclusive = !tokens.canConsume("EXCLUSIVE");
                         constraint = new Between(left, lowerBound, upperBound, lowerInclusive, upperInclusive);
-                        if (not) constraint = new Not(constraint);
+                        if (not) constraint = not(constraint);
                     } else {
                         Operator operator = parseComparisonOperator(tokens);
                         StaticOperand right = parseStaticOperand(tokens, typeSystem);
-                        constraint = new Comparison(left, operator, right);
+                        constraint = comparison(left, operator, right);
                     }
                 }
                 // else continue ...
@@ -806,11 +806,11 @@ public class SqlQueryParser implements QueryParser {
         // AND has higher precedence than OR, so we need to evaluate it first ...
         while (tokens.canConsume("AND")) {
             Constraint rhs = parseConstraint(tokens, typeSystem, source);
-            if (rhs != null) constraint = new And(constraint, rhs);
+            if (rhs != null) constraint = and(constraint, rhs);
         }
         while (tokens.canConsume("OR")) {
             Constraint rhs = parseConstraint(tokens, typeSystem, source);
-            if (rhs != null) constraint = new Or(constraint, rhs);
+            if (rhs != null) constraint = or(constraint, rhs);
         }
         return constraint;
     }
@@ -875,7 +875,7 @@ public class SqlQueryParser implements QueryParser {
         Order order = Order.ASCENDING;
         if (tokens.canConsume("DESC")) order = Order.DESCENDING;
         if (tokens.canConsume("ASC")) order = Order.ASCENDING;
-        return new Ordering(operand, order);
+        return ordering(operand, order);
     }
 
     protected Constraint parsePropertyExistance( TokenStream tokens,
@@ -898,14 +898,14 @@ public class SqlQueryParser implements QueryParser {
                     String msg = GraphI18n.mustBeScopedAtLineAndColumn.text(firstWord, pos.getLine(), pos.getColumn());
                     throw new ParsingException(pos, msg);
                 }
-                selectorName = ((Selector)source).getName();
+                selectorName = ((Selector)source).name();
                 propertyName = firstWord;
             }
             if (tokens.canConsume("IS", "NOT", "NULL")) {
-                return new PropertyExistence(selectorName, propertyName);
+                return propertyExistence(selectorName, propertyName);
             }
             tokens.consume("IS", "NULL");
-            return new Not(new PropertyExistence(selectorName, propertyName));
+            return not(propertyExistence(selectorName, propertyName));
         }
         return null;
     }
@@ -920,7 +920,7 @@ public class SqlQueryParser implements QueryParser {
                 String msg = GraphI18n.bindVariableMustConformToNcName.text(value, pos.getLine(), pos.getColumn());
                 throw new ParsingException(pos, msg);
             }
-            return new BindVariableName(value);
+            return bindVariableName(value);
         }
         return parseLiteral(tokens, typeSystem);
     }
@@ -944,7 +944,7 @@ public class SqlQueryParser implements QueryParser {
             tokens.consume(')');
             try {
                 Object literal = typeFactory.create(value);
-                return new Literal(literal);
+                return literal(typeSystem, literal);
             } catch (ValueFormatException e) {
                 String msg = GraphI18n.valueCannotBeCastToSpecifiedType.text(value,
                                                                              pos.getLine(),
@@ -955,7 +955,7 @@ public class SqlQueryParser implements QueryParser {
             }
         }
         // Just create a literal out of the supplied value ...
-        return new Literal(parseLiteralValue(tokens, typeSystem));
+        return literal(typeSystem, parseLiteralValue(tokens, typeSystem));
     }
 
     protected String parseLiteralValue( TokenStream tokens,
@@ -1067,63 +1067,63 @@ public class SqlQueryParser implements QueryParser {
             result = parseDynamicOperand(tokens, typeSystem, source);
             tokens.consume(")");
         } else if (tokens.canConsume("LENGTH", "(")) {
-            result = new Length(parsePropertyValue(tokens, typeSystem, source));
+            result = length(parsePropertyValue(tokens, typeSystem, source));
             tokens.consume(")");
         } else if (tokens.canConsume("LOWER", "(")) {
-            result = new LowerCase(parseDynamicOperand(tokens, typeSystem, source));
+            result = lowerCase(parseDynamicOperand(tokens, typeSystem, source));
             tokens.consume(")");
         } else if (tokens.canConsume("UPPER", "(")) {
-            result = new UpperCase(parseDynamicOperand(tokens, typeSystem, source));
+            result = upperCase(parseDynamicOperand(tokens, typeSystem, source));
             tokens.consume(")");
         } else if (tokens.canConsume("NAME", "(")) {
             if (tokens.canConsume(")")) {
                 if (source instanceof Selector) {
-                    return new NodeName(((Selector)source).getName());
+                    return new NodeName(((Selector)source).name());
                 }
                 String msg = GraphI18n.functionIsAmbiguous.text("NAME()", pos.getLine(), pos.getColumn());
                 throw new ParsingException(pos, msg);
             }
-            result = new NodeName(parseSelectorName(tokens, typeSystem));
+            result = nodeName(parseSelectorName(tokens, typeSystem));
             tokens.consume(")");
         } else if (tokens.canConsume("LOCALNAME", "(")) {
             if (tokens.canConsume(")")) {
                 if (source instanceof Selector) {
-                    return new NodeLocalName(((Selector)source).getName());
+                    return nodeLocalName(((Selector)source).name());
                 }
                 String msg = GraphI18n.functionIsAmbiguous.text("LOCALNAME()", pos.getLine(), pos.getColumn());
                 throw new ParsingException(pos, msg);
             }
-            result = new NodeLocalName(parseSelectorName(tokens, typeSystem));
+            result = nodeLocalName(parseSelectorName(tokens, typeSystem));
             tokens.consume(")");
         } else if (tokens.canConsume("SCORE", "(")) {
             if (tokens.canConsume(")")) {
                 if (source instanceof Selector) {
-                    return new FullTextSearchScore(((Selector)source).getName());
+                    return fullTextSearchScore(((Selector)source).name());
                 }
                 String msg = GraphI18n.functionIsAmbiguous.text("SCORE()", pos.getLine(), pos.getColumn());
                 throw new ParsingException(pos, msg);
             }
-            result = new FullTextSearchScore(parseSelectorName(tokens, typeSystem));
+            result = fullTextSearchScore(parseSelectorName(tokens, typeSystem));
             tokens.consume(")");
         } else if (tokens.canConsume("DEPTH", "(")) {
             if (tokens.canConsume(")")) {
                 if (source instanceof Selector) {
-                    return new NodeDepth(((Selector)source).getName());
+                    return nodeDepth(((Selector)source).name());
                 }
                 String msg = GraphI18n.functionIsAmbiguous.text("DEPTH()", pos.getLine(), pos.getColumn());
                 throw new ParsingException(pos, msg);
             }
-            result = new NodeDepth(parseSelectorName(tokens, typeSystem));
+            result = nodeDepth(parseSelectorName(tokens, typeSystem));
             tokens.consume(")");
         } else if (tokens.canConsume("PATH", "(")) {
             if (tokens.canConsume(")")) {
                 if (source instanceof Selector) {
-                    return new NodePath(((Selector)source).getName());
+                    return nodePath(((Selector)source).name());
                 }
                 String msg = GraphI18n.functionIsAmbiguous.text("PATH()", pos.getLine(), pos.getColumn());
                 throw new ParsingException(pos, msg);
             }
-            result = new NodePath(parseSelectorName(tokens, typeSystem));
+            result = nodePath(parseSelectorName(tokens, typeSystem));
             tokens.consume(")");
         } else if (tokens.canConsume("REFERENCE", "(")) {
             result = parseReferenceValue(tokens, typeSystem, source);
@@ -1146,25 +1146,25 @@ public class SqlQueryParser implements QueryParser {
             if (tokens.matches('(')) {
                 // Don't use precendence, but instead use the next DynamicOperand as the RHS ...
                 DynamicOperand right = parseDynamicOperand(tokens, typeSystem, source);
-                result = new ArithmeticOperand(result, arithmeticOperator, right);
+                result = arithmeticOperand(result, arithmeticOperator, right);
             } else {
                 // There is no parenthesis, so use operator precedence ...
                 DynamicOperand right = parseDynamicOperand(tokens, typeSystem, source);
                 if (right instanceof ArithmeticOperand) {
                     // But the RHS is an arithmetic operand, so we need to use operator precedence ...
                     ArithmeticOperand arithRhs = (ArithmeticOperand)right;
-                    ArithmeticOperator rhsOperator = arithRhs.getOperator();
+                    ArithmeticOperator rhsOperator = arithRhs.operator();
                     if (arithmeticOperator.precedes(rhsOperator)) {
                         // This operand's operator does take precedence, so this must be computed before working with the RHS ...
-                        DynamicOperand newRhs = arithRhs.getRight();
-                        DynamicOperand newLhs = new ArithmeticOperand(result, arithmeticOperator, arithRhs.getLeft());
-                        result = new ArithmeticOperand(newLhs, rhsOperator, newRhs);
+                        DynamicOperand newRhs = arithRhs.right();
+                        DynamicOperand newLhs = new ArithmeticOperand(result, arithmeticOperator, arithRhs.left());
+                        result = arithmeticOperand(newLhs, rhsOperator, newRhs);
                     } else {
-                        result = new ArithmeticOperand(result, arithmeticOperator, right);
+                        result = arithmeticOperand(result, arithmeticOperator, right);
                     }
                 } else {
                     // The RHS is just another DynamicOperand ...
-                    result = new ArithmeticOperand(result, arithmeticOperator, right);
+                    result = arithmeticOperand(result, arithmeticOperator, right);
                 }
             }
         }
@@ -1181,12 +1181,12 @@ public class SqlQueryParser implements QueryParser {
             // We actually read the selector name, so now read the property name ...
             selectorName = new SelectorName(firstWord);
             String propertyName = parseName(tokens, typeSystem);
-            return new PropertyValue(selectorName, propertyName);
+            return propertyValue(selectorName, propertyName);
         }
         // Otherwise the source should be a single named selector
         if (source instanceof Selector) {
-            selectorName = ((Selector)source).getAliasOrName();
-            return new PropertyValue(selectorName, firstWord);
+            selectorName = ((Selector)source).aliasOrName();
+            return propertyValue(selectorName, firstWord);
         }
         String msg = GraphI18n.mustBeScopedAtLineAndColumn.text(firstWord, pos.getLine(), pos.getColumn());
         throw new ParsingException(pos, msg);
@@ -1200,8 +1200,8 @@ public class SqlQueryParser implements QueryParser {
         if (tokens.canConsume(')')) {
             // There should be a single source ...
             if (source instanceof Selector) {
-                selectorName = ((Selector)source).getAliasOrName();
-                return new ReferenceValue(selectorName);
+                selectorName = ((Selector)source).aliasOrName();
+                return referenceValue(selectorName);
             }
             String msg = GraphI18n.functionIsAmbiguous.text("REFERENCE()", pos.getLine(), pos.getColumn());
             throw new ParsingException(pos, msg);
@@ -1212,7 +1212,7 @@ public class SqlQueryParser implements QueryParser {
             // We actually read the selector name, so now read the property name ...
             selectorName = new SelectorName(firstWord);
             String propertyName = parseName(tokens, typeSystem);
-            return new ReferenceValue(selectorName, propertyName);
+            return referenceValue(selectorName, propertyName);
         }
         tokens.consume(")");
         // The name may be a selector name, or it may be a property name on the default selector.
@@ -1221,16 +1221,16 @@ public class SqlQueryParser implements QueryParser {
             Selector selector = (Selector)source;
             // and the selector name matches ...
             selectorName = new SelectorName(firstWord);
-            if (selectorName.equals(selector.getName()) || (selector.hasAlias() && selectorName.equals(selector.getAlias()))) {
+            if (selectorName.equals(selector.name()) || (selector.hasAlias() && selectorName.equals(selector.alias()))) {
                 // This is a reference value with just the selector name ...
-                return new ReferenceValue(selectorName);
+                return referenceValue(selectorName);
             }
             // Otherwise, the reference value is just the property name ...
-            return new ReferenceValue(selector.getAliasOrName(), firstWord);
+            return referenceValue(selector.aliasOrName(), firstWord);
         }
         // Otherwise, the first word is the name of a selector ...
         selectorName = new SelectorName(firstWord);
-        return new ReferenceValue(selectorName);
+        return referenceValue(selectorName);
     }
 
     protected Limit parseLimit( TokenStream tokens ) {
@@ -1248,14 +1248,14 @@ public class SqlQueryParser implements QueryParser {
                                                                                              pos.getColumn());
                     throw new ParsingException(pos, msg);
                 }
-                return new Limit(offset, first);
+                return limit(offset, first);
             }
             if (tokens.canConsume("OFFSET")) {
                 int offset = tokens.consumeInteger();
-                return new Limit(first, offset);
+                return limit(first, offset);
             }
             // No offset
-            return new Limit(first, 0);
+            return limit(first, 0);
         }
         return null;
     }
@@ -1304,6 +1304,181 @@ public class SqlQueryParser implements QueryParser {
     protected String parseName( TokenStream tokens,
                                 TypeSystem typeSystem ) {
         return removeBracketsAndQuotes(tokens.consume());
+    }
+
+    protected Query query( Source source,
+                           Constraint constraint,
+                           List<? extends Ordering> orderings,
+                           List<? extends Column> columns,
+                           Limit limit,
+                           boolean distinct ) {
+        return new Query(source, constraint, orderings, columns, limit, distinct);
+    }
+
+    protected SetQuery setQuery( QueryCommand leftQuery,
+                                 Operation operation,
+                                 QueryCommand rightQuery,
+                                 boolean all ) {
+        return new SetQuery(leftQuery, operation, rightQuery, all);
+    }
+
+    protected Length length( PropertyValue propertyValue ) {
+        return new Length(propertyValue);
+    }
+
+    protected LowerCase lowerCase( DynamicOperand operand ) {
+        return new LowerCase(operand);
+    }
+
+    protected UpperCase upperCase( DynamicOperand operand ) {
+        return new UpperCase(operand);
+    }
+
+    protected NodeName nodeName( SelectorName selector ) {
+        return new NodeName(selector);
+    }
+
+    protected NodeLocalName nodeLocalName( SelectorName selector ) {
+        return new NodeLocalName(selector);
+    }
+
+    protected NodeDepth nodeDepth( SelectorName selector ) {
+        return new NodeDepth(selector);
+    }
+
+    protected NodePath nodePath( SelectorName selector ) {
+        return new NodePath(selector);
+    }
+
+    protected EquiJoinCondition equiJoinCondition( SelectorName selector1,
+                                                   String property1,
+                                                   SelectorName selector2,
+                                                   String property2 ) {
+        return new EquiJoinCondition(selector1, property1, selector2, property2);
+    }
+
+    protected DescendantNodeJoinCondition descendantNodeJoinCondition( SelectorName ancestor,
+                                                                       SelectorName descendant ) {
+        return new DescendantNodeJoinCondition(ancestor, descendant);
+    }
+
+    protected ChildNodeJoinCondition childNodeJoinCondition( SelectorName parent,
+                                                             SelectorName child ) {
+        return new ChildNodeJoinCondition(parent, child);
+    }
+
+    protected SameNodeJoinCondition sameNodeJoinCondition( SelectorName selector1,
+                                                           SelectorName selector2 ) {
+        return new SameNodeJoinCondition(selector1, selector2);
+    }
+
+    protected SameNodeJoinCondition sameNodeJoinCondition( SelectorName selector1,
+                                                           SelectorName selector2,
+                                                           String path ) {
+        return new SameNodeJoinCondition(selector1, selector2, path);
+    }
+
+    protected Limit limit( int rowCount,
+                           int offset ) {
+        return new Limit(rowCount, offset);
+    }
+
+    protected Column column( SelectorName selectorName,
+                             String propertyName,
+                             String columnName ) {
+        return new Column(selectorName, propertyName, columnName);
+    }
+
+    protected Join join( Source left,
+                         JoinType joinType,
+                         Source right,
+                         JoinCondition joinCondition ) {
+        return new Join(left, joinType, right, joinCondition);
+    }
+
+    protected Not not( Constraint constraint ) {
+        return new Not(constraint);
+    }
+
+    protected And and( Constraint constraint1,
+                       Constraint constraint2 ) {
+        return new And(constraint1, constraint2);
+    }
+
+    protected Or or( Constraint constraint1,
+                     Constraint constraint2 ) {
+        return new Or(constraint1, constraint2);
+    }
+
+    protected FullTextSearch fullTextSearch( SelectorName name,
+                                             String propertyName,
+                                             String expression,
+                                             Term term ) {
+        return new FullTextSearch(name, propertyName, expression, term);
+    }
+
+    protected SameNode sameNode( SelectorName name,
+                                 String path ) {
+        return new SameNode(name, path);
+    }
+
+    protected ChildNode childNode( SelectorName name,
+                                   String path ) {
+        return new ChildNode(name, path);
+    }
+
+    protected DescendantNode descendantNode( SelectorName name,
+                                             String path ) {
+        return new DescendantNode(name, path);
+    }
+
+    protected Comparison comparison( DynamicOperand left,
+                                     Operator operator,
+                                     StaticOperand right ) {
+        return new Comparison(left, operator, right);
+    }
+
+    protected Ordering ordering( DynamicOperand operand,
+                                 Order order ) {
+        return new Ordering(operand, order);
+    }
+
+    protected PropertyExistence propertyExistence( SelectorName selector,
+                                                   String propertyName ) {
+        return new PropertyExistence(selector, propertyName);
+    }
+
+    protected FullTextSearchScore fullTextSearchScore( SelectorName selector ) {
+        return new FullTextSearchScore(selector);
+    }
+
+    protected ArithmeticOperand arithmeticOperand( DynamicOperand leftOperand,
+                                                   ArithmeticOperator operator,
+                                                   DynamicOperand rightOperand ) {
+        return new ArithmeticOperand(leftOperand, operator, rightOperand);
+    }
+
+    protected PropertyValue propertyValue( SelectorName selector,
+                                           String propertyName ) {
+        return new PropertyValue(selector, propertyName);
+    }
+
+    protected ReferenceValue referenceValue( SelectorName selector ) {
+        return new ReferenceValue(selector);
+    }
+
+    protected ReferenceValue referenceValue( SelectorName selector,
+                                             String propertyName ) {
+        return new ReferenceValue(selector, propertyName);
+    }
+
+    protected BindVariableName bindVariableName( String variableName ) {
+        return new BindVariableName(variableName);
+    }
+
+    protected Literal literal( TypeSystem typeSystem,
+                               Object value ) throws ValueFormatException {
+        return new Literal(value);
     }
 
     /**

@@ -73,25 +73,25 @@ public class Column implements LanguageObject {
      * 
      * @return the selector name; never null
      */
-    public final SelectorName getSelectorName() {
+    public final SelectorName selectorName() {
         return selectorName;
     }
 
     /**
      * Get the name of the property that this column represents.
      * 
-     * @return the property name; or null if this represents all selectable columns on the {@link #getSelectorName() selector}
+     * @return the property name; or null if this represents all selectable columns on the {@link #selectorName() selector}
      */
-    public final String getPropertyName() {
+    public final String propertyName() {
         return propertyName;
     }
 
     /**
      * Get the name of the column.
      * 
-     * @return the column name; or null if this represents all selectable columsn on the {@link #getSelectorName() selector}
+     * @return the column name; or null if this represents all selectable columsn on the {@link #selectorName() selector}
      */
-    public final String getColumnName() {
+    public final String columnName() {
         return columnName;
     }
 
@@ -112,7 +112,7 @@ public class Column implements LanguageObject {
      */
     @Override
     public int hashCode() {
-        return getSelectorName().hashCode();
+        return selectorName().hashCode();
     }
 
     /**

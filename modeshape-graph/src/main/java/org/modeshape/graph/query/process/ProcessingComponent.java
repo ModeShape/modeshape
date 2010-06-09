@@ -156,11 +156,11 @@ public abstract class ProcessingComponent {
         assert context != null;
         if (operand instanceof PropertyValue) {
             PropertyValue propValue = (PropertyValue)operand;
-            String propertyName = propValue.getPropertyName();
-            String selectorName = propValue.getSelectorName().getName();
+            String propertyName = propValue.propertyName();
+            String selectorName = propValue.selectorName().name();
             final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
             // Find the expected property type of the value ...
-            Table table = schemata.getTable(propValue.getSelectorName());
+            Table table = schemata.getTable(propValue.selectorName());
             Column schemaColumn = table.getColumn(propertyName);
             final String expectedType = schemaColumn.getPropertyType();
             final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
@@ -176,11 +176,11 @@ public abstract class ProcessingComponent {
         }
         if (operand instanceof ReferenceValue) {
             ReferenceValue refValue = (ReferenceValue)operand;
-            String propertyName = refValue.getPropertyName();
-            String selectorName = refValue.getSelectorName().getName();
+            String propertyName = refValue.propertyName();
+            String selectorName = refValue.selectorName().name();
             final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
             // Find the expected property type of the value ...
-            Table table = schemata.getTable(refValue.getSelectorName());
+            Table table = schemata.getTable(refValue.selectorName());
             Column schemaColumn = table.getColumn(propertyName);
             final String expectedType = schemaColumn.getPropertyType();
             final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
@@ -197,12 +197,12 @@ public abstract class ProcessingComponent {
         final TypeFactory<String> stringFactory = typeSystem.getStringFactory();
         if (operand instanceof Length) {
             Length length = (Length)operand;
-            PropertyValue value = length.getPropertyValue();
-            String propertyName = value.getPropertyName();
-            String selectorName = value.getSelectorName().getName();
+            PropertyValue value = length.propertyValue();
+            String propertyName = value.propertyName();
+            String selectorName = value.selectorName().name();
             final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
             // Find the expected property type of the value ...
-            Table table = context.getSchemata().getTable(value.getSelectorName());
+            Table table = context.getSchemata().getTable(value.selectorName());
             Column schemaColumn = table.getColumn(propertyName);
             final String expectedType = schemaColumn.getPropertyType();
             final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
@@ -220,7 +220,7 @@ public abstract class ProcessingComponent {
         }
         if (operand instanceof LowerCase) {
             LowerCase lowerCase = (LowerCase)operand;
-            final DynamicOperation delegate = createDynamicOperation(typeSystem, schemata, columns, lowerCase.getOperand());
+            final DynamicOperation delegate = createDynamicOperation(typeSystem, schemata, columns, lowerCase.operand());
             return new DynamicOperation() {
                 public String getExpectedType() {
                     return stringFactory.getTypeName();
@@ -234,7 +234,7 @@ public abstract class ProcessingComponent {
         }
         if (operand instanceof UpperCase) {
             UpperCase upperCase = (UpperCase)operand;
-            final DynamicOperation delegate = createDynamicOperation(typeSystem, schemata, columns, upperCase.getOperand());
+            final DynamicOperation delegate = createDynamicOperation(typeSystem, schemata, columns, upperCase.operand());
             return new DynamicOperation() {
                 public String getExpectedType() {
                     return stringFactory.getTypeName();
@@ -248,7 +248,7 @@ public abstract class ProcessingComponent {
         }
         if (operand instanceof NodeDepth) {
             NodeDepth nodeDepth = (NodeDepth)operand;
-            final int locationIndex = columns.getLocationIndex(nodeDepth.getSelectorName().getName());
+            final int locationIndex = columns.getLocationIndex(nodeDepth.selectorName().name());
             return new DynamicOperation() {
                 public String getExpectedType() {
                     return typeSystem.getLongFactory().getTypeName(); // depth is always LONG
@@ -265,7 +265,7 @@ public abstract class ProcessingComponent {
         }
         if (operand instanceof NodePath) {
             NodePath nodePath = (NodePath)operand;
-            final int locationIndex = columns.getLocationIndex(nodePath.getSelectorName().getName());
+            final int locationIndex = columns.getLocationIndex(nodePath.selectorName().name());
             return new DynamicOperation() {
                 public String getExpectedType() {
                     return stringFactory.getTypeName();
@@ -281,7 +281,7 @@ public abstract class ProcessingComponent {
         }
         if (operand instanceof NodeName) {
             NodeName nodeName = (NodeName)operand;
-            final int locationIndex = columns.getLocationIndex(nodeName.getSelectorName().getName());
+            final int locationIndex = columns.getLocationIndex(nodeName.selectorName().name());
             return new DynamicOperation() {
                 public String getExpectedType() {
                     return stringFactory.getTypeName();
@@ -298,7 +298,7 @@ public abstract class ProcessingComponent {
         }
         if (operand instanceof NodeLocalName) {
             NodeLocalName nodeName = (NodeLocalName)operand;
-            final int locationIndex = columns.getLocationIndex(nodeName.getSelectorName().getName());
+            final int locationIndex = columns.getLocationIndex(nodeName.selectorName().name());
             return new DynamicOperation() {
                 public String getExpectedType() {
                     return stringFactory.getTypeName();
@@ -315,7 +315,7 @@ public abstract class ProcessingComponent {
         }
         if (operand instanceof FullTextSearchScore) {
             FullTextSearchScore score = (FullTextSearchScore)operand;
-            String selectorName = score.getSelectorName().getName();
+            String selectorName = score.selectorName().name();
             final int index = columns.getFullTextSearchScoreIndexFor(selectorName);
             final TypeFactory<Double> doubleFactory = typeSystem.getDoubleFactory();
             if (index < 0) {
@@ -342,15 +342,15 @@ public abstract class ProcessingComponent {
         }
         if (operand instanceof ArithmeticOperand) {
             ArithmeticOperand arith = (ArithmeticOperand)operand;
-            final DynamicOperation leftOp = createDynamicOperation(typeSystem, schemata, columns, arith.getLeft());
-            final DynamicOperation rightOp = createDynamicOperation(typeSystem, schemata, columns, arith.getRight());
+            final DynamicOperation leftOp = createDynamicOperation(typeSystem, schemata, columns, arith.left());
+            final DynamicOperation rightOp = createDynamicOperation(typeSystem, schemata, columns, arith.right());
             // compute the expected (common) type ...
             String leftType = leftOp.getExpectedType();
             String rightType = rightOp.getExpectedType();
             final String commonType = typeSystem.getCompatibleType(leftType, rightType);
             if (typeSystem.getDoubleFactory().getTypeName().equals(commonType)) {
                 final TypeFactory<Double> commonTypeFactory = typeSystem.getDoubleFactory();
-                switch (arith.getOperator()) {
+                switch (arith.operator()) {
                     case ADD:
                         return new DynamicOperation() {
                             public String getExpectedType() {
@@ -408,7 +408,7 @@ public abstract class ProcessingComponent {
                 }
             } else if (typeSystem.getLongFactory().getTypeName().equals(commonType)) {
                 final TypeFactory<Long> commonTypeFactory = typeSystem.getLongFactory();
-                switch (arith.getOperator()) {
+                switch (arith.operator()) {
                     case ADD:
                         return new DynamicOperation() {
                             public String getExpectedType() {

@@ -29,6 +29,5 @@ import net.jcip.annotations.Immutable;
  * The condition used for a join between two sources.
  */
 @Immutable
-public abstract class JoinCondition implements LanguageObject {
-    private static final long serialVersionUID = 1L;
+public interface JoinCondition extends LanguageObject {
 }

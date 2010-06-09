@@ -31,7 +31,7 @@ import org.modeshape.common.util.HashCode;
  * A constraint that evaluates to true when either of the other constraints evaluates to true.
  */
 @Immutable
-public class Or extends Constraint {
+public class Or implements Constraint {
     private static final long serialVersionUID = 1L;
 
     private final Constraint left;
@@ -59,7 +59,7 @@ public class Or extends Constraint {
      * 
      * @return the left-hand constraint; never null
      */
-    public final Constraint getLeft() {
+    public Constraint left() {
         return left;
     }
 
@@ -68,7 +68,7 @@ public class Or extends Constraint {
      * 
      * @return the right-hand constraint; never null
      */
-    public final Constraint getRight() {
+    public Constraint right() {
         return right;
     }
 

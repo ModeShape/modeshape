@@ -56,7 +56,7 @@ public class Ordering implements LanguageObject {
      * 
      * @return the operand; never null
      */
-    public final DynamicOperand getOperand() {
+    public DynamicOperand operand() {
         return operand;
     }
 
@@ -65,7 +65,7 @@ public class Ordering implements LanguageObject {
      * 
      * @return the type; never null
      */
-    public final Order getOrder() {
+    public Order order() {
         return order;
     }
 

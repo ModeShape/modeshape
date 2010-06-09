@@ -85,7 +85,7 @@ public class QueryResultColumns implements Columns {
      * @param includeFullTextSearchScores true if room should be made in the tuples for the full-text search scores for each
      *        {@link Location}, or false otherwise
      */
-    public QueryResultColumns( List<Column> columns,
+    public QueryResultColumns( List<? extends Column> columns,
                                boolean includeFullTextSearchScores ) {
         this(includeFullTextSearchScores, columns);
         CheckArg.isNotEmpty(columns, "columns");
@@ -99,7 +99,7 @@ public class QueryResultColumns implements Columns {
      * @param columns the columns that define the results; should never be modified directly
      */
     protected QueryResultColumns( boolean includeFullTextSearchScores,
-                                  List<Column> columns ) {
+                                  List<? extends Column> columns ) {
         this.columns = columns != null ? Collections.<Column>unmodifiableList(columns) : NO_COLUMNS;
         this.columnsByName = new HashMap<String, Column>();
         this.columnIndexByColumnName = new HashMap<String, Integer>();
@@ -115,14 +115,14 @@ public class QueryResultColumns implements Columns {
         for (int i = 0, max = this.columns.size(); i != max; ++i) {
             Column column = this.columns.get(i);
             assert column != null;
-            String columnName = column.getColumnName();
+            String columnName = column.columnName();
             assert columnName != null;
             if (columnsByName.put(columnName, column) != null) {
                 assert false : "Column names must be unique";
             }
             names.add(columnName);
             columnIndexByColumnName.put(columnName, new Integer(i));
-            String selectorName = column.getSelectorName().getName();
+            String selectorName = column.selectorName().name();
             if (selectors.add(selectorName)) {
                 selectorNames.add(selectorName);
                 selectorIndex = new Integer(selectorIndex.intValue() + 1);
@@ -136,7 +136,7 @@ public class QueryResultColumns implements Columns {
                 byPropertyName = new HashMap<String, Integer>();
                 columnIndexByPropertyNameBySelectorName.put(selectorName, byPropertyName);
             }
-            byPropertyName.put(column.getPropertyName(), new Integer(i));
+            byPropertyName.put(column.propertyName(), new Integer(i));
         }
         if (columns != null && selectorNames.isEmpty()) {
             String selectorName = DEFAULT_SELECTOR_NAME;
@@ -211,7 +211,7 @@ public class QueryResultColumns implements Columns {
         for (int i = 0, max = this.columns.size(); i != max; ++i) {
             Column column = this.columns.get(i);
             assert column != null;
-            String columnName = column.getColumnName();
+            String columnName = column.columnName();
             assert columnName != null;
             if (columnsByName.put(columnName, column) != null) {
                 assert false : "Column names must be unique";
@@ -219,7 +219,7 @@ public class QueryResultColumns implements Columns {
             names.add(columnName);
             Integer columnIndex = new Integer(wrappedAround.getColumnIndexForName(columnName));
             columnIndexByColumnName.put(columnName, columnIndex);
-            String selectorName = column.getSelectorName().getName();
+            String selectorName = column.selectorName().name();
             if (!selectorNames.contains(selectorName)) selectorNames.add(selectorName);
             Integer selectorIndex = new Integer(wrappedAround.getLocationIndex(selectorName));
             locationIndexBySelectorName.put(selectorName, selectorIndex);
@@ -231,7 +231,7 @@ public class QueryResultColumns implements Columns {
                 byPropertyName = new HashMap<String, Integer>();
                 columnIndexByPropertyNameBySelectorName.put(selectorName, byPropertyName);
             }
-            byPropertyName.put(column.getPropertyName(), columnIndex);
+            byPropertyName.put(column.propertyName(), columnIndex);
         }
         if (selectorNames.isEmpty()) {
             String selectorName = DEFAULT_SELECTOR_NAME;
@@ -257,7 +257,7 @@ public class QueryResultColumns implements Columns {
      * 
      * @see org.modeshape.graph.query.QueryResults.Columns#getColumns()
      */
-    public List<Column> getColumns() {
+    public List<? extends Column> getColumns() {
         return columns;
     }
 
@@ -266,8 +266,9 @@ public class QueryResultColumns implements Columns {
      * 
      * @see java.lang.Iterable#iterator()
      */
+    @SuppressWarnings( "unchecked" )
     public Iterator<Column> iterator() {
-        return getColumns().iterator();
+        return (Iterator<Column>)getColumns().iterator();
     }
 
     /**
@@ -399,7 +400,7 @@ public class QueryResultColumns implements Columns {
      * @see org.modeshape.graph.query.QueryResults.Columns#getPropertyNameForColumn(int)
      */
     public String getPropertyNameForColumn( int columnIndex ) {
-        return columns.get(columnIndex).getPropertyName();
+        return columns.get(columnIndex).propertyName();
     }
 
     /**
@@ -412,7 +413,7 @@ public class QueryResultColumns implements Columns {
         if (result == null) {
             throw new NoSuchElementException(GraphI18n.columnDoesNotExistInQuery.text(columnName));
         }
-        return result.getPropertyName();
+        return result.propertyName();
     }
 
     /**

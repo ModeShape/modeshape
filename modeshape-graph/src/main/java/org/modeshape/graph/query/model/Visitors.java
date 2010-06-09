@@ -93,113 +93,113 @@ public class Visitors {
             @Override
             public void visit( AllNodes allNodes ) {
                 if (allNodes.hasAlias()) {
-                    symbols.add(allNodes.getAlias());
+                    symbols.add(allNodes.alias());
                 } else {
-                    symbols.add(allNodes.getName());
+                    symbols.add(allNodes.name());
                 }
             }
 
             @Override
             public void visit( ChildNode childNode ) {
-                symbols.add(childNode.getSelectorName());
+                symbols.add(childNode.selectorName());
             }
 
             @Override
             public void visit( ChildNodeJoinCondition joinCondition ) {
-                symbols.add(joinCondition.getChildSelectorName());
-                symbols.add(joinCondition.getParentSelectorName());
+                symbols.add(joinCondition.childSelectorName());
+                symbols.add(joinCondition.parentSelectorName());
             }
 
             @Override
             public void visit( Column column ) {
-                symbols.add(column.getSelectorName());
+                symbols.add(column.selectorName());
             }
 
             @Override
             public void visit( DescendantNode descendant ) {
-                symbols.add(descendant.getSelectorName());
+                symbols.add(descendant.selectorName());
             }
 
             @Override
             public void visit( DescendantNodeJoinCondition joinCondition ) {
-                symbols.add(joinCondition.getAncestorSelectorName());
-                symbols.add(joinCondition.getDescendantSelectorName());
+                symbols.add(joinCondition.ancestorSelectorName());
+                symbols.add(joinCondition.descendantSelectorName());
             }
 
             @Override
             public void visit( EquiJoinCondition joinCondition ) {
-                symbols.add(joinCondition.getSelector1Name());
-                symbols.add(joinCondition.getSelector2Name());
+                symbols.add(joinCondition.selector1Name());
+                symbols.add(joinCondition.selector2Name());
             }
 
             @Override
             public void visit( FullTextSearch fullTextSearch ) {
-                symbols.add(fullTextSearch.getSelectorName());
+                symbols.add(fullTextSearch.selectorName());
             }
 
             @Override
             public void visit( FullTextSearchScore fullTextSearchScore ) {
-                symbols.add(fullTextSearchScore.getSelectorName());
+                symbols.add(fullTextSearchScore.selectorName());
             }
 
             @Override
             public void visit( Length length ) {
-                symbols.add(length.getSelectorName());
+                symbols.add(length.selectorName());
             }
 
             @Override
             public void visit( NodeDepth depth ) {
-                symbols.add(depth.getSelectorName());
+                symbols.add(depth.selectorName());
             }
 
             @Override
             public void visit( NodePath path ) {
-                symbols.add(path.getSelectorName());
+                symbols.add(path.selectorName());
             }
 
             @Override
             public void visit( NodeLocalName node ) {
-                symbols.add(node.getSelectorName());
+                symbols.add(node.selectorName());
             }
 
             @Override
             public void visit( NodeName node ) {
-                symbols.add(node.getSelectorName());
+                symbols.add(node.selectorName());
             }
 
             @Override
             public void visit( NamedSelector node ) {
                 if (node.hasAlias()) {
-                    symbols.add(node.getAlias());
+                    symbols.add(node.alias());
                 } else {
-                    symbols.add(node.getName());
+                    symbols.add(node.name());
                 }
             }
 
             @Override
             public void visit( PropertyExistence prop ) {
-                symbols.add(prop.getSelectorName());
+                symbols.add(prop.selectorName());
             }
 
             @Override
             public void visit( PropertyValue prop ) {
-                symbols.add(prop.getSelectorName());
+                symbols.add(prop.selectorName());
             }
 
             @Override
             public void visit( ReferenceValue ref ) {
-                symbols.add(ref.getSelectorName());
+                symbols.add(ref.selectorName());
             }
 
             @Override
             public void visit( SameNode node ) {
-                symbols.add(node.getSelectorName());
+                symbols.add(node.selectorName());
             }
 
             @Override
             public void visit( SameNodeJoinCondition joinCondition ) {
-                symbols.add(joinCondition.getSelector1Name());
-                symbols.add(joinCondition.getSelector2Name());
+                symbols.add(joinCondition.selector1Name());
+                symbols.add(joinCondition.selector2Name());
             }
         });
         return symbols;
@@ -587,8 +587,8 @@ public class Visitors {
          */
         public void visit( And and ) {
             strategy.visit(and);
-            enqueue(and.getLeft());
-            enqueue(and.getRight());
+            enqueue(and.left());
+            enqueue(and.right());
             visitNext();
         }
 
@@ -599,8 +599,8 @@ public class Visitors {
          */
         public void visit( ArithmeticOperand arithmeticOperation ) {
             strategy.visit(arithmeticOperation);
-            enqueue(arithmeticOperation.getLeft());
-            enqueue(arithmeticOperation.getRight());
+            enqueue(arithmeticOperation.left());
+            enqueue(arithmeticOperation.right());
             visitNext();
         }
 
@@ -611,9 +611,9 @@ public class Visitors {
          */
         public void visit( Between between ) {
             strategy.visit(between);
-            enqueue(between.getOperand());
-            enqueue(between.getLowerBound());
-            enqueue(between.getUpperBound());
+            enqueue(between.operand());
+            enqueue(between.lowerBound());
+            enqueue(between.upperBound());
             visitNext();
         }
 
@@ -664,8 +664,8 @@ public class Visitors {
          */
         public void visit( Comparison comparison ) {
             strategy.visit(comparison);
-            enqueue(comparison.getOperand1());
-            enqueue(comparison.getOperand2());
+            enqueue(comparison.operand1());
+            enqueue(comparison.operand2());
             visitNext();
         }
 
@@ -726,9 +726,9 @@ public class Visitors {
          */
         public void visit( Join join ) {
             strategy.visit(join);
-            enqueue(join.getLeft());
-            enqueue(join.getJoinCondition());
-            enqueue(join.getRight());
+            enqueue(join.left());
+            enqueue(join.joinCondition());
+            enqueue(join.right());
             visitNext();
         }
 
@@ -769,7 +769,7 @@ public class Visitors {
          */
         public void visit( LowerCase lowerCase ) {
             strategy.visit(lowerCase);
-            enqueue(lowerCase.getOperand());
+            enqueue(lowerCase.operand());
             visitNext();
         }
 
@@ -830,7 +830,7 @@ public class Visitors {
          */
         public void visit( Not not ) {
             strategy.visit(not);
-            enqueue(not.getConstraint());
+            enqueue(not.constraint());
             visitNext();
         }
 
@@ -841,8 +841,8 @@ public class Visitors {
          */
         public void visit( Or or ) {
             strategy.visit(or);
-            enqueue(or.getLeft());
-            enqueue(or.getRight());
+            enqueue(or.left());
+            enqueue(or.right());
             visitNext();
         }
 
@@ -853,7 +853,7 @@ public class Visitors {
          */
         public void visit( Ordering ordering ) {
             strategy.visit(ordering);
-            enqueue(ordering.getOperand());
+            enqueue(ordering.operand());
             visitNext();
         }
 
@@ -884,10 +884,10 @@ public class Visitors {
          */
         public void visit( Query query ) {
             strategy.visit(query);
-            enqueue(query.getSource());
-            enqueue(query.getColumns());
-            enqueue(query.getConstraint());
-            enqueue(query.getOrderings());
+            enqueue(query.source());
+            enqueue(query.columns());
+            enqueue(query.constraint());
+            enqueue(query.orderings());
             visitNext();
         }
 
@@ -928,8 +928,8 @@ public class Visitors {
          */
         public void visit( SetCriteria setCriteria ) {
             strategy.visit(setCriteria);
-            enqueue(setCriteria.getLeftOperand());
-            for (StaticOperand right : setCriteria.getRightOperands()) {
+            enqueue(setCriteria.leftOperand());
+            for (StaticOperand right : setCriteria.rightOperands()) {
                 enqueue(right);
             }
             visitNext();
@@ -942,8 +942,8 @@ public class Visitors {
          */
         public void visit( SetQuery setQuery ) {
             strategy.visit(setQuery);
-            enqueue(setQuery.getLeft());
-            enqueue(setQuery.getRight());
+            enqueue(setQuery.left());
+            enqueue(setQuery.right());
             visitNext();
         }
 
@@ -954,7 +954,7 @@ public class Visitors {
          */
         public void visit( UpperCase upperCase ) {
             strategy.visit(upperCase);
-            enqueue(upperCase.getOperand());
+            enqueue(upperCase.operand());
             visitNext();
         }
     }
@@ -1039,9 +1039,9 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.AllNodes)
          */
         public void visit( AllNodes allNodes ) {
-            append(allNodes.getName());
+            append(allNodes.name());
             if (allNodes.hasAlias()) {
-                append(" AS ").append(allNodes.getAlias());
+                append(" AS ").append(allNodes.alias());
             }
         }
 
@@ -1052,9 +1052,9 @@ public class Visitors {
          */
         public void visit( And and ) {
             append('(');
-            and.getLeft().accept(this);
+            and.left().accept(this);
             append(" AND ");
-            and.getRight().accept(this);
+            and.right().accept(this);
             append(')');
         }
 
@@ -1065,11 +1065,11 @@ public class Visitors {
          */
         public void visit( ArithmeticOperand arithmeticOperand ) {
             append('(');
-            arithmeticOperand.getLeft().accept(this);
+            arithmeticOperand.left().accept(this);
             append(' ');
-            append(arithmeticOperand.getOperator().getSymbol());
+            append(arithmeticOperand.operator().symbol());
             append(' ');
-            arithmeticOperand.getRight().accept(this);
+            arithmeticOperand.right().accept(this);
             append(')');
         }
 
@@ -1079,12 +1079,12 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Between)
          */
         public void visit( Between between ) {
-            between.getOperand().accept(this);
+            between.operand().accept(this);
             append(" BETWEEN ");
-            between.getLowerBound().accept(this);
+            between.lowerBound().accept(this);
             if (!between.isLowerBoundIncluded()) append(" EXCLUSIVE");
             append(" AND ");
-            between.getUpperBound().accept(this);
+            between.upperBound().accept(this);
             if (!between.isUpperBoundIncluded()) append(" EXCLUSIVE");
         }
 
@@ -1094,7 +1094,7 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.BindVariableName)
          */
         public void visit( BindVariableName variable ) {
-            append('$').append(variable.getVariableName());
+            append('$').append(variable.variableName());
         }
 
         /**
@@ -1104,9 +1104,9 @@ public class Visitors {
          */
         public void visit( ChildNode child ) {
             append("ISCHILDNODE(");
-            append(child.getSelectorName());
+            append(child.selectorName());
             append(',');
-            append(child.getParentPath());
+            append(child.parentPath());
             append(')');
         }
 
@@ -1117,9 +1117,9 @@ public class Visitors {
          */
         public void visit( ChildNodeJoinCondition condition ) {
             append("ISCHILDNODE(");
-            append(condition.getChildSelectorName());
+            append(condition.childSelectorName());
             append(',');
-            append(condition.getParentSelectorName());
+            append(condition.parentSelectorName());
             append(')');
         }
 
@@ -1129,14 +1129,14 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Column)
          */
         public void visit( Column column ) {
-            append(column.getSelectorName());
-            if (column.getPropertyName() == null) {
+            append(column.selectorName());
+            if (column.propertyName() == null) {
                 append(".*");
             } else {
-                String propertyName = column.getPropertyName();
+                String propertyName = column.propertyName();
                 append('.').append(propertyName);
-                if (!propertyName.equals(column.getColumnName()) && !propertyName.equals(column.getColumnName())) {
-                    append(" AS ").append(column.getColumnName());
+                if (!propertyName.equals(column.columnName()) && !propertyName.equals(column.columnName())) {
+                    append(" AS ").append(column.columnName());
                 }
             }
         }
@@ -1147,9 +1147,9 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Comparison)
          */
         public void visit( Comparison comparison ) {
-            comparison.getOperand1().accept(this);
-            append(' ').append(comparison.getOperator().getSymbol()).append(' ');
-            comparison.getOperand2().accept(this);
+            comparison.operand1().accept(this);
+            append(' ').append(comparison.operator().symbol()).append(' ');
+            comparison.operand2().accept(this);
         }
 
         /**
@@ -1159,9 +1159,9 @@ public class Visitors {
          */
         public void visit( DescendantNode descendant ) {
             append("ISDESCENDANTNODE(");
-            append(descendant.getSelectorName());
+            append(descendant.selectorName());
             append(',');
-            append(descendant.getAncestorPath());
+            append(descendant.ancestorPath());
             append(')');
         }
 
@@ -1172,9 +1172,9 @@ public class Visitors {
          */
         public void visit( DescendantNodeJoinCondition condition ) {
             append("ISDESCENDANTNODE(");
-            append(condition.getDescendantSelectorName());
+            append(condition.descendantSelectorName());
             append(',');
-            append(condition.getAncestorSelectorName());
+            append(condition.ancestorSelectorName());
             append(')');
         }
 
@@ -1184,9 +1184,9 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.EquiJoinCondition)
          */
         public void visit( EquiJoinCondition condition ) {
-            append(condition.getSelector1Name()).append('.').append(condition.getProperty1Name());
+            append(condition.selector1Name()).append('.').append(condition.property1Name());
             append(" = ");
-            append(condition.getSelector2Name()).append('.').append(condition.getProperty2Name());
+            append(condition.selector2Name()).append('.').append(condition.property2Name());
         }
 
         /**
@@ -1195,11 +1195,11 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.FullTextSearch)
          */
         public void visit( FullTextSearch fullText ) {
-            append("CONTAINS(").append(fullText.getSelectorName());
-            if (fullText.getPropertyName() != null) {
-                append('.').append(fullText.getPropertyName());
+            append("CONTAINS(").append(fullText.selectorName());
+            if (fullText.propertyName() != null) {
+                append('.').append(fullText.propertyName());
             }
-            sb.append(",'").append(fullText.getFullTextSearchExpression()).append("')");
+            sb.append(",'").append(fullText.fullTextSearchExpression()).append("')");
         }
 
         /**
@@ -1208,7 +1208,7 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.FullTextSearchScore)
          */
         public void visit( FullTextSearchScore score ) {
-            append("SCORE(").append(score.getSelectorName()).append(')');
+            append("SCORE(").append(score.selectorName()).append(')');
         }
 
         /**
@@ -1217,16 +1217,16 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Join)
          */
         public void visit( Join join ) {
-            join.getLeft().accept(this);
+            join.left().accept(this);
             // if (join.getType() != JoinType.INNER) {
-            sb.append(' ').append(join.getType().getSymbol());
+            sb.append(' ').append(join.type().symbol());
             // } else {
             // sb.append(',');
             // }
             append(' ');
-            join.getRight().accept(this);
+            join.right().accept(this);
             append(" ON ");
-            join.getJoinCondition().accept(this);
+            join.joinCondition().accept(this);
         }
 
         /**
@@ -1236,7 +1236,7 @@ public class Visitors {
          */
         public void visit( Length length ) {
             append("LENGTH(");
-            length.getPropertyValue().accept(this);
+            length.propertyValue().accept(this);
             append(')');
         }
 
@@ -1246,9 +1246,9 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Limit)
          */
         public void visit( Limit limit ) {
-            append("LIMIT ").append(limit.getRowLimit());
-            if (limit.getOffset() != 0) {
-                append(" OFFSET ").append(limit.getOffset());
+            append("LIMIT ").append(limit.rowLimit());
+            if (limit.offset() != 0) {
+                append(" OFFSET ").append(limit.offset());
             }
         }
 
@@ -1258,13 +1258,13 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Literal)
          */
         public void visit( Literal literal ) {
-            Object value = literal.getValue();
+            Object value = literal.value();
             boolean quote = value instanceof String || value instanceof Path || value instanceof Name;
             if (quote) append('\'');
             if (context == null) {
-                append(literal.getValue().toString());
+                append(literal.value().toString());
             } else {
-                append(context.getValueFactories().getStringFactory().create(literal.getValue()));
+                append(context.getValueFactories().getStringFactory().create(literal.value()));
             }
             if (quote) append('\'');
         }
@@ -1276,7 +1276,7 @@ public class Visitors {
          */
         public void visit( LowerCase lowerCase ) {
             append("LOWER(");
-            lowerCase.getOperand().accept(this);
+            lowerCase.operand().accept(this);
             append(')');
         }
 
@@ -1286,7 +1286,7 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.NodeDepth)
          */
         public void visit( NodeDepth depth ) {
-            append("DEPTH(").append(depth.getSelectorName()).append(')');
+            append("DEPTH(").append(depth.selectorName()).append(')');
         }
 
         /**
@@ -1295,7 +1295,7 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.NodePath)
          */
         public void visit( NodePath path ) {
-            append("PATH(").append(path.getSelectorName()).append(')');
+            append("PATH(").append(path.selectorName()).append(')');
         }
 
         /**
@@ -1304,7 +1304,7 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.NodeLocalName)
          */
         public void visit( NodeLocalName name ) {
-            append("LOCALNAME(").append(name.getSelectorName()).append(')');
+            append("LOCALNAME(").append(name.selectorName()).append(')');
         }
 
         /**
@@ -1313,7 +1313,7 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.NodeName)
          */
         public void visit( NodeName name ) {
-            append("NAME(").append(name.getSelectorName()).append(')');
+            append("NAME(").append(name.selectorName()).append(')');
         }
 
         /**
@@ -1322,9 +1322,9 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.NamedSelector)
          */
         public void visit( NamedSelector selector ) {
-            append(selector.getName());
+            append(selector.name());
             if (selector.hasAlias()) {
-                append(" AS ").append(selector.getAlias());
+                append(" AS ").append(selector.alias());
             }
         }
 
@@ -1336,7 +1336,7 @@ public class Visitors {
         public void visit( Not not ) {
             append('(');
             append("NOT ");
-            not.getConstraint().accept(this);
+            not.constraint().accept(this);
             append(')');
         }
 
@@ -1347,9 +1347,9 @@ public class Visitors {
          */
         public void visit( Or or ) {
             append('(');
-            or.getLeft().accept(this);
+            or.left().accept(this);
             append(" OR ");
-            or.getRight().accept(this);
+            or.right().accept(this);
             append(')');
         }
 
@@ -1359,8 +1359,8 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Ordering)
          */
         public void visit( Ordering ordering ) {
-            ordering.getOperand().accept(this);
-            append(' ').append(ordering.getOrder().getSymbol());
+            ordering.operand().accept(this);
+            append(' ').append(ordering.order().symbol());
         }
 
         /**
@@ -1369,7 +1369,7 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.PropertyExistence)
          */
         public void visit( PropertyExistence existence ) {
-            append(existence.getSelectorName()).append('.').append(existence.getPropertyName()).append(" IS NOT NULL");
+            append(existence.selectorName()).append('.').append(existence.propertyName()).append(" IS NOT NULL");
         }
 
         /**
@@ -1378,7 +1378,7 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.PropertyValue)
          */
         public void visit( PropertyValue value ) {
-            append(value.getSelectorName()).append('.').append(value.getPropertyName());
+            append(value.selectorName()).append('.').append(value.propertyName());
         }
 
         /**
@@ -1387,9 +1387,9 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.ReferenceValue)
          */
         public void visit( ReferenceValue value ) {
-            append(value.getSelectorName());
-            if (value.getPropertyName() != null) {
-                append('.').append(value.getPropertyName());
+            append(value.selectorName());
+            if (value.propertyName() != null) {
+                append('.').append(value.propertyName());
             }
         }
 
@@ -1401,34 +1401,34 @@ public class Visitors {
         public void visit( Query query ) {
             append("SELECT ");
             if (query.isDistinct()) append("DISTINCT ");
-            if (query.getColumns().isEmpty()) {
+            if (query.columns().isEmpty()) {
                 append('*');
             } else {
                 boolean isFirst = true;
-                for (Column column : query.getColumns()) {
+                for (Column column : query.columns()) {
                     if (isFirst) isFirst = false;
                     else append(',');
                     column.accept(this);
                 }
             }
             append(" FROM ");
-            query.getSource().accept(this);
-            if (query.getConstraint() != null) {
+            query.source().accept(this);
+            if (query.constraint() != null) {
                 append(" WHERE ");
-                query.getConstraint().accept(this);
+                query.constraint().accept(this);
             }
-            if (!query.getOrderings().isEmpty()) {
+            if (!query.orderings().isEmpty()) {
                 append(" ORDER BY ");
                 boolean isFirst = true;
-                for (Ordering ordering : query.getOrderings()) {
+                for (Ordering ordering : query.orderings()) {
                     if (isFirst) isFirst = false;
                     else append(',');
                     ordering.accept(this);
                 }
             }
-            if (!query.getLimits().isUnlimited()) {
+            if (!query.limits().isUnlimited()) {
                 append(' ');
-                query.getLimits().accept(this);
+                query.limits().accept(this);
             }
         }
 
@@ -1438,7 +1438,7 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.SameNode)
          */
         public void visit( SameNode sameNode ) {
-            append("ISSAMENODE(").append(sameNode.getSelectorName()).append(',').append(sameNode.getPath()).append(')');
+            append("ISSAMENODE(").append(sameNode.selectorName()).append(',').append(sameNode.path()).append(')');
         }
 
         /**
@@ -1447,9 +1447,9 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.SameNodeJoinCondition)
          */
         public void visit( SameNodeJoinCondition condition ) {
-            append("ISSAMENODE(").append(condition.getSelector1Name()).append(',').append(condition.getSelector2Name());
-            if (condition.getSelector2Path() != null) {
-                append(',').append(condition.getSelector2Path());
+            append("ISSAMENODE(").append(condition.selector1Name()).append(',').append(condition.selector2Name());
+            if (condition.selector2Path() != null) {
+                append(',').append(condition.selector2Path());
             }
             append(')');
         }
@@ -1460,9 +1460,9 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.SetCriteria)
          */
         public void visit( SetCriteria criteria ) {
-            criteria.getLeftOperand().accept(this);
+            criteria.leftOperand().accept(this);
             append(" IN (");
-            Iterator<StaticOperand> iter = criteria.getRightOperands().iterator();
+            Iterator<StaticOperand> iter = criteria.rightOperands().iterator();
             if (iter.hasNext()) {
                 iter.next().accept(this);
                 while (iter.hasNext()) {
@@ -1479,10 +1479,10 @@ public class Visitors {
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.SetQuery)
          */
         public void visit( SetQuery query ) {
-            query.getLeft().accept(this);
-            append(' ').append(query.getOperation().getSymbol()).append(' ');
+            query.left().accept(this);
+            append(' ').append(query.operation().getSymbol()).append(' ');
             if (query.isAll()) append("ALL ");
-            query.getRight().accept(this);
+            query.right().accept(this);
         }
 
         /**
@@ -1492,7 +1492,7 @@ public class Visitors {
          */
         public void visit( UpperCase upperCase ) {
             append("UPPER(");
-            upperCase.getOperand().accept(this);
+            upperCase.operand().accept(this);
             append(')');
         }
 

@@ -27,18 +27,18 @@ import javax.jcr.PropertyType;
 import net.jcip.annotations.Immutable;
 
 /**
- * A utility for working with {@link PropertyType JCR property types} and {@link org.modeshape.graph.property.PropertyType ModeShape
- * property types}.
+ * A utility for working with {@link PropertyType JCR property types} and {@link org.modeshape.graph.property.PropertyType
+ * ModeShape property types}.
  */
 @Immutable
-class PropertyTypeUtil {
+public class PropertyTypeUtil {
 
     /**
      * Compute the JCR {@link PropertyType} for the given ModeShape {@link org.modeshape.graph.property.PropertyType}.
      * <p>
-     * See ModeShape-293 for complete discussion on why this method works the way it does. The best option appears to be basing the
-     * PropertyType on the first value, since that should be compatible with the PropertyType that was used when the values were
-     * set on the property in the first place.
+     * See ModeShape-293 for complete discussion on why this method works the way it does. The best option appears to be basing
+     * the PropertyType on the first value, since that should be compatible with the PropertyType that was used when the values
+     * were set on the property in the first place.
      * </p>
      * 
      * @param property the ModeShape property for which the {@link PropertyType} is to be determined; never null
@@ -58,7 +58,7 @@ class PropertyTypeUtil {
      * @param jcrPropertyType the ModeShape property for which the {@link PropertyType} is to be determined; never null
      * @return the JCR property type; always a valid value and never {@link PropertyType#UNDEFINED}.
      */
-    static final org.modeshape.graph.property.PropertyType dnaPropertyTypeFor( int jcrPropertyType ) {
+    public static final org.modeshape.graph.property.PropertyType dnaPropertyTypeFor( int jcrPropertyType ) {
         // Make sure the value is the correct type ...
         switch (jcrPropertyType) {
             case PropertyType.STRING:
@@ -73,12 +73,16 @@ class PropertyTypeUtil {
                 return org.modeshape.graph.property.PropertyType.LONG;
             case PropertyType.DATE:
                 return org.modeshape.graph.property.PropertyType.DATE;
+            case PropertyType.DECIMAL:
+                return org.modeshape.graph.property.PropertyType.DECIMAL;
             case PropertyType.PATH:
                 return org.modeshape.graph.property.PropertyType.PATH;
             case PropertyType.NAME:
                 return org.modeshape.graph.property.PropertyType.NAME;
             case PropertyType.REFERENCE:
                 return org.modeshape.graph.property.PropertyType.REFERENCE;
+            case PropertyType.WEAKREFERENCE:
+                return org.modeshape.graph.property.PropertyType.REFERENCE; // TODO: Change this!
         }
         assert false;
         return org.modeshape.graph.property.PropertyType.STRING;
@@ -90,7 +94,7 @@ class PropertyTypeUtil {
      * @param dnaPropertyType the ModeShape property type; never null
      * @return the JCR property type; always a valid value and never {@link PropertyType#UNDEFINED}.
      */
-    static final int jcrPropertyTypeFor( org.modeshape.graph.property.PropertyType dnaPropertyType ) {
+    public static final int jcrPropertyTypeFor( org.modeshape.graph.property.PropertyType dnaPropertyType ) {
         // Make sure the value is the correct type ...
         switch (dnaPropertyType) {
             case STRING:
@@ -110,7 +114,7 @@ class PropertyTypeUtil {
             case DATE:
                 return PropertyType.DATE;
             case DECIMAL:
-                return PropertyType.STRING; // better than losing information
+                return PropertyType.DECIMAL;
             case DOUBLE:
                 return PropertyType.DOUBLE;
             case BINARY:

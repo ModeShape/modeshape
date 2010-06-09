@@ -37,7 +37,7 @@ import org.modeshape.common.util.HashCode;
  * </ul>
  */
 @Immutable
-public class EquiJoinCondition extends JoinCondition {
+public class EquiJoinCondition implements JoinCondition {
     private static final long serialVersionUID = 1L;
 
     private final SelectorName selector1Name;
@@ -77,7 +77,7 @@ public class EquiJoinCondition extends JoinCondition {
      */
     public EquiJoinCondition( Column column1,
                               Column column2 ) {
-        this(column1.getSelectorName(), column1.getPropertyName(), column2.getSelectorName(), column2.getPropertyName());
+        this(column1.selectorName(), column1.propertyName(), column2.selectorName(), column2.propertyName());
     }
 
     /**
@@ -85,7 +85,7 @@ public class EquiJoinCondition extends JoinCondition {
      * 
      * @return the selector name appearing on the left-side of the join; never null
      */
-    public final SelectorName getSelector1Name() {
+    public final SelectorName selector1Name() {
         return selector1Name;
     }
 
@@ -94,7 +94,7 @@ public class EquiJoinCondition extends JoinCondition {
      * 
      * @return the property name for the left-side of the join; never null
      */
-    public final String getProperty1Name() {
+    public final String property1Name() {
         return property1Name;
     }
 
@@ -103,7 +103,7 @@ public class EquiJoinCondition extends JoinCondition {
      * 
      * @return the selector name appearing on the right-side of the join; never null
      */
-    public final SelectorName getSelector2Name() {
+    public final SelectorName selector2Name() {
         return selector2Name;
     }
 
@@ -112,7 +112,7 @@ public class EquiJoinCondition extends JoinCondition {
      * 
      * @return the property name for the left-side of the join; never null
      */
-    public final String getProperty2Name() {
+    public final String property2Name() {
         return property2Name;
     }
 

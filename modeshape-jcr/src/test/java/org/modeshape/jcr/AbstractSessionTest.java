@@ -54,6 +54,7 @@ import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.query.parse.QueryParsers;
+import org.modeshape.jcr.query.JcrSql2QueryParser;
 import org.modeshape.jcr.xpath.XPathQueryParser;
 
 /**

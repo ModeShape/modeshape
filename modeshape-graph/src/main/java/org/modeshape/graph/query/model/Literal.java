@@ -30,7 +30,7 @@ import org.modeshape.common.util.CheckArg;
  * A literal value used in a {@link Comparison} constraint.
  */
 @Immutable
-public class Literal extends StaticOperand {
+public class Literal implements StaticOperand {
     private static final long serialVersionUID = 1L;
 
     private final Object value;
@@ -43,7 +43,7 @@ public class Literal extends StaticOperand {
     /**
      * @return value
      */
-    public final Object getValue() {
+    public final Object value() {
         return value;
     }
 
@@ -64,7 +64,7 @@ public class Literal extends StaticOperand {
      */
     @Override
     public int hashCode() {
-        return getValue().hashCode();
+        return value().hashCode();
     }
 
     /**

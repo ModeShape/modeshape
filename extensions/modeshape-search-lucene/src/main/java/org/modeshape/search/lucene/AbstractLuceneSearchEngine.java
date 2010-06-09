@@ -450,8 +450,8 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 // Limit the tuples ...
                 Limit limit = request.limit();
                 if (!limit.isUnlimited()) {
-                    int firstIndex = limit.getOffset();
-                    int maxRows = Math.min(tuples.size(), limit.getRowLimit());
+                    int firstIndex = limit.offset();
+                    int maxRows = Math.min(tuples.size(), limit.rowLimit());
                     if (firstIndex > 0) {
                         if (firstIndex > tuples.size()) {
                             tuples.clear();
@@ -529,8 +529,8 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
             public Query createQuery( Constraint constraint ) throws IOException {
                 if (constraint instanceof And) {
                     And and = (And)constraint;
-                    Query leftQuery = createQuery(and.getLeft());
-                    Query rightQuery = createQuery(and.getRight());
+                    Query leftQuery = createQuery(and.left());
+                    Query rightQuery = createQuery(and.right());
                     if (leftQuery == null || rightQuery == null) return null;
                     BooleanQuery booleanQuery = new BooleanQuery();
                     booleanQuery.add(leftQuery, Occur.MUST);
@@ -539,8 +539,8 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 }
                 if (constraint instanceof Or) {
                     Or or = (Or)constraint;
-                    Query leftQuery = createQuery(or.getLeft());
-                    Query rightQuery = createQuery(or.getRight());
+                    Query leftQuery = createQuery(or.left());
+                    Query rightQuery = createQuery(or.right());
                     if (leftQuery == null) {
                         return rightQuery != null ? rightQuery : null;
                     } else if (rightQuery == null) {
@@ -553,7 +553,7 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 }
                 if (constraint instanceof Not) {
                     Not not = (Not)constraint;
-                    Query notted = createQuery(not.getConstraint());
+                    Query notted = createQuery(not.constraint());
                     if (notted == null) return new MatchAllDocsQuery();
                     BooleanQuery query = new BooleanQuery();
                     query.add(notted, Occur.MUST_NOT);
@@ -561,14 +561,14 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 }
                 if (constraint instanceof SetCriteria) {
                     SetCriteria setCriteria = (SetCriteria)constraint;
-                    DynamicOperand left = setCriteria.getLeftOperand();
-                    int numRightOperands = setCriteria.getRightOperands().size();
+                    DynamicOperand left = setCriteria.leftOperand();
+                    int numRightOperands = setCriteria.rightOperands().size();
                     assert numRightOperands > 0;
                     if (numRightOperands == 1) {
-                        return createQuery(left, Operator.EQUAL_TO, setCriteria.getRightOperands().iterator().next());
+                        return createQuery(left, Operator.EQUAL_TO, setCriteria.rightOperands().iterator().next());
                     }
                     BooleanQuery setQuery = new BooleanQuery();
-                    for (StaticOperand right : setCriteria.getRightOperands()) {
+                    for (StaticOperand right : setCriteria.rightOperands()) {
                         Query rightQuery = createQuery(left, Operator.EQUAL_TO, right);
                         if (rightQuery == null) return null;
                         setQuery.add(rightQuery, Occur.SHOULD);
@@ -581,9 +581,9 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 }
                 if (constraint instanceof Between) {
                     Between between = (Between)constraint;
-                    DynamicOperand operand = between.getOperand();
-                    StaticOperand lower = between.getLowerBound();
-                    StaticOperand upper = between.getUpperBound();
+                    DynamicOperand operand = between.operand();
+                    StaticOperand lower = between.lowerBound();
+                    StaticOperand upper = between.upperBound();
                     return createQuery(operand,
                                        lower,
                                        upper,
@@ -593,28 +593,28 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 }
                 if (constraint instanceof Comparison) {
                     Comparison comparison = (Comparison)constraint;
-                    return createQuery(comparison.getOperand1(), comparison.getOperator(), comparison.getOperand2());
+                    return createQuery(comparison.operand1(), comparison.operator(), comparison.operand2());
                 }
                 if (constraint instanceof FullTextSearch) {
                     FullTextSearch search = (FullTextSearch)constraint;
-                    String propertyName = search.getPropertyName();
+                    String propertyName = search.propertyName();
                     if (propertyName != null) propertyName = fieldNameFor(propertyName);
                     String fieldName = fullTextFieldName(propertyName);
                     return createQuery(fieldName, search.getTerm());
                 }
                 if (constraint instanceof SameNode) {
                     SameNode sameNode = (SameNode)constraint;
-                    Path path = pathFactory.create(sameNode.getPath());
+                    Path path = pathFactory.create(sameNode.path());
                     return session.findNodeAt(path);
                 }
                 if (constraint instanceof ChildNode) {
                     ChildNode childNode = (ChildNode)constraint;
-                    Path path = pathFactory.create(childNode.getParentPath());
+                    Path path = pathFactory.create(childNode.parentPath());
                     return session.findChildNodes(path);
                 }
                 if (constraint instanceof DescendantNode) {
                     DescendantNode descendantNode = (DescendantNode)constraint;
-                    Path path = pathFactory.create(descendantNode.getAncestorPath());
+                    Path path = pathFactory.create(descendantNode.ancestorPath());
                     return session.findAllNodesBelow(path);
                 }
                 // Should not get here ...
@@ -648,10 +648,10 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                     return session.findNodesWith((Length)left, operator, right);
                 } else if (left instanceof LowerCase) {
                     LowerCase lowercase = (LowerCase)left;
-                    return createQuery(lowercase.getOperand(), operator, right, false);
+                    return createQuery(lowercase.operand(), operator, right, false);
                 } else if (left instanceof UpperCase) {
                     UpperCase lowercase = (UpperCase)left;
-                    return createQuery(lowercase.getOperand(), operator, right, false);
+                    return createQuery(lowercase.operand(), operator, right, false);
                 } else if (left instanceof NodeDepth) {
                     assert operator != Operator.LIKE;
                     // Could be represented as a result filter, but let's do this now ...
@@ -673,11 +673,11 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 Object value = null;
                 if (operand instanceof Literal) {
                     Literal literal = (Literal)operand;
-                    value = literal.getValue();
+                    value = literal.value();
                     if (!caseSensitive) value = lowerCase(value);
                 } else if (operand instanceof BindVariableName) {
                     BindVariableName variable = (BindVariableName)operand;
-                    String variableName = variable.getVariableName();
+                    String variableName = variable.variableName();
                     value = variables.get(variableName);
                     if (!caseSensitive) value = lowerCase(value);
                 } else {
@@ -748,7 +748,7 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
             }
 
             public Query createQuery( PropertyExistence existence ) {
-                String propertyName = existence.getPropertyName();
+                String propertyName = existence.propertyName();
                 if ("jcr:primaryType".equals(propertyName)) {
                     // All nodes have a primary type, so therefore we can match all documents ...
                     return new MatchAllDocsQuery();

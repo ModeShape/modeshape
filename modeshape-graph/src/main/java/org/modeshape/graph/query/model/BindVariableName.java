@@ -30,7 +30,7 @@ import org.modeshape.common.util.CheckArg;
  * A value bound to a variable name used in a {@link Comparison} constraint.
  */
 @Immutable
-public class BindVariableName extends StaticOperand {
+public class BindVariableName implements StaticOperand {
 
     private static final long serialVersionUID = 1L;
 
@@ -44,7 +44,7 @@ public class BindVariableName extends StaticOperand {
     /**
      * @return variableName
      */
-    public final String getVariableName() {
+    public final String variableName() {
         return variableName;
     }
 

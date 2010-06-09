@@ -326,15 +326,15 @@ public class ImmutableSchemata implements Schemata {
                     List<Column> viewColumns = new ArrayList<Column>(columns.size());
                     for (org.modeshape.graph.query.model.Column column : columns) {
                         // Find the table that the column came from ...
-                        Table source = schemata.getTable(column.getSelectorName());
+                        Table source = schemata.getTable(column.selectorName());
                         if (source == null) break;
-                        String viewColumnName = column.getColumnName();
-                        String sourceColumnName = column.getPropertyName(); // getColumnName() returns alias
+                        String viewColumnName = column.columnName();
+                        String sourceColumnName = column.propertyName(); // getColumnName() returns alias
                         Column sourceColumn = source.getColumn(sourceColumnName);
                         if (sourceColumn == null) {
                             throw new InvalidQueryException(Visitors.readable(command),
                                                             "The view references a non-existant column '"
-                                                            + column.getColumnName() + "' in '" + source.getName() + "'");
+                                                            + column.columnName() + "' in '" + source.getName() + "'");
                         }
                         viewColumns.add(new ImmutableColumn(viewColumnName, sourceColumn.getPropertyType(),
                                                             sourceColumn.isFullTextSearchable()));

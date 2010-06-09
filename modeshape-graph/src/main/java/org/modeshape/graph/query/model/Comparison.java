@@ -31,7 +31,7 @@ import org.modeshape.common.util.HashCode;
  * A constraint that evaluates to true when the defined operation evaluates to true.
  */
 @Immutable
-public class Comparison extends Constraint {
+public class Comparison implements Constraint {
 
     private static final long serialVersionUID = 1L;
 
@@ -57,7 +57,7 @@ public class Comparison extends Constraint {
      * 
      * @return the dynamic operand; never null
      */
-    public final DynamicOperand getOperand1() {
+    public DynamicOperand operand1() {
         return operand1;
     }
 
@@ -66,7 +66,7 @@ public class Comparison extends Constraint {
      * 
      * @return the dynamic operand; never null
      */
-    public final StaticOperand getOperand2() {
+    public StaticOperand operand2() {
         return operand2;
     }
 
@@ -75,7 +75,7 @@ public class Comparison extends Constraint {
      * 
      * @return the operator; never null
      */
-    public final Operator getOperator() {
+    public final Operator operator() {
         return operator;
     }
 

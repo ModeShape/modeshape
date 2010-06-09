@@ -26,9 +26,8 @@ package org.modeshape.graph.query.model;
 import net.jcip.annotations.Immutable;
 
 /**
- * 
+ * Represents the abstract base class for all constraints.
  */
 @Immutable
-public abstract class Constraint implements LanguageObject {
-    private static final long serialVersionUID = 1L;
+public interface Constraint extends LanguageObject {
 }

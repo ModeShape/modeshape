@@ -27,12 +27,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
+import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.ObjectUtil;
+import org.modeshape.graph.GraphI18n;
 
 /**
  * This object acts as a Set operator on multiple {@link QueryCommand queries}, such as performing UNION, INTERSECT, and EXCEPT
@@ -43,7 +46,7 @@ import org.modeshape.common.util.ObjectUtil;
  * </p>
  */
 @Immutable
-public class SetQuery extends QueryCommand {
+public class SetQuery implements QueryCommand {
     private static final long serialVersionUID = 1L;
 
     public enum Operation implements Readable {
@@ -98,6 +101,23 @@ public class SetQuery extends QueryCommand {
         }
     }
 
+    protected static boolean unionableColumns( List<? extends Column> left,
+                                               List<? extends Column> right ) {
+        // Check the column size first ...
+        if (left.size() != right.size()) return false;
+        // Same size, so check the columns ...
+        Iterator<? extends Column> leftIter = left.iterator();
+        Iterator<? extends Column> rightIter = right.iterator();
+        while (leftIter.hasNext() && rightIter.hasNext()) {
+            Column leftColumn = leftIter.next();
+            Column rightColumn = rightIter.next();
+            if (leftColumn == null || rightColumn == null) return false;
+        }
+        return leftIter.hasNext() == rightIter.hasNext();
+    }
+
+    private final List<? extends Ordering> orderings;
+    private final Limit limits;
     private final QueryCommand left;
     private final QueryCommand right;
     private final Operation operation;
@@ -117,14 +137,19 @@ public class SetQuery extends QueryCommand {
                      Operation operation,
                      QueryCommand right,
                      boolean all ) {
-        super();
         CheckArg.isNotNull(left, "left");
         CheckArg.isNotNull(right, "right");
         CheckArg.isNotNull(operation, "operation");
+        if (!unionableColumns(left.columns(), right.columns())) {
+            I18n msg = GraphI18n.leftAndRightQueriesInSetQueryMustHaveUnionableColumns;
+            throw new IllegalArgumentException(msg.text(left.columns(), right.columns()));
+        }
         this.left = left;
         this.right = right;
         this.operation = operation;
         this.all = all;
+        this.orderings = Collections.<Ordering>emptyList();
+        this.limits = Limit.NONE;
         this.hc = HashCode.compute(this.left, this.right, this.operation);
     }
 
@@ -143,17 +168,49 @@ public class SetQuery extends QueryCommand {
                      Operation operation,
                      QueryCommand right,
                      boolean all,
-                     List<Ordering> orderings,
+                     List<? extends Ordering> orderings,
                      Limit limit ) {
-        super(orderings, limit);
         CheckArg.isNotNull(left, "left");
         CheckArg.isNotNull(right, "right");
         CheckArg.isNotNull(operation, "operation");
+        if (!unionableColumns(left.columns(), right.columns())) {
+            I18n msg = GraphI18n.leftAndRightQueriesInSetQueryMustHaveUnionableColumns;
+            throw new IllegalArgumentException(msg.text(left.columns(), right.columns()));
+        }
         this.left = left;
         this.right = right;
         this.operation = operation;
         this.all = all;
+        this.orderings = orderings != null ? orderings : Collections.<Ordering>emptyList();
+        this.limits = limit != null ? limit : Limit.NONE;
         this.hc = HashCode.compute(this.left, this.right, this.operation);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.QueryCommand#columns()
+     */
+    public List<? extends Column> columns() {
+        return left.columns(); // equivalent to right columns
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.QueryCommand#limits()
+     */
+    public Limit limits() {
+        return limits;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.QueryCommand#orderings()
+     */
+    public List<? extends Ordering> orderings() {
+        return orderings;
     }
 
     /**
@@ -161,7 +218,7 @@ public class SetQuery extends QueryCommand {
      * 
      * @return the left-hand query; never null
      */
-    public final QueryCommand getLeft() {
+    public QueryCommand left() {
         return left;
     }
 
@@ -170,7 +227,7 @@ public class SetQuery extends QueryCommand {
      * 
      * @return the right-hand query; never null
      */
-    public final QueryCommand getRight() {
+    public QueryCommand right() {
         return right;
     }
 
@@ -179,7 +236,7 @@ public class SetQuery extends QueryCommand {
      * 
      * @return the operation; never null
      */
-    public final Operation getOperation() {
+    public final Operation operation() {
         return operation;
     }
 
@@ -226,8 +283,8 @@ public class SetQuery extends QueryCommand {
             if (this.operation != that.operation) return false;
             if (!this.left.equals(that.left)) return false;
             if (!this.right.equals(that.right)) return false;
-            if (!ObjectUtil.isEqualWithNulls(this.getLimits(), that.getLimits())) return false;
-            if (!ObjectUtil.isEqualWithNulls(this.getOrderings(), that.getOrderings())) return false;
+            if (!ObjectUtil.isEqualWithNulls(this.limits(), that.limits())) return false;
+            if (!ObjectUtil.isEqualWithNulls(this.orderings(), that.orderings())) return false;
             return true;
         }
         return false;
@@ -243,23 +300,25 @@ public class SetQuery extends QueryCommand {
     }
 
     public SetQuery withLimit( int rowLimit ) {
-        return new SetQuery(left, operation, right, all, getOrderings(), getLimits().withRowLimit(rowLimit));
+        if (limits().rowLimit() == rowLimit) return this; // nothing to change
+        return new SetQuery(left, operation, right, all, orderings(), limits().withRowLimit(rowLimit));
     }
 
     public SetQuery withOffset( int offset ) {
-        return new SetQuery(left, operation, right, all, getOrderings(), getLimits().withOffset(offset));
+        if (limits().offset() == offset) return this; // nothing to change
+        return new SetQuery(left, operation, right, all, orderings(), limits().withOffset(offset));
     }
 
     public SetQuery adding( Ordering... orderings ) {
         List<Ordering> newOrderings = null;
-        if (this.getOrderings() != null) {
-            newOrderings = new ArrayList<Ordering>(getOrderings());
+        if (this.orderings() != null) {
+            newOrderings = new ArrayList<Ordering>(orderings());
             for (Ordering ordering : orderings) {
                 newOrderings.add(ordering);
             }
         } else {
             newOrderings = Arrays.asList(orderings);
         }
-        return new SetQuery(left, operation, right, all, newOrderings, getLimits());
+        return new SetQuery(left, operation, right, all, newOrderings, limits());
     }
 }

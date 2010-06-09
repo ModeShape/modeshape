@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.query.model;
 
+import java.util.Set;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
@@ -31,9 +32,10 @@ import org.modeshape.common.util.HashCode;
  * A dynamic operand that evaluates to the value(s) of a property on a selector, used in a {@link Comparison} constraint.
  */
 @Immutable
-public class PropertyValue extends DynamicOperand {
+public class PropertyValue implements DynamicOperand {
     private static final long serialVersionUID = 1L;
 
+    private final Set<SelectorName> selectorNames;
     private final String propertyName;
     private final int hc;
 
@@ -46,7 +48,7 @@ public class PropertyValue extends DynamicOperand {
      */
     public PropertyValue( SelectorName selectorName,
                           String propertyName ) {
-        super(selectorName);
+        this.selectorNames = SelectorName.nameSetFrom(selectorName);
         CheckArg.isNotNull(propertyName, "propertyName");
         this.propertyName = propertyName;
         this.hc = HashCode.compute(selectorName, this.propertyName);
@@ -57,8 +59,17 @@ public class PropertyValue extends DynamicOperand {
      * 
      * @return the one selector names used by this operand; never null
      */
-    public SelectorName getSelectorName() {
-        return getSelectorNames().iterator().next();
+    public SelectorName selectorName() {
+        return selectorNames().iterator().next();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.DynamicOperand#selectorNames()
+     */
+    public Set<SelectorName> selectorNames() {
+        return selectorNames;
     }
 
     /**
@@ -66,7 +77,7 @@ public class PropertyValue extends DynamicOperand {
      * 
      * @return the property name; never null
      */
-    public final String getPropertyName() {
+    public final String propertyName() {
         return propertyName;
     }
 
@@ -101,7 +112,7 @@ public class PropertyValue extends DynamicOperand {
         if (obj instanceof PropertyValue) {
             PropertyValue that = (PropertyValue)obj;
             if (this.hc != that.hc) return false;
-            return this.getSelectorNames().equals(that.getSelectorNames()) && this.propertyName.equals(that.propertyName);
+            return this.selectorNames().equals(that.selectorNames()) && this.propertyName.equals(that.propertyName);
         }
         return false;
     }
