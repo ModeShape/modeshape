@@ -23,9 +23,6 @@
  */
 package org.modeshape.jdbc;
 
-
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -52,7 +49,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
@@ -62,27 +58,27 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
+import org.modeshape.common.util.IoUtil;
 
 /**
  * 
  */
 public class JcrResultSet implements ResultSet {
-    
+
     private static final Map<String, JcrType> TYPE_INFO = JcrType.builtInTypeMap();
 
-    
     private boolean closed;
     private JcrStatement statement;
     private QueryResult jcrResults;
     private JcrResultSetMetaData metadata;
     private RowIterator rowIter;
     private Row row;
-    
+
     // the object which was last read from Results
     private Object currentValue = null;
 
     private Map<String, Integer> columnIndexesByName;
-    
+
     // the length of columnIDs is number of columnnames plus 1, so that its 1 based, not zero based.
     // and when method calls that takes an index arg, it doesn't need to be converted
     private String[] columnIDs = null;
@@ -99,9 +95,9 @@ public class JcrResultSet implements ResultSet {
             columnIDs = new String[jcrResults.getColumnNames().length + 1];
             columnIndexesByName = new HashMap<String, Integer>(jcrResults.getColumnNames().length + 1);
             for (String name : jcrResults.getColumnNames()) {
-        	 columnIndexesByName.put(name, index);
-                 columnIDs[index] = name;
-                 index++;
+                columnIndexesByName.put(name, index);
+                columnIDs[index] = name;
+                index++;
             }
             assert columnIndexesByName.size() > 0;
             this.columnIndexesByName = Collections.unmodifiableMap(columnIndexesByName);
@@ -114,14 +110,15 @@ public class JcrResultSet implements ResultSet {
             throw new SQLException(e.getLocalizedMessage(), e);
         }
     }
-    
+
     /**
-     * no-arg CTOR is used to create an empty result set 
+     * no-arg CTOR is used to create an empty result set
+     * 
      * @see JcrStatement#getGeneratedKeys()
      */
     protected JcrResultSet() {
-	closed = true;
-	columnIndexesByName = Collections.emptyMap();
+        closed = true;
+        columnIndexesByName = Collections.emptyMap();
     }
 
     /**
@@ -145,39 +142,29 @@ public class JcrResultSet implements ResultSet {
             closed = true;
         }
     }
-    
-    byte[] convertToByteArray(final Value value) throws SQLException {
-	BufferedOutputStream bos = null;
-	InputStream is = null;
-        byte[] data = null;
+
+    byte[] convertToByteArray( final Value value ) throws SQLException {
+        if (value == null) return null;
+        InputStream is = null;
         boolean error = false;
-        if (value == null) return data;
         try {
-            	switch (value.getType()) {
-		case PropertyType.STRING:
-		case PropertyType.BOOLEAN:
-		case PropertyType.DOUBLE:
-		    
-		    String v = value.getString();
-		    return (v != null ? v.getBytes() : null);
+            switch (value.getType()) {
+                case PropertyType.STRING:
+                case PropertyType.BOOLEAN:
+                case PropertyType.DOUBLE:
 
-		case PropertyType.BINARY:
+                    String v = value.getString();
+                    return (v != null ? v.getBytes() : null);
 
-		default:
-		    break;
-		}
-            	is = value.getStream();
-            	ByteArrayOutputStream out = new ByteArrayOutputStream();
-            	bos  = new BufferedOutputStream(out);
+                case PropertyType.BINARY:
+                    is = value.getBinary().getStream();
+                    return IoUtil.readBytes(is);
+                default:
+                    return null;
+            }
 
-	        byte[] l_buffer = new byte[1024]; // buffer holding bytes to be transferred
-	        int l_nbytes = 0;  // Number of bytes read
-	        while ((l_nbytes = is.read(l_buffer)) != -1) // Read from BLOB stream
-		bos.write(l_buffer,0,l_nbytes); // Write to file stream
-	        data = out.toByteArray();
-
-        } catch (IOException ioe) { 
-            error = true; 
+        } catch (IOException ioe) {
+            error = true;
             throw new SQLException(ioe.getLocalizedMessage(), ioe);
         } catch (IllegalStateException ie) {
             error = true;
@@ -185,20 +172,13 @@ public class JcrResultSet implements ResultSet {
         } catch (RepositoryException e) {
             error = true;
             throw new SQLException(e.getLocalizedMessage(), e);
-	} finally {
+        } finally {
             try {
-        	if (is!=null) is.close();
+                if (is != null) is.close();
             } catch (Exception e) {
-        	if (!error) throw new SQLException(e.getLocalizedMessage(), e)  ;
-            }
-            try {
-        	if (bos != null) bos.close();
-            } catch (Exception e) {
-        	if (!error) throw new SQLException(e.getLocalizedMessage(), e)  ;
+                if (!error) throw new SQLException(e.getLocalizedMessage(), e);
             }
         }
-		
-        return data;
     }
 
     protected final void notClosed() throws SQLException {
@@ -208,20 +188,18 @@ public class JcrResultSet implements ResultSet {
     protected final void noUpdates() throws SQLException {
         throw new SQLFeatureNotSupportedException(JdbcI18n.updatesNotSupported.text());
     }
-    
+
     protected final void forwardOnly() throws SQLException {
         throw new SQLException(JdbcI18n.resultSetIsForwardOnly.text());
     }
-    
-    protected final void itemNotFoundUsingColunName(String columnName) throws SQLException {
+
+    protected final void itemNotFoundUsingColunName( String columnName ) throws SQLException {
         throw new SQLException(JdbcI18n.noSuchColumn.text(columnName));
     }
-    
-    protected final void itemNotFoundUsingColunIndex(int idx) throws SQLException {
+
+    protected final void itemNotFoundUsingColunIndex( int idx ) throws SQLException {
         throw new SQLException(JdbcI18n.noSuchColumn.text(String.valueOf(idx)));
     }
-    
-
 
     /**
      * {@inheritDoc}
@@ -276,8 +254,8 @@ public class JcrResultSet implements ResultSet {
     /**
      * {@inheritDoc}
      * <p>
-     * This method, when called on an open result set, will have no effect
-     * on the fetch direction because this driver only supports {@link ResultSet#FETCH_FORWARD}.
+     * This method, when called on an open result set, will have no effect on the fetch direction because this driver only
+     * supports {@link ResultSet#FETCH_FORWARD}.
      * </p>
      * 
      * @see java.sql.ResultSet#setFetchDirection(int)
@@ -286,32 +264,34 @@ public class JcrResultSet implements ResultSet {
     public void setFetchDirection( int direction ) throws SQLException {
         notClosed();
         if (direction != ResultSet.FETCH_FORWARD) {
-       		throw new SQLException(JdbcI18n.resultSetIsForwardOnly.text());
+            throw new SQLException(JdbcI18n.resultSetIsForwardOnly.text());
         }
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * This method, when called on an open result set, always throws {@link SQLException} 
-     * because this driver only supports {@link ResultSet#FETCH_FORWARD}.
-     * </p> 
+     * This method, when called on an open result set, always throws {@link SQLException} because this driver only supports
+     * {@link ResultSet#FETCH_FORWARD}.
+     * </p>
+     * 
      * @see java.sql.ResultSet#absolute(int)
      */
     @Override
     public boolean absolute( int row ) throws SQLException {
         notClosed();
         forwardOnly();
-        
+
         return false;
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * This method, when called on an open result set, always throws {@link SQLException} 
-     * because this driver only supports {@link ResultSet#FETCH_FORWARD}.
-     * </p> 
+     * This method, when called on an open result set, always throws {@link SQLException} because this driver only supports
+     * {@link ResultSet#FETCH_FORWARD}.
+     * </p>
+     * 
      * @see java.sql.ResultSet#afterLast()
      */
     @Override
@@ -323,9 +303,10 @@ public class JcrResultSet implements ResultSet {
     /**
      * {@inheritDoc}
      * <p>
-     * This method, when called on an open result set, always throws {@link SQLException} 
-     * because this driver only supports {@link ResultSet#FETCH_FORWARD}.
-     * </p>  
+     * This method, when called on an open result set, always throws {@link SQLException} because this driver only supports
+     * {@link ResultSet#FETCH_FORWARD}.
+     * </p>
+     * 
      * @see java.sql.ResultSet#beforeFirst()
      */
     @Override
@@ -376,36 +357,37 @@ public class JcrResultSet implements ResultSet {
     public int findColumn( String columnLabel ) throws SQLException {
         notClosed();
         final Integer result = columnLabel != null ? columnIndexesByName.get(columnLabel) : null;
-        
+
         if (result == null) {
             this.itemNotFoundUsingColunName(columnLabel);
         }
+        assert result != null;
         return result.intValue();
     }
-    
-    
-    private String findColumn(int columnIndex) throws SQLException{
-	if (columnIndex >= 0 && columnIndex < this.columnIDs.length) {
-	    return columnIDs[columnIndex];
-	}
-		
-	throw new SQLException(JdbcI18n.invalidColumnIndex.text(new Object[] {columnIndex, this.columnIDs.length}));	
+
+    private String findColumn( int columnIndex ) throws SQLException {
+        if (columnIndex >= 0 && columnIndex < this.columnIDs.length) {
+            return columnIDs[columnIndex];
+        }
+
+        throw new SQLException(JdbcI18n.invalidColumnIndex.text(new Object[] {columnIndex, this.columnIDs.length}));
 
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * This method, when called on an open result set, always throws {@link SQLException} 
-     * because this driver only supports {@link ResultSet#FETCH_FORWARD}.
-     * </p>  
+     * This method, when called on an open result set, always throws {@link SQLException} because this driver only supports
+     * {@link ResultSet#FETCH_FORWARD}.
+     * </p>
+     * 
      * @see java.sql.ResultSet#first()
      */
     @Override
     public boolean first() throws SQLException {
         notClosed();
         forwardOnly();
-        
+
         return false;
     }
 
@@ -427,14 +409,11 @@ public class JcrResultSet implements ResultSet {
      * </p>
      * 
      * @see java.sql.ResultSet#getRowId(int)
-     * 
      */
     @Override
     public RowId getRowId( final int columnIndex ) throws SQLException {
-   	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
-
-
 
     /**
      * {@inheritDoc}
@@ -443,7 +422,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public RowId getRowId( String columnLabel ) throws SQLException {
-   	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -474,7 +453,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Array getArray( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -484,7 +463,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Array getArray( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -494,7 +473,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public InputStream getAsciiStream( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -504,7 +483,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public InputStream getAsciiStream( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -514,7 +493,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public BigDecimal getBigDecimal( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -524,7 +503,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public BigDecimal getBigDecimal( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -535,7 +514,7 @@ public class JcrResultSet implements ResultSet {
     @Override
     public BigDecimal getBigDecimal( int columnIndex,
                                      int scale ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -546,7 +525,7 @@ public class JcrResultSet implements ResultSet {
     @Override
     public BigDecimal getBigDecimal( String columnLabel,
                                      int scale ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -556,7 +535,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public InputStream getBinaryStream( int columnIndex ) throws SQLException {
-	return getBinaryStream(findColumn(columnIndex)); 
+        return getBinaryStream(findColumn(columnIndex));
     }
 
     /**
@@ -566,7 +545,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public InputStream getBinaryStream( String columnLabel ) throws SQLException {
-	return (InputStream) getValueReturn(columnLabel, PropertyType.BINARY);
+        return (InputStream)getValueReturn(columnLabel, PropertyType.BINARY);
     }
 
     /**
@@ -576,7 +555,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Blob getBlob( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -586,7 +565,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Blob getBlob( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -596,7 +575,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public boolean getBoolean( int columnIndex ) throws SQLException {
-	return getBoolean(findColumn(columnIndex));
+        return getBoolean(findColumn(columnIndex));
     }
 
     /**
@@ -606,7 +585,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public boolean getBoolean( String columnLabel ) throws SQLException {
-	 return (Boolean) getValueReturn(columnLabel, PropertyType.BOOLEAN);
+        return (Boolean)getValueReturn(columnLabel, PropertyType.BOOLEAN);
     }
 
     /**
@@ -616,7 +595,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public byte getByte( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -626,7 +605,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public byte getByte( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -636,7 +615,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public byte[] getBytes( int columnIndex ) throws SQLException {
-	return getBytes(findColumn(columnIndex));
+        return getBytes(findColumn(columnIndex));
     }
 
     /**
@@ -646,23 +625,23 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public byte[] getBytes( String columnLabel ) throws SQLException {
-	notClosed();
-	isRowSet();
+        notClosed();
+        isRowSet();
 
-	this.currentValue = null;
-	try {
-	    Value value = row.getValue(columnLabel);
-	    byte[] rtnbytes = convertToByteArray(value);
-	    this.currentValue = rtnbytes;
-	    return rtnbytes;
-	} catch (PathNotFoundException pnfe) {
-	   // do nothing, return null
-	} catch (ItemNotFoundException e) {	    
-	    itemNotFoundUsingColunName(columnLabel);
-	} catch (RepositoryException e) {
-	    throw new SQLException(e.getLocalizedMessage(), e);
-	}
-	return null;
+        this.currentValue = null;
+        try {
+            Value value = row.getValue(columnLabel);
+            byte[] rtnbytes = convertToByteArray(value);
+            this.currentValue = rtnbytes;
+            return rtnbytes;
+        } catch (PathNotFoundException pnfe) {
+            // do nothing, return null
+        } catch (ItemNotFoundException e) {
+            itemNotFoundUsingColunName(columnLabel);
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage(), e);
+        }
+        return null;
     }
 
     /**
@@ -672,7 +651,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Reader getCharacterStream( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -682,7 +661,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Reader getCharacterStream( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -692,7 +671,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Clob getClob( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -702,7 +681,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Clob getClob( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -712,7 +691,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public int getConcurrency() throws SQLException {
-	notClosed();
+        notClosed();
         return 0;
     }
 
@@ -723,7 +702,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Date getDate( int columnIndex ) throws SQLException {
-	return getDate(findColumn(columnIndex));
+        return getDate(findColumn(columnIndex));
     }
 
     /**
@@ -733,7 +712,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Date getDate( String columnLabel ) throws SQLException {
-	return (Date) getValueReturn(columnLabel, PropertyType.DATE);
+        return (Date)getValueReturn(columnLabel, PropertyType.DATE);
     }
 
     /**
@@ -744,7 +723,7 @@ public class JcrResultSet implements ResultSet {
     @Override
     public Date getDate( int columnIndex,
                          Calendar cal ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -755,7 +734,7 @@ public class JcrResultSet implements ResultSet {
     @Override
     public Date getDate( String columnLabel,
                          Calendar cal ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -765,7 +744,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public double getDouble( int columnIndex ) throws SQLException {
-	return getDouble(findColumn(columnIndex));
+        return getDouble(findColumn(columnIndex));
     }
 
     /**
@@ -775,7 +754,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public double getDouble( String columnLabel ) throws SQLException {
-	return (Double) getValueReturn(columnLabel, PropertyType.DOUBLE);
+        return (Double)getValueReturn(columnLabel, PropertyType.DOUBLE);
     }
 
     /**
@@ -785,7 +764,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public float getFloat( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -795,24 +774,21 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public float getFloat( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * According to 1.6 javadocs, holdability should be set to either
-     * {@link ResultSet#CLOSE_CURSORS_AT_COMMIT} or
-     * {@link ResultSet#HOLD_CURSORS_OVER_COMMIT}.
-     * However, JDBC 4.0 spec says the default holdability is
-     * implementation defined.   Therefore, the default
-     * value will be 0.
+     * According to 1.6 javadocs, holdability should be set to either {@link ResultSet#CLOSE_CURSORS_AT_COMMIT} or
+     * {@link ResultSet#HOLD_CURSORS_OVER_COMMIT}. However, JDBC 4.0 spec says the default holdability is implementation defined.
+     * Therefore, the default value will be 0.
      * 
      * @see java.sql.ResultSet#getHoldability()
      */
     @Override
     public int getHoldability() throws SQLException {
-	notClosed();
+        notClosed();
         return 0;
     }
 
@@ -823,7 +799,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public int getInt( int columnIndex ) throws SQLException {
-	return getInt(findColumn(columnIndex));
+        return getInt(findColumn(columnIndex));
     }
 
     /**
@@ -833,8 +809,8 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public int getInt( String columnLabel ) throws SQLException {
-	notClosed();
-        return (int) getLong(columnLabel);
+        notClosed();
+        return (int)getLong(columnLabel);
     }
 
     /**
@@ -844,7 +820,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public long getLong( int columnIndex ) throws SQLException {
-	return getLong(findColumn(columnIndex));
+        return getLong(findColumn(columnIndex));
     }
 
     /**
@@ -854,7 +830,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public long getLong( String columnLabel ) throws SQLException {
-	return (Long) getValueReturn(columnLabel, PropertyType.LONG);
+        return (Long)getValueReturn(columnLabel, PropertyType.LONG);
     }
 
     /**
@@ -864,7 +840,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Reader getNCharacterStream( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -874,7 +850,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Reader getNCharacterStream( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -884,7 +860,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public NClob getNClob( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -894,7 +870,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public NClob getNClob( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -904,7 +880,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public String getNString( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -915,7 +891,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public String getNString( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -924,10 +900,9 @@ public class JcrResultSet implements ResultSet {
      * @see java.sql.ResultSet#getObject(int)
      */
     @Override
-    public Object getObject( int columnIndex ) throws SQLException {	
-	return getObject(findColumn(columnIndex));
+    public Object getObject( int columnIndex ) throws SQLException {
+        return getObject(findColumn(columnIndex));
     }
-
 
     /**
      * {@inheritDoc}
@@ -936,9 +911,8 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Object getObject( String columnLabel ) throws SQLException {
-	return getColumnTranslatedToJDBC(columnLabel);
+        return getColumnTranslatedToJDBC(columnLabel);
     }
-
 
     /**
      * {@inheritDoc}
@@ -948,7 +922,7 @@ public class JcrResultSet implements ResultSet {
     @Override
     public Object getObject( int columnIndex,
                              Map<String, Class<?>> map ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -959,7 +933,7 @@ public class JcrResultSet implements ResultSet {
     @Override
     public Object getObject( String columnLabel,
                              Map<String, Class<?>> map ) throws SQLException {
-   	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
 
     }
 
@@ -970,7 +944,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Ref getRef( int columnIndex ) throws SQLException {
-   	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -980,7 +954,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Ref getRef( String columnLabel ) throws SQLException {
-   	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -990,7 +964,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public SQLXML getSQLXML( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1000,7 +974,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public SQLXML getSQLXML( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1010,7 +984,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public short getShort( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1020,7 +994,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public short getShort( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1029,8 +1003,8 @@ public class JcrResultSet implements ResultSet {
      * @see java.sql.ResultSet#getString(int)
      */
     @Override
-    public String getString( int columnIndex ) throws SQLException {	
-	return getString(findColumn(columnIndex));	 
+    public String getString( int columnIndex ) throws SQLException {
+        return getString(findColumn(columnIndex));
     }
 
     /**
@@ -1040,7 +1014,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public String getString( String columnLabel ) throws SQLException {
-	return (String) getValueReturn(columnLabel, PropertyType.STRING);
+        return (String)getValueReturn(columnLabel, PropertyType.STRING);
     }
 
     /**
@@ -1050,7 +1024,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Time getTime( int columnIndex ) throws SQLException {
-	return getTime(findColumn(columnIndex));
+        return getTime(findColumn(columnIndex));
     }
 
     /**
@@ -1060,8 +1034,8 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Time getTime( String columnLabel ) throws SQLException {
-	Date d = (Date) getValueReturn(columnLabel, PropertyType.DATE);
-	if (d == null) return null;
+        Date d = (Date)getValueReturn(columnLabel, PropertyType.DATE);
+        if (d == null) return null;
         return new Time(d.getTime());
     }
 
@@ -1073,7 +1047,7 @@ public class JcrResultSet implements ResultSet {
     @Override
     public Time getTime( int columnIndex,
                          Calendar cal ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1084,7 +1058,7 @@ public class JcrResultSet implements ResultSet {
     @Override
     public Time getTime( String columnLabel,
                          Calendar cal ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1094,7 +1068,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Timestamp getTimestamp( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1104,7 +1078,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Timestamp getTimestamp( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1115,7 +1089,7 @@ public class JcrResultSet implements ResultSet {
     @Override
     public Timestamp getTimestamp( int columnIndex,
                                    Calendar cal ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1126,7 +1100,7 @@ public class JcrResultSet implements ResultSet {
     @Override
     public Timestamp getTimestamp( String columnLabel,
                                    Calendar cal ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1136,7 +1110,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public URL getURL( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1146,7 +1120,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public URL getURL( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1156,7 +1130,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public InputStream getUnicodeStream( int columnIndex ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1166,169 +1140,165 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public InputStream getUnicodeStream( String columnLabel ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
-    
-    
-    public Value getValue(int columnIndex) throws SQLException {
-	return getValue(findColumn(columnIndex));
-	
-    }
-    
-    
-    public Value getValue(String columnLabel) throws SQLException {
-	notClosed();
-	isRowSet();
-	
-	try {
-		return row.getValue(columnLabel);
-	} catch (PathNotFoundException pnfe) {
-	    	 return null;
-	} catch (RepositoryException e) {
-	    throw new SQLException(e.getLocalizedMessage(), e);
-	}
+
+    public Value getValue( int columnIndex ) throws SQLException {
+        return getValue(findColumn(columnIndex));
 
     }
-        
+
+    public Value getValue( String columnLabel ) throws SQLException {
+        notClosed();
+        isRowSet();
+
+        try {
+            return row.getValue(columnLabel);
+        } catch (PathNotFoundException pnfe) {
+            return null;
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage(), e);
+        }
+
+    }
+
     /**
-     * This is called when the calling method controls what datatype to be returned.
-     * Another reason for centralizing this logic so that the {@link #currentValue} can be maintained
-     * @param columnName 
+     * This is called when the calling method controls what datatype to be returned. Another reason for centralizing this logic so
+     * that the {@link #currentValue} can be maintained
+     * 
+     * @param columnName
      * @param type is the {@link PropertyType datatype} to be returned
      * @return Object
-     * @throws SQLException 
-     */
-    private Object getValueReturn(String columnName, int type) throws SQLException {
-	notClosed();
-	isRowSet();
-	
-	this.currentValue = null;
-	try {
-	    	    
-	    final Value value = row.getValue(columnName);
-	    this.currentValue = getValueObject(value, type);
-	    
-	} catch (PathNotFoundException pnfe) {
-	    	  // do nothing, return null
-	} catch (ItemNotFoundException e) {	    
-	    itemNotFoundUsingColunName(columnName);
-	} catch (RepositoryException e) {
-	    throw new SQLException(e.getLocalizedMessage(), e);
-	}
-	return this.currentValue;
-    }
-       
-    /**
-     * Helper method for returning an object from <code>value</code> based on <code>type</code>
-     * @param value 
-     * @param type indicates {@link PropertyType} used to derive return object type 
-     * @return Object 
      * @throws SQLException
      */
-    private Object getValueObject(Value value, int type) throws SQLException {
-	if (value == null) return null;
-	
-    	try {
-        	switch (type) {
-        	
-        	case PropertyType.STRING:
-        	    	return value.getString();	    
-        	case PropertyType.BOOLEAN:	    
-        	    	return value.getBoolean();
-        	case PropertyType.DATE:      
-        	    	return new java.sql.Date( value.getDate().getTime().getTime() );
-         	case PropertyType.DOUBLE:	    
-        	    	return value.getDouble();       	    	
-        	case PropertyType.LONG:
-        	    	return value.getLong();	    
-        	case PropertyType.BINARY:	    
-        	    	return value.getStream();
-        	}    	
-	
-	} catch (ValueFormatException ve) {
-	    throw new SQLException(ve.getLocalizedMessage(), ve);
-	} catch (IllegalStateException ie) {
-	    throw new SQLException(ie.getLocalizedMessage(), ie);
-	} catch (RepositoryException e) {
-	    throw new SQLException(e.getLocalizedMessage(), e);
-	}	
-	return value.toString();
+    private Object getValueReturn( String columnName,
+                                   int type ) throws SQLException {
+        notClosed();
+        isRowSet();
+
+        this.currentValue = null;
+        try {
+
+            final Value value = row.getValue(columnName);
+            this.currentValue = getValueObject(value, type);
+
+        } catch (PathNotFoundException pnfe) {
+            // do nothing, return null
+        } catch (ItemNotFoundException e) {
+            itemNotFoundUsingColunName(columnName);
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage(), e);
+        }
+        return this.currentValue;
     }
-    
-    
+
     /**
-     * This method transforms a {@link Value} into a JDBC type   
-     * based on {@link JcrType} mappings
+     * Helper method for returning an object from <code>value</code> based on <code>type</code>
+     * 
+     * @param value
+     * @param type indicates {@link PropertyType} used to derive return object type
+     * @return Object
+     * @throws SQLException
+     */
+    private Object getValueObject( Value value,
+                                   int type ) throws SQLException {
+        if (value == null) return null;
+
+        try {
+            switch (type) {
+
+                case PropertyType.STRING:
+                    return value.getString();
+                case PropertyType.BOOLEAN:
+                    return value.getBoolean();
+                case PropertyType.DATE:
+                    return new java.sql.Date(value.getDate().getTime().getTime());
+                case PropertyType.DOUBLE:
+                    return value.getDouble();
+                case PropertyType.LONG:
+                    return value.getLong();
+                case PropertyType.BINARY:
+                    return value.getBinary().getStream();
+            }
+
+        } catch (ValueFormatException ve) {
+            throw new SQLException(ve.getLocalizedMessage(), ve);
+        } catch (IllegalStateException ie) {
+            throw new SQLException(ie.getLocalizedMessage(), ie);
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage(), e);
+        }
+        return value.toString();
+    }
+
+    /**
+     * This method transforms a {@link Value} into a JDBC type based on {@link JcrType} mappings
+     * 
      * @param columnName
      * @return Object
-     * @throws SQLException 
+     * @throws SQLException
      */
-    private Object getColumnTranslatedToJDBC(String columnName)
-	    throws SQLException {
-	notClosed();
-	isRowSet();
-	try {
+    private Object getColumnTranslatedToJDBC( String columnName ) throws SQLException {
+        notClosed();
+        isRowSet();
+        try {
 
-	    Value value = null;
-	    this.currentValue = null;
-	    
-	    try {
-		value = row.getValue(columnName);
-	    } catch (javax.jcr.PathNotFoundException pnf) {
-	    }
-		
-	    if (value == null)
-		return null;
-	    
-	    JcrType jcrType = TYPE_INFO.get(PropertyType.nameFromValue(value
-		    .getType()));
-    	    
-	    this.currentValue = getValueTranslatedToJDBC(value, jcrType);
-	    return this.currentValue;
-	    
+            Value value = null;
+            this.currentValue = null;
 
-	} catch (RepositoryException e) {
-	    throw new SQLException(e.getLocalizedMessage(), e);
-	}
+            try {
+                value = row.getValue(columnName);
+            } catch (javax.jcr.PathNotFoundException pnf) {
+            }
+
+            if (value == null) return null;
+
+            JcrType jcrType = TYPE_INFO.get(PropertyType.nameFromValue(value.getType()));
+
+            this.currentValue = getValueTranslatedToJDBC(value, jcrType);
+            return this.currentValue;
+
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage(), e);
+        }
     }
-    
-    private Object getValueTranslatedToJDBC(Value value, JcrType jcrType) 
-    throws SQLException {
-	if (value == null) return null;
-	
-	try {
-	    
-	    if (jcrType.getRepresentationClass() == java.lang.String.class) {
-		return value.getString();
-	    } else if (jcrType.getRepresentationClass() == java.lang.Long.class) {
-		return new Long(value.getLong());
-	    } else if (jcrType.getRepresentationClass() == java.lang.Boolean.class) {
-		return new Boolean(value.getBoolean());
-	    } else if (jcrType.getRepresentationClass() == java.lang.Double.class ||
-		    jcrType.getRepresentationClass() == java.lang.Float.class) {
-		return new Float(value.getDouble());
-	    } else if (jcrType.getRepresentationClass() == java.sql.Date.class) {
-		return new Date(value.getDate().getTime().getTime());
-	    } else if (jcrType.getRepresentationClass() == java.sql.Timestamp.class) {
-		return new java.sql.Timestamp(value.getDate().getTime()
-			.getTime());		
-	    } else if (jcrType.getRepresentationClass() == java.sql.Blob.class) {
-		return new JcrBlob(value, 0L);
-	    } else if (jcrType.getRepresentationClass() == UUID.class) {
-		return UUID.fromString(value.getString());
-		
-	    } else {
-		throw new SQLException(JdbcI18n.noJcrTypeMapped.text(jcrType.getRepresentationClass().getName()));
-	    }
-	    	    
-	} catch (ValueFormatException ve) {
-	    throw new SQLException(ve.getLocalizedMessage(), ve);
-	} catch (IllegalStateException ie) {
-	    throw new SQLException(ie.getLocalizedMessage(), ie);
-	} catch (RepositoryException e) {
-	    throw new SQLException(e.getLocalizedMessage(), e);
-	}
-    
+
+    private Object getValueTranslatedToJDBC( Value value,
+                                             JcrType jcrType ) throws SQLException {
+        if (value == null) return null;
+
+        try {
+
+            if (jcrType.getRepresentationClass() == java.lang.String.class) {
+                return value.getString();
+            } else if (jcrType.getRepresentationClass() == java.lang.Long.class) {
+                return new Long(value.getLong());
+            } else if (jcrType.getRepresentationClass() == java.lang.Boolean.class) {
+                return new Boolean(value.getBoolean());
+            } else if (jcrType.getRepresentationClass() == java.lang.Double.class
+                       || jcrType.getRepresentationClass() == java.lang.Float.class) {
+                return new Float(value.getDouble());
+            } else if (jcrType.getRepresentationClass() == java.sql.Date.class) {
+                return new Date(value.getDate().getTime().getTime());
+            } else if (jcrType.getRepresentationClass() == java.sql.Timestamp.class) {
+                return new java.sql.Timestamp(value.getDate().getTime().getTime());
+            } else if (jcrType.getRepresentationClass() == java.sql.Blob.class) {
+                return new JcrBlob(value, 0L);
+            } else if (jcrType.getRepresentationClass() == UUID.class) {
+                return UUID.fromString(value.getString());
+
+            } else {
+                throw new SQLException(JdbcI18n.noJcrTypeMapped.text(jcrType.getRepresentationClass().getName()));
+            }
+
+        } catch (ValueFormatException ve) {
+            throw new SQLException(ve.getLocalizedMessage(), ve);
+        } catch (IllegalStateException ie) {
+            throw new SQLException(ie.getLocalizedMessage(), ie);
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage(), e);
+        }
+
     }
 
     /**
@@ -1340,9 +1310,9 @@ public class JcrResultSet implements ResultSet {
     public SQLWarning getWarnings() throws SQLException {
         return null;
     }
-    
-    protected boolean hasNext() throws SQLException {
-	return rowIter.hasNext();
+
+    protected boolean hasNext() {
+        return rowIter.hasNext();
     }
 
     /**
@@ -1353,21 +1323,22 @@ public class JcrResultSet implements ResultSet {
     @Override
     public void insertRow() throws SQLException {
         this.notClosed();
-	this.noUpdates();
+        this.noUpdates();
     }
 
     /**
      * {@inheritDoc}
+     * 
      * @see java.sql.ResultSet#isAfterLast()
      */
     @Override
     public boolean isAfterLast() throws SQLException {
         this.notClosed();
-	if (this.row == null && !this.rowIter.hasNext()  && this.rowIter.getPosition() == this.rowIter.getSize()) {
-	    return true;
-	}
-	return false;
-	
+        if (this.row == null && !this.rowIter.hasNext() && this.rowIter.getPosition() == this.rowIter.getSize()) {
+            return true;
+        }
+        return false;
+
     }
 
     /**
@@ -1378,10 +1349,10 @@ public class JcrResultSet implements ResultSet {
     @Override
     public boolean isBeforeFirst() throws SQLException {
         this.notClosed();
-	if (this.rowIter.getPosition() == 0) {
-	    return true;
-	}
-	return false;
+        if (this.rowIter.getPosition() == 0) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -1392,10 +1363,10 @@ public class JcrResultSet implements ResultSet {
     @Override
     public boolean isFirst() throws SQLException {
         this.notClosed();
-	if (this.rowIter.getPosition() == 1) {
-	    return true;
-	}
-	return false;
+        if (this.rowIter.getPosition() == 1) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -1406,47 +1377,48 @@ public class JcrResultSet implements ResultSet {
     @Override
     public boolean isLast() throws SQLException {
         this.notClosed();
-        
-	if (this.row !=null && !this.rowIter.hasNext() && this.rowIter.getPosition() == this.rowIter.getSize()) {
-	    return true;
-	}
-	return false;
-    }
-    
-    protected final void isRowSet() throws SQLException {
-	if (this.row != null) return;
-	
-        throw new SQLException(JdbcI18n.currentRowNotSet.text());
+
+        if (this.row != null && !this.rowIter.hasNext() && this.rowIter.getPosition() == this.rowIter.getSize()) {
+            return true;
+        }
+        return false;
     }
 
+    protected final void isRowSet() throws SQLException {
+        if (this.row != null) return;
+
+        throw new SQLException(JdbcI18n.currentRowNotSet.text());
+    }
 
     /**
      * {@inheritDoc}
      * <p>
-     * This method, when called on an open result set, always throws {@link SQLException} 
-     * because this driver only supports {@link ResultSet#FETCH_FORWARD}.
-     * </p>  
+     * This method, when called on an open result set, always throws {@link SQLException} because this driver only supports
+     * {@link ResultSet#FETCH_FORWARD}.
+     * </p>
+     * 
      * @see java.sql.ResultSet#last()
      */
     @Override
     public boolean last() throws SQLException {
-	notClosed();
-	forwardOnly();
+        notClosed();
+        forwardOnly();
         return false;
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * This method, when called on an open result set, always throws {@link SQLException} 
-     * because this driver only supports {@link ResultSet#FETCH_FORWARD}.
-     * </p>  
+     * This method, when called on an open result set, always throws {@link SQLException} because this driver only supports
+     * {@link ResultSet#FETCH_FORWARD}.
+     * </p>
+     * 
      * @see java.sql.ResultSet#moveToCurrentRow()
      */
     @Override
     public void moveToCurrentRow() throws SQLException {
-	notClosed();
-	forwardOnly();
+        notClosed();
+        forwardOnly();
     }
 
     /**
@@ -1456,26 +1428,25 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public void moveToInsertRow() throws SQLException {
-	this.noUpdates();
+        this.noUpdates();
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * This method, when cursor position is after the last row,
-     * will return <code>false</code>
+     * This method, when cursor position is after the last row, will return <code>false</code>
      * </p>
      * 
      * @see java.sql.ResultSet#next()
      */
     @Override
-    public boolean next() throws SQLException {	
-	notClosed();
-	if (!this.hasNext() ) {
-	    this.row = null;
-	    this.currentValue = null;
-	    return false;
-	}
+    public boolean next() throws SQLException {
+        notClosed();
+        if (!this.hasNext()) {
+            this.row = null;
+            this.currentValue = null;
+            return false;
+        }
 
         this.row = rowIter.nextRow();
         return true;
@@ -1484,46 +1455,48 @@ public class JcrResultSet implements ResultSet {
     /**
      * {@inheritDoc}
      * <p>
-     * This method, when called on an open result set, always throws {@link SQLException} 
-     * because this driver only supports {@link ResultSet#FETCH_FORWARD}.
-     * </p> 
+     * This method, when called on an open result set, always throws {@link SQLException} because this driver only supports
+     * {@link ResultSet#FETCH_FORWARD}.
+     * </p>
      * 
      * @see java.sql.ResultSet#previous()
      */
     @Override
     public boolean previous() throws SQLException {
-	notClosed();
-	this.forwardOnly();
+        notClosed();
+        this.forwardOnly();
         return false;
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * This method, when called on an open result set, always throws {@link SQLException} 
-     * because this driver only supports {@link ResultSet#FETCH_FORWARD}.
-     * </p>  
+     * This method, when called on an open result set, always throws {@link SQLException} because this driver only supports
+     * {@link ResultSet#FETCH_FORWARD}.
+     * </p>
+     * 
      * @see java.sql.ResultSet#refreshRow()
      */
     @Override
     public void refreshRow() throws SQLException {
-	notClosed();
-	this.forwardOnly();
+        notClosed();
+        this.forwardOnly();
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * This method, when called on an open result set, always throws {@link SQLException} 
-     * because this driver only supports {@link ResultSet#FETCH_FORWARD}.
-     * </p>  
+     * This method, when called on an open result set, always throws {@link SQLException} because this driver only supports
+     * {@link ResultSet#FETCH_FORWARD}.
+     * </p>
+     * 
      * @see java.sql.ResultSet#relative(int)
      */
     @Override
     public boolean relative( int rows ) throws SQLException {
-	notClosed();
-	forwardOnly();
-	return false;
+        notClosed();
+        forwardOnly();
+        return false;
     }
 
     /**
@@ -2932,8 +2905,8 @@ public class JcrResultSet implements ResultSet {
     @Override
     public boolean wasNull() throws SQLException {
         notClosed();
- 
-	return currentValue == null;
+
+        return currentValue == null;
     }
 
     /**
@@ -2942,8 +2915,8 @@ public class JcrResultSet implements ResultSet {
      * @see java.sql.Wrapper#isWrapperFor(java.lang.Class)
      */
     @Override
-    public boolean isWrapperFor( Class<?> iface )  {
-	return iface.isInstance(this);
+    public boolean isWrapperFor( Class<?> iface ) {
+        return iface.isInstance(this);
     }
 
     /**
@@ -2953,12 +2926,11 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
-	if (iface.isInstance(this)) {
-	    return iface.cast(this);
-	}
+        if (iface.isInstance(this)) {
+            return iface.cast(this);
+        }
 
-	throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text());
+        throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text());
     }
-
 
 }

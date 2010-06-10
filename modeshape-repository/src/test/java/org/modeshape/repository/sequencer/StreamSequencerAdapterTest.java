@@ -39,6 +39,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.graph.ExecutionContext;
@@ -57,8 +59,6 @@ import org.modeshape.graph.sequencer.SequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencer;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
 import org.modeshape.repository.util.RepositoryNodePath;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author Randall Hauch
@@ -113,6 +113,14 @@ public class StreamSequencerAdapterTest {
         seqContext = new SequencerContext(context, graph);
     }
 
+    protected Path path( String path ) {
+        return context.getValueFactories().getPathFactory().create(path);
+    }
+
+    protected Name name( String name ) {
+        return context.getValueFactories().getNameFactory().create(name);
+    }
+
     protected void testSequencer( final StreamSequencer sequencer ) throws Throwable {
         StreamSequencer streamSequencer = new StreamSequencer() {
 
@@ -135,7 +143,7 @@ public class StreamSequencerAdapterTest {
                                              Collections.singleton(sequencedProperty), null);
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
         outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/d/e"));
-        sequencerOutput.setProperty("alpha/beta", "isSomething", true);
+        sequencerOutput.setProperty(path("alpha/beta"), name("isSomething"), true);
         adapter.execute(inputNode, "sequencedProperty", nodeChange, outputPaths, seqContext, problems);
     }
 
@@ -197,7 +205,7 @@ public class StreamSequencerAdapterTest {
         outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/d/e"));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
-        sequencerOutput.setProperty("alpha/beta", "isSomething", true);
+        sequencerOutput.setProperty(path("alpha/beta"), name("isSomething"), true);
 
         // Call the sequencer ...
         sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, seqContext, problems);
@@ -232,7 +240,7 @@ public class StreamSequencerAdapterTest {
         outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/d/e"));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
-        sequencerOutput.setProperty("alpha/beta", "isSomething", true);
+        sequencerOutput.setProperty(path("alpha/beta"), name("isSomething"), true);
 
         // Call the sequencer, which should cause the exception ...
         sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, seqContext, problems);
@@ -268,7 +276,7 @@ public class StreamSequencerAdapterTest {
         outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/x/y/z"));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
-        sequencerOutput.setProperty("alpha/beta", "isSomething", true);
+        sequencerOutput.setProperty(path("alpha/beta"), name("isSomething"), true);
 
         // Call the sequencer ...
         sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, seqContext, problems);
@@ -307,7 +315,7 @@ public class StreamSequencerAdapterTest {
         outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/d/e"));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
-        sequencerOutput.setProperty("alpha/beta", "isSomething", true);
+        sequencerOutput.setProperty(path("alpha/beta"), name("isSomething"), true);
 
         // Call the sequencer ...
         sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, seqContext, problems);
@@ -353,7 +361,7 @@ public class StreamSequencerAdapterTest {
         outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/x/z"));
 
         // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
-        sequencerOutput.setProperty("alpha/beta", "isSomething", true);
+        sequencerOutput.setProperty(path("alpha/beta"), name("isSomething"), true);
 
         // Call the sequencer ...
         sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, seqContext, problems);
@@ -515,11 +523,11 @@ public class StreamSequencerAdapterTest {
          * Create several output properties and make sure the resulting graph
          * does not contain duplicate nodes
          */
-        output.setProperty("a", "property1", "value1");
-        output.setProperty("a/b", "property1", "value1");
-        output.setProperty("a/b", "property2", "value2");
-        output.setProperty("a/b[2]", "property1", "value1");
-        output.setProperty("a/b[2]/c", "property1", "value1");
+        output.setProperty(path("a"), name("property1"), "value1");
+        output.setProperty(path("a/b"), name("property1"), "value1");
+        output.setProperty(path("a/b"), name("property2"), "value2");
+        output.setProperty(path("a/b[2]"), name("property1"), "value1");
+        output.setProperty(path("a/b[2]/c"), name("property1"), "value1");
 
         Set<Path> builtPaths = new HashSet<Path>();
         sequencer.saveOutput("/", output, seqContext, builtPaths);

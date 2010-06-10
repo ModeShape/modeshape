@@ -37,7 +37,6 @@ import javax.jcr.query.Query;
 import org.modeshape.common.text.TokenStream;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.query.model.ArithmeticOperator;
-import org.modeshape.graph.query.model.BindVariableName;
 import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.model.Constraint;
 import org.modeshape.graph.query.model.DynamicOperand;
@@ -48,7 +47,6 @@ import org.modeshape.graph.query.model.Limit;
 import org.modeshape.graph.query.model.Operator;
 import org.modeshape.graph.query.model.Order;
 import org.modeshape.graph.query.model.Ordering;
-import org.modeshape.graph.query.model.PropertyExistence;
 import org.modeshape.graph.query.model.PropertyValue;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.SelectorName;
@@ -61,6 +59,7 @@ import org.modeshape.graph.query.model.SetQuery.Operation;
 import org.modeshape.graph.query.parse.SqlQueryParser;
 import org.modeshape.jcr.query.qom.JcrAnd;
 import org.modeshape.jcr.query.qom.JcrArithmeticOperand;
+import org.modeshape.jcr.query.qom.JcrBindVariableName;
 import org.modeshape.jcr.query.qom.JcrChildNode;
 import org.modeshape.jcr.query.qom.JcrChildNodeJoinCondition;
 import org.modeshape.jcr.query.qom.JcrColumn;
@@ -86,6 +85,7 @@ import org.modeshape.jcr.query.qom.JcrNodePath;
 import org.modeshape.jcr.query.qom.JcrNot;
 import org.modeshape.jcr.query.qom.JcrOr;
 import org.modeshape.jcr.query.qom.JcrOrdering;
+import org.modeshape.jcr.query.qom.JcrPropertyExistence;
 import org.modeshape.jcr.query.qom.JcrPropertyValue;
 import org.modeshape.jcr.query.qom.JcrQueryCommand;
 import org.modeshape.jcr.query.qom.JcrReferenceValue;
@@ -473,9 +473,9 @@ public class JcrSql2QueryParser extends SqlQueryParser {
      *      java.lang.String)
      */
     @Override
-    protected PropertyExistence propertyExistence( SelectorName selector,
-                                                   String propertyName ) {
-        return super.propertyExistence(selector, propertyName);
+    protected JcrPropertyExistence propertyExistence( SelectorName selector,
+                                                      String propertyName ) {
+        return new JcrPropertyExistence(selector, propertyName);
     }
 
     /**
@@ -541,8 +541,8 @@ public class JcrSql2QueryParser extends SqlQueryParser {
      * @see org.modeshape.graph.query.parse.SqlQueryParser#bindVariableName(java.lang.String)
      */
     @Override
-    protected BindVariableName bindVariableName( String variableName ) {
-        return super.bindVariableName(variableName);
+    protected JcrBindVariableName bindVariableName( String variableName ) {
+        return new JcrBindVariableName(variableName);
     }
 
     /**

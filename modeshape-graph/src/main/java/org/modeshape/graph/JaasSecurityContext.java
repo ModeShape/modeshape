@@ -1,10 +1,11 @@
 package org.modeshape.graph;
 
-import net.jcip.annotations.NotThreadSafe;
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.Logger;
-import org.modeshape.common.util.Reflection;
-
+import java.io.IOException;
+import java.security.Principal;
+import java.security.acl.Group;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -15,12 +16,10 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
-import java.io.IOException;
-import java.security.Principal;
-import java.security.acl.Group;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
+import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.Logger;
+import org.modeshape.common.util.Reflection;
 
 /**
  * JAAS-based {@link SecurityContext security context} that provides authentication and authorization through the JAAS
@@ -217,11 +216,11 @@ public final class JaasSecurityContext implements SecurityContext {
                 if (callbacks[i] instanceof TextOutputCallback) {
 
                     // display the message according to the specified type
-                    TextOutputCallback toc = (TextOutputCallback)callbacks[i];
-                    if (!LOG_TO_CONSOLE) {
+                    if (LOG_TO_CONSOLE) {
                         continue;
                     }
 
+                    TextOutputCallback toc = (TextOutputCallback)callbacks[i];
                     switch (toc.getMessageType()) {
                         case TextOutputCallback.INFORMATION:
                             System.out.println(toc.getMessage());

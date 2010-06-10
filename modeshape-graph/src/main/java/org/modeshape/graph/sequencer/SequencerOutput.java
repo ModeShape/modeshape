@@ -50,6 +50,7 @@ public interface SequencerOutput {
      *             propertyName to be mapped in the NamespaceRegistry of the ModeShapeEngine's (or JcrEngine's) ExecutionContext.
      *             Use {@link #setProperty(Path, Name, Object...)} instead.
      */
+    @Deprecated
     void setProperty( String nodePath,
                       String propertyName,
                       Object... values );
@@ -69,6 +70,7 @@ public interface SequencerOutput {
      *             propertyName to be mapped in the NamespaceRegistry of the ModeShapeEngine's (or JcrEngine's) ExecutionContext.
      *             Use {@link #setProperty(Path, Name, Object...)} instead.
      */
+    @Deprecated
     void setReference( String nodePath,
                        String propertyName,
                        String... paths );

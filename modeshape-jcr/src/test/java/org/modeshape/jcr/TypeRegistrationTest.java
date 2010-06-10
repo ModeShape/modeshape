@@ -47,7 +47,6 @@ import org.modeshape.jcr.nodetype.NodeTypeExistsException;
 import org.modeshape.jcr.nodetype.NodeTypeTemplate;
 import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
 
-@SuppressWarnings( "deprecation" )
 public class TypeRegistrationTest extends AbstractSessionTest {
 
     private static final String TEST_TYPE_NAME = "mode:testNode";
@@ -785,6 +784,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         assertThat(repoTypeManager.getNodeType(typeNameAsName), is(nullValue()));
     }
 
+    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldAllowUnregisteringUnusedTypesWithMutualDependencies() throws Exception {
         ntTemplate.setName(TEST_TYPE_NAME);

@@ -464,6 +464,7 @@ public class JcrRepositoryTest {
         return session;
     }
 
+    @SuppressWarnings( "deprecation" )
     private void testDescriptorKeys( Repository repository ) {
         String[] keys = repository.getDescriptorKeys();
         assertThat(keys, notNullValue());
@@ -485,6 +486,7 @@ public class JcrRepositoryTest {
         assertThat(keys, hasItemInArray(Repository.SPEC_VERSION_DESC));
     }
 
+    @SuppressWarnings( "deprecation" )
     private void testDescriptorValues( Repository repository ) {
         assertThat(repository.getDescriptor(Repository.LEVEL_1_SUPPORTED), is("true"));
         assertThat(repository.getDescriptor(Repository.LEVEL_2_SUPPORTED), is("true"));

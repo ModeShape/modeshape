@@ -23,32 +23,6 @@
  */
 package org.modeshape.maven.spi;
 
-import org.modeshape.common.text.TextDecoder;
-import org.modeshape.common.text.TextEncoder;
-import org.modeshape.common.text.UrlEncoder;
-import org.modeshape.common.util.Logger;
-import org.modeshape.maven.ArtifactType;
-import org.modeshape.maven.MavenI18n;
-import org.modeshape.maven.MavenId;
-import org.modeshape.maven.MavenRepositoryException;
-import org.modeshape.maven.MavenUrl;
-import org.modeshape.maven.SignatureType;
-
-import javax.jcr.Credentials;
-import javax.jcr.ItemExistsException;
-import javax.jcr.LoginException;
-import javax.jcr.NoSuchWorkspaceException;
-import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
-import javax.jcr.Property;
-import javax.jcr.Repository;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.SimpleCredentials;
-import javax.jcr.lock.LockException;
-import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NoSuchNodeTypeException;
-import javax.jcr.version.VersionException;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -65,6 +39,32 @@ import java.net.URLConnection;
 import java.net.URLStreamHandler;
 import java.util.Calendar;
 import java.util.Properties;
+import javax.jcr.Binary;
+import javax.jcr.Credentials;
+import javax.jcr.ItemExistsException;
+import javax.jcr.LoginException;
+import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
+import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.SimpleCredentials;
+import javax.jcr.lock.LockException;
+import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
+import javax.jcr.version.VersionException;
+import org.modeshape.common.text.TextDecoder;
+import org.modeshape.common.text.TextEncoder;
+import org.modeshape.common.text.UrlEncoder;
+import org.modeshape.common.util.Logger;
+import org.modeshape.maven.ArtifactType;
+import org.modeshape.maven.MavenI18n;
+import org.modeshape.maven.MavenId;
+import org.modeshape.maven.MavenRepositoryException;
+import org.modeshape.maven.MavenUrl;
+import org.modeshape.maven.SignatureType;
 
 /**
  * Base class for providers that work against a JCR repository. This class implements all functionality except for creating the
@@ -82,6 +82,9 @@ import java.util.Properties;
  *          super.setRepository(repo);
  *      }
  * }
+ * 
+ * 
+ * 
  * </pre>
  */
 public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
@@ -230,7 +233,8 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
                         Node contentNode = current.addNode(CONTENT_NODE_NAME, "nt:resource");
                         contentNode.setProperty("jcr:mimeType", "text/plain");
                         contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
-                        contentNode.setProperty(CONTENT_PROPERTY_NAME, new ByteArrayInputStream("".getBytes()));
+                        Binary binary = session.getValueFactory().createBinary(new ByteArrayInputStream("".getBytes()));
+                        contentNode.setProperty(CONTENT_PROPERTY_NAME, binary);
                     }
                 }
                 session.save();
@@ -364,7 +368,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
             // Find the node and it's property ...
             final Node contentNode = getContentNodeForMavenResource(session, mavenUrl);
             Property contentProperty = contentNode.getProperty(CONTENT_PROPERTY_NAME);
-            InputStream result = contentProperty.getStream();
+            InputStream result = contentProperty.getBinary().getStream();
             result = new MavenInputStream(session, result);
             return result;
         } catch (LoginException err) {
@@ -429,7 +433,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
             session = this.createSession();
             // Find the node and it's property ...
             final Node contentNode = getContentNodeForMavenResource(session, mavenUrl);
-            contentNode.setProperty(CONTENT_PROPERTY_NAME, content);
+            contentNode.setProperty(CONTENT_PROPERTY_NAME, session.getValueFactory().createBinary(content));
             session.save();
         } catch (LoginException err) {
             throw new IOException(MavenI18n.unableToOpenSessiontoRepositoryWhenWritingNode.text(mavenUrl, err.getMessage()));
@@ -542,10 +546,7 @@ public class JcrMavenUrlProvider extends AbstractMavenUrlProvider {
                         try {
                             inputStream.close();
                         } catch (IOException ioe) {
-                            LOGGER.error(ioe,
-                                                                    MavenI18n.errorClosingTempFileStreamAfterWritingContent,
-                                                                    mavenUrl,
-                                                                    ioe.getMessage());
+                            LOGGER.error(ioe, MavenI18n.errorClosingTempFileStreamAfterWritingContent, mavenUrl, ioe.getMessage());
                         } finally {
                             try {
                                 file.delete();

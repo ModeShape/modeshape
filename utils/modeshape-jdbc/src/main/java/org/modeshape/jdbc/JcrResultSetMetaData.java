@@ -202,11 +202,12 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      * @see java.sql.ResultSetMetaData#getTableName(int)
      */
     @Override
-    public String getTableName( int column ) {
-        if (results instanceof org.modeshape.jcr.api.query.QueryResult) {
-            return ((org.modeshape.jcr.api.query.QueryResult)results).getSelectorNames()[column - 1]; // column value is 1-based
+    public String getTableName( int column ) throws SQLException {
+        try {
+            return results.getSelectorNames()[column - 1]; // column value is 1-based
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage(), e);
         }
-        return ""; // per the JDBC spec
     }
 
     /**

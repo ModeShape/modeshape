@@ -30,6 +30,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Calendar;
+import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -82,7 +83,8 @@ public class DdlIntegrationTestUtil {
         Node contentNode = tools.findOrCreateChild(node, "jcr:content", "nt:resource");
         contentNode.setProperty("jcr:mimeType", mimeType);
         contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
-        contentNode.setProperty("jcr:data", url.openStream());
+        Binary binary = session.getValueFactory().createBinary(url.openStream());
+        contentNode.setProperty("jcr:data", binary);
 
         // Save the session ...
         session.save();

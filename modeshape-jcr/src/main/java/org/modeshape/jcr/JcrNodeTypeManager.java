@@ -654,6 +654,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      *         {@link JcrNodeTypeManager#registerNodeType(NodeTypeDefinition, boolean)}.
      * @throws RepositoryException if another error occurs
      */
+    @SuppressWarnings( "unchecked" )
     public NodeTypeTemplate createNodeTypeTemplate( NodeTypeDefinition ntd ) throws RepositoryException {
         NodeTypeTemplate ntt = new JcrNodeTypeTemplate(context(), true);
 

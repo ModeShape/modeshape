@@ -65,17 +65,13 @@ public class JcrBlob implements Blob {
      */
     @Override
     public void free() throws SQLException {
-        // We don't support JCR 2.0 yet, but look at the ModeShape JCR extensions (which are modelled after JCR 2) ...
-        if (value instanceof org.modeshape.jcr.api.Value) {
-            try {
-                // Get the binary value ...
-                Binary binary = value.getBinary();
-                binary.dispose();
-            } catch (RepositoryException e) {
-                throw new SQLException(e.getLocalizedMessage(), e);
-            }
+        try {
+            // Get the binary value ...
+            Binary binary = value.getBinary();
+            binary.dispose();
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage(), e);
         }
-        // Otherwise, there's nothing in JCR 1.0 to call that can free the binary value!
     }
 
     /**
@@ -111,25 +107,18 @@ public class JcrBlob implements Blob {
     @Override
     public byte[] getBytes( long pos,
                             int length ) throws SQLException {
-        InputStream stream = null;
         SQLException error = null;
         try {
             byte[] data = new byte[length];
             int numRead = 0;
-            // We don't support JCR 2.0 yet, but look at the ModeShape JCR extensions (which are modelled after JCR 2) ...
-            if (value instanceof org.modeshape.jcr.api.Value) {
-                // Get the binary value ...
-                Binary binary = ((org.modeshape.jcr.api.Value)value).getBinary();
-                try {
-                    numRead = binary.read(data, pos);
-                } finally {
-                    binary.dispose();
-                }
-            } else {
-                // Otherwise, brute force it ...
-                stream = this.value.getStream();
-                numRead = stream.read(data, (int)pos, length);
+            // Get the binary value ...
+            Binary binary = value.getBinary();
+            try {
+                numRead = binary.read(data, pos);
+            } finally {
+                binary.dispose();
             }
+
             // We may have read less than the desired length ...
             if (numRead < length) {
                 // create a shortened array ...
@@ -144,17 +133,6 @@ public class JcrBlob implements Blob {
         } catch (RepositoryException e) {
             error = new SQLException(e.getLocalizedMessage(), e);
             throw error;
-        } finally {
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (Throwable t) {
-                    // Only throw if we've not already thrown an exception ...
-                    if (error == null) {
-                        throw new SQLException(t);
-                    }
-                }
-            }
         }
     }
 

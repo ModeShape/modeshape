@@ -23,7 +23,6 @@
  */
 package org.modeshape.graph.connector.federation;
 
-import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CancellationException;
@@ -161,7 +160,6 @@ class FederatedRepositoryConnection implements RepositoryConnection {
 
         // Figure out whether we should asynchronously do the forking ...
         boolean synchronousStep1 = shouldProcessSynchronously(request);
-        final boolean awaitAllSubtasks = false;
 
         // Prepare for trace-level logging ...
         if (stopwatch != null) stopwatch.start();
@@ -177,7 +175,8 @@ class FederatedRepositoryConnection implements RepositoryConnection {
             // used so that the source can begin processing the requests before all the requests have been
             // computed and submitted to the subtask). Thus, it's possible (and likely) that this thread
             // and subtask threads are executed in parallel.
-            final Queue<FederatedRequest> requests = awaitAllSubtasks ? new LinkedList<FederatedRequest>() : new LinkedBlockingQueue<FederatedRequest>();
+            final boolean awaitAllSubtasks = false;
+            final Queue<FederatedRequest> requests = /*awaitAllSubtasks ? new LinkedList<FederatedRequest>() :*/new LinkedBlockingQueue<FederatedRequest>();
             final ForkRequestProcessor fork = new ForkRequestProcessor(repository, context, nowInUtc, requests);
             if (synchronousStep1) {
                 // Execute the forking process in this thread ...

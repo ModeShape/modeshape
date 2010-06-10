@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
+import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
@@ -246,14 +247,16 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
                 byte[] bytes = new byte[BASE_64_BUFFER_SIZE];
                 int len;
 
+                Binary binary = value.getBinary();
                 try {
-                    InputStream stream = new Base64.InputStream(value.getStream(), Base64.ENCODE | Base64.URL_SAFE);
-
+                    InputStream stream = new Base64.InputStream(binary.getStream(), Base64.ENCODE | Base64.URL_SAFE);
                     while (-1 != (len = stream.read(bytes))) {
                         contentHandler.characters(new String(bytes, 0, len).toCharArray(), 0, len);
                     }
                 } catch (IOException ioe) {
                     throw new RepositoryException(ioe);
+                } finally {
+                    binary.dispose();
                 }
             }
             endElement(contentHandler, JcrSvLexicon.VALUE);

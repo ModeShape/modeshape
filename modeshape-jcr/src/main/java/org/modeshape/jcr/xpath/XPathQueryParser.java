@@ -32,12 +32,13 @@ import org.modeshape.graph.query.parse.QueryParser;
 import org.modeshape.jcr.xpath.XPath.Component;
 
 /**
- * A {@link QueryParser} implementation that accepts XPath expressions and converts them to a {@link QueryCommand ModeShape Abstract
- * Query Model} representation.
+ * A {@link QueryParser} implementation that accepts XPath expressions and converts them to a {@link QueryCommand ModeShape
+ * Abstract Query Model} representation.
  */
 public class XPathQueryParser implements QueryParser {
 
     static final boolean COLLAPSE_INNER_COMPONENTS = true;
+    @SuppressWarnings( "deprecation" )
     private static final String LANGUAGE = Query.XPATH;
 
     /**

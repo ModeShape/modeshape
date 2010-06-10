@@ -381,6 +381,7 @@ public class MixinTest extends AbstractSessionTest {
         nodeA.removeMixin(MIXIN_TYPE_B.getString(registry));
     }
 
+    @SuppressWarnings( {"unchecked", "deprecation"} )
     @Override
     protected List<javax.jcr.nodetype.NodeTypeTemplate> getTestTypes() throws ConstraintViolationException {
         NodeTypeTemplate mixinTypeA = new JcrNodeTypeTemplate(this.context);

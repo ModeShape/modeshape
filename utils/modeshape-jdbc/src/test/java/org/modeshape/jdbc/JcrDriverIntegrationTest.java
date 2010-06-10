@@ -27,37 +27,20 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
-
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.DriverManager;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
-import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.Value;
 import javax.jcr.query.Query;
-import javax.jcr.query.QueryResult;
-import javax.jcr.query.Row;
-import javax.jcr.query.RowIterator;
 import javax.naming.Context;
-
-import org.hamcrest.core.IsInstanceOf;
 import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -68,8 +51,6 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
@@ -89,30 +70,13 @@ import org.modeshape.jcr.JcrRepository.QueryLanguage;
  * The following are the SQL semantics that the tests will be covering:
  * <li>variations of simple SELECT * FROM</li>
  * <li>JOIN
- * 
  * </p>
- * 
- * 
  * <p>
- * To create the expected results to be used to run a test, use the test and print method:
- * 
- * example:	DriverTestUtil.executeTestAndPrint(this.connection, "SELECT * FROM [nt:base]");
- * 
- * This will print the expected results like this:
- * 
- * 	      String[] expected = {
- *		      "jcr:primaryType[STRING]",
- *		      "mode:root",
- *		      "car:Car",
- *		      "car:Car",
- *		      "nt:unstructured"
- *		}
- * 
- * Now copy the expected results to the test method.  Then change the test to run the executeTest method passing
- * in the <code>expected</code> results:
- * 
- * example: 	DriverTestUtil.executeTest(this.connection, "SELECT * FROM [nt:base]", expected);
- *
+ * To create the expected results to be used to run a test, use the test and print method: example:
+ * DriverTestUtil.executeTestAndPrint(this.connection, "SELECT * FROM [nt:base]"); This will print the expected results like this:
+ * String[] expected = { "jcr:primaryType[STRING]", "mode:root", "car:Car", "car:Car", "nt:unstructured" } Now copy the expected
+ * results to the test method. Then change the test to run the executeTest method passing in the <code>expected</code> results:
+ * example: DriverTestUtil.executeTest(this.connection, "SELECT * FROM [nt:base]", expected);
  * </p>
  */
 public class JcrDriverIntegrationTest {
@@ -133,7 +97,7 @@ public class JcrDriverIntegrationTest {
         return new String[] {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine", "car:mpgHighway",
             "car:valueRating", "jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model", "car:msrp"};
     }
-    
+
     @Mock
     private Context jndi;
 
@@ -142,15 +106,15 @@ public class JcrDriverIntegrationTest {
     private static JcrEngine engine;
     private static JcrRepository repository;
     private JcrConnection connection;
-    
-    private static String jndiNameForRepository="java:MyRepository";
-    private static String validUrl="jdbc:jcr:jndi://" + jndiNameForRepository ;
+
+    private static String jndiNameForRepository = "java:MyRepository";
+    private static String validUrl = "jdbc:jcr:jndi://" + jndiNameForRepository;
     private JcrDriver.JndiContextFactory contextFactory;
 
-
+    @SuppressWarnings( "deprecation" )
     @BeforeClass
     public static void beforeAll() throws Exception {
-	
+
         configuration = new JcrConfiguration();
         configuration.repositorySource("car-source")
                      .usingClass(InMemoryRepositorySource.class)
@@ -185,7 +149,7 @@ public class JcrDriverIntegrationTest {
         try {
             InputStream stream = resourceStream("cars-system-view.xml");
             assertNotNull(stream);
-            
+
             try {
                 session.getWorkspace().importXML("/", stream, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
             } catch (Throwable t) {
@@ -209,12 +173,11 @@ public class JcrDriverIntegrationTest {
             session.logout();
         }
 
-     }
+    }
 
     @AfterClass
     public static void afterAll() throws Exception {
-	
-	
+
         engine.shutdown();
         engine.awaitTermination(3, TimeUnit.SECONDS);
         engine = null;
@@ -223,10 +186,10 @@ public class JcrDriverIntegrationTest {
 
     @Before
     public void beforeEach() throws Exception {
-	MockitoAnnotations.initMocks(this);
-	
+        MockitoAnnotations.initMocks(this);
+
         when(jndi.lookup(jndiNameForRepository)).thenReturn(repository);
-        
+
         contextFactory = new JcrDriver.JndiContextFactory() {
             @SuppressWarnings( "synthetic-access" )
             @Override
@@ -234,29 +197,29 @@ public class JcrDriverIntegrationTest {
                 return jndi;
             }
         };
-        
+
         driver = new JcrDriver();
         driver.setContextFactory(contextFactory);
-        
-        Properties validProperties = new Properties();
-//        validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "admin");
-        	//"<anonymous>");
-        	//"jsmith");
- //       validProperties.put(JcrDriver.PASSWORD_PROPERTY_NAME, "admin");
 
-        connection =  (JcrConnection)driver.connect(validUrl, validProperties);
-	
+        Properties validProperties = new Properties();
+        // validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "admin");
+        // "<anonymous>");
+        // "jsmith");
+        // validProperties.put(JcrDriver.PASSWORD_PROPERTY_NAME, "admin");
+
+        connection = (JcrConnection)driver.connect(validUrl, validProperties);
+
     }
 
     @After
     public void afterEach() throws Exception {
-	DriverManager.deregisterDriver(driver);
-	
+        DriverManager.deregisterDriver(driver);
+
         if (connection != null) {
             try {
-        	connection.close();
+                connection.close();
             } finally {
-        	connection = null;
+                connection = null;
             }
         }
         driver = null;
@@ -273,141 +236,102 @@ public class JcrDriverIntegrationTest {
     // ----------------------------------------------------------------------------------------------------------------
 
     @Test
-    public void shouldBeAbleToExecuteSqlSelectAllNodes()
-	    throws SQLException {
-	      String[] expected = {
-		      "jcr:primaryType[STRING]",
-		      "mode:root",
-		      "car:Car",
-		      "car:Car",
-		      "nt:unstructured",
-		      "nt:unstructured",
-		      "car:Car",
-		      "nt:unstructured",
-		      "car:Car",
-		      "car:Car",
-		      "car:Car",
-		      "car:Car",
-		      "nt:unstructured",
-		      "car:Car",
-		      "nt:unstructured",
-		      "car:Car",
-		      "car:Car",
-		      "car:Car",
-		      "car:Car",
-		      "nt:unstructured",
-		      "nt:unstructured",
-		      "nt:unstructured",
-		      "nt:unstructured",
-		      "nt:unstructured"
-	      };
-	
-	DriverTestUtil.executeTest(this.connection, "SELECT * FROM [nt:base]", expected, 23);
+    public void shouldBeAbleToExecuteSqlSelectAllNodes() throws SQLException {
+        String[] expected = {"jcr:primaryType[STRING]", "mode:root", "car:Car", "car:Car", "nt:unstructured", "nt:unstructured",
+            "car:Car", "nt:unstructured", "car:Car", "car:Car", "car:Car", "car:Car", "nt:unstructured", "car:Car",
+            "nt:unstructured", "car:Car", "car:Car", "car:Car", "car:Car", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured"};
+
+        DriverTestUtil.executeTest(this.connection, "SELECT * FROM [nt:base]", expected, 23);
 
     }
 
     @Test
-    public void shouldBeAbleToExecuteSqlSelectAllCars()
-	    throws SQLException {
-	
-	      String[] expected = {
-"car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]",
-"Hummer    H3    2008    $30,595    3    4    13    16    null    null    null    car:Car",
-"Infiniti    G37    2008    $34,900    3    4    18    24    null    null    null    car:Car",
-"Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car",
-"Nissan    Altima    2008    $18,260    null    null    23    32    null    null    null    car:Car",
-"Land Rover    LR2    2008    $33,985    4    5    16    23    null    null    null    car:Car",
-"Toyota    Prius    2008    $21,500    4    5    48    45    null    null    null    car:Car",
-"Ford    F-150    2008    $23,910    5    1    14    20    null    null    null    car:Car",
-"Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    car:Car",
-"Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    car:Car",
-"Land Rover    LR3    2008    $48,525    5    2    12    17    null    null    null    car:Car",
-"Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    car:Car",
-"Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    car:Car",
-	      };
-	
-	DriverTestUtil.executeTest(this.connection, "SELECT * FROM [car:Car]", expected, 12);
+    public void shouldBeAbleToExecuteSqlSelectAllCars() throws SQLException {
+
+        String[] expected = {
+            "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]",
+            "Hummer    H3    2008    $30,595    3    4    13    16    null    null    null    car:Car",
+            "Infiniti    G37    2008    $34,900    3    4    18    24    null    null    null    car:Car",
+            "Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car",
+            "Nissan    Altima    2008    $18,260    null    null    23    32    null    null    null    car:Car",
+            "Land Rover    LR2    2008    $33,985    4    5    16    23    null    null    null    car:Car",
+            "Toyota    Prius    2008    $21,500    4    5    48    45    null    null    null    car:Car",
+            "Ford    F-150    2008    $23,910    5    1    14    20    null    null    null    car:Car",
+            "Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    car:Car",
+            "Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    car:Car",
+            "Land Rover    LR3    2008    $48,525    5    2    12    17    null    null    null    car:Car",
+            "Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    car:Car",
+            "Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    car:Car",};
+
+        DriverTestUtil.executeTest(this.connection, "SELECT * FROM [car:Car]", expected, 12);
     }
 
     @Test
-    public void shouldBeAbleToExecuteSqlQueryWithOrderByClauseUsingDefault()
-	    throws SQLException {
-	String[] expected = {
-		"car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]",
-		"Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    car:Car",
-		"Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    car:Car",
-		"Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car",
-		"Ford    F-150    2008    $23,910    5    1    14    20    null    null    null    car:Car",
-		"Hummer    H3    2008    $30,595    3    4    13    16    null    null    null    car:Car",
-		"Infiniti    G37    2008    $34,900    3    4    18    24    null    null    null    car:Car",
-		"Land Rover    LR2    2008    $33,985    4    5    16    23    null    null    null    car:Car",
-		"Land Rover    LR3    2008    $48,525    5    2    12    17    null    null    null    car:Car",
-		"Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    car:Car",
-		"Nissan    Altima    2008    $18,260    null    null    23    32    null    null    null    car:Car",
-		"Toyota    Prius    2008    $21,500    4    5    48    45    null    null    null    car:Car",
-		"Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    car:Car"
-		};	
+    public void shouldBeAbleToExecuteSqlQueryWithOrderByClauseUsingDefault() throws SQLException {
+        String[] expected = {
+            "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]",
+            "Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    car:Car",
+            "Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    car:Car",
+            "Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car",
+            "Ford    F-150    2008    $23,910    5    1    14    20    null    null    null    car:Car",
+            "Hummer    H3    2008    $30,595    3    4    13    16    null    null    null    car:Car",
+            "Infiniti    G37    2008    $34,900    3    4    18    24    null    null    null    car:Car",
+            "Land Rover    LR2    2008    $33,985    4    5    16    23    null    null    null    car:Car",
+            "Land Rover    LR3    2008    $48,525    5    2    12    17    null    null    null    car:Car",
+            "Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    car:Car",
+            "Nissan    Altima    2008    $18,260    null    null    23    32    null    null    null    car:Car",
+            "Toyota    Prius    2008    $21,500    4    5    48    45    null    null    null    car:Car",
+            "Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    car:Car"};
 
-	DriverTestUtil.executeTest(this.connection, "SELECT * FROM [car:Car] ORDER BY [car:maker]", expected, 12);
+        DriverTestUtil.executeTest(this.connection, "SELECT * FROM [car:Car] ORDER BY [car:maker]", expected, 12);
 
     }
-    
+
     @Test
     public void shouldBeAbleToExecuteSqlQueryWithOrderByClauseAsc() throws SQLException {
-	String[] expected = {
-		"car:model[STRING]",
-		"Altima",
-		"Continental",
-		"DB9",
-		"DTS",
-		"F-150",
-		"G37",
-		"H3",
-		"Highlander",
-		"IS350",
-		"LR2",
-		"LR3",
-		"Prius"
-		};
-	       
-	DriverTestUtil.executeTest(this.connection, "SELECT car.[car:model] FROM [car:Car] As car WHERE car.[car:model] IS NOT NULL ORDER BY car.[car:model] ASC", expected, 12);
+        String[] expected = {"car:model[STRING]", "Altima", "Continental", "DB9", "DTS", "F-150", "G37", "H3", "Highlander",
+            "IS350", "LR2", "LR3", "Prius"};
+
+        DriverTestUtil.executeTest(this.connection,
+                                   "SELECT car.[car:model] FROM [car:Car] As car WHERE car.[car:model] IS NOT NULL ORDER BY car.[car:model] ASC",
+                                   expected,
+                                   12);
 
     }
-    
-  @Test
-  public void shouldBeAbleToExecuteSqlQueryWithOrderedByClauseDesc() throws SQLException {
-      String[] expected = {
-	      "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]",
-	      "Land Rover    LR3    2008    $48,525    5    2    12    17    null    null    null    car:Car",
-	      "Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    car:Car",
-	      "Infiniti    G37    2008    $34,900    3    4    18    24    null    null    null    car:Car",
-	      "Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    car:Car",
-	      "Land Rover    LR2    2008    $33,985    4    5    16    23    null    null    null    car:Car",
-	      "Hummer    H3    2008    $30,595    3    4    13    16    null    null    null    car:Car",
-	      "Ford    F-150    2008    $23,910    5    1    14    20    null    null    null    car:Car",
-	      "Toyota    Prius    2008    $21,500    4    5    48    45    null    null    null    car:Car",
-	      "Nissan    Altima    2008    $18,260    null    null    23    32    null    null    null    car:Car",
-	      "Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    car:Car",
-	      "Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    car:Car",
-	      "Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car"
-	      };
-      // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!   
-	DriverTestUtil.executeTest(this.connection, "SELECT * FROM [car:Car] ORDER BY [car:msrp] DESC", expected, 12);
 
-  }
-    
+    @Test
+    public void shouldBeAbleToExecuteSqlQueryWithOrderedByClauseDesc() throws SQLException {
+        String[] expected = {
+            "car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]    car:userRating[LONG]    car:valueRating[LONG]    car:mpgCity[LONG]    car:mpgHighway[LONG]    car:lengthInInches[DOUBLE]    car:wheelbaseInInches[DOUBLE]    car:engine[STRING]    jcr:primaryType[STRING]",
+            "Land Rover    LR3    2008    $48,525    5    2    12    17    null    null    null    car:Car",
+            "Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    car:Car",
+            "Infiniti    G37    2008    $34,900    3    4    18    24    null    null    null    car:Car",
+            "Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    car:Car",
+            "Land Rover    LR2    2008    $33,985    4    5    16    23    null    null    null    car:Car",
+            "Hummer    H3    2008    $30,595    3    4    13    16    null    null    null    car:Car",
+            "Ford    F-150    2008    $23,910    5    1    14    20    null    null    null    car:Car",
+            "Toyota    Prius    2008    $21,500    4    5    48    45    null    null    null    car:Car",
+            "Nissan    Altima    2008    $18,260    null    null    23    32    null    null    null    car:Car",
+            "Aston Martin    DB9    2008    $171,600    5    null    12    19    185.5    108.0    5,935 cc 5.9 liters V 12    car:Car",
+            "Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    car:Car",
+            "Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car"};
+        // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
+        DriverTestUtil.executeTest(this.connection, "SELECT * FROM [car:Car] ORDER BY [car:msrp] DESC", expected, 12);
+
+    }
 
     @Test
     public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllCarsUnderHybrid() throws SQLException {
-	
-	String[] expected = {
-		"car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]",
-		"Nissan    Altima    2008    $18,260",
-		"Toyota    Prius    2008    $21,500",
-		"Toyota    Highlander    2008    $34,200"
-		};
-        
-	DriverTestUtil.executeTest(this.connection, "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%'", expected, 3);
+
+        String[] expected = {"car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]",
+            "Nissan    Altima    2008    $18,260", "Toyota    Prius    2008    $21,500",
+            "Toyota    Highlander    2008    $34,200"};
+
+        DriverTestUtil.executeTest(this.connection,
+                                   "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%'",
+                                   expected,
+                                   3);
 
     }
 
@@ -419,63 +343,22 @@ public class JcrDriverIntegrationTest {
     @Ignore
     @Test
     public void shouldBeAbleToExecuteSqlQueryUsingJoinToFindAllCarsUnderHybrid() throws SQLException {
-        
-	DriverTestUtil.executeTestAndPrint(this.connection, "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid'");
+
+        DriverTestUtil.executeTestAndPrint(this.connection,
+                                           "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid'");
 
     }
 
     @Test
     public void shouldBeAbleToExecuteSqlQueryToFindAllUnstructuredNodes() throws SQLException {
-	String[] expected = {
-		"jcr:primaryType[STRING]",
-		"nt:unstructured",
-		"nt:unstructured",
-		"nt:unstructured",
-		"nt:unstructured",
-		"nt:unstructured",
-		"nt:unstructured",
-		"nt:unstructured",
-		"nt:unstructured",
-		"nt:unstructured",
-		"nt:unstructured",
-		"car:Car",
-		"car:Car",
-		"car:Car",
-		"car:Car",
-		"car:Car",
-		"car:Car",
-		"car:Car",
-		"car:Car",
-		"car:Car",
-		"car:Car",
-		"car:Car",
-		"car:Car"
-		};
+        String[] expected = {"jcr:primaryType[STRING]", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "car:Car", "car:Car", "car:Car", "car:Car", "car:Car", "car:Car", "car:Car", "car:Car", "car:Car",
+            "car:Car", "car:Car", "car:Car"};
 
-        
-	DriverTestUtil.executeTest(this.connection, "SELECT * FROM [nt:unstructured]", expected, 22);
+        DriverTestUtil.executeTest(this.connection, "SELECT * FROM [nt:unstructured]", expected, 22);
 
     }
-
-    
-  /**
-   * Tests that the child nodes (but no grandchild nodes) are returned.
-   * 
-   * @throws SQLException
-   */
-  @Test
-  public void shouldBeAbleToExecuteSqlQueryWithChildAxisCriteria() throws SQLException {
-      String[] expected = {
-	      "jcr:path[String]    jcr:score[String]    jcr:primaryType[STRING]",
-	      "/Cars/Utility    1.0    nt:unstructured",
-	      "/Cars/Hybrid    1.0    nt:unstructured",
-	      "/Cars/Sports    1.0    nt:unstructured",
-	      "/Cars/Luxury    1.0    nt:unstructured"
-	      };     
-	DriverTestUtil.executeTest(this.connection, "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%' ", expected, 4, QueryLanguage.JCR_SQL);
-	
-
-  }
 
     /**
      * Tests that the child nodes (but no grandchild nodes) are returned.
@@ -483,19 +366,35 @@ public class JcrDriverIntegrationTest {
      * @throws SQLException
      */
     @Test
-    public void shouldBeAbleToExecuteSqlQueryWithContainsCriteria()
-	    throws SQLException {
-	String[] expected = {
-		"jcr:path[String]    jcr:score[String]    jcr:primaryType[STRING]",
-		"/Cars/Utility    1.0    nt:unstructured",
-		"/Cars/Hybrid    1.0    nt:unstructured",
-		"/Cars/Sports    1.0    nt:unstructured",
-		"/Cars/Luxury    1.0    nt:unstructured"
-		};
-
-	DriverTestUtil.executeTest(this.connection,
-			"SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'", expected, 4, QueryLanguage.JCR_SQL);
+    public void shouldBeAbleToExecuteSqlQueryWithChildAxisCriteria() throws SQLException {
+        String[] expected = {"jcr:path[String]    jcr:score[String]    jcr:primaryType[STRING]",
+            "/Cars/Utility    1.0    nt:unstructured", "/Cars/Hybrid    1.0    nt:unstructured",
+            "/Cars/Sports    1.0    nt:unstructured", "/Cars/Luxury    1.0    nt:unstructured"};
+        DriverTestUtil.executeTest(this.connection,
+                                   "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%' ",
+                                   expected,
+                                   4,
+                                   QueryLanguage.JCR_SQL);
 
     }
-    
+
+    /**
+     * Tests that the child nodes (but no grandchild nodes) are returned.
+     * 
+     * @throws SQLException
+     */
+    @Test
+    public void shouldBeAbleToExecuteSqlQueryWithContainsCriteria() throws SQLException {
+        String[] expected = {"jcr:path[String]    jcr:score[String]    jcr:primaryType[STRING]",
+            "/Cars/Utility    1.0    nt:unstructured", "/Cars/Hybrid    1.0    nt:unstructured",
+            "/Cars/Sports    1.0    nt:unstructured", "/Cars/Luxury    1.0    nt:unstructured"};
+
+        DriverTestUtil.executeTest(this.connection,
+                                   "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'",
+                                   expected,
+                                   4,
+                                   QueryLanguage.JCR_SQL);
+
+    }
+
 }

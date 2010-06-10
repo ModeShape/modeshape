@@ -44,6 +44,7 @@ public interface PropertyDefinitionTemplate extends javax.jcr.nodetype.PropertyD
      *        values
      * @deprecated Use {@link #setDefaultValues(javax.jcr.Value[])} instead
      */
+    @Deprecated
     public void setDefaultValues( String[] defaultValues );
 
 }

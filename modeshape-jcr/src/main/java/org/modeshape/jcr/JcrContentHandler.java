@@ -190,8 +190,8 @@ class JcrContentHandler extends DefaultHandler {
         return jcrValueFactory.createValue(value, type);
     }
 
-    protected final Value valueFor( InputStream stream ) {
-        return jcrValueFactory.createValue(stream);
+    protected final Value valueFor( InputStream stream ) throws RepositoryException {
+        return jcrValueFactory.createValue(jcrValueFactory.createBinary(stream));
     }
 
     protected final SessionCache cache() {

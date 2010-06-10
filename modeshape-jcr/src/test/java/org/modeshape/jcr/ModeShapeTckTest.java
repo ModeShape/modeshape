@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Collections;
 import javax.jcr.AccessDeniedException;
+import javax.jcr.Binary;
 import javax.jcr.Credentials;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.InvalidItemStateException;
@@ -26,6 +27,7 @@ import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
+import javax.jcr.version.VersionHistory;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.jackrabbit.test.AbstractJCRTest;
@@ -153,6 +155,60 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     private void testAdmin( Session session ) throws Exception {
         testRegisterNamespace(session);
         testRegisterType(session);
+    }
+
+    protected boolean useDeprecatedApi() {
+        return true;
+        // return false; // TODO: fix this when we've implemented the new version methods
+    }
+
+    @SuppressWarnings( "deprecation" )
+    protected VersionHistory versionHistory( Node node ) throws RepositoryException {
+        if (useDeprecatedApi()) return node.getVersionHistory();
+        return session.getWorkspace().getVersionManager().getVersionHistory(node.getPath());
+    }
+
+    @SuppressWarnings( "deprecation" )
+    protected Version baseVersion( Node node ) throws RepositoryException {
+        if (useDeprecatedApi()) return node.getBaseVersion();
+        return session.getWorkspace().getVersionManager().getBaseVersion(node.getPath());
+    }
+
+    @SuppressWarnings( "deprecation" )
+    protected Version checkin( Node node ) throws RepositoryException {
+        if (useDeprecatedApi()) return node.checkin();
+        return session.getWorkspace().getVersionManager().checkin(node.getPath());
+    }
+
+    @SuppressWarnings( "deprecation" )
+    protected void checkout( Node node ) throws RepositoryException {
+        if (useDeprecatedApi()) {
+            node.checkout();
+        } else {
+            session.getWorkspace().getVersionManager().checkout(node.getPath());
+        }
+    }
+
+    @SuppressWarnings( "deprecation" )
+    protected void restore( Node node,
+                            Version version,
+                            boolean removeExisting ) throws RepositoryException {
+        if (useDeprecatedApi()) {
+            node.restore(version, removeExisting);
+        } else {
+            session.getWorkspace().getVersionManager().restore(version, removeExisting);
+        }
+    }
+
+    @SuppressWarnings( "deprecation" )
+    protected void lock( Node node,
+                         boolean isDeep,
+                         boolean isSessionScoped ) throws RepositoryException {
+        if (useDeprecatedApi()) {
+            node.lock(isDeep, isSessionScoped);
+        } else {
+            session.getWorkspace().getLockManager().lock(node.getPath(), isDeep, isSessionScoped, 1L, "owner");
+        }
     }
 
     /**
@@ -497,6 +553,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     }
 
+    @SuppressWarnings( "deprecation" )
     public void testShouldCreateProperVersionHistoryWhenSavingVersionedNode() throws Exception {
         session = getHelper().getReadWriteSession();
         Node node = session.getRootNode().addNode("/test", "nt:unstructured");
@@ -519,42 +576,44 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         assertThat(node.hasProperty("jcr:uuid"), is(true));
         assertThat(node.getProperty("jcr:uuid").getString(), is(history.getProperty("jcr:versionableUuid").getString()));
 
-        assertThat(node.getVersionHistory().getUUID(), is(history.getUUID()));
-        assertThat(node.getVersionHistory().getPath(), is(history.getPath()));
+        assertThat(versionHistory(node).getUUID(), is(history.getUUID()));
+        assertThat(versionHistory(node).getIdentifier(), is(history.getIdentifier()));
+        assertThat(versionHistory(node).getPath(), is(history.getPath()));
 
-        assertThat(node.getBaseVersion().getUUID(), is(version.getUUID()));
-        assertThat(node.getBaseVersion().getPath(), is(version.getPath()));
+        assertThat(baseVersion(node).getUUID(), is(version.getUUID()));
+        assertThat(baseVersion(node).getIdentifier(), is(version.getIdentifier()));
+        assertThat(baseVersion(node).getPath(), is(version.getPath()));
     }
 
     public void testShouldCreateProperStructureForPropertiesOnTheFirstCheckInOfANode() throws Exception {
         session = getHelper().getReadWriteSession();
         Node node = session.getRootNode().addNode("/checkInTest", "modetest:versionTest");
-        session.getRootNode().save();
+        session.save();
 
         node.addMixin("mix:versionable");
-        node.save();
+        session.save();
 
         node.setProperty("abortProp", "abortPropValue");
         node.setProperty("copyProp", "copyPropValue");
         node.setProperty("ignoreProp", "ignorePropValue");
         node.setProperty("versionProp", "versionPropValue");
 
-        node.save();
+        session.save();
 
         try {
-            node.checkin();
+            checkin(node);
             fail("Should not be able to checkin a node with a property that has an OnParentVersionAction of ABORT");
         } catch (VersionException ve) {
             assertThat(node.getProperty("jcr:isCheckedOut").getBoolean(), is(true));
         }
 
         node.setProperty("abortProp", (String)null);
-        node.save();
+        session.save();
 
-        node.checkin();
+        checkin(node);
         assertThat(node.getProperty("jcr:isCheckedOut").getBoolean(), is(false));
 
-        Version version = node.getBaseVersion();
+        Version version = baseVersion(node);
         assertThat(version, is(notNullValue()));
         assertThat(version.getProperty("jcr:frozenNode/copyProp").getString(), is("copyPropValue"));
         assertThat(version.getProperty("jcr:frozenNode/versionProp").getString(), is("versionPropValue"));
@@ -566,14 +625,14 @@ public class ModeShapeTckTest extends AbstractJCRTest {
             // Expected
         }
 
-        node.checkout();
+        checkout(node);
 
         node.setProperty("abortProp", "abortPropValueNew");
         node.setProperty("copyProp", "copyPropValueNew");
         node.setProperty("ignoreProp", "ignorePropValueNew");
         node.setProperty("versionProp", "versionPropValueNew");
 
-        version = node.getBaseVersion();
+        version = baseVersion(node);
         assertThat(version, is(notNullValue()));
         assertThat(version.getProperty("jcr:frozenNode/copyProp").getString(), is("copyPropValue"));
         assertThat(version.getProperty("jcr:frozenNode/versionProp").getString(), is("versionPropValue"));
@@ -585,14 +644,14 @@ public class ModeShapeTckTest extends AbstractJCRTest {
             // Expected
         }
 
-        node.save();
+        session.save();
 
     }
 
     public void testShouldCreateProperHistoryForNodeWithCopySemantics() throws Exception {
         session = getHelper().getReadWriteSession();
         Node node = session.getRootNode().addNode("/checkInTest", "modetest:versionTest");
-        session.getRootNode().save();
+        session.save();
 
         /*
          * Create /checkinTest/copyNode/AbortNode with copyNode being versionable.  This should be able 
@@ -615,9 +674,9 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         Node versionNode = copyNode.addNode("versionNode", "modetest:versionTest");
         versionNode.addMixin("mix:versionable");
 
-        node.save();
+        session.save();
 
-        Version version = copyNode.checkin();
+        Version version = checkin(copyNode);
 
         assertThat(version.getProperty("jcr:frozenNode/versionNode/jcr:primaryType").getString(), is("nt:frozenNode"));
         assertThat(version.getProperty("jcr:frozenNode/versionNode/jcr:frozenPrimaryType").getString(),
@@ -648,9 +707,9 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         abortNode.setProperty("ignoreProp", "ignorePropValue");
         abortNode.setProperty("copyProp", "copyPropValue");
 
-        node.save();
+        session.save();
 
-        Version version = versionNode.checkin();
+        Version version = checkin(versionNode);
 
         assertThat(version.getProperty("jcr:frozenNode/abortNode/jcr:primaryType").getString(), is("nt:frozenNode"));
         assertThat(version.getProperty("jcr:frozenNode/abortNode/jcr:frozenPrimaryType").getString(), is("modetest:versionTest"));
@@ -681,9 +740,9 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         copyNode.setProperty("ignoreProp", "ignorePropValue");
         copyNode.setProperty("copyProp", "copyPropValue");
 
-        node.save();
+        session.save();
 
-        Version version = versionNode.checkin();
+        Version version = checkin(versionNode);
 
         assertThat(version.getProperty("jcr:frozenNode/copyNode/jcr:primaryType").getString(), is("nt:versionedChild"));
         try {
@@ -701,7 +760,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         }
 
         String childUuid = version.getProperty("jcr:frozenNode/copyNode/jcr:childVersionHistory").getString();
-        Node childNode = session.getNodeByUUID(childUuid);
+        Node childNode = session.getNodeByIdentifier(childUuid);
 
         Node rootNode = childNode.getNode("jcr:rootVersion");
 
@@ -711,7 +770,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
     public void testShouldRestorePropertiesOnVersionableNode() throws Exception {
         session = getHelper().getReadWriteSession();
         Node node = session.getRootNode().addNode("/checkInTest", "modetest:versionTest");
-        session.getRootNode().save();
+        session.save();
 
         /*
          * Create /checkinTest/copyNode with copyNode being versionable.  This should be able 
@@ -723,23 +782,23 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         copyNode.setProperty("copyProp", "copyPropValue");
         copyNode.setProperty("ignoreProp", "ignorePropValue");
         copyNode.setProperty("computeProp", "computePropValue");
-        node.save();
+        session.save();
 
-        Version version = copyNode.checkin();
+        Version version = checkin(copyNode);
 
         /*
          * Make some changes
          */
-        copyNode.checkout();
+        checkout(copyNode);
         copyNode.addMixin("mix:lockable");
         copyNode.setProperty("copyProp", "copyPropValueNew");
         copyNode.setProperty("ignoreProp", "ignorePropValueNew");
         copyNode.setProperty("versionProp", "versionPropValueNew");
         copyNode.setProperty("computeProp", "computePropValueNew");
-        copyNode.save();
-        copyNode.checkin();
+        session.save();
+        checkin(copyNode);
 
-        copyNode.restore(version, false);
+        restore(copyNode, version, false);
 
         assertThat(copyNode.getProperty("copyProp").getString(), is("copyPropValue"));
         assertThat(copyNode.getProperty("ignoreProp").getString(), is("ignorePropValueNew"));
@@ -770,7 +829,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         Node fileNode = projectNode.addNode("fileNode", "nt:file");
         Node contentNode = fileNode.addNode("jcr:content", "nt:resource");
-        contentNode.setProperty("jcr:data", new ByteArrayInputStream(largeArray));
+        Binary binaryValue = session.getValueFactory().createBinary(new ByteArrayInputStream(largeArray));
+        contentNode.setProperty("jcr:data", binaryValue);
         contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
         contentNode.setProperty("jcr:mimeType", "application/octet-stream");
 
@@ -804,13 +864,12 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         // Add the mixin, but don't save it
         testNode.addMixin("mix:versionable");
-        testNode.checkout();
+        checkout(testNode);
 
-        testNode.save();
+        session.save();
 
         // Now check that it still returns silently on a saved node that was never checked in.
-        testNode.checkout();
-
+        checkout(testNode);
     }
 
     public void testShouldCreateVersionStorageForWhenVersionableNodesCopied() throws Exception {
@@ -836,11 +895,11 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         parentNode = (Node)session.getItem(newParentPath);
         childNode = parentNode.getNode("versionableChild");
 
-        parentNode.checkout();
-        parentNode.checkin();
+        checkout(parentNode);
+        checkin(parentNode);
 
-        childNode.checkout();
-        childNode.checkin();
+        checkout(childNode);
+        checkin(childNode);
 
     }
 
@@ -921,7 +980,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         String sourceName = sourceNode.getName();
         session.move(sourceNode.getPath(), targetNode.getPath() + "/" + sourceName);
         sourceNode = targetNode.getNode(sourceName);
-        sourceNode.checkout();
+        checkout(sourceNode);
     }
 
     public void testShouldNotAllowLockedNodeToBeRemoved() throws Exception {
@@ -934,7 +993,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         Node targetNode = parentNode.addNode("lockedTarget");
         session.save();
 
-        parentNode.lock(true, true);
+        lock(parentNode, true, true);
 
         Session session2 = getHelper().getReadWriteSession();
         Node targetNode2 = (Node)session2.getItem("/lockedParent/lockedTarget");
@@ -961,7 +1020,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         targetNode.setProperty("foo", "bar");
         session.save();
 
-        parentNode.lock(true, true);
+        lock(parentNode, true, true);
 
         Session session2 = getHelper().getReadWriteSession();
         Property targetProp2 = (Property)session2.getItem("/lockedPropParent/lockedTarget/foo");
@@ -987,7 +1046,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         Node targetNode = parentNode.addNode("checkedInTarget");
         session.save();
 
-        parentNode.checkin();
+        checkin(parentNode);
 
         try {
             targetNode.remove();
@@ -996,7 +1055,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
             // Success
         }
 
-        parentNode.checkout();
+        checkout(parentNode);
         targetNode.remove();
         session.save();
     }
@@ -1012,7 +1071,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         Property targetProp = targetNode.setProperty("foo", "bar");
         session.save();
 
-        parentNode.checkin();
+        checkin(parentNode);
 
         try {
             targetProp.remove();
@@ -1021,7 +1080,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
             // Success
         }
 
-        parentNode.checkout();
+        checkout(parentNode);
         targetProp.remove();
         session.save();
     }

@@ -77,7 +77,7 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
         this.valueFactories = valueFactories;
         this.sessionCache = sessionCache;
         this.type = type;
-        this.value = value;
+        this.value = value instanceof JcrBinary ? ((JcrBinary)value).binary() : value;
     }
 
     private ValueFormatException createValueFormatException( Class<?> type ) {
@@ -309,7 +309,7 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
                     case PropertyType.STRING:
                         return this.getString().equals(that.getString());
                     case PropertyType.BINARY:
-                        return IoUtil.isSame(this.getStream(), that.getStream());
+                        return IoUtil.isSame(this.getStream(), that.getBinary().getStream());
                     case PropertyType.BOOLEAN:
                         return this.getBoolean() == that.getBoolean();
                     case PropertyType.DOUBLE:
@@ -458,11 +458,4 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
     public String toString() {
         return (value == null ? "null" : value.toString()) + " (" + PropertyType.nameFromValue(type) + ")";
     }
-
-    private enum State {
-        NEVER_CONSUMED,
-        INPUT_STREAM_CONSUMED,
-        NON_INPUT_STREAM_CONSUMED
-    }
-
 }

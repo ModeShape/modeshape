@@ -88,7 +88,7 @@ public final class JcrObservationManagerTest extends TestSuite {
     private static final String LOCK_MIXIN = "mix:lockable"; // extends referenceable
     private static final String LOCK_OWNER = "jcr:lockOwner"; // property
     private static final String LOCK_IS_DEEP = "jcr:lockIsDeep"; // property
-    private static final String NT_BASE = "nt:base";
+    // private static final String NT_BASE = "nt:base";
     private static final String REF_MIXIN = "mix:referenceable";
     private static final String UNSTRUCTURED = "nt:unstructured";
     private static final String USER_ID = "superuser";

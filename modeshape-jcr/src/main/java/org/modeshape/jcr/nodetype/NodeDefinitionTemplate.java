@@ -45,6 +45,7 @@ public interface NodeDefinitionTemplate extends javax.jcr.nodetype.NodeDefinitio
      *         in either qualified or expanded form.
      * @deprecated Use {@link #setRequiredPrimaryTypeNames(String[])} instead
      */
+    @Deprecated
     public void setRequiredPrimaryTypes( String[] requiredPrimaryTypes ) throws ConstraintViolationException;
 
     /**
@@ -55,6 +56,7 @@ public interface NodeDefinitionTemplate extends javax.jcr.nodetype.NodeDefinitio
      *         qualified or expanded form.
      * @deprecated Use {@link #setDefaultPrimaryTypeName(String)} instead
      */
+    @Deprecated
     public void setDefaultPrimaryType( String defaultPrimaryType ) throws ConstraintViolationException;
 
 }

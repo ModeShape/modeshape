@@ -768,7 +768,7 @@ class JcrWorkspace implements Workspace {
     }
 
     @Override
-    public VersionManager getVersionManager() throws UnsupportedRepositoryOperationException, RepositoryException {
+    public VersionManager getVersionManager() {
         return versionManager;
     }
 

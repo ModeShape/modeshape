@@ -25,6 +25,7 @@ package org.modeshape.jdbc;
 
 import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -83,7 +84,7 @@ public class TestUtil {
     public static List<Object[]> TUPLES;
 
     public static final String SQL_SELECT = "Select propA FROM typeA";
-    
+
     public static final String DRIVER_VERSION = JdbcI18n.driverVersion.text();
 
     static {
@@ -104,17 +105,15 @@ public class TestUtil {
          *  the tuples data types for each column correspond to @see TYPE_NAMES
          */
         TUPLES.add(new Object[] {"r1c1", new Long(1), null, null, new Double(1), new Boolean(true), new Date(),
-            new ByteArrayInputStream((new String("Heres my data at r1").getBytes()))});
+            new String("Heres my data at r1").getBytes()});
         TUPLES.add(new Object[] {"r2c1", new Long(2), null, null, new Double(2), new Boolean(false), new Date(),
-            new ByteArrayInputStream((new String("Heres my data r2   ").getBytes()))});
+            new String("Heres my data r2   ").getBytes()});
         TUPLES.add(new Object[] {"r3c1", new Long(3), null, null, new Double(3), new Boolean(true), new Date(),
-            new ByteArrayInputStream((new String("Heres my data at r3  ").getBytes()))});
+            new String("Heres my data at r3  ").getBytes()});
         TUPLES.add(new Object[] {"r4c1", 4L, null, null, 4D, new Boolean(true).booleanValue(), new Date(),
-            new ByteArrayInputStream((new String("Heres  my  data    r4  ").getBytes()))});
-        
+            new String("Heres  my  data    r4  ").getBytes()});
+
     }
-    
-    
 
     static Node[] createNodes() {
         Node[] nodes = new Node[NODE_NAMES.length];
@@ -131,23 +130,24 @@ public class TestUtil {
         }
         return nodes;
     }
-    
+
     public static boolean hasMinorVersion() {
 
         String[] coords = DRIVER_VERSION.split("[.-]");
-	final int major = Integer.parseInt(coords[0]);
-	final int minor = Integer.parseInt(coords[1]);
-		
-	return ( minor != 0);
-	
-    }
-    
-    public static int majorVersion() {
-	String[] coords = DRIVER_VERSION.split("[.-]");
-	final int major = Integer.parseInt(coords[0]);
+        @SuppressWarnings( "unused" )
+        final int major = Integer.parseInt(coords[0]);
+        final int minor = Integer.parseInt(coords[1]);
 
-	return major;
-	
+        return (minor != 0);
+
+    }
+
+    public static int majorVersion() {
+        String[] coords = DRIVER_VERSION.split("[.-]");
+        final int major = Integer.parseInt(coords[0]);
+
+        return major;
+
     }
 
     public static QueryResult createQueryResult() {
@@ -555,6 +555,60 @@ class QueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
             public Binary getBinary() throws RepositoryException {
                 if (value instanceof Binary) {
                     return ((Binary)valueObject);
+                }
+                if (value instanceof byte[]) {
+                    final byte[] bytes = (byte[])value;
+                    return new Binary() {
+
+                        @Override
+                        public void dispose() {
+                        }
+
+                        @Override
+                        public long getSize() {
+                            return bytes.length;
+                        }
+
+                        @Override
+                        public InputStream getStream() {
+                            return new ByteArrayInputStream(bytes);
+                        }
+
+                        @Override
+                        public int read( byte[] b,
+                                         long position ) throws IOException {
+                            if (getSize() <= position) return -1;
+                            InputStream stream = null;
+                            IOException error = null;
+                            try {
+                                stream = getStream();
+                                // Read/skip the next 'position' bytes ...
+                                long skip = position;
+                                while (skip > 0) {
+                                    long skipped = stream.skip(skip);
+                                    if (skipped <= 0) return -1;
+                                    skip -= skipped;
+                                }
+                                return stream.read(b);
+                            } catch (IOException e) {
+                                error = e;
+                                throw e;
+                            } finally {
+                                if (stream != null) {
+                                    try {
+                                        stream.close();
+                                    } catch (RuntimeException t) {
+                                        // Only throw if we've not already thrown an exception ...
+                                        if (error == null) throw t;
+                                    } catch (IOException t) {
+                                        // Only throw if we've not already thrown an exception ...
+                                        if (error == null) throw t;
+                                    }
+                                }
+                            }
+                        }
+
+                    };
                 }
                 throw new ValueFormatException("Value not a Binary");
             }
