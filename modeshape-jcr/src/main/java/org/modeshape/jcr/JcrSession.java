@@ -779,7 +779,15 @@ class JcrSession implements Session {
         try {
             return cache.findJcrNode(Location.create(UUID.fromString(id)));
         } catch (IllegalArgumentException e) {
-            throw new RepositoryException(JcrI18n.identifierPathContainedUnsupportedIdentifierFormat.text(id));
+            try {
+                // See if it's a path ...
+                PathFactory pathFactory = executionContext.getValueFactories().getPathFactory();
+                Path path = pathFactory.create(id);
+                return getNode(path);
+            } catch (org.modeshape.graph.property.ValueFormatException e2) {
+                // It's not a path either ...
+                throw new RepositoryException(JcrI18n.identifierPathContainedUnsupportedIdentifierFormat.text(id));
+            }
         }
     }
 

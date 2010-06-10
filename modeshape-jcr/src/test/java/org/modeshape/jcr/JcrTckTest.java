@@ -274,7 +274,6 @@ public class JcrTckTest {
         suite.addTestSuite(CanRemoveItemTest.class);
 
         // JCR 2.0
-        suite.addTestSuite(NodeTypeCreationTest.class);
 
         return suite;
     }
@@ -359,6 +358,7 @@ public class JcrTckTest {
         suite.addTestSuite(ValueFactoryTest.class);
 
         // JCR 2.0
+        suite.addTestSuite(NodeTypeCreationTest.class);
 
         // // new node types
         // suite.addTestSuite(GetWeakReferencesTest.class);

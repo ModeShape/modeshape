@@ -249,7 +249,25 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @throws RepositoryException if there is an error accessing the identifier of the node
      */
     String identifier() throws RepositoryException {
-        return uuid().toString();
+        String identifier = null;
+        UUID uuid = nodeInfo().getLocation().getUuid();
+        if (uuid == null) {
+            PropertyInfo<JcrPropertyPayload> uuidProp = nodeInfo().getProperty(JcrLexicon.UUID);
+            if (uuidProp == null) {
+                uuidProp = nodeInfo().getProperty(ModeShapeLexicon.UUID);
+            }
+            if (uuidProp != null) {
+                assert !uuidProp.getProperty().isEmpty();
+                identifier = context().getValueFactories().getStringFactory().create(uuidProp.getProperty().getFirstValue());
+            } else {
+                // There is no UUID property, then we need to return an identifier, so use the path ...
+                identifier = getPath();
+            }
+        } else {
+            identifier = uuid.toString();
+        }
+        assert identifier != null;
+        return identifier;
     }
 
     /**
@@ -259,7 +277,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @throws RepositoryException if there is an error accessing the identifier of this node
      */
     String identifierPath() throws RepositoryException {
-        return "[" + uuid() + "]";
+        return "[" + identifier() + "]";
     }
 
     /**
