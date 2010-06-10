@@ -66,6 +66,7 @@ import org.modeshape.graph.query.model.Operator;
 import org.modeshape.graph.query.model.Order;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.model.SetQuery.Operation;
+import org.modeshape.graph.query.plan.PlanHints;
 import org.modeshape.jcr.api.query.qom.ArithmeticOperand;
 import org.modeshape.jcr.api.query.qom.Between;
 import org.modeshape.jcr.api.query.qom.Limit;
@@ -84,7 +85,7 @@ import org.modeshape.jcr.query.JcrQueryContext;
 public class JcrQueryObjectModelFactory
     implements QueryObjectModelFactory, org.modeshape.jcr.api.query.qom.QueryObjectModelFactory {
 
-    public static final String LANGUAGE = Query.JCR_SQL2;
+    public static final String LANGUAGE = Query.JCR_JQOM;
     private final JcrQueryContext context;
 
     public JcrQueryObjectModelFactory( JcrQueryContext context ) {
@@ -109,7 +110,12 @@ public class JcrQueryObjectModelFactory
 
         JcrSelectQuery query = select(source, constraint, orderings, columns, null, false);
         String statement = query.toString();
-        return new JcrQueryObjectModel(context, statement, LANGUAGE, query, null, null);
+        // Set up the hints ...
+        PlanHints hints = new PlanHints();
+        hints.showPlan = true;
+        // We want to allow use of residual properties (not in the schemata) for criteria ...
+        hints.validateColumnExistance = false;
+        return new JcrQueryObjectModel(context, statement, LANGUAGE, query, hints, null);
     }
 
     /**
@@ -127,14 +133,23 @@ public class JcrQueryObjectModelFactory
                                   Limit limit,
                                   boolean distinct ) {
         JcrSource jcrSource = CheckArg.getInstanceOf(source, JcrSource.class, "source");
-        JcrConstraint jcrConstraint = CheckArg.getInstanceOf(constraint, JcrConstraint.class, "constraint");
-        List<JcrColumn> jcrColumns = new ArrayList<JcrColumn>();
-        for (int i = 0; i != columns.length; ++i) {
-            jcrColumns.add(CheckArg.getInstanceOf(columns[i], JcrColumn.class, "column[" + i + "]"));
+        JcrConstraint jcrConstraint = null;
+        if (constraint != null) {
+            jcrConstraint = CheckArg.getInstanceOf(constraint, JcrConstraint.class, "constraint");
         }
-        List<JcrOrdering> jcrOrderings = new ArrayList<JcrOrdering>();
-        for (int i = 0; i != orderings.length; ++i) {
-            jcrOrderings.add(CheckArg.getInstanceOf(orderings[i], JcrOrdering.class, "orderings[" + i + "]"));
+        List<JcrColumn> jcrColumns = null;
+        if (columns != null) {
+            jcrColumns = new ArrayList<JcrColumn>();
+            for (int i = 0; i != columns.length; ++i) {
+                jcrColumns.add(CheckArg.getInstanceOf(columns[i], JcrColumn.class, "column[" + i + "]"));
+            }
+        }
+        List<JcrOrdering> jcrOrderings = null;
+        if (orderings != null) {
+            jcrOrderings = new ArrayList<JcrOrdering>();
+            for (int i = 0; i != orderings.length; ++i) {
+                jcrOrderings.add(CheckArg.getInstanceOf(orderings[i], JcrOrdering.class, "orderings[" + i + "]"));
+            }
         }
         JcrLimit jcrLimit = limit == null ? JcrLimit.NONE : new JcrLimit(limit.getRowLimit(), limit.getOffset());
         return new JcrSelectQuery(jcrSource, jcrConstraint, jcrOrderings, jcrColumns, jcrLimit, distinct);

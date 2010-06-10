@@ -51,3 +51,4 @@
 - dateProp (DATE)
 - doubleProp (DOUBLE)
 - longProp (LONG)
+- uriProp (URI)

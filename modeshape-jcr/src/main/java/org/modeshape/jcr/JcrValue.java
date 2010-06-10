@@ -26,6 +26,7 @@ package org.modeshape.jcr;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.util.Calendar;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
@@ -65,9 +66,9 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
               Object value ) {
         assert valueFactories != null;
         assert type == PropertyType.BINARY || type == PropertyType.BOOLEAN || type == PropertyType.DATE
-               || type == PropertyType.DOUBLE || type == PropertyType.LONG || type == PropertyType.NAME
-               || type == PropertyType.PATH || type == PropertyType.REFERENCE || type == PropertyType.STRING
-               || type == PropertyType.DECIMAL;
+               || type == PropertyType.DECIMAL || type == PropertyType.DOUBLE || type == PropertyType.LONG
+               || type == PropertyType.NAME || type == PropertyType.PATH || type == PropertyType.REFERENCE
+               || type == PropertyType.WEAKREFERENCE || type == PropertyType.STRING || type == PropertyType.URI;
 
         // Leaving this assertion out for now so that values can be created in node type sources, which are created outside
         // the context of any particular session.
@@ -402,6 +403,7 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
                 }
 
             case PropertyType.REFERENCE:
+            case PropertyType.WEAKREFERENCE:
                 if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY) {
                     throw createValueFormatException(Node.class);
                 }
@@ -427,6 +429,25 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
                 }
                 try {
                     return this.withTypeAndValue(type, valueFactories.getLongFactory().create(value));
+                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    throw createValueFormatException(vfe);
+                }
+            case PropertyType.DECIMAL:
+                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY && this.type != PropertyType.DOUBLE
+                    && this.type != PropertyType.LONG && this.type != PropertyType.DATE) {
+                    throw createValueFormatException(BigDecimal.class);
+                }
+                try {
+                    return this.withTypeAndValue(type, valueFactories.getDecimalFactory().create(value));
+                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    throw createValueFormatException(vfe);
+                }
+            case PropertyType.URI:
+                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY && this.type != PropertyType.URI) {
+                    throw createValueFormatException(URI.class);
+                }
+                try {
+                    return this.withTypeAndValue(type, valueFactories.getUriFactory().create(value));
                 } catch (org.modeshape.graph.property.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }

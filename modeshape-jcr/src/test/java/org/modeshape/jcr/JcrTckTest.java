@@ -142,6 +142,7 @@ import org.apache.jackrabbit.test.api.observation.NodeReorderTest;
 import org.apache.jackrabbit.test.api.observation.PropertyAddedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyChangedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
+import org.apache.jackrabbit.test.api.query.CreateQueryTest;
 import org.apache.jackrabbit.test.api.query.DerefQueryLevel1Test;
 import org.apache.jackrabbit.test.api.query.ElementTest;
 import org.apache.jackrabbit.test.api.query.GetLanguageTest;
@@ -151,15 +152,24 @@ import org.apache.jackrabbit.test.api.query.GetPropertyNamesTest;
 import org.apache.jackrabbit.test.api.query.GetStatementTest;
 import org.apache.jackrabbit.test.api.query.GetSupportedQueryLanguagesTest;
 import org.apache.jackrabbit.test.api.query.OrderByDateTest;
+import org.apache.jackrabbit.test.api.query.OrderByDecimalTest;
 import org.apache.jackrabbit.test.api.query.OrderByDoubleTest;
+import org.apache.jackrabbit.test.api.query.OrderByLengthTest;
+import org.apache.jackrabbit.test.api.query.OrderByLocalNameTest;
 import org.apache.jackrabbit.test.api.query.OrderByLongTest;
+import org.apache.jackrabbit.test.api.query.OrderByLowerCaseTest;
 import org.apache.jackrabbit.test.api.query.OrderByMultiTypeTest;
+import org.apache.jackrabbit.test.api.query.OrderByNameTest;
 import org.apache.jackrabbit.test.api.query.OrderByStringTest;
+import org.apache.jackrabbit.test.api.query.OrderByURITest;
+import org.apache.jackrabbit.test.api.query.OrderByUpperCaseTest;
 import org.apache.jackrabbit.test.api.query.PredicatesTest;
 import org.apache.jackrabbit.test.api.query.QueryResultNodeIteratorTest;
 import org.apache.jackrabbit.test.api.query.SQLJcrPathTest;
 import org.apache.jackrabbit.test.api.query.SQLQueryLevel2Test;
 import org.apache.jackrabbit.test.api.query.SaveTest;
+import org.apache.jackrabbit.test.api.query.SetLimitTest;
+import org.apache.jackrabbit.test.api.query.SetOffsetTest;
 import org.apache.jackrabbit.test.api.query.SimpleSelectionTest;
 import org.apache.jackrabbit.test.api.query.XPathDocOrderTest;
 import org.apache.jackrabbit.test.api.query.XPathJcrPathTest;
@@ -390,7 +400,7 @@ public class JcrTckTest {
             // We currently don't pass the tests in those suites that are commented out
             // See https://jira.jboss.org/jira/browse/ModeShape-285
 
-            // addTest(new QueryTests());
+            addTest(new QueryTests());
             // addTest(new ObservationTests()); // remove this and the ObservationTests inner class when all tests pass and
             // uncomment observation.TestAll
 
@@ -427,6 +437,7 @@ public class JcrTckTest {
             addTestSuite(GetPersistentQueryPathTest.class);
             addTestSuite(GetStatementTest.class);
             addTestSuite(GetSupportedQueryLanguagesTest.class);
+            addTestSuite(CreateQueryTest.class);
 
             addTestSuite(QueryResultNodeIteratorTest.class);
             addTestSuite(GetPropertyNamesTest.class);
@@ -438,6 +449,15 @@ public class JcrTckTest {
             addTestSuite(OrderByLongTest.class);
             addTestSuite(OrderByMultiTypeTest.class);
             addTestSuite(OrderByStringTest.class);
+            addTestSuite(OrderByLengthTest.class);
+            addTestSuite(OrderByLocalNameTest.class);
+            addTestSuite(OrderByNameTest.class);
+            addTestSuite(OrderByLowerCaseTest.class);
+            addTestSuite(OrderByUpperCaseTest.class);
+            addTestSuite(OrderByDecimalTest.class);
+            addTestSuite(OrderByURITest.class);
+            addTestSuite(SetLimitTest.class);
+            addTestSuite(SetOffsetTest.class);
         }
     }
 

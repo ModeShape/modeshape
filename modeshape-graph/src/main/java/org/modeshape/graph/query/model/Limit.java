@@ -42,10 +42,10 @@ public class Limit implements LanguageObject {
      * Create a limit on the number of rows.
      * 
      * @param rowLimit the maximum number of rows
-     * @throws IllegalArgumentException if the row limit is not positive
+     * @throws IllegalArgumentException if the row limit is negative
      */
     public Limit( int rowLimit ) {
-        CheckArg.isPositive(rowLimit, "rowLimit");
+        CheckArg.isNonNegative(rowLimit, "rowLimit");
         this.rowLimit = rowLimit;
         this.offset = 0;
     }
@@ -55,11 +55,11 @@ public class Limit implements LanguageObject {
      * 
      * @param rowLimit the maximum number of rows
      * @param offset the number of rows to skip before beginning the results
-     * @throws IllegalArgumentException if the row limit is not positive, or if the offset is negative
+     * @throws IllegalArgumentException if the row limit is negative, or if the offset is negative
      */
     public Limit( int rowLimit,
                   int offset ) {
-        CheckArg.isPositive(rowLimit, "rowLimit");
+        CheckArg.isNonNegative(rowLimit, "rowLimit");
         CheckArg.isNonNegative(offset, "offset");
         this.rowLimit = rowLimit;
         this.offset = offset;
@@ -77,7 +77,7 @@ public class Limit implements LanguageObject {
     /**
      * Get the maximum number of rows that are to be returned.
      * 
-     * @return the maximum number of rows; always positive, or equal to {@link Integer#MAX_VALUE} if there is no limit
+     * @return the maximum number of rows; never negative, or equal to {@link Integer#MAX_VALUE} if there is no limit
      */
     public final int rowLimit() {
         return rowLimit;

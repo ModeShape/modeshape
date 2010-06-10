@@ -46,23 +46,26 @@ public class LimitComponent extends DelegatingComponent {
      */
     @Override
     public List<Object[]> execute() {
+        if (limit.rowLimit() == 0) {
+            return emptyTuples();
+        }
         List<Object[]> tuples = delegate().execute();
         if (limit.isOffset()) {
             if (limit.offset() >= tuples.size()) {
                 // There aren't enough results, so return an empty list ...
                 return emptyTuples();
             }
-            if (limit.isUnlimited()) {
+            if (limit.hasRowLimited()) {
+                // Both an offset AND a row limit (which may be more than the number of rows available)...
+                int toIndex = Math.min(tuples.size(), Math.max(0, limit.offset() + limit.rowLimit()));
+                tuples = tuples.subList(limit.offset(), toIndex);
+            } else {
                 // An offset, but no row limit ...
                 tuples = tuples.subList(limit.offset(), tuples.size());
-            } else {
-                // Both an offset AND a row limit (which may be more than the number of rows available)...
-                int toIndex = Math.min(limit.offset() + limit.rowLimit(), tuples.size());
-                tuples = tuples.subList(limit.offset(), toIndex);
             }
         } else {
             // No offset, but perhaps there's a row limit ...
-            if (!limit.isUnlimited()) {
+            if (limit.hasRowLimited()) {
                 int toIndex = Math.min(limit.rowLimit(), tuples.size());
                 tuples = tuples.subList(0, toIndex);
             }

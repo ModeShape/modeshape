@@ -915,6 +915,7 @@ class JcrSession implements Session {
                         }
 
                     case PropertyType.REFERENCE:
+                    case PropertyType.WEAKREFERENCE:
                         try {
                             return valueFactories.getReferenceFactory().create(value);
                         } catch (org.modeshape.graph.property.ValueFormatException vfe) {
@@ -929,6 +930,18 @@ class JcrSession implements Session {
                     case PropertyType.LONG:
                         try {
                             return valueFactories.getLongFactory().create(value);
+                        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                            throw new ValueFormatException(vfe);
+                        }
+                    case PropertyType.DECIMAL:
+                        try {
+                            return valueFactories.getDecimalFactory().create(value);
+                        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                            throw new ValueFormatException(vfe);
+                        }
+                    case PropertyType.URI:
+                        try {
+                            return valueFactories.getUriFactory().create(value);
                         } catch (org.modeshape.graph.property.ValueFormatException vfe) {
                             throw new ValueFormatException(vfe);
                         }
