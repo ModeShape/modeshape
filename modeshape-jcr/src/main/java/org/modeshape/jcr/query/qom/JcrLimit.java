@@ -38,7 +38,7 @@ public class JcrLimit extends Limit implements org.modeshape.jcr.api.query.qom.L
      * Create a limit on the number of rows.
      * 
      * @param rowLimit the maximum number of rows
-     * @throws IllegalArgumentException if the row limit is not positive
+     * @throws IllegalArgumentException if the row limit is negative
      */
     public JcrLimit( int rowLimit ) {
         super(rowLimit);
@@ -49,7 +49,7 @@ public class JcrLimit extends Limit implements org.modeshape.jcr.api.query.qom.L
      * 
      * @param rowLimit the maximum number of rows
      * @param offset the number of rows to skip before beginning the results
-     * @throws IllegalArgumentException if the row limit is not positive, or if the offset is negative
+     * @throws IllegalArgumentException if the row limit is negative, or if the offset is negative
      */
     public JcrLimit( int rowLimit,
                      int offset ) {
