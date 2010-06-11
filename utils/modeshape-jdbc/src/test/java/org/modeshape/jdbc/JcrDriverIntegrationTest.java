@@ -343,9 +343,16 @@ public class JcrDriverIntegrationTest {
     @Ignore
     @Test
     public void shouldBeAbleToExecuteSqlQueryUsingJoinToFindAllCarsUnderHybrid() throws SQLException {
-
-        DriverTestUtil.executeTestAndPrint(this.connection,
-                                           "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid'");
+	String[] expected = {
+		"jcr:path[String]    jcr:score[String]    jcr:primaryType[STRING]",
+		"/Cars/Utility    1.0    nt:unstructured",
+		"/Cars/Hybrid    1.0    nt:unstructured",
+		"/Cars/Sports    1.0    nt:unstructured",
+		"/Cars/Luxury    1.0    nt:unstructured"
+		};
+	
+        DriverTestUtil.executeTest(this.connection,
+                                           "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid'", expected, 4);
 
     }
 
