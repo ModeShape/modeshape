@@ -47,10 +47,10 @@ import org.modeshape.graph.property.ValueFormatException;
  * The standard {@link ValueFactory} for {@link PropertyType#REFERENCE} values.
  */
 @Immutable
-public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
+public class ReferenceValueFactory extends AbstractValueFactory<Reference> {
 
-    public UuidReferenceValueFactory( TextDecoder decoder,
-                                      ValueFactory<String> stringValueFactory ) {
+    public ReferenceValueFactory( TextDecoder decoder,
+                                  ValueFactory<String> stringValueFactory ) {
         super(PropertyType.REFERENCE, decoder, stringValueFactory);
     }
 
@@ -63,10 +63,7 @@ public class UuidReferenceValueFactory extends AbstractValueFactory<Reference> {
             UUID uuid = UUID.fromString(value);
             return new UuidReference(uuid);
         } catch (IllegalArgumentException err) {
-            throw new ValueFormatException(value, getPropertyType(),
-                                           GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                              Reference.class.getSimpleName(),
-                                                                              value), err);
+            return new StringReference(value);
         }
     }
 

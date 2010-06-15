@@ -25,6 +25,7 @@ package org.modeshape.search.lucene;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -474,6 +475,17 @@ public class LuceneSearchSession implements WorkspaceSession {
                 }
                 continue;
             }
+            if (type == FieldType.DECIMAL) {
+                ValueFactory<BigDecimal> decimalFactory = processor.valueFactories.getDecimalFactory();
+                for (Object value : property) {
+                    if (value == null) continue;
+                    BigDecimal decimal = decimalFactory.create(value);
+                    // Convert to a string that is lexicographically sortable ...
+                    value = FieldUtil.decimalToString(decimal);
+                    doc.add(new Field(nameString, stringValue, rule.getStoreOption(), Field.Index.NOT_ANALYZED));
+                }
+                continue;
+            }
             if (type == FieldType.BINARY) {
                 // TODO : add to full-text search ...
                 continue;
@@ -719,6 +731,7 @@ public class LuceneSearchSession implements WorkspaceSession {
         switch (type) {
             case REFERENCE:
             case WEAK_REFERENCE:
+            case DECIMAL: // stored in lexicographically-ordered form
             case STRING:
                 String stringValue = stringFactory.create(value);
                 if (value instanceof Path) {
@@ -819,6 +832,36 @@ public class LuceneSearchSession implements WorkspaceSession {
                         return null;
                 }
                 break;
+            case BOOLEAN:
+                boolean booleanValue = factories.getBooleanFactory().create(value);
+                stringValue = stringFactory.create(value);
+                switch (operator) {
+                    case EQUAL_TO:
+                        return new TermQuery(new Term(field, stringValue));
+                    case NOT_EQUAL_TO:
+                        return new TermQuery(new Term(field, stringFactory.create(!booleanValue)));
+                    case GREATER_THAN:
+                        if (!booleanValue) {
+                            return new TermQuery(new Term(field, stringFactory.create(true)));
+                        }
+                        // Can't be greater than 'true', per JCR spec
+                        return new MatchNoneQuery();
+                    case GREATER_THAN_OR_EQUAL_TO:
+                        return new TermQuery(new Term(field, stringFactory.create(true)));
+                    case LESS_THAN:
+                        if (booleanValue) {
+                            return new TermQuery(new Term(field, stringFactory.create(false)));
+                        }
+                        // Can't be less than 'false', per JCR spec
+                        return new MatchNoneQuery();
+                    case LESS_THAN_OR_EQUAL_TO:
+                        return new TermQuery(new Term(field, stringFactory.create(false)));
+                    case LIKE:
+                        // This is not allowed ...
+                        assert false;
+                        return null;
+                }
+                break;
             case INT:
                 NumericRule<Integer> intRule = (NumericRule<Integer>)rule;
                 int intValue = factories.getLongFactory().create(value).intValue();
@@ -900,36 +943,6 @@ public class LuceneSearchSession implements WorkspaceSession {
                     case LESS_THAN_OR_EQUAL_TO:
                         if (floatValue < fRule.getMinimum()) return new MatchNoneQuery();
                         return NumericRangeQuery.newFloatRange(field, fRule.getMinimum(), floatValue, true, true);
-                    case LIKE:
-                        // This is not allowed ...
-                        assert false;
-                        return null;
-                }
-                break;
-            case BOOLEAN:
-                boolean booleanValue = factories.getBooleanFactory().create(value);
-                stringValue = stringFactory.create(value);
-                switch (operator) {
-                    case EQUAL_TO:
-                        return new TermQuery(new Term(field, stringValue));
-                    case NOT_EQUAL_TO:
-                        return new TermQuery(new Term(field, stringFactory.create(!booleanValue)));
-                    case GREATER_THAN:
-                        if (!booleanValue) {
-                            return new TermQuery(new Term(field, stringFactory.create(true)));
-                        }
-                        // Can't be greater than 'true', per JCR spec
-                        return new MatchNoneQuery();
-                    case GREATER_THAN_OR_EQUAL_TO:
-                        return new TermQuery(new Term(field, stringFactory.create(true)));
-                    case LESS_THAN:
-                        if (booleanValue) {
-                            return new TermQuery(new Term(field, stringFactory.create(false)));
-                        }
-                        // Can't be less than 'false', per JCR spec
-                        return new MatchNoneQuery();
-                    case LESS_THAN_OR_EQUAL_TO:
-                        return new TermQuery(new Term(field, stringFactory.create(false)));
                     case LIKE:
                         // This is not allowed ...
                         assert false;
@@ -1029,6 +1042,27 @@ public class LuceneSearchSession implements WorkspaceSession {
                 lowerInt = factories.getBooleanFactory().create(lowerValue).booleanValue() ? 1 : 0;
                 upperInt = factories.getBooleanFactory().create(upperValue).booleanValue() ? 1 : 0;
                 return NumericRangeQuery.newIntRange(field, lowerInt, upperInt, includesLower, includesUpper);
+            case DECIMAL:
+                BigDecimal lowerDecimal = factories.getDecimalFactory().create(lowerValue);
+                BigDecimal upperDecimal = factories.getDecimalFactory().create(upperValue);
+                String lsv = FieldUtil.decimalToString(lowerDecimal);
+                String usv = FieldUtil.decimalToString(upperDecimal);
+                Query lower = null;
+                if (includesLower) {
+                    lower = CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(lsv, field, factories, false);
+                } else {
+                    lower = CompareStringQuery.createQueryForNodesWithFieldGreaterThan(lsv, field, factories, false);
+                }
+                Query upper = null;
+                if (includesUpper) {
+                    upper = CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(usv, field, factories, false);
+                } else {
+                    upper = CompareStringQuery.createQueryForNodesWithFieldLessThan(usv, field, factories, false);
+                }
+                BooleanQuery query = new BooleanQuery();
+                query.add(lower, Occur.MUST);
+                query.add(upper, Occur.MUST);
+                return query;
             case STRING:
             case REFERENCE:
             case WEAK_REFERENCE:

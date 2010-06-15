@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import javax.jcr.Node;
@@ -270,12 +271,14 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
     /**
      * Return the minimum value allowed by the constraints, or null if no such minimum value is defined by the definition given
      * it's required type and constraints. A minimum value can only be found for numeric types, such as {@link PropertyType#DATE
-     * DATE}, {@link PropertyType#LONG LONG}, and {@link PropertyType#DOUBLE DOUBLE}; all other types will return null.
+     * DATE}, {@link PropertyType#LONG LONG}, {@link PropertyType#DOUBLE DOUBLE}, and {@link PropertyType#DECIMAL DECIMAL}; all
+     * other types will return null.
      * 
      * @return the minimum value, or null if no minimum value could be identified
      */
     Object getMinimumValue() {
-        if (requiredType == PropertyType.DATE || requiredType == PropertyType.DOUBLE || requiredType == PropertyType.LONG) {
+        if (requiredType == PropertyType.DATE || requiredType == PropertyType.DOUBLE || requiredType == PropertyType.LONG
+            || requiredType == PropertyType.DECIMAL) {
             ConstraintChecker checker = this.checker;
             if (checker == null || checker.getType() != requiredType) {
                 checker = createChecker(context, requiredType, valueConstraints);
@@ -291,12 +294,14 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
     /**
      * Return the maximum value allowed by the constraints, or null if no such maximum value is defined by the definition given
      * it's required type and constraints. A maximum value can only be found for numeric types, such as {@link PropertyType#DATE
-     * DATE}, {@link PropertyType#LONG LONG}, and {@link PropertyType#DOUBLE DOUBLE}; all other types will return null.
+     * DATE}, {@link PropertyType#LONG LONG}, {@link PropertyType#DOUBLE DOUBLE}, and {@link PropertyType#DECIMAL DECIMAL}; all
+     * other types will return null.
      * 
      * @return the maximum value, or null if no maximum value could be identified
      */
     Object getMaximumValue() {
-        if (requiredType == PropertyType.DATE || requiredType == PropertyType.DOUBLE || requiredType == PropertyType.LONG) {
+        if (requiredType == PropertyType.DATE || requiredType == PropertyType.DOUBLE || requiredType == PropertyType.LONG
+            || requiredType == PropertyType.DECIMAL) {
             ConstraintChecker checker = this.checker;
             if (checker == null || checker.getType() != requiredType) {
                 checker = createChecker(context, requiredType, valueConstraints);
@@ -416,9 +421,12 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
             case PropertyType.PATH:
                 return new PathConstraintChecker(valueConstraints, context);
             case PropertyType.REFERENCE:
+            case PropertyType.WEAKREFERENCE:
                 return new ReferenceConstraintChecker(valueConstraints, context);
             case PropertyType.STRING:
                 return new StringConstraintChecker(valueConstraints, context);
+            case PropertyType.DECIMAL:
+                return new DecimalConstraintChecker(valueConstraints, context);
             default:
                 throw new IllegalStateException("Invalid property type: " + type);
         }
@@ -705,6 +713,29 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         @Override
         protected Comparable<Double> parseValue( String s ) {
             return Double.parseDouble(s);
+        }
+    }
+
+    @Immutable
+    private static class DecimalConstraintChecker extends RangeConstraintChecker<BigDecimal> {
+
+        protected DecimalConstraintChecker( String[] valueConstraints,
+                                            ExecutionContext context ) {
+            super(valueConstraints, context);
+        }
+
+        public int getType() {
+            return PropertyType.DECIMAL;
+        }
+
+        @Override
+        protected ValueFactory<BigDecimal> getValueFactory( ValueFactories valueFactories ) {
+            return valueFactories.getDecimalFactory();
+        }
+
+        @Override
+        protected Comparable<BigDecimal> parseValue( String s ) {
+            return new BigDecimal(s);
         }
     }
 

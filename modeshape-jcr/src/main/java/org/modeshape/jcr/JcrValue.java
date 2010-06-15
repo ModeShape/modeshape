@@ -277,6 +277,8 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
                         return this.getDouble() == that.getDouble();
                     case PropertyType.LONG:
                         return this.getLong() == that.getLong();
+                    case PropertyType.DECIMAL:
+                        return getDecimal().equals(that.getDecimal());
                     case PropertyType.DATE:
                         DateTimeFactory dateFactory = valueFactories.getDateFactory();
                         DateTime thisDateValue = dateFactory.create(this.value);
@@ -293,6 +295,7 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
                         Name thatNameValue = nameFactory.create(that.value);
                         return thisNameValue.equals(thatNameValue);
                     case PropertyType.REFERENCE:
+                    case PropertyType.WEAKREFERENCE:
                         return this.getString().equals(that.getString());
                     default:
                         throw new SystemFailureException(JcrI18n.invalidPropertyType.text(this.type));
@@ -317,6 +320,8 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
                         return this.getDouble() == that.getDouble();
                     case PropertyType.LONG:
                         return this.getLong() == that.getLong();
+                    case PropertyType.DECIMAL:
+                        return this.getDecimal().equals(that.getDecimal());
                     case PropertyType.DATE:
                         return this.getDate().equals(that.getDate());
                     case PropertyType.PATH:

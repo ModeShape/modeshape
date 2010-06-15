@@ -119,7 +119,7 @@ public class StandardValueFactories extends AbstractValueFactories {
         this.nameFactory = (NameFactory)getFactory(factories, new NameValueFactory(this.namespaceRegistry, decoder,
                                                                                    this.stringFactory));
         this.pathFactory = (PathFactory)getFactory(factories, new PathValueFactory(decoder, this.stringFactory, this.nameFactory));
-        this.referenceFactory = getFactory(factories, new UuidReferenceValueFactory(decoder, this.stringFactory));
+        this.referenceFactory = getFactory(factories, new ReferenceValueFactory(decoder, this.stringFactory));
         this.uuidFactory = (UuidFactory)getFactory(factories, new UuidValueFactory(decoder, this.stringFactory));
         this.uriFactory = getFactory(factories, new UriValueFactory(this.namespaceRegistry, decoder, this.stringFactory));
         this.objectFactory = getFactory(factories, new ObjectValueFactory(decoder, this.stringFactory, this.binaryFactory));
