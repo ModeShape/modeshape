@@ -159,7 +159,7 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
         if (PropertyType.BINARY == prop.getType()) {
             StringBuffer buff = new StringBuffer(ENCODE_BUFFER_SIZE);
             try {
-                Base64.InputStream is = new Base64.InputStream(value.getStream(), Base64.ENCODE);
+                Base64.InputStream is = new Base64.InputStream(value.getBinary().getStream(), Base64.ENCODE);
 
                 byte[] bytes = new byte[ENCODE_BUFFER_SIZE];
                 int len;
@@ -185,8 +185,10 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
      * Indicates whether the current node is an XML text node as per section 6.4.2.3 of the JCR 1.0 specification. XML text nodes
      * are nodes that have the name &quot;jcr:xmltext&quot; and only one property (besides the mandatory
      * &quot;jcr:primaryType&quot;). The property must have a property name of &quot;jcr:xmlcharacters&quot;, a type of
-     * <code>String</code>, and does not have multiple values. <p/> In practice, this is handled in ModeShape by making XML text
-     * nodes have a type of &quot;dna:xmltext&quot;, which enforces these property characteristics.
+     * <code>String</code>, and does not have multiple values.
+     * <p/>
+     * In practice, this is handled in ModeShape by making XML text nodes have a type of &quot;dna:xmltext&quot;, which enforces
+     * these property characteristics.
      * 
      * @param node the node to test
      * @return whether this node is a special xml text node
