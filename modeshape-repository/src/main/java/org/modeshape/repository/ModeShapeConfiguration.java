@@ -46,7 +46,6 @@ import org.modeshape.common.component.ClassLoaderFactory;
 import org.modeshape.common.component.StandardClassLoaderFactory;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.xml.StreamingContentHandler;
-import org.modeshape.graph.DnaExecutionContext;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
@@ -87,7 +86,6 @@ import org.xml.sax.helpers.AttributesImpl;
  * configuration.save();
  * </pre>
  */
-@SuppressWarnings( "deprecation" )
 @NotThreadSafe
 public class ModeShapeConfiguration {
 
@@ -708,7 +706,7 @@ public class ModeShapeConfiguration {
      * @see #build()
      */
     protected ExecutionContext getExecutionContextForEngine() {
-        return new DnaExecutionContext(getExecutionContext());
+        return getExecutionContext();
     }
 
     /**
