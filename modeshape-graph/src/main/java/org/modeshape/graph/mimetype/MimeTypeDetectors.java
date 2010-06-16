@@ -25,7 +25,6 @@ package org.modeshape.graph.mimetype;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.atomic.AtomicReference;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.component.ClassLoaderFactory;
 import org.modeshape.common.component.ComponentLibrary;
@@ -46,10 +45,9 @@ public final class MimeTypeDetectors implements MimeTypeDetector {
                                                                                                            MimeTypeDetectors.class.getClassLoader());
 
     private final ComponentLibrary<MimeTypeDetector, MimeTypeDetectorConfig> library;
-    private final AtomicReference<Logger> logger;
+    private Logger logger;
 
     public MimeTypeDetectors() {
-        logger = new AtomicReference<Logger>(Logger.getLogger(getClass()));
         library = new ComponentLibrary<MimeTypeDetector, MimeTypeDetectorConfig>(true);
         library.setClassLoaderFactory(DEFAULT_CLASSLOADER_FACTORY);
     }
@@ -84,8 +82,11 @@ public final class MimeTypeDetectors implements MimeTypeDetector {
      * 
      * @return the logger
      */
-    public Logger getLogger() {
-        return logger.get();
+    public synchronized Logger getLogger() {
+        if (logger == null) {
+            logger = Logger.getLogger(getClass());
+        }
+        return logger;
     }
 
     /**
@@ -153,7 +154,7 @@ public final class MimeTypeDetectors implements MimeTypeDetector {
      * 
      * @param logger the logger, or <code>null</code> if the standard logging should be used
      */
-    public void setLogger( Logger logger ) {
-        this.logger.set(logger != null ? logger : Logger.getLogger(getClass()));
+    public synchronized void setLogger( Logger logger ) {
+        this.logger = logger != null ? logger : getLogger();
     }
 }

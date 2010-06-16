@@ -33,6 +33,7 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.modeshape.graph.mimetype.MimeTypeDetector;
+import org.modeshape.graph.mimetype.MimeTypeDetectors;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
@@ -126,8 +127,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      *        should be used
      * @param propertyFactory the {@link PropertyFactory} implementation, or null if a {@link BasicPropertyFactory} instance
      *        should be used
-     * @param mimeTypeDetector the {@link MimeTypeDetector} implementation, or null if an {@link ExtensionBasedMimeTypeDetector}
-     *        instance should be used
+     * @param mimeTypeDetector the {@link MimeTypeDetector} implementation, or null if the context should use a
+     *        {@link MimeTypeDetectors} instance with an {@link ExtensionBasedMimeTypeDetector}
      * @param classLoaderFactory the {@link ClassLoaderFactory} implementation, or null if a {@link StandardClassLoaderFactory}
      *        instance should be used
      */
@@ -144,7 +145,13 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         this.valueFactories = valueFactories == null ? new StandardValueFactories(this.namespaceRegistry) : valueFactories;
         this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
         this.classLoaderFactory = classLoaderFactory == null ? new StandardClassLoaderFactory() : classLoaderFactory;
-        this.mimeTypeDetector = mimeTypeDetector != null ? mimeTypeDetector : new ExtensionBasedMimeTypeDetector();
+        this.mimeTypeDetector = mimeTypeDetector != null ? mimeTypeDetector : createDefaultMimeTypeDetector();
+    }
+
+    private MimeTypeDetector createDefaultMimeTypeDetector() {
+        MimeTypeDetectors detectors = new MimeTypeDetectors();
+        detectors.addDetector(ExtensionBasedMimeTypeDetector.CONFIGURATION);
+        return detectors;
     }
 
     /**
@@ -265,7 +272,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      * Create a new execution context that is the same as this context, but which uses the supplied {@link MimeTypeDetector MIME
      * type detector}.
      * 
-     * @param mimeTypeDetector the new MIME type detector implementation, or null if the default implementation should be used
+     * @param mimeTypeDetector the new MIME type detector implementation, or null if the context should use a
+     *        {@link MimeTypeDetectors} instance with an {@link ExtensionBasedMimeTypeDetector}
      * @return the execution context that is identical with this execution context, but which uses the supplied detector
      *         implementation; never null
      */

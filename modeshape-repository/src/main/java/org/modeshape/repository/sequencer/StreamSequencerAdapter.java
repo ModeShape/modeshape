@@ -26,12 +26,12 @@ package org.modeshape.repository.sequencer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.modeshape.common.collection.Collections;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.Reflection;
@@ -40,6 +40,7 @@ import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.observe.NetChangeObserver.NetChange;
 import org.modeshape.graph.property.Binary;
+import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PathNotFoundException;
@@ -311,11 +312,14 @@ public class StreamSequencerAdapter implements Sequencer {
         ValueFactories factories = context.getExecutionContext().getValueFactories();
         Path path = factories.getPathFactory().create(input.getLocation().getPath());
 
-        Set<org.modeshape.graph.property.Property> props = new HashSet<org.modeshape.graph.property.Property>(
-                                                                                                              input.getPropertiesByName()
-                                                                                                                   .values());
-        props = Collections.unmodifiableSet(props);
-        String mimeType = getMimeType(context, sequencedProperty, path.getLastSegment().getName().getLocalName());
+        Set<org.modeshape.graph.property.Property> props = Collections.unmodifiableSet(input.getPropertiesByName().values());
+        Name fileName = path.getLastSegment().getName();
+        if (JcrLexicon.CONTENT.equals(fileName) && !path.isRoot()) {
+            // We're actually sequencing the "jcr:content" child node of an "nt:file" node, but the name of
+            // the file is actually the name of the "jcr:content" node's parent "nt:file" node.
+            fileName = path.getParent().getLastSegment().getName();
+        }
+        String mimeType = getMimeType(context, sequencedProperty, fileName.getLocalName());
         return new StreamSequencerContext(context.getExecutionContext(), path, props, mimeType, problems);
     }
 

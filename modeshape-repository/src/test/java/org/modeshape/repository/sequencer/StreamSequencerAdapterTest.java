@@ -48,7 +48,6 @@ import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.graph.mimetype.MimeTypeDetectors;
 import org.modeshape.graph.observe.NetChangeObserver.ChangeType;
 import org.modeshape.graph.observe.NetChangeObserver.NetChange;
 import org.modeshape.graph.property.Name;
@@ -84,8 +83,7 @@ public class StreamSequencerAdapterTest {
     @Before
     public void beforeEach() {
         problems = new SimpleProblems();
-        // Set up the MIME type detectors ...
-        this.context = new ExecutionContext().with(new MimeTypeDetectors());
+        this.context = new ExecutionContext();
         this.sequencerOutput = new SequencerOutputMap(this.context.getValueFactories());
         final SequencerOutputMap finalOutput = sequencerOutput;
 
@@ -508,6 +506,38 @@ public class StreamSequencerAdapterTest {
                                                                                          seqContext,
                                                                                          problems);
         assertThat(sequencerContext.getMimeType(), is("text/plain"));
+        assertThat(context.getMimeTypeDetector().mimeTypeOf("myFile.rdf", null), is("application/rdf+xml"));
+        assertThat(context.getMimeTypeDetector().mimeTypeOf("c", null), is("text/plain"));
+    }
+
+    @Test
+    public void shouldCreateSequencerContextThatProvidesMimeTypeForJcrFileNodeStructure() throws Exception {
+
+        this.sequencedProperty = mock(Property.class);
+        graph.create("/a").and().create("/a/myFile.rdf").and().create("/a/myFile.rdf/jcr:content").and();
+        Node input = graph.getNodeAt("/a/myFile.rdf/jcr:content");
+        StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input,
+                                                                                         sequencedProperty,
+                                                                                         seqContext,
+                                                                                         problems);
+        assertThat(sequencerContext.getMimeType(), is("application/rdf+xml"));
+        assertThat(context.getMimeTypeDetector().mimeTypeOf("myFile.rdf", null), is("application/rdf+xml"));
+        assertThat(context.getMimeTypeDetector().mimeTypeOf("jcr:content", null), is("text/plain"));
+    }
+
+    @Test
+    public void shouldCreateSequencerContextThatProvidesMimeTypeForNonJcrFileNodeStructure() throws Exception {
+
+        this.sequencedProperty = mock(Property.class);
+        graph.create("/a").and().create("/a/myFile.rdf").and().create("/a/myFile.rdf/content").and();
+        Node input = graph.getNodeAt("/a/myFile.rdf/content");
+        StreamSequencerContext sequencerContext = sequencer.createStreamSequencerContext(input,
+                                                                                         sequencedProperty,
+                                                                                         seqContext,
+                                                                                         problems);
+        assertThat(sequencerContext.getMimeType(), is("text/plain"));
+        assertThat(context.getMimeTypeDetector().mimeTypeOf("myFile.rdf", null), is("application/rdf+xml"));
+        assertThat(context.getMimeTypeDetector().mimeTypeOf("content", null), is("text/plain"));
     }
 
     private Name nameFor( String raw ) {

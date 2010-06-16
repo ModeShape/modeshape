@@ -24,8 +24,8 @@
 package org.modeshape.common.collection;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -34,9 +34,15 @@ import java.util.Set;
 public class Collections {
 
     public static <T> Set<T> unmodifiableSet( T... values ) {
-        List<T> valuesCollection = Arrays.asList(values);
-        Set<T> set = new HashSet<T>(valuesCollection);
-        return java.util.Collections.unmodifiableSet(set);
+        return unmodifiableSet(Arrays.asList(values));
+    }
+
+    public static <T> Set<T> unmodifiableSet( Collection<T> values ) {
+        return java.util.Collections.unmodifiableSet(new HashSet<T>(values));
+    }
+
+    public static <T> Set<T> unmodifiableSet( Set<T> values ) {
+        return java.util.Collections.unmodifiableSet(values);
     }
 
 }
