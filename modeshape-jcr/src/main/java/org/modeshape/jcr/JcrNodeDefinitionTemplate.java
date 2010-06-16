@@ -74,7 +74,7 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
      * {@inheritDoc}
      * 
      * @see org.modeshape.jcr.nodetype.NodeDefinitionTemplate#setRequiredPrimaryTypes(java.lang.String[])
-     * @deprecated Use {@link #setRequiredPrimaryTypeNames(String[])} instead
+     * @deprecated As of ModeShape 2.0, use {@link #setRequiredPrimaryTypeNames(String[])} instead
      */
     @SuppressWarnings( "dep-ann" )
     public void setRequiredPrimaryTypes( String[] requiredPrimaryTypes ) throws ConstraintViolationException {

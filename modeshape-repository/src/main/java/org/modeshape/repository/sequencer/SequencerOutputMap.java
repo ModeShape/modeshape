@@ -90,9 +90,10 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
     /**
      * {@inheritDoc}
      * 
-     * @deprecated this method depends on the namespace mappings for the given URIs in the name components of the nodePath and
-     *             propertyName to be mapped in the NamespaceRegistry of the ModeShapeEngine's (or JcrEngine's) ExecutionContext.
-     *             Use {@link #setProperty(Path, Name, Object...)} instead.
+     * @deprecated As of ModeShape 2.0, the preferred approach is to use {@link #setProperty(Path, Name, Object...)}, which
+     *             properly addresses the session having different namespace mappings. This method depends on the namespace
+     *             mappings for the given URIs in the name components of the nodePath and propertyName to be mapped in the
+     *             NamespaceRegistry of the ModeShapeEngine's (or JcrEngine's) ExecutionContext.
      */
     @Deprecated
     public void setProperty( String nodePath,
@@ -108,9 +109,10 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
     /**
      * {@inheritDoc}
      * 
-     * @deprecated this method depends on the namespace mappings for the given URIs in the name components of the nodePath and
-     *             propertyName to be mapped in the NamespaceRegistry of the ModeShapeEngine's (or JcrEngine's) ExecutionContext.
-     *             Use {@link #setProperty(Path, Name, Object...)} instead.
+     * @deprecated As of ModeShape 2.0, the preferred approach is to use {@link #setProperty(Path, Name, Object...)}, which
+     *             properly addresses the session having different namespace mappings. This method depends on the namespace
+     *             mappings for the given URIs in the name components of the nodePath and propertyName to be mapped in the
+     *             NamespaceRegistry of the ModeShapeEngine's (or JcrEngine's) ExecutionContext.
      */
     @Deprecated
     public void setReference( String nodePath,

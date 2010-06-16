@@ -42,7 +42,7 @@ public interface PropertyDefinitionTemplate extends javax.jcr.nodetype.PropertyD
      * 
      * @param defaultValues the string representation of the default values, or null or an empty array if there are no default
      *        values
-     * @deprecated Use {@link #setDefaultValues(javax.jcr.Value[])} instead
+     * @deprecated As of ModeShape 2.0, use {@link #setDefaultValues(javax.jcr.Value[])} instead
      */
     @Deprecated
     public void setDefaultValues( String[] defaultValues );

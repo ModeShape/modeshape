@@ -444,6 +444,7 @@ final class JcrObservationManager implements ObservationManager {
             throw new UnsupportedRepositoryOperationException();
         }
 
+        @SuppressWarnings( "unchecked" )
         @Override
         public Map getInfo() throws RepositoryException {
             throw new UnsupportedRepositoryOperationException();

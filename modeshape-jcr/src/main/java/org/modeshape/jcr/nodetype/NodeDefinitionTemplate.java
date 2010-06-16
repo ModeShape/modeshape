@@ -43,7 +43,7 @@ public interface NodeDefinitionTemplate extends javax.jcr.nodetype.NodeDefinitio
      *        primary types of the children described by this definition
      * @throws ConstraintViolationException if any of the <code>requiredPrimaryTypes</code> are not a syntactically valid JCR name
      *         in either qualified or expanded form.
-     * @deprecated Use {@link #setRequiredPrimaryTypeNames(String[])} instead
+     * @deprecated As of ModeShape 2.0, use {@link #setRequiredPrimaryTypeNames(String[])} instead
      */
     @Deprecated
     public void setRequiredPrimaryTypes( String[] requiredPrimaryTypes ) throws ConstraintViolationException;
@@ -54,7 +54,7 @@ public interface NodeDefinitionTemplate extends javax.jcr.nodetype.NodeDefinitio
      * @param defaultPrimaryType the name of the primary type that should be used by default, or null if there is none
      * @throws ConstraintViolationException if <code>defaultPrimaryType</code> is not a syntactically valid JCR name in either
      *         qualified or expanded form.
-     * @deprecated Use {@link #setDefaultPrimaryTypeName(String)} instead
+     * @deprecated As of ModeShape 2.0, use {@link #setDefaultPrimaryTypeName(String)} instead
      */
     @Deprecated
     public void setDefaultPrimaryType( String defaultPrimaryType ) throws ConstraintViolationException;
