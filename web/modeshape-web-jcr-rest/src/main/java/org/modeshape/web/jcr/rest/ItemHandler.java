@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import javax.jcr.Binary;
 import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -71,8 +72,7 @@ class ItemHandler extends AbstractHandler {
                            String rawRepositoryName,
                            String rawWorkspaceName,
                            String path,
-                           int depth )
-        throws JSONException, UnauthorizedException, RepositoryException {
+                           int depth ) throws JSONException, UnauthorizedException, RepositoryException {
         assert path != null;
         assert rawRepositoryName != null;
         assert rawWorkspaceName != null;
@@ -158,7 +158,7 @@ class ItemHandler extends AbstractHandler {
      */
     private String jsonEncodedStringFor( Value value ) throws RepositoryException {
         // Encode the binary value in Base64 ...
-        InputStream stream = value.getStream();
+        InputStream stream = value.getBinary().getStream();
         try {
             return Base64.encode(stream);
         } finally {
@@ -367,7 +367,8 @@ class ItemHandler extends AbstractHandler {
             byte[] binaryValue = Base64.decode(encodedValue);
 
             stream = new ByteArrayInputStream(binaryValue);
-            return valueFactory.createValue(stream);
+            Binary binary = valueFactory.createBinary(stream);
+            return valueFactory.createValue(binary);
         } catch (IOException ioe) {
             throw new RepositoryException(ioe);
         } finally {
@@ -470,8 +471,7 @@ class ItemHandler extends AbstractHandler {
     public void deleteItem( HttpServletRequest request,
                             String rawRepositoryName,
                             String rawWorkspaceName,
-                            String path )
-        throws NotFoundException, UnauthorizedException, RepositoryException {
+                            String path ) throws NotFoundException, UnauthorizedException, RepositoryException {
 
         assert rawRepositoryName != null;
         assert rawWorkspaceName != null;
@@ -555,7 +555,7 @@ class ItemHandler extends AbstractHandler {
             node = property.getParent();
             setPropertyOnNode(node, jsonPropertyName, jsonProperty.get(jsonPropertyName));
         }
-        node.save();
+        node.getSession().save();
         return jsonFor(node, 0).toString();
     }
 

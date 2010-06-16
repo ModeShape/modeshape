@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import javax.jcr.Binary;
 import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -275,7 +276,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                 return null;
             }
 
-            return node.getProperty(CONTENT_NODE_NAME + "/" + DATA_PROP_NAME).getStream();
+            return node.getProperty(CONTENT_NODE_NAME + "/" + DATA_PROP_NAME).getBinary().getStream();
 
         } catch (RepositoryException re) {
             throw new WebdavException(re);
@@ -422,13 +423,14 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
             // contentNode.setProperty(MIME_TYPE_PROP_NAME, contentType != null ? contentType : "application/octet-stream");
             contentNode.setProperty(ENCODING_PROP_NAME, characterEncoding != null ? characterEncoding : "UTF-8");
-            contentNode.setProperty(DATA_PROP_NAME, content);
+            Binary binary = node.getSession().getValueFactory().createBinary(content);
+            contentNode.setProperty(DATA_PROP_NAME, binary);
             contentNode.setProperty(MODIFIED_PROP_NAME, Calendar.getInstance());
 
-            // Copy the content to the property, THEN re-read the content from the property's stream to avoid discaring the first
+            // Copy the content to the property, THEN re-read the content from the Binary value to avoid discaring the first
             // bytes of the stream
             if (contentType == null) {
-                contentType = mimeTypeDetector.mimeTypeOf(resourceName, contentNode.getProperty(DATA_PROP_NAME).getStream());
+                contentType = mimeTypeDetector.mimeTypeOf(resourceName, binary.getStream());
             }
 
             return contentNode.getProperty(DATA_PROP_NAME).getLength();
