@@ -137,7 +137,7 @@ public class MixinTest extends AbstractSessionTest {
     }
 
     @Test
-    public void shouldNotAllowAddingMixinIfPrimaryTypeConflicts() throws Exception {
+    public void shouldAllowAddingMixinIfPrimaryTypeConflicts() throws Exception {
         graph.create("/a").and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(PRIMARY_TYPE_A);
         graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(JcrMixLexicon.REFERENCEABLE.getString(registry));
@@ -145,11 +145,11 @@ public class MixinTest extends AbstractSessionTest {
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
 
-        assertThat(nodeA.canAddMixin(MIXIN_TYPE_C.getString(registry)), is(false));
+        assertThat(nodeA.canAddMixin(MIXIN_TYPE_C.getString(registry)), is(true));
     }
 
     @Test
-    public void shouldNotAllowAddingMixinIfMixinTypeConflicts() throws Exception {
+    public void shouldAllowAddingMixinIfMixinTypeConflicts() throws Exception {
         graph.create("/a").and();
         graph.set(JcrLexicon.PRIMARY_TYPE.getString(registry)).on("/a").to(JcrNtLexicon.BASE.getString(registry));
         graph.set(JcrLexicon.MIXIN_TYPES.getString(registry)).on("/a").to(MIXIN_TYPE_B);
@@ -157,7 +157,7 @@ public class MixinTest extends AbstractSessionTest {
         Node rootNode = session.getRootNode();
         Node nodeA = rootNode.getNode("a");
 
-        assertThat(nodeA.canAddMixin(MIXIN_TYPE_C.getString(registry)), is(false));
+        assertThat(nodeA.canAddMixin(MIXIN_TYPE_C.getString(registry)), is(true));
     }
 
     @Test

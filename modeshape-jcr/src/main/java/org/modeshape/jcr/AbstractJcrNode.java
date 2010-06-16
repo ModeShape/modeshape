@@ -656,6 +656,43 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final PropertyIterator getReferences( String propertyName ) throws RepositoryException {
         checkSession();
+        return propertiesOnOtherNodesReferencingThis(propertyName, PropertyType.REFERENCE);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#getWeakReferences()
+     */
+    @Override
+    public PropertyIterator getWeakReferences() throws RepositoryException {
+        return getWeakReferences(null);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#getWeakReferences(java.lang.String)
+     */
+    @Override
+    public PropertyIterator getWeakReferences( String propertyName ) throws RepositoryException {
+        checkSession();
+        return propertiesOnOtherNodesReferencingThis(propertyName, PropertyType.WEAKREFERENCE);
+    }
+
+    /**
+     * Find the properties on other nodes that are REFERENCE or WEAKREFERENCE properties (as dictated by the
+     * <code>referenceType</code> parameter) to this node.
+     * 
+     * @param propertyName the name of the referring REFERENCE or WEAKREFERENCE properties on the other nodes, or null if all
+     *        referring REFERENCE or WEAKREFERENCE properties should be returned
+     * @param referenceType either {@link PropertyType#REFERENCE} or {@link PropertyType#WEAKREFERENCE};
+     * @return the property iterator; never null by may be {@link JcrEmptyPropertyIterator empty} if there are no references or if
+     *         this node is not referenceable
+     * @throws RepositoryException if there is an error finding the referencing properties
+     */
+    protected PropertyIterator propertiesOnOtherNodesReferencingThis( String propertyName,
+                                                                      int referenceType ) throws RepositoryException {
         if (!this.isReferenceable()) {
             // This node is not referenceable, so it cannot have any references to it ...
             return new JcrEmptyPropertyIterator();
@@ -664,7 +701,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         if (!iter.hasNext()) {
             return new JcrEmptyPropertyIterator();
         }
-        String uuid = getUUID();
+        // Use the identifier, not the UUID (since the getUUID() method just calls the getIdentifier() method) ...
+        String id = getIdentifier();
         List<Property> references = new LinkedList<Property>();
         while (iter.hasNext()) {
             javax.jcr.Node node = iter.nextNode();
@@ -675,18 +713,18 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                 Property prop = propIter.nextProperty();
                 // Look at the definition's required type ...
                 int propType = prop.getDefinition().getRequiredType();
-                if (propType == PropertyType.REFERENCE || propType == PropertyType.UNDEFINED || propType == PropertyType.STRING) {
+                if (propType == referenceType || propType == PropertyType.UNDEFINED || propType == PropertyType.STRING) {
                     if (propertyName != null && !propertyName.equals(prop.getName())) continue;
                     if (prop.getDefinition().isMultiple()) {
                         for (Value value : prop.getValues()) {
-                            if (uuid.equals(value.getString())) {
+                            if (id.equals(value.getString())) {
                                 references.add(prop);
                                 break;
                             }
                         }
                     } else {
                         Value value = prop.getValue();
-                        if (uuid.equals(value.getString())) {
+                        if (id.equals(value.getString())) {
                             references.add(prop);
                         }
                     }
@@ -988,9 +1026,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             return false;
         }
 
-        NodeType primaryType = this.getPrimaryNodeType();
-        NodeType[] mixinTypes = this.getMixinNodeTypes();
-
         if (mixinCandidateType.isAbstract()) {
             return false;
         }
@@ -999,11 +1034,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             return false;
         }
 
-        /* MODE FLAG - Needs to be uncommented for JCR 2 */
-        // if (isNodeType(mixinCandidateType.getInternalName())) return true;
-        if (mixinCandidateType.conflictsWith(primaryType, mixinTypes)) {
-            return false;
-        }
+        if (isNodeType(mixinCandidateType.getInternalName())) return true;
 
         // ------------------------------------------------------------------------------
         // Check for any existing properties based on residual definitions that conflict
@@ -2224,18 +2255,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
     @Override
     public NodeIterator getSharedSet() throws RepositoryException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public PropertyIterator getWeakReferences() throws RepositoryException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public PropertyIterator getWeakReferences( String name ) throws RepositoryException {
         // TODO Auto-generated method stub
         return null;
     }

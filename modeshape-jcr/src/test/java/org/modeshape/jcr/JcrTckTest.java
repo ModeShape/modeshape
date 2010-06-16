@@ -35,13 +35,17 @@ import org.apache.jackrabbit.test.api.DocumentViewImportTest;
 import org.apache.jackrabbit.test.api.DoublePropertyTest;
 import org.apache.jackrabbit.test.api.ExportDocViewTest;
 import org.apache.jackrabbit.test.api.ExportSysViewTest;
+import org.apache.jackrabbit.test.api.GetWeakReferencesTest;
 import org.apache.jackrabbit.test.api.HasPermissionTest;
 import org.apache.jackrabbit.test.api.ImpersonateTest;
 import org.apache.jackrabbit.test.api.LifecycleTest;
 import org.apache.jackrabbit.test.api.LongPropertyTest;
 import org.apache.jackrabbit.test.api.NamePropertyTest;
+import org.apache.jackrabbit.test.api.NameTest;
 import org.apache.jackrabbit.test.api.NamespaceRegistryReadMethodsTest;
 import org.apache.jackrabbit.test.api.NamespaceRegistryTest;
+import org.apache.jackrabbit.test.api.NodeAddMixinTest;
+import org.apache.jackrabbit.test.api.NodeCanAddMixinTest;
 import org.apache.jackrabbit.test.api.NodeDiscoveringNodeTypesTest;
 import org.apache.jackrabbit.test.api.NodeItemIsModifiedTest;
 import org.apache.jackrabbit.test.api.NodeItemIsNewTest;
@@ -253,8 +257,6 @@ public class JcrTckTest {
         suite.addTestSuite(ExportSysViewTest.class);
         suite.addTestSuite(ExportDocViewTest.class);
 
-        // This test can't be verified on the the FS Connector or the JDCB Metadata Connector.
-        // suite.addTestSuite(NameTest.class);
         // suite.addTestSuite(PathTest.class);
 
         // The tests in this suite are level one
@@ -335,11 +337,14 @@ public class JcrTckTest {
         suite.addTestSuite(PropertyItemIsModifiedTest.class);
         suite.addTestSuite(PropertyItemIsNewTest.class);
 
-        // suite.addTestSuite(NodeAddMixinTest.class);
-        // suite.addTestSuite(NodeCanAddMixinTest.class);
+        suite.addTestSuite(NodeAddMixinTest.class);
+        suite.addTestSuite(NodeCanAddMixinTest.class);
         suite.addTestSuite(NodeRemoveMixinTest.class);
 
         suite.addTestSuite(NodeSetPrimaryTypeTest.class);
+
+        // This isn't marked as read-only, so it causes problems if you put it with the L1 tests
+        suite.addTestSuite(NameTest.class);
 
         suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
         suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
@@ -371,7 +376,7 @@ public class JcrTckTest {
         suite.addTestSuite(NodeTypeCreationTest.class);
 
         // // new node types
-        // suite.addTestSuite(GetWeakReferencesTest.class);
+        suite.addTestSuite(GetWeakReferencesTest.class);
 
         // // new Session features
         suite.addTestSuite(SessionRemoveItemTest.class);
