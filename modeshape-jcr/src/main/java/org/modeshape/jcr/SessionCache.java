@@ -2678,7 +2678,7 @@ class SessionCache {
 
                 // Some tests don't set this up.
                 if (workspace != null) {
-                    workspace.versionManager().initializeVersionHistoryFor(batch, node, false);
+                    workspace.versionManager().initializeVersionHistoryFor(batch, node, null, false);
                 }
             } catch (RepositoryException re) {
                 throw new IllegalStateException(re);

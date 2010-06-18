@@ -179,6 +179,38 @@ import org.apache.jackrabbit.test.api.query.XPathDocOrderTest;
 import org.apache.jackrabbit.test.api.query.XPathJcrPathTest;
 import org.apache.jackrabbit.test.api.query.XPathPosIndexTest;
 import org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test;
+import org.apache.jackrabbit.test.api.version.ActivitiesTest;
+import org.apache.jackrabbit.test.api.version.CheckinTest;
+import org.apache.jackrabbit.test.api.version.CheckoutTest;
+import org.apache.jackrabbit.test.api.version.ConfigurationsTest;
+import org.apache.jackrabbit.test.api.version.CopyTest;
+import org.apache.jackrabbit.test.api.version.GetContainingHistoryTest;
+import org.apache.jackrabbit.test.api.version.GetCreatedTest;
+import org.apache.jackrabbit.test.api.version.GetPredecessorsTest;
+import org.apache.jackrabbit.test.api.version.GetReferencesNodeTest;
+import org.apache.jackrabbit.test.api.version.GetVersionableUUIDTest;
+import org.apache.jackrabbit.test.api.version.MergeCancelMergeTest;
+import org.apache.jackrabbit.test.api.version.MergeCheckedoutSubNodeTest;
+import org.apache.jackrabbit.test.api.version.MergeDoneMergeTest;
+import org.apache.jackrabbit.test.api.version.MergeNodeIteratorTest;
+import org.apache.jackrabbit.test.api.version.MergeNodeTest;
+import org.apache.jackrabbit.test.api.version.MergeNonVersionableSubNodeTest;
+import org.apache.jackrabbit.test.api.version.MergeShallowTest;
+import org.apache.jackrabbit.test.api.version.MergeSubNodeTest;
+import org.apache.jackrabbit.test.api.version.OnParentVersionAbortTest;
+import org.apache.jackrabbit.test.api.version.OnParentVersionComputeTest;
+import org.apache.jackrabbit.test.api.version.OnParentVersionCopyTest;
+import org.apache.jackrabbit.test.api.version.OnParentVersionIgnoreTest;
+import org.apache.jackrabbit.test.api.version.OnParentVersionInitializeTest;
+import org.apache.jackrabbit.test.api.version.RemoveVersionTest;
+import org.apache.jackrabbit.test.api.version.SessionMoveVersionExceptionTest;
+import org.apache.jackrabbit.test.api.version.VersionGraphTest;
+import org.apache.jackrabbit.test.api.version.VersionHistoryTest;
+import org.apache.jackrabbit.test.api.version.VersionLabelTest;
+import org.apache.jackrabbit.test.api.version.VersionStorageTest;
+import org.apache.jackrabbit.test.api.version.VersionTest;
+import org.apache.jackrabbit.test.api.version.WorkspaceMoveVersionExceptionTest;
+import org.apache.jackrabbit.test.api.version.WorkspaceRestoreTest;
 
 /**
  * Test suite to wrap Apache Jackrabbit JCR technology compatibility kit (TCK) unit tests. Note that technically these are not the
@@ -207,7 +239,6 @@ public class JcrTckTest {
         suite.addTest(levelOneSuite());
         suite.addTest(levelTwoSuite());
         suite.addTest(new OptionalFeatureTests());
-
         return suite;
     }
 
@@ -411,6 +442,7 @@ public class JcrTckTest {
 
             // addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
             // addTest(org.apache.jackrabbit.test.api.version.TestAll.suite());
+            addTest(new FullVersioningTests());
             addTest(org.apache.jackrabbit.test.api.lock.TestAll.suite());
             addTest(org.apache.jackrabbit.test.api.util.TestAll.suite());
             // addTest(org.apache.jackrabbit.test.api.query.TestAll.suite());
@@ -486,4 +518,49 @@ public class JcrTckTest {
             // addTestSuite(WorkspaceOperationTest.class);
         }
     }
+
+    private static class FullVersioningTests extends TestSuite {
+        protected FullVersioningTests() {
+            super("JCR Full Versioning Tests");
+
+            addTestSuite(VersionTest.class);
+            addTestSuite(VersionHistoryTest.class);
+            addTestSuite(VersionStorageTest.class);
+            addTestSuite(VersionLabelTest.class);
+            addTestSuite(CheckoutTest.class);
+            addTestSuite(CheckinTest.class);
+            addTestSuite(CopyTest.class);
+            addTestSuite(VersionGraphTest.class);
+            addTestSuite(RemoveVersionTest.class);
+            // addTestSuite(RestoreTest.class);
+            addTestSuite(WorkspaceRestoreTest.class);
+            addTestSuite(OnParentVersionAbortTest.class);
+            addTestSuite(OnParentVersionComputeTest.class);
+            addTestSuite(OnParentVersionCopyTest.class);
+            addTestSuite(OnParentVersionIgnoreTest.class);
+            addTestSuite(OnParentVersionInitializeTest.class);
+            addTestSuite(GetReferencesNodeTest.class);
+            addTestSuite(GetPredecessorsTest.class);
+            addTestSuite(GetCreatedTest.class);
+            addTestSuite(GetContainingHistoryTest.class);
+            addTestSuite(GetVersionableUUIDTest.class);
+            addTestSuite(SessionMoveVersionExceptionTest.class);
+            addTestSuite(WorkspaceMoveVersionExceptionTest.class);
+            addTestSuite(MergeCancelMergeTest.class);
+            addTestSuite(MergeCheckedoutSubNodeTest.class);
+            addTestSuite(MergeDoneMergeTest.class);
+            addTestSuite(MergeNodeIteratorTest.class);
+            addTestSuite(MergeNodeTest.class);
+            addTestSuite(MergeShallowTest.class);
+            // addTestSuite(MergeActivityTest.class);
+            addTestSuite(MergeNonVersionableSubNodeTest.class);
+            addTestSuite(MergeSubNodeTest.class);
+
+            // JCR 2.0
+
+            addTestSuite(ActivitiesTest.class);
+            addTestSuite(ConfigurationsTest.class);
+        }
+    }
+
 }

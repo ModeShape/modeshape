@@ -264,6 +264,16 @@ class JcrSession implements Session {
         return this.repository.getRepositorySourceName();
     }
 
+    Path pathFor( String path,
+                  String parameterName ) throws RepositoryException {
+        try {
+            return this.executionContext.getValueFactories().getPathFactory().create(path);
+
+        } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+            throw new RepositoryException(JcrI18n.invalidPathParameter.text(path, parameterName), vfe);
+        }
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -774,7 +784,7 @@ class JcrSession implements Session {
      * @see javax.jcr.Session#getNodeByIdentifier(java.lang.String)
      */
     @Override
-    public Node getNodeByIdentifier( String id ) throws ItemNotFoundException, RepositoryException {
+    public AbstractJcrNode getNodeByIdentifier( String id ) throws ItemNotFoundException, RepositoryException {
         // Attempt to create a UUID from the identifier ...
         try {
             return cache.findJcrNode(Location.create(UUID.fromString(id)));

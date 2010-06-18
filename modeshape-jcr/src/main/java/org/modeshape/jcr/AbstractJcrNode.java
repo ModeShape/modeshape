@@ -1734,19 +1734,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     }
 
     /**
-     * Throw an {@link UnsupportedRepositoryOperationException} if this node is not versionable (i.e.,
-     * isNodeType(JcrMixLexicon.VERSIONABLE) == false).
-     * 
-     * @throws UnsupportedRepositoryOperationException if <code>!isNodeType({@link JcrMixLexicon#VERSIONABLE})</code>
-     * @throws RepositoryException if an error occurs reading the node types for this node
-     */
-    private void checkVersionable() throws UnsupportedRepositoryOperationException, RepositoryException {
-        if (!isNodeType(JcrMixLexicon.VERSIONABLE)) {
-            throw new UnsupportedRepositoryOperationException(JcrI18n.requiresVersionable.text());
-        }
-    }
-
-    /**
      * Throw a {@link ConstraintViolationException} if this node is protected (based on the its node definition).
      * 
      * @throws ConstraintViolationException if this node's definition indicates that the node is protected
@@ -1779,9 +1766,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#checkin()
      */
     public final Version checkin() throws RepositoryException {
-        checkSession();
-        checkVersionable();
-
         return versionManager().checkin(this);
     }
 
@@ -1791,9 +1775,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#checkout()
      */
     public final void checkout() throws UnsupportedRepositoryOperationException, LockException, RepositoryException {
-        checkSession();
-        checkVersionable();
-
         versionManager().checkout(this);
     }
 
@@ -1806,10 +1787,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                      boolean bestEffort ) throws ConstraintViolationException, RepositoryException {
         CheckArg.isNotNull(srcWorkspace, "source workspace name");
 
-        checkSession();
         checkNotProtected();
 
-        return versionManager().merge(this, srcWorkspace, bestEffort);
+        return versionManager().merge(this, srcWorkspace, bestEffort, false);
     }
 
     /**
@@ -1818,9 +1798,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#cancelMerge(javax.jcr.version.Version)
      */
     public final void cancelMerge( Version version ) throws RepositoryException {
-        checkSession();
-        checkVersionable();
-
         versionManager().cancelMerge(this, version);
     }
 
@@ -1830,9 +1807,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#doneMerge(javax.jcr.version.Version)
      */
     public final void doneMerge( Version version ) throws RepositoryException {
-        checkSession();
-        checkVersionable();
-
         versionManager().doneMerge(this, version);
     }
 
@@ -1842,9 +1816,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * @see javax.jcr.Node#getVersionHistory()
      */
     public final JcrVersionHistoryNode getVersionHistory() throws RepositoryException {
-        checkSession();
-        checkVersionable();
-
         return versionManager().getVersionHistory(this);
     }
 
@@ -1855,7 +1826,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final JcrVersionNode getBaseVersion() throws RepositoryException {
         checkSession();
-        checkVersionable();
 
         // This can happen if the versionable type was added to the node, but it hasn't been saved yet
         if (!hasProperty(JcrLexicon.BASE_VERSION)) {
@@ -1882,7 +1852,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     public final void restore( Version version,
                                boolean removeExisting ) throws RepositoryException {
-        checkSession();
         try {
             checkNotProtected();
         } catch (ConstraintViolationException cve) {
@@ -1899,7 +1868,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public final void restore( Version version,
                                String relPath,
                                boolean removeExisting ) throws RepositoryException {
-        checkSession();
         checkNotProtected();
 
         PathFactory pathFactory = context().getValueFactories().getPathFactory();

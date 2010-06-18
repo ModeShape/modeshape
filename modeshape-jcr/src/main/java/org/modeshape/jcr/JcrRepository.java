@@ -1257,7 +1257,6 @@ public class JcrRepository implements Repository {
         repoDescriptors.put(Repository.OPTION_JOURNALED_OBSERVATION_SUPPORTED, valueFor(factories, false));
         repoDescriptors.put(Repository.OPTION_RETENTION_SUPPORTED, valueFor(factories, false));
         repoDescriptors.put(Repository.OPTION_LIFECYCLE_SUPPORTED, valueFor(factories, false));
-        repoDescriptors.put(Repository.OPTION_TRANSACTIONS_SUPPORTED, valueFor(factories, false));
         repoDescriptors.put(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED, valueFor(factories, false));
         repoDescriptors.put(Repository.OPTION_NODE_AND_PROPERTY_WITH_SAME_NAME_SUPPORTED, valueFor(factories, true));
         repoDescriptors.put(Repository.OPTION_UPDATE_PRIMARY_NODE_TYPE_SUPPORTED, valueFor(factories, false));
@@ -1284,7 +1283,7 @@ public class JcrRepository implements Repository {
         repoDescriptors.put(Repository.QUERY_FULL_TEXT_SEARCH_SUPPORTED, valueFor(factories, true));
         repoDescriptors.put(Repository.QUERY_JOINS, valueFor(factories, Repository.QUERY_JOINS_INNER_OUTER));
         repoDescriptors.put(Repository.SPEC_NAME_DESC, valueFor(factories, JcrI18n.SPEC_NAME_DESC.text()));
-        repoDescriptors.put(Repository.SPEC_VERSION_DESC, valueFor(factories, "1.0"));
+        repoDescriptors.put(Repository.SPEC_VERSION_DESC, valueFor(factories, "2.0"));
 
         if (!repoDescriptors.containsKey(Repository.REP_NAME_DESC)) {
             repoDescriptors.put(Repository.REP_NAME_DESC,

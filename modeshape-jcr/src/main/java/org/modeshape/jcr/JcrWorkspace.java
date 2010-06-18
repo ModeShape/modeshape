@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import javax.jcr.AccessDeniedException;
-import javax.jcr.InvalidItemStateException;
 import javax.jcr.InvalidSerializedDataException;
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
@@ -572,8 +571,16 @@ class JcrWorkspace implements Workspace {
             while (!nodesToCheck.isEmpty()) {
                 AbstractJcrNode node = nodesToCheck.remove(0);
 
-                // This returns silently if the node is not versionable
-                versionManager.initializeVersionHistoryFor(node);
+                if (node.isNodeType(JcrMixLexicon.VERSIONABLE)) {
+                    // Find the node that this was copied from
+                    Path nodeDestPath = node.path().relativeTo(destPath);
+                    Path nodeSourcePath = nodeDestPath.resolveAgainst(srcPath);
+
+                    AbstractJcrNode fromNode = cache.findJcrNode(Location.create(nodeSourcePath));
+                    UUID originalVersion = fromNode.getBaseVersion().uuid();
+
+                    versionManager.initializeVersionHistoryFor(node, originalVersion);
+                }
 
                 for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
                     nodesToCheck.add((AbstractJcrNode)iter.nextNode());
@@ -740,11 +747,6 @@ class JcrWorkspace implements Workspace {
      */
     public void restore( Version[] versions,
                          boolean removeExisting ) throws RepositoryException {
-        session.checkLive();
-        if (session.hasPendingChanges()) {
-            throw new InvalidItemStateException(JcrI18n.noPendingChangesAllowed.text());
-        }
-
         versionManager().restore(versions, removeExisting);
     }
 

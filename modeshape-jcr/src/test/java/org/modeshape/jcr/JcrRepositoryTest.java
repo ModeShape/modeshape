@@ -503,7 +503,7 @@ public class JcrRepositoryTest {
         assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC), is(notNullValue()));
         // assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC), is("1.1-SNAPSHOT"));
         assertThat(repository.getDescriptor(Repository.SPEC_NAME_DESC), is(JcrI18n.SPEC_NAME_DESC.text()));
-        assertThat(repository.getDescriptor(Repository.SPEC_VERSION_DESC), is("1.0"));
+        assertThat(repository.getDescriptor(Repository.SPEC_VERSION_DESC), is("2.0"));
     }
 
     @Ignore( "GC behavior is non-deterministic from the application's POV - this test _will_ occasionally fail" )

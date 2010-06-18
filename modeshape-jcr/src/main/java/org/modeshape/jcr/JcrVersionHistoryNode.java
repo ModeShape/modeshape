@@ -24,10 +24,12 @@
 package org.modeshape.jcr;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import javax.jcr.AccessDeniedException;
+import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
@@ -324,22 +326,36 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
 
     @Override
     public NodeIterator getAllFrozenNodes() throws RepositoryException {
-        throw new UnsupportedRepositoryOperationException();
+        return new FrozenNodeIterator(getAllVersions());
     }
 
     @Override
     public NodeIterator getAllLinearFrozenNodes() throws RepositoryException {
-        throw new UnsupportedRepositoryOperationException();
+        return new FrozenNodeIterator(getAllLinearVersions());
     }
 
     @Override
     public VersionIterator getAllLinearVersions() throws RepositoryException {
-        throw new UnsupportedRepositoryOperationException();
+        AbstractJcrNode existingNode = session().getNodeByIdentifier(getVersionableIdentifier());
+        if (existingNode == null) return getAllVersions();
+        
+        assert existingNode.isNodeType(JcrMixLexicon.VERSIONABLE);
+        
+        LinkedList<JcrVersionNode> versions = new LinkedList<JcrVersionNode>();
+        JcrVersionNode baseVersion = existingNode.getBaseVersion();
+        
+        while (baseVersion != null) {
+            versions.addFirst(baseVersion);
+            baseVersion = baseVersion.getLinearPredecessor();
+        }
+        
+        return new LinearVersionIterator(versions, versions.size());
     }
 
     @Override
     public String getVersionableIdentifier() throws RepositoryException {
-        throw new UnsupportedRepositoryOperationException();
+        // ModeShape uses a node's UUID as it's identifier
+        return getVersionableUUID();
     }
 
     /**
@@ -455,6 +471,112 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
+     * An implementation of {@link VersionIterator} that iterates over a given set of versions. This differs from
+     * {@link JcrVersionIterator} in that it expects an exact list of versions to iterate over whereas {@code JcrVersionIterator}
+     * expects list of children for a {@code nt:versionHistory} node and filters out the label child.
+     */
+    class LinearVersionIterator implements VersionIterator {
+
+        private final Iterator<? extends Version> versions;
+        private final int size;
+        private int pos;
+
+        protected LinearVersionIterator( Iterable<? extends Version> versions,
+                                         int size ) {
+            this.versions = versions.iterator();
+            this.size = size;
+            this.pos = 0;
+        }
+
+        @Override
+        public long getPosition() {
+            return pos;
+        }
+
+        @Override
+        public long getSize() {
+            return this.size;
+        }
+
+        @Override
+        public void skip( long skipNum ) {
+            while (skipNum-- > 0 && versions.hasNext()) {
+                versions.next();
+                pos++;
+            }
+
+        }
+
+        @Override
+        public Version nextVersion() {
+            return versions.next();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return versions.hasNext();
+        }
+
+        @Override
+        public Object next() {
+            return nextVersion();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+    
+    class FrozenNodeIterator implements NodeIterator {
+        private final VersionIterator versions;
+
+        FrozenNodeIterator( VersionIterator versionIter ) {
+            this.versions = versionIter;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return versions.hasNext();
+        }
+
+        @Override
+        public Object next() {
+            return nextNode();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Node nextNode() {
+            try {
+                return versions.nextVersion().getFrozenNode();
+            } catch (RepositoryException re) {
+                // ModeShape doesn't throw a RepositoryException on getFrozenNode() from a valid version node
+                throw new IllegalStateException(re);
+            }
+        }
+
+        @Override
+        public long getPosition() {
+            return versions.getPosition();
+        }
+
+        @Override
+        public long getSize() {
+            return versions.getSize();
+        }
+
+        @Override
+        public void skip( long skipNum ) {
+            versions.skip(skipNum);
         }
     }
 }

@@ -29,7 +29,6 @@ import java.util.List;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
-import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.version.Version;
 import org.modeshape.graph.property.Name;
@@ -114,6 +113,22 @@ class JcrVersionNode extends JcrNode implements Version {
         
     }
 
+    private final JcrVersionNode getFirstNodeForProperty( Name propertyName ) throws RepositoryException {
+        assert JcrLexicon.SUCCESSORS.equals(propertyName) || JcrLexicon.PREDECESSORS.equals(propertyName);
+
+        Property references = getProperty(propertyName);
+
+        if (references == null) return null;
+
+        Value[] values = references.getValues();
+        if (values.length == 0) return null;
+
+        String uuid = values[0].getString();
+        AbstractJcrNode node = session().getNodeByUUID(uuid);
+
+        return (JcrVersionNode)node;
+    }
+
     boolean isSuccessorOf( JcrVersionNode other ) throws RepositoryException {
         if (!other.hasProperty(JcrLexicon.SUCCESSORS)) return false;
 
@@ -130,13 +145,13 @@ class JcrVersionNode extends JcrNode implements Version {
     }
 
     @Override
-    public Version getLinearPredecessor() throws RepositoryException {
-        throw new UnsupportedRepositoryOperationException();
+    public JcrVersionNode getLinearPredecessor() throws RepositoryException {
+        return getFirstNodeForProperty(JcrLexicon.PREDECESSORS);
     }
 
     @Override
-    public Version getLinearSuccessor() throws RepositoryException {
-        throw new UnsupportedRepositoryOperationException();
+    public JcrVersionNode getLinearSuccessor() throws RepositoryException {
+        return getFirstNodeForProperty(JcrLexicon.SUCCESSORS);
     }
 
 }

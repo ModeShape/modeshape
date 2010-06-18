@@ -44,7 +44,6 @@ import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.Repository;
-import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Workspace;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
@@ -540,31 +539,6 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
      * and are in MixinTest
      */
 
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowCancelMergeOfNonVersionableNode() throws Exception {
-        hybrid.cancelMerge(null);
-    }
-
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowCheckinOfNonVersionableNode() throws Exception {
-        hybrid.checkin();
-    }
-
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowCheckoutOfNonVersionableNode() throws Exception {
-        hybrid.checkout();
-    }
-
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowDoneMergeOfNonVersionableNode() throws Exception {
-        hybrid.doneMerge(null);
-    }
-
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowGetBaseVersionOfNonVersionableNode() throws Exception {
-        hybrid.getBaseVersion();
-    }
-
     @Test( expected = LockException.class )
     public void shouldNotAllowGetLockIfNoLock() throws Exception {
         hybrid.getLock();
@@ -646,11 +620,6 @@ public class AbstractJcrNodeTest extends AbstractJcrTest {
     @Test
     public void shouldProvideSession() throws Exception {
         assertThat((JcrSession)prius.getSession(), is(jcrSession));
-    }
-
-    @Test( expected = UnsupportedRepositoryOperationException.class )
-    public void shouldNotAllowGetVersionHistory() throws Exception {
-        cars.getVersionHistory();
     }
 
     /*
