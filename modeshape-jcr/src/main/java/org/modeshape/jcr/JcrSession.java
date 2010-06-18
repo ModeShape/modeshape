@@ -125,7 +125,7 @@ class JcrSession implements Session {
     /**
      * The execution context for this session, which uses the {@link #sessionRegistry session's namespace registry}
      */
-    protected final ExecutionContext executionContext;
+    private ExecutionContext executionContext;
 
     /**
      * The session-specific attributes that came from the {@link SimpleCredentials}' {@link SimpleCredentials#getAttributeNames()}
@@ -135,7 +135,7 @@ class JcrSession implements Session {
     /**
      * The graph representing this session, which uses the {@link #graph session's graph}.
      */
-    private final Graph graph;
+    private final JcrGraph graph;
 
     private final SessionCache cache;
 
@@ -221,6 +221,13 @@ class JcrSession implements Session {
 
     ExecutionContext getExecutionContext() {
         return this.executionContext;
+    }
+
+    void setSessionData( String key,
+                         String value ) {
+        // This returns the same instance iff the <key,value> would not alter the current context ...
+        this.executionContext = this.executionContext.with(key, value);
+        this.graph.setContext(this.executionContext);
     }
 
     String sessionId() {

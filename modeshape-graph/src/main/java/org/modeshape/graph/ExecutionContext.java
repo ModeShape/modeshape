@@ -25,6 +25,9 @@ package org.modeshape.graph;
 
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.component.ClassLoaderFactory;
@@ -68,6 +71,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     private final SecurityContext securityContext;
     /** The unique ID string, which is always generated so that it can be final and not volatile. */
     private final String id = UUID.randomUUID().toString();
+    private final Map<String, String> data;
 
     /**
      * Create an instance of an execution context that uses the {@link AccessController#getContext() current JAAS calling context}
@@ -76,7 +80,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     @SuppressWarnings( "synthetic-access" )
     public ExecutionContext() {
-        this(new NullSecurityContext(), null, null, null, null, null);
+        this(new NullSecurityContext(), null, null, null, null, null, null);
         initializeDefaultNamespaces(this.getNamespaceRegistry());
         assert securityContext != null;
 
@@ -96,6 +100,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         this.propertyFactory = original.getPropertyFactory();
         this.classLoaderFactory = original.getClassLoaderFactory();
         this.mimeTypeDetector = original.getMimeTypeDetector();
+        this.data = original.getData();
     }
 
     /**
@@ -115,6 +120,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         this.propertyFactory = original.getPropertyFactory();
         this.classLoaderFactory = original.getClassLoaderFactory();
         this.mimeTypeDetector = original.getMimeTypeDetector();
+        this.data = original.getData();
     }
 
     /**
@@ -131,13 +137,15 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      *        {@link MimeTypeDetectors} instance with an {@link ExtensionBasedMimeTypeDetector}
      * @param classLoaderFactory the {@link ClassLoaderFactory} implementation, or null if a {@link StandardClassLoaderFactory}
      *        instance should be used
+     * @param data the custom data for this context, or null if there is no such data
      */
     protected ExecutionContext( SecurityContext securityContext,
                                 NamespaceRegistry namespaceRegistry,
                                 ValueFactories valueFactories,
                                 PropertyFactory propertyFactory,
                                 MimeTypeDetector mimeTypeDetector,
-                                ClassLoaderFactory classLoaderFactory ) {
+                                ClassLoaderFactory classLoaderFactory,
+                                Map<String, String> data ) {
         assert securityContext != null;
         this.securityContext = securityContext;
         this.namespaceRegistry = namespaceRegistry != null ? namespaceRegistry : new ThreadSafeNamespaceRegistry(
@@ -146,6 +154,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
         this.classLoaderFactory = classLoaderFactory == null ? new StandardClassLoaderFactory() : classLoaderFactory;
         this.mimeTypeDetector = mimeTypeDetector != null ? mimeTypeDetector : createDefaultMimeTypeDetector();
+        this.data = data != null ? data : Collections.<String, String>emptyMap();
     }
 
     private MimeTypeDetector createDefaultMimeTypeDetector() {
@@ -253,6 +262,15 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     }
 
     /**
+     * Get the immutable map of custom data that is affiliated with this context.
+     * 
+     * @return the custom data; never null but possibly empty
+     */
+    public Map<String, String> getData() {
+        return data;
+    }
+
+    /**
      * Create a new execution context that mirrors this context but that uses the supplied namespace registry. The resulting
      * context's {@link #getValueFactories() value factories} and {@link #getPropertyFactory() property factory} all make use of
      * the new namespace registry.
@@ -265,7 +283,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
         return new ExecutionContext(this.getSecurityContext(), namespaceRegistry, null, null, this.getMimeTypeDetector(),
-                                    this.getClassLoaderFactory());
+                                    this.getClassLoaderFactory(), this.getData());
     }
 
     /**
@@ -281,7 +299,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
         return new ExecutionContext(this.getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    mimeTypeDetector, getClassLoaderFactory());
+                                    mimeTypeDetector, getClassLoaderFactory(), this.getData());
     }
 
     /**
@@ -296,7 +314,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
         return new ExecutionContext(this.getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), classLoaderFactory);
+                                    getMimeTypeDetector(), classLoaderFactory, this.getData());
     }
 
     /**
@@ -310,6 +328,59 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     public ExecutionContext with( SecurityContext securityContext ) {
         return new ExecutionContext(this, securityContext);
+    }
+
+    /**
+     * Create a new execution context that mirrors this context but that contains the supplied data. Note that the supplied map is
+     * always copied to ensure that it is immutable.
+     * 
+     * @param data the data that is to be affiliated with the resulting context or null if the resulting context should have no
+     *        data
+     * @return the execution context that is identical with this execution context, but which uses the supplied data; never null
+     * @since 2.0
+     */
+    public ExecutionContext with( Map<String, String> data ) {
+        Map<String, String> newData = data;
+        if (data == null) {
+            if (this.data.isEmpty()) return this;
+        } else {
+            // Copy the data in the map ...
+            newData = Collections.unmodifiableMap(new HashMap<String, String>(data));
+        }
+        return new ExecutionContext(this.getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
+                                    getMimeTypeDetector(), getClassLoaderFactory(), newData);
+    }
+
+    /**
+     * Create a new execution context that mirrors this context but that contains the supplied key-value pair in the new context's
+     * data.
+     * 
+     * @param key the key for the new data that is to be affiliated with the resulting context
+     * @param value the data value to be affiliated with the supplied key in the resulting context, or null if an existing data
+     *        affiliated with the key should be removed in the resulting context
+     * @return the execution context that is identical with this execution context, but which uses the supplied data; never null
+     * @since 2.0
+     */
+    public ExecutionContext with( String key,
+                                  String value ) {
+        Map<String, String> newData = data;
+        if (value == null) {
+            // Remove the value with the key ...
+            if (this.data.isEmpty() || !this.data.containsKey(key)) {
+                // nothing to remove
+                return this;
+            }
+            newData = new HashMap<String, String>(data);
+            newData.remove(key);
+            newData = Collections.unmodifiableMap(newData);
+        } else {
+            // We are to add the value ...
+            newData = new HashMap<String, String>(data);
+            newData.put(key, value);
+            newData = Collections.unmodifiableMap(newData);
+        }
+        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
+                                    getMimeTypeDetector(), getClassLoaderFactory(), newData);
     }
 
     /**

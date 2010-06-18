@@ -30,6 +30,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -67,6 +68,8 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.graph.property.DateTime;
+import org.modeshape.jcr.JcrObservationManager.JcrEventBundle;
 import org.modeshape.jcr.JcrRepository.Option;
 
 /**
@@ -506,9 +509,14 @@ public final class JcrObservationManagerTest extends TestSuite {
     public void shouldTestEventIteratorTest_testSkip() throws Exception {
         // create events
         List<Event> events = new ArrayList<Event>();
-        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(Event.NODE_ADDED, "/testroot/node1", "userId"));
-        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(Event.NODE_ADDED, "/testroot/node2", "userId"));
-        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(Event.NODE_ADDED, "/testroot/node3", "userId"));
+        DateTime now = engine.getExecutionContext().getValueFactories().getDateFactory().create();
+        JcrEventBundle bundle = ((JcrObservationManager)getObservationManager()).new JcrEventBundle(now, "userId", null);
+        String id1 = UUID.randomUUID().toString();
+        String id2 = UUID.randomUUID().toString();
+        String id3 = UUID.randomUUID().toString();
+        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node1", id1));
+        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node2", id2));
+        events.add(((JcrObservationManager)getObservationManager()).new JcrEvent(bundle, Event.NODE_ADDED, "/testroot/node3", id3));
 
         // create iterator
         EventIterator itr = ((JcrObservationManager)getObservationManager()).new JcrEventIterator(events);
@@ -878,6 +886,7 @@ public final class JcrObservationManagerTest extends TestSuite {
      * @throws Exception
      * @see NodeMovedTest#testMoveNode()
      */
+    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldTestNodeMovedTest_testMoveNode() throws Exception {
         // setup
@@ -889,26 +898,37 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // register listeners
+        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
         TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
         TestListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
 
         // move node
         String newPath = getRoot().getPath() + '/' + node2;
-        getWorkspace().move(n2.getPath(), newPath);
+        getWorkspace().move(oldPath, newPath);
         save();
 
         // event handling
+        moveNodeListener.waitForEvents();
+        removeListener(moveNodeListener);
         addNodeListener.waitForEvents();
         removeListener(addNodeListener);
         removeNodeListener.waitForEvents();
         removeListener(removeNodeListener);
 
         // tests
+        checkResults(moveNodeListener);
         checkResults(addNodeListener);
         checkResults(removeNodeListener);
-        assertTrue("Path for new location of moved node is wrong: actual=" + addNodeListener.getEvents().get(0).getPath()
+        Map<String, String> info = moveNodeListener.getEvents().get(0).getInfo();
+        assertThat(info.get(JcrObservationManager.MOVE_FROM_KEY), is(oldPath));
+        assertThat(info.get(JcrObservationManager.MOVE_TO_KEY), is(newPath));
+        assertThat(info.get(JcrObservationManager.ORDER_CHILD_KEY), is(nullValue()));
+        assertThat(info.get(JcrObservationManager.ORDER_BEFORE_KEY), is(nullValue()));
+        assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
+                   + ", expected=" + newPath, containsPath(moveNodeListener, newPath));
+        assertTrue("Path for new location of added node is wrong: actual=" + addNodeListener.getEvents().get(0).getPath()
                    + ", expected=" + newPath, containsPath(addNodeListener, newPath));
-        assertTrue("Path for old location of moved node is wrong: actual=" + removeNodeListener.getEvents().get(0).getPath()
+        assertTrue("Path for new location of removed node is wrong: actual=" + removeNodeListener.getEvents().get(0).getPath()
                    + ", expected=" + oldPath, containsPath(removeNodeListener, oldPath));
     }
 
@@ -916,6 +936,7 @@ public final class JcrObservationManagerTest extends TestSuite {
      * @throws Exception
      * @see NodeMovedTest#testMoveTree()
      */
+    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldTestNodeMovedTest_testMoveTree() throws Exception {
         // setup
@@ -925,26 +946,37 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // register listeners
+        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
         TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
         TestListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
 
         // move node
         String newPath = getRoot().getPath() + "/node3";
-        getWorkspace().move(n1.getPath(), newPath);
+        getWorkspace().move(oldPath, newPath);
         save();
 
         // event handling
+        moveNodeListener.waitForEvents();
+        removeListener(moveNodeListener);
         addNodeListener.waitForEvents();
         removeListener(addNodeListener);
         removeNodeListener.waitForEvents();
         removeListener(removeNodeListener);
 
         // tests
+        checkResults(moveNodeListener);
         checkResults(addNodeListener);
         checkResults(removeNodeListener);
-        assertTrue("Path for new location of moved node is wrong: actual=" + addNodeListener.getEvents().get(0).getPath()
+        Map<String, String> info = moveNodeListener.getEvents().get(0).getInfo();
+        assertThat(info.get(JcrObservationManager.MOVE_FROM_KEY), is(oldPath));
+        assertThat(info.get(JcrObservationManager.MOVE_TO_KEY), is(newPath));
+        assertThat(info.get(JcrObservationManager.ORDER_CHILD_KEY), is(nullValue()));
+        assertThat(info.get(JcrObservationManager.ORDER_BEFORE_KEY), is(nullValue()));
+        assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
+                   + ", expected=" + newPath, containsPath(moveNodeListener, newPath));
+        assertTrue("Path for new location of added node is wrong: actual=" + addNodeListener.getEvents().get(0).getPath()
                    + ", expected=" + newPath, containsPath(addNodeListener, newPath));
-        assertTrue("Path for old location of moved node is wrong: actual=" + removeNodeListener.getEvents().get(0).getPath()
+        assertTrue("Path for new location of removed node is wrong: actual=" + removeNodeListener.getEvents().get(0).getPath()
                    + ", expected=" + oldPath, containsPath(removeNodeListener, oldPath));
     }
 
@@ -952,6 +984,7 @@ public final class JcrObservationManagerTest extends TestSuite {
      * @throws Exception
      * @see NodeMovedTest#testMoveWithRemove()
      */
+    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldTestNodeMovedTest_testMoveWithRemove() throws Exception {
         // setup
@@ -962,6 +995,7 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // register listeners
+        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
         TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
         TestListener removeNodeListener = addListener(2, 2, Event.NODE_REMOVED, null, false, null, null, false);
 
@@ -976,18 +1010,29 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // event handling
+        moveNodeListener.waitForEvents();
+        removeListener(moveNodeListener);
         addNodeListener.waitForEvents();
         removeListener(addNodeListener);
         removeNodeListener.waitForEvents();
         removeListener(removeNodeListener);
 
         // tests
+        checkResults(moveNodeListener);
         checkResults(addNodeListener);
         checkResults(removeNodeListener);
-        assertTrue("Path for new location of moved node is wrong: actual=" + addNodeListener.getEvents().get(0).getPath()
+        Map<String, String> info = moveNodeListener.getEvents().get(0).getInfo();
+        assertThat(info.get(JcrObservationManager.ORDER_CHILD_KEY), is(nullValue()));
+        assertThat(info.get(JcrObservationManager.ORDER_BEFORE_KEY), is(nullValue()));
+        assertThat(info.get(JcrObservationManager.MOVE_FROM_KEY), is(oldPath));
+        assertThat(info.get(JcrObservationManager.MOVE_TO_KEY), is(newPath));
+        assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
+                   + ", expected=" + newPath, containsPath(moveNodeListener, newPath));
+        assertTrue("Path for new location of added node is wrong: actual=" + addNodeListener.getEvents().get(0).getPath()
                    + ", expected=" + newPath, containsPath(addNodeListener, newPath));
+        assertTrue("Path for new location of removed node is wrong: actual=" + removeNodeListener.getEvents().get(0).getPath()
+                   + ", expected=" + oldPath, containsPath(removeNodeListener, oldPath));
         assertTrue("Path for removed node is wrong", containsPath(removeNodeListener, removedNodePath));
-        assertTrue("Path for old path of moved node is wrong", containsPath(removeNodeListener, oldPath));
     }
 
     // ===========================================================================================================================
@@ -998,6 +1043,7 @@ public final class JcrObservationManagerTest extends TestSuite {
      * @throws Exception
      * @see NodeReorderTest#testNodeReorder()
      */
+    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldTestNodeReorderTest_testNodeReorder() throws Exception {
         // setup
@@ -1007,6 +1053,7 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // register listeners
+        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
         TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
         TestListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
 
@@ -1015,14 +1062,24 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // handle events
+        moveNodeListener.waitForEvents();
+        removeListener(moveNodeListener);
         addNodeListener.waitForEvents();
         removeListener(addNodeListener);
         removeNodeListener.waitForEvents();
         removeListener(removeNodeListener);
 
         // tests
+        checkResults(moveNodeListener);
         checkResults(addNodeListener);
         checkResults(removeNodeListener);
+        Map<String, String> info = moveNodeListener.getEvents().get(0).getInfo();
+        assertThat(info.get(JcrObservationManager.MOVE_FROM_KEY), is(nullValue()));
+        assertThat(info.get(JcrObservationManager.MOVE_TO_KEY), is(nullValue()));
+        assertThat(info.get(JcrObservationManager.ORDER_CHILD_KEY), is("node3"));
+        assertThat(info.get(JcrObservationManager.ORDER_BEFORE_KEY), is("node2"));
+        assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
+                   + ", expected=" + n3.getPath(), containsPath(moveNodeListener, n3.getPath()));
         assertTrue("Added reordered node has wrong path: actual=" + addNodeListener.getEvents().get(0).getPath() + ", expected="
                    + n3.getPath(), containsPath(addNodeListener, n3.getPath()));
         assertTrue("Removed reordered node has wrong path: actual=" + removeNodeListener.getEvents().get(0).getPath()
@@ -1033,6 +1090,7 @@ public final class JcrObservationManagerTest extends TestSuite {
      * @throws Exception
      * @see NodeReorderTest#testNodeReorderSameName()
      */
+    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldTestNodeReorderTest_testNodeReorderSameName() throws Exception {
         // setup
@@ -1043,6 +1101,7 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // register listeners + "[2]"
+        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
         TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
         TestListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
 
@@ -1051,14 +1110,26 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // handle events
+        moveNodeListener.waitForEvents();
+        removeListener(moveNodeListener);
         addNodeListener.waitForEvents();
         removeListener(addNodeListener);
         removeNodeListener.waitForEvents();
         removeListener(removeNodeListener);
 
         // tests
+        checkResults(moveNodeListener);
         checkResults(addNodeListener);
         checkResults(removeNodeListener);
+        Map<String, String> info = moveNodeListener.getEvents().get(0).getInfo();
+        assertThat(info.get(JcrObservationManager.MOVE_FROM_KEY), is(nullValue()));
+        assertThat(info.get(JcrObservationManager.MOVE_TO_KEY), is(nullValue()));
+        assertThat(info.get(JcrObservationManager.ORDER_CHILD_KEY), is(node1 + "[3]"));
+        assertThat(info.get(JcrObservationManager.ORDER_BEFORE_KEY), is(node1 + "[2]"));
+        assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
+                   + ", expected=" + getRoot().getPath() + "/" + node1 + "[2]", containsPath(moveNodeListener,
+                                                                                             getRoot().getPath() + "/" + node1
+                                                                                             + "[2]"));
         assertTrue("Added reordered node has wrong path: actual=" + addNodeListener.getEvents().get(0).getPath() + ", expected="
                    + n1.getPath() + "[2]", containsPath(addNodeListener, n1.getPath() + "[2]"));
         assertTrue("Removed reordered node has wrong path: actual=" + removeNodeListener.getEvents().get(0).getPath()
@@ -1069,6 +1140,7 @@ public final class JcrObservationManagerTest extends TestSuite {
      * @throws Exception
      * @see NodeReorderTest#testNodeReorderSameNameWithRemove()
      */
+    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldTestNodeReorderTest_testNodeReorderSameNameWithRemove() throws Exception {
         // setup
@@ -1081,6 +1153,7 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // register listeners + "[2]"
+        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
         TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
         TestListener removeNodeListener = addListener(2, Event.NODE_REMOVED, null, false, null, null, false);
 
@@ -1091,14 +1164,23 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // handle events
+        moveNodeListener.waitForEvents();
+        removeListener(moveNodeListener);
         addNodeListener.waitForEvents();
         removeListener(addNodeListener);
         removeNodeListener.waitForEvents();
         removeListener(removeNodeListener);
 
         // tests
-        checkResults(addNodeListener);
-        checkResults(removeNodeListener);
+        Map<String, String> info = moveNodeListener.getEvents().get(0).getInfo();
+        assertThat(info.get(JcrObservationManager.MOVE_FROM_KEY), is(nullValue()));
+        assertThat(info.get(JcrObservationManager.MOVE_TO_KEY), is(nullValue()));
+        assertThat(info.get(JcrObservationManager.ORDER_CHILD_KEY), is(node1 + "[2]"));
+        assertThat(info.get(JcrObservationManager.ORDER_BEFORE_KEY), is(nullValue()));
+        assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
+                   + ", expected=" + getRoot().getPath() + "/" + node1 + "[3]", containsPath(moveNodeListener,
+                                                                                             getRoot().getPath() + "/" + node1
+                                                                                             + "[3]"));
         assertTrue("Added reordered node has wrong path: actual=" + addNodeListener.getEvents().get(0).getPath() + ", expected="
                    + n1.getPath() + "[3]", containsPath(addNodeListener, n1.getPath() + "[3]"));
         assertTrue("Removed reordered node path not found: " + n1.getPath() + "[2]", containsPath(removeNodeListener,
@@ -1611,6 +1693,7 @@ public final class JcrObservationManagerTest extends TestSuite {
      * @throws Exception
      * @see WorkspaceOperationTest#testMove()
      */
+    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldTestWorkspaceOperationTest_testMove() throws Exception {
         // setup
@@ -1621,6 +1704,7 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // register listeners
+        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
         TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
         TestListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
 
@@ -1631,14 +1715,24 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // event handling
+        moveNodeListener.waitForEvents();
+        removeListener(moveNodeListener);
         addNodeListener.waitForEvents();
         removeListener(addNodeListener);
         removeNodeListener.waitForEvents();
         removeListener(removeNodeListener);
 
         // tests
+        checkResults(moveNodeListener);
         checkResults(addNodeListener);
         checkResults(removeNodeListener);
+        Map<String, String> info = moveNodeListener.getEvents().get(0).getInfo();
+        assertThat(info.get(JcrObservationManager.MOVE_FROM_KEY), is(oldPath));
+        assertThat(info.get(JcrObservationManager.MOVE_TO_KEY), is(targetPath));
+        assertThat(info.get(JcrObservationManager.ORDER_CHILD_KEY), is(nullValue()));
+        assertThat(info.get(JcrObservationManager.ORDER_BEFORE_KEY), is(nullValue()));
+        assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
+                   + ", expected=" + targetPath, containsPath(moveNodeListener, targetPath));
         assertTrue("Path for new location of moved node is wrong: actual=" + addNodeListener.getEvents().get(0).getPath()
                    + ", expected=" + targetPath, containsPath(addNodeListener, targetPath));
         assertTrue("Path for old location of moved node is wrong: actual=" + removeNodeListener.getEvents().get(0).getPath()
@@ -1649,6 +1743,7 @@ public final class JcrObservationManagerTest extends TestSuite {
      * @throws Exception
      * @see WorkspaceOperationTest#testRename()
      */
+    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldTestWorkspaceOperationTest_testRename() throws Exception {
         // setup
@@ -1657,6 +1752,7 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // register listeners
+        TestListener moveNodeListener = addListener(1, Event.NODE_MOVED, null, false, null, null, false);
         TestListener addNodeListener = addListener(1, Event.NODE_ADDED, null, false, null, null, false);
         TestListener removeNodeListener = addListener(1, Event.NODE_REMOVED, null, false, null, null, false);
 
@@ -1667,14 +1763,24 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // event handling
+        moveNodeListener.waitForEvents();
+        removeListener(moveNodeListener);
         addNodeListener.waitForEvents();
         removeListener(addNodeListener);
         removeNodeListener.waitForEvents();
         removeListener(removeNodeListener);
 
         // tests
+        checkResults(moveNodeListener);
         checkResults(addNodeListener);
         checkResults(removeNodeListener);
+        Map<String, String> info = moveNodeListener.getEvents().get(0).getInfo();
+        assertThat(info.get(JcrObservationManager.MOVE_FROM_KEY), is(oldPath));
+        assertThat(info.get(JcrObservationManager.MOVE_TO_KEY), is(renamedPath));
+        assertThat(info.get(JcrObservationManager.ORDER_CHILD_KEY), is(nullValue()));
+        assertThat(info.get(JcrObservationManager.ORDER_BEFORE_KEY), is(nullValue()));
+        assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
+                   + ", expected=" + renamedPath, containsPath(moveNodeListener, renamedPath));
         assertTrue("Path for renamed node is wrong: actual=" + addNodeListener.getEvents().get(0).getPath() + ", expected="
                    + renamedPath, containsPath(addNodeListener, renamedPath));
         assertTrue("Path for old name of renamed node is wrong: actual=" + removeNodeListener.getEvents().get(0).getPath()
@@ -1804,7 +1910,8 @@ public final class JcrObservationManagerTest extends TestSuite {
         }
 
         public void waitForEvents() throws Exception {
-            this.latch.await(2000, TimeUnit.MILLISECONDS);
+            long millis = this.expectedEvents == 0 ? 50 : 250;
+            this.latch.await(millis, TimeUnit.MILLISECONDS);
         }
     }
 

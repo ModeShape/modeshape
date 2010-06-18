@@ -295,6 +295,13 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
     /**
      * {@inheritDoc}
      */
+    public Path create( Path.Segment value ) {
+        return createAbsolutePath(value);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public Path createAbsolutePath( Name... segmentNames ) {
         if (segmentNames == null || segmentNames.length == 0) return RootPath.INSTANCE;
         List<Segment> segments = new ArrayList<Segment>(segmentNames.length);

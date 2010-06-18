@@ -170,6 +170,16 @@ public class DecimalValueFactory extends AbstractValueFactory<BigDecimal> {
     /**
      * {@inheritDoc}
      */
+    public BigDecimal create( Path.Segment value ) {
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Path.Segment.class.getSimpleName(),
+                                                                          value));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public BigDecimal create( Reference value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),

@@ -668,27 +668,27 @@ public class JcrRepository implements Repository {
         // Right now, the other nodes will be created as needed
     }
 
-    Graph createWorkspaceGraph( String workspaceName,
-                                ExecutionContext workspaceContext ) {
-        Graph graph = null;
+    JcrGraph createWorkspaceGraph( String workspaceName,
+                                   ExecutionContext workspaceContext ) {
+        JcrGraph graph = null;
         if (WORKSPACES_SHARE_SYSTEM_BRANCH) {
             // Connect via the federated source ...
             assert this.federatedSource != null;
-            graph = Graph.create(this.federatedSource, workspaceContext);
+            graph = JcrGraph.create(this.federatedSource, workspaceContext);
         } else {
             // Otherwise, just create a graph directly to the connection factory ...
-            graph = Graph.create(this.sourceName, this.connectionFactory, workspaceContext);
+            graph = JcrGraph.create(this.sourceName, this.connectionFactory, workspaceContext);
         }
         graph.useWorkspace(workspaceName);
         return graph;
     }
 
-    Graph createSystemGraph( ExecutionContext sessionContext ) {
+    JcrGraph createSystemGraph( ExecutionContext sessionContext ) {
         assert this.systemSourceName != null;
         assert this.connectionFactory != null;
         assert sessionContext != null;
         // The default workspace should be the system workspace ...
-        Graph result = Graph.create(this.systemSourceName, this.connectionFactory, sessionContext);
+        JcrGraph result = JcrGraph.create(this.systemSourceName, this.connectionFactory, sessionContext);
         if (this.systemWorkspaceName != null) {
             result.useWorkspace(systemWorkspaceName);
         }

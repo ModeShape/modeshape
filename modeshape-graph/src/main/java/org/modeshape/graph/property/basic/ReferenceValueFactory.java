@@ -185,6 +185,16 @@ public class ReferenceValueFactory extends AbstractValueFactory<Reference> {
     /**
      * {@inheritDoc}
      */
+    public Reference create( Path.Segment value ) {
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Path.Segment.class.getSimpleName(),
+                                                                          value));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public Reference create( Reference value ) {
         return value;
     }

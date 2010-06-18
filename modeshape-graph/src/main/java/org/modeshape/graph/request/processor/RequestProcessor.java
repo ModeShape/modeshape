@@ -219,8 +219,8 @@ public abstract class RequestProcessor {
         if (request == null) return;
         try {
             if (request.isCancelled()) return;
-            
-            switch(request.getType()) {
+
+            switch (request.getType()) {
                 case ACCESS_QUERY:
                     process((AccessQueryRequest)request);
                     break;
@@ -1027,7 +1027,8 @@ public abstract class RequestProcessor {
         if (userName == null) userName = "";
         String contextId = context.getId();
         String processId = null;
-        Changes changes = new Changes(processId, contextId, userName, getSourceName(), getNowInUtc(), this.changes);
+        Map<String, String> userData = context.getData();
+        Changes changes = new Changes(processId, contextId, userName, getSourceName(), getNowInUtc(), this.changes, userData);
         observer.notify(changes);
         // Null the list, since this should have been closed
         this.changes = null;

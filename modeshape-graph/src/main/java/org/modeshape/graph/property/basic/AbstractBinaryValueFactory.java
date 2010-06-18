@@ -179,6 +179,14 @@ public abstract class AbstractBinaryValueFactory extends AbstractValueFactory<Bi
     /**
      * {@inheritDoc}
      */
+    public Binary create( Path.Segment value ) {
+        // Convert the value to a string, then to a binary ...
+        return create(this.getStringValueFactory().create(value));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public Binary create( Reference value ) {
         // Convert the value to a string, then to a binary ...
         return create(this.getStringValueFactory().create(value));

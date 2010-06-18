@@ -31,6 +31,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
+import org.joda.time.DateTimeZone;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.property.Binary;
@@ -43,7 +44,6 @@ import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
-import org.joda.time.DateTimeZone;
 
 /**
  * The standard {@link ValueFactory} for {@link PropertyType#DATE} values.
@@ -173,6 +173,16 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
         throw new ValueFormatException(value, getPropertyType(), GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
                                                                                                     Path.class.getSimpleName(),
                                                                                                     value));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public DateTime create( Path.Segment value ) {
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Path.Segment.class.getSimpleName(),
+                                                                          value));
     }
 
     /**

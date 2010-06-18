@@ -163,6 +163,13 @@ public class ObjectValueFactory extends AbstractValueFactory<Object> {
     /**
      * {@inheritDoc}
      */
+    public Object create( Path.Segment value ) {
+        return value;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public Object create( Reference value ) {
         return value;
     }

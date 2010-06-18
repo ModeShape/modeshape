@@ -203,6 +203,17 @@ public class StringValueFactory extends AbstractValueFactory<String> {
     /**
      * {@inheritDoc}
      */
+    public String create( Path.Segment value ) {
+        if (value == null) return null;
+        if (this.namespaceRegistry != null) {
+            return value.getString(this.namespaceRegistry, getEncoder());
+        }
+        return value.getString(getEncoder());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public String create( Reference value ) {
         if (value == null) return null;
         return value.getString(getEncoder());

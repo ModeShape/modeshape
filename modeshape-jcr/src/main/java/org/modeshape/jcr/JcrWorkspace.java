@@ -56,7 +56,6 @@ import javax.jcr.version.VersionManager;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.SubgraphNode;
@@ -118,7 +117,7 @@ class JcrWorkspace implements Workspace {
      * have the same thread context as this workspace (e.g., the session, namespace registry, etc.) to also reuse this same graph
      * instance (though it's not very expensive at all for each to have their own instance, too).
      */
-    private final Graph graph;
+    private final JcrGraph graph;
 
     /**
      * Reference to the namespace registry for this workspace. Per the JCR specification, this registry instance is persistent
@@ -194,7 +193,7 @@ class JcrWorkspace implements Workspace {
 
     }
 
-    final Graph graph() {
+    final JcrGraph graph() {
         return this.graph;
     }
 

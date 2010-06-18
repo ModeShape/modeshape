@@ -196,6 +196,14 @@ public class UriValueFactory extends AbstractValueFactory<URI> {
     /**
      * {@inheritDoc}
      */
+    public URI create( Path.Segment value ) {
+        if (value == null) return null;
+        return create("./" + value.getString(this.namespaceRegistry));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public URI create( Reference value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),

@@ -1391,7 +1391,7 @@ class JcrQueryManager implements QueryManager {
 
         protected SessionQueryContext( JcrSession session ) {
             this.session = session;
-            this.factories = session.executionContext.getValueFactories();
+            this.factories = session.getExecutionContext().getValueFactories();
             this.cache = session.cache();
         }
 
@@ -1535,7 +1535,7 @@ class JcrQueryManager implements QueryManager {
 
         protected SessionTypeSystem( JcrSession session ) {
             this.session = session;
-            this.delegate = session.executionContext.getValueFactories().getTypeSystem();
+            this.delegate = session.getExecutionContext().getValueFactories().getTypeSystem();
         }
 
         @Override

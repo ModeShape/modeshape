@@ -177,6 +177,16 @@ public class DoubleValueFactory extends AbstractValueFactory<Double> {
     /**
      * {@inheritDoc}
      */
+    public Double create( Path.Segment value ) {
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Path.Segment.class.getSimpleName(),
+                                                                          value));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public Double create( Reference value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),

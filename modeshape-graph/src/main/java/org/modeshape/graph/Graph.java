@@ -259,12 +259,12 @@ public class Graph {
      * @throws RuntimeException if a runtime error occurs during execution
      */
     protected void execute( Request request ) {
-        RepositoryConnection connection = Graph.this.getConnectionFactory().createConnection(getSourceName());
+        RepositoryConnection connection = getConnectionFactory().createConnection(getSourceName());
         if (connection == null) {
             throw new RepositorySourceException(GraphI18n.unableToFindRepositorySourceWithName.text(getSourceName()));
         }
         try {
-            connection.execute(Graph.this.getContext(), request);
+            connection.execute(getContext(), request);
         } finally {
             connection.close();
         }
@@ -2075,7 +2075,7 @@ public class Graph {
      * @return the object that is used to specified the node whose property is to be read, and which will return the property
      */
     public On<Property> getProperty( final String name ) {
-        Name nameObj = context.getValueFactories().getNameFactory().create(name);
+        Name nameObj = getContext().getValueFactories().getNameFactory().create(name);
         return getProperty(nameObj);
     }
 
@@ -2432,7 +2432,7 @@ public class Graph {
      */
     public Node resolve( Reference reference ) {
         CheckArg.isNotNull(reference, "reference");
-        UUID uuid = context.getValueFactories().getUuidFactory().create(reference);
+        UUID uuid = getContext().getValueFactories().getUuidFactory().create(reference);
         return getNodeAt(uuid);
     }
 
@@ -4633,11 +4633,11 @@ public class Graph {
                 // Look for a property ...
                 Property uuidProperty = node.getProperty(ModeShapeLexicon.UUID);
                 if (uuidProperty != null) {
-                    uuid = context.getValueFactories().getUuidFactory().create(uuidProperty.getFirstValue());
+                    uuid = getContext().getValueFactories().getUuidFactory().create(uuidProperty.getFirstValue());
                 } else {
                     uuidProperty = node.getProperty(JcrLexicon.UUID);
                     if (uuidProperty != null) {
-                        uuid = context.getValueFactories().getUuidFactory().create(uuidProperty.getFirstValue());
+                        uuid = getContext().getValueFactories().getUuidFactory().create(uuidProperty.getFirstValue());
                     }
                 }
             }
@@ -7001,7 +7001,7 @@ public class Graph {
 
         @Override
         public String toString() {
-            return "Subgraph\n" + getToString(context); // ExecutionContext.DEFAULT_CONTEXT);//getLocation().toString();
+            return "Subgraph\n" + getToString(getContext());
         }
 
         /**
@@ -7130,7 +7130,7 @@ public class Graph {
 
         @Override
         public String toString() {
-            return getNodeString(context, location);
+            return getNodeString(getContext(), location);
         }
 
         private String getNodeString( ExecutionContext context,
@@ -7517,7 +7517,7 @@ public class Graph {
                 }
 
                 public Into<WithUuids<T>> as( final String name ) {
-                    return as(context.getValueFactories().getNameFactory().create(name));
+                    return as(getContext().getValueFactories().getNameFactory().create(name));
                 }
 
                 public Into<WithUuids<T>> as( final Segment segment ) {

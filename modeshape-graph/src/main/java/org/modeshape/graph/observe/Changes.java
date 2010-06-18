@@ -26,6 +26,7 @@ package org.modeshape.graph.observe;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import net.jcip.annotations.Immutable;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.SecurityContext;
@@ -45,14 +46,25 @@ public class Changes implements Comparable<Changes>, Serializable {
     protected final String userName;
     protected final String sourceName;
     protected final DateTime timestamp;
+    protected final Map<String, String> data;
     protected final List<ChangeRequest> changeRequests;
 
+    /**
+     * @param processId the process identifier; may be null
+     * @param contextId the context identifier; may be null
+     * @param userName the username; may not be null
+     * @param sourceName the source name; may not be null
+     * @param timestamp the timestamp; may not be null
+     * @param requests the requests; may not be null or empty
+     * @param data the immutable customized map of data to be associated with these changes; or null if there is no such data
+     */
     public Changes( String processId,
                     String contextId,
                     String userName,
                     String sourceName,
                     DateTime timestamp,
-                    List<ChangeRequest> requests ) {
+                    List<ChangeRequest> requests,
+                    Map<String, String> data ) {
         assert requests != null;
         assert !requests.isEmpty();
         this.userName = userName;
@@ -61,6 +73,7 @@ public class Changes implements Comparable<Changes>, Serializable {
         this.changeRequests = Collections.unmodifiableList(requests);
         this.processId = processId != null ? processId : "";
         this.contextId = contextId != null ? contextId : "";
+        this.data = data != null ? data : Collections.<String, String>emptyMap();
         assert this.userName != null;
         assert this.sourceName != null;
         assert this.timestamp != null;
@@ -75,12 +88,14 @@ public class Changes implements Comparable<Changes>, Serializable {
         this.changeRequests = changes.changeRequests;
         this.processId = changes.processId;
         this.contextId = changes.contextId;
+        this.data = changes.data;
         assert this.userName != null;
         assert this.sourceName != null;
         assert this.timestamp != null;
         assert this.changeRequests != null;
         assert this.processId != null;
         assert this.contextId != null;
+        assert this.data != null;
     }
 
     /**
@@ -140,6 +155,15 @@ public class Changes implements Comparable<Changes>, Serializable {
     }
 
     /**
+     * Get the data associated with these changes.
+     * 
+     * @return the immutable data; never null but possibly empty
+     */
+    public Map<String, String> getData() {
+        return data;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see java.lang.Object#hashCode()
@@ -174,6 +198,7 @@ public class Changes implements Comparable<Changes>, Serializable {
             if (!this.getSourceName().equals(that.getSourceName())) return false;
             if (!this.getTimestamp().equals(that.getTimestamp())) return false;
             if (!this.getUserName().equals(that.getUserName())) return false;
+            if (!this.getData().equals(that.getData())) return false;
             return true;
         }
         return false;

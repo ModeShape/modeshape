@@ -176,6 +176,10 @@ public class GraphSession<Payload, PropertyPayload> {
         this.operations = this.store.batch(this.requestBuilder);
     }
 
+    ExecutionContext context() {
+        return context;
+    }
+
     final String readable( Name name ) {
         return name.getString(context.getNamespaceRegistry());
     }
@@ -785,7 +789,7 @@ public class GraphSession<Payload, PropertyPayload> {
             // Need to make sure that changes to this branch are not dependent upon changes to nodes outside of this branch...
             if (node.containsChangesWithExternalDependencies()) {
                 I18n msg = GraphI18n.unableToRefreshBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
-                String path = node.getPath().getString(context.getNamespaceRegistry());
+                String path = readable(node.getPath());
                 throw new InvalidStateException(msg.text(path, workspaceName));
             }
         }
@@ -857,7 +861,7 @@ public class GraphSession<Payload, PropertyPayload> {
 
         if (node.isNew()) {
             I18n msg = GraphI18n.unableToRefreshPropertiesBecauseNodeIsModified;
-            String path = node.getPath().getString(context.getNamespaceRegistry());
+            String path = readable(node.getPath());
             throw new InvalidStateException(msg.text(path, workspaceName));
         }
 
@@ -946,7 +950,7 @@ public class GraphSession<Payload, PropertyPayload> {
         }
         if (node.isStale()) {
             // This node was deleted in this session ...
-            String readableLocation = node.getLocation().getString(context.getNamespaceRegistry());
+            String readableLocation = readable(node.getLocation());
             I18n msg = GraphI18n.nodeHasAlreadyBeenRemovedFromThisSession;
             throw new InvalidStateException(msg.text(readableLocation, workspaceName));
         }
@@ -963,7 +967,7 @@ public class GraphSession<Payload, PropertyPayload> {
         // Need to make sure that changes to this branch are not dependent upon changes to nodes outside of this branch...
         if (node.containsChangesWithExternalDependencies()) {
             I18n msg = GraphI18n.unableToSaveBranchBecauseChangesDependOnChangesToNodesOutsideOfBranch;
-            String path = node.getPath().getString(context.getNamespaceRegistry());
+            String path = readable(node.getPath());
             throw new ValidationException(msg.text(path, workspaceName));
         }
 
@@ -2115,8 +2119,8 @@ public class GraphSession<Payload, PropertyPayload> {
             assert !parent.isStale();
             // Make sure the parent is not a decendant of the child ...
             if (parent.isAtOrBelow(child)) {
-                String path = getPath().getString(cache.context.getNamespaceRegistry());
-                String parentPath = parent.getPath().getString(cache.context.getNamespaceRegistry());
+                String path = cache.readable(getPath());
+                String parentPath = cache.readable(parent.getPath());
                 String workspaceName = cache.workspaceName;
                 String msg = GraphI18n.unableToMoveNodeToBeChildOfDecendent.text(path, parentPath, workspaceName);
                 throw new ValidationException(msg);
@@ -3011,7 +3015,7 @@ public class GraphSession<Payload, PropertyPayload> {
                     return node.isLoaded();
                 }
             });
-            return new StructureSnapshot<PropertyPayload>(cache.context.getNamespaceRegistry(),
+            return new StructureSnapshot<PropertyPayload>(cache.context().getNamespaceRegistry(),
                                                           Collections.unmodifiableList(snapshots));
         }
     }

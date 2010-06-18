@@ -182,6 +182,15 @@ public interface ValueFactory<T> {
     T create( Path value ) throws ValueFormatException;
 
     /**
+     * Create a value from a path segment.
+     * 
+     * @param value the path segment from which the value is to be created
+     * @return the value, or null if the supplied path segment is null
+     * @throws ValueFormatException if the conversion from a path could not be performed
+     */
+    T create( Path.Segment value ) throws ValueFormatException;
+
+    /**
      * Create a value from a reference.
      * 
      * @param value the reference from which the value is to be created

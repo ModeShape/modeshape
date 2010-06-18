@@ -138,6 +138,9 @@ import org.apache.jackrabbit.test.api.nodetype.PropertyDefTest;
 import org.apache.jackrabbit.test.api.observation.AddEventListenerTest;
 import org.apache.jackrabbit.test.api.observation.EventIteratorTest;
 import org.apache.jackrabbit.test.api.observation.EventTest;
+import org.apache.jackrabbit.test.api.observation.GetDateTest;
+import org.apache.jackrabbit.test.api.observation.GetIdentifierTest;
+import org.apache.jackrabbit.test.api.observation.GetInfoTest;
 import org.apache.jackrabbit.test.api.observation.GetRegisteredEventListenersTest;
 import org.apache.jackrabbit.test.api.observation.LockingTest;
 import org.apache.jackrabbit.test.api.observation.NodeAddedTest;
@@ -177,6 +180,7 @@ import org.apache.jackrabbit.test.api.query.SetOffsetTest;
 import org.apache.jackrabbit.test.api.query.SimpleSelectionTest;
 import org.apache.jackrabbit.test.api.query.XPathDocOrderTest;
 import org.apache.jackrabbit.test.api.query.XPathJcrPathTest;
+import org.apache.jackrabbit.test.api.query.XPathOrderByTest;
 import org.apache.jackrabbit.test.api.query.XPathPosIndexTest;
 import org.apache.jackrabbit.test.api.query.XPathQueryLevel2Test;
 import org.apache.jackrabbit.test.api.version.ActivitiesTest;
@@ -437,7 +441,7 @@ public class JcrTckTest {
             // See https://jira.jboss.org/jira/browse/ModeShape-285
 
             addTest(new QueryTests());
-            // addTest(new ObservationTests()); // remove this and the ObservationTests inner class when all tests pass and
+            addTest(new ObservationTests()); // remove this and the ObservationTests inner class when all tests pass and
             // uncomment observation.TestAll
 
             // addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
@@ -455,20 +459,20 @@ public class JcrTckTest {
 
             // these are the tests included in observation.TestAll.suite()
             addTestSuite(SaveTest.class);
-            // MODE-760 addTestSuite(SQLOrderByTest.class);
+            // addTestSuite(SQLOrderByTest.class); // see MODE-760
             addTestSuite(SQLQueryLevel2Test.class);
-            // addTestSuite(SQLJoinTest.class); // 2 of these tests generate invalid queries
+            // addTestSuite(SQLJoinTest.class); // see https://issues.apache.org/jira/browse/JCR-2663
             addTestSuite(SQLJcrPathTest.class);
-            // MODE-760 addTestSuite(SQLPathTest.class);
+            // addTestSuite(SQLPathTest.class); // see MODE-760
             addTestSuite(XPathPosIndexTest.class);
             addTestSuite(XPathDocOrderTest.class);
-            // addTestSuite(XPathOrderByTest.class); // failure, but its run earlier and some previous test is messing up this run
+            addTestSuite(XPathOrderByTest.class);
             addTestSuite(XPathQueryLevel2Test.class);
             addTestSuite(XPathJcrPathTest.class);
 
             addTestSuite(DerefQueryLevel1Test.class);
             addTestSuite(ElementTest.class);
-            // MODE-759 addTestSuite(TextNodeTest.class);
+            // addTestSuite(TextNodeTest.class); // see MODE-759
             addTestSuite(GetLanguageTest.class);
             addTestSuite(GetPersistentQueryPathLevel1Test.class);
             addTestSuite(GetPersistentQueryPathTest.class);
@@ -508,14 +512,22 @@ public class JcrTckTest {
             addTestSuite(GetRegisteredEventListenersTest.class);
             addTestSuite(LockingTest.class);
             addTestSuite(NodeAddedTest.class);
-            // addTestSuite(NodeRemovedTest.class);
+            // addTestSuite(NodeRemovedTest.class); // see https://issues.apache.org/jira/browse/JCR-2661
             addTestSuite(NodeMovedTest.class);
             addTestSuite(NodeReorderTest.class);
             addTestSuite(PropertyAddedTest.class);
             addTestSuite(PropertyChangedTest.class);
             addTestSuite(PropertyRemovedTest.class);
             addTestSuite(AddEventListenerTest.class);
-            // addTestSuite(WorkspaceOperationTest.class);
+            // addTestSuite(WorkspaceOperationTest.class); // see https://issues.apache.org/jira/browse/JCR-2661
+
+            // JCR 2.0
+
+            // addTestSuite(EventJournalTest.class); // see https://issues.apache.org/jira/browse/JCR-2662
+            addTestSuite(GetDateTest.class);
+            addTestSuite(GetIdentifierTest.class);
+            addTestSuite(GetInfoTest.class);
+            // addTestSuite(GetUserDataTest.class); // see MODE-786
         }
     }
 

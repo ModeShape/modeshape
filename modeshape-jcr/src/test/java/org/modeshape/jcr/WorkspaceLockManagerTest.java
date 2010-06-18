@@ -10,6 +10,12 @@ import static org.mockito.Mockito.when;
 import java.util.LinkedList;
 import java.util.UUID;
 import javax.jcr.RepositoryException;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
@@ -25,16 +31,10 @@ import org.modeshape.graph.request.Request;
 import org.modeshape.graph.request.UnlockBranchRequest;
 import org.modeshape.graph.request.LockBranchRequest.LockScope;
 import org.modeshape.jcr.WorkspaceLockManager.ModeShapeLock;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 public class WorkspaceLockManagerTest {
 
-    protected Graph graph;
+    protected JcrGraph graph;
     private ExecutionContext context;
     private UUID validUuid;
     private Location validLocation;
@@ -60,11 +60,10 @@ public class WorkspaceLockManagerTest {
         context = new ExecutionContext();
         connection = new MockRepositoryConnection(sourceName, executedRequests);
         when(connectionFactory.createConnection(sourceName)).thenReturn(connection);
-        graph = Graph.create(sourceName, connectionFactory, context);
+        graph = JcrGraph.create(sourceName, connectionFactory, context);
 
         validUuid = UUID.randomUUID();
         validLocation = Location.create(validUuid);
-
 
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         when(repository.getExecutionContext()).thenReturn(context);

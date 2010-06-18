@@ -272,6 +272,19 @@ public class NameValueFactory extends AbstractValueFactory<Name> implements Name
     /**
      * {@inheritDoc}
      */
+    public Name create( Path.Segment segment ) {
+        if (segment == null) return null;
+        // Can only convert if the path has no SNS index ...
+        if (!segment.hasIndex()) return segment.getName();
+        throw new ValueFormatException(segment, getPropertyType(),
+                                       GraphI18n.errorConvertingType.text(Path.Segment.class.getSimpleName(),
+                                                                          Name.class.getSimpleName(),
+                                                                          segment));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public Name create( Reference value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),

@@ -138,7 +138,7 @@ public class StreamSequencerAdapterTest {
         Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
         Property sequencedProperty = inputNode.getProperty("sequencedProperty");
         NetChange nodeChange = new NetChange(repositoryWorkspaceName, location, EnumSet.of(ChangeType.PROPERTY_CHANGED), null,
-                                             Collections.singleton(sequencedProperty), null);
+                                             Collections.singleton(sequencedProperty), null, null, null, false);
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
         outputPaths.add(new RepositoryNodePath(repositorySourceName, repositoryWorkspaceName, "/d/e"));
         sequencerOutput.setProperty(path("alpha/beta"), name("isSomething"), true);
@@ -196,7 +196,7 @@ public class StreamSequencerAdapterTest {
         Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
         Property sequencedProperty = nodeC.getProperty("sequencedProperty");
         NetChange nodeChange = new NetChange(repositoryWorkspaceName, location, EnumSet.of(ChangeType.PROPERTY_CHANGED), null,
-                                             Collections.singleton(sequencedProperty), null);
+                                             Collections.singleton(sequencedProperty), null, null, null, false);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
@@ -231,7 +231,7 @@ public class StreamSequencerAdapterTest {
         Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
         Property sequencedProperty = nodeC.getProperty("sequencedProperty");
         NetChange nodeChange = new NetChange(repositoryWorkspaceName, location, EnumSet.of(ChangeType.PROPERTY_CHANGED), null,
-                                             Collections.singleton(sequencedProperty), null);
+                                             Collections.singleton(sequencedProperty), null, null, null, false);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
@@ -266,7 +266,7 @@ public class StreamSequencerAdapterTest {
         Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
         Property sequencedProperty = nodeC.getProperty("sequencedProperty");
         NetChange nodeChange = new NetChange(repositoryWorkspaceName, location, EnumSet.of(ChangeType.PROPERTY_CHANGED), null,
-                                             Collections.singleton(sequencedProperty), null);
+                                             Collections.singleton(sequencedProperty), null, null, null, false);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
@@ -306,7 +306,7 @@ public class StreamSequencerAdapterTest {
         Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
         Property sequencedProperty = nodeC.getProperty("sequencedProperty");
         NetChange nodeChange = new NetChange(repositoryWorkspaceName, location, EnumSet.of(ChangeType.PROPERTY_CHANGED), null,
-                                             Collections.singleton(sequencedProperty), null);
+                                             Collections.singleton(sequencedProperty), null, null, null, false);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
@@ -350,7 +350,7 @@ public class StreamSequencerAdapterTest {
         Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
         Property sequencedProperty = nodeC.getProperty("sequencedProperty");
         NetChange nodeChange = new NetChange(repositoryWorkspaceName, location, EnumSet.of(ChangeType.PROPERTY_CHANGED), null,
-                                             Collections.singleton(sequencedProperty), null);
+                                             Collections.singleton(sequencedProperty), null, null, null, false);
 
         // Set up the output directory ...
         Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();

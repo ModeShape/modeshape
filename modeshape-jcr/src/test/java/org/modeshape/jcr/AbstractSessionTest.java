@@ -69,7 +69,7 @@ public abstract class AbstractSessionTest {
     protected InMemoryRepositorySource source;
     protected JcrWorkspace workspace;
     protected JcrSession session;
-    protected Graph graph;
+    protected JcrGraph graph;
     protected RepositoryConnectionFactory connectionFactory;
     protected RepositoryNodeTypeManager repoTypeManager;
     protected Map<String, Object> sessionAttributes;
@@ -98,7 +98,7 @@ public abstract class AbstractSessionTest {
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
         // Set up the initial content ...
-        graph = Graph.create(source, context);
+        graph = JcrGraph.create(source, context);
 
         // Make sure the path to the namespaces exists ...
         graph.create("/jcr:system").and(); // .and().create("/jcr:system/mode:namespaces");

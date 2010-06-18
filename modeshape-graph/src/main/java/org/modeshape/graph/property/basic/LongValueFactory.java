@@ -170,6 +170,16 @@ public class LongValueFactory extends AbstractValueFactory<Long> {
     /**
      * {@inheritDoc}
      */
+    public Long create( Path.Segment value ) {
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Path.Segment.class.getSimpleName(),
+                                                                          value));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public Long create( Reference value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),

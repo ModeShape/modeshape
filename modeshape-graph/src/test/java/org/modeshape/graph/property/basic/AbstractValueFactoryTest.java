@@ -35,6 +35,8 @@ import java.net.URI;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.text.NoOpEncoder;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.graph.property.Binary;
@@ -46,10 +48,6 @@ import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
-import org.modeshape.graph.property.basic.AbstractValueFactory;
-import org.modeshape.graph.property.basic.StringValueFactory;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author Randall Hauch
@@ -115,6 +113,10 @@ public class AbstractValueFactoryTest {
         }
 
         public String create( Path value ) {
+            return null;
+        }
+
+        public String create( Path.Segment value ) {
             return null;
         }
 

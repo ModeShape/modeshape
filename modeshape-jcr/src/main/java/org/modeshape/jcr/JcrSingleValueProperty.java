@@ -449,7 +449,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
             binary = ((JcrBinary)value).binary();
         } else {
             // Otherwise, this isn't our instance, so copy the data ...
-            binary = session().executionContext.getValueFactories().getBinaryFactory().create(getStream(), value.getSize());
+            binary = session().getExecutionContext().getValueFactories().getBinaryFactory().create(getStream(), value.getSize());
         }
         setValue(createValue(binary, PropertyType.BINARY).asType(this.getType()));
     }

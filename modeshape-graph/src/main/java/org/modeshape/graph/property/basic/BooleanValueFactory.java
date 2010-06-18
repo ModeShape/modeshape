@@ -177,6 +177,16 @@ public class BooleanValueFactory extends AbstractValueFactory<Boolean> {
     /**
      * {@inheritDoc}
      */
+    public Boolean create( Path.Segment value ) {
+        throw new ValueFormatException(value, getPropertyType(),
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Path.Segment.class.getSimpleName(),
+                                                                          value));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public Boolean create( Reference value ) {
         throw new ValueFormatException(value, getPropertyType(),
                                        GraphI18n.unableToCreateValue.text(getPropertyType().getName(),

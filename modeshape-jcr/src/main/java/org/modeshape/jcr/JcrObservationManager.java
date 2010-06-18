@@ -27,6 +27,8 @@ import static org.modeshape.graph.JcrLexicon.MIXIN_TYPES;
 import static org.modeshape.graph.JcrLexicon.PRIMARY_TYPE;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -34,21 +36,23 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.jcr.RangeIterator;
 import javax.jcr.RepositoryException;
-import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventJournal;
 import javax.jcr.observation.EventListener;
 import javax.jcr.observation.EventListenerIterator;
 import javax.jcr.observation.ObservationManager;
+import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.observe.Changes;
 import org.modeshape.graph.observe.NetChangeObserver;
 import org.modeshape.graph.observe.Observable;
+import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
@@ -64,6 +68,17 @@ import org.modeshape.graph.request.ChangeRequest;
  * The implementation of JCR {@link ObservationManager}.
  */
 final class JcrObservationManager implements ObservationManager {
+
+    /**
+     * The key for storing the {@link JcrObservationManager#setUserData(String) observation user data} in the
+     * {@link ExecutionContext}'s {@link ExecutionContext#getData() data}.
+     */
+    static final String OBSERVATION_USER_DATA_KEY = "org.modeshape.jcr.observation.userdata";
+
+    static final String MOVE_FROM_KEY = "srcAbsPath";
+    static final String MOVE_TO_KEY = "destAbsPath";
+    static final String ORDER_CHILD_KEY = "srcChildRelPath";
+    static final String ORDER_BEFORE_KEY = "destChildRelPath";
 
     /**
      * The repository observable the JCR listeners will be registered with.
@@ -90,6 +105,8 @@ final class JcrObservationManager implements ObservationManager {
      */
     private final ValueFactories valueFactories;
 
+    private final ValueFactory<String> stringFactory;
+
     /**
      * The name of the session's workspace; cached for performance reasons.
      */
@@ -110,6 +127,7 @@ final class JcrObservationManager implements ObservationManager {
         this.listeners = new ConcurrentHashMap<EventListener, JcrListenerAdapter>();
         this.namespaceRegistry = this.session.getExecutionContext().getNamespaceRegistry();
         this.valueFactories = this.session.getExecutionContext().getValueFactories();
+        this.stringFactory = this.valueFactories.getStringFactory();
         this.workspaceName = this.session.getWorkspace().getName();
     }
 
@@ -149,8 +167,20 @@ final class JcrObservationManager implements ObservationManager {
     /**
      * @return the namespace registry used by listeners when handling events
      */
-    NamespaceRegistry geNamespaceRegistry() {
+    NamespaceRegistry namespaceRegistry() {
         return this.namespaceRegistry;
+    }
+
+    final String stringFor( Path path ) {
+        return this.stringFactory.create(path);
+    }
+
+    final String stringFor( Path.Segment segment ) {
+        return this.stringFactory.create(segment);
+    }
+
+    final String stringFor( Name name ) {
+        return this.stringFactory.create(name);
     }
 
     /**
@@ -233,6 +263,52 @@ final class JcrObservationManager implements ObservationManager {
         if (jcrListener != null) {
             this.repositoryObservable.unregister(jcrListener);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method set's the user data on the {@link #session session's} {@link JcrSession#getExecutionContext() execution
+     * context}, under the {@link #OBSERVATION_USER_DATA_KEY} key.
+     * </p>
+     * 
+     * @see javax.jcr.observation.ObservationManager#setUserData(java.lang.String)
+     */
+    @Override
+    public void setUserData( String userData ) {
+        // User data value may be null
+        session.setSessionData(OBSERVATION_USER_DATA_KEY, userData);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Since ModeShape does not support journaled observation, this method returns null.
+     * </p>
+     * 
+     * @see javax.jcr.observation.ObservationManager#getEventJournal()
+     */
+    @Override
+    public EventJournal getEventJournal() {
+        return null; // per the JavaDoc
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Since ModeShape does not support journaled observation, this method returns null.
+     * </p>
+     * 
+     * @see javax.jcr.observation.ObservationManager#getEventJournal(int, java.lang.String, boolean, java.lang.String[],
+     *      java.lang.String[])
+     */
+    @Override
+    public EventJournal getEventJournal( int eventTypes,
+                                         String absPath,
+                                         boolean isDeep,
+                                         String[] uuid,
+                                         String[] nodeTypeName ) {
+        return null;
     }
 
     /**
@@ -375,9 +451,57 @@ final class JcrObservationManager implements ObservationManager {
     }
 
     /**
+     * The information related to and shared by a set of events that represent a single logical operation.
+     */
+    @Immutable
+    class JcrEventBundle {
+
+        /**
+         * The date and time of the event bundle.
+         */
+        private final DateTime date;
+
+        /**
+         * The user ID.
+         */
+        private final String userId;
+
+        private final String userData;
+
+        public JcrEventBundle( DateTime dateTime,
+                               String userId,
+                               String userData ) {
+            this.userId = userId;
+            this.userData = userData;
+            this.date = dateTime;
+        }
+
+        public String getUserID() {
+            return this.userId;
+        }
+
+        /**
+         * @return date
+         */
+        public DateTime getDate() {
+            return date;
+        }
+
+        /**
+         * @return userData
+         */
+        public String getUserData() {
+            return userData;
+        }
+    }
+
+    /**
      * An implementation of JCR {@link Event}.
      */
+    @Immutable
     class JcrEvent implements Event {
+
+        private final String id;
 
         /**
          * The node path.
@@ -390,21 +514,24 @@ final class JcrObservationManager implements ObservationManager {
         private final int type;
 
         /**
-         * The user ID.
+         * The immutable bundle information, which may be shared amongst multiple events.
          */
-        private final String userId;
+        private final JcrEventBundle bundle;
 
         /**
+         * @param bundle the event bundle information
          * @param type the event type
          * @param path the node path
-         * @param userId the user ID
+         * @param id the node identifier
          */
-        public JcrEvent( int type,
+        public JcrEvent( JcrEventBundle bundle,
+                         int type,
                          String path,
-                         String userId ) {
+                         String id ) {
             this.type = type;
             this.path = path;
-            this.userId = userId;
+            this.bundle = bundle;
+            this.id = id;
         }
 
         /**
@@ -431,28 +558,48 @@ final class JcrObservationManager implements ObservationManager {
          * @see javax.jcr.observation.Event#getUserID()
          */
         public String getUserID() {
-            return this.userId;
+            return bundle.getUserID();
         }
 
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.observation.Event#getDate()
+         */
         @Override
-        public long getDate() throws RepositoryException {
-            throw new UnsupportedRepositoryOperationException();
+        public long getDate() {
+            return bundle.getDate().getMilliseconds();
         }
 
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.observation.Event#getIdentifier()
+         */
         @Override
-        public String getIdentifier() throws RepositoryException {
-            throw new UnsupportedRepositoryOperationException();
+        public String getIdentifier() {
+            return id;
         }
 
-        @SuppressWarnings( "unchecked" )
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.observation.Event#getUserData()
+         */
         @Override
-        public Map getInfo() throws RepositoryException {
-            throw new UnsupportedRepositoryOperationException();
+        public String getUserData() {
+            return bundle.getUserData();
         }
 
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.observation.Event#getInfo()
+         * @see JcrMoveEvent#getInfo()
+         */
         @Override
-        public String getUserData() throws RepositoryException {
-            throw new UnsupportedRepositoryOperationException();
+        public Map<String, String> getInfo() {
+            return Collections.emptyMap();
         }
 
         /**
@@ -479,8 +626,61 @@ final class JcrObservationManager implements ObservationManager {
                 case Event.PROPERTY_REMOVED:
                     sb.append("Property removed");
                     break;
+                case Event.NODE_MOVED:
+                    sb.append("Node moved");
+                    break;
             }
-            sb.append(" at ").append(path).append(" by ").append(userId);
+            sb.append(" at ").append(path).append(" by ").append(getUserID());
+            return sb.toString();
+        }
+    }
+
+    /**
+     * An implementation of JCR {@link Event}.
+     */
+    @Immutable
+    class JcrMoveEvent extends JcrEvent {
+
+        private final Map<String, String> info;
+
+        /**
+         * @param bundle the event bundle information
+         * @param type the event type
+         * @param path the node path
+         * @param id the node identifier
+         * @param info the immutable map containing the source and destination absolute paths for the move
+         */
+        public JcrMoveEvent( JcrEventBundle bundle,
+                             int type,
+                             String path,
+                             String id,
+                             Map<String, String> info ) {
+            super(bundle, type, path, id);
+            this.info = info;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jcr.JcrObservationManager.JcrEvent#getInfo()
+         */
+        @Override
+        public Map<String, String> getInfo() {
+            return this.info;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Node moved");
+            String from = info.containsKey(MOVE_FROM_KEY) ? info.get(MOVE_FROM_KEY) : info.get(ORDER_CHILD_KEY);
+            String to = info.containsKey(MOVE_TO_KEY) ? info.get(MOVE_TO_KEY) : info.get(ORDER_BEFORE_KEY);
+            sb.append(" from ").append(from).append(" to ").append(to).append(" by ").append(getUserID());
             return sb.toString();
         }
     }
@@ -742,6 +942,9 @@ final class JcrObservationManager implements ObservationManager {
         protected void notify( NetChanges netChanges ) {
             Collection<Event> events = new ArrayList<Event>();
 
+            String userData = netChanges.getData().get(OBSERVATION_USER_DATA_KEY);
+            JcrEventBundle bundle = new JcrEventBundle(netChanges.getTimestamp(), netChanges.getUserName(), userData);
+
             for (NetChange change : netChanges.getNetChanges()) {
                 // ignore all events other than those on this workspace ...
                 if (!getWorkspaceName().equals(change.getRepositoryWorkspaceName())) {
@@ -761,23 +964,49 @@ final class JcrObservationManager implements ObservationManager {
                 // process event making sure we have the right event type
                 Path path = change.getPath();
                 PathFactory pathFactory = getValueFactories().getPathFactory();
-                String userId = getUserId();
+                String id = change.getLocation().getUuid().toString();
 
+                if (change.includes(ChangeType.NODE_MOVED)) {
+                    Location original = change.getOriginalLocation();
+                    Path originalPath = original.getPath();
+                    if ((this.eventTypes & Event.NODE_MOVED) == Event.NODE_MOVED) {
+                        Location before = change.getMovedBefore();
+                        boolean sameParent = !originalPath.isRoot() && !path.isRoot()
+                                             && originalPath.getParent().equals(path.getParent());
+                        Map<String, String> info = new HashMap<String, String>();
+                        if (sameParent && change.isReorder()) {
+                            info.put(ORDER_CHILD_KEY, stringFor(originalPath.getLastSegment()));
+                            info.put(ORDER_BEFORE_KEY, before != null ? stringFor(before.getPath().getLastSegment()) : null);
+                        } else {
+                            info.put(MOVE_FROM_KEY, stringFor(originalPath));
+                            info.put(MOVE_TO_KEY, stringFor(path));
+                        }
+                        info = Collections.unmodifiableMap(info);
+                        events.add(new JcrMoveEvent(bundle, Event.NODE_MOVED, stringFor(path), id, info));
+                    }
+                    // For some bizarre reason, JCR 2.0 expects these methods <i>in addition to</i> the NODE_MOVED event
+                    if ((this.eventTypes & Event.NODE_ADDED) == Event.NODE_ADDED) {
+                        events.add(new JcrEvent(bundle, Event.NODE_ADDED, stringFor(path), id));
+                    }
+                    if ((this.eventTypes & Event.NODE_REMOVED) == Event.NODE_REMOVED) {
+                        events.add(new JcrEvent(bundle, Event.NODE_REMOVED, stringFor(originalPath), id));
+                    }
+                }
                 if (change.includes(ChangeType.NODE_ADDED) && ((this.eventTypes & Event.NODE_ADDED) == Event.NODE_ADDED)) {
                     // create event for added node
-                    events.add(new JcrEvent(Event.NODE_ADDED, path.getString(geNamespaceRegistry()), userId));
+                    events.add(new JcrEvent(bundle, Event.NODE_ADDED, stringFor(path), id));
                 } else if (change.includes(ChangeType.NODE_REMOVED)
                            && ((this.eventTypes & Event.NODE_REMOVED) == Event.NODE_REMOVED)) {
                     // create event for removed node
-                    events.add(new JcrEvent(Event.NODE_REMOVED, path.getString(geNamespaceRegistry()), userId));
+                    events.add(new JcrEvent(bundle, Event.NODE_REMOVED, stringFor(path), id));
                 }
 
                 if (change.includes(ChangeType.PROPERTY_CHANGED)
                     && ((this.eventTypes & Event.PROPERTY_CHANGED) == Event.PROPERTY_CHANGED)) {
                     for (Property property : change.getModifiedProperties()) {
                         // create event for changed property
-                        Path propertyPath = pathFactory.create(path, property.getName().getString(geNamespaceRegistry()));
-                        events.add(new JcrEvent(Event.PROPERTY_CHANGED, propertyPath.getString(geNamespaceRegistry()), userId));
+                        Path propertyPath = pathFactory.create(path, stringFor(property.getName()));
+                        events.add(new JcrEvent(bundle, Event.PROPERTY_CHANGED, stringFor(propertyPath), id));
                     }
                 }
 
@@ -786,8 +1015,8 @@ final class JcrObservationManager implements ObservationManager {
                     && ((this.eventTypes & Event.PROPERTY_ADDED) == Event.PROPERTY_ADDED)) {
                     for (Property property : change.getAddedProperties()) {
                         // create event for added property
-                        Path propertyPath = pathFactory.create(path, property.getName().getString(geNamespaceRegistry()));
-                        events.add(new JcrEvent(Event.PROPERTY_ADDED, propertyPath.getString(geNamespaceRegistry()), userId));
+                        Path propertyPath = pathFactory.create(path, stringFor(property.getName()));
+                        events.add(new JcrEvent(bundle, Event.PROPERTY_ADDED, stringFor(propertyPath), id));
                     }
                 }
 
@@ -796,7 +1025,7 @@ final class JcrObservationManager implements ObservationManager {
                     for (Name name : change.getRemovedProperties()) {
                         // create event for removed property
                         Path propertyPath = pathFactory.create(path, name);
-                        events.add(new JcrEvent(Event.PROPERTY_REMOVED, propertyPath.getString(geNamespaceRegistry()), userId));
+                        events.add(new JcrEvent(bundle, Event.PROPERTY_REMOVED, stringFor(propertyPath), id));
                     }
                 }
             }
@@ -813,25 +1042,6 @@ final class JcrObservationManager implements ObservationManager {
         private boolean shouldCheckNodeType() {
             return ((this.nodeTypeNames != null) && (this.nodeTypeNames.length != 0));
         }
-    }
-
-    @Override
-    public EventJournal getEventJournal() throws RepositoryException {
-        throw new UnsupportedRepositoryOperationException();
-    }
-
-    @Override
-    public EventJournal getEventJournal( int eventTypes,
-                                         String absPath,
-                                         boolean isDeep,
-                                         String[] uuid,
-                                         String[] nodeTypeName ) throws RepositoryException {
-        throw new UnsupportedRepositoryOperationException();
-    }
-
-    @Override
-    public void setUserData( String userData ) throws RepositoryException {
-        throw new UnsupportedRepositoryOperationException();
     }
 
 }

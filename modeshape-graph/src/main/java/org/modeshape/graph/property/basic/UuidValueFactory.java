@@ -214,6 +214,28 @@ public class UuidValueFactory extends AbstractValueFactory<UUID> implements Uuid
     /**
      * {@inheritDoc}
      */
+    public UUID create( Path.Segment value ) {
+        if (value.isIdentifier()) {
+            try {
+                // The local part of the segment's name should be the identifier, though it may not be a UUID ...
+                String id = value.getName().getLocalName();
+                return UUID.fromString(id);
+            } catch (IllegalArgumentException err) {
+                throw new ValueFormatException(value, PropertyType.UUID,
+                                               GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                                  Path.Segment.class.getSimpleName(),
+                                                                                  value));
+            }
+        }
+        throw new ValueFormatException(value, PropertyType.UUID,
+                                       GraphI18n.unableToCreateValue.text(getPropertyType().getName(),
+                                                                          Path.Segment.class.getSimpleName(),
+                                                                          value));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public UUID create( Reference value ) {
         if (value instanceof UuidReference) {
             UuidReference ref = (UuidReference)value;
