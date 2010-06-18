@@ -55,6 +55,7 @@ public abstract class BaseTransaction<NodeType extends Node, WorkspaceType exten
     protected final NameFactory nameFactory;
     protected final PropertyFactory propertyFactory;
     protected final ValueFactories valueFactories;
+    protected final Location rootLocation;
 
     /** The repository against which this transaction is operating */
     private final Repository<NodeType, WorkspaceType> repository;
@@ -69,6 +70,7 @@ public abstract class BaseTransaction<NodeType extends Node, WorkspaceType exten
         this.pathFactory = valueFactories.getPathFactory();
         this.nameFactory = valueFactories.getNameFactory();
         this.repository = repository;
+        this.rootLocation = Location.create(rootNodeUuid);
     }
 
     protected String readable( Object obj ) {
@@ -108,7 +110,7 @@ public abstract class BaseTransaction<NodeType extends Node, WorkspaceType exten
      * @see org.modeshape.graph.connector.base.Transaction#getRootNode(org.modeshape.graph.connector.base.Workspace)
      */
     public NodeType getRootNode( WorkspaceType workspace ) {
-        return getNode(workspace, Location.create(rootNodeUuid));
+        return getNode(workspace, rootLocation);
     }
 
     protected NodeType getNode( WorkspaceType workspace,

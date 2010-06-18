@@ -196,11 +196,18 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
     private void destroyNode( WorkspaceChanges changes,
                               WorkspaceType workspace,
                               NodeType node ) {
+        // First destroy the children ...
+        for (UUID childUuid : node.getChildren()) {
+            NodeType child = changes.getChangedOrAdded(childUuid);
+            if (child == null) {
+                // The node was not changed or added, so go back to the workspace ...
+                child = workspace.getNode(childUuid);
+            }
+            destroyNode(changes, workspace, child);
+        }
+        // Then remove the requested node ...
         UUID uuid = node.getUuid();
         changes.removed(uuid);
-        for (UUID child : node.getChildren()) {
-            destroyNode(changes, workspace, workspace.getNode(child));
-        }
     }
 
     /**
@@ -925,6 +932,8 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
                 workspace.putNode((NodeType)changed.freeze());
             }
             for (UUID uuid : removedNodes) {
+                // the node may not exist in the workspace (i.e., it was created and then deleted in the txn)
+                // but this method call won't care ...
                 workspace.removeNode(uuid);
             }
         }

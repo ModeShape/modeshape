@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.Graph;
@@ -526,7 +527,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
              .orReplace()
              .and();
         batch.create(longTestFileName).and();
-        
+
         try {
             batch.execute();
             fail("The overly long test file name (" + longTestFileName + ") did not fail");
@@ -538,7 +539,67 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         assertFalse(newFile.exists());
     }
 
-    
+    /**
+     * This method attempts to create a small subgraph and then delete some of the nodes in that subgraph, all within the same
+     * batch operation.
+     */
+    @FixFor( "MODE-788" )
+    @Test
+    public void shouldCreateSubgraphAndDeletePartOfThatSubgraphInSameOperation() {
+        graph.batch()
+             .create("/a")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER)
+             .orReplace()
+             .and()
+             .create("/a/b")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER)
+             .orReplace()
+             .and()
+             .create("/a/b/c")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER)
+             .orReplace()
+             .and()
+             .delete("/a/b")
+             .and()
+             .execute();
+
+        // Now look up node A ...
+        File newFile = new File(testWorkspaceRoot, "a");
+        assertTrue(newFile.exists());
+        assertTrue(newFile.isDirectory());
+        assertTrue(newFile.list().length == 0);
+        assertFalse(new File(newFile, "b").exists());
+    }
+
+    /**
+     * This method attempts to create a small subgraph and then delete some of the nodes in that subgraph, all within the same
+     * batch operation.
+     */
+    @FixFor( "MODE-788" )
+    @Test
+    public void shouldCreateSubgraphAndDeleteSubgraphInSameOperation() {
+        graph.batch()
+             .create("/a")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER)
+             .orReplace()
+             .and()
+             .create("/a/b")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER)
+             .orReplace()
+             .and()
+             .create("/a/b/c")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER)
+             .orReplace()
+             .and()
+             .delete("/a")
+             .and()
+             .execute();
+
+        // Now look up node A ...
+        assertTrue(testWorkspaceRoot.list().length == 0);
+        assertFalse(new File(testWorkspaceRoot, "a").exists());
+    }
+
     protected void assertContents( File file,
                                    String contents ) {
         assertTrue(file.exists());

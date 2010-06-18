@@ -410,6 +410,9 @@ public class SimpleJpaRepository extends MapRepository {
 
             // Delete unused large values ...
             LargeValueEntity.deleteUnused(entityManager, dialect);
+
+            // And clean up the local cache by paths by brute force ...
+            this.nodesByPath.clear();
         }
 
         /*

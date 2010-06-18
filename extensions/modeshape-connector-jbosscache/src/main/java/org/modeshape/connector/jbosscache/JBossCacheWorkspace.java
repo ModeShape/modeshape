@@ -107,7 +107,9 @@ public class JBossCacheWorkspace extends MapWorkspace<JBossCacheNode> {
     @Override
     public JBossCacheNode putNode( JBossCacheNode node ) {
         assert node != null;
-        return workspaceNode.put(node.getUuid(), node);
+        JBossCacheNode result = workspaceNode.put(node.getUuid(), node);
+        workspaceNode = findOrCreateWorkspaceRoot(this.name, this.workspaceCache, this.rootNodeUuid);
+        return result;
     }
 
     /**
@@ -118,7 +120,9 @@ public class JBossCacheWorkspace extends MapWorkspace<JBossCacheNode> {
     @Override
     public JBossCacheNode removeNode( UUID uuid ) {
         assert uuid != null;
-        return workspaceNode.remove(uuid);
+        JBossCacheNode result = workspaceNode.remove(uuid);
+        workspaceNode = findOrCreateWorkspaceRoot(this.name, this.workspaceCache, this.rootNodeUuid);
+        return result;
     }
 
     /**
@@ -129,6 +133,7 @@ public class JBossCacheWorkspace extends MapWorkspace<JBossCacheNode> {
     @Override
     public void removeAll() {
         workspaceNode.clearData();
+        workspaceNode = findOrCreateWorkspaceRoot(this.name, this.workspaceCache, this.rootNodeUuid);
     }
 
     /**

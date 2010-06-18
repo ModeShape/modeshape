@@ -39,6 +39,7 @@ import java.util.UUID;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.graph.Graph;
@@ -1977,6 +1978,157 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
     @Test
     public void shouldUnlockNode() {
         // fail("Need to add test body here");
+    }
+
+    /**
+     * This method attempts to create a small subgraph and then delete some of the nodes in that subgraph and then recreate some
+     * of the just-deleted nodes, all within the same batch operation.
+     */
+    @FixFor( "MODE-788" )
+    @Test
+    public void shouldCreateAndDeleteAndRecreateInSameOperation() {
+        graph.batch()
+             .create("/a")
+             .with("propB", "valueB")
+             .and("propC", "valueC")
+             .and()
+             .create("/a/b")
+             .with("propA", "value a/b")
+             .and()
+             .create("/a/b/c")
+             .with("propA", "value a/b/c")
+             .and()
+             .delete("/a/b")
+             .and()
+             .create("/a/b")
+             .with("propA", "value a/b2")
+             .and()
+             .create("/a/b/c")
+             .with("propA", "value a/b2/c")
+             .and()
+             .execute();
+
+        // Now look up the root node ...
+        Node root = graph.getNodeAt("/");
+        assertThat(root, is(notNullValue()));
+        assertThat(root, hasProperty(ModeShapeLexicon.UUID, getRootNodeUuid()));
+        assertThat(root.getChildren(), hasChild(segment("a")));
+
+        // Now look up node A ...
+        Node nodeA = graph.getNodeAt("/a");
+        assertThat(nodeA, is(notNullValue()));
+        assertThat(nodeA, hasProperty("propB", "valueB"));
+        assertThat(nodeA, hasProperty("propC", "valueC"));
+        assertThat(nodeA.getChildren(), hasChild(segment("b")));
+
+        // Now look up node B ...
+        Node nodeB = graph.getNodeAt("/a/b");
+        assertThat(nodeB, is(notNullValue()));
+        assertThat(nodeB, hasProperty("propA", "value a/b2"));
+        assertThat(nodeB.getChildren(), hasChild(segment("c")));
+
+        // Now look up node C ...
+        Node nodeC = graph.getNodeAt("/a/b/c");
+        assertThat(nodeC, is(notNullValue()));
+        assertThat(nodeC, hasProperty("propA", "value a/b2/c"));
+        assertThat(nodeC.getChildren(), isEmpty());
+    }
+
+    /**
+     * This method attempts to create a small subgraph and then delete some of the nodes in that subgraph, all within the same
+     * batch operation.
+     */
+    @FixFor( "MODE-788" )
+    @Test
+    public void shouldCreateSubgraphAndDeletePartOfThatSubgraphInSameOperation() {
+        graph.batch()
+             .create("/a")
+             .with("propB", "valueB")
+             .and("propC", "valueC")
+             .and()
+             .create("/a/b")
+             .with("propA", "value a/b")
+             .and()
+             .create("/a/b/c")
+             .with("propA", "valueA a/b/c")
+             .and()
+             .delete("/a/b")
+             .and()
+             .execute();
+
+        // Now look up the root node ...
+        Node root = graph.getNodeAt("/");
+        assertThat(root, is(notNullValue()));
+        assertThat(root, hasProperty(ModeShapeLexicon.UUID, getRootNodeUuid()));
+        assertThat(root.getChildren(), hasChild(segment("a")));
+
+        // Now look up node A ...
+        Node nodeA = graph.getNodeAt("/a");
+        assertThat(nodeA, is(notNullValue()));
+        assertThat(nodeA, hasProperty("propB", "valueB"));
+        assertThat(nodeA, hasProperty("propC", "valueC"));
+        assertThat(nodeA.getChildren(), isEmpty());
+    }
+
+    /**
+     * This method attempts to create a small subgraph and then delete all of the nodes in that subgraph, all within the same
+     * batch operation.
+     */
+    @FixFor( "MODE-788" )
+    @Test
+    public void shouldCreateAndDeleteSubgraphInSameOperation() {
+        graph.batch()
+             .create("/a")
+             .with("propB", "valueB")
+             .and("propC", "valueC")
+             .and()
+             .create("/a/b")
+             .with("propA", "value a/b")
+             .and()
+             .create("/a/b/c")
+             .with("propA", "valueA a/b/c")
+             .and()
+             .delete("/a")
+             .and()
+             .execute();
+
+        // Now look up the root node ...
+        Node root = graph.getNodeAt("/");
+        assertThat(root, is(notNullValue()));
+        assertThat(root, hasProperty(ModeShapeLexicon.UUID, getRootNodeUuid()));
+        assertThat(root.getChildren(), isEmpty());
+    }
+
+    /**
+     * This method attempts to create a very small subgraph and then delete all of the nodes in that subgraph, all within the same
+     * batch operation.
+     */
+    @FixFor( "MODE-788" )
+    @Test
+    public void shouldCreateAndDeleteTwoNodeSubgraphInSameOperation() {
+        // Look for the root before we do anyting ...
+        Node root = graph.getNodeAt("/");
+        assertThat(root, is(notNullValue()));
+        assertThat(root, hasProperty(ModeShapeLexicon.UUID, getRootNodeUuid()));
+        assertThat(root.getChildren(), isEmpty());
+
+        graph.batch().create("/a").and().create("/a/b").and().delete("/a").and().execute();
+
+        // Now look up the root node ...
+        root = graph.getNodeAt("/");
+        assertThat(root, is(notNullValue()));
+        assertThat(root, hasProperty(ModeShapeLexicon.UUID, getRootNodeUuid()));
+        assertThat(root.getChildren(), isEmpty());
+    }
+
+    /**
+     * This method attempts to create a small subgraph and then delete all of the nodes in that subgraph, all within the same
+     * batch operation.
+     */
+    @FixFor( "MODE-788" )
+    @Test
+    public void shouldCreateAndDeleteNodeInSameOperation() {
+        graph.batch().create("/a").with("propB", "valueB").and("propC", "valueC").and().delete("/a").and().execute();
     }
 
 }
