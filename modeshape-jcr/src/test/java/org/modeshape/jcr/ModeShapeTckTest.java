@@ -28,9 +28,11 @@ import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
+import javax.jcr.version.VersionManager;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.jackrabbit.test.AbstractJCRTest;
+import org.modeshape.common.FixFor;
 
 /**
  * Additional ModeShape tests that check for JCR compliance.
@@ -813,8 +815,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     }
 
+    @FixFor( "MODE-693" )
     public void testShouldAllowDeletingNodesWhenLargePropertyIsPresent() throws Exception {
-        // q.v. MODE-693
         session = getHelper().getReadWriteSession();
 
         Node root = session.getRootNode();
@@ -853,8 +855,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         assertThat(root.hasNode(pathToNode), is(false));
     }
 
+    @FixFor( "MODE-704" )
     public void testShouldReturnSilentlyWhenCheckingOutACheckedOutNode() throws Exception {
-        // q.v., MODE-704
         session = getHelper().getReadWriteSession();
 
         Node root = session.getRootNode();
@@ -872,9 +874,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         checkout(testNode);
     }
 
+    @FixFor( "MODE-709" )
     public void testShouldCreateVersionStorageForWhenVersionableNodesCopied() throws Exception {
-        // q.v., MODE-709
-
         session = getHelper().getReadWriteSession();
 
         Node root = session.getRootNode();
@@ -903,10 +904,9 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
     }
 
+    @FixFor( "MODE-720" )
     @SuppressWarnings( "unchecked" )
     public void testShouldBeAbleToReferToUnsavedReferenceNode() throws Exception {
-        // q.v., MODE-720
-
         session = getHelper().getSuperuserSession();
 
         JcrNodeTypeManager nodeTypes = (JcrNodeTypeManager)session.getWorkspace().getNodeTypeManager();
@@ -943,9 +943,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         session.save();
     }
 
+    @FixFor( "MODE-701" )
     public void testShouldBeAbleToImportAutocreatedChildNodeWithoutDuplication() throws Exception {
-        // q.v., MODE-701
-
         session = getHelper().getSuperuserSession();
 
         /*
@@ -1100,6 +1099,27 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         } catch (InvalidItemStateException iise) {
             // Success
         }
+
+    }
+
+    @FixFor( "MODE-792" )
+    public void testCheckingOutAnAlreadyCheckedOutNodeShouldHaveNoEffect() throws Exception {
+        session = getHelper().getReadWriteSession();
+        VersionManager versionManager = session.getWorkspace().getVersionManager();
+
+        Node root = session.getRootNode();
+        Node parentNode = root.addNode("checkedOutNodeNopTest");
+        parentNode.addMixin("mix:versionable");
+
+        session.save();
+        versionManager.checkin(parentNode.getPath());
+
+        versionManager.checkout(parentNode.getPath());
+
+        parentNode.setProperty("foo", "bar");
+        versionManager.checkout(parentNode.getPath());
+
+        assertEquals(parentNode.getProperty("foo").getString(), "bar");
 
     }
 }

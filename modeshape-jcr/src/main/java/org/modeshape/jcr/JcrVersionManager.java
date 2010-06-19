@@ -451,6 +451,11 @@ final class JcrVersionManager implements VersionManager {
             return;
         }
 
+        // Checking out an already checked-out node is supposed to return silently
+        if (node.getProperty(JcrLexicon.IS_CHECKED_OUT).getBoolean()) {
+            return;
+        }
+
         PropertyFactory propFactory = propertyFactory();
 
         PropertyInfo<JcrPropertyPayload> mvProp = node.nodeInfo().getProperty(ModeShapeIntLexicon.MULTI_VALUED_PROPERTIES);
@@ -489,8 +494,6 @@ final class JcrVersionManager implements VersionManager {
         graph.set(isCheckedOut, predecessors, multiValuedProps).on(location).and();
 
         cache().refreshProperties(location);
-        // node.refresh(true);
-
     }
 
     /**
