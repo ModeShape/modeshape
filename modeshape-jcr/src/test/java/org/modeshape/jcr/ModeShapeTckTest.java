@@ -1122,4 +1122,24 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         assertEquals(parentNode.getProperty("foo").getString(), "bar");
 
     }
+
+    @FixFor( "MODE-793" )
+    public void testPropertyCardinalityShouldPropagateToFrozenNode() throws Exception {
+        session = getHelper().getReadWriteSession();
+        VersionManager versionManager = session.getWorkspace().getVersionManager();
+
+        Node root = session.getRootNode();
+        Node parentNode = root.addNode("checkedOutNodeNopTest");
+        parentNode.addMixin("mix:versionable");
+        parentNode.setProperty("foo", new String[] {"bar", "baz"});
+        session.save();
+
+        assertEquals(true, parentNode.getProperty("foo").getDefinition().isMultiple());
+
+        Version version = versionManager.checkin(parentNode.getPath());
+
+        Node frozenNode = version.getFrozenNode();
+
+        assertEquals(true, frozenNode.getProperty("foo").getDefinition().isMultiple());
+    }
 }

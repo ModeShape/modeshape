@@ -282,7 +282,6 @@ final class JcrVersionManager implements VersionManager {
                                                                                                           jcrUuid).and(JcrLexicon.FROZEN_PRIMARY_TYPE,
                                                                                                                        primaryTypeName).and(JcrLexicon.FROZEN_MIXIN_TYPES,
                                                                                                                                             mixinTypeNames).and(versionedPropertiesFor(node)).and();
-
         int onParentVersion = node.getDefinition().getOnParentVersion();
         for (NodeIterator childNodes = node.getNodes(); childNodes.hasNext();) {
             AbstractJcrNode childNode = (AbstractJcrNode)childNodes.nextNode();
@@ -400,6 +399,10 @@ final class JcrVersionManager implements VersionManager {
         throws RepositoryException {
 
         Collection<org.modeshape.graph.property.Property> props = new LinkedList<org.modeshape.graph.property.Property>();
+
+        // Have to add this directly as it's not returned by AbstractJcrNode.getProperties
+        AbstractJcrProperty multiValuedProperties = node.getProperty(ModeShapeIntLexicon.MULTI_VALUED_PROPERTIES);
+        if (multiValuedProperties != null) props.add(multiValuedProperties.property());
 
         for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
             AbstractJcrProperty property = (AbstractJcrProperty)iter.nextProperty();
