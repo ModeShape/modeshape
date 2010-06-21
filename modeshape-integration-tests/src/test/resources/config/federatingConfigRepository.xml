@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+
+    <mode:sources jcr:primaryType="nt:unstructured">
+        
+        <mode:source jcr:name="data" 
+            mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource"
+            mode:defaultWorkspaceName="config"
+            mode:creatingWorkspaceAllowed="true"
+            >
+           <mode:predefinedWorkspaceNames>config</mode:predefinedWorkspaceNames>
+           <mode:predefinedWorkspaceNames>website</mode:predefinedWorkspaceNames>
+           <mode:predefinedWorkspaceNames>users</mode:predefinedWorkspaceNames>
+           <mode:predefinedWorkspaceNames>userroles</mode:predefinedWorkspaceNames>
+           <mode:predefinedWorkspaceNames>usergroups</mode:predefinedWorkspaceNames>
+           <mode:predefinedWorkspaceNames>mgnlSystem</mode:predefinedWorkspaceNames>
+           <mode:predefinedWorkspaceNames>mgnlVersion</mode:predefinedWorkspaceNames>
+        </mode:source>
+
+        <mode:source jcr:name="disk" 
+            mode:classname="org.modeshape.connector.filesystem.FileSystemSource"
+            mode:description="Some folder on local disk"
+            mode:workspaceRootPath="/tmp/filesystem"
+            mode:defaultWorkspaceName="files"
+            mode:creatingWorkspacesAllowed="false"
+            mode:updatesAllowed="true" 
+            />
+
+        <mode:source jcr:name="magnolia">
+            <mode:classname>org.modeshape.graph.connector.federation.FederatedRepositorySource</mode:classname>
+            <mode:workspaces>
+                <mode:workspace jcr:name="config">
+                  <mode:projections>
+                    <mode:projection jcr:name="Config projection" 
+                        mode:source="data" 
+                        mode:workspaceName="config">
+                        <mode:projectionRules>/ => /</mode:projectionRules>
+                    </mode:projection>
+                  </mode:projections>  
+                </mode:workspace>
+                <mode:workspace jcr:name="website">
+                  <mode:projections>
+                    <mode:projection jcr:name="Website projection" 
+                        mode:source="data" 
+                        mode:workspaceName="website">
+                        <mode:projectionRules>/ => /</mode:projectionRules>
+                    </mode:projection>
+                  </mode:projections>  
+                </mode:workspace>
+                <mode:workspace jcr:name="users">
+                  <mode:projections>
+                    <mode:projection jcr:name="Users projection" 
+                        mode:source="data" 
+                        mode:workspaceName="users">
+                        <mode:projectionRules>/ => /</mode:projectionRules>
+                    </mode:projection>
+                  </mode:projections>  
+                </mode:workspace>
+                <mode:workspace jcr:name="userroles">
+                  <mode:projections>
+                    <mode:projection jcr:name="Userroles projection" 
+                        mode:source="data" 
+                        mode:workspaceName="userroles">
+                        <mode:projectionRules>/ => /</mode:projectionRules>
+                    </mode:projection>
+                  </mode:projections>  
+                </mode:workspace>
+                <mode:workspace jcr:name="usergroups">
+                  <mode:projections>
+                    <mode:projection jcr:name="Usergroups projection" 
+                        mode:source="data" 
+                        mode:workspaceName="usergroups">
+                        <mode:projectionRules>/ => /</mode:projectionRules>
+                    </mode:projection>
+                  </mode:projections>  
+                </mode:workspace>
+                <mode:workspace jcr:name="mgnlSystem">
+                  <mode:projections>
+                    <mode:projection jcr:name="mgnlSystem projection" 
+                        mode:source="data" 
+                        mode:workspaceName="mgnlSystem">
+                        <mode:projectionRules>/ => /</mode:projectionRules>
+                    </mode:projection>
+                  </mode:projections>  
+                </mode:workspace>
+                <mode:workspace jcr:name="mgnlVersion">
+                  <mode:projections>
+                    <mode:projection jcr:name="mgnlVersion projection" 
+                        mode:source="data" 
+                        mode:workspaceName="mgnlVersion">
+                        <mode:projectionRules>/ => /</mode:projectionRules>
+                    </mode:projection>
+                  </mode:projections>  
+                </mode:workspace>
+                <mode:workspace jcr:name="downloads">
+                  <mode:projections>
+                    <mode:projection jcr:name="Downloads projection" 
+                        mode:source="disk" 
+                        mode:workspaceName="files">
+                        <mode:projectionRules>/ => /</mode:projectionRules>
+                    </mode:projection>
+                  </mode:projections>  
+                </mode:workspace>
+            </mode:workspaces>
+        </mode:source>
+
+        <!-- 
+        <mode:source jcr:name="magnolia" 
+            mode:classname="org.modeshape.connector.infinispan.InfinispanSource" 
+            mode:description="The repository for our content"
+            mode:defaultworkspaceName="config"
+            mode:predefinedWorkspaceNames="config,website,users,userroles,usergroups,mgnlSystem,mgnlVersion"
+            mode:creatingWorkspaceAllowed="true"
+            />
+        -->
+
+    </mode:sources>
+
+    <mode:repositories>
+        <mode:repository jcr:name="magnolia">
+            <mode:source>magnolia</mode:source>
+            <mode:options jcr:primaryType="mode:options">
+                <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
+            </mode:options>
+        </mode:repository>
+        <mode:repository jcr:name="data">
+            <mode:source>data</mode:source>
+            <mode:options jcr:primaryType="mode:options">
+                <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
+            </mode:options>
+        </mode:repository>
+    </mode:repositories>
+
+</configuration>
