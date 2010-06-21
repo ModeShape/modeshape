@@ -172,7 +172,7 @@ class JcrSession implements Session {
         // Create an execution context for this session, which should use the local namespace registry ...
         this.executionContext = sessionContext;
         NamespaceRegistry local = sessionContext.getNamespaceRegistry();
-        this.sessionRegistry = new JcrNamespaceRegistry(Behavior.JSR170_SESSION, local, globalNamespaceRegistry, this);
+        this.sessionRegistry = new JcrNamespaceRegistry(Behavior.JSR283_SESSION, local, globalNamespaceRegistry, this);
         this.rootPath = this.executionContext.getValueFactories().getPathFactory().createRootPath();
 
         // Set up the graph to use for this session (which uses the session's namespace registry and context) ...
@@ -680,7 +680,7 @@ class JcrSession implements Session {
     public AbstractJcrProperty getProperty( String absolutePath ) throws PathNotFoundException, RepositoryException {
         CheckArg.isNotEmpty(absolutePath, "absolutePath");
         // Return root node if path is "/"
-        Path path = executionContext.getValueFactories().getPathFactory().create(absolutePath);
+        Path path = pathFor(absolutePath, "absolutePath");
         if (path.isRoot()) {
             throw new PathNotFoundException(JcrI18n.rootNodeIsNotProperty.text());
         }
@@ -715,7 +715,7 @@ class JcrSession implements Session {
     public boolean propertyExists( String absolutePath ) throws RepositoryException {
         CheckArg.isNotEmpty(absolutePath, "absolutePath");
         // Return root node if path is "/"
-        Path path = executionContext.getValueFactories().getPathFactory().create(absolutePath);
+        Path path = pathFor(absolutePath, "absolutePath");
         if (path.isRoot() || path.isIdentifier()) {
             return false;
         }

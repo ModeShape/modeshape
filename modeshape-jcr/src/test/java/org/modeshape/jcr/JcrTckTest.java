@@ -44,6 +44,7 @@ import org.apache.jackrabbit.test.api.NamePropertyTest;
 import org.apache.jackrabbit.test.api.NameTest;
 import org.apache.jackrabbit.test.api.NamespaceRegistryReadMethodsTest;
 import org.apache.jackrabbit.test.api.NamespaceRegistryTest;
+import org.apache.jackrabbit.test.api.NamespaceRemappingTest;
 import org.apache.jackrabbit.test.api.NodeAddMixinTest;
 import org.apache.jackrabbit.test.api.NodeCanAddMixinTest;
 import org.apache.jackrabbit.test.api.NodeDiscoveringNodeTypesTest;
@@ -243,6 +244,8 @@ public class JcrTckTest {
         suite.addTest(levelOneSuite());
         suite.addTest(levelTwoSuite());
         suite.addTest(new OptionalFeatureTests());
+        // suite.addTest(new OptionalFeatureTests());
+
         return suite;
     }
 
@@ -281,7 +284,7 @@ public class JcrTckTest {
         suite.addTestSuite(UndefinedPropertyTest.class);
 
         suite.addTestSuite(NamespaceRegistryReadMethodsTest.class);
-        // suite.addTestSuite(NamespaceRemappingTest.class);
+        suite.addTestSuite(NamespaceRemappingTest.class);
         suite.addTestSuite(NodeIteratorTest.class);
         suite.addTestSuite(PropertyReadMethodsTest.class);
         suite.addTestSuite(RepositoryDescriptorTest.class);
@@ -292,6 +295,7 @@ public class JcrTckTest {
         suite.addTestSuite(ExportSysViewTest.class);
         suite.addTestSuite(ExportDocViewTest.class);
 
+        suite.addTestSuite(NameTest.class);
         // suite.addTestSuite(PathTest.class);
 
         // The tests in this suite are level one

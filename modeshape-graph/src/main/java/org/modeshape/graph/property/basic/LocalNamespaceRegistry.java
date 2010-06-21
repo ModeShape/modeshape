@@ -83,7 +83,13 @@ public class LocalNamespaceRegistry extends SimpleNamespaceRegistry {
     @Override
     public String getNamespaceForPrefix( String prefix ) {
         String result = super.getNamespaceForPrefix(prefix);
-        if (result == null) result = this.delegate.getNamespaceForPrefix(prefix);
+        if (result == null) {
+            result = this.delegate.getNamespaceForPrefix(prefix);
+            // Catch if this namespace was remapped
+            if (result != null && super.getPrefixForNamespaceUri(result, false) != null) {
+                return null;
+            }
+        }
         return result;
     }
 
