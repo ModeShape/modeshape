@@ -312,7 +312,7 @@ public class StreamSequencerAdapter implements Sequencer {
         ValueFactories factories = context.getExecutionContext().getValueFactories();
         Path path = factories.getPathFactory().create(input.getLocation().getPath());
 
-        Set<org.modeshape.graph.property.Property> props = Collections.unmodifiableSet(input.getPropertiesByName().values());
+        Set<org.modeshape.graph.property.Property> props = Collections.<Property>unmodifiableSet(input.getPropertiesByName().values());
         Name fileName = path.getLastSegment().getName();
         if (JcrLexicon.CONTENT.equals(fileName) && !path.isRoot()) {
             // We're actually sequencing the "jcr:content" child node of an "nt:file" node, but the name of

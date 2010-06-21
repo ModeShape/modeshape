@@ -418,7 +418,7 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
 
         // Test that old names fail after namespace remaps
         session.setNamespacePrefix("newprefix", TestLexicon.Namespace.URI);
-        assertThat(prop.satisfiesConstraints(valueFor("modetest:constrainedType", PropertyType.NAME)), is(true));
+        assertThat(prop.satisfiesConstraints(valueFor("modetest:constrainedType", PropertyType.NAME)), is(false));
     }
 
     @Test

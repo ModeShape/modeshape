@@ -24,17 +24,18 @@
 package org.modeshape.graph.property.basic;
 
 import static org.hamcrest.core.Is.is;
-import static org.modeshape.graph.property.basic.IsPathContaining.hasSegments;
 import static org.junit.Assert.assertThat;
+import static org.modeshape.graph.property.basic.IsPathContaining.hasSegments;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.ValueFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.modeshape.graph.property.ValueFormatException;
 
 /**
  * @author Randall Hauch
@@ -132,4 +133,24 @@ public class PathValueFactoryTest {
         }
     }
 
+    @Test
+    public void shouldSplitPathWithExpandedNamespace() {
+        String[] splits = factory.splitPath("/{http://www.jcp.org/jcr/1.0}foo/bar/{blah}baz");
+        String[] correctSplits = new String[] {"{http://www.jcp.org/jcr/1.0}foo", "bar", "{blah}baz"};
+
+        assertThat(splits, is(correctSplits));
+    }
+
+    @Test
+    public void shouldSplitPathWithoutExpandedNamespace() {
+        String[] splits = factory.splitPath("/jcr:foo/bar/blah:baz");
+        String[] correctSplits = new String[] {"jcr:foo", "bar", "blah:baz"};
+
+        assertThat(splits, is(correctSplits));
+    }
+
+    @Test( expected = ValueFormatException.class )
+    public void shouldThrowValueFormatExceptionOnMalformedName() {
+        factory.splitPath("/jcr:foo/{foobar");
+    }
 }

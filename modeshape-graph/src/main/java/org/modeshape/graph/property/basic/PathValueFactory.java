@@ -160,7 +160,8 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
 
         // Parse the path into its segments ...
         List<Segment> segments = new ArrayList<Segment>();
-        String[] pathSegments = DELIMITER_PATTERN.split(trimmedValue);
+        // String[] pathSegments = DELIMITER_PATTERN.split(trimmedValue);
+        String[] pathSegments = splitPath(trimmedValue);
         if (pathSegments.length == 0) {
             throw new ValueFormatException(value, getPropertyType(), GraphI18n.validPathMayNotContainEmptySegment.text(value));
         }
@@ -183,6 +184,45 @@ public class PathValueFactory extends AbstractValueFactory<Path> implements Path
         }
         // Create a path constructed from the supplied segments ...
         return new BasicPath(segments, absolute);
+    }
+
+    String[] splitPath( String rawPath ) {
+        List<String> segments = new LinkedList<String>();
+        
+        int curr = 0;
+        int nextBrace = rawPath.indexOf('{');
+        int nextSlash = rawPath.indexOf('/');
+        
+        while (true) {
+            // Next brace comes before next slash
+            if ((nextSlash == -1 && nextBrace > -1) || (nextBrace > -1 && nextBrace < nextSlash)) {
+                int nextClosingBrace = rawPath.indexOf('}', nextBrace);
+                
+                if (nextClosingBrace == -1) {
+                    throw new ValueFormatException(rawPath, getPropertyType(), GraphI18n.missingClosingBrace.text(rawPath));
+                }
+
+                // Move the next checks past the end of the braced section, but don't add to the result set yet
+                nextSlash = rawPath.indexOf('/', nextClosingBrace + 1);
+                nextBrace = rawPath.indexOf('{', nextClosingBrace + 1);
+            }
+            // Next slash comes before next brace
+            else if ((nextBrace == -1 && nextSlash > -1) || (nextSlash > -1 && nextSlash < nextBrace)) {
+                if (nextSlash > 0) {
+                    // Don't add an empty string from the beginning of an absolute path
+                    segments.add(rawPath.substring(curr, nextSlash));
+                }
+
+                curr = nextSlash + 1;
+
+                nextSlash = rawPath.indexOf('/', curr);
+            }
+            // No more slashes or braces
+            else {
+                segments.add(rawPath.substring(curr));
+                return segments.toArray(new String[segments.size()]);
+            }
+        }
     }
 
     /**

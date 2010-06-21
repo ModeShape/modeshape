@@ -139,7 +139,15 @@ public class LocalNamespaceRegistry extends SimpleNamespaceRegistry {
     public String getPrefixForNamespaceUri( String namespaceUri,
                                             boolean generateIfMissing ) {
         String result = super.getPrefixForNamespaceUri(namespaceUri, false);
-        if (result == null) result = this.delegate.getPrefixForNamespaceUri(namespaceUri, false);
+        if (result == null) {
+            result = this.delegate.getPrefixForNamespaceUri(namespaceUri, false);
+            if (result != null) {
+                // This was remapped at the session layer
+                if (!this.getNamespaceForPrefix(result).equals(namespaceUri)) {
+                    result = null;
+                }
+            }
+        }
         if (result == null && generateIfMissing) result = super.getPrefixForNamespaceUri(namespaceUri, true);
         return result;
     }

@@ -58,6 +58,7 @@ import org.apache.jackrabbit.test.api.NodeSetPrimaryTypeTest;
 import org.apache.jackrabbit.test.api.NodeTest;
 import org.apache.jackrabbit.test.api.NodeUUIDTest;
 import org.apache.jackrabbit.test.api.PathPropertyTest;
+import org.apache.jackrabbit.test.api.PathTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsModifiedTest;
 import org.apache.jackrabbit.test.api.PropertyItemIsNewTest;
 import org.apache.jackrabbit.test.api.PropertyReadMethodsTest;
@@ -239,11 +240,10 @@ public class JcrTckTest {
         // return new JCRTestSuite();
 
         // Or uncomment the following lines to execute the different sets/suites of tests ...
-        TestSuite suite = new TestSuite("JCR 1.0 API tests");
+        TestSuite suite = new TestSuite("JCR 2.0 API tests");
 
         suite.addTest(levelOneSuite());
-        suite.addTest(levelTwoSuite());
-        suite.addTest(new OptionalFeatureTests());
+        // suite.addTest(levelTwoSuite());
         // suite.addTest(new OptionalFeatureTests());
 
         return suite;
@@ -294,9 +294,6 @@ public class JcrTckTest {
 
         suite.addTestSuite(ExportSysViewTest.class);
         suite.addTestSuite(ExportDocViewTest.class);
-
-        suite.addTestSuite(NameTest.class);
-        // suite.addTestSuite(PathTest.class);
 
         // The tests in this suite are level one
         // suite.addTest(org.apache.jackrabbit.test.api.nodetype.TestAll.suite());
@@ -382,8 +379,9 @@ public class JcrTckTest {
 
         suite.addTestSuite(NodeSetPrimaryTypeTest.class);
 
-        // This isn't marked as read-only, so it causes problems if you put it with the L1 tests
+        // These two tests aren't marked as read-only, so they causes problems for read-only connectors with the L1 tests
         suite.addTestSuite(NameTest.class);
+        suite.addTestSuite(PathTest.class);
 
         suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
         suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);

@@ -60,6 +60,7 @@ public final class GraphI18n {
     public static I18n unableToDiscoverPropertyTypeForNullValue;
     public static I18n unableToObtainValidRepositoryAfterAttempts;
     public static I18n validPathMayNotContainEmptySegment;
+    public static I18n missingClosingBrace;
     public static I18n valueJavaTypeNotCompatibleWithPropertyType;
     public static I18n pathExpressionMayNotBeBlank;
     public static I18n pathExpressionIsInvalid;

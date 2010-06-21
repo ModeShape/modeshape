@@ -35,13 +35,13 @@
         <repository jcr:name="repository" sourceName="repositorySource">
             <source>repositorySource</source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names-->
-            <options jcr:primaryType="mode:options">
-                <projectNodeTypes jcr:primaryType="mode:option" value="false"/>
+            <options jcr:primaryType="options">
+                <projectNodeTypes jcr:primaryType="option" value="false"/>
             </options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here.-->
-            <nodeTypes jcr:primaryType="mode:nodeTypes"/>
+            <nodeTypes jcr:primaryType="nodeTypes"/>
             <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape-->
-            <namespaces jcr:primaryType="mode:namespaces" />
+            <namespaces jcr:primaryType="namespaces" />
         </repository>
     </repositories>
 </configuration>

@@ -202,7 +202,7 @@ public class IdentifierPath extends AbstractPath {
      */
     @Override
     public String getString() {
-        return Path.DELIMITER_STR;
+        return idSegment.getString();
     }
 
     /**
@@ -212,7 +212,7 @@ public class IdentifierPath extends AbstractPath {
      */
     @Override
     public String getString( TextEncoder encoder ) {
-        return Path.DELIMITER_STR;
+        return idSegment.getString(encoder);
     }
 
     /**
@@ -223,7 +223,7 @@ public class IdentifierPath extends AbstractPath {
     @Override
     public String getString( NamespaceRegistry namespaceRegistry ) {
         CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
-        return Path.DELIMITER_STR;
+        return idSegment.getString(namespaceRegistry);
     }
 
     /**
@@ -236,7 +236,7 @@ public class IdentifierPath extends AbstractPath {
     public String getString( NamespaceRegistry namespaceRegistry,
                              TextEncoder encoder ) {
         CheckArg.isNotNull(namespaceRegistry, "namespaceRegistry");
-        return Path.DELIMITER_STR;
+        return idSegment.getString(namespaceRegistry, encoder);
     }
 
     /**
@@ -249,7 +249,8 @@ public class IdentifierPath extends AbstractPath {
     public String getString( NamespaceRegistry namespaceRegistry,
                              TextEncoder encoder,
                              TextEncoder delimiterEncoder ) {
-        return (delimiterEncoder == null) ? DELIMITER_STR : delimiterEncoder.encode(DELIMITER_STR);
+        return (delimiterEncoder == null) ? getString(namespaceRegistry, encoder) : delimiterEncoder.encode(getString(namespaceRegistry,
+                                                                                                                      encoder));
     }
 
     /**
