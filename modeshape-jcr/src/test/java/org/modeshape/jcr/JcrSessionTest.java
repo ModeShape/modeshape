@@ -200,7 +200,7 @@ public class JcrSessionTest extends AbstractSessionTest {
 
     @Test
     public void shouldProvideUserId() throws Exception {
-        assertThat(session.getUserID(), nullValue());
+        assertThat(session.getUserID(), notNullValue());
         Principal principal = Mockito.mock(Principal.class);
         when(principal.getName()).thenReturn("name");
         Subject subject = new Subject(false, Collections.singleton(principal), Collections.EMPTY_SET, Collections.EMPTY_SET);

@@ -199,6 +199,15 @@ class JcrNodeType implements NodeType {
         return propertyDefinitions;
     }
 
+    /**
+     * Get all of the property definitions defined on this node type and its supertypes.
+     * 
+     * @return this node's explicit and inherited property definitions; never null
+     */
+    Collection<JcrPropertyDefinition> allPropertyDefinitions() {
+        return allDefinitions.allPropertyDefinitions();
+    }
+
     Collection<JcrPropertyDefinition> allSingleValuePropertyDefinitions( Name propertyName ) {
         return allDefinitions.allSingleValuePropertyDefinitions(propertyName);
     }
@@ -209,6 +218,15 @@ class JcrNodeType implements NodeType {
 
     Collection<JcrPropertyDefinition> allPropertyDefinitions( Name propertyName ) {
         return allDefinitions.allPropertyDefinitions(propertyName);
+    }
+
+    /**
+     * Get all of the child node definitions defined on this node type and its supertypes.
+     * 
+     * @return this node's explicit and inherited child node definitions; never null
+     */
+    Collection<JcrNodeDefinition> allChildNodeDefinitions() {
+        return allDefinitions.allChildNodeDefinitions();
     }
 
     Collection<JcrNodeDefinition> allChildNodeDefinitions( Name childName,
@@ -434,6 +452,7 @@ class JcrNodeType implements NodeType {
     public NodeTypeIterator getDeclaredSubtypes() {
         return new JcrNodeTypeIterator(nodeTypeManager.declaredSubtypesFor(this));
     }
+
     /**
      * {@inheritDoc}
      * 
@@ -536,6 +555,14 @@ class JcrNodeType implements NodeType {
     boolean isNodeType( Name nodeTypeName ) {
         if (nodeTypeName == null) return false;
         return this.thisAndAllSupertypesNames.contains(nodeTypeName);
+    }
+
+    boolean isNodeTypeOneOf( Name... nodeTypeNames ) {
+        if (nodeTypeNames == null || nodeTypeNames.length == 0) return false;
+        for (Name nodeTypeName : nodeTypeNames) {
+            if (this.thisAndAllSupertypesNames.contains(nodeTypeName)) return true;
+        }
+        return false;
     }
 
     /**

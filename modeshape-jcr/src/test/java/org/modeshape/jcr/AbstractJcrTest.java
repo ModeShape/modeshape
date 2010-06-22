@@ -130,6 +130,7 @@ public abstract class AbstractJcrTest {
         when(jcrSession.getRepository()).thenReturn(repository);
         when(workspace.getName()).thenReturn(workspaceName);
         when(jcrSession.isLive()).thenReturn(true);
+        when(jcrSession.getUserID()).thenReturn("username");
 
         lockManager = new WorkspaceLockManager(context, repository, workspaceName, null);
         jcrLockManager = new JcrLockManager(jcrSession, lockManager);

@@ -37,7 +37,6 @@ public class JcrLexicon extends org.modeshape.graph.JcrLexicon {
     public static final Name CHILD_VERSION_HISTORY = new BasicName(Namespace.URI, "childVersionHistory");
     public static final Name CONTENT = new BasicName(Namespace.URI, "content");
     public static final Name COPIED_FROM = new BasicName(Namespace.URI, "copiedFrom");
-    public static final Name CREATED = new BasicName(Namespace.URI, "created");
     public static final Name DATA = new BasicName(Namespace.URI, "data");
     public static final Name ENCODING = new BasicName(Namespace.URI, "encoding");
     public static final Name FROZEN_MIXIN_TYPES = new BasicName(Namespace.URI, "frozenMixinTypes");
@@ -46,7 +45,6 @@ public class JcrLexicon extends org.modeshape.graph.JcrLexicon {
     public static final Name FROZEN_UUID = new BasicName(Namespace.URI, "frozenUuid");
     public static final Name IS_CHECKED_OUT = new BasicName(Namespace.URI, "isCheckedOut");
     public static final Name LANGUAGE = new BasicName(Namespace.URI, "language");
-    public static final Name LAST_MODIFIED = new BasicName(Namespace.URI, "lastModified");
     public static final Name LOCK_IS_DEEP = new BasicName(Namespace.URI, "lockIsDeep");
     public static final Name LOCK_OWNER = new BasicName(Namespace.URI, "lockOwner");
     public static final Name MERGE_FAILED = new BasicName(Namespace.URI, "mergeFailed");

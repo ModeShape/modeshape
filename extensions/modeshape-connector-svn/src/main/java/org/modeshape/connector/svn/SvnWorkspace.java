@@ -67,6 +67,7 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
                                                                                                                  JcrLexicon.ENCODED,
                                                                                                                  JcrLexicon.MIMETYPE,
                                                                                                                  JcrLexicon.LAST_MODIFIED,
+                                                                                                                 JcrLexicon.LAST_MODIFIED_BY,
                                                                                                                  JcrLexicon.UUID,
                                                                                                                  ModeShapeIntLexicon.NODE_DEFINITON})));
     /**
@@ -77,6 +78,7 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
                                                                                                                     Arrays.asList(new Name[] {
                                                                                                                         JcrLexicon.PRIMARY_TYPE,
                                                                                                                         JcrLexicon.CREATED,
+                                                                                                                        JcrLexicon.CREATED_BY,
                                                                                                                         JcrLexicon.UUID,
                                                                                                                         ModeShapeIntLexicon.NODE_DEFINITON})));
 
@@ -349,7 +351,7 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
         // Manually create all of the commands needed to delete the source and recreate it in the target
         List<SvnCommand> commands = new LinkedList<SvnCommand>();
         LinkedList<Path> pathsToCopy = new LinkedList<Path>();
-        
+
         Path sourceRoot = pathTo(source);
         Path targetRoot = pathTo(target);
 
@@ -361,17 +363,16 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
 
             assert node != null : path;
 
-
             Path oldParent = node.getParent();
             Path newParent = oldParent.relativeTo(sourceRoot).resolveAgainst(targetRoot);
 
             PathNode newNode = node.clone().withParent(newParent);
-                if (path.equals(sourceRoot)) {
-                    newNode = newNode.withName(target.getName());
-                }
+            if (path.equals(sourceRoot)) {
+                newNode = newNode.withName(target.getName());
+            }
             commands.add(createPutCommand(null, newNode));
 
-                for (Segment child : node.getChildren()) {
+            for (Segment child : node.getChildren()) {
                 pathsToCopy.add(pathFactory().create(path, child));
             }
 
@@ -383,7 +384,7 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
 
     @Override
     public SvnCommand createPutCommand( PathNode previousNode,
-                                                     PathNode node ) {
+                                        PathNode node ) {
         Name primaryType = primaryTypeFor(node);
 
         // Can't modify the root node
@@ -413,14 +414,18 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
 
         if (previousNode != null) {
             Property oldContentProp = previousNode.getProperty(JcrLexicon.DATA);
-            Binary oldContentBin = oldContentProp == null ? null : context().getValueFactories().getBinaryFactory().create(oldContentProp.getFirstValue());
+            Binary oldContentBin = oldContentProp == null ? null : context().getValueFactories()
+                                                                            .getBinaryFactory()
+                                                                            .create(oldContentProp.getFirstValue());
             oldContent = oldContentBin == null ? EMPTY_BYTE_ARRAY : oldContentBin.getBytes();
         } else {
             oldContent = EMPTY_BYTE_ARRAY;
         }
 
         Property contentProp = node.getProperty(JcrLexicon.DATA);
-        Binary contentBin = contentProp == null ? null : context().getValueFactories().getBinaryFactory().create(contentProp.getFirstValue());
+        Binary contentBin = contentProp == null ? null : context().getValueFactories()
+                                                                  .getBinaryFactory()
+                                                                  .create(contentProp.getFirstValue());
         byte[] newContent = contentBin == null ? EMPTY_BYTE_ARRAY : contentBin.getBytes();
 
         // The path for a content node ends with the /jcr:content. Need to go up one level to get the file name.

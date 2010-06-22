@@ -39,4 +39,6 @@ public class JcrMixLexicon {
     public static final Name REFERENCEABLE = new BasicName(Namespace.URI, "referenceable");
     public static final Name VERSIONABLE = new BasicName(Namespace.URI, "versionable");
     public static final Name LOCKABLE = new BasicName(Namespace.URI, "lockable");
+    public static final Name CREATED = new BasicName(Namespace.URI, "created");
+    public static final Name LAST_MODIFIED = new BasicName(Namespace.URI, "lastModified");
 }

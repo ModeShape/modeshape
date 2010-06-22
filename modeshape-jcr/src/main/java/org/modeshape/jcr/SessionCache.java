@@ -982,6 +982,14 @@ class SessionCache {
                                                 JcrValue value,
                                                 boolean skipProtected )
             throws AccessDeniedException, ConstraintViolationException, VersionException, RepositoryException {
+            return setProperty(name, value, skipProtected, false);
+        }
+
+        protected AbstractJcrProperty setProperty( Name name,
+                                                   JcrValue value,
+                                                   boolean skipProtected,
+                                                   boolean skipLastUpdated )
+            throws AccessDeniedException, ConstraintViolationException, VersionException, RepositoryException {
             assert name != null;
             assert value != null;
 
@@ -1080,6 +1088,11 @@ class SessionCache {
                 assert jcrProp != null;
                 JcrPropertyPayload propPayload = new JcrPropertyPayload(definition.getId(), propertyType, jcrProp);
                 node.setProperty(dnaProp, definition.isMultiple(), propPayload);
+
+                if (!skipLastUpdated) {
+                    // Update the lastModified properties ...
+                    updateLastModifiedOn(node);
+                }
                 return jcrProp;
             } catch (ValidationException e) {
                 throw new ConstraintViolationException(e.getMessage(), e);
@@ -1137,6 +1150,16 @@ class SessionCache {
                                                 Value[] values,
                                                 int valueType,
                                                 boolean skipProtected )
+            throws AccessDeniedException, ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException,
+            VersionException {
+            return setProperty(name, values, valueType, skipProtected, false);
+        }
+
+        protected AbstractJcrProperty setProperty( Name name,
+                                                   Value[] values,
+                                                   int valueType,
+                                                   boolean skipProtected,
+                                                   boolean skipLastUpdated )
             throws AccessDeniedException, ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException,
             VersionException {
             assert name != null;
@@ -1290,6 +1313,10 @@ class SessionCache {
                 assert jcrProp != null;
                 JcrPropertyPayload propPayload = new JcrPropertyPayload(definition.getId(), propertyType, jcrProp);
                 node.setProperty(dnaProp, definition.isMultiple(), propPayload);
+                if (!skipLastUpdated) {
+                    // Update the lastModified properties on the node ...
+                    updateLastModifiedOn(node);
+                }
                 return jcrProp;
             } catch (ValidationException e) {
                 throw new ConstraintViolationException(e.getMessage(), e);
@@ -1310,6 +1337,8 @@ class SessionCache {
          */
         public boolean removeProperty( Name name ) throws AccessDeniedException, RepositoryException {
             try {
+                // Update the lastModified properties on the node ...
+                updateLastModifiedOn(node);
                 return node.removeProperty(name) != null;
             } catch (ValidationException e) {
                 throw new ConstraintViolationException(e.getMessage(), e);
@@ -1334,6 +1363,8 @@ class SessionCache {
                                       Path.Segment before ) throws AccessDeniedException, RepositoryException {
             try {
                 node.orderChildBefore(childToBeMoved, before);
+                // Update the lastModified properties on the parent ...
+                updateLastModifiedOn(node);
             } catch (ValidationException e) {
                 throw new ConstraintViolationException(e.getMessage(), e);
             } catch (RepositorySourceException e) {
@@ -1394,6 +1425,10 @@ class SessionCache {
                         newChildEditor.removeProperty(ModeShapeIntLexicon.NODE_DEFINITON);
                     }
                 }
+                // Update the lastModified properties on the old and new parent ...
+                updateLastModifiedOn(existingChild.getParent());
+                updateLastModifiedOn(node);
+
                 return existingChild;
             } catch (ValidationException e) {
                 throw new ConstraintViolationException(e.getMessage(), e);
@@ -1446,25 +1481,48 @@ class SessionCache {
         private void autoCreateItemsFor( JcrNodeType nodeType )
             throws InvalidItemStateException, ConstraintViolationException, AccessDeniedException, RepositoryException {
 
-            for (JcrPropertyDefinition propertyDefinition : nodeType.propertyDefinitions()) {
+            for (JcrPropertyDefinition propertyDefinition : nodeType.allPropertyDefinitions()) {
                 if (propertyDefinition.isAutoCreated() && !propertyDefinition.isProtected()) {
                     PropertyInfo<JcrPropertyPayload> autoCreatedProp = node.getProperty(propertyDefinition.getInternalName());
                     if (autoCreatedProp == null) {
                         // We have to 'auto-create' the property ...
-                        assert propertyDefinition.getDefaultValues() != null;
-                        if (propertyDefinition.isMultiple()) {
-                            setProperty(propertyDefinition.getInternalName(),
-                                        propertyDefinition.getDefaultValues(),
-                                        propertyDefinition.getRequiredType());
+                        if (propertyDefinition.getDefaultValues() != null) {
+                            if (propertyDefinition.isMultiple()) {
+                                setProperty(propertyDefinition.getInternalName(),
+                                            propertyDefinition.getDefaultValues(),
+                                            propertyDefinition.getRequiredType());
+                            } else {
+                                assert propertyDefinition.getDefaultValues().length == 1;
+                                setProperty(propertyDefinition.getInternalName(),
+                                            (JcrValue)propertyDefinition.getDefaultValues()[0]);
+                            }
                         } else {
-                            assert propertyDefinition.getDefaultValues().length == 1;
-                            setProperty(propertyDefinition.getInternalName(), (JcrValue)propertyDefinition.getDefaultValues()[0]);
+                            JcrNodeType definingNodeType = propertyDefinition.declaringNodeType;
+                            Name name = definingNodeType.getInternalName();
+                            if (name.equals(JcrMixLexicon.CREATED)) {
+                                JcrNode jcrNode = (JcrNode)node.getPayload().getJcrNode();
+                                JcrValue now = jcrNode.valueFrom(Calendar.getInstance());
+                                JcrValue by = jcrNode.valueFrom(session().getUserID());
+                                setProperty(JcrLexicon.CREATED, now, false, true);
+                                setProperty(JcrLexicon.CREATED_BY, by, false, true);
+                            } else if (name.equals(JcrMixLexicon.LAST_MODIFIED)) {
+                                JcrNode jcrNode = (JcrNode)node.getPayload().getJcrNode();
+                                JcrValue now = jcrNode.valueFrom(Calendar.getInstance());
+                                JcrValue by = jcrNode.valueFrom(session().getUserID());
+                                setProperty(JcrLexicon.LAST_MODIFIED, now, false, true);
+                                setProperty(JcrLexicon.LAST_MODIFIED_BY, by, false, true);
+                            } else if (name.equals(JcrNtLexicon.HIERARCHY_NODE)) {
+                                JcrNode jcrNode = (JcrNode)node.getPayload().getJcrNode();
+                                JcrValue now = jcrNode.valueFrom(Calendar.getInstance());
+                                setProperty(JcrLexicon.CREATED, now, false, true);
+                            }
+                            // otherwise, we don't care
                         }
                     }
                 }
             }
 
-            for (JcrNodeDefinition nodeDefinition : nodeType.childNodeDefinitions()) {
+            for (JcrNodeDefinition nodeDefinition : nodeType.allChildNodeDefinitions()) {
                 if (nodeDefinition.isAutoCreated() && !nodeDefinition.isProtected()) {
                     Name nodeName = nodeDefinition.getInternalName();
                     if (node.getChildrenCount(nodeName) == 0) {
@@ -1592,12 +1650,30 @@ class SessionCache {
 
                 JcrNode jcrNode = (JcrNode)result.getPayload().getJcrNode();
 
-                // Fix the jcr:created protected property for nt:hierarcyNode (and descendants)
+                // Fix the "jcr:created", "jcr:createdBy", "jcr:lastModified" and "jcr:lastModifiedBy" properties on the new child
+                // ...
+                JcrValue now = jcrNode.valueFrom(Calendar.getInstance());
+                JcrValue by = jcrNode.valueFrom(session().getUserID());
+                boolean isCreatedType = primaryType.isNodeType(JcrMixLexicon.CREATED);
+                boolean isLastModifiedType = primaryType.isNodeType(JcrMixLexicon.LAST_MODIFIED);
                 boolean isHierarchyNode = primaryType.isNodeType(JcrNtLexicon.HIERARCHY_NODE);
-                if (isHierarchyNode) {
-                    JcrValue value = jcrNode.valueFrom(Calendar.getInstance());
-                    jcrNode.editor().setProperty(JcrLexicon.CREATED, value, false);
+                if (isHierarchyNode || isCreatedType || isLastModifiedType) {
+                    NodeEditor editor = jcrNode.editor();
+                    if (isHierarchyNode) {
+                        editor.setProperty(JcrLexicon.CREATED, now, false, true);
+                    }
+                    if (isCreatedType) {
+                        editor.setProperty(JcrLexicon.CREATED, now, false, true);
+                        editor.setProperty(JcrLexicon.CREATED_BY, by, false, true);
+                    }
+                    if (isLastModifiedType) {
+                        editor.setProperty(JcrLexicon.LAST_MODIFIED, now, false, true);
+                        editor.setProperty(JcrLexicon.LAST_MODIFIED_BY, by, false, true);
+                    }
                 }
+
+                // Update the lastModified properties on the parent ...
+                updateLastModifiedOn(node, now, by);
 
                 // The postCreateChild hook impl should populate the payloads
                 jcrNode.editor().autoCreateItemsFor(primaryType);
@@ -1613,6 +1689,45 @@ class SessionCache {
             }
         }
 
+        protected boolean updateLastModifiedOn( Node<JcrNodePayload, JcrPropertyPayload> node ) throws RepositoryException {
+            if (isNodeType(node, JcrMixLexicon.LAST_MODIFIED)) {
+                JcrNode jcrNode = (JcrNode)node.getPayload().getJcrNode();
+                JcrValue now = jcrNode.valueFrom(Calendar.getInstance());
+                JcrValue by = jcrNode.valueFrom(session().getUserID());
+                NodeEditor editor = jcrNode.editor();
+                editor.setProperty(JcrLexicon.LAST_MODIFIED, now, false, true);
+                editor.setProperty(JcrLexicon.LAST_MODIFIED_BY, by, false, true);
+                return true;
+            }
+            return false;
+        }
+
+        protected boolean updateLastModifiedOn( Node<JcrNodePayload, JcrPropertyPayload> node,
+                                                JcrValue now,
+                                                JcrValue by ) throws RepositoryException {
+            if (isNodeType(node, JcrMixLexicon.LAST_MODIFIED)) {
+                JcrNode jcrNode = (JcrNode)node.getPayload().getJcrNode();
+                NodeEditor editor = jcrNode.editor();
+                editor.setProperty(JcrLexicon.LAST_MODIFIED, now, false, true);
+                editor.setProperty(JcrLexicon.LAST_MODIFIED_BY, by, false, true);
+                return true;
+            }
+            return false;
+        }
+
+        protected boolean updateCreatedOn( Node<JcrNodePayload, JcrPropertyPayload> node,
+                                           JcrValue now,
+                                           JcrValue by ) throws RepositoryException {
+            if (isNodeType(node, JcrMixLexicon.CREATED)) {
+                JcrNode parent = (JcrNode)node.getPayload().getJcrNode();
+                NodeEditor editor = parent.editor();
+                editor.setProperty(JcrLexicon.CREATED, now, false, true);
+                editor.setProperty(JcrLexicon.CREATED_BY, by, false, true);
+                return true;
+            }
+            return false;
+        }
+
         /**
          * Destroy the child node with the supplied UUID and all nodes that exist below it, including any nodes that were created
          * and haven't been persisted.
@@ -1626,6 +1741,8 @@ class SessionCache {
             throws AccessDeniedException, RepositoryException {
             if (!child.getParent().equals(node)) return false;
             try {
+                // Update the lastModified properties on the parent ...
+                updateLastModifiedOn(node);
                 child.destroy();
             } catch (AccessControlException e) {
                 throw new AccessDeniedException(e.getMessage(), e);

@@ -182,7 +182,7 @@ public abstract class AbstractSessionTest {
         sessionAttributes.put("attribute1", "value1");
 
         // Now create the workspace ...
-        SecurityContext mockSecurityContext = new MockSecurityContext(null, Collections.singleton(ModeShapeRoles.READWRITE));
+        SecurityContext mockSecurityContext = new MockSecurityContext("username", Collections.singleton(ModeShapeRoles.READWRITE));
         workspace = new JcrWorkspace(repository, workspaceName, context.with(mockSecurityContext), sessionAttributes);
 
         // Create the session and log in ...

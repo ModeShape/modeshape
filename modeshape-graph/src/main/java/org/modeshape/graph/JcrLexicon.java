@@ -44,10 +44,12 @@ public class JcrLexicon {
     public static final Name MIXIN_TYPES = new BasicName(Namespace.URI, "mixinTypes");
     public static final Name CONTENT = new BasicName(Namespace.URI, "content");
     public static final Name CREATED = new BasicName(Namespace.URI, "created");
+    public static final Name CREATED_BY = new BasicName(Namespace.URI, "createdBy");
     public static final Name ENCODED = new BasicName(Namespace.URI, "encoded");
     public static final Name MIMETYPE = new BasicName(Namespace.URI, "mimeType");
     public static final Name DATA = new BasicName(Namespace.URI, "data");
     public static final Name LAST_MODIFIED = new BasicName(Namespace.URI, "lastModified");
+    public static final Name LAST_MODIFIED_BY = new BasicName(Namespace.URI, "lastModifiedBy");
 
     // Names used in the node type definitions ...
     public static final Name AUTO_CREATED = new BasicName(Namespace.URI, "autoCreated");
