@@ -783,6 +783,48 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
+    @FixFor( "MODE-790" )
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryWithCompoundCriteria() throws Exception {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root/Cars//element(*,car:Car)[@car:year='2008' and jcr:contains(., '\"liter V 12\"')]",
+                                          Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+
+        assertResults(query, result, 1);
+        assertResultsHaveColumns(result,
+                                 "jcr:primaryType",
+                                 "jcr:path",
+                                 "jcr:score",
+                                 "jcr:created",
+                                 "jcr:createdBy",
+                                 "car:mpgCity",
+                                 "car:userRating",
+                                 "car:mpgHighway",
+                                 "car:engine",
+                                 "car:model",
+                                 "car:year",
+                                 "car:maker",
+                                 "car:lengthInInches",
+                                 "car:valueRating",
+                                 "car:wheelbaseInInches",
+                                 "car:msrp");
+
+        // Query again with a different criteria that should return no nodes ...
+        query = session.getWorkspace()
+                       .getQueryManager()
+                       .createQuery("/jcr:root/Cars//element(*,car:Car)[@car:year='2007' and jcr:contains(., '\"liter V 12\"')]",
+                                    Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 0);
+    }
+
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithElementTestForChildrenOfRoot() throws RepositoryException {

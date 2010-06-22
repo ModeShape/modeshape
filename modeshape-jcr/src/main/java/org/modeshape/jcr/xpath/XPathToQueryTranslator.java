@@ -499,9 +499,20 @@ public class XPathToQueryTranslator {
                 right = temp;
                 operator = operator.reverse();
             }
-            if (left instanceof AttributeNameTest) {
-                AttributeNameTest attribute = (AttributeNameTest)left;
-                String propertyName = nameFrom(attribute.getNameTest());
+            if (left instanceof NodeTest) {
+                NodeTest nodeTest = (NodeTest)left;
+                String propertyName = null;
+                if (nodeTest instanceof AttributeNameTest) {
+                    AttributeNameTest attribute = (AttributeNameTest)left;
+                    propertyName = nameFrom(attribute.getNameTest());
+                } else if (nodeTest instanceof NameTest) {
+                    NameTest nameTest = (NameTest)left;
+                    propertyName = nameFrom(nameTest);
+                } else {
+                    throw new InvalidQueryException(query,
+                                                    "Left hand side of a comparison must be a name test or attribute name test; therefore '"
+                                                    + comparison + "' is not valid");
+                }
                 if (right instanceof Literal) {
                     String value = ((Literal)right).getValue();
                     where.propertyValue(tableName, propertyName).is(operator, value);

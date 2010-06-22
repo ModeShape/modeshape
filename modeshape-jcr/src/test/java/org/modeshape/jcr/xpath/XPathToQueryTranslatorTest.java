@@ -29,6 +29,7 @@ import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.TypeSystem;
@@ -347,6 +348,34 @@ public class XPathToQueryTranslatorTest {
     public void shouldTranslateFromXPathContainingAttributeMatch() {
         assertThat(xpath("//InfinitiG37[@foo:year='2008']"),
                    isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) LIKE '%/InfinitiG37' AND nodeSet1.[foo:year] = '2008'"));
+    }
+
+    @FixFor( "MODE-790" )
+    @Test
+    public void shouldTranslateFromXPathContainingCompoundCriteria() {
+        assertThat(xpath("/jcr:root/Cars//element(*,car:Car)[@car:year='2008' and jcr:contains(., '\"liter V 12\"')]"),
+                   isSql("SELECT * FROM [car:Car] WHERE (PATH([car:Car]) LIKE '/Cars/%' AND ([car:Car].[car:year] = '2008' AND CONTAINS([car:Car].*,'\"liter V 12\"')))"));
+    }
+
+    @FixFor( "MODE-790" )
+    @Test
+    public void shouldTranslateFromXPathContainingCompoundCriteria2() {
+        assertThat(xpath("/jcr:root/drools:repository/drools:package_area//element(*, drools:assetNodeType)[jcr:contains(., 'testQueryText*')]"),
+                   isSql("SELECT * FROM [drools:assetNodeType] WHERE (PATH([drools:assetNodeType]) LIKE '/drools:repository/drools:package_area/%' AND CONTAINS([drools:assetNodeType].*,'testQueryText*'))"));
+    }
+
+    @FixFor( "MODE-790" )
+    @Test
+    public void shouldTranslateFromXPathContainingCompoundCriteria3() {
+        assertThat(xpath("/jcr:root/drools:repository/drools:package_area//element(*, drools:assetNodeType)[jcr:contains(., 'testQueryText*') and drools:archive = 'false']"),
+                   isSql("SELECT * FROM [drools:assetNodeType] WHERE (PATH([drools:assetNodeType]) LIKE '/drools:repository/drools:package_area/%' AND CONTAINS([drools:assetNodeType].*,'testQueryText*') AND [drools:archive] = 'false')"));
+    }
+
+    @FixFor( "MODE-790" )
+    @Test
+    public void shouldTranslateFromXPathContainingCompoundCriteria4() {
+        assertThat(xpath("/jcr:root/drools:repository/drools:package_area//element(*, drools:assetNodeType)[jcr:contains(., 'testQueryText*') and @drools:archive = 'false']"),
+                   isSql("SELECT * FROM [drools:assetNodeType] WHERE (PATH([drools:assetNodeType]) LIKE '/drools:repository/drools:package_area/%' AND CONTAINS([drools:assetNodeType].*,'testQueryText*') AND [drools:archive] = 'false')"));
     }
 
     @Test

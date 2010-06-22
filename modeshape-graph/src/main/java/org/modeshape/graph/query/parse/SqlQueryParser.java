@@ -712,7 +712,7 @@ public class SqlQueryParser implements QueryParser {
             tokens.consume(',');
 
             // Followed by the full text search expression ...
-            String expression = removeBracketsAndQuotes(tokens.consume());
+            String expression = removeBracketsAndQuotes(tokens.consume(), false); // don't remove nested quotes
             Term term = parseFullTextSearchExpression(expression, tokens.previousPosition());
             tokens.consume(")");
             constraint = fullTextSearch(selectorName, propertyName, expression, term);
@@ -1261,23 +1261,40 @@ public class SqlQueryParser implements QueryParser {
     }
 
     /**
-     * Remove any leading and trailing single-quotes, double-quotes, or square brackets from the supplied text.
+     * Remove all leading and trailing single-quotes, double-quotes, or square brackets from the supplied text. If multiple,
+     * properly-paired quotes or brackets are found, they will all be removed.
      * 
      * @param text the input text; may not be null
      * @return the text without leading and trailing brackets and quotes, or <code>text</code> if there were no square brackets or
      *         quotes
      */
     protected String removeBracketsAndQuotes( String text ) {
+        return removeBracketsAndQuotes(text, true);
+    }
+
+    /**
+     * Remove any leading and trailing single-quotes, double-quotes, or square brackets from the supplied text.
+     * 
+     * @param text the input text; may not be null
+     * @param recursive true if more than one pair of quotes, double-quotes, or square brackets should be removed, or false if
+     *        just the first pair should be removed
+     * @return the text without leading and trailing brackets and quotes, or <code>text</code> if there were no square brackets or
+     *         quotes
+     */
+    protected String removeBracketsAndQuotes( String text,
+                                              boolean recursive ) {
         if (text.length() > 0) {
             char firstChar = text.charAt(0);
             switch (firstChar) {
                 case '\'':
                 case '"':
                     assert text.charAt(text.length() - 1) == firstChar;
-                    return removeBracketsAndQuotes(text.substring(1, text.length() - 1));
+                    String removed = text.substring(1, text.length() - 1);
+                    return recursive ? removeBracketsAndQuotes(removed, recursive) : removed;
                 case '[':
                     assert text.charAt(text.length() - 1) == ']';
-                    return removeBracketsAndQuotes(text.substring(1, text.length() - 1));
+                    removed = text.substring(1, text.length() - 1);
+                    return recursive ? removeBracketsAndQuotes(removed, recursive) : removed;
             }
         }
         return text;
