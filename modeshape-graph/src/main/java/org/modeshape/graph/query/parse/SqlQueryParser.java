@@ -930,7 +930,7 @@ public class SqlQueryParser implements QueryParser {
         if (tokens.canConsume("CAST", "(")) {
             // Get the value that is to be cast ...
             Position pos = tokens.nextPosition();
-            String value = parseLiteralValue(tokens, typeSystem);
+            Object value = parseLiteralValue(tokens, typeSystem);
             // Figure out the type we're supposed to cast to ...
             tokens.consume("AS");
             String typeName = tokens.consume();
@@ -958,7 +958,7 @@ public class SqlQueryParser implements QueryParser {
         return literal(typeSystem, parseLiteralValue(tokens, typeSystem));
     }
 
-    protected String parseLiteralValue( TokenStream tokens,
+    protected Object parseLiteralValue( TokenStream tokens,
                                         TypeSystem typeSystem ) {
         if (tokens.matches(SqlTokenizer.QUOTED_STRING)) {
             return removeBracketsAndQuotes(tokens.consume());

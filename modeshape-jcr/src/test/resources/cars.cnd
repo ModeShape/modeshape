@@ -34,7 +34,7 @@
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
 
-[car:Car] > nt:unstructured
+[car:Car] > nt:unstructured, mix:created
   - car:maker (string)
   - car:model (string)
   - car:year (string) < '(19|20)\d{2}'                     // any 4 digit number starting with '19' or '20'

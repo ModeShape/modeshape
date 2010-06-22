@@ -54,11 +54,11 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.jcr.JcrRepository.Option;
-import org.modeshape.jcr.JcrRepository.QueryLanguage;
 import org.modeshape.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import org.modeshape.jcr.query.JcrQueryResult;
 
@@ -87,7 +87,8 @@ public class JcrQueryManagerTest {
 
     protected static String[] carColumnNames() {
         return new String[] {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine", "car:mpgHighway",
-            "car:valueRating", "jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model", "car:msrp"};
+            "car:valueRating", "jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model", "car:msrp", "jcr:created",
+            "jcr:createdBy"};
     }
 
     private static JcrConfiguration configuration;
@@ -206,7 +207,7 @@ public class JcrQueryManagerTest {
                                   long numberOfResults ) throws RepositoryException {
         assertThat(query, is(notNullValue()));
         assertThat(result, is(notNullValue()));
-        if (print) {
+        if (print /*|| result.getNodes().getSize() != numberOfResults || result.getRows().getSize() != numberOfResults*/) {
             System.out.println();
             System.out.println(query);
             System.out.println(" plan -> " + ((JcrQueryResult)result).getPlan());
@@ -386,12 +387,13 @@ public class JcrQueryManagerTest {
     // JCR-SQL Queries
     // ----------------------------------------------------------------------------------------------------------------
 
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToCreateAndExecuteSqlQueryWithOrderByClause() throws RepositoryException {
         Query query = session.getWorkspace()
                              .getQueryManager()
                              .createQuery("SELECT car:model FROM car:Car WHERE car:model IS NOT NULL ORDER BY car:model ASC",
-                                          QueryLanguage.JCR_SQL);
+                                          Query.SQL);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -404,12 +406,13 @@ public class JcrQueryManagerTest {
      * 
      * @throws RepositoryException
      */
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToCreateAndExecuteSqlQueryWithChildAxisCriteria() throws RepositoryException {
         Query query = session.getWorkspace()
                              .getQueryManager()
                              .createQuery("SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'",
-                                          QueryLanguage.JCR_SQL);
+                                          Query.SQL);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -422,17 +425,40 @@ public class JcrQueryManagerTest {
      * 
      * @throws RepositoryException
      */
+    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToCreateAndExecuteSqlQueryWithContainsCriteria() throws RepositoryException {
         Query query = session.getWorkspace()
                              .getQueryManager()
                              .createQuery("SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'",
-                                          QueryLanguage.JCR_SQL);
+                                          Query.SQL);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 4); // the 4 types of cars
         assertResultsHaveColumns(result, "jcr:path", "jcr:score", "jcr:primaryType");
+    }
+
+    @Test
+    @FixFor( "MODE-791" )
+    @SuppressWarnings( "deprecation" )
+    public void shouldReturnNodesWithPropertyConstrainedByTimestamp() throws Exception {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT car:model, car:maker FROM car:Car " + "WHERE jcr:path LIKE '/Cars/%' "
+                                          + "AND (car:msrp LIKE '$3%' OR car:msrp LIKE '$2') "
+                                          + "AND (car:year LIKE '2008' OR car:year LIKE '2009') " + "AND car:valueRating > '1' "
+                                          + "AND jcr:created > TIMESTAMP '1974-07-10T00:00:00.000-05:00' "
+                                          + "AND jcr:created < TIMESTAMP '3074-07-10T00:00:00.000-05:00'",
+                                          Query.SQL);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 5);
+
+        for (NodeIterator iter = result.getNodes(); iter.hasNext();) {
+            assertThat(iter.nextNode().hasProperty("car:model"), is(true));
+        }
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -532,7 +558,7 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root/Cars//*", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        print = true;
+        // print = true;
         assertResults(query, result, 16);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
@@ -606,6 +632,8 @@ public class JcrQueryManagerTest {
                                  "jcr:primaryType",
                                  "jcr:path",
                                  "jcr:score",
+                                 "jcr:created",
+                                 "jcr:createdBy",
                                  "car:mpgCity",
                                  "car:userRating",
                                  "car:mpgHighway",
@@ -670,7 +698,7 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("//Infiniti_x0020_G37[@car:year='2008']", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        print = true;
+        // print = true;
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 1);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");

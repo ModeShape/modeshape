@@ -670,7 +670,7 @@ public class JcrSqlQueryParser extends SqlQueryParser {
      *      org.modeshape.graph.query.model.TypeSystem)
      */
     @Override
-    protected String parseLiteralValue( TokenStream tokens,
+    protected Object parseLiteralValue( TokenStream tokens,
                                         TypeSystem typeSystem ) {
         if (tokens.canConsume("TIMESTAMP")) {
             Position pos = tokens.previousPosition();
@@ -680,7 +680,8 @@ public class JcrSqlQueryParser extends SqlQueryParser {
             try {
                 // Convert to a date and then back to a string to get canonical form ...
                 Object dateTime = dateTimeFactory.create(value);
-                return dateTimeFactory.asString(dateTime);
+                return dateTime;
+                // return dateTimeFactory.asString(dateTime);
             } catch (ValueFormatException e) {
                 String msg = GraphI18n.expectingLiteralAndUnableToParseAsDate.text(value, pos.getLine(), pos.getColumn());
                 throw new ParsingException(pos, msg);

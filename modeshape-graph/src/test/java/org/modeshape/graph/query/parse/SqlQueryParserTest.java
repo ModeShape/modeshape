@@ -38,6 +38,7 @@ import org.modeshape.common.text.Position;
 import org.modeshape.common.text.TokenStream;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Binary;
+import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PropertyType;
@@ -1151,55 +1152,66 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseLiteralValueFromStringWithPositiveAndNegativeIntegerValues() {
-        assertThat(parser.parseLiteralValue(tokens("123"), typeSystem), is("123"));
-        assertThat(parser.parseLiteralValue(tokens("-123"), typeSystem), is("-123"));
-        assertThat(parser.parseLiteralValue(tokens("- 123"), typeSystem), is("-123"));
-        assertThat(parser.parseLiteralValue(tokens("+123"), typeSystem), is("123"));
-        assertThat(parser.parseLiteralValue(tokens("+ 123"), typeSystem), is("123"));
-        assertThat(parser.parseLiteralValue(tokens("0"), typeSystem), is("0"));
+        assertThat(parser.parseLiteralValue(tokens("123"), typeSystem), is((Object)"123"));
+        assertThat(parser.parseLiteralValue(tokens("-123"), typeSystem), is((Object)"-123"));
+        assertThat(parser.parseLiteralValue(tokens("- 123"), typeSystem), is((Object)"-123"));
+        assertThat(parser.parseLiteralValue(tokens("+123"), typeSystem), is((Object)"123"));
+        assertThat(parser.parseLiteralValue(tokens("+ 123"), typeSystem), is((Object)"123"));
+        assertThat(parser.parseLiteralValue(tokens("0"), typeSystem), is((Object)"0"));
     }
 
     @Test
     public void shouldParseLiteralValueFromStringWithPositiveAndNegativeDecimalValues() {
-        assertThat(parser.parseLiteralValue(tokens("1.23"), typeSystem), is("1.23"));
-        assertThat(parser.parseLiteralValue(tokens("-1.23"), typeSystem), is("-1.23"));
-        assertThat(parser.parseLiteralValue(tokens("+0.123"), typeSystem), is("0.123"));
+        assertThat(parser.parseLiteralValue(tokens("1.23"), typeSystem), is((Object)"1.23"));
+        assertThat(parser.parseLiteralValue(tokens("-1.23"), typeSystem), is((Object)"-1.23"));
+        assertThat(parser.parseLiteralValue(tokens("+0.123"), typeSystem), is((Object)"0.123"));
     }
 
     @Test
     public void shouldParseLiteralValueFromStringWithPositiveAndNegativeDecimalValuesInScientificNotation() {
-        assertThat(parser.parseLiteralValue(tokens("1.23"), typeSystem), is("1.23"));
-        assertThat(parser.parseLiteralValue(tokens("1.23e10"), typeSystem), is("1.23E10"));
-        assertThat(parser.parseLiteralValue(tokens("- 1.23e10"), typeSystem), is("-1.23E10"));
-        assertThat(parser.parseLiteralValue(tokens("- 1.23e-10"), typeSystem), is("-1.23E-10"));
+        assertThat(parser.parseLiteralValue(tokens("1.23"), typeSystem), is((Object)"1.23"));
+        assertThat(parser.parseLiteralValue(tokens("1.23e10"), typeSystem), is((Object)"1.23E10"));
+        assertThat(parser.parseLiteralValue(tokens("- 1.23e10"), typeSystem), is((Object)"-1.23E10"));
+        assertThat(parser.parseLiteralValue(tokens("- 1.23e-10"), typeSystem), is((Object)"-1.23E-10"));
     }
 
     @Test
     public void shouldParseLiteralValueFromStringWithBooleanValues() {
-        assertThat(parser.parseLiteralValue(tokens("true"), typeSystem), is(Boolean.TRUE.toString()));
-        assertThat(parser.parseLiteralValue(tokens("false"), typeSystem), is(Boolean.FALSE.toString()));
-        assertThat(parser.parseLiteralValue(tokens("TRUE"), typeSystem), is(Boolean.TRUE.toString()));
-        assertThat(parser.parseLiteralValue(tokens("FALSE"), typeSystem), is(Boolean.FALSE.toString()));
+        assertThat(parser.parseLiteralValue(tokens("true"), typeSystem), is((Object)Boolean.TRUE.toString()));
+        assertThat(parser.parseLiteralValue(tokens("false"), typeSystem), is((Object)Boolean.FALSE.toString()));
+        assertThat(parser.parseLiteralValue(tokens("TRUE"), typeSystem), is((Object)Boolean.TRUE.toString()));
+        assertThat(parser.parseLiteralValue(tokens("FALSE"), typeSystem), is((Object)Boolean.FALSE.toString()));
     }
 
     @Test
     public void shouldParseLiteralValueFromStringWithDateValues() {
         // sYYYY-MM-DDThh:mm:ss.sssTZD
-        assertThat(parser.parseLiteralValue(tokens("2009-03-22T03:22:45.345Z"), typeSystem), is("2009-03-22T03:22:45.345Z"));
-        assertThat(parser.parseLiteralValue(tokens("2009-03-22T03:22:45.345UTC"), typeSystem), is("2009-03-22T03:22:45.345Z"));
-        assertThat(parser.parseLiteralValue(tokens("2009-03-22T03:22:45.3-01:00"), typeSystem), is("2009-03-22T04:22:45.300Z"));
-        assertThat(parser.parseLiteralValue(tokens("2009-03-22T03:22:45.345+01:00"), typeSystem), is("2009-03-22T02:22:45.345Z"));
+        assertThat(parser.parseLiteralValue(tokens("2009-03-22T03:22:45.345Z"), typeSystem),
+                   is((Object)"2009-03-22T03:22:45.345Z"));
+        assertThat(parser.parseLiteralValue(tokens("2009-03-22T03:22:45.345UTC"), typeSystem),
+                   is((Object)"2009-03-22T03:22:45.345Z"));
+        assertThat(parser.parseLiteralValue(tokens("2009-03-22T03:22:45.3-01:00"), typeSystem),
+                   is((Object)"2009-03-22T04:22:45.300Z"));
+        assertThat(parser.parseLiteralValue(tokens("2009-03-22T03:22:45.345+01:00"), typeSystem),
+                   is((Object)"2009-03-22T02:22:45.345Z"));
 
-        assertThat(parser.parseLiteralValue(tokens("-2009-03-22T03:22:45.345Z"), typeSystem), is("-2009-03-22T03:22:45.345Z"));
-        assertThat(parser.parseLiteralValue(tokens("-2009-03-22T03:22:45.345UTC"), typeSystem), is("-2009-03-22T03:22:45.345Z"));
-        assertThat(parser.parseLiteralValue(tokens("-2009-03-22T03:22:45.3-01:00"), typeSystem), is("-2009-03-22T04:22:45.300Z"));
+        assertThat(parser.parseLiteralValue(tokens("-2009-03-22T03:22:45.345Z"), typeSystem),
+                   is((Object)"-2009-03-22T03:22:45.345Z"));
+        assertThat(parser.parseLiteralValue(tokens("-2009-03-22T03:22:45.345UTC"), typeSystem),
+                   is((Object)"-2009-03-22T03:22:45.345Z"));
+        assertThat(parser.parseLiteralValue(tokens("-2009-03-22T03:22:45.3-01:00"), typeSystem),
+                   is((Object)"-2009-03-22T04:22:45.300Z"));
         assertThat(parser.parseLiteralValue(tokens("-2009-03-22T03:22:45.345+01:00"), typeSystem),
-                   is("-2009-03-22T02:22:45.345Z"));
+                   is((Object)"-2009-03-22T02:22:45.345Z"));
 
-        assertThat(parser.parseLiteralValue(tokens("+2009-03-22T03:22:45.345Z"), typeSystem), is("2009-03-22T03:22:45.345Z"));
-        assertThat(parser.parseLiteralValue(tokens("+2009-03-22T03:22:45.345UTC"), typeSystem), is("2009-03-22T03:22:45.345Z"));
-        assertThat(parser.parseLiteralValue(tokens("+2009-03-22T03:22:45.3-01:00"), typeSystem), is("2009-03-22T04:22:45.300Z"));
-        assertThat(parser.parseLiteralValue(tokens("+2009-03-22T03:22:45.345+01:00"), typeSystem), is("2009-03-22T02:22:45.345Z"));
+        assertThat(parser.parseLiteralValue(tokens("+2009-03-22T03:22:45.345Z"), typeSystem),
+                   is((Object)"2009-03-22T03:22:45.345Z"));
+        assertThat(parser.parseLiteralValue(tokens("+2009-03-22T03:22:45.345UTC"), typeSystem),
+                   is((Object)"2009-03-22T03:22:45.345Z"));
+        assertThat(parser.parseLiteralValue(tokens("+2009-03-22T03:22:45.3-01:00"), typeSystem),
+                   is((Object)"2009-03-22T04:22:45.300Z"));
+        assertThat(parser.parseLiteralValue(tokens("+2009-03-22T03:22:45.345+01:00"), typeSystem),
+                   is((Object)"2009-03-22T02:22:45.345Z"));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -1208,62 +1220,66 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseLiteralValueFromQuotedStringWithPositiveAndNegativeIntegerValues() {
-        assertThat(parser.parseLiteralValue(tokens("'123'"), typeSystem), is("123"));
-        assertThat(parser.parseLiteralValue(tokens("'-123'"), typeSystem), is("-123"));
-        assertThat(parser.parseLiteralValue(tokens("'- 123'"), typeSystem), is("- 123"));
-        assertThat(parser.parseLiteralValue(tokens("'+123'"), typeSystem), is("+123"));
-        assertThat(parser.parseLiteralValue(tokens("'+ 123'"), typeSystem), is("+ 123"));
-        assertThat(parser.parseLiteralValue(tokens("'0'"), typeSystem), is("0"));
+        assertThat(parser.parseLiteralValue(tokens("'123'"), typeSystem), is((Object)"123"));
+        assertThat(parser.parseLiteralValue(tokens("'-123'"), typeSystem), is((Object)"-123"));
+        assertThat(parser.parseLiteralValue(tokens("'- 123'"), typeSystem), is((Object)"- 123"));
+        assertThat(parser.parseLiteralValue(tokens("'+123'"), typeSystem), is((Object)"+123"));
+        assertThat(parser.parseLiteralValue(tokens("'+ 123'"), typeSystem), is((Object)"+ 123"));
+        assertThat(parser.parseLiteralValue(tokens("'0'"), typeSystem), is((Object)"0"));
     }
 
     @Test
     public void shouldParseLiteralValueFromQuotedStringWithPositiveAndNegativeDecimalValues() {
-        assertThat(parser.parseLiteralValue(tokens("'1.23'"), typeSystem), is("1.23"));
-        assertThat(parser.parseLiteralValue(tokens("'-1.23'"), typeSystem), is("-1.23"));
-        assertThat(parser.parseLiteralValue(tokens("'+0.123'"), typeSystem), is("+0.123"));
+        assertThat(parser.parseLiteralValue(tokens("'1.23'"), typeSystem), is((Object)"1.23"));
+        assertThat(parser.parseLiteralValue(tokens("'-1.23'"), typeSystem), is((Object)"-1.23"));
+        assertThat(parser.parseLiteralValue(tokens("'+0.123'"), typeSystem), is((Object)"+0.123"));
     }
 
     @Test
     public void shouldParseLiteralValueFromQuotedStringWithPositiveAndNegativeDecimalValuesInScientificNotation() {
-        assertThat(parser.parseLiteralValue(tokens("'1.23'"), typeSystem), is("1.23"));
-        assertThat(parser.parseLiteralValue(tokens("'1.23e10'"), typeSystem), is("1.23e10"));
-        assertThat(parser.parseLiteralValue(tokens("'- 1.23e10'"), typeSystem), is("- 1.23e10"));
-        assertThat(parser.parseLiteralValue(tokens("'- 1.23e-10'"), typeSystem), is("- 1.23e-10"));
+        assertThat(parser.parseLiteralValue(tokens("'1.23'"), typeSystem), is((Object)"1.23"));
+        assertThat(parser.parseLiteralValue(tokens("'1.23e10'"), typeSystem), is((Object)"1.23e10"));
+        assertThat(parser.parseLiteralValue(tokens("'- 1.23e10'"), typeSystem), is((Object)"- 1.23e10"));
+        assertThat(parser.parseLiteralValue(tokens("'- 1.23e-10'"), typeSystem), is((Object)"- 1.23e-10"));
     }
 
     @Test
     public void shouldParseLiteralValueFromQuotedStringWithBooleanValues() {
-        assertThat(parser.parseLiteralValue(tokens("'true'"), typeSystem), is("true"));
-        assertThat(parser.parseLiteralValue(tokens("'false'"), typeSystem), is("false"));
-        assertThat(parser.parseLiteralValue(tokens("'TRUE'"), typeSystem), is("TRUE"));
-        assertThat(parser.parseLiteralValue(tokens("'FALSE'"), typeSystem), is("FALSE"));
+        assertThat(parser.parseLiteralValue(tokens("'true'"), typeSystem), is((Object)"true"));
+        assertThat(parser.parseLiteralValue(tokens("'false'"), typeSystem), is((Object)"false"));
+        assertThat(parser.parseLiteralValue(tokens("'TRUE'"), typeSystem), is((Object)"TRUE"));
+        assertThat(parser.parseLiteralValue(tokens("'FALSE'"), typeSystem), is((Object)"FALSE"));
     }
 
     @Test
     public void shouldParseLiteralValueFromQuotedStringWithDateValues() {
         // sYYYY-MM-DDThh:mm:ss.sssTZD
-        assertThat(parser.parseLiteralValue(tokens("'2009-03-22T03:22:45.345Z'"), typeSystem), is("2009-03-22T03:22:45.345Z"));
-        assertThat(parser.parseLiteralValue(tokens("'2009-03-22T03:22:45.345UTC'"), typeSystem), is("2009-03-22T03:22:45.345UTC"));
+        assertThat(parser.parseLiteralValue(tokens("'2009-03-22T03:22:45.345Z'"), typeSystem),
+                   is((Object)"2009-03-22T03:22:45.345Z"));
+        assertThat(parser.parseLiteralValue(tokens("'2009-03-22T03:22:45.345UTC'"), typeSystem),
+                   is((Object)"2009-03-22T03:22:45.345UTC"));
         assertThat(parser.parseLiteralValue(tokens("'2009-03-22T03:22:45.3-01:00'"), typeSystem),
-                   is("2009-03-22T03:22:45.3-01:00"));
+                   is((Object)"2009-03-22T03:22:45.3-01:00"));
         assertThat(parser.parseLiteralValue(tokens("'2009-03-22T03:22:45.345+01:00'"), typeSystem),
-                   is("2009-03-22T03:22:45.345+01:00"));
+                   is((Object)"2009-03-22T03:22:45.345+01:00"));
 
-        assertThat(parser.parseLiteralValue(tokens("'-2009-03-22T03:22:45.345Z'"), typeSystem), is("-2009-03-22T03:22:45.345Z"));
+        assertThat(parser.parseLiteralValue(tokens("'-2009-03-22T03:22:45.345Z'"), typeSystem),
+                   is((Object)"-2009-03-22T03:22:45.345Z"));
         assertThat(parser.parseLiteralValue(tokens("'-2009-03-22T03:22:45.345UTC'"), typeSystem),
-                   is("-2009-03-22T03:22:45.345UTC"));
+                   is((Object)"-2009-03-22T03:22:45.345UTC"));
         assertThat(parser.parseLiteralValue(tokens("'-2009-03-22T03:22:45.3-01:00'"), typeSystem),
-                   is("-2009-03-22T03:22:45.3-01:00"));
+                   is((Object)"-2009-03-22T03:22:45.3-01:00"));
         assertThat(parser.parseLiteralValue(tokens("'-2009-03-22T03:22:45.345+01:00'"), typeSystem),
-                   is("-2009-03-22T03:22:45.345+01:00"));
+                   is((Object)"-2009-03-22T03:22:45.345+01:00"));
 
-        assertThat(parser.parseLiteralValue(tokens("'+2009-03-22T03:22:45.345Z'"), typeSystem), is("+2009-03-22T03:22:45.345Z"));
+        assertThat(parser.parseLiteralValue(tokens("'+2009-03-22T03:22:45.345Z'"), typeSystem),
+                   is((Object)"+2009-03-22T03:22:45.345Z"));
         assertThat(parser.parseLiteralValue(tokens("'+2009-03-22T03:22:45.345UTC'"), typeSystem),
-                   is("+2009-03-22T03:22:45.345UTC"));
+                   is((Object)"+2009-03-22T03:22:45.345UTC"));
         assertThat(parser.parseLiteralValue(tokens("'+2009-03-22T03:22:45.3-01:00'"), typeSystem),
-                   is("+2009-03-22T03:22:45.3-01:00"));
+                   is((Object)"+2009-03-22T03:22:45.3-01:00"));
         assertThat(parser.parseLiteralValue(tokens("'+2009-03-22T03:22:45.345+01:00'"), typeSystem),
-                   is("+2009-03-22T03:22:45.345+01:00"));
+                   is((Object)"+2009-03-22T03:22:45.345+01:00"));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -2084,6 +2100,10 @@ public class SqlQueryParserTest {
 
     protected Path path( String path ) {
         return (Path)typeSystem.getTypeFactory(PropertyType.PATH.getName()).create(path);
+    }
+
+    protected DateTime date( String dateTime ) {
+        return (DateTime)typeSystem.getDateTimeFactory().create(dateTime);
     }
 
     protected TokenStream tokens( String content ) {
