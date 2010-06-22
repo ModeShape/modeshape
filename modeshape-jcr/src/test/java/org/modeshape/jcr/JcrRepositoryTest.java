@@ -33,6 +33,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
@@ -55,6 +56,7 @@ import org.modeshape.graph.Node;
 import org.modeshape.graph.JaasSecurityContext.UserPasswordCallbackHandler;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
+import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.observe.MockObservable;
@@ -76,7 +78,7 @@ public class JcrRepositoryTest {
     private JcrSession session;
 
     @BeforeClass
-    public static void beforeClass() {
+    public static void beforeAll() {
         // Initialize IDTrust
         String configFile = "security/jaas.conf.xml";
         IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
@@ -89,7 +91,7 @@ public class JcrRepositoryTest {
     }
 
     @Before
-    public void before() throws Exception {
+    public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
         sourceName = "repository";
 
@@ -108,9 +110,8 @@ public class JcrRepositoryTest {
              * 
              * @see org.modeshape.graph.connector.RepositoryConnectionFactory#createConnection(java.lang.String)
              */
-            @SuppressWarnings( "synthetic-access" )
             public RepositoryConnection createConnection( String sourceName ) throws RepositorySourceException {
-                return sourceName.equals(sourceName) ? source.getConnection() : null;
+                return sourceName.equals(source().getName()) ? source().getConnection() : null;
             }
         };
 
@@ -119,7 +120,7 @@ public class JcrRepositoryTest {
         repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, null);
 
         // Set up the graph that goes directly to the source ...
-        sourceGraph = Graph.create(source, context);
+        sourceGraph = Graph.create(source(), context);
 
         // Set up the graph that goes directly to the system source ...
         systemGraph = repository.createSystemGraph(context);
@@ -134,6 +135,10 @@ public class JcrRepositoryTest {
                 session = null;
             }
         }
+    }
+
+    protected RepositorySource source() {
+        return source;
     }
 
     @Test
@@ -575,6 +580,50 @@ public class JcrRepositoryTest {
         // The locker thread should be inactive and the lock cleaned up
         repository.cleanUpLocks();
         assertThat(readerNode.isLocked(), is(false));
+    }
+
+    @Test
+    public void shouldHaveAvailableWorkspacesMatchingThoseInSourceContainingJustDefaultWorkspace() throws Exception {
+        // Set up the source ...
+        source = new InMemoryRepositorySource();
+        source.setName(sourceName);
+        sourceGraph = Graph.create(source(), context);
+
+        // Create the repository ...
+        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, null);
+
+        // Get the available workspaces ...
+        session = createSession();
+        Set<String> jcrWorkspaces = setOf(session.getWorkspace().getAccessibleWorkspaceNames());
+
+        // Check against the session ...
+        Set<String> graphWorkspaces = sourceGraph.getWorkspaces();
+        assertThat(jcrWorkspaces, is(graphWorkspaces));
+    }
+
+    @Test
+    public void shouldHaveAvailableWorkspacesMatchingThoseInSourceContainingPredefinedWorkspaces() throws Exception {
+        // Set up the source ...
+        source = new InMemoryRepositorySource();
+        source.setName(sourceName);
+        source.setPredefinedWorkspaceNames(new String[] {"ws1", "ws2", "ws3"});
+        source.setDefaultWorkspaceName("ws1");
+        sourceGraph = Graph.create(source(), context);
+
+        // Create the repository ...
+        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, null);
+
+        // Get the available workspaces ...
+        session = createSession();
+        Set<String> jcrWorkspaces = setOf(session.getWorkspace().getAccessibleWorkspaceNames());
+
+        // Check against the session ...
+        Set<String> graphWorkspaces = sourceGraph.getWorkspaces();
+        assertThat(jcrWorkspaces, is(graphWorkspaces));
+    }
+
+    protected <T> Set<T> setOf( T... values ) {
+        return org.modeshape.common.collection.Collections.unmodifiableSet(values);
     }
 
 }

@@ -112,6 +112,7 @@ public final class GraphI18n {
     public static I18n pathConnectorRequestsMustHavePath;
     public static I18n workspaceDoesNotExistInRepository;
     public static I18n workspaceAlreadyExistsInRepository;
+    public static I18n currentWorkspaceCannotBeDeleted;
     public static I18n sourceIsReadOnly;
     public static I18n workspaceIsReadOnly;
 

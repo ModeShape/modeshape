@@ -15,6 +15,7 @@
            <mode:predefinedWorkspaceNames>usergroups</mode:predefinedWorkspaceNames>
            <mode:predefinedWorkspaceNames>mgnlSystem</mode:predefinedWorkspaceNames>
            <mode:predefinedWorkspaceNames>mgnlVersion</mode:predefinedWorkspaceNames>
+           <mode:predefinedWorkspaceNames>modeSystem</mode:predefinedWorkspaceNames>
         </mode:source>
 
         <mode:source jcr:name="disk" 
@@ -121,12 +122,14 @@
             <mode:source>magnolia</mode:source>
             <mode:options jcr:primaryType="mode:options">
                 <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
+                <systemSourceName jcr:primaryType="mode:option" mode:value="modeSystem@data"/>
             </mode:options>
         </mode:repository>
         <mode:repository jcr:name="data">
             <mode:source>data</mode:source>
             <mode:options jcr:primaryType="mode:options">
                 <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
+                <systemSourceName jcr:primaryType="mode:option" mode:value="modeSystem@data"/>
             </mode:options>
         </mode:repository>
     </mode:repositories>

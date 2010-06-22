@@ -230,9 +230,12 @@ final &LoginContext; loginContext = ...;
 			</para>
 			<para>
 				ModeShape has extended the set of JCR-defined actions ("add_node", "set_property", "remove", and "read") with additional actions ("register_type",  
-				"register_namespace", and "unlock_any").  The register_type and register_namespace permissions restrict the ability to register (and unregister) node types and namespaces, respectively.
-				The unlock_any permission grants the user the ability to unlock any locked node or branch (as opposed to users without that permission who can only unlock nodes or branches that they 
-				have locked themselves or for which they hold the lock token).  
+				"register_namespace", "unlock_any", "create_workspace" and "delete_workspace").  The "register_type" and "register_namespace" permissions control 
+				the ability to register (and unregister) node types and namespaces, respectively.
+				The "unlock_any"" permission grants the user the ability to unlock any locked node or branch (as opposed to users without that permission 
+				who can only unlock nodes or branches that they have locked themselves or for which they hold the lock token).
+				And the "create_workspace" and "delete_workspace" permissions grants the user the ability to create workspaces and delete workspaces, respectively,
+				using the corresponding methods on &Workspace;.
 				Permissions to perform these actions are aggregated in roles that can be assigned to users. 
 			</para>
 			<para>
@@ -299,12 +302,24 @@ final &LoginContext; loginContext = ...;
 					<entry></entry>
 					<entry>Allows</entry>
 				</row>
+				<row>
+					<entry>create_workspace</entry>
+					<entry></entry>
+					<entry></entry>
+					<entry>Allows</entry>
+				</row>
+				<row>
+					<entry>delete_workspace</entry>
+					<entry></entry>
+					<entry></entry>
+					<entry>Allows</entry>
+				</row>
 			</tbody>
 		</tgroup>
 	</table>
 				  
 				<note>
-					<para> In this release, ModeShape does not check that the <code>actions</code> parameter passed into 
+					<para> In this release, ModeShape does <emphasis>not</emphasis> check that the <code>actions</code> parameter passed into 
 						<code>Session.checkPermission(...)</code> contains only valid actions. This check may be added in a future release.
 					</para>
 				</note> 
@@ -342,8 +357,10 @@ final &LoginContext; loginContext = ...;
 		</tgroup>
 	</table>			
 			<para>
-				It is also possible to grant more than one role to the same user.  For example, the user jsmith could be granted the roles readonly.production, readwrite.production.jsmith,
-				and readwrite.staging to allow read-only access to any workspace on a production repository, read/write access to a personal workspace on the same production repository,
+				It is also possible to grant more than one role to the same user.  For example, the user "jsmith" could be granted the roles 
+				"<code>readonly.production</code>", "<code>readwrite.production.jsmith</code>",
+				and "<code>readwrite.staging</code>" to allow read-only access to any workspace on a production repository, 
+				read/write access to a personal workspace on the same production repository,
 				and read/write access to any workspace in a staging repository.    
 			</para>
 			<para>

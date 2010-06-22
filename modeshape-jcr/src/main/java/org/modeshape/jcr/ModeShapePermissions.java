@@ -24,6 +24,7 @@
 package org.modeshape.jcr;
 
 import javax.jcr.Session;
+import javax.jcr.Workspace;
 
 /**
  * The set of constants that can be used for action literals with the {@link Session#checkPermission(String, String)} method.
@@ -86,5 +87,17 @@ public interface ModeShapePermissions {
      * @see Session#checkPermission(String, String)
      */
     public static final String READ = "read";
+
+    /**
+     * The {@link #CREATE_WORKSPACE create_workspace} permission allows the user the ability to
+     * {@link Workspace#createWorkspace(String) create new workspaces}.
+     */
+    public static final String CREATE_WORKSPACE = "create_workspace";
+
+    /**
+     * The {@link #DELETE_WORKSPACE delete_workspace} permission allows the user the ability to
+     * {@link Workspace#deleteWorkspace(String) delete workspaces}.
+     */
+    public static final String DELETE_WORKSPACE = "delete_workspace";
 
 }

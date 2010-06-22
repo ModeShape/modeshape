@@ -749,25 +749,91 @@ class JcrWorkspace implements Workspace {
         versionManager().restore(versions, removeExisting);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The caller must have {@link ModeShapePermissions#CREATE_WORKSPACE permission to create workspaces}, and must have
+     * {@link ModeShapePermissions#READ read permission} on the source workspace.
+     * </p>
+     * 
+     * @see javax.jcr.Workspace#createWorkspace(java.lang.String, java.lang.String)
+     */
     @Override
     public void createWorkspace( String name,
                                  String srcWorkspace )
         throws AccessDeniedException, UnsupportedRepositoryOperationException, NoSuchWorkspaceException, RepositoryException {
-        throw new UnsupportedRepositoryOperationException();
+        CheckArg.isNotNull(name, "name");
+        CheckArg.isNotNull(srcWorkspace, "srcWorkspace");
+        session.checkLive();
+        try {
+            session.checkPermission(srcWorkspace, null, ModeShapePermissions.READ);
+            session.checkPermission(name, null, ModeShapePermissions.CREATE_WORKSPACE);
+            repository.createWorkspace(name, srcWorkspace);
+        } catch (AccessControlException e) {
+            throw new AccessDeniedException(e);
+        } catch (InvalidWorkspaceException e) {
+            throw new NoSuchWorkspaceException(e);
+        } catch (RepositorySourceException e) {
+            throw new RepositoryException(e);
+        }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The caller must have {@link ModeShapePermissions#CREATE_WORKSPACE permission to create workspaces}.
+     * </p>
+     * 
+     * @see javax.jcr.Workspace#createWorkspace(java.lang.String)
+     */
     @Override
     public void createWorkspace( String name )
         throws AccessDeniedException, UnsupportedRepositoryOperationException, RepositoryException {
-        throw new UnsupportedRepositoryOperationException();
+        CheckArg.isNotNull(name, "name");
+        session.checkLive();
+        try {
+            session.checkPermission(name, null, ModeShapePermissions.CREATE_WORKSPACE);
+            repository.createWorkspace(name, null);
+        } catch (AccessControlException e) {
+            throw new AccessDeniedException(e);
+        } catch (InvalidWorkspaceException e) {
+            throw new RepositoryException(e);
+        } catch (RepositorySourceException e) {
+            throw new RepositoryException(e);
+        }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * It is not possible to delete the current workspace. Also, the caller must have
+     * {@link ModeShapePermissions#DELETE_WORKSPACE permission to delete workspaces}.
+     * </p>
+     * 
+     * @see javax.jcr.Workspace#deleteWorkspace(java.lang.String)
+     */
     @Override
     public void deleteWorkspace( String name )
         throws AccessDeniedException, UnsupportedRepositoryOperationException, NoSuchWorkspaceException, RepositoryException {
-        throw new UnsupportedRepositoryOperationException();
+        CheckArg.isNotNull(name, "name");
+        session.checkLive();
+        try {
+            session.checkPermission(name, null, ModeShapePermissions.DELETE_WORKSPACE);
+            repository.destroyWorkspace(name, this);
+        } catch (AccessControlException e) {
+            throw new AccessDeniedException(e);
+        } catch (InvalidWorkspaceException e) {
+            throw new RepositoryException(e);
+        } catch (RepositorySourceException e) {
+            throw new RepositoryException(e);
+        }
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Workspace#getVersionManager()
+     */
     @Override
     public VersionManager getVersionManager() {
         return versionManager;

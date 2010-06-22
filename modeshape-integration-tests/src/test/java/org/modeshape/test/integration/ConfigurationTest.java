@@ -27,6 +27,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.File;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
@@ -36,6 +37,7 @@ import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.collection.Collections;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 
@@ -103,6 +105,17 @@ public class ConfigurationTest {
         Repository repository = engine.getRepository("magnolia");
         assertThat(repository, is(notNullValue()));
 
+        // Get the predefined workspaces on the 'magnolia' repository source ...
+        Set<String> magnoliaWorkspaces = engine.getGraph("magnolia").getWorkspaces();
+        Set<String> diskWorkspaces = engine.getGraph("disk").getWorkspaces();
+        Set<String> dataWorkspaces = engine.getGraph("data").getWorkspaces();
+
+        assertThat(magnoliaWorkspaces, is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles",
+            "usergroups", "mgnlSystem", "mgnlVersion", "downloads"})));
+        assertThat(dataWorkspaces, is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles",
+            "usergroups", "mgnlSystem", "mgnlVersion", "modeSystem"})));
+        assertThat(diskWorkspaces, is(Collections.unmodifiableSet(new String[] {"files"})));
+
         // Create a session, authenticating using one of the usernames defined by our JAAS policy file(s) ...
         Session session = null;
         Credentials credentials = new SimpleCredentials("superuser", "superuser".toCharArray());
@@ -112,6 +125,11 @@ public class ConfigurationTest {
             try {
                 session = repository.login(credentials, workspaceName);
                 session.getRootNode().addNode("testNode", "nt:folder");
+
+                // Check that the workspaces are all available ...
+                Set<String> jcrWorkspaces = Collections.unmodifiableSet(session.getWorkspace().getAccessibleWorkspaceNames());
+                assertThat(jcrWorkspaces, is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles",
+                    "usergroups", "mgnlSystem", "mgnlVersion", "downloads"})));
             } finally {
                 if (session != null) session.logout();
             }
@@ -148,6 +166,17 @@ public class ConfigurationTest {
         Repository repository = engine.getRepository("data");
         assertThat(repository, is(notNullValue()));
 
+        // Get the predefined workspaces on the 'magnolia' repository source ...
+        Set<String> magnoliaWorkspaces = engine.getGraph("magnolia").getWorkspaces();
+        Set<String> diskWorkspaces = engine.getGraph("disk").getWorkspaces();
+        Set<String> dataWorkspaces = engine.getGraph("data").getWorkspaces();
+
+        assertThat(magnoliaWorkspaces, is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles",
+            "usergroups", "mgnlSystem", "mgnlVersion", "downloads"})));
+        assertThat(dataWorkspaces, is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles",
+            "usergroups", "mgnlSystem", "mgnlVersion", "modeSystem"})));
+        assertThat(diskWorkspaces, is(Collections.unmodifiableSet(new String[] {"files"})));
+
         // Create a session, authenticating using one of the usernames defined by our JAAS policy file(s) ...
         Session session = null;
         Credentials credentials = new SimpleCredentials("superuser", "superuser".toCharArray());
@@ -156,11 +185,15 @@ public class ConfigurationTest {
             try {
                 session = repository.login(credentials, workspaceName);
                 session.getRootNode().addNode("testNode", "nt:folder");
+
+                // Check that the workspaces are all available ...
+                Set<String> jcrWorkspaces = Collections.unmodifiableSet(session.getWorkspace().getAccessibleWorkspaceNames());
+                assertThat(jcrWorkspaces, is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles",
+                    "usergroups", "mgnlSystem", "mgnlVersion"})));
             } finally {
                 if (session != null) session.logout();
             }
         }
-
     }
 
 }

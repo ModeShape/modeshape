@@ -87,6 +87,18 @@ import javax.security.auth.Subject;
  * <td></td>
  * <td>Allows</td>
  * </tr>
+ * <tr>
+ * <td>create_workspace</td>
+ * <td></td>
+ * <td></td>
+ * <td>Allows</td>
+ * </tr>
+ * <tr>
+ * <td>delete_workspace</td>
+ * <td></td>
+ * <td></td>
+ * <td>Allows</td>
+ * </tr>
  * </table>
  * </p>
  */

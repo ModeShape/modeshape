@@ -91,6 +91,7 @@ import org.modeshape.graph.request.CloneWorkspaceRequest;
 import org.modeshape.graph.request.CompositeRequest;
 import org.modeshape.graph.request.CreateNodeRequest;
 import org.modeshape.graph.request.CreateWorkspaceRequest;
+import org.modeshape.graph.request.DestroyWorkspaceRequest;
 import org.modeshape.graph.request.FullTextSearchRequest;
 import org.modeshape.graph.request.InvalidRequestException;
 import org.modeshape.graph.request.InvalidWorkspaceException;
@@ -425,6 +426,32 @@ public class Graph {
                         return setWorkspace(request.getActualWorkspaceName(), request.getActualLocationOfRoot());
                     }
                 };
+            }
+        };
+    }
+
+    /**
+     * Destroy an existing workspace in the source used by this graph. It is not possible to destroy the workspace that this graph
+     * is {@link #getCurrentWorkspace() currently using}.
+     * 
+     * @return the interface used to complete the request to create a new workspace; never null
+     */
+    public DestroyWorkspace destroyWorkspace() {
+        return new DestroyWorkspace() {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.Graph.DestroyWorkspace#named(java.lang.String)
+             */
+            public boolean named( String workspaceName ) {
+                CheckArg.isNotNull(workspaceName, "workspaceName");
+                if (getCurrentWorkspaceName().equals(workspaceName)) {
+                    String msg = GraphI18n.currentWorkspaceCannotBeDeleted.text(workspaceName, getSourceName());
+                    throw new InvalidWorkspaceException(msg);
+                }
+                DestroyWorkspaceRequest request = requests.destroyWorkspace(workspaceName);
+                if (request.hasError()) return false;
+                return true;
             }
         };
     }
@@ -4746,6 +4773,21 @@ public class Graph {
          * @throws InvalidWorkspaceException if there is no such workspace with the supplied name
          */
         NameWorkspace clonedFrom( String originalWorkspaceName );
+    }
+
+    /**
+     * The interface used to destroy a workspace.
+     */
+    public interface DestroyWorkspace {
+        /**
+         * Specify the name of the new workspace that is to be destroyed.
+         * 
+         * @param workspaceName the name of the existing workspace that will be cloned to create the new workspace;
+         * @return true if the workspace was destroyed, or false otherwise
+         * @throws IllegalArgumentException if the name of the workspace is null
+         * @throws InvalidWorkspaceException if there is no existing workspace with the supplied name
+         */
+        boolean named( String workspaceName );
     }
 
     /**

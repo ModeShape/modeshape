@@ -52,6 +52,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.query.Query;
 import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
@@ -66,11 +67,13 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.JaasSecurityContext;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.SecurityContext;
 import org.modeshape.graph.Subgraph;
+import org.modeshape.graph.Workspace;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositoryContext;
@@ -448,9 +451,6 @@ public class JcrRepository implements Repository {
         CheckArg.isNotNull(repositorySourceName, "repositorySourceName");
         CheckArg.isNotNull(repositoryObservable, "repositoryObservable");
 
-        // Initialize required JCR descriptors.
-        this.descriptors = initializeDescriptors(executionContext.getValueFactories(), descriptors);
-
         // Set up the options ...
         if (options == null) {
             this.options = DEFAULT_OPTIONS;
@@ -585,10 +585,33 @@ public class JcrRepository implements Repository {
             this.federatedSource = new FederatedRepositorySource();
             this.federatedSource.setName("JCR " + repositorySourceName);
             this.federatedSource.initialize(new FederatedRepositoryContext(this.connectionFactory));
+
+            // Set up the workspaces corresponding to all those available in the source (except the system)
+            Graph graph = Graph.create(sourceName, connectionFactory, executionContext);
+            String defaultWorkspaceName = graph.getCurrentWorkspaceName();
+            for (String workspaceName : graph.getWorkspaces()) {
+                boolean isDefault = workspaceName.equals(defaultWorkspaceName);
+                addWorkspace(workspaceName, isDefault);
+            }
         } else {
             this.federatedSource = null;
             this.systemSourceProjection = null;
         }
+
+        if (descriptors == null) descriptors = new HashMap<String, String>();
+        // Determine if it's possible to manage workspaces with the underlying source ...
+        if (repositorySourceCapabilities != null && repositorySourceCapabilities.supportsCreatingWorkspaces()) {
+            // Don't overwrite (so they workspace management can be disabled) ...
+            if (!descriptors.containsKey(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED)) {
+                descriptors.put(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED, Boolean.TRUE.toString());
+            }
+        } else {
+            // Not possible, so overwrite any value that might have been added ...
+            descriptors.put(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED, Boolean.FALSE.toString());
+        }
+
+        // Initialize required JCR descriptors.
+        this.descriptors = initializeDescriptors(executionContext.getValueFactories(), descriptors);
 
         this.lockManagers = new ConcurrentHashMap<String, WorkspaceLockManager>();
         this.locksPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, ModeShapeLexicon.LOCKS);
@@ -649,6 +672,105 @@ public class JcrRepository implements Repository {
         }
 
         this.anonymousUserContext = anonymousUserContext;
+    }
+
+    protected void addWorkspace( String workspaceName,
+                                 boolean isDefault ) {
+        synchronized (this.federatedSource) {
+            if (this.federatedSource == null) return;
+            assert this.systemSourceProjection != null;
+            if (!this.federatedSource.hasWorkspace(workspaceName)) {
+                if (workspaceName.equals(systemWorkspaceName)) return;
+                // Add the workspace to the federated source ...
+                ProjectionParser projectionParser = ProjectionParser.getInstance();
+                Projection.Rule[] mirrorRules = projectionParser.rulesFromString(this.executionContext, "/ => /");
+                List<Projection> projections = new ArrayList<Projection>(2);
+                projections.add(new Projection(sourceName, workspaceName, false, mirrorRules));
+                projections.add(this.systemSourceProjection);
+                this.federatedSource.addWorkspace(workspaceName, projections, isDefault);
+            }
+        }
+    }
+
+    /**
+     * Create a new workspace with the supplied name.
+     * 
+     * @param workspaceName the name of the workspace to be destroyed; may not be null
+     * @param clonedFromWorkspaceNamed the name of the workspace that is to be cloned, or null if the new workspace is to be empty
+     * @throws InvalidWorkspaceException if the workspace cannot be created because one already exists
+     * @throws UnsupportedRepositoryOperationException if this repository does not support workspace management
+     */
+    protected void createWorkspace( String workspaceName,
+                                    String clonedFromWorkspaceNamed )
+        throws InvalidWorkspaceException, UnsupportedRepositoryOperationException {
+        assert workspaceName != null;
+        if (!Boolean.parseBoolean(getDescriptor(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED))) {
+            throw new UnsupportedRepositoryOperationException();
+        }
+        if (workspaceName.equals(systemWorkspaceName)) {
+            // Cannot create a workspace that has the same name as the system workspace ...
+            String msg = GraphI18n.workspaceAlreadyExistsInRepository.text(workspaceName, systemSourceName);
+            throw new InvalidWorkspaceException(msg);
+        }
+        // Create a graph to the underlying source ...
+        Graph graph = Graph.create(sourceName, connectionFactory, executionContext);
+        // Create the workspace (which will fail if workspaces cannot be created) ...
+        Workspace graphWorkspace = null;
+        if (clonedFromWorkspaceNamed != null) {
+            graphWorkspace = graph.createWorkspace().clonedFrom(clonedFromWorkspaceNamed).named(workspaceName);
+        } else {
+            graphWorkspace = graph.createWorkspace().named(workspaceName);
+        }
+        String actualName = graphWorkspace.getName();
+        addWorkspace(actualName, false);
+    }
+
+    /**
+     * Destroy the workspace with the supplied name.
+     * 
+     * @param workspaceName the name of the workspace to be destroyed; may not be null
+     * @param currentWorkspace the workspace performing the operation; may not be null
+     * @throws InvalidWorkspaceException if the workspace cannot be destroyed
+     * @throws UnsupportedRepositoryOperationException if this repository does not support workspace management
+     * @throws NoSuchWorkspaceException if the workspace does not exist
+     * @throws RepositorySourceException if there is an error destroying this workspace
+     */
+    protected void destroyWorkspace( String workspaceName,
+                                     JcrWorkspace currentWorkspace )
+        throws InvalidWorkspaceException, UnsupportedRepositoryOperationException, NoSuchWorkspaceException,
+        RepositorySourceException {
+        assert workspaceName != null;
+        assert currentWorkspace != null;
+        if (!Boolean.parseBoolean(getDescriptor(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED))) {
+            throw new UnsupportedRepositoryOperationException();
+        }
+        if (workspaceName.equals(systemWorkspaceName)) {
+            // Cannot create a workspace that has the same name as the system workspace ...
+            String msg = GraphI18n.workspaceAlreadyExistsInRepository.text(workspaceName, sourceName);
+            throw new InvalidWorkspaceException(msg);
+        }
+        if (currentWorkspace.getName().equals(workspaceName)) {
+            String msg = GraphI18n.currentWorkspaceCannotBeDeleted.text(workspaceName, sourceName);
+            throw new InvalidWorkspaceException(msg);
+        }
+        // Make sure the workspace exists ...
+        Graph graph = Graph.create(sourceName, connectionFactory, executionContext);
+        graph.useWorkspace(currentWorkspace.getName());
+        if (!graph.getWorkspaces().contains(workspaceName)) {
+            // Cannot create a workspace that has the same name as the system workspace ...
+            String msg = GraphI18n.workspaceDoesNotExistInRepository.text(workspaceName, sourceName);
+            throw new NoSuchWorkspaceException(msg);
+        }
+
+        // Remove the federated workspace ...
+        if (federatedSource != null) {
+            synchronized (federatedSource) {
+                federatedSource.removeWorkspace(workspaceName);
+            }
+        }
+
+        // And now destroy the workspace ...
+        graph.destroyWorkspace().named(workspaceName);
     }
 
     protected void initializeSystemContent( Graph systemGraph ) {
@@ -1006,19 +1128,7 @@ public class JcrRepository implements Repository {
         }
 
         if (WORKSPACES_SHARE_SYSTEM_BRANCH) {
-            assert this.federatedSource != null;
-            assert this.systemSourceProjection != null;
-            synchronized (this.federatedSource) {
-                if (!this.federatedSource.hasWorkspace(workspaceName)) {
-                    // Add the workspace to the federated source ...
-                    ProjectionParser projectionParser = ProjectionParser.getInstance();
-                    Projection.Rule[] mirrorRules = projectionParser.rulesFromString(this.executionContext, "/ => /");
-                    List<Projection> projections = new ArrayList<Projection>(2);
-                    projections.add(new Projection(sourceName, workspaceName, false, mirrorRules));
-                    projections.add(this.systemSourceProjection);
-                    this.federatedSource.addWorkspace(workspaceName, projections, isDefault);
-                }
-            }
+            addWorkspace(workspaceName, isDefault);
         } else {
             // We're not sharing a '/jcr:system' branch, so we need to make sure there is one in the source.
             // Note that this doesn't always work with some connectors (e.g., the FileSystem or SVN connectors)

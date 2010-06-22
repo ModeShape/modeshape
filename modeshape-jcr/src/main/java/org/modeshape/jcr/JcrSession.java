@@ -477,7 +477,9 @@ class JcrSession implements Session {
                                  || hasRole(ModeShapeRoles.READWRITE, workspaceName)
                                  || hasRole(ModeShapeRoles.ADMIN, workspaceName);
             } else if (ModeShapePermissions.REGISTER_NAMESPACE.equals(action)
-                       || ModeShapePermissions.REGISTER_TYPE.equals(action) || ModeShapePermissions.UNLOCK_ANY.equals(action)) {
+                       || ModeShapePermissions.REGISTER_TYPE.equals(action) || ModeShapePermissions.UNLOCK_ANY.equals(action)
+                       || ModeShapePermissions.CREATE_WORKSPACE.equals(action)
+                       || ModeShapePermissions.DELETE_WORKSPACE.equals(action)) {
                 hasPermission &= hasRole(ModeShapeRoles.ADMIN, workspaceName);
             } else {
                 hasPermission &= hasRole(ModeShapeRoles.ADMIN, workspaceName) || hasRole(ModeShapeRoles.READWRITE, workspaceName);
