@@ -2705,10 +2705,10 @@ class SessionCache {
                     if (property.getPayload().getPropertyType() != PropertyType.BINARY) continue;
                     binaryPropertyNames.add(property.getName());
                 }
+                StringBuilder sb = new StringBuilder();
                 if (!binaryPropertyNames.isEmpty()) {
                     Collections.sort(binaryPropertyNames);
                     BinaryFactory binaryFactory = context().getValueFactories().getBinaryFactory();
-                    StringBuilder sb = new StringBuilder();
                     for (Name name : binaryPropertyNames) {
                         org.modeshape.graph.session.GraphSession.PropertyInfo<JcrPropertyPayload> property = node.getProperty(name);
                         for (Object value : property.getProperty()) {
@@ -2718,17 +2718,9 @@ class SessionCache {
                             sb.append(hash);
                         }
                     }
-                    if (sb.length() != 0) {
-                        String etagValue = sb.toString();
-                        setPropertyIfAbsent(node,
-                                            primaryTypeName,
-                                            mixinTypeNames,
-                                            false,
-                                            JcrLexicon.ETAG,
-                                            PropertyType.STRING,
-                                            etagValue);
-                    }
                 }
+                String etagValue = sb.toString(); // may be empty
+                setPropertyIfAbsent(node, primaryTypeName, mixinTypeNames, false, JcrLexicon.ETAG, PropertyType.STRING, etagValue);
             }
 
             // See if the node is an instance of 'mix:created'.
