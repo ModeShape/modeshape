@@ -114,7 +114,7 @@ public class ConfigurationTest {
             "usergroups", "mgnlSystem", "mgnlVersion", "downloads"})));
         assertThat(dataWorkspaces, is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles",
             "usergroups", "mgnlSystem", "mgnlVersion", "modeSystem"})));
-        assertThat(diskWorkspaces, is(Collections.unmodifiableSet(new String[] {"files"})));
+        assertThat(diskWorkspaces, is(Collections.unmodifiableSet(new String[] {"workspace1"})));
 
         // Create a session, authenticating using one of the usernames defined by our JAAS policy file(s) ...
         Session session = null;
@@ -175,7 +175,7 @@ public class ConfigurationTest {
             "usergroups", "mgnlSystem", "mgnlVersion", "downloads"})));
         assertThat(dataWorkspaces, is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles",
             "usergroups", "mgnlSystem", "mgnlVersion", "modeSystem"})));
-        assertThat(diskWorkspaces, is(Collections.unmodifiableSet(new String[] {"files"})));
+        assertThat(diskWorkspaces, is(Collections.unmodifiableSet(new String[] {"workspace1"})));
 
         // Create a session, authenticating using one of the usernames defined by our JAAS policy file(s) ...
         Session session = null;

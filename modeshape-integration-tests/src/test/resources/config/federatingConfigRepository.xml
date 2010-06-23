@@ -21,8 +21,8 @@
         <mode:source jcr:name="disk" 
             mode:classname="org.modeshape.connector.filesystem.FileSystemSource"
             mode:description="Some folder on local disk"
-            mode:workspaceRootPath="/tmp/filesystem"
-            mode:defaultWorkspaceName="files"
+            mode:workspaceRootPath="src/test/resources/filesystem"
+            mode:defaultWorkspaceName="workspace1"
             mode:creatingWorkspacesAllowed="false"
             mode:updatesAllowed="true" 
             />
@@ -97,7 +97,7 @@
                   <mode:projections>
                     <mode:projection jcr:name="Downloads projection" 
                         mode:source="disk" 
-                        mode:workspaceName="files">
+                        mode:workspaceName="workspace1">
                         <mode:projectionRules>/ => /</mode:projectionRules>
                     </mode:projection>
                   </mode:projections>  
