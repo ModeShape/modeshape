@@ -2720,7 +2720,7 @@ class SessionCache {
                     }
                 }
                 String etagValue = sb.toString(); // may be empty
-                setPropertyIfAbsent(node, primaryTypeName, mixinTypeNames, false, JcrLexicon.ETAG, PropertyType.STRING, etagValue);
+                setProperty(node, primaryTypeName, mixinTypeNames, false, JcrLexicon.ETAG, PropertyType.STRING, etagValue);
             }
 
             // See if the node is an instance of 'mix:created'.
@@ -2765,6 +2765,16 @@ class SessionCache {
                                             int propertyType,
                                             Object value ) {
             if (node.getProperty(propertyName) != null) return;
+            setProperty(node, primaryTypeName, mixinTypeNames, skipProtected, propertyName, propertyType, value);
+        }
+
+        protected void setProperty( org.modeshape.graph.session.GraphSession.Node<JcrNodePayload, JcrPropertyPayload> node,
+                                    Name primaryTypeName,
+                                    List<Name> mixinTypeNames,
+                                    boolean skipProtected,
+                                    Name propertyName,
+                                    int propertyType,
+                                    Object value ) {
             Property graphProp = propertyFactory.create(propertyName, value);
             JcrPropertyDefinition propDefn = findBestPropertyDefintion(primaryTypeName,
                                                                        mixinTypeNames,

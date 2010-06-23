@@ -656,9 +656,9 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         session.save();
 
         /*
-         * Create /checkinTest/copyNode/AbortNode with copyNode being versionable.  This should be able 
-         * to be checked in, as the ABORT status of abortNode is ignored when copyNode is checked in.
-         */
+        * Create /checkinTest/copyNode/AbortNode with copyNode being versionable. This should be able
+        * to be checked in, as the ABORT status of abortNode is ignored when copyNode is checked in.
+        */
 
         Node copyNode = node.addNode("copyNode", "modetest:versionTest");
         copyNode.addMixin("mix:versionable");
@@ -668,10 +668,10 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         abortNode.setProperty("copyProp", "copyPropValue");
 
         /*
-         * Create /checkinTest/copyNode/versionNode with versionNode being versionable as well.  This should
-         * create a copy of versionNode in the version history, due to copyNode (the root of the checkin) having
-         * COPY semantics for the OnParentVersionAction.
-         */
+        * Create /checkinTest/copyNode/versionNode with versionNode being versionable as well. This should
+        * create a copy of versionNode in the version history, due to copyNode (the root of the checkin) having
+        * COPY semantics for the OnParentVersionAction.
+        */
 
         Node versionNode = copyNode.addNode("versionNode", "modetest:versionTest");
         versionNode.addMixin("mix:versionable");
@@ -698,9 +698,9 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         session.save();
 
         /*
-         * Create /checkinTest/versionNode/abortNode with versionNode being versionable.  This should not fail
-         * when versionNode is checked in, as the OnParentVersionAction semantics come from the checked-in node.
-         */
+        * Create /checkinTest/versionNode/abortNode with versionNode being versionable. This should not fail
+        * when versionNode is checked in, as the OnParentVersionAction semantics come from the checked-in node.
+        */
 
         Node versionNode = node.addNode("versionNode", "modetest:versionTest");
         versionNode.addMixin("mix:versionable");
@@ -730,9 +730,9 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         session.save();
 
         /*
-         * Create /checkinTest/versionNode/copyNode with versionNode and copyNode being versionable.  This should
-         * create a child of type nt:childVersionedNode under the frozen node.
-         */
+        * Create /checkinTest/versionNode/copyNode with versionNode and copyNode being versionable. This should
+        * create a child of type nt:childVersionedNode under the frozen node.
+        */
 
         Node versionNode = node.addNode("versionNode", "modetest:versionTest");
         versionNode.addMixin("mix:versionable");
@@ -775,9 +775,9 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         session.save();
 
         /*
-         * Create /checkinTest/copyNode with copyNode being versionable.  This should be able 
-         * to be checked in, as the ABORT status of abortNode is ignored when copyNode is checked in.
-         */
+        * Create /checkinTest/copyNode with copyNode being versionable. This should be able
+        * to be checked in, as the ABORT status of abortNode is ignored when copyNode is checked in.
+        */
 
         Node copyNode = node.addNode("copyNode", "modetest:versionTest");
         copyNode.addMixin("mix:versionable");
@@ -789,8 +789,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         Version version = checkin(copyNode);
 
         /*
-         * Make some changes
-         */
+        * Make some changes
+        */
         checkout(copyNode);
         copyNode.addMixin("mix:lockable");
         copyNode.setProperty("copyProp", "copyPropValueNew");
@@ -912,8 +912,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         JcrNodeTypeManager nodeTypes = (JcrNodeTypeManager)session.getWorkspace().getNodeTypeManager();
 
         /*
-         * Register a one-off node type with a reference property that has a constraint on it
-         */
+        * Register a one-off node type with a reference property that has a constraint on it
+        */
         NodeTypeTemplate ntt = nodeTypes.createNodeTypeTemplate();
         ntt.setName("modetest:constrainedPropType");
 
@@ -926,8 +926,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         nodeTypes.registerNodeType(ntt, false);
 
         /*
-         * Add a node that would satisfy the constraint
-         */
+        * Add a node that would satisfy the constraint
+        */
         Node root = session.getRootNode();
 
         Node parentNode = root.addNode("constrainedNodeTest", "nt:unstructured");
@@ -935,8 +935,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         targetNode.addMixin("mix:referenceable");
 
         /*
-         * Now add a node with the one-off type.
-         */
+        * Now add a node with the one-off type.
+        */
         Node referringNode = parentNode.addNode("referer", "modetest:constrainedPropType");
         referringNode.setProperty("modetest:constrainedProp", targetNode);
 
@@ -948,8 +948,8 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         session = getHelper().getSuperuserSession();
 
         /*
-         * Add a node that would satisfy the constraint
-         */
+        * Add a node that would satisfy the constraint
+        */
         Node root = session.getRootNode();
 
         Node parentNode = root.addNode("autocreatedChildRoot", "nt:unstructured");
@@ -1141,5 +1141,68 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         Node frozenNode = version.getFrozenNode();
 
         assertEquals(true, frozenNode.getProperty("foo").getDefinition().isMultiple());
+    }
+
+    @FixFor( "MODE-799" )
+    public void testNodeWithoutETagMixinShouldNotHaveETagProperty() throws Exception {
+        session = getHelper().getReadWriteSession();
+
+        Node root = session.getRootNode();
+        root.addNode("someNewNode");
+        session.save();
+
+        assertThat(root.getNode("someNewNode").hasProperty("jcr:etag"), is(false));
+    }
+
+    @FixFor( "MODE-799" )
+    public void testAutomaticCreationUponSaveOfETagPropertyWhenETagMixinIsAddedToNodeWithoutBinaryProperties() throws Exception {
+        session = getHelper().getReadWriteSession();
+
+        Node root = session.getRootNode();
+        Node newNode = root.addNode("someNewNode4");
+        newNode.addMixin("mix:etag");
+        session.save();
+
+        String etagValue = root.getNode("someNewNode4").getProperty("jcr:etag").getString();
+        assertThat(etagValue, is(""));
+    }
+
+    @FixFor( "MODE-799" )
+    public void testAutomaticCreationUponSaveOfETagPropertyWhenETagMixinIsAddedToNodeWithExistingBinaryProperties()
+        throws Exception {
+        session = getHelper().getReadWriteSession();
+
+        Node root = session.getRootNode();
+        Node newNode = root.addNode("someNewNode2");
+        Binary binary = session.getValueFactory().createBinary(new ByteArrayInputStream("This is the value".getBytes()));
+        newNode.setProperty("binaryProperty", binary);
+        session.save();
+
+        root.getNode("someNewNode2").addMixin("mix:etag");
+        session.save();
+
+        String etagExpected = new String(((JcrBinary)binary).binary().getHash());
+
+        String etagValue = root.getNode("someNewNode2").getProperty("jcr:etag").getString();
+        assertThat(etagValue, is(etagExpected));
+    }
+
+    @FixFor( "MODE-799" )
+    public void testAutomaticCreationUponSaveOfETagPropertyWhenNodeWithETagMixinHasNewBinaryProperty() throws Exception {
+        session = getHelper().getReadWriteSession();
+
+        Node root = session.getRootNode();
+        Node newNode = root.addNode("someNewNode3");
+        newNode.addMixin("mix:etag");
+        session.save();
+
+        Binary binary = session.getValueFactory().createBinary(new ByteArrayInputStream("This is the value".getBytes()));
+        root.getNode("someNewNode3").setProperty("binaryProperty", binary);
+        session.save();
+
+        String etagExpected = new String(((JcrBinary)binary).binary().getHash());
+
+        String etagValue = root.getNode("someNewNode3").getProperty("jcr:etag").getString();
+        assertThat(etagValue, is(etagExpected));
     }
 }
