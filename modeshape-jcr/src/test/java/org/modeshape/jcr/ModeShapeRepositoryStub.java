@@ -169,15 +169,27 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
         return super.getProperty(name);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.apache.jackrabbit.test.RepositoryStub#getKnownPrincipal(javax.jcr.Session)
+     */
+    @SuppressWarnings( "unused" )
     @Override
     public Principal getKnownPrincipal( Session session ) throws RepositoryException {
-        // TODO Auto-generated method stub
+        // TODO: initial implementation
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.apache.jackrabbit.test.RepositoryStub#getUnknownPrincipal(javax.jcr.Session)
+     */
+    @SuppressWarnings( "unused" )
     @Override
     public Principal getUnknownPrincipal( Session session ) throws RepositoryException, NotExecutableException {
-        // TODO Auto-generated method stub
+        // TODO: initial implementation
         return null;
     }
 

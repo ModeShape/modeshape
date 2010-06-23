@@ -867,7 +867,10 @@ public class JcrRepository implements Repository {
      * @return the name of the source that should be observed; never null
      */
     String getObservableSourceName() {
-        return WORKSPACES_SHARE_SYSTEM_BRANCH ? federatedSource.getName() : sourceName;
+        if (!WORKSPACES_SHARE_SYSTEM_BRANCH) {
+            return sourceName;
+        }
+        return federatedSource.getName();
     }
 
     /**

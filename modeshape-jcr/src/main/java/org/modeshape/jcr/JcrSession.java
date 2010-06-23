@@ -1375,16 +1375,24 @@ class JcrSession implements Session {
         return getSnapshot().toString();
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Session#getAccessControlManager()
+     */
     @Override
     public AccessControlManager getAccessControlManager() throws UnsupportedRepositoryOperationException, RepositoryException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedRepositoryOperationException();
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Session#getRetentionManager()
+     */
     @Override
     public RetentionManager getRetentionManager() throws UnsupportedRepositoryOperationException, RepositoryException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedRepositoryOperationException();
     }
 
     @Immutable

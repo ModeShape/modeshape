@@ -147,6 +147,7 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
      * @return the version labels for that version
      * @throws RepositoryException if an error occurs accessing the repository
      */
+    @SuppressWarnings( "deprecation" )
     private Collection<String> versionLabelsFor( Version version ) throws RepositoryException {
         if (!version.getParent().equals(this)) {
             throw new VersionException(JcrI18n.invalidVersion.text(version.getPath(), getPath()));
@@ -206,6 +207,7 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
     /**
      * @{inheritDoc
      */
+    @SuppressWarnings( "deprecation" )
     @Override
     public void removeVersion( String versionName )
         throws ReferentialIntegrityException, AccessDeniedException, UnsupportedRepositoryOperationException, VersionException,
@@ -279,6 +281,7 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
     /**
      * @{inheritDoc
      */
+    @SuppressWarnings( "deprecation" )
     @Override
     public void addVersionLabel( String versionName,
                                  String label,
@@ -338,17 +341,17 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
     public VersionIterator getAllLinearVersions() throws RepositoryException {
         AbstractJcrNode existingNode = session().getNodeByIdentifier(getVersionableIdentifier());
         if (existingNode == null) return getAllVersions();
-        
+
         assert existingNode.isNodeType(JcrMixLexicon.VERSIONABLE);
-        
+
         LinkedList<JcrVersionNode> versions = new LinkedList<JcrVersionNode>();
         JcrVersionNode baseVersion = existingNode.getBaseVersion();
-        
+
         while (baseVersion != null) {
             versions.addFirst(baseVersion);
             baseVersion = baseVersion.getLinearPredecessor();
         }
-        
+
         return new LinearVersionIterator(versions, versions.size());
     }
 
@@ -531,7 +534,7 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
             throw new UnsupportedOperationException();
         }
     }
-    
+
     class FrozenNodeIterator implements NodeIterator {
         private final VersionIterator versions;
 

@@ -82,8 +82,7 @@ public class JcrLockManager implements LockManager {
         return getLock(node);
     }
 
-    Lock getLock( AbstractJcrNode node )
-        throws PathNotFoundException, LockException, AccessDeniedException, RepositoryException {
+    Lock getLock( AbstractJcrNode node ) throws PathNotFoundException, LockException, AccessDeniedException, RepositoryException {
         WorkspaceLockManager.ModeShapeLock lock = lockFor(node);
         if (lock != null) return lock.lockFor(node.cache);
         throw new LockException(JcrI18n.notLocked.text(node.location));
@@ -217,6 +216,7 @@ public class JcrLockManager implements LockManager {
         unlock(node);
     }
 
+    @SuppressWarnings( "unused" )
     void unlock( AbstractJcrNode node )
         throws PathNotFoundException, LockException, AccessDeniedException, InvalidItemStateException, RepositoryException {
         WorkspaceLockManager.ModeShapeLock lock = lockManager.lockFor(session, node.location);
@@ -268,7 +268,7 @@ public class JcrLockManager implements LockManager {
         return null;
     }
 
-    final WorkspaceLockManager.ModeShapeLock lockFor( UUID nodeUuid ) throws RepositoryException {
+    final WorkspaceLockManager.ModeShapeLock lockFor( UUID nodeUuid ) {
         // This can only happen in mocked testing.
         if (session == null || session.workspace() == null) return null;
 

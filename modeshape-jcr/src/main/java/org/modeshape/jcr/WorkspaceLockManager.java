@@ -280,8 +280,9 @@ class WorkspaceLockManager {
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
         try {
-            org.modeshape.graph.Node lockNode = repository.createSystemGraph(context).getNodeAt(pathFactory.create(locksPath,
-                                                                                                                   pathFactory.createSegment(lockToken)));
+            org.modeshape.graph.Node lockNode = repository.createSystemGraph(context)
+                                                          .getNodeAt(pathFactory.create(locksPath,
+                                                                                        pathFactory.createSegment(lockToken)));
 
             return booleanFactory.create(lockNode.getProperty(ModeShapeLexicon.IS_HELD_BY_SESSION).getFirstValue());
         } catch (PathNotFoundException pnfe) {
@@ -309,8 +310,9 @@ class WorkspaceLockManager {
         PropertyFactory propFactory = context.getPropertyFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
-        repository.createSystemGraph(context).set(propFactory.create(ModeShapeLexicon.IS_HELD_BY_SESSION, value)).on(pathFactory.create(locksPath,
-                                                                                                                                        pathFactory.createSegment(lockToken)));
+        repository.createSystemGraph(context)
+                  .set(propFactory.create(ModeShapeLexicon.IS_HELD_BY_SESSION, value))
+                  .on(pathFactory.create(locksPath, pathFactory.createSegment(lockToken)));
     }
 
     /**
@@ -509,7 +511,7 @@ class WorkspaceLockManager {
                 }
 
                 @Override
-                public long getSecondsRemaining() throws RepositoryException {
+                public long getSecondsRemaining() {
                     return isLockOwningSession() ? Integer.MAX_VALUE : Integer.MIN_VALUE;
                 }
 

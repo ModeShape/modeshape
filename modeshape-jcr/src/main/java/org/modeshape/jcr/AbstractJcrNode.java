@@ -2212,34 +2212,61 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
         return HashCode.compute(cache, location);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#followLifecycleTransition(java.lang.String)
+     */
+    @SuppressWarnings( "unused" )
     @Override
     public void followLifecycleTransition( String transition )
         throws UnsupportedRepositoryOperationException, InvalidLifecycleTransitionException, RepositoryException {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedRepositoryOperationException();
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#getAllowedLifecycleTransistions()
+     */
     @Override
     public String[] getAllowedLifecycleTransistions() throws UnsupportedRepositoryOperationException, RepositoryException {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedRepositoryOperationException();
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#getSharedSet()
+     */
     @Override
-    public NodeIterator getSharedSet() throws RepositoryException {
-        // TODO Auto-generated method stub
-        return null;
+    public NodeIterator getSharedSet() {
+        return new JcrNodeIterator(this);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#removeShare()
+     */
     @Override
     public void removeShare() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
-        // TODO Auto-generated method stub
-
+        // Per section 14.2:
+        // "In cases where the shared set consists of a single node, or when these methods are
+        // called on a non-shareable node, their behavior is identical to Node.remove()."
+        remove();
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.Node#removeSharedSet()
+     */
     @Override
     public void removeSharedSet() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
-        // TODO Auto-generated method stub
-
+        // Per section 14.2:
+        // "In cases where the shared set consists of a single node, or when these methods are
+        // called on a non-shareable node, their behavior is identical to Node.remove()."
+        remove();
     }
 }
