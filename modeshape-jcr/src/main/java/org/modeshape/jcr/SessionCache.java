@@ -60,6 +60,8 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.RepositorySourceException;
+import org.modeshape.graph.property.Binary;
+import org.modeshape.graph.property.BinaryFactory;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
@@ -2644,6 +2646,7 @@ class SessionCache {
             JcrNodeType primaryType = nodeTypes().getNodeType(primaryTypeName);
             boolean isLastModifiedType = primaryType.isNodeType(JcrMixLexicon.LAST_MODIFIED);
             boolean isCreatedType = primaryType.isNodeType(JcrMixLexicon.CREATED);
+            boolean isETag = primaryType.isNodeType(JcrMixLexicon.ETAG);
             for (JcrPropertyDefinition definition : primaryType.getPropertyDefinitions()) {
                 if (definition.isMandatory() && !definition.isProtected() && !satisfiedProperties.contains(definition)) {
                     throw new ValidationException(JcrI18n.noDefinition.text("property",
@@ -2668,6 +2671,7 @@ class SessionCache {
                     JcrNodeType mixinType = nodeTypes().getNodeType(mixinTypeName);
                     isLastModifiedType = isLastModifiedType || mixinType.isNodeType(JcrMixLexicon.LAST_MODIFIED);
                     isCreatedType = isCreatedType || mixinType.isNodeType(JcrMixLexicon.CREATED);
+                    isETag = isETag || mixinType.isNodeType(JcrMixLexicon.ETAG);
                     for (JcrPropertyDefinition definition : mixinType.getPropertyDefinitions()) {
                         if (definition.isMandatory() && !definition.isProtected() && !satisfiedProperties.contains(definition)) {
                             throw new ValidationException(JcrI18n.noDefinition.text("child node",
@@ -2687,6 +2691,43 @@ class SessionCache {
                         }
                     }
 
+                }
+            }
+
+            // Do we need to update the 'jcr:etag' property?
+            if (isETag) {
+                // Per section 3.7.12 of JCR 2, this property should be changed whenever BINARY properties are added, removed, or
+                // changed. So, go through the properties (in sorted-name order so it is repeatable) and create this value
+                // by simply concatenating the SHA-1 hash of each BINARY value ...
+                List<Name> binaryPropertyNames = new ArrayList<Name>();
+                for (org.modeshape.graph.session.GraphSession.PropertyInfo<JcrPropertyPayload> property : node.getProperties()) {
+                    if (property.getProperty().size() == 0) continue;
+                    if (property.getPayload().getPropertyType() != PropertyType.BINARY) continue;
+                    binaryPropertyNames.add(property.getName());
+                }
+                if (!binaryPropertyNames.isEmpty()) {
+                    Collections.sort(binaryPropertyNames);
+                    BinaryFactory binaryFactory = context().getValueFactories().getBinaryFactory();
+                    StringBuilder sb = new StringBuilder();
+                    for (Name name : binaryPropertyNames) {
+                        org.modeshape.graph.session.GraphSession.PropertyInfo<JcrPropertyPayload> property = node.getProperty(name);
+                        for (Object value : property.getProperty()) {
+                            Binary binary = binaryFactory.create(value);
+                            String hash = new String(binary.getHash()); // doesn't matter what charset, as long as its always the
+                            // same
+                            sb.append(hash);
+                        }
+                    }
+                    if (sb.length() != 0) {
+                        String etagValue = sb.toString();
+                        setPropertyIfAbsent(node,
+                                            primaryTypeName,
+                                            mixinTypeNames,
+                                            false,
+                                            JcrLexicon.ETAG,
+                                            PropertyType.STRING,
+                                            etagValue);
+                    }
                 }
             }
 

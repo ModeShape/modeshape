@@ -39,6 +39,7 @@ public class JcrLexicon extends org.modeshape.graph.JcrLexicon {
     public static final Name COPIED_FROM = new BasicName(Namespace.URI, "copiedFrom");
     public static final Name DATA = new BasicName(Namespace.URI, "data");
     public static final Name ENCODING = new BasicName(Namespace.URI, "encoding");
+    public static final Name ETAG = new BasicName(Namespace.URI, "etag");
     public static final Name FROZEN_MIXIN_TYPES = new BasicName(Namespace.URI, "frozenMixinTypes");
     public static final Name FROZEN_NODE = new BasicName(Namespace.URI, "frozenNode");
     public static final Name FROZEN_PRIMARY_TYPE = new BasicName(Namespace.URI, "frozenPrimaryType");

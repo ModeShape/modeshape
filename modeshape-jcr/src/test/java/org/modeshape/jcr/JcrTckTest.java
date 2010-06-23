@@ -119,6 +119,7 @@ import org.apache.jackrabbit.test.api.WorkspaceMoveSameNameSibsTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveTest;
 import org.apache.jackrabbit.test.api.WorkspaceMoveVersionableTest;
 import org.apache.jackrabbit.test.api.WorkspaceReadMethodsTest;
+import org.apache.jackrabbit.test.api.WorkspaceTest;
 import org.apache.jackrabbit.test.api.nodetype.CanAddChildNodeCallWithoutNodeTypeTest;
 import org.apache.jackrabbit.test.api.nodetype.CanRemoveItemTest;
 import org.apache.jackrabbit.test.api.nodetype.CanSetPropertyBinaryTest;
@@ -420,7 +421,7 @@ public class JcrTckTest {
         suite.addTestSuite(HasPermissionTest.class);
 
         // // new Workspace features
-        // suite.addTestSuite(WorkspaceTest.class);
+        suite.addTestSuite(WorkspaceTest.class);
 
         // // shareable nodes
         suite.addTestSuite(ShareableNodeTest.class);

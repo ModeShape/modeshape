@@ -163,6 +163,9 @@
 //                             Pre-defined Mixins
 // ------------------------------------------------------------------------
 
+[mix:etag] mixin
+  - jcr:etag (string) protected autocreated
+
 [mix:lockable] mixin 
   - jcr:lockOwner (string) protected ignore 
   - jcr:lockIsDeep (boolean) protected ignore 

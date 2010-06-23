@@ -24,11 +24,15 @@
 package org.modeshape.jcr;
 
 import net.jcip.annotations.Immutable;
+import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.basic.BasicName;
 
 /**
  * Lexicon of names from the standard JCR "<code>http://www.jcp.org/jcr/mix/1.0</code>" namespace.
  */
 @Immutable
 public class JcrMixLexicon extends org.modeshape.graph.JcrMixLexicon {
+
+    public static final Name ETAG = new BasicName(Namespace.URI, "etag");
 
 }
