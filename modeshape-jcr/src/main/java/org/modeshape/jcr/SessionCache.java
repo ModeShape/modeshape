@@ -60,6 +60,7 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.RepositorySourceException;
+import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
@@ -982,14 +983,6 @@ class SessionCache {
                                                 JcrValue value,
                                                 boolean skipProtected )
             throws AccessDeniedException, ConstraintViolationException, VersionException, RepositoryException {
-            return setProperty(name, value, skipProtected, false);
-        }
-
-        protected AbstractJcrProperty setProperty( Name name,
-                                                   JcrValue value,
-                                                   boolean skipProtected,
-                                                   boolean skipLastUpdated )
-            throws AccessDeniedException, ConstraintViolationException, VersionException, RepositoryException {
             assert name != null;
             assert value != null;
 
@@ -1088,11 +1081,6 @@ class SessionCache {
                 assert jcrProp != null;
                 JcrPropertyPayload propPayload = new JcrPropertyPayload(definition.getId(), propertyType, jcrProp);
                 node.setProperty(dnaProp, definition.isMultiple(), propPayload);
-
-                if (!skipLastUpdated) {
-                    // Update the lastModified properties ...
-                    updateLastModifiedOn(node);
-                }
                 return jcrProp;
             } catch (ValidationException e) {
                 throw new ConstraintViolationException(e.getMessage(), e);
@@ -1150,16 +1138,6 @@ class SessionCache {
                                                 Value[] values,
                                                 int valueType,
                                                 boolean skipProtected )
-            throws AccessDeniedException, ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException,
-            VersionException {
-            return setProperty(name, values, valueType, skipProtected, false);
-        }
-
-        protected AbstractJcrProperty setProperty( Name name,
-                                                   Value[] values,
-                                                   int valueType,
-                                                   boolean skipProtected,
-                                                   boolean skipLastUpdated )
             throws AccessDeniedException, ConstraintViolationException, RepositoryException, javax.jcr.ValueFormatException,
             VersionException {
             assert name != null;
@@ -1313,10 +1291,6 @@ class SessionCache {
                 assert jcrProp != null;
                 JcrPropertyPayload propPayload = new JcrPropertyPayload(definition.getId(), propertyType, jcrProp);
                 node.setProperty(dnaProp, definition.isMultiple(), propPayload);
-                if (!skipLastUpdated) {
-                    // Update the lastModified properties on the node ...
-                    updateLastModifiedOn(node);
-                }
                 return jcrProp;
             } catch (ValidationException e) {
                 throw new ConstraintViolationException(e.getMessage(), e);
@@ -1337,8 +1311,6 @@ class SessionCache {
          */
         public boolean removeProperty( Name name ) throws AccessDeniedException, RepositoryException {
             try {
-                // Update the lastModified properties on the node ...
-                updateLastModifiedOn(node);
                 return node.removeProperty(name) != null;
             } catch (ValidationException e) {
                 throw new ConstraintViolationException(e.getMessage(), e);
@@ -1363,8 +1335,6 @@ class SessionCache {
                                       Path.Segment before ) throws AccessDeniedException, RepositoryException {
             try {
                 node.orderChildBefore(childToBeMoved, before);
-                // Update the lastModified properties on the parent ...
-                updateLastModifiedOn(node);
             } catch (ValidationException e) {
                 throw new ConstraintViolationException(e.getMessage(), e);
             } catch (RepositorySourceException e) {
@@ -1425,9 +1395,6 @@ class SessionCache {
                         newChildEditor.removeProperty(ModeShapeIntLexicon.NODE_DEFINITON);
                     }
                 }
-                // Update the lastModified properties on the old and new parent ...
-                updateLastModifiedOn(existingChild.getParent());
-                updateLastModifiedOn(node);
 
                 return existingChild;
             } catch (ValidationException e) {
@@ -1496,28 +1463,8 @@ class SessionCache {
                                 setProperty(propertyDefinition.getInternalName(),
                                             (JcrValue)propertyDefinition.getDefaultValues()[0]);
                             }
-                        } else {
-                            JcrNodeType definingNodeType = propertyDefinition.declaringNodeType;
-                            Name name = definingNodeType.getInternalName();
-                            if (name.equals(JcrMixLexicon.CREATED)) {
-                                JcrNode jcrNode = (JcrNode)node.getPayload().getJcrNode();
-                                JcrValue now = jcrNode.valueFrom(Calendar.getInstance());
-                                JcrValue by = jcrNode.valueFrom(session().getUserID());
-                                setProperty(JcrLexicon.CREATED, now, false, true);
-                                setProperty(JcrLexicon.CREATED_BY, by, false, true);
-                            } else if (name.equals(JcrMixLexicon.LAST_MODIFIED)) {
-                                JcrNode jcrNode = (JcrNode)node.getPayload().getJcrNode();
-                                JcrValue now = jcrNode.valueFrom(Calendar.getInstance());
-                                JcrValue by = jcrNode.valueFrom(session().getUserID());
-                                setProperty(JcrLexicon.LAST_MODIFIED, now, false, true);
-                                setProperty(JcrLexicon.LAST_MODIFIED_BY, by, false, true);
-                            } else if (name.equals(JcrNtLexicon.HIERARCHY_NODE)) {
-                                JcrNode jcrNode = (JcrNode)node.getPayload().getJcrNode();
-                                JcrValue now = jcrNode.valueFrom(Calendar.getInstance());
-                                setProperty(JcrLexicon.CREATED, now, false, true);
-                            }
-                            // otherwise, we don't care
                         }
+                        // otherwise, we don't care
                     }
                 }
             }
@@ -1655,25 +1602,17 @@ class SessionCache {
                 JcrValue now = jcrNode.valueFrom(Calendar.getInstance());
                 JcrValue by = jcrNode.valueFrom(session().getUserID());
                 boolean isCreatedType = primaryType.isNodeType(JcrMixLexicon.CREATED);
-                boolean isLastModifiedType = primaryType.isNodeType(JcrMixLexicon.LAST_MODIFIED);
                 boolean isHierarchyNode = primaryType.isNodeType(JcrNtLexicon.HIERARCHY_NODE);
-                if (isHierarchyNode || isCreatedType || isLastModifiedType) {
+                if (isHierarchyNode || isCreatedType) {
                     NodeEditor editor = jcrNode.editor();
                     if (isHierarchyNode) {
-                        editor.setProperty(JcrLexicon.CREATED, now, false, true);
+                        editor.setProperty(JcrLexicon.CREATED, now, false);
                     }
                     if (isCreatedType) {
-                        editor.setProperty(JcrLexicon.CREATED, now, false, true);
-                        editor.setProperty(JcrLexicon.CREATED_BY, by, false, true);
-                    }
-                    if (isLastModifiedType) {
-                        editor.setProperty(JcrLexicon.LAST_MODIFIED, now, false, true);
-                        editor.setProperty(JcrLexicon.LAST_MODIFIED_BY, by, false, true);
+                        editor.setProperty(JcrLexicon.CREATED, now, false);
+                        editor.setProperty(JcrLexicon.CREATED_BY, by, false);
                     }
                 }
-
-                // Update the lastModified properties on the parent ...
-                updateLastModifiedOn(node, now, by);
 
                 // The postCreateChild hook impl should populate the payloads
                 jcrNode.editor().autoCreateItemsFor(primaryType);
@@ -1689,45 +1628,6 @@ class SessionCache {
             }
         }
 
-        protected boolean updateLastModifiedOn( Node<JcrNodePayload, JcrPropertyPayload> node ) throws RepositoryException {
-            if (isNodeType(node, JcrMixLexicon.LAST_MODIFIED)) {
-                JcrNode jcrNode = (JcrNode)node.getPayload().getJcrNode();
-                JcrValue now = jcrNode.valueFrom(Calendar.getInstance());
-                JcrValue by = jcrNode.valueFrom(session().getUserID());
-                NodeEditor editor = jcrNode.editor();
-                editor.setProperty(JcrLexicon.LAST_MODIFIED, now, false, true);
-                editor.setProperty(JcrLexicon.LAST_MODIFIED_BY, by, false, true);
-                return true;
-            }
-            return false;
-        }
-
-        protected boolean updateLastModifiedOn( Node<JcrNodePayload, JcrPropertyPayload> node,
-                                                JcrValue now,
-                                                JcrValue by ) throws RepositoryException {
-            if (isNodeType(node, JcrMixLexicon.LAST_MODIFIED)) {
-                JcrNode jcrNode = (JcrNode)node.getPayload().getJcrNode();
-                NodeEditor editor = jcrNode.editor();
-                editor.setProperty(JcrLexicon.LAST_MODIFIED, now, false, true);
-                editor.setProperty(JcrLexicon.LAST_MODIFIED_BY, by, false, true);
-                return true;
-            }
-            return false;
-        }
-
-        protected boolean updateCreatedOn( Node<JcrNodePayload, JcrPropertyPayload> node,
-                                           JcrValue now,
-                                           JcrValue by ) throws RepositoryException {
-            if (isNodeType(node, JcrMixLexicon.CREATED)) {
-                JcrNode parent = (JcrNode)node.getPayload().getJcrNode();
-                NodeEditor editor = parent.editor();
-                editor.setProperty(JcrLexicon.CREATED, now, false, true);
-                editor.setProperty(JcrLexicon.CREATED_BY, by, false, true);
-                return true;
-            }
-            return false;
-        }
-
         /**
          * Destroy the child node with the supplied UUID and all nodes that exist below it, including any nodes that were created
          * and haven't been persisted.
@@ -1741,8 +1641,6 @@ class SessionCache {
             throws AccessDeniedException, RepositoryException {
             if (!child.getParent().equals(node)) return false;
             try {
-                // Update the lastModified properties on the parent ...
-                updateLastModifiedOn(node);
                 child.destroy();
             } catch (AccessControlException e) {
                 throw new AccessDeniedException(e.getMessage(), e);
@@ -2333,6 +2231,7 @@ class SessionCache {
     @Immutable
     final class JcrNodeOperations extends GraphSession.NodeOperations<JcrNodePayload, JcrPropertyPayload> {
         private final Logger LOGGER = Logger.getLogger(JcrNodeOperations.class);
+        private final String user = SessionCache.this.session().getUserID();
 
         private Map<Name, PropertyInfo<JcrPropertyPayload>> buildProperties( org.modeshape.graph.Node persistentNode,
                                                                              Node<JcrNodePayload, JcrPropertyPayload> node,
@@ -2684,11 +2583,12 @@ class SessionCache {
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.graph.session.GraphSession.Operations#preSave(org.modeshape.graph.session.GraphSession.Node)
+         * @see org.modeshape.graph.session.GraphSession.NodeOperations#preSave(org.modeshape.graph.session.GraphSession.Node,
+         *      org.modeshape.graph.property.DateTime)
          */
         @Override
-        public void preSave( org.modeshape.graph.session.GraphSession.Node<JcrNodePayload, JcrPropertyPayload> node )
-            throws ValidationException {
+        public void preSave( org.modeshape.graph.session.GraphSession.Node<JcrNodePayload, JcrPropertyPayload> node,
+                             DateTime saveTime ) throws ValidationException {
             JcrNodePayload payload = node.getPayload();
 
             Name primaryTypeName = payload.getPrimaryTypeName();
@@ -2742,6 +2642,8 @@ class SessionCache {
             }
 
             JcrNodeType primaryType = nodeTypes().getNodeType(primaryTypeName);
+            boolean isLastModifiedType = primaryType.isNodeType(JcrMixLexicon.LAST_MODIFIED);
+            boolean isCreatedType = primaryType.isNodeType(JcrMixLexicon.CREATED);
             for (JcrPropertyDefinition definition : primaryType.getPropertyDefinitions()) {
                 if (definition.isMandatory() && !definition.isProtected() && !satisfiedProperties.contains(definition)) {
                     throw new ValidationException(JcrI18n.noDefinition.text("property",
@@ -2764,6 +2666,8 @@ class SessionCache {
             if (mixinTypeNames != null) {
                 for (Name mixinTypeName : mixinTypeNames) {
                     JcrNodeType mixinType = nodeTypes().getNodeType(mixinTypeName);
+                    isLastModifiedType = isLastModifiedType || mixinType.isNodeType(JcrMixLexicon.LAST_MODIFIED);
+                    isCreatedType = isCreatedType || mixinType.isNodeType(JcrMixLexicon.CREATED);
                     for (JcrPropertyDefinition definition : mixinType.getPropertyDefinitions()) {
                         if (definition.isMandatory() && !definition.isProtected() && !satisfiedProperties.contains(definition)) {
                             throw new ValidationException(JcrI18n.noDefinition.text("child node",
@@ -2785,6 +2689,60 @@ class SessionCache {
 
                 }
             }
+
+            // See if the node is an instance of 'mix:created'.
+            // This is done even if the node is not newly-created, because this needs to happen whenever the
+            // 'mix:created' node type is added as a mixin (which can happen to an existing node).
+            if (isCreatedType) {
+                setPropertyIfAbsent(node, primaryTypeName, mixinTypeNames, false, JcrLexicon.CREATED, PropertyType.DATE, saveTime);
+                setPropertyIfAbsent(node,
+                                    primaryTypeName,
+                                    mixinTypeNames,
+                                    false,
+                                    JcrLexicon.CREATED_BY,
+                                    PropertyType.STRING,
+                                    user);
+            }
+
+            // See if the node is an instance of 'mix:lastModified' ...
+            if (isLastModifiedType) {
+                // Check to see if the 'jcr:lastModified' or 'jcr:lastModifiedBy' properties were explicitly changed ...
+                setPropertyIfAbsent(node,
+                                    primaryTypeName,
+                                    mixinTypeNames,
+                                    false,
+                                    JcrLexicon.LAST_MODIFIED,
+                                    PropertyType.DATE,
+                                    saveTime);
+                setPropertyIfAbsent(node,
+                                    primaryTypeName,
+                                    mixinTypeNames,
+                                    false,
+                                    JcrLexicon.LAST_MODIFIED_BY,
+                                    PropertyType.STRING,
+                                    user);
+            }
+        }
+
+        protected void setPropertyIfAbsent( org.modeshape.graph.session.GraphSession.Node<JcrNodePayload, JcrPropertyPayload> node,
+                                            Name primaryTypeName,
+                                            List<Name> mixinTypeNames,
+                                            boolean skipProtected,
+                                            Name propertyName,
+                                            int propertyType,
+                                            Object value ) {
+            if (node.getProperty(propertyName) != null) return;
+            Property graphProp = propertyFactory.create(propertyName, value);
+            JcrPropertyDefinition propDefn = findBestPropertyDefintion(primaryTypeName,
+                                                                       mixinTypeNames,
+                                                                       graphProp,
+                                                                       propertyType,
+                                                                       true,
+                                                                       skipProtected);
+            AbstractJcrNode jcrNode = node.getPayload().getJcrNode();
+            AbstractJcrProperty jcrProp = new JcrSingleValueProperty(SessionCache.this, jcrNode, propertyName);
+            JcrPropertyPayload propPayload = new JcrPropertyPayload(propDefn.getId(), propertyType, jcrProp);
+            node.setProperty(graphProp, false, propPayload);
         }
 
         @Override

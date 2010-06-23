@@ -243,8 +243,8 @@ public class JcrTckTest {
         TestSuite suite = new TestSuite("JCR 2.0 API tests");
 
         suite.addTest(levelOneSuite());
-        // suite.addTest(levelTwoSuite());
-        // suite.addTest(new OptionalFeatureTests());
+        suite.addTest(levelTwoSuite());
+        suite.addTest(new OptionalFeatureTests());
 
         return suite;
     }

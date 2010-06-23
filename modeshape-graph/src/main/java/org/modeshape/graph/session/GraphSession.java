@@ -897,10 +897,11 @@ public class GraphSession<Payload, PropertyPayload> {
 
         // Make sure that each of the changed node is valid. This process requires that all children of
         // all changed nodes are loaded, so in this process load all unloaded children in one batch ...
+        final DateTime saveTime = context.getValueFactories().getDateFactory().create();
         root.onChangedNodes(new LoadAllChildrenVisitor() {
             @Override
             protected void finishParentAfterLoading( Node<Payload, PropertyPayload> node ) {
-                nodeOperations.preSave(node);
+                nodeOperations.preSave(node, saveTime);
             }
         });
 
@@ -973,10 +974,11 @@ public class GraphSession<Payload, PropertyPayload> {
 
         // Make sure that each of the changed node is valid. This process requires that all children of
         // all changed nodes are loaded, so in this process load all unloaded children in one batch ...
+        final DateTime saveTime = context.getValueFactories().getDateFactory().create();
         root.onChangedNodes(new LoadAllChildrenVisitor() {
             @Override
             protected void finishParentAfterLoading( Node<Payload, PropertyPayload> node ) {
-                nodeOperations.preSave(node);
+                nodeOperations.preSave(node, saveTime);
             }
         });
 
@@ -1232,9 +1234,11 @@ public class GraphSession<Payload, PropertyPayload> {
          * Validate a node for consistency and well-formedness.
          * 
          * @param node the node to be validated
+         * @param saveTime the time at which the save operation is occurring; never null
          * @throws ValidationException if there is a problem during validation
          */
-        void preSave( Node<NodePayload, PropertyPayload> node ) throws ValidationException;
+        void preSave( Node<NodePayload, PropertyPayload> node,
+                      DateTime saveTime ) throws ValidationException;
 
         /**
          * Update any computed fields based on the given node
@@ -1350,9 +1354,10 @@ public class GraphSession<Payload, PropertyPayload> {
         /**
          * {@inheritDoc}
          * 
-         * @see GraphSession.Operations#preSave(GraphSession.Node)
+         * @see GraphSession.Operations#preSave(GraphSession.Node,DateTime)
          */
-        public void preSave( Node<Payload, PropertyPayload> node ) throws ValidationException {
+        public void preSave( Node<Payload, PropertyPayload> node,
+                             DateTime saveTime ) throws ValidationException {
             // do nothing here
         }
 
