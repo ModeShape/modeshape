@@ -65,11 +65,6 @@ public interface IJsonConstants {
     String PROPERTIES_KEY = "properties";
 
     /**
-     * The server context added to URLs.
-     */
-    String SERVER_CONTEXT = "/resources";
-
-    /**
      * The workspace context added to the URLs.
      */
     String WORKSPACE_CONTEXT = "/items";

@@ -31,6 +31,18 @@ import org.modeshape.web.jcr.rest.client.Utils;
 
 /**
  * The <code>Server</code> class is the business object for a server that is hosting one or more ModeShape repositories.
+ * 
+ * <p>
+ * The server requires a <i>url</i>, <i>user</i> name, and a <i>password</i> in order to connect.
+ * The {@link #url} that is used has a format of <b>http://hostname:port/context root</b>.  
+ * Where 
+ * <li>hostname is the name of the server</li>
+ * <li>port is the port to connect to, generally its 8080</li>
+ * <li>context root is the deployed war context</li>
+ * <p>
+ * The deployed war context root is based on what the deployed war file is called.
+ * If the ModeShape deployed war is called resources.war (which is the default build name), then the context root 
+ * would be <i>resources</i>.  
  */
 @Immutable
 public class Server implements IModeShapeObject {
@@ -61,7 +73,7 @@ public class Server implements IModeShapeObject {
     /**
      * Constructs on new <code>Server</code>.
      * 
-     * @param url the server URL (never <code>null</code>)
+     * @param url the server URL, which must contain the deployed war file context (never <code>null</code>)
      * @param user the server user (may be <code>null</code>)
      * @param password the server password (may be <code>null</code>)
      * @throws IllegalArgumentException if the URL or user arguments are <code>null</code>

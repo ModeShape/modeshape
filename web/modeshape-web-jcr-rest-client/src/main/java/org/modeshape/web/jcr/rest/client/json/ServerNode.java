@@ -85,10 +85,6 @@ public final class ServerNode extends JsonNode {
         if (url.lastIndexOf("/") == (url.length() - 1)) {
             url.delete((url.length() - 1), (url.length() - 1));
         }
-
-        // append server context
-        url.append(IJsonConstants.SERVER_CONTEXT);
-
         return new URL(url.toString());
     }
 

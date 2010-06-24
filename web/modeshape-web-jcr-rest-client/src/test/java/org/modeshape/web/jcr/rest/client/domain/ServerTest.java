@@ -40,8 +40,8 @@ public final class ServerTest {
     // Constants
     // ===========================================================================================================================
 
-    private static final String URL1 = "file:/tmp/temp.txt";
-    private static final String URL2 = "http:www.redhat.com";
+    private static final String URL1 = "file:/tmp/temp.txt/resources";
+    private static final String URL2 = "http:www.redhat.com/resources";
 
     private static final String USER1 = "user1";
     private static final String USER2 = "user2";
@@ -50,6 +50,7 @@ public final class ServerTest {
     private static final String PSWD2 = "pwsd2";
 
     private static Server SERVER1 = new Server(URL1, USER1, PSWD1);
+    private static Server SERVER2 = new Server(URL2, USER2, PSWD2);
 
     // ===========================================================================================================================
     // Tests
@@ -58,6 +59,7 @@ public final class ServerTest {
     @Test
     public void shouldBeEqualIfHavingSameProperies() {
         assertThat(SERVER1, equalTo(new Server(SERVER1.getUrl(), SERVER1.getUser(), SERVER1.getPassword())));
+        assertThat(SERVER2, equalTo(new Server(SERVER2.getUrl(), SERVER2.getUser(), SERVER2.getPassword())));
     }
 
     @Test

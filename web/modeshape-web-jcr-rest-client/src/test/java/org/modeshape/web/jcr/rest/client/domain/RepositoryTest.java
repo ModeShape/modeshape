@@ -44,9 +44,9 @@ public final class RepositoryTest {
 
     private static final String NAME2 = "name2";
 
-    private static final Server SERVER1 = new Server("file:/tmp/temp.txt", "user", "pswd");
+    private static final Server SERVER1 = new Server("file:/tmp/temp.txt/resources", "user", "pswd");
 
-    private static final Server SERVER2 = new Server("http:www.redhat.com", "user", "pswd");
+    private static final Server SERVER2 = new Server("http:www.redhat.com/resources",  "user", "pswd");
 
     private static final Repository REPOSITORY1 = new Repository(NAME1, SERVER1);
 
