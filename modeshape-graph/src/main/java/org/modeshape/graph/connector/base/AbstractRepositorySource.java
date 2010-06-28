@@ -112,6 +112,30 @@ public abstract class AbstractRepositorySource implements BaseRepositorySource {
     }
 
     /**
+     * Get the UUID of the root node for the cache. If the cache exists, this UUID is not used but is instead set to the UUID of
+     * the existing root node.
+     * 
+     * @return the UUID of the root node for the cache.
+     */
+    public String getRootNodeUuid() {
+        return this.rootNodeUuid.toString();
+    }
+
+    /**
+     * Set the UUID of the root node in this repository. If the cache exists, this UUID is not used but is instead set to the UUID
+     * of the existing root node.
+     * 
+     * @param rootNodeUuid the UUID of the root node for the cache, or null if the UUID should be randomly generated
+     */
+    public synchronized void setRootNodeUuid( String rootNodeUuid ) {
+        UUID uuid = null;
+        if (rootNodeUuid == null) uuid = UUID.randomUUID();
+        else uuid = UUID.fromString(rootNodeUuid);
+        if (this.rootNodeUuid.equals(uuid)) return; // unchanged
+        this.rootNodeUuid = uuid;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.modeshape.graph.connector.RepositorySource#close()

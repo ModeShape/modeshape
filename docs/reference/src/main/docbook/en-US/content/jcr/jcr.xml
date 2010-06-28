@@ -621,27 +621,76 @@ final &LoginContext; loginContext = ...;
 		<ulink url="&Roadmap;">current list of known issues and bugs</ulink>.</emphasis>
 		</para> 
 		<sect2>
-			<title>Level 1 and Level 2 (Required) Features</title>
+			<title>Required features</title>
 			<para>
-				ModeShape currently supports all Level 1 and Level 2 features defined by the 
-				<ulink url="&JSR283;">JSR-283</ulink> specification.
-			</para>
-		</sect2>
+				ModeShape &versionNumber; implements all of the JCR 2.0 required features:
+		    <itemizedlist>
+		      <listitem><para>repository acquisition</para></listitem>
+		      <listitem><para>authentication</para></listitem>
+		      <listitem><para>reading/navigating</para></listitem>
+		      <listitem><para>query</para></listitem>
+		      <listitem><para>export</para></listitem>
+		      <listitem><para>node type discovery</para></listitem>
+		      <listitem><para>permissions and capability checking</para></listitem>
+		    </itemizedlist>
+	    </para>
+	    <para>
+		    ModeShape supports several query languages, including the <link linkend="jcr-sql2-query-language">JCR-SQL2</link> and 
+		    <link linkend="jcr-qom-query-language">JCR-QOM</link> query languages defined in <ulink url="&JSR283;">JSR-283</ulink>, 
+		    and the <link linkend="jcr-xpath-query-language">XPath</link> and <link linkend="jcr-sql-query-language">JCR-SQL</link> 
+		    languages defined in <ulink url="&JSR170;">JSR-170</ulink> but deprecated in <ulink url="&JSR283;">JSR-283</ulink>.
+		    ModeShape also supports a <link linkend="jcr-fulltext-search-query-language">fulltext search</link> language that
+		    is defined by the <link linkend="jcr-sql2-full-text-search-constraints">full-text search expression grammar</link>
+				used in the second parameter of the <code>CONTAINS(...)</code> function of the 
+				<link linkend="jcr-sql2-query-language">JCR-SQL2</link> language.
+				We just pulled it out and made it available as a first-class query language.
+		  </para>
+	  </sect2>
 		<sect2>
-			<title>Optional Features</title>
+			<title>Optional features</title>
 			<para>
-				ModeShape also supports the optional JCR locking, observation, query, and full versioning features,
-				as well as most of the node type management features.
+				ModeShape &versionNumber; implements most of the JCR 2.0 optional features:
+		    <itemizedlist>
+		      <listitem><para>writing</para></listitem>
+		      <listitem><para>import</para></listitem>
+		      <listitem><para>observation</para></listitem>
+		      <listitem><para>workspace management</para></listitem>
+		      <listitem><para>versioning</para></listitem>
+		      <listitem><para>locking</para></listitem>
+		      <listitem><para>node type management</para></listitem>
+		      <listitem><para>same-name siblings</para></listitem>
+		      <listitem><para>orderable child nodes</para></listitem>
+		    </itemizedlist>
+		    The remaining optional features (shareable nodes, access control management, lifecycle management, 
+				retention and hold, and transactions) may be introduced in future versions.
+	    </para>
+	  </sect2>
+		<sect2>
+			<title>TCK Compatibility features</title>
+			<para>
+			  The ModeShape project has not yet been certified to be fully-compliant with the JCR 2.0 specification, but does plan
+			  on attaining this certification in the very near future.
 			</para>
 			<para>
-				ModeShape now supports the optional SQL query feature as defined by <ulink url="&JSR170;">JSR-170</ulink>
-				and the JCR-SQL query language, though the "<code>/jcr:system</code>" content does not appear
-				in the query results as expected (see <ulink url="&JIRA;-759">MODE-760</ulink>).
-				ModeShape also supports its replacement, the <emphasis>JCR-SQL2</emphasis> query language defined by the 
-				<ulink url="&JSR283;">JSR-283</ulink> specification.  JCR-SQL2 is much improved and much more capable.
-				For details on both of these query languages, see the chapter on 
-				<link linkend="jcr-query-and-search">queries and search languages</link>.
+				However, the ModeShape project also runs the JCR TCK unit tests from the reference implementation every night.  These tests 
+				technically do not represent the official TCK, but are used within the TCK. Most of these unit tests are run in the <code>modeshape-jcr</code>
+				module against the <link linkend="in-memory-connector">in-memory repository</link> to ensure our JCR implementation behaves
+				correctly, and the same tests are run in the <code>modeshape-integration-tests</code> module against a variety of connectors
+				to ensure they're implemented correctly. The <code>modeshape-jcr-tck</code> module runs <emphasis>all</emphasis> of these
+				TCK unit tests, and currently there are only a handful of failures due to known issues (see the
+				<link linkend="jcr-spec-support">JCR specification support</link> section for details).
 			</para>
+			<para>
+			  ModeShape &versionNumber; currently passes 1371 of the 1391 JCR TCK tests, where 17 of these 20 failures appear
+			  to be bugs in the TCK tests (see 
+			  <ulink url="https://issues.apache.org/jira/browse/JCR-2648">JCR-2648</ulink>, 
+			  <ulink url="https://issues.apache.org/jira/browse/JCR-2661">JCR-2661</ulink>, 
+			  <ulink url="https://issues.apache.org/jira/browse/JCR-2662">JCR-2662</ulink>, and
+			  <ulink url="https://issues.apache.org/jira/browse/JCR-2663">JCR-2663</ulink>). The remaining 3 failures are
+			  due to known issues (see 
+			  <ulink url="&JIRA;-760">MODE-760</ulink> and
+			  <ulink url="&JIRA;-786">MODE-786</ulink>).
+		  </para>
 		</sect2>
 		<sect2 id="modeshape_jcr_security">
 			<title>JCR Security</title>

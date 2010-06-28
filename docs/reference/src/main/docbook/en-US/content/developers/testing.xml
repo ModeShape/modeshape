@@ -159,8 +159,10 @@
 	      <listitem><para>same-name siblings</para></listitem>
 	      <listitem><para>orderable child nodes</para></listitem>
 	    </itemizedlist>
-	    ModeShape supports the JCR-SQL2 and JQOM query languages defined in <ulink url="&JSR283;">JSR-283</ulink>, 
-	    plus the XPath and JCR-SQL languages defined in <ulink url="&JSR170;">JSR-170</ulink> but deprecated in
+	    ModeShape supports the <link linkend="jcr-sql2-query-language">JCR-SQL2</link> and 
+	    <link linkend="jcr-qom-query-language">JCR-QOM</link> query languages defined in <ulink url="&JSR283;">JSR-283</ulink>, 
+	    plus the <link linkend="jcr-xpath-query-language">XPath</link> and 
+	    <link linkend="jcr-sql-query-language">JCR-SQL</link> languages defined in <ulink url="&JSR170;">JSR-170</ulink> but deprecated in
 	    <ulink url="&JSR283;">JSR-283</ulink>.
 		</para>
 		<para>

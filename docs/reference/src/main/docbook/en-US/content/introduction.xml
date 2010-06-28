@@ -607,7 +607,7 @@
 			writing, import, observation, workspace management, versioning, locking, node type management, same-name siblings, 
 			and orderable child nodes.
 			The remaining optional features (shareable nodes, access control management, lifecycle management, 
-			retention and hold, and transactions) will be introduced in future versions.
+			retention and hold, and transactions) may be introduced in future versions.
 	  </para>
 	  <note>
 		  <para>
@@ -618,8 +618,7 @@
 			  <ulink url="https://issues.apache.org/jira/browse/JCR-2662">JCR-2662</ulink>, and
 			  <ulink url="https://issues.apache.org/jira/browse/JCR-2663">JCR-2663</ulink>). The remaining 3 failures are
 			  due to known issues (see 
-			  <ulink url="&JIRA;-759">MODE-759</ulink>, 
-			  <ulink url="&JIRA;-760">MODE-760</ulink>, 
+			  <ulink url="&JIRA;-760">MODE-760</ulink> and
 			  <ulink url="&JIRA;-786">MODE-786</ulink>).
   		</para>
 	  </note>

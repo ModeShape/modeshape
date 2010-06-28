@@ -1148,10 +1148,15 @@ offset ::= /* Non-negative integer value */
 		</para>
 		<para>
 			This query language is actually defined by the <ulink url="&JSR283;">JCR 2.0 specification</ulink> as the 
-			<link linkend="jcr-sql2-full-text-search-constraint">full-text search expression grammar</link>
+			<link linkend="jcr-sql2-full-text-search-constraints">full-text search expression grammar</link>
 			used in the second parameter of the <code>CONTAINS(...)</code> function of the JCR-SQL2 language.
-			We just pulled it out and made it available as a first-class query language.
+			We just pulled it out and made it available as a first-class query language, such that a full-text
+			search query supplied by the user, <emphasis>full-text-query</emphasis>, is equivalent to executing this JCR-SQL2:
 		</para>
+		<para>
+			<code> SELECT * FROM [nt:base] WHERE CONTAINS([nt:base],'<emphasis>full-text-query</emphasis>') </code>
+		</para>
+<programlisting><![CDATA[ SELECT * FROM [nt:base] WHERE CONTAINS([nt:base],'full-text-query') ]]></programlisting>
 		<para>
 			This language allows a JCR client to construct a query to find nodes with property values that match
 			the supplied terms. Nodes that "best" match the terms are returned before nodes that have a lesser match.
