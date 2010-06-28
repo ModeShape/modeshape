@@ -95,12 +95,14 @@
 <!ENTITY NodeIterator									"<ulink url='&JcrApi;javax/jcr/NodeIterator.html'><interface>NodeIterator</interface></ulink>">
 <!ENTITY RowIterator									"<ulink url='&JcrApi;javax/jcr/query/RowIterator.html'><interface>RowIterator</interface></ulink>">
 <!ENTITY Node													"<ulink url='&JcrApi;javax/jcr/Node.html'><interface>Node</interface></ulink>">
-<!ENTITY QueryManager									"<ulink url='&JcrApi;javax/jcr/query/QueryManager.html'><interface>QueryManager</interface></ulink>">
-<!ENTITY Query												"<ulink url='&JcrApi;javax/jcr/query/Query.html'><interface>Query</interface></ulink>">
-<!ENTITY QueryResult									"<ulink url='&JcrApi;javax/jcr/query/QueryResult.html'><interface>QueryResult</interface></ulink>">
 <!ENTITY Binary      									"<ulink url='&JcrApi;javax/jcr/Binary.html'><interface>Binary</interface></ulink>">
 <!ENTITY LockManager 									"<ulink url='&JcrApi;javax/jcr/lock/LockManager.html'><interface>LockManager</interface></ulink>">
 <!ENTITY VersionManager 							"<ulink url='&JcrApi;javax/jcr/version/VersionManager.html'><interface>VersionManager</interface></ulink>">
+<!ENTITY QueryManager									"<ulink url='&JcrApi;javax/jcr/query/QueryManager.html'><interface>QueryManager</interface></ulink>">
+<!ENTITY Query												"<ulink url='&JcrApi;javax/jcr/query/Query.html'><interface>Query</interface></ulink>">
+<!ENTITY QueryResult									"<ulink url='&JcrApi;javax/jcr/query/QueryResult.html'><interface>QueryResult</interface></ulink>">
+<!ENTITY QueryObjectModel        			"<ulink url='&JcrApi;javax/jcr/query/qom/QueryObjectModel.html'><interface>QueryObjectModel</interface></ulink>">
+<!ENTITY QueryObjectModelFactory			"<ulink url='&JcrApi;javax/jcr/query/qom/QueryObjectModelFactory.html'><interface>QueryObjectModelFactory</interface></ulink>">
 
 <!-- Types in modeshape-common -->
 

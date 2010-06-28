@@ -227,7 +227,7 @@
   <sect1 id="modules">
     <title>ModeShape modules</title>
     <para>
-      ModeShape consists quite a few separate modules. Just a few of these make up the essential core components of the system:
+      ModeShape consists of quite a few separate modules. Just a few of these make up the essential core components of the system:
       <itemizedlist>
         <listitem>
           <para>
@@ -243,7 +243,7 @@
         <listitem>
           <para>
             <emphasis role="strong">modeshape-jcr-api</emphasis>
-            defines a number of interfaces that add a few interfaces or extend several of the JCR API interfaces. 
+            defines a number of interfaces that extend several of the JCR API interfaces. 
             For example, this module defines a &Repositories; interface that defines a way to look up <code>javax.jcr.Repository</code> 
             instances by name, and that is implemented by the ModeShape <code>JcrEngine</code>. It also defines several new
             interfaces that extend the JCR 2.0 API's Query Object Model with additional behavior, including more criteria options

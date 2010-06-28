@@ -32,21 +32,27 @@
   <title>Querying and Searching using JCR</title>
   <para>
 	  The JCR API defines a way to query a repository for content that meets user-defined criteria. 
-	  The JCR API actually makes it possible for implementations to support multiple query languages,
-	  but the only language required by <ulink url="&JSR170;">JCR 1.0</ulink> is a subset of XPath. The 1.0 specification
-	  also defines an optional SQL-like query language called <link linkend="jcr-sql-query-language">JCR-SQL</link>.
-	  <ulink url="&JSR283;">JCR 2.0</ulink> defines a new language called <link linkend="jcr-sql2-query-language">JCR-SQL2</link>
-    that improves upon (and in fact supersedes) JCR-SQL.
+	  The JCR 2.0 API actually makes it possible for implementations to support multiple query languages,
+	  and the specification requires support for two languages: 
+	  <link linkend="jcr-sql2-query-language">JCR-SQL2</link> and <link linkend="jcr-qom-query-language">JCR-QOM</link>.
+	  <ulink url="&JSR170;">JCR 1.0</ulink> defined two other languages (<link linkend="jcr-xpath-query-language">XPath</link> 
+	  and <link linkend="jcr-sql-query-language">JCR-SQL</link>), though these languages were deprecated in
+	  <ulink url="&JSR283;">JCR 2.0</ulink>.
   </para>
 	<para>
-		At this time, ModeShape supports all of these query languages, plus one search-engine-like language not
-		defined in the <ulink url="&JSR170;">JCR 1.0</ulink> specification. In fact, ModeShape handles all of
-		these query languages in a similar way:
+		At this time, ModeShape supports all of these query languages, plus one search-engine-like language
+		called "<link linkend="fulltext-search-expressions">search</link>" that 
+		is actually just the <link linkend="jcr-sql2-full-text-search-constraints">full-text search expression grammar</link>
+		used in the second parameter of the <code>CONTAINS(...)</code> function of the JCR-SQL2 language.
+	</para>
+	<para>
+		ModeShape handles all of these languages in nearly the same manner, the only difference being whether the query is
+		represented as a string or build programmatically using the <code>javax.jcr.query.qom</code> part of the JCR API.
     <orderedlist>
       <listitem>
         <para>
-					ModeShape parses the query string using a language-specific parser and creates a language-independent representation
-					called the query model.
+	        A language-independent representation, called the query model, is constructed by parsing the string representation of
+	        the query (using a language-specific parser) or the JCR-QOM objects created by the client.
         </para>
       </listitem>
       <listitem>
@@ -1192,8 +1198,8 @@ offset ::= /* Non-negative integer value */
 				</para>
 			</note>
 		</para>
-		<sect2 id='fulltext-search-expressions'>
-			<title>Full-text Search Expressions</title>
+		<sect2 id="fulltext-search-expressions">
+			<title>Full-text Search Language</title>
 <programlisting><![CDATA[
 
 FulltextSearch ::= Disjunct {Space 'OR' Space Disjunct}
@@ -1224,4 +1230,81 @@ Char ::= /* Any character */
  		 	</para>
 		</sect2>
 	</sect1>
+	  <sect1 id="jcr-qom-query-language">	
+	    <title>JCR Query Object Model (JCR-QOM) API</title>
+	    <para>
+		 		JCR 2.0 introduces a new API for programmatically constructing a query. This API allows the client to construct the lower-level
+		    objects for each part of the query, and is a great fit for applications that would otherwise generate fairly complicated
+		    query expressions. Using this API is a matter of getting the &QueryObjectModelFactory; from the session's &QueryManager;,
+		    and using the factory to create the various components, starting with the lowest-level components.  Then, these lower-level
+		    components can be passed to other factory methods to create the higher-level components, and so on, until finally
+		    the <code>createQuery(...)</code> method is called to return the &QueryObjectModel;.
+		  </para>
+			<para>
+				Here is a simple example that shows how this is done for the simple query "<code>SELECT * FROM [nt:unstructured] AS unstructNodes</code>":
+			</para>
+<programlisting role="JAVA"><![CDATA[
+// Obtain the query manager for the session ...
+javax.jcr.query.QueryManager queryManager = session.getWorkspace().getQueryManager();
+
+// Create a query object model factory ...
+QueryObjectModelFactory factory = queryManager.getQOMFactory();
+
+// Create the FROM clause: a selector for the [nt:unstructured] nodes ...
+Selector source = factory.selector("nt:unstructured","unstructNodes");
+
+// Create the SELECT clause (we want all columns defined on the node type) ...
+Column[] columns = null;
+
+// Create the WHERE clause (we have none for this query) ...
+Constraint constraint = null;
+
+// Define the orderings (we have none for this query)...
+Ordering[] orderings = null;
+
+// Create the query ...
+QueryObjectModel query = factory.createQuery(source,constraint,orderings,columns);
+ 
+// Execute the query and get the results ...
+// (This is the same as before.)
+javax.jcr.QueryResult result = query.execute();
+
+]]></programlisting>
+     <para>
+			From this point on, processing the results is the same as when using the <link linkend="jcr-query-api">JCR Query API</link>:
+		</para>
+<programlisting role="JAVA"><![CDATA[
+
+// Iterate over the nodes in the results ...
+javax.jcr.NodeIterator nodeIter = result.getNodes();
+while ( nodeIter.hasNext() ) {
+    javax.jcr.Node node = nodeIter.nextNode();
+		...
+}
+
+// Or iterate over the rows in the results ...
+String[] columnNames = result.getColumnNames();
+javax.jcr.query.RowIterator rowIter = result.getRows();
+while ( rowIter.hasNext() ) {
+    javax.jcr.query.Row row = rowIter.nextRow();
+    // Iterate over the column values in each row ...
+    javax.jcr.Value[] values = row.getValues();
+    for ( javax.jcr.Value value : values ) {
+				...
+    }
+    // Or access the column values by name ...
+    for ( String columnName : columnNames ) {
+        javax.jcr.Value value = row.getValue(columnName);
+				...
+    }
+}
+
+// When finished, close the session ...
+session.logout();
+]]></programlisting>
+			<para>
+				Of course, most queries will create the columns, orderings, and constraints using the &QueryObjectModelFactory;,
+				whereas the example above just assumes all of the columns, no orderings, and no constraints.
+			</para>
+		</sect1>
 </chapter>
