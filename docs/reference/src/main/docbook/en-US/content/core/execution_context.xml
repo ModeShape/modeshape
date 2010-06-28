@@ -31,7 +31,7 @@
 <chapter id="execution_context">
   <title>Execution Context</title>
   <para>
-		The various components of ModeShape are designed as plain old Java objects, or POJOs.  And rather than making assumptions
+		The various components of ModeShape are designed as plain old Java objects, or POJOs (Plain Old Java Objects).  And rather than making assumptions
 		about their environment, each component instead requires that any external dependencies necessary for it to operate
 		must be supplied to it.  This pattern is known as Dependency Injection, and it allows the components to be simpler
 		and allows for a great deal of flexibility and customization in how the components are configured.  

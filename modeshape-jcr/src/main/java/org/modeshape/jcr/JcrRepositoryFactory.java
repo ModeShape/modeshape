@@ -125,18 +125,22 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         LOG.debug("Trying to load ModeShape JCR Repository with parameters: " + parameters);
         if (parameters == null) return null;
 
-        String rawUrl = (String)parameters.get(URL);
+        Object rawUrl = parameters.get(URL);
         if (rawUrl == null) {
             LOG.debug("No parameter found with key: " + URL);
             return null;
         }
 
-        URL url;
-        try {
-            url = new URL(rawUrl);
-        } catch (MalformedURLException mue) {
-            LOG.debug("Could not parse URL: " + mue.getMessage());
-            return null;
+        URL url = null;
+        if (rawUrl instanceof URL) {
+            url = (URL)rawUrl;
+        } else {
+            try {
+                url = new URL(rawUrl.toString());
+            } catch (MalformedURLException mue) {
+                LOG.debug("Could not parse URL: " + mue.getMessage());
+                return null;
+            }
         }
 
         if (url.getPath() == null || url.getPath().trim().length() == 0) {

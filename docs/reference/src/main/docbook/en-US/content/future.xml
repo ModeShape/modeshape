@@ -32,13 +32,39 @@
 	<title>Looking to the future</title>
 	<para>
 		ModeShape &versionNumber; provides a very capable JCR implementation with powerful and unique features not matched
-		by other implementations.  This release adds several key features, such as JCR versioning and a JCR connector,
+		by other implementations.  This release moves ModeShape to the JCR 2.0 API, implements several new features, 
 		and includes fixes and improvements. 
 	</para>
+	<para>ModeShape now implements all of the required JCR 2.0 features:
+    <itemizedlist>
+      <listitem><para>repository acquisition</para></listitem>
+      <listitem><para>authentication</para></listitem>
+      <listitem><para>reading/navigating</para></listitem>
+      <listitem><para>query</para></listitem>
+      <listitem><para>export</para></listitem>
+      <listitem><para>node type discovery</para></listitem>
+      <listitem><para>permissions and capability checking</para></listitem>
+    </itemizedlist>
+		and implements most of the optional JCR 2.0 features:
+    <itemizedlist>
+      <listitem><para>writing</para></listitem>
+      <listitem><para>import</para></listitem>
+      <listitem><para>observation</para></listitem>
+      <listitem><para>workspace management</para></listitem>
+      <listitem><para>versioning</para></listitem>
+      <listitem><para>locking</para></listitem>
+      <listitem><para>node type management</para></listitem>
+      <listitem><para>same-name siblings</para></listitem>
+      <listitem><para>orderable child nodes</para></listitem>
+    </itemizedlist>
+    ModeShape supports the JCR-SQL2 and JQOM query languages defined in <ulink url="&JSR283;">JSR-283</ulink>, 
+    plus the XPath and JCR-SQL languages defined in <ulink url="&JSR170;">JSR-170</ulink> but deprecated in
+    <ulink url="&JSR283;">JSR-283</ulink>.
+	</para>
 	<para>
-		At this point, ModeShape passes all of the JCR Technology Compatibility Kit (TCK) tests 
-		for Level 1, Level 2, and the optional locking and versioning features (plus almost all of the tests for the
-		optional observation feature). We'll soon begin the process of attaining JCR certification for ModeShape.
+		At this point, ModeShape passes virtually all of the JCR Technology Compatibility Kit (TCK) tests,
+		except for a few known issues with ModeShape as well as bugs in the TCK tests. As soon as these
+		are fixed, we'll start the process of attaining JCR 2.0 certification for ModeShape.
 	</para>
 	<para>
 		What's next for ModeShape? 

@@ -75,7 +75,7 @@
 			  as well as the configuration and engine in which all the components run.  These are all topics covered
 			  in this part of the document.
 			</para>
-			<para>The ModeShape implementation of the <ulink url="&JSR170;">JCR API</ulink> as well as some other
+			<para>The ModeShape implementation of the <ulink url="&JSR283;">JCR API</ulink> as well as some other
 			  JCR-related components are covered in the <link linkend="jcr-part">next part</link>.
 			</para>
 		</partintro>
@@ -88,7 +88,7 @@
 		<title>ModeShape JCR</title>
 		<partintro>
 			<para>
-			  The ModeShape project provides an implementation of the <ulink url="&JSR170;">JCR API</ulink>, which is
+			  The ModeShape project provides an implementation of the <ulink url="&JSR283;">JCR 2.0 API</ulink>, which is
 			  built on top of the <link linkend="core-part">core libraries</link> discussed earlier.  This implementation
 			  as well as a number of JCR-related components are described in this part of the document.
 				But before talking about how to use the JCR API with a ModeShape repository, first we need to

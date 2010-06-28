@@ -93,6 +93,7 @@ JcrConfiguration config = ...
 config.repositorySource("IMR Store")
       .usingClass(InMemoryRepositorySource.class)
       .setDescription("The repository for our content")
+      .setProperty("predefinedWorkspaceNames", new String[] { "staging", "dev"})
       .setProperty("defaultWorkspaceName", workspaceName);
  ]]></programlisting>
 	<para>
@@ -118,7 +119,11 @@ config.repositorySource("IMR Store")
         <mode:source jcr:name="IMR Store" 
                     mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" 
                     mode:description="The repository for our content" 
-                    mode:defaultWorkspaceName="default"/>    
+                    mode:defaultWorkspaceName="default">
+           <mode:predefinedWorkspaceNames>staging</mode:predefinedWorkspaceNames>
+				   <mode:predefinedWorkspaceNames>dev</mode:predefinedWorkspaceNames>
+				</mode:source>
+				               
     </mode:sources>
     
 	<!-- MIME type detectors and JCR repositories would be defined below --> 

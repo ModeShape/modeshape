@@ -137,11 +137,6 @@
 						following a communication failure. The default value is '0'.</entry>
 				</row>
 				<row>
-					<entry>rootNodeUuid</entry>
-					<entry>Optional property that, if used, specifies the UUID that should be used for the root node of each workspace.  If no value is
-					specified, a default UUID is used.</entry>
-				</row>	
-				<row>
 					<entry>updatesAllowed</entry>
 					<entry>Determines whether the content in the file system can be updated ("true"), or if the content may only be read ("false").
 						The default value is "false" to avoid unintentional security vulnerabilities.</entry>
@@ -177,7 +172,6 @@ config.repositorySource("FS Store")
       .setProperty("workspaceRootPath", "/home/content/someApp")
       .setProperty("defaultWorkspaceName", "prod")
       .setProperty("predefinedWorkspaceNames", new String[] { "staging", "dev"})
-      .setProperty("rootNodeUuid", UUID.fromString("fd129c12-81a8-42ed-aa4b-820dba49e6f0")
       .setProperty("updatesAllowed", "true")
       .setProperty("creatingWorkspaceAllowed", "false");
  ]]></programlisting>
@@ -206,10 +200,10 @@ config.repositorySource("FS Store")
         	mode:description="The repository for our content"
         	mode:workspaceRootPath="/home/content/someApp"
         	mode:defaultWorkspaceName="prod"
-        	mode:predefinedWorkspaceNames="staging, dev"
-        	mode:rootNodeUuid="fd129c12-81a8-42ed-aa4b-820dba49e6f0"
         	mode:creatingWorkspacesAllowed="false"
         	mode:updatesAllowed="true" >
+            <mode:predefinedWorkspaceNames>staging</mode:predefinedWorkspaceNames>
+            <mode:predefinedWorkspaceNames>dev</mode:predefinedWorkspaceNames>
       	    <!-- 
       	    If desired, specify a cache policy that caches items in memory for 5 minutes (300000 ms).
       	    This fragment can be left out if the connector should not cache any content.

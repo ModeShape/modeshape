@@ -322,7 +322,7 @@ public interface &SequencerOutput; {
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-graph</artifactId>
-  <version>1.1.0.Final</version>
+  <version>2.0.0.Final</version>
 </dependency>
 	 ]]></programlisting>
 			<para>These are minimum dependencies required for compiling a sequencer.  Of course, you'll have to add
@@ -333,14 +333,14 @@ public interface &SequencerOutput; {
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-graph</artifactId>
-  <version>1.1.0.Final</version>
+  <version>2.0.0.Final</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-common</artifactId>
-  <version>1.1.0.Final</version>
+  <version>2.0.0.Final</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
@@ -352,6 +352,12 @@ public interface &SequencerOutput; {
   <scope>test</scope>
 </dependency>
 <dependency>
+	<groupId>org.mockito</groupId>
+	<artifactId>mockito-all</artifactId>
+	<version>1.8.4</version>
+	<scope>test</scope>
+</dependency>
+<dependency>
   <groupId>org.hamcrest</groupId>
   <artifactId>hamcrest-library</artifactId>
   <version>1.1</version>
@@ -361,13 +367,13 @@ public interface &SequencerOutput; {
 <dependency>
   <groupId>org.slf4j</groupId>
   <artifactId>slf4j-log4j12</artifactId>
-  <version>1.5.8</version>
+  <version>1.5.11</version>
   <scope>test</scope>
 </dependency>
 <dependency>
   <groupId>log4j</groupId>
   <artifactId>log4j</artifactId>
-  <version>1.2.14</version>
+  <version>1.2.16</version>
   <scope>test</scope>
 </dependency>	 ]]></programlisting>
 	  	<para>Testing ModeShape sequencers does not require a JCR repository or the ModeShape services.  (For more detail,
@@ -378,14 +384,14 @@ public interface &SequencerOutput; {
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-jcr</artifactId>
-  <version>1.1.0.Final</version>
+  <version>2.0.0.Final</version>
   <scope>test</scope>
 </dependency>
 <!-- Java Content Repository API -->
 <dependency>
   <groupId>javax.jcr</groupId>
   <artifactId>jcr</artifactId>
-  <version>1.0.1</version>
+  <version>2.0</version>
   <scope>test</scope>
 </dependency>
 	 ]]></programlisting>
@@ -401,61 +407,75 @@ public interface &SequencerOutput; {
 		  <programlisting>
 public class &ImageMetadataSequencer; implements &StreamSequencer; {
 
-    public static final String METADATA_NODE = "image:metadata";
-    public static final String IMAGE_PRIMARY_TYPE = "jcr:primaryType";
-    public static final String IMAGE_MIXINS = "jcr:mixinTypes";
-    public static final String IMAGE_MIME_TYPE = "jcr:mimeType";
-    public static final String IMAGE_ENCODING = "jcr:encoding";
-    public static final String IMAGE_FORMAT_NAME = "image:formatName";
-    public static final String IMAGE_WIDTH = "image:width";
-    public static final String IMAGE_HEIGHT = "image:height";
-    public static final String IMAGE_BITS_PER_PIXEL = "image:bitsPerPixel";
-    public static final String IMAGE_PROGRESSIVE = "image:progressive";
-    public static final String IMAGE_NUMBER_OF_IMAGES = "image:numberOfImages";
-    public static final String IMAGE_PHYSICAL_WIDTH_DPI = "image:physicalWidthDpi";
-    public static final String IMAGE_PHYSICAL_HEIGHT_DPI = "image:physicalHeightDpi";
-    public static final String IMAGE_PHYSICAL_WIDTH_INCHES = "image:physicalWidthInches";
-    public static final String IMAGE_PHYSICAL_HEIGHT_INCHES = "image:physicalHeightInches";
+		/**
+		 * {@inheritDoc}
+		 * 
+		 * @see StreamSequencer#sequence(InputStream, SequencerOutput, StreamSequencerContext)
+		 */
+		public void sequence( InputStream stream,
+		                      SequencerOutput output,
+		                      StreamSequencerContext context ) {
 
-    /**
-     * {@inheritDoc}
-     */
-    public void sequence( &InputStream; stream, &SequencerOutput; output, 
-                          &SequencerContext; context ) {
-        &ImageMetadata; metadata = new &ImageMetadata;();
-        metadata.setInput(stream);
-        metadata.setDetermineImageNumber(true);
-        metadata.setCollectComments(true);
+		    ImageMetadata metadata = new ImageMetadata();
+		    metadata.setInput(stream);
+		    metadata.setDetermineImageNumber(true);
+		    metadata.setCollectComments(true);
 
-        // Process the image stream and extract the metadata ...
-        if (!metadata.check()) {
-            metadata = null;
-        }
-        // Generate the output graph if we found useful metadata ...
-        if (metadata != null) {
-            // Place the image metadata into the output map ...
-            output.setProperty(METADATA_NODE, IMAGE_PRIMARY_TYPE, "image:metadata");
-            // output.psetProperty(METADATA_NODE, IMAGE_MIXINS, "");
-            output.setProperty(METADATA_NODE, IMAGE_MIME_TYPE, metadata.getMimeType());
-            // output.setProperty(METADATA_NODE, IMAGE_ENCODING, "");
-            output.setProperty(METADATA_NODE, IMAGE_FORMAT_NAME, metadata.getFormatName());
-            output.setProperty(METADATA_NODE, IMAGE_WIDTH, metadata.getWidth());
-            output.setProperty(METADATA_NODE, IMAGE_HEIGHT, metadata.getHeight());
-            output.setProperty(METADATA_NODE, IMAGE_BITS_PER_PIXEL, metadata.getBitsPerPixel());
-            output.setProperty(METADATA_NODE, IMAGE_PROGRESSIVE, metadata.isProgressive());
-            output.setProperty(METADATA_NODE, IMAGE_NUMBER_OF_IMAGES, 
-                               metadata.getNumberOfImages());
-            output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_WIDTH_DPI,  
-						metadata.getPhysicalWidthDpi());
-            output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_HEIGHT_DPI,  
-						metadata.getPhysicalHeightDpi());
-            output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_WIDTH_INCHES,  
-						metadata.getPhysicalWidthInch());
-            output.setProperty(METADATA_NODE, IMAGE_PHYSICAL_HEIGHT_INCHES,  
-						metadata.getPhysicalHeightInch());
-        }
-    }
+		    // Process the image stream and extract the metadata ...
+		    if (!metadata.check()) {
+		        metadata = null;
+		    }
+
+		    // Generate the output graph if we found useful metadata ...
+		    if (metadata != null) {
+		        PathFactory pathFactory = context.getValueFactories().getPathFactory();
+		        Path metadataNode = pathFactory.createRelativePath(ImageMetadataLexicon.METADATA_NODE);
+
+		        // Place the image metadata into the output map ...
+		        output.setProperty(metadataNode, JcrLexicon.PRIMARY_TYPE, "image:metadata");
+		        // output.psetProperty(metadataNode, nameFactory.create(IMAGE_MIXINS), "");
+		        output.setProperty(metadataNode, JcrLexicon.MIMETYPE, metadata.getMimeType());
+		        // output.setProperty(metadataNode, nameFactory.create(IMAGE_ENCODING), "");
+		        output.setProperty(metadataNode, ImageMetadataLexicon.FORMAT_NAME, metadata.getFormatName());
+		        output.setProperty(metadataNode, ImageMetadataLexicon.WIDTH, metadata.getWidth());
+		        output.setProperty(metadataNode, ImageMetadataLexicon.HEIGHT, metadata.getHeight());
+		        output.setProperty(metadataNode, ImageMetadataLexicon.BITS_PER_PIXEL, metadata.getBitsPerPixel());
+		        output.setProperty(metadataNode, ImageMetadataLexicon.PROGRESSIVE, metadata.isProgressive());
+		        output.setProperty(metadataNode, ImageMetadataLexicon.NUMBER_OF_IMAGES, metadata.getNumberOfImages());
+		        output.setProperty(metadataNode, ImageMetadataLexicon.PHYSICAL_WIDTH_DPI, metadata.getPhysicalWidthDpi());
+		        output.setProperty(metadataNode, ImageMetadataLexicon.PHYSICAL_HEIGHT_DPI, metadata.getPhysicalHeightDpi());
+		        output.setProperty(metadataNode, ImageMetadataLexicon.PHYSICAL_WIDTH_INCHES, metadata.getPhysicalWidthInch());
+		        output.setProperty(metadataNode, ImageMetadataLexicon.PHYSICAL_HEIGHT_INCHES, metadata.getPhysicalHeightInch());
+		    }
+		}
 }
+</programlisting>
+      <para>where the &ImageMetadataLexicon; class contains the &Name; constants and is defined as:</para>
+<programlisting>
+	/**
+	 * A lexicon of names used within the image sequencer.
+	 */
+	@Immutable
+	public class &ImageMetadataLexicon; {
+
+	    public static class Namespace {
+	        public static final String URI = "http://www.modeshape.org/images/1.0";
+	        public static final String PREFIX = "image";
+	    }
+
+	    public static final Name METADATA_NODE = new BasicName(Namespace.URI, "metadata");
+	    public static final Name FORMAT_NAME = new BasicName(Namespace.URI, "formatName");
+	    public static final Name WIDTH = new BasicName(Namespace.URI, "width");
+	    public static final Name HEIGHT = new BasicName(Namespace.URI, "height");
+	    public static final Name BITS_PER_PIXEL = new BasicName(Namespace.URI, "bitsPerPixel");
+	    public static final Name PROGRESSIVE = new BasicName(Namespace.URI, "progressive");
+	    public static final Name NUMBER_OF_IMAGES = new BasicName(Namespace.URI, "numberOfImages");
+	    public static final Name PHYSICAL_WIDTH_DPI = new BasicName(Namespace.URI, "physicalWidthDpi");
+	    public static final Name PHYSICAL_HEIGHT_DPI = new BasicName(Namespace.URI, "physicalHeightDpi");
+	    public static final Name PHYSICAL_WIDTH_INCHES = new BasicName(Namespace.URI, "physicalWidthInches");
+	    public static final Name PHYSICAL_HEIGHT_INCHES = new BasicName(Namespace.URI, "physicalHeightInches");
+
+	}
 </programlisting>
 		  <para>
 		    Notice how the image metadata is extracted and the output graph is generated.  A single node is created with the name 

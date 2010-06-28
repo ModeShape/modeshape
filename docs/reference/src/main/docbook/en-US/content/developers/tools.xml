@@ -102,7 +102,7 @@
 		<para>
 			Currently, ModeShape is developed and built using <ulink url="http://java.sun.com/javase/downloads/widget/jdk6.jsp">JDK 6</ulink>.
 			So if you're trying to get ModeShape to compile locally, you should make sure you have the JDK 6 installed and are using it.
-			If you're a contributor, you should make sure that you're using JDK 6 before committing any changes.  
+			If you're a contributor, you should make sure that you're using JDK 6 before committing any changes.
 		</para>
 		<para>
 			When installing a JDK, simply follow the procedure for your particular platform.  On most platforms, this should set the
@@ -221,78 +221,44 @@
 		<para>ModeShape uses Maven 2 for its build system, as is this example. Using Maven 2 has several advantages, including
 	    the ability to manage dependencies. If a library is needed, Maven automatically finds and downloads that library, plus
 	    everything that library needs. This means that it's very easy to build the examples - or even create a maven project that
-	    depends on the ModeShape JARs.</para>
+	    depends on the ModeShape JARs.
+	  </para>
 		<para>
-      To use Maven with ModeShape, you'll need to have <link linkend="jdk">JDK 6</link> and Maven 2.0.9 (or higher).</para>
+      To use Maven with ModeShape, you'll need to have <link linkend="jdk">JDK 6</link> and Maven 2.0.9 (or higher).
+    </para>
 		<para>
       Maven can be downloaded from <ulink url="http://maven.apache.org/">http://maven.apache.org/</ulink>, and is installed by unzipping the
       <code>maven-2.0.9-bin.zip</code> or <code>maven-2.0.11-bin.zip</code> file to a convenient location on your local disk. 
-      Simply add <code>$MAVEN_HOME/bin</code> to your path and add the following profile to your <code>~/.m2/settings.xml</code> file:
-		</para>
-		<programlisting role="XML"><![CDATA[
-<settings>
-  <profiles>
-    <profile>
-      <id>jboss.repository</id>
-      <activation>
-        <property>
-          <name>!jboss.repository.off</name>
-        </property>
-      </activation>
-      <repositories>
-        <repository>
-          <id>snapshots.jboss.org</id>
-          <url>http://snapshots.jboss.org/maven2</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-        </repository>
-        <repository>
-          <id>repository.jboss.org</id>
-          <url>http://repository.jboss.org/maven2</url>
-          <snapshots>
-            <enabled>false</enabled>
-          </snapshots>
-        </repository>
-      </repositories>
-      <pluginRepositories>
-        <pluginRepository>
-          <id>repository.jboss.org</id>
-          <url>http://repository.jboss.org/maven2</url>
-          <snapshots>
-            <enabled>false</enabled>
-          </snapshots>
-        </pluginRepository>
-        <pluginRepository>
-          <id>snapshots.jboss.org</id>
-          <url>http://snapshots.jboss.org/maven2</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-        </pluginRepository>
-      </pluginRepositories>
-    </profile>
-  </profiles>
-</settings>
-]]></programlisting>
-		<para>This profile informs Maven of the two JBoss repositories (<ulink url="http://repository.jboss.org/maven2">snapshots</ulink> 
-		  and <ulink url="http://snapshots.jboss.org/maven2">releases</ulink>) that contain all of the JARs for ModeShape and all dependent libraries.
-		</para>
+      Then add <code>$MAVEN_HOME/bin</code> to your path.
+    </para>
 		<para>While you're adding <code>$MAVEN_HOME/bin</code> to your path, you should also set the <code>$MAVEN_OPTS</code> environment variable
-		  to "<code>-Xmx384m</code>".  If you don't do this, you'll likely see an <code>java.lang.OutOfMemoryError</code> sometime during a full
+		  to "<code>-Xmx384m</code>".  If you don't do this, you will likely see an <code>java.lang.OutOfMemoryError</code> sometime during a full
 		  build.
+		</para>
+		<para>
+			The JBoss Maven repository provides a central location for not only the artifacts produced by the JBoss.org projects (well, at least those
+			that use Maven), but also is where those projects can place the artifacts that they depend on.  The new 
+			<ulink url="https://repository.jboss.org/nexus">JBoss.org Maven repository</ulink> uses the 
+			<ulink url="http://nexus.sonatype.org/">Nexus</ulink> repository manager, and is configured to proxy other Maven repositories 
+			and automatically cache the third-party artifacts used in our builds. This helps ensure that developers have easy
+			access to these artifacts (including sources) and that the project (and dependencies) can always be rebuilt when needed.
+		</para>
+		<para>
+			For more information about the JBoss Maven repository, see the 
+			<ulink url="http://community.jboss.org/en/build/blog/2010/04/20/announcement--new-maven-repository-infrastructure">announcement</ulink>
+			and <ulink url="http://community.jboss.org/wiki/MavenRepository">documentation</ulink>.
 		</para>
 		<note>
 			<para>
-				The JBoss Maven repository provides a central location for not only the artifacts produced by the JBoss.org projects (well, at least those
-				that use Maven), but also is where those projects can place the artifacts that they depend on.  ModeShape has a policy that
-				the <emphasis>source code and JARs</emphasis> for <emphasis>all</emphasis> dependencies <emphasis>must</emphasis> be loaded into the 
-				JBoss Maven repository.  It may be a little bit more work for the developers, but it does help ensure that developers have easy
-				access to the source and that the project (and dependencies) can always be rebuilt when needed.
+				Previous versions of ModeShape made use of the older JBoss.org Maven repository, and required modifying your local
+				<code>~/.m2/settings.xml</code> file.  This is no longer required by users or contributors, since the ModeShape POM
+				file is set up to reference the new JBoss.org repository.
 			</para>
 			<para>
-				For more information about the JBoss Maven repository, including instructions for adding source and JAR artifacts, 
-				see the <ulink url="http://wiki.jboss.org/wiki/Maven">JBoss.org Wiki</ulink>.
+				However, if you are one of the ModeShape contributors that will be making and publishing ModeShape releases into the
+				JBoss.org repository, you will need to modify your <code>~/.m2/settings.xml</code> file to contain your
+				JBoss.org repository credentials. For details, see the 
+				<ulink ulr="http://community.jboss.org/wiki/MavenGettingStarted-Developers">documentation for developers</ulink>.
 			</para>
 		</note>
 		<sect2 id="build_commands">
@@ -328,6 +294,15 @@
 							</entry>
 						</row>
 						<row>
+							<entry><code>mvn clean install -P integration </code></entry>
+							<entry>This "integration build" does everything the "quick" build does plus compiling and
+								running the integration tests, documentation, and examples, all of which add several minutes over the "quick build".
+								Since the integration tests include running the JCR TCK tests against a variety of configurations with different
+								connectors, this build should be run before committing changes to the JCR implementation code.
+							  Also, HSQLDB is used when a database is needed.
+							</entry>
+						</row>
+						<row>
 							<entry><code>mvn clean install -Ddatabase=dbprofile</code></entry>
 							<entry>Same as the "quick build", except that it specifies the database management system
 								that is to be used by the tests.
@@ -346,23 +321,18 @@
 							</entry>
 						</row>
 						<row>
-							<entry><code>mvn -P integration clean install</code></entry>
-							<entry>This "integration build" does everything the "quick" build does plus it compiles and
-								runs the integration tests, which take several extra minutes to run.
-							  Also, HSQLDB is used when a database is needed.
-							</entry>
-						</row>
-						<row>
-							<entry><code>mvn -P integration clean install -Ddatabase=dbprofile</code></entry>
+							<entry><code>mvn clean install -Ddatabase=dbprofile -P integration</code></entry>
 							<entry>This does the same as the "integration build", except that it specifies the database management system
 								that is to be used by the unit and integration tests.  Options for the "<code>dbprofile</code>" values are
 								the same as listed above.
 							</entry>
 						</row>
 						<row>
-							<entry><code>mvn -P assembly clean install</code></entry>
-							<entry>This runs a builds all source code, documentation, JavaDoc, runs all unit and integration tests,
-								and produces all assemblies (e.g., zip files).
+							<entry><code>mvn clean install -P assembly</code></entry>
+							<entry>Clean up all produced artifacts; compile the source code and test cases; 
+								run all of the unit tests; install the resulting JAR artifact(s); compile and run all integration tests;
+								build the documentation; produce the JavaDoc; and build the ZIP assemblies for the source, binary distribution, 
+								documentation, JavaDoc, and examples.
 							  HSQLDB is used when a database is needed.
 							</entry>
 						</row>
@@ -390,13 +360,19 @@
 				</thead>
 				<tbody>
 					<row>
-						<entry><ulink url="http://hudson.jboss.org/hudson/job/ModeShape%20continuous/">Continuous</ulink></entry>
+						<entry><ulink url="http://hudson.jboss.org/hudson/view/ModeShape/job/ModeShape%20continuous/">Continuous</ulink></entry>
 						<entry>Continuous build that runs an integration build after changes are committed to SVN.  SVN is polled every 15 minutes.</entry>
 					</row>
 					<row>
-						<entry><ulink url="http://hudson.jboss.org/hudson/job/ModeShape%20nightly%20integration/">Nightly</ulink></entry>
+						<entry><ulink url="http://hudson.jboss.org/hudson/view/ModeShape/job/ModeShape%20nightly%20integration/">Nightly</ulink></entry>
 						<entry>Integration build that runs every night (usually around 2 a.m. EDT), regardless of whether changes have been committed to SVN
 							since the previous night.</entry>
+					</row>
+					<row>
+						<entry><ulink url="http://hudson.jboss.org/hudson/view/ModeShape/job/ModeShape%20API%20compatibility/">JCR 2.0 API Compatibility</ulink></entry>
+						<entry>Continuous build that runs every night (usually around 2 a.m. EDT), regardless of whether changes have been committed to SVN
+							since the previous night. This job runs a full integration build with all of the JCR TCK unit tests, and may have
+							several failures.</entry>
 					</row>
 				</tbody>
 			</tgroup>
@@ -407,7 +383,7 @@
 		<para>Many of the ModeShape committers use the Eclipse IDE, and all project files required by Eclipse are committed in SVN, making
 			it pretty easy to get an Eclipse workspace running with all of the ModeShape projects.
 		</para>
-		<para>We're using the latest released version of Eclipse, 
+		<para>We're using either the Ganymede or Helios (latest) versions of Eclipse, 
 			available from <ulink url="http://www.eclipse.org/">Eclipse.org</ulink>.  Simply follow the instructions for your platform.
 		</para>
 		<para>
@@ -419,7 +395,7 @@
 			formatting preferences for the ModeShape project.
 		</para>
 		<para>
-			Then install Eclipse plugins for SVN and Maven.  (Remember, you will have to restart Eclipse after installing them.)
+			Then install Eclipse plugins for SVN, Maven, and optionally Git.  (Remember, you will have to restart Eclipse after installing them.)
 			We use the following plugins:
 		</para>
 		<table frame='all'>
@@ -430,20 +406,24 @@
 				<thead>
 					<row>
 			  		<entry>Eclipse Plugins</entry>
-						<entry>Update Site URLs</entry>
+						<entry>Installation documentation</entry>
 					</row>
 				</thead>
 				<tbody>
 					<row>
 						<entry>Subversive SVN Client</entry>
 						<entry>
-							<ulink url="http://www.polarion.org/projects/subversive/download/eclipse/2.0/update-site/">http://www.polarion.org/projects/subversive/download/eclipse/2.0/update-site/</ulink>
-						  <ulink url="http://www.polarion.org/projects/subversive/download/integrations/update-site/">http://www.polarion.org/projects/subversive/download/integrations/update-site/</ulink>
+						<ulink url="http://www.polarion.com/products/svn/subversive/download.php">http://www.polarion.com/products/svn/subversive/download.php</ulink>
 						</entry>
 					</row>
 					<row>
 						<entry>Maven Integration for Eclipse</entry>
-						<entry><ulink url="http://m2eclipse.sonatype.org/update/">http://m2eclipse.sonatype.org/update/</ulink></entry>
+						<entry><ulink url="http://m2eclipse.sonatype.org/installing-m2eclipse.html">http://m2eclipse.sonatype.org/installing-m2eclipse.html</ulink></entry>
+					</row>
+					<row>
+
+						<entry>Git Integration for Eclipse</entry>
+						<entry><ulink url="http://www.eclipse.org/egit/download/">http://www.eclipse.org/egit/download/</ulink></entry>
 					</row>
 				</tbody>
 			</tgroup>
@@ -567,8 +547,8 @@
 			</note>
 			<para>
 				The release has been performed, but we still need to build and deploy the <emphasis>real</emphasis> artifacts
-				to the JBoss Maven repository.  To do
-				this, go to a working area and check out the recently-produced SVN tag (using the correct <code>{release-number}</code>):
+				to the JBoss Maven repository.  
+				To do this, go to a working area and check out the recently-produced SVN tag (using the correct <code>{release-number}</code>):
 			</para>
 			<programlisting>$ svn checkout https://anonsvn.jboss.org/repos/modeshape/tags/modeshape-{release-number}/</programlisting>
 			<para>
@@ -577,22 +557,15 @@
 			<programlisting>$ mvn clean deploy</programlisting>
 			<para>
 				This will rebuild all the artifacts (from your local copy of the <emphasis>tagged</emphasis> source) and deploy them
-				to the local file system, which is comprised of a local checkout of the JBoss Maven2 repository 
-				in a location specified by a combination of the <code>&lt;distributionManagement&gt;</code> section of several <code>pom.xml</code> 
-				files and your personal <code>settings.xml</code> file.  Once this Maven command completes, you will need to 
-				commit the new files after they are deployed.  For more information, see the 
-				<ulink url="http://wiki.jboss.org/wiki/Maven">JBoss wiki</ulink>.
+				to the JBoss.org Maven repository in staging area. Then, using the JBoss.org web interface, close the staging area
+				and (after validating the artifacts uploaded to the staging area) promote them into the releases repository
+				(see the <ulink url="http://community.jboss.org/wiki/MavenDeployingaRelease">repository documentation</ulink> for details).
 			</para>
 			<para>
-				At this point, the software has been released and tagged, and it's been deployed to a local checked-out copy of the 
-				ModeShape Maven 2 repository (via the "&lt;distribution&gt;" section of the pom.xml files).  Those need to be committed
-				into the Maven 2 repository using SVN.  And finally, the last thing is to publish the release onto
-				the project's <ulink url="&Downloads;">downloads</ulink> and <ulink url="&Home;/docs">documentation</ulink> pages.
-			</para>
-			<para>
-				The assemblies of the source, binaries, etc. also need to be published onto the &Downloads; area of the
-				<ulink url="http://www.modeshape.org">the project page</ulink>.  This process is expected to change, as <ulink url="http://www.jboss.org">JBoss.org</ulink>
-				improves its infrastructure.
+				At this point, the software has been tagged, released, and deployed to the JBoss.org Maven repository. The last
+				tasks are to update the <ulink url="&Home;">ModeShape.org</ulink> website (using Magnolia) and publish the release onto
+				the project's <ulink url="&Downloads;">downloads</ulink> and <ulink url="&Home;/docs">documentation</ulink> pages
+				using <code>sftp</code> and <code>rsync</code> (Red Hat employees only).
 			</para>
 		</sect2>
 	</sect1>

@@ -119,7 +119,7 @@ config.repositorySource("SVN Store")
       .setDescription("The ModeShape SVN repository (anonymous access)")
       .setProperty("repositoryRootUrl", "http://anonsvn.jboss.org/repos/modeshape");
       .setProperty("defaultWorkspaceName", "trunk");
-      .setProperty("predefinedWorkspaceNames", new String[] {"trunk" });
+      .setProperty("predefinedWorkspaceNames", new String[] {"trunk","tags" });
  ]]></programlisting>
 	<para>
 		Another way to configure the Subversion connector is to create &JcrConfiguration; instance and load an XML configuration file that contains a repository source that 
@@ -146,8 +146,9 @@ config.repositorySource("SVN Store")
                     mode:description="The ModeShape SVN repository (anonymous access)"
                     mode:repositoryRootUrl="http://anonsvn.jboss.org/repos/modeshape"
                     mode:defaultWorkspaceName="trunk"
-                    mode:predefinedWorkspaceNames="trunk"
                     mode:defaultWorkspaceName="default" >
+          <mode:predefinedWorkspaceNames>tags</mode:predefinedWorkspaceNames>
+          <mode:predefinedWorkspaceNames>trunk</mode:predefinedWorkspaceNames>
           <!-- 
           If desired, specify a cache policy that caches items in memory for 5 minutes (300000 ms).
           This fragment can be left out if the connector should not cache any content.

@@ -97,7 +97,8 @@
 				<row>
 					<entry>rootNodeUuid</entry>
 					<entry>Optional property that, if used, specifies the UUID that should be used for the root node of each workspace.  If no value is
-					specified, a random UUID is generated each time that the repository is started.</entry>
+					specified, a pre-defined UUID constant is used. A custom value need only be supplied for Infinispan sources created prior to ModeShape 2.0,
+					or if a specific UUID is desired or needed.</entry>
 				</row>	
 				<row>
 					<entry>updatesAllowed</entry>
@@ -117,7 +118,6 @@ config.repositorySource("Infinispan Store")
       .usingClass(InfinispanSource.class)
       .setDescription("The repository for our content")
       .setProperty("defaultWorkspaceName", "prod")
-      .setProperty("rootNodeUuid", UUID.fromString("84b73fc8-81a8-42ed-aa4b-3905094966f0")
       .setProperty("predefinedWorkspaceNames", new String[] { "staging", "dev"});
 ]]></programlisting>
 	<para>
@@ -143,9 +143,10 @@ config.repositorySource("Infinispan Store")
         <mode:source jcr:name="Infinispan Store" 
                     mode:classname="org.modeshape.connector.infinispan.InfinispanSource" 
                     mode:description="The repository for our content"
-                    mode:defaultworkspaceName="prod"
-                    mode:rootNodeUuid="84b73fc8-81a8-42ed-aa4b-3905094966f0"
-                    mode:predefinedWorkspaceNames="staging,dev"/>    
+                    mode:defaultworkspaceName="prod">
+           <mode:predefinedWorkspaceNames>staging</mode:predefinedWorkspaceNames>
+           <mode:predefinedWorkspaceNames>dev</mode:predefinedWorkspaceNames>
+        </mode:source>
     </mode:sources>
     
 	<!-- MIME type detectors and JCR repositories would be defined below --> 

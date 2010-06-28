@@ -151,8 +151,10 @@ config.repositorySource("Store")
                     mode:classname="org.modeshape.graph.connector.jbosscache.JBossCacheSource" 
                     mode:description="The repository for our content"
                     mode:defaultworkspaceName="prod"
-                    mode:rootNodeUuid="12083e7e-2b55-4c8d-954d-627a9f5c45c2"
-                    mode:predefinedWorkspaceNames="staging,dev"/>    
+                    mode:rootNodeUuid="12083e7e-2b55-4c8d-954d-627a9f5c45c2">
+           <mode:predefinedWorkspaceNames>staging</mode:predefinedWorkspaceNames>
+           <mode:predefinedWorkspaceNames>dev</mode:predefinedWorkspaceNames>
+        </mode:source>
     </mode:sources>
     
 	<!-- MIME type detectors and JCR repositories would be defined below --> 

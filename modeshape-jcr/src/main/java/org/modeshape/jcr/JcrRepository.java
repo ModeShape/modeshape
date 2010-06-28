@@ -376,6 +376,11 @@ public class JcrRepository implements Repository {
          * specification.
          */
         public static final String JCR_SQL2 = Query.JCR_SQL2;
+
+        /**
+         * The enhanced Query Object Model language defined by the JCR 2.0 specification.
+         */
+        public static final String JCR_JQOM = Query.JCR_JQOM;
         /**
          * The full-text search language defined as part of the abstract query model, in Section 6.7.19 of the JCR 2.0
          * specification.

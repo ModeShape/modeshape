@@ -204,7 +204,7 @@ public interface &Path; extends Comparable&lt;Path>, Iterable&lt;&PathSegment;>,
 		<para>
 			Each &PathSegment; is an immutable pair of a &Name; and <emphasis>same-name-sibling (SNS) index</emphasis>.  When two sibling nodes
 			have the same name, then the first sibling will have SNS index of "1" and the second will be given a SNS index of "2".
-			(This mirrors the same-name-sibling index behavior of <ulink url="&JSR170;">JCR paths</ulink>.)
+			(This mirrors the same-name-sibling index behavior of <ulink url="&JSR283;">JCR paths</ulink>.)
 		</para>
 		<programlisting>
 @Immutable
@@ -260,7 +260,7 @@ public static interface &PathSegment; extends Cloneable, Comparable&lt;&PathSegm
 		  URIs, booleans, longs, doubles, decimals, binary content,	dates, UUIDs, references to other nodes, 
 		  or any other serializable object.  All but three of these are the standard Java classes: dates are
 		  represented by an immutable &DateTime; class; binary content is represented by an immutable &Binary;
-		  interface patterned after the proposed interface of the same name in <ulink url="&JSR283;">JSR-283</ulink>;
+		  interface patterned after the interface of the same name in <ulink url="&JSR283;">JSR-283</ulink>;
 		  and &Reference; is an immutable interface patterned after the corresponding interface is 
 		  <ulink url="&JSR170;">JSR-170</ulink> and <ulink url="&JSR283;">JSR-283</ulink>.
 		</para>

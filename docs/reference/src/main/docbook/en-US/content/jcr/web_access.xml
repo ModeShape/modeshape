@@ -319,7 +319,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	<parent>
 		<artifactId>modeshape</artifactId>
 		<groupId>org.modeshape</groupId>
-		<version>1.1</version>
+		<version>2.0</version>
 		<relativePath>../..</relativePath>
 	</parent>
 	<artifactId>modeshape-web-jcr-webdav-war</artifactId>
@@ -357,32 +357,30 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ configRepository.xml
 	|	+ log4j.properties (Optional)
 	+ /lib
-	|	+ activation-1.1.jar
 	|	+ aperture-1.1.0.Beta1.jar
 	|	+ google-collections-1.0.jar
 	|	+ hamcrest-core-1.1.jar
 	|	+ jakarta-regexp-1.4.jar
-	|	+ jaxb-api-2.1.jar
-	|	+ jaxb-impl-2.1.12.jar
 	|	+ jcip-annotations-1.0.jar
-	|	+ jcr-1.0.1.jar
+	|	+ jcr-2.0.jar
 	|	+ joda-time-1.6.jar
 	|	+ junit-dep-4.4.jar
 	|	+ lucene-analyzers-3.0.0.jar
 	|	+ lucene-core-3.0.0.jar
 	|	+ lucene-regex-3.0.0.jar
 	|	+ lucene-snowball-3.0.0.jar
-	|	+ modeshape-cnd-1.1.jar
-	|	+ modeshape-common-1.1.jar
-	|	+ modeshape-graph-1.1.jar
-	|	+ modeshape-jcr-1.1.jar
-	|	+ modeshape-mimetype-detector-aperture-1.1.jar
-	|	+ modeshape-repository-1.1.jar
-	|	+ modeshape-search-lucene-1.1.jar
-	|	+ modeshape-web-jcr-1.1.jar
-	|	+ modeshape-web-jcr-webdav-1.1.jar
+	|	+ modeshape-cnd-2.0.jar
+	|	+ modeshape-common-2.0.jar
+	|	+ modeshape-graph-2.0.jar
+	|	+ modeshape-jcr-2.0.jar
+	|	+ modeshape-jcr-api-2.0.jar
+	|	+ modeshape-mimetype-detector-aperture-2.0.jar
+	|	+ modeshape-repository-2.0.jar
+	|	+ modeshape-search-lucene-2.0.jar
+	|	+ modeshape-web-jcr-2.0.jar
+	|	+ modeshape-web-jcr-webdav-2.0.jar
 	|	+ rdf2go.api-4.6.2.jar
-	|	+ slf4j-api-1.5.8.jar
+	|	+ slf4j-api-1.5.11.jar
 	|	+ slf4j-log4j12-1.5.8.jar
 	|	+ stax-api-1.0-2.jar
 	|	+ webdav-servlet-2.0.jar
@@ -807,7 +805,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	<parent>
 		<artifactId>modeshape</artifactId>
 		<groupId>org.modeshape</groupId>
-		<version>1.1</version>
+		<version>2.0</version>
 		<relativePath>../..</relativePath>
 	</parent>
 	<artifactId>modeshape-web-jcr-rest-war</artifactId>
@@ -819,7 +817,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 		<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-web-jcr-rest</artifactId>
-			<version>1.1</version>
+			<version>2.0</version>
 		</dependency>
 
 		<dependency>
@@ -832,7 +830,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-client</artifactId>
-			<version>1.1.GA</version>
+			<version>1.2.1.GA</version>
 		</dependency>		
 	</dependencies>
 </project>
@@ -865,7 +863,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ jaxrs-api-1.2.1.GA.jar
 	|	+ jcip-annotations-1.0.jar
 	|	+ jcl-over-slf4j-1.5.8.jar
-	|	+ jcr-1.0.1.jar
+	|	+ jcr-2.0.jar
 	|	+ jettison-1.1.jar
 	|	+ joda-time-1.6.jar
 	|	+ jsr250-api-1.0.jar
@@ -874,20 +872,21 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ lucene-core-3.0.0.jar
 	|	+ lucene-regex-3.0.0.jar
 	|	+ lucene-snowball-3.0.0.jar
-	|	+ modeshape-cnd-1.1.jar
-	|	+ modeshape-common-1.1.jar
-	|	+ modeshape-graph-1.1.jar
-	|	+ modeshape-jcr-1.1.jar
-	|	+ modeshape-repository-1.1.jar
-	|	+ modeshape-search-lucene-1.1.jar
-	|	+ modeshape-web-jcr-1.1.jar
-	|	+ modeshape-web-jcr-rest-1.1.jar
+	|	+ modeshape-cnd-2.0.jar
+	|	+ modeshape-common-2.0.jar
+	|	+ modeshape-graph-2.0.jar
+	|	+ modeshape-jcr-2.0.jar
+	|	+ modeshape-jcr-api-2.0.jar
+	|	+ modeshape-repository-2.0.jar
+	|	+ modeshape-search-lucene-2.0.jar
+	|	+ modeshape-web-jcr-2.0.jar
+	|	+ modeshape-web-jcr-rest-2.0.jar
 	|	+ resteasy-jaxb-provider-1.2.1.GA.jar
 	|	+ resteasy-jaxrs-1.2.1.GA.jar
 	|	+ resteasy-jettison-provider-1.2.1.GA.jar
 	|	+ scannotation-1.0.2.jar
 	|	+ sjsxp-1.0.1.jar
-	|	+ slf4j-api-1.5.8.jar
+	|	+ slf4j-api-1.5.11.jar
 	|	+ slf4j-log4j12-1.5.8.jar
 	|	+ slf4j-simple-1.5.8.jar
 	|	+ stax-api-1.0-2.jar

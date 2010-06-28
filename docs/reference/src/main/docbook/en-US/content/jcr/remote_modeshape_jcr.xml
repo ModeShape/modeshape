@@ -28,7 +28,7 @@
 <!ENTITY % CustomDTD SYSTEM "../../custom.dtd">
 %CustomDTD;
 ]>
-<chapter id="deploying_modeshape_jcr">
+<chapter id="remote_modeshape_jcr">
   <title>Deploying the ModeShape JCR Implementation</title>
   <para>
 		Placeholder for the ModeShape REST Server documentation

@@ -31,12 +31,12 @@
 <chapter id="introduction">
   <title>Introduction to ModeShape</title>
 	<para>
-		ModeShape is a JCR implementation that provides access to content stored in many different kinds of systems. 
+		ModeShape is a <ulink url="&JSR283;">JCR</ulink> implementation that provides access to content stored in many different kinds of systems. 
 		A ModeShape repository isn't yet another silo of isolated information, but rather it's a JCR view of the information 
 		you already have in your environment: files systems, databases, other repositories, services, applications, etc.
 	</para>
 	<para>
-		To your applications, ModeShape looks and behaves like a regular JCR repository.  Using the standard JCR API,
+		To your applications, ModeShape looks and behaves like a regular JCR repository.  Using the standard JCR 2.0 API (a.k.a. <ulink url="&JSR283;">JSR-283</ulink>),
 		applications can search, navigate, version, and listen for changes in the content.  But under the covers, ModeShape
 		gets its content by federating multiple back-end systems (like databases, services, other repositories, etc.),
 		allowing those systems to continue "owning" the information while ensuring the unified repository stays up-to-date
@@ -182,17 +182,20 @@
 	    transactions, and observation. Because of this, content repositories are used by content management systems (CMS), document
 	    management systems (DMS), and other applications that manage electronic files (e.g., documents, images, multi-media, web
 	    content, etc.) and metadata associated with them (e.g., author, date, status, security information, etc.). The
-	    <ulink url="http://www.jcp.org/en/jsr/detail?id=170">Content Repository for Java technology API</ulink>
-	    provides a standard Java API for working with content repositories. Abbreviated "JCR", this API was developed as part of the
-	    Java Community Process under <ulink url="http://www.jcp.org/en/jsr/detail?id=170">JSR-170</ulink>
-	    and has been revised under <ulink url="http://www.jcp.org/en/jsr/detail?id=283">JSR-283</ulink>.
+	    <ulink url="&JSR283;">Content Repository for Java technology API</ulink>
+	    provides a standard Java API for working with content repositories. Abbreviated "JCR", this API was developed through the
+	    Java Community Process originally under <ulink url="&JSR170;">JSR-170</ulink> (as "JCR 1.0"), but has
+	    since been revised and improved as "JCR 2.0" under <ulink url="&JSR283;">JSR-283</ulink>.
 	  </para>
 	  <para>
-		  The JCR API provides a number of information services that are needed by many applications,
+		  The JCR 2.0 API provides a number of information services that are needed by many applications,
 		  including: read and write access to information; the ability to structure information in a hierarchical and flexible manner that can adapt
-		  and evolve over time; ability to work with unstructured content; ability to (transparently) handle large strings; 
+		  and evolve over time; ability to work with structured, semi-structured, and unstructured content; ability to (transparently) handle large strings; 
 		  notifications of changes in the information; search and query; versioning of information; access control; integrity constraints;
 		  participation within distributed transactions; explicit locking of content; and of course persistence.
+		</para>
+		<para>
+			ModeShape implements the JCR 2.0 API, including many of the optional features.
 		</para>
 		<figure id="jcr-features">
 			<title>JCR API features</title>
@@ -202,18 +205,18 @@
   <sect1 id="roadmap">
     <title>Project roadmap</title>
     <para>
-      The roadmap for ModeShape is managed in the project's
+	    The ModeShape open source project uses its 
       <ulink url="&JIRA;">JIRA instance</ulink>
-      . The roadmap shows the different tasks, requirements, issues and other activities that have been targeted to each of the
-      upcoming releases. (The
-      <ulink url="&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">roadmap report</ulink>
-      always shows the next three releases.)
+      to track issues for tasks, requirements, bugs, and other activities. The
+      <ulink url="&Roadmap;">roadmap report</ulink>
+      shows how each of these issues are targeted to the upcoming releases, while the <ulink url="&ChangeLog;">change log report</ulink>
+      shows all of the issues that were fixed in each of the past releases.
     </para>
     <para>
       By convention, the ModeShape project team periodically review JIRA issues that aren't targeted to a release, and then schedule
  			them based upon current workload, severity, and the roadmap.  And if we review an issue and don't know how to target it,
 			we target it to the
-      <ulink url="&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">Future Releases</ulink>
+      <ulink url="&FutureReleases;">Future Releases</ulink>
       bucket.
 		</para>
 		<para>
@@ -224,30 +227,39 @@
   <sect1 id="modules">
     <title>ModeShape modules</title>
     <para>
-      ModeShape consists of the following modules:
+      ModeShape consists quite a few separate modules. Just a few of these make up the essential core components of the system:
       <itemizedlist>
         <listitem>
           <para>
             <emphasis role="strong">modeshape-jcr</emphasis>
-            contains ModeShape's implementation of the JCR API. If you're using ModeShape as a JCR repository, this is the
+            contains ModeShape's implementation of the JCR 2.0 API. If you're using ModeShape as a JCR repository, this is the
  						top-level dependency that you'll want to use.  The module defines all required dependencies, except for
  						the repository connector(s) and any sequencer implementations needed by your configuration.
-						As we'll see later on, using ModeShape as a JCR repository is easy: simply create a <link linkend="configuration">configuration</link>, 
-						start ModeShape's <link linkend="jcr_engine">JCR engine</link>,	get the JCR &Repository; object for your repository, and then use the JCR API.
+						As we'll see later on, using ModeShape as a JCR repository is as easy as defining a <link linkend="configuration">configuration</link>,
+						obtaining the JCR &Repository; object for your repository using the &RepositoryFactory;, and then using the standard JCR API.
 						This module also uses the JCR unit tests from the reference implementation to verify the behavior of the ModeShape implementation.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">modeshape-jcr-api</emphasis>
-            defines a number of interfaces that extend a few of the JCR API interfaces, adding some of the methods that appear
-            in JCR 2.0. This module serves as a temporary bridge to some very useful JCR 2.0 functionality.
-            Plus, this module defines a <code>Repositories</code> interface that defines a way to look up <code>javax.jcr.Repository</code> 
+            defines a number of interfaces that add a few interfaces or extend several of the JCR API interfaces. 
+            For example, this module defines a &Repositories; interface that defines a way to look up <code>javax.jcr.Repository</code> 
+            instances by name, and that is implemented by the ModeShape <code>JcrEngine</code>. It also defines several new
+            interfaces that extend the JCR 2.0 API's Query Object Model with additional behavior, including more criteria options
+            (such as &Between;, &NodeDepth;, &NodePath;, &ReferenceValue;), a formal &Limit; clause, and a &SetQuery; for unions, intersects,
+            and difference queries.
+            This module is very small and is only dependent upon the JCR API, and ModeShape is designed so that client applications can depend
+            only upon this module without having to depend on the <code>modeshape-jcr</code> interfaces or its dependencies.
+            For example, this module defines a &Repositories; interface that defines a way to look up <code>javax.jcr.Repository</code> 
             instances by name, and that is implemented by the ModeShape <code>JcrEngine</code>, allowing client applications to
             dependency on this module to look up repositories by name <emphasis>without</emphasis> having to depend on the 
-            <code>modeshape-jcr</code> interfaces or its dependencies.
           </para>
         </listitem>
+      </itemizedlist>
+			Several other modules are also essential, but for the most part are hidden to client applications as they provide components used
+			within the JCR implementation:
+      <itemizedlist>
         <listitem>
           <para>
             <emphasis role="strong">modeshape-repository</emphasis>
@@ -278,20 +290,9 @@
           </para>
         </listitem>
       </itemizedlist>
-				There are several modules that provide system- and integration-level tests:
-      <itemizedlist>
-        <listitem>
-          <para>
-            <emphasis role="strong">modeshape-integration-tests</emphasis>
-            provides a home for all of the integration tests that involve more components that just unit tests. Integration
-            tests are often more complicated, take longer, and involve testing the integration and functionality of multiple
-            components (whereas unit tests focus on testing a single class or component and may use stubs or mock objects
-            to isolate the code being tested from other related components).
-          </para>
-        </listitem>
-      </itemizedlist>
-      The following modules are optional extensions that may be used selectively and as needed
- 			(and are located in the source under the <code>extensions/</code> directory):
+      Most of the ModeShape modules, however, are optional extensions. Many of these depend on third party libraries, so you 
+      will probably want to include only those modules that provide functionality you'll use in your repository.
+      These modules are located in the source under the <code>extensions/</code> directory.
       <itemizedlist>
         <listitem>
           <para>
@@ -338,7 +339,7 @@
         <listitem>
           <para>
             <emphasis role="strong">modeshape-connector-jcr</emphasis>
-            is a ModeShape repository connector that accesses and stores content in an external JCR repository. This allows
+            is a ModeShape repository connector that accesses and stores content in an external JCR 2.0 repository. This allows
             ModeShape to integrate with other JCR implementations and even federate multiple JCR repositories into 
             a single unified repository. Any differences in namespaces are automatically handled, although node types used by
             the content in the external JCR repository must also be registered into the ModeShape repository using the connector.
@@ -467,7 +468,9 @@
       The following modules make up the various web application projects (and are located in the source
       under the
       <code>web/</code>
-      directory):
+      directory). You may be able to use these artifacts "out of the box", but more likely the configuration defined in the WAR files
+      will not be exactly what you want for your environment. In this case, you can replicate one of our "-war" modules and customize
+      the configuration settings to easily assembly a custom WAR.
       <itemizedlist>
         <listitem>
           <para>
@@ -517,7 +520,7 @@
           </para>
         </listitem>
       </itemizedlist>
-      There are also documentation modules (located in the source under the
+      There are also modules for ModeShape's documentation (located in the source under the
       <code>docs/</code>
       directory):
       <itemizedlist>
@@ -544,7 +547,8 @@
           </para>
         </listitem>
       </itemizedlist>
-      Another module provides some utility functionality:
+      Another module provides a utility to generate DDL for a variety of database management systems. This module is likely
+      not used in client applications, but rather used during development to generate the desired DDL.
       <itemizedlist>
         <listitem>
           <para>
@@ -554,7 +558,8 @@
           </para>
         </listitem>
       </itemizedlist>
-      There is another module that runs the full suite of JCR TCK tests, and which at the moment still contains some failures.
+      There is another module that runs the full suite of JCR TCK tests, and which at the moment still contains a few failures.
+      This module is never needed in client applications.
       <itemizedlist>
         <listitem>
           <para>
@@ -565,6 +570,18 @@
           </para>
         </listitem>
       </itemizedlist>
+		  Another module provides system- and integration-level tests is never needed in client applications:
+      <itemizedlist>
+        <listitem>
+          <para>
+            <emphasis role="strong">modeshape-integration-tests</emphasis>
+            provides a home for all of the integration tests that involve more components that just unit tests. Integration
+            tests are often more complicated, take longer, and involve testing the integration and functionality of multiple
+            components (whereas unit tests focus on testing a single class or component and may use stubs or mock objects
+            to isolate the code being tested from other related components).
+          </para>
+        </listitem>
+      </itemizedlist>
       Finally, there is a Maven parent <code>pom.xml</code> file that aggregates all of the other projects, provides common
       defaults for Maven plugins and dependency versions used throughout the modules, and definition of various asset files
       to help build the necessary Maven artifacts during a build.
@@ -572,26 +589,44 @@
   	<para>
       Each of these modules is a Maven project with a group ID of
       <code>org.modeshape</code>
-      . All of these projects correspond to artifacts in the
-      <ulink url="&JBossMaven;">JBoss Maven 2 Repository</ulink>
-      .
+      . All of these projects correspond to <ulink url="&ModeShapeMaven;">artifacts</ulink> in the
+      <ulink url="&JBossMaven;">JBoss Maven 2 Repository</ulink>, the settings for which are described on the
+      <ulink url="http://community.jboss.org/wiki/MavenGettingStarted-Users">JBoss.org wiki</ulink>.
     </para>
 	</sect1>
   <sect1 id="whats_new">
     <title>What's new?</title>
 	  <para>
-			With version &versionNumber;, ModeShape adds support for the <link linkend="jcr-sql-query-language">JCR-SQL query language</link>,
-			improvements to the existing connectors, and quite a few <ulink url="&ReleaseNotes;">bug fixes and improvements</ulink>.
+			With version &versionNumber;, ModeShape introduces support for the <link linkend="jcr-spec-support">JCR 2.0 API</link>,
+			improvements to existing connectors, and quite a few <ulink url="&ReleaseNotes;">bug fixes and improvements</ulink>.
 		</para>
-		<para>This means that <emphasis role="strong">ModeShape now implements all of the JCR Level 1 and Level 2 features, 
-			along with the optional locking, query, versioning, and observation features</emphasis>.
-			Of all of the JCR TCK tests, the only failures are related to several known issues: two from observation (see <ulink url="&JIRA;-563">MODE-563</ulink>)
-			one from query tests (see <ulink url="&JIRA;-760">MODE-760</ulink>), and two from invalid/incorrect queries created by the tests.
-		</para>
-		<para>
+		<para>This means that <emphasis role="strong">ModeShape now implements all of the required JCR 2.0 features</emphasis>: 
+			repository acquisition, authentication, reading/navigating, query, export, node type discovery, and permissions and 
+			capability checking. 
+			<emphasis role="strong">ModeShape also implements most of the optional JCR 2.0 features</emphasis>:
+			writing, import, observation, workspace management, versioning, locking, node type management, same-name siblings, 
+			and orderable child nodes.
+			The remaining optional features (shareable nodes, access control management, lifecycle management, 
+			retention and hold, and transactions) will be introduced in future versions.
+	  </para>
+	  <note>
+		  <para>
+			  ModeShape &versionNumber; currently passes 1371 of the 1391 JCR TCK tests, where 17 of these 20 failures appear
+			  to be bugs in the TCK tests (see 
+			  <ulink url="https://issues.apache.org/jira/browse/JCR-2648">JCR-2648</ulink>, 
+			  <ulink url="https://issues.apache.org/jira/browse/JCR-2661">JCR-2661</ulink>, 
+			  <ulink url="https://issues.apache.org/jira/browse/JCR-2662">JCR-2662</ulink>, and
+			  <ulink url="https://issues.apache.org/jira/browse/JCR-2663">JCR-2663</ulink>). The remaining 3 failures are
+			  due to known issues (see 
+			  <ulink url="&JIRA;-759">MODE-759</ulink>, 
+			  <ulink url="&JIRA;-760">MODE-760</ulink>, 
+			  <ulink url="&JIRA;-786">MODE-786</ulink>).
+  		</para>
+	  </note>
+		<!--para>
 		  This release also upgrades several third-party dependencies to the latest versions available at the time of release.
 		  Some of the upgraded libraries include <ulink url="http://hibernate.org/">Hibernate</ulink>, 
 		  <ulink url="http://jboss.org/jbosscache">JBoss Cache</ulink>, and <ulink url="http://slf4j.org/">SLF4J</ulink>. 
-		</para>
+		</para-->
   </sect1>
 </chapter>

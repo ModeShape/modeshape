@@ -32,49 +32,468 @@
   <title>Using the JCR API with ModeShape</title>
   <para>
   	The
-    <ulink url="&JSR170;">Content Repository for Java technology API</ulink>
+    <ulink url="&JSR283;">Content Repository for Java Technology API 2.0</ulink>
     provides a standard Java API for working with content repositories. Abbreviated "JCR", this API was developed as part of the
-    Java Community Process under <ulink url="&JSR170;">JSR-170</ulink> (JCR 1.0) and has been revised under <ulink url="&JSR283;">JSR-283</ulink>.
-		ModeShape provides a partial JCR 1.0 implementation that allows you to work with the contents of a repository using the
-		JCR API.  For information about how to use the JCR API, please see the <ulink url="&JSR170;">JSR-170</ulink> specification.
+    Java Community Process under <ulink url="&JSR170;">JSR-170</ulink> (JCR 1.0) and has been revised as JCR 2.0 under <ulink url="&JSR283;">JSR-283</ulink>.
+    JCR 2.0 is largely This improved version of the JCR API is largely the same as JCR 
+    Some of the improvements make it possible for your application to be written entirely against the JCR 2.0 API
+  </para>
+  <para>
+		ModeShape implements the JCR 2.0 API, meaning your application implementation that allows you to work with the contents of a repository using the
+		JCR API.
+	</para>
 	<note>
-		<para>In the interests of brevity, this chapter does not attempt to reproduce the JSR-170 specification nor provide
-		an exhaustive definition of ModeShape JCR capabilities.  Rather, this chapter will describe any deviations from the
-		specification as well as any ModeShape-specific public APIs and configuration.
+		<para>
+			In the interests of brevity, this chapter does not attempt to reproduce the JSR-283 specification nor provide
+		  an exhaustive definition of ModeShape JCR capabilities.  Rather, this chapter will describe any deviations from the
+		  specification as well as any ModeShape-specific public APIs and configuration. So, for a detailed explanation
+		  of the JCR API and its many interfaces and methods, see the <ulink url="&JSR283;">JSR-283</ulink> specification.
 		</para>
 	</note>
-  </para>
-	<para>Using ModeShape within your application is actually quite straightforward.  As you'll see in this chapter,
-		the first step is setting up ModeShape and starting the <code>JcrEngine</code>.  After that, you obtain the
-		<code>javax.jcr.Repository</code> instance for a named repository and just use the standard JCR API throughout your
-		application.
+	<para>
+		Using ModeShape within your application is actually quite straightforward, and with JCR 2.0 it is possible for your
+		application to do everything using only the JCR 2.0 API. Your application will first obtain a <code>javax.jcr.Repository</code> instance,
+		and will use that object to create sessions through which your application will read, modify, search,
+		or monitor content in the repository.
+    JCR sessions are designed to be lightweight, so it is perfectly fine 
+		(and actually recommended) for your application to create many short-lived sessions while generally avoiding
+		longer-lived sessions. In fact, <code>javax.jcr.Session</code> objects are not required to be thread-safe
+		(and are not in ModeShape), so your application should avoid using a single Session instance in multiple threads.
 	</para>
-  <sect1>	
-    <title>Obtaining JCR Repositories</title>
-		<para>Once you've obtained a reference to a <code>JcrEngine</code> as described in 
-		<link linkend="configuration">the previous chapter</link>, obtaining a repository is as easy as calling
-		the <code>getRepository(String)</code> method with the name of the repository that you just configured.
-<programlisting>
-&String; repositoryName = ...;
-&JcrEngine; jcrEngine = ...;
-&Repository; repository = jcrEngine.getRepository(repositoryName);
-</programlisting>
+	<sect1 id="whats_new_in_jcr2">
+		<title>What's new in JCR 2.0?</title>
+		<para>
+			Before we get started talking about how to use ModeShape via the standard JCR 2.0 API, it's worth spending a little time talking
+			about the changes in JCR 2.0 compared with version 1.0.
+		</para>
+		<para>
+			First the good news. If your application was written against the JCR 1.0 API, there's a good chance that most functionality will
+			still work. Generally speaking, many of the methods 
+	    Although an application written against the JCR 1.0 API will for the most part work very well against a JCR 2.0 repository, there are
+	    a few improvements to the JCR 2.0 API that your application will likely want to leverage.
+		</para>
+		<para>
+			Let's look at some of the more important changes in the JCR 2.0 API. However, this is certainly not definitive nor a complete
+			comparison, so please consult the <ulink url="&JSR283;">JSR-283</ulink> specification.
+		</para>
+		<sect2 id="jcr2_establishing_connections">
+			<title>Connecting</title>
+			<para>
+				JCR 1.0 did not specify a way for client applications to obtain the &Repository; instance, though the JCR 1.0 specification did
+				state this is typically done through JNDI. Consequently, JCR clients either used the JNDI approach or were required to use
+				implementation-specific code. Often, client applications abstracted this process to minimize their reliance upon implementation-specific
+				interfaces.
+			</para>
+			<para>
+				While the JNDI approach still works, JCR 2.0 introduces a new mechanism that makes it possible to find a &Repository; instance 
+				using only the JCR API. Details	of this are covered more in <link linkend="obtainining_jcr_repository">later</link>, but suffice 
+				to say that ModeShape does support this new &RepositoryFactory; approach. 
+			</para>
+			<para>
+				<emphasis>How this affects your application:</emphasis> If your application used an implementation-specific approach to obtaining
+				a &Repository; instance, you might consider changing it to use the 
+				<link linkend="obtainining_jcr_repository">new &RepositoryFactory; mechanism</link>.
+			</para>
+		</sect2>
+		<sect2 id="jcr2_identifiers">
+			<title>Identifiers</title>
+			<para>
+				JCR 1.0 used the notion of UUIDs on referenceable nodes - in other words those nodes with the "mix:referencedable" mixin.
+				However, there were several disadvantages to this design.  First, non-referenceable nodes had no such identifier in the JCR API,
+				leading to difficulties in easily identifying nodes using an immutable and invariant identifier (unlike the path, which can change
+				at any time) and requiring a fair amount of code to check whether a node is referenceable before its UUID could safely be obtained. 
+				Second and perhaps more importantly, only valid UUIDs could be used to identify nodes. This can cause difficulty
+				when JCR is used as an API to another system that does not use UUIDs.
+			</para>
+			<para>
+				JCR 2.0 introduces the notion of an identifier on all nodes, and the format of this identifier is designed to be opaque to the
+				client applications. This dramatically reduces the code to access a node's identifier down to a simple method call. And it
+				makes it possible for an implementation to use any identifiers format. This is good for ModeShape federation, as connectors
+				no longer need to force UUIDs for all nodes.
+			</para>
+			<para>
+				<emphasis>How this affects your application:</emphasis> The <code>Node.getUUID()</code> method is now deprecated, and instead 
+				your code should call <code>Node.getIdentifier()</code>, which works on any node. However, be aware that the resulting identifier 
+				is no longer required to be a valid UUID.  ModeShape does support these methods and behavior.
+			</para>
+		</sect2>
+		<sect2 id="jcr2_binary_values">
+			<title>Binary Values</title>
+			<para>
+				JCR 1.0 has always supported storing binary values in properties, but clients could do little more than just stream the bytes
+				for each value.  JCR 2.0 introduces a &Binary; interface that defines a way to get the size of the binary value, an InputStream
+				to the value, a method for random access to the value's bytes, and a way to dispose of the binary value when completed
+				(allowing the implementation to better clean up memory and other resources).
+			</para>
+			<para>
+				<emphasis>How this affects your application:</emphasis> The way your existing JCR application accesses and sets binary values
+				will still work, but the methods are now deprecated.  Therefore, you will very likely want to change to use the new &Binary; interface. 
+				For example, code that previously accessed the input stream directly from the &Property;:
+			</para>
+    <programlisting role="JAVA"><![CDATA[Property property = ...
+InputStream stream = property.getInputStream();
+try {
+   // Read stream
+} finally {
+   stream.close();
+}
+]]></programlisting>
+  		<para>
+	      can be minimally changed to first get the &Binary; value and then get the stream from this Binary value:
+			</para>
+    <programlisting role="JAVA"><![CDATA[Property property = ...
+InputStream stream = property.getBinary().getInputStream();
+try {
+   // Read stream
+} finally {
+   stream.close();
+}
+]]></programlisting>
+  		<para>
+	      This second example is not using any deprecated methods, but does not actually dispose of the &Binary; object. This actually
+	      works just fine in ModeShape, as closing the InputStream will automatically dispose of the &Binary; object.
+	    </para>
+	    <para>
+	      You may also consider whether your application may benefit from the new <code>Binary.getSize()</code> or <code>Binary.read(byte[],long)</code> methods.
+			</para>
+		</sect2>
+		<sect2 id="jcr2_node_type_management">
+			<title>Node Type Management</title>
+			<para>
+				In JCR 1.0, client applications could discover node types, property definitions, and child node definitions, but the API did not
+				provide a way for client applications to modify or create new node types. This has been rectified in the JCR 2.0 API, and is
+				these methods are now supported by ModeShape.
+			</para>
+			<para>
+				Additionally, the JCR 2.0 specification formalized the <emphasis>Compact Node Definition</emphasis> grammar, and made a few minor
+				improvements to the CND formats used in some JCR 1.0 implementations. Earlier ModeShape releases supported the older CND format,
+				and ModeShape &versionNumber; now supports the grammar as defined in the specification.
+			</para>
+			<para>
+				<emphasis>How this affects your application:</emphasis> Your application can now define its node types using the standard
+				CND format and/or using the new programmatic mechanism. If you already used the older CND format, be aware of the few new
+				options available when defining property definitions (e.g., searchable, queryable, etc.). Note that node type discovery is
+				largely unchanged.
+			</para>
+		</sect2>
+		<sect2 id="jcr2_query_feature">
+			<title>Queries</title>
+			<para>
+				JCR 1.0 made it possible for applications to query the repository using XPath and JCR-SQL query languages. JCR 2.0 maintains
+				the (mostly) similar Java interfaces for executing queries, but it deprecates the XPath and JCR-SQL query languages
+				and introduces a new declarative language called "JCR-SQL2" that is a very good improvement over JCR-SQL. JCR 2.0 also
+				introduces a new query object model (called "JCR-QOM") for defining queries using a programmatic API.
+			</para>
+			<para>
+				ModeShape supports all of these languages (<link linkend="jcr-xpath-query-language">XPath</link>, 
+				<link linkend="jcr-sql-query-language">JCR-SQL</link>, <link linkend="jcr-sql2-query-language">JCR-SQL2</link>, 
+				<link linkend="jcr-qom-query-language">JCR-QOM</link>), and also supports a 
+				<link linkend="fulltext-search-query-language">full-text query language</link>
+				that is defined by the full-text search expression in the JCR-SQL2 language. Additionally, ModeShape extends most of these
+				languages to support richer and more capable queries.
+			</para>
+			<para>
+				<emphasis>How this affects your application:</emphasis> Your application can continue to use XPath and JCR-SQL queries.
+				However, your application may benefit from switching from JCR-SQL to JCR-SQL2 and its greater capabilities and expressive
+				power. Leverage some of the ModeShape extensions to make your JCR-SQL2 queries even more powerful.
+			</para>
+		</sect2>
+		<sect2 id="jcr2_workspace_management">
+			<title>Workspace Management</title>
+			<para>
+				Applications could not use the JCR 1.0 API to create or destroy workspaces, meaning such operations could only be done through
+				a non-standard and implementation-specific API. The JCR 2.0 API now standardizes these operations, and although not all
+				implementations are required to support them, ModeShape does support these (though not all connectors do support them).
+			</para>
+			<para>
+				<emphasis>How this affects your application:</emphasis> Your application can now create and remove workspaces using the standard JCR 2.0 API.
+			</para>
+		</sect2>
+		<sect2 id="jcr2_observation">
+			<title>Observation</title>
+			<para>
+				Applications could use the JCR 1.0 API to be notified of changes to the content, using the optional observation feature.
+				 called "observation". create or destroy workspaces, meaning such operations could only be done through
+				a non-standard and implementation-specific API. The JCR 2.0 API now standardizes these operations, and although not all
+				implementations are required to support them, ModeShape does support these (though not all connectors do support them).
+			</para>
+			<para>
+				<emphasis>How this affects your application:</emphasis> Your application can now create and remove workspaces using the standard JCR 2.0 API.
+			</para>
+		</sect2>
+		<sect2 id="jcr2_locking">
+			<title>Locking</title>
+			<para>
+				JCR 1.0 API had the notion of locking nodes, useful in situations that required synchronization around reading and modifying
+				content. This optional API is simple and clean, and worked quite well. The JCR 2.0 API preserved all of the JCR 1.0 locking semantics,
+				but added a few (optional) methods. ModeShape implements this optional locking feature.
+			</para>
+			<para>
+				<emphasis>How this affects your application:</emphasis> If your application is already using the JCR 1.0 locking feature,
+				be aware that many of the locking-related methods on &Node; were deprecated in JCR 2.0 and moved to the new &LockManager; interface.
+				However, locking semantics remain unchanged.
+			</para>
+		</sect2>
+		<sect2 id="jcr2_versioning">
+			<title>Versioning</title>
+			<para>
+				Versioning of nodes was defined as an optional feature of the JCR 1.0 API. The JCR 2.0 API expanded upon locking by defining
+				a simple versioning model, introducing the &VersionManager; interface, and making some semantic changes as well. For example, 
+				restoring a version that contained a versioned child in its subgraph no longer automatically restores the versioned child.
+				This behavior was ambiguous in the JCR 1.0 specification, and ModeShape 1.x performed the restore operation recursively down the graph.
+				The JCR 2.0 specification more clearly requires a non-recursive restore. Therefore, ModeShape &versionNumber; now supports
+				the "full versioning" model.
+			</para>
+			<para>
+				<emphasis>How this affects your application:</emphasis> If your application is already using JCR 1.0 versioning feature,
+				be aware that many of the version-related methods on &Node; were deprecated in JCR 2.0 and moved to the new &VersionManager; interface.
+				And any reliance upon ModeShape's recursive restore operation must be changed, per the JCR 2.0 specification.
+			</para>
+		</sect2>
+		<sect2 id="jcr2_importing_and_exporting">
+			<title>Importing and Exporting</title>
+			<para>
+				Importing and exporting content is largely unchanged in JCR 2.0, with the exception of specific requirements on handling
+				node identifiers.
+			</para>
+			<para>
+				<emphasis>How this affects your application:</emphasis> Exporting from a JCR 1.0 or 2.0 repository and importing into a JCR 2.0 repository
+				should work as before. ModeShape does support importing and exporting.
+			</para>
+		</sect2>
+		<sect2 id="jcr2_orderable_child_nodes">
+			<title>Orderable Child Nodes</title>
+			<para>
+				Orderable child nodes was an optional feature in JCR 1.0, and has been carried over to JCR 2.0 unchanged. Node ordering has been supported
+				by ModeShape since the initial release.
+			</para>
+			<para>
+				<emphasis>How this affects your application:</emphasis> No changes are required if your application relies upon node ordering.
+			</para>
+		</sect2>
+		<sect2 id="jcr2_paths">
+			<title>Paths</title>
+			<para>
+				As defined in JCR 1.0, paths only consisted of segments with node names. JCR 2.0 adds a new form of path called "identifier paths" that
+				are of the form <code>'[' </code><emphasis>identifier</emphasis><code> ']'</code>, where <emphasis>identifier</emphasis> is an opaque
+				identifier. (Note that the JCR 2.0 specification might appear to allow identifier segments and name segments to be used together, but
+				Section 3.4.1.1 requires that an identifier segment must be the first and only segment in a path.)
+			</para>
+			<para>
+				<emphasis>How this affects your application:</emphasis> Any application written to JCR 1.0 paths will likely work as expected (this is
+				certainly true when using ModeShape repositories). However, with JCR 2.0 it is now possible for your application to start making us
+				of identifier paths. For example, PATH properties can now store identifier paths, and it is possible to resolve an identifier path
+				to the actual node. And while the specification does not preclude an implementation returning an identifier path as the node's
+				absolute path, ModeShape never does this and will always return the name-oriented path.
+			</para>
+		</sect2>
+		<sect2 id="jcr2_getting_items">
+			<title>getItem(String)</title>
+			<para>
+				The JCR 1.0 specification was slightly ambiguous in defining how the <code>getItem(String)</code> method behaved if the relative path
+				could resolve to a node or a property.  ModeShape always implemented this by first attempting to resolve to a node, and only if no
+				such node could be found would it attempt to resolve to a property. The JCR 2.0 specification now explicitly specifies this behavior
+				(see Section 3.4.2.2).
+			</para>
+			<para>
+				<emphasis>How this affects your application:</emphasis> Your application will need to change if it uses <code>getItem(String)</code> and 
+				expects relative paths to be resolved against properties before nodes, as this is clearly different from the JCR 2.0 specified behavior.
+				Otherwise, your application needs no changes with respect to <code>getItem(String)</code>.
+			</para>
+		</sect2>
+  </sect1>
+	<sect1 id="obtainining_jcr_repository">
+		<title>Obtaining a JCR Repository</title>
+		<para>
+			Before your application can use a JCR repository, it has to find it. As mentioned <link linkend="jcr2_establishing_connections">above</link>,
+			the JCR 2.0 API defines a new &RepositoryFactory; interface that can be used with the 
+			<ulink url="&Java;java/util/ServiceLoader.html">Java Standard Edition Service Loader mechanism</ulink>
+			to obtain a &Repository; instance, all using the JCR API alone:
+		</para>
+    <programlisting role="JAVA"><![CDATA[
+Map<String,String> parameters = ...
+Repository repository = null;
+for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
+    repository = factory.getRepository(parameters);
+    if (repository != null) break;
+}]]></programlisting>
+		<para>
+			This code looks for all &RepositoryFactory; implementations on the classpath (assuming those implementations properly defined the service provider
+			within their JARs), and will ask each to create a repository given the supplied parameters. Thus, the parameters
+			are specific to the implementation you want to use.
+	  </para>
+		<note>
+			<para>
+				With JCR 1.0, applications could only find a &Repository; instance using implementation-specific code.
+				This new JCR 2.0 approach is a bit more complicated, but should work with most JCR 2.0 implementations
+				and does not require using any implementation classes. And your application can even load the parameters
+				from a configuration resource, meaning nothing in your application depends on a particular JCR implementation.
+			</para>
+		</note>
+	  <para>
+			ModeShape uses a single property named "<code>org.modeshape.jcr.URL</code>"
+			with a value that is a URL that either resolves to a ModeShape configuration file, such as
+	  </para>
+    <programlisting><![CDATA[ file://path/to/configFile.xml?repositoryName=MyRepository ]]></programlisting>
+    <para>
+	    or points to a &JcrEngine; instance in JNDI:
+	  </para>
+    <programlisting><![CDATA[ jndi://name/in/jndi?repositoryName=MyRepository ]]></programlisting>
+		<para>
+			Pointing directly to a configuration file often works well in stand-alone applications, while using JNDI works great
+			for applications deployed to server platforms (e.g., an application server or servlet container) where multiple applications
+			might want to use the same JCR repository. (We'll see in the <link linkend="jcr_engine">next section</link> 
+			how to configure ModeShape's &JcrEngine; explicitly and register it in JNDI.)
+		</para>
+		<para>
+			So, here's the ServiceLoader example again, but with ModeShape-specific parameters:
+		</para>
+    <programlisting role="JAVA"><![CDATA[
+String configUrl = ... ; // URL that points to your configuration file
+Map<String,String> parameters = Collections.singletonMap("org.modeshape.jcr.URL", configUrl);
+
+Repository repository = null;
+for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
+    repository = factory.getRepository(parameters);
+    if (repository != null) break;
+}]]></programlisting>
+		<para>
+			Once you've gotten hold of a &Repository; instance, you can use it to create &Session;s, using code similar to:
+    </para>			
+    <programlisting role="JAVA"><![CDATA[
+Credentials credentials = ...; // JCR credentials
+String workspaceName = ...;  // Name of repository workspace
+Session session = repository.login(credentials,workspaceName);
+]]></programlisting>
+    <para>
+	    We'll talk about the various ways of creating sessions in a <link linkend="">later chapter</link>.
+		</para>
+		<sect2>
+			<title>URL formats</title>
+			<para>
+				The value of <code>configUrl</code> in the code snippets above would be something like <code>file:relativePathToConfigFile?repositoryName=yourRepositoryName</code>.  
+				In this example, the configuration file that specifies the repository setup will be loaded from the file path <code>relativePathToConfigFile</code> and 
+				the repository named <code>yourRepositoryName</code> will be returned.  If there is no repository with that name or the configuration file does not exist 
+				at that path, <code>getRepository(Map)</code> will return null.  The format for the configuration file is <link linkend="loading_from_file">the same as used above</link> 
+				when loading a &JcrConfiguration; object from a configuration file.
+			</para>
+			<para>
+				If an absolute path to the configuration file works better, a value for <code>configUrl</code> like <code>file:///absolutePathToConfigFile?repositoryName=yourRepositoryName</code>
+				could have been used instead.  Note the addition of the three forward slashes after the protocol portion of the URL (i.e., <code>file:</code>).  this indicates that the 
+				following path is an absolute path.
+			</para>
+			<para>
+				This method can be used to load files from the file system or from the classpath.  If there is no file found at the given path, the same path will be used to try
+				to load the configuration file as a resource through the classloader.
+			</para>
+			<para>
+				Behind the scenes, the &JcrRepositoryFactory; is checking to see if it has already configured and started a &JcrEngine; for the named configuration file.  If it 
+				has already created a &JcrEngine; for this configuration, then that &JcrEngine; is reused.  Otherwise, a new &JcrEngine; is created and configured based on the given
+				configuration file.  Either way, the &JcrEngine; is used to get the reference to the returned &Repository;.
+			</para>
+		</sect2>
+		<sect2>
+			<title>Accessing Repositories from JNDI</title>
+			<para>
+				Given a slightly different URL, the same code used above can be reused to get a &Repository; from a &JcrEngine; that has been previously deployed through JNDI.
+				JNDI URLs take the form <code>jndi:///nameOfJndiResource?repositoryName=yourRepositoryName</code>.  The <code>nameOfJndiResource</code> is passed directly to
+				a JNDI <code>lookup</code>.  If no &JcrEngine; exists at the given name, the <code>getRepository(Map)</code> method will return <code>null</code>.  Also, any additional
+				parameters besides <code>JcrRepositoryFactory.URL</code> that are provided in the parameters map in the <code>getRepository(Map)</code> method will be used
+				in the constructor for the <code>InitialContext</code> used to look up the JNDI reference.
+			</para>
+			<para>
+				Accessing a repository through JNDI differs slightly from accessing a repository from a configuration file in that the &JcrRepositoryFactory; will never create a
+				new &JcrEngine; instance in response to a <code>getRepository</code> invocation with a JNDI URL.
+			</para>
+		</sect2>
+		<sect2>
+			<title>Cleaning Up after JcrRepositoryFactory</title>
+			<para>
+				As a <link linkend="jcr_repository_factory_from_file">preceding section</link> notes, it is possible for the &JcrRepositoryFactory; to create one or more &JcrEngine; instances.  Although the 
+				<ulink url="&JSR283;">JSR-283</ulink> specification does not specify a way to shutdown engines or repositories created as a side effect of &JcrRepositoryFactory; use, ModeShape has an extension to the
+				<ulink url="&JSR283;">JSR-283</ulink> API that provides this capability.
+			</para>
+    <programlisting role="JAVA"><![CDATA[
+org.modeshape.jcr.api.RepositoryFactory repoFactory = JcrRepositoryFactory();
+
+// Create any number of JcrEngines by calling repoFactory.getRepository(params);
+
+// Do some stuff with the repository
+
+// Now clean up the repository when finished
+
+repoFactory.shutdown(30, TimeUnit.SECONDS);
+
+]]></programlisting>
+			<para>
+				The code listed above will instantiate a new &JcrRepositoryFactory; and use a ModeShape-specific method to shutdown any &JcrEngine;s created by &JcrRepositoryFactory;
+				and wait for up to 30 seconds for each of them to shutdown gracefully.  Behind the scenes, the <code>shutdown(long, TimeUnit)</code> method is iterating over an internal 
+				collection of &JcrEngine;s and calling <code>shutdown</code> and <code>awaitTermination(long, TimeUnit)</code> on each engine.
+			</para>
+		</sect2>
+	</sect1>
+	<sect1 id="jcr_engine">
+		<title>ModeShape's JcrEngine</title>
+		<para>
+			Although the preferred mechanism to obtain a &Repository; object is through the &RepositoryFactory; interface
+			<link linkend="obtainining_jcr_repository">described above</link>, there are times when an application wants
+			or needs to have more control over an actual ModeShape engine, which encapsulates everything necessary
+			to run one or more JCR repositories and managing the underlying repository sources, the pools of connections to the sources, the sequencers,
+			the MIME type detector(s), and the &Repository; implementations.
+		</para>
+		<para>
+			Creating a new &JcrEngine; instance is very easy if you already have a valid &JcrConfiguration; instance as
+			described in the <link linkend="jcr_configuration">previous chapter</link>.  Once you have a valid &JcrConfiguration;
+			instance, all you have to do is build and start the engine:
+		</para>
+    <programlisting role="JAVA"><![CDATA[
+JcrConfiguration config = ...
+JcrEngine engine = config.build();
+engine.start();
+ ]]></programlisting>
+		<para>
+			Obtaining a JCR &Repository; instance is a matter of simply asking the engine for it by the name defined in the configuration:
+		</para>
+    <programlisting role="JAVA"><![CDATA[
+javax.jcr.Repository repository = engine.getRepository("Name of repository");
+ ]]></programlisting>
+		<para>
 			At this point, your application can proceed by working with the JCR API.
 		</para>
-  </sect1>
+		<para>
+			And, once you're finished with the &JcrEngine;, you should shut it down:
+		</para>
+    <programlisting role="JAVA"><![CDATA[
+engine.shutdown();
+engine.awaitTermination(3,TimeUnit.SECONDS);	// optional
+ ]]></programlisting>
+		<para>
+			When the <code>shutdown()</code> method is called, the &Repository; instances managed by the engine are marked as being shut down,
+			and they will not be able to create new &Session;s.  However, any existing &Session;s or ongoing operations (e.g., event notifications)
+			present at the time of the <code>shutdown()</code> call will be allowed to finish.  
+			In essence, <code>shutdown()</code> is a <emphasis>graceful</emphasis> request, and since it may take some time to complete,
+			you can wait until the shutdown has completed by simply calling <code>awaitTermination(...)</code> as shown above.
+			This method will block until the engine has indeed shutdown or until the supplied time duration has passed (whichever comes first).
+			And, yes, you can call the <code>awaitTermination(...)</code> method repeatedly if needed.
+		</para>
+	</sect1>
   <sect1 id="jcr-sessions">
     <title>Creating JCR Sessions</title>
-		<para>Once you have obtained a reference to the JCR &Repository;, you can create a JCR session using one of its
-			<code>login(...)</code> methods.  The <ulink url="&JSR170;">JSR-170</ulink> specification provides four login methods, but the
+		<para>
+			Once you have obtained a reference to the JCR &Repository;, you can create a JCR session using one of its
+			<code>login(...)</code> methods.  The <ulink url="&JSR283;">JSR-283</ulink> specification provides four login methods, but the
 			behavior of these methods depends on the kind of authentication system your application is using.
 		</para>
 	  <sect2 id="jcr-sessions-jaas">
 	    <title>Using JAAS</title>
-		<para>The <code>login()</code> method allows the implementation to choose its own security context to create a session in the default workspace
-		for the repository.  The ModeShape JCR implementation uses the security context from the current JAAS &AccessControlContext;.  This implies
-		that this method will throw a &LoginException; if it is not executed as a &PrivilegedAction; (AND the 
-		<code>JcrRepository.Options.ANONYMOUS_USER_ROLES</code> option does not allow access - <link linkend="jcr-guest-access">see below</link> for an example of how to configure guest user access).  
-		Here is one example of how this might work:
+			<para>
+				The <code>login()</code> method allows the implementation to choose its own security context to create a session in the default workspace
+			  for the repository.  The ModeShape JCR implementation uses the security context from the current JAAS &AccessControlContext;.  This implies
+			  that this method will throw a &LoginException; if it is not executed as a &PrivilegedAction; (AND the 
+			  <code>JcrRepository.Options.ANONYMOUS_USER_ROLES</code> option does not allow access;
+			  <link linkend="jcr-guest-access">see below</link> for an example of how to configure guest user access).  
+			  Here is one example of how this might work:
+		  </para>
     <programlisting>
 Subject subject = ...;
 &Session; session = Subject.doAsPrivileged(subject, new PrivilegedExceptionAction&lt;&Session;&gt;() {
@@ -83,7 +502,9 @@ Subject subject = ...;
     }
 }, AccessController.getContext());
 </programlisting>	
+   <para>
 		Another variant of this is to use the AccessControlContext directly, which then operates against the current Subject:
+	 </para>
     <programlisting>
 &Session; session = AccessController.doPrivileged( new PrivilegedExceptionAction&lt;&Session;&gt;() {
     public Session run() throws Exception {
@@ -91,10 +512,10 @@ Subject subject = ...;
     }
 });
 </programlisting>	
-	</para>
 	<para>
 		Either of these approaches will yield a session with the same user name and roles as <code>subject</code>.  The <code>login(String workspaceName)</code>
 		method is comparable and allows the workspace to be specified by name:
+	</para>
     <programlisting>
 Subject subject = ...;
 final &String; workspaceName = ...;
@@ -103,26 +524,30 @@ final &String; workspaceName = ...;
         return repository.login(workspaceName);
     }}, AccessController.getContext());
 </programlisting>	
-		</para>
 		<para>The JCR API also allows supplying a JCR &Credentials; object directly as part of the login process, although ModeShape imposes
 		some requirements on what types of &Credentials; may be supplied.  The simplest way is to provide a JCR &SimpleCredentials; object.
 		These credentials will be validated against the JAAS realm named "modeshape-jcr", unless another realm name is provided as an option 
 		during the JCR repository configuration.  For example:
+		</para>
 	    <programlisting>
 &String; userName = ...;
 char[] password = ...;
 &Session; session = repository.login(new &SimpleCredentials;(userName, password));
 </programlisting>	
+    <para>
 		Similarly, the <code>login(Credentials credentials, String workspaceName)</code> method enables passing the credentials and a workspace name:
+  	</para>
 	    <programlisting>
 &String; userName = ...;
 char[] password = ...;
 &String; workspaceName = ...;
 &Session; session = repository.login(new &SimpleCredentials;(userName, password), workspaceName);
 </programlisting>	
+  <para>
 		If a &LoginContext; is available for the user, that can be used as part of the credentials to authenticate the user with
 		ModeShape instead.  This snippet uses an anonymous class to provide the login context, but any class with a <code>&LoginContext; getLoginContext()</code>
 		method can be used as well.
+  </para>
 	    <programlisting>
 final &LoginContext; loginContext = ...;
 &Session; session = repository.login(new &Credentials;() {
@@ -131,7 +556,6 @@ final &LoginContext; loginContext = ...;
 	}
 }, workspaceName);
 </programlisting>
-      </para>
 	  </sect2>
 		<sect2 id="jcr-sessions-custom">
   		<title>Using Custom Security</title>
@@ -178,13 +602,13 @@ final &LoginContext; loginContext = ...;
 		the <code>JcrRepository.Options.ANONYMOUS_USER_ROLES</code> option for your repository to have a different value, like &quot;&quot; (to disable
 		guest access entirely) or &quot;readonly&quot; (to give guests read-only access to all repositories).  The value of this option can
 		be any pattern that matches those described in the <link linkend="role-formats">table below</link>.  
+		</para>
 		<note>
 			<para>
 				The Using ModeShape chapter of the Getting Started Guide provides examples of modifying this option through programmatic configuration or
 				in an XML configuration file.
 			</para>
 		</note>
-		</para>
 	</sect2>
 	</sect1>
 	<sect1 id="jcr-spec-support">
@@ -200,16 +624,14 @@ final &LoginContext; loginContext = ...;
 			<title>Level 1 and Level 2 (Required) Features</title>
 			<para>
 				ModeShape currently supports all Level 1 and Level 2 features defined by the 
-				<ulink url="&JSR170;">JSR-170</ulink> specification.
+				<ulink url="&JSR283;">JSR-283</ulink> specification.
 			</para>
 		</sect2>
 		<sect2>
 			<title>Optional Features</title>
 			<para>
-				ModeShape also supports the optional JCR locking, observation, query, and versioning features.
-				However, ModeShape's behavior with regard to events upon deletion follows the updated behavior 
-				outline in the <ulink url="&JSR283;">JSR-283</ulink> specification (namely that when a subgraph 
-				is deleted, ModeShape generates only one event for the top-level node in that subgraph).
+				ModeShape also supports the optional JCR locking, observation, query, and full versioning features,
+				as well as most of the node type management features.
 			</para>
 			<para>
 				ModeShape now supports the optional SQL query feature as defined by <ulink url="&JSR170;">JSR-170</ulink>
@@ -224,7 +646,7 @@ final &LoginContext; loginContext = ...;
 		<sect2 id="modeshape_jcr_security">
 			<title>JCR Security</title>
 			<para>
-				Although the <ulink url="&JSR170;">JSR-170</ulink> specification requires implementation of the <code>Session.checkPermission(String, String)</code> method,
+				Although the <ulink url="&JSR283;">JSR-283</ulink> specification requires implementation of the <code>Session.checkPermission(String, String)</code> method,
 				it allows implementors to choose the granularity of their access controls.  ModeShape supports coarse-grained, role-based access control at the repository 
 				and workspace level.
 			</para>
@@ -317,16 +739,17 @@ final &LoginContext; loginContext = ...;
 			</tbody>
 		</tgroup>
 	</table>
+        </para>
 				  
 				<note>
 					<para> In this release, ModeShape does <emphasis>not</emphasis> check that the <code>actions</code> parameter passed into 
 						<code>Session.checkPermission(...)</code> contains only valid actions. This check may be added in a future release.
 					</para>
 				</note> 
-				
-				It is also possible to grant access only to one or more repositories on a single ModeShape server or to one or more named workspaces within a repository.  The format for 
-				role names is defined below:
-			</para>
+			  <para>
+				  It is also possible to grant access only to one or more repositories on a single ModeShape server or to one or more named workspaces within a repository.  The format for 
+				  role names is defined below:
+			  </para>
 				<table frame='all' id="role-formats">
 		<title>Role Formats</title>
 		<tgroup cols='3' align='left' colsep='1' rowsep='1'>
@@ -364,36 +787,30 @@ final &LoginContext; loginContext = ...;
 				and read/write access to any workspace in a staging repository.    
 			</para>
 			<para>
-				As a final note, the ModeShape JCR implementation may have additional security roles added prior to the 1.0 release.  A <code>CONNECT</code> role
+				As a final note, the ModeShape JCR implementation may have additional security roles added in the future.  A <code>CONNECT</code> role
 				is already being used by the ModeShape REST Server to control whether users have access to the repository through that means.   
 			</para>
 		</sect2>
 		<sect2>
 			<title>Built-In Node Types</title>
-			<para>ModeShape supports all of the built-in node types described in the JSR-170 specification.
+			<para>ModeShape supports all of the built-in node types described in the <ulink url="&JSR283;">JSR-283</ulink> specification.
 			ModeShape also defines some custom node types in the <code>mode</code> namespace, but none of these
-			node types except for <code>mode:resource</code> are intended to be used by developers integrating with ModeShape and may be changed or removed
+			node types (other than <code>mode:resource</code>) are intended to be used by developers integrating with ModeShape and may be changed or removed
 			at any time.
 			</para>
 		</sect2>
 		<sect2>
 			<title>Custom Node Type Registration</title>
 			<para>
-				Although the <ulink url="&JSR170;">JSR-170</ulink> specification does not require support for registration and unregistration of custom types, ModeShape supports this extremely
-				useful feature.  Custom node types can be added at startup, as noted above or at runtime through a ModeShape-specific interface.  ModeShape supports defining node
-				types either through a <ulink url="&JSR283;">JSR-283</ulink>-like template approach or through the use of &CND; (CND) files.
-				Both type registration mechanisms are supported equally within ModeShape, although the CND approach for defining node types is recommended.
+				Although the <ulink url="&JSR283;">JSR-283</ulink> specification does not require support for registration and unregistration of custom types, ModeShape supports this extremely
+				useful feature.  Custom node types can be added at startup, as noted above, at runtime through a ModeShape-specific interface that accepts CND files, or through the JSR-283
+				node type template methods. 
+				All three of these node type registration mechanisms are supported equally within ModeShape, although the CND approach for defining node types is recommended.
 				<note>
 					<para>ModeShape also supports defining custom node types to load at startup.  This is discussed in more detail
 					in the <link linkend="programmatically_configuring_repositories">previous chapter</link>.
 					</para>
 				</note>
-			</para>
-			<para>
-				The JSR-283 specification provides a useful means of programmatically defining JCR node types.  ModeShape supports a comparable
-				node type definition API that implements the functionality from the specification, albeit with interfaces in the <code>org.modeshape.jcr.nodetype</code> package.  
-				The intent is to deprecate these classes and replace their usage with the JSR-283 equivalents when ModeShape fully supports
-				the JSR-283 final adopted specification in a future release.
 			</para>
 			<para>
 				Node types can be defined like so:
@@ -440,7 +857,7 @@ nodeTypeManager.registerNodeType(nodeType,false);
 </programlisting>	
 			This definition could then be registered as part of the repository configuration, using the &JcrConfiguration; class
 			(see the <link linkend="programmatically_configuring_repositories">previous chapter</link>).  Or, you can also
-			use a Session to declare the node types in a CDN file, but this also requires ModeShape-specific interfaces and classes:
+			use a Session to declare the node types in a CND file, but this also requires ModeShape-specific interfaces and classes:
 <programlisting>
 String pathToCndFileInClassLoader = ...;
 &CndNodeTypeSource; nodeTypeSource = new &CndNodeTypeSource;(pathToCndFileInClassLoader);
