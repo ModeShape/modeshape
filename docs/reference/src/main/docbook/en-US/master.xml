@@ -98,7 +98,6 @@
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/configuration.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/jcr.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/query_and_search.xml"/>
-  	<!-- xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/remote_modeshape_jcr.xml"/ -->
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/jcr/web_access.xml"/>
   </part>
 	<part id="provided-connectors-part">
