@@ -13,7 +13,7 @@
   <url>http://www.modeshape.org</url>
   <description>ModeShape JBoss Deployment Components</description>
   <modules>
-    <module>service</module>
+    <module>modeshape-jboss-service</module>
     <module>web-rest-war</module>
   </modules>
 </project>
