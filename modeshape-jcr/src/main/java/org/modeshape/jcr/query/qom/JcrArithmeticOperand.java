@@ -31,7 +31,8 @@ import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
 /**
  * 
  */
-public class JcrArithmeticOperand extends ArithmeticOperand implements org.modeshape.jcr.api.query.qom.ArithmeticOperand {
+public class JcrArithmeticOperand extends ArithmeticOperand
+    implements org.modeshape.jcr.api.query.qom.ArithmeticOperand, JcrDynamicOperand {
 
     private static final long serialVersionUID = 1L;
 
