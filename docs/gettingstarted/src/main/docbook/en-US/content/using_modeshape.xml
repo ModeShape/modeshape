@@ -32,18 +32,17 @@
 	<title>Using ModeShape</title>
 	<para>Using ModeShape within your application is actually quite straightforward.  Although there are multiple ways to 
 		access a JCR repository in ModeShape, the simplest is to use the <ulink url="&JSR283;">JSR-283</ulink> &RepositoryFactory; interface to 
-		get a reference to a named <code>javax.jcr.Repository</code> from a configuration file.  After that, you just use 
-		the standard JCR API throughout your application.
+		get a reference to a named &Repository; from a configuration file.  After that, you continue to work with your repository content using the JCR API.
 	</para>
 	<sect1 id="repository_factory">
-		<title>ModeShape's JcrRepositoryFactory</title>
+		<title>ModeShape's RepositoryFactory</title>
 		<para>
 			ModeShape provides an implementation of the &RepositoryFactory; interface that can return a reference to a named repository
 			based on a provided configuration file.  The code to get started with this is very simple.
 		</para>
     <programlisting role="JAVA"><![CDATA[
 String configUrl = ... ; // URL that points to your configuration file
-Map params = Collections.singletonMap(JcrRepositoryFactory.URL, configUrl);
+Map params = Collections.singletonMap("org.modeshape.jcr.URL", configUrl);
 Repository repository;
 
 for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
@@ -51,10 +50,53 @@ for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
     if (repository != null) break;
 }]]></programlisting>
 		<para>
-			The simplest format for the configuration URL in the listing above is <code>file:relativePathToConfigFile?repositoryName=yourRepositoryName</code>.  In this example,
-			the configuration file that specifies the repository setup will be loaded from the file path <code>relativePathToConfigFile</code> and the repository named <code>yourRepositoryName</code> 
-			will be returned.  If there is no repository with that name or the configuration file does not exist at that path, <code>getRepository(Map)</code> will return null.
+			This code looks for all &RepositoryFactory; implementations on the classpath (assuming those implementations properly defined the service provider
+			within their JARs), and will ask each to create a repository given the supplied parameters. Thus, the parameters
+			are specific to the implementation you want to use.
+	  </para>
+		<note>
+			<para>
+				With JCR 1.0, applications could only find a &Repository; instance using implementation-specific code.
+				This new JCR 2.0 approach is a bit more complicated, but should work with most JCR 2.0 implementations
+				and does not require using any implementation classes. And your application can even load the parameters
+				from a configuration resource, meaning nothing in your application depends on a particular JCR implementation.
+			</para>
+		</note>
+	  <para>
+			ModeShape uses a single property named "<code>org.modeshape.jcr.URL</code>"
+			with a value that is a URL that either resolves to a ModeShape configuration file, such as
+	  </para>
+    <programlisting><![CDATA[ file://path/to/configFile.xml?repositoryName=MyRepository ]]></programlisting>
+    <para>
+	    or points to a &JcrEngine; instance in JNDI:
+	  </para>
+    <programlisting><![CDATA[ jndi://name/in/jndi?repositoryName=MyRepository ]]></programlisting>
+		<para>
+			Pointing directly to a configuration file often works well in stand-alone applications, while using JNDI works great
+			for applications deployed to server platforms (e.g., an application server or servlet container) where multiple applications
+			might want to use the same JCR repository. We'll see in the <link linkend="jcr_engine">next section</link> 
+			how to configure ModeShape's &JcrEngine; explicitly and register it in JNDI.
 		</para>
+		<para>
+			So, here's the ServiceLoader example again, but with ModeShape-specific parameters:
+		</para>
+    <programlisting role="JAVA"><![CDATA[
+String configUrl = ... ; // URL that points to your configuration file
+Map<String,String> parameters = Collections.singletonMap("org.modeshape.jcr.URL", configUrl);
+
+Repository repository = null;
+for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
+    repository = factory.getRepository(parameters);
+    if (repository != null) break;
+}]]></programlisting>
+		<para>
+			Once you've gotten hold of a &Repository; instance, you can use it to create &Session;s, using code similar to:
+    </para>			
+    <programlisting role="JAVA"><![CDATA[
+Credentials credentials = ...; // JCR credentials
+String workspaceName = ...;  // Name of repository workspace
+Session session = repository.login(credentials,workspaceName);
+]]></programlisting>
 		</sect1>
 	<sect1 id="jcr_configuration">
 		<title>ModeShape Configuration Files</title>
@@ -320,46 +362,232 @@ try {
 			</note>
 		</sect2>
 	</sect1>
-	<sect1 id="using_modeshape_via_maven">
-		<title>Using ModeShape via Maven</title>
+	<sect1 id="modeshape_classpath">
+		<title>Setting the Classpath</title>
 		<para>
-			ModeShape is a Maven-based project. If your application is using Maven, it is very easy to add a dependency on 
-			ModeShape's JCR library (plus any extensions), and Maven will ensure your application has access to all 
-			of the ModeShape artifacts and all 3rd-party libraries upon which ModeShape depends. 
-			Simply add a dependency in your application's POM:
+			Before you deploy ModeShape into your application or its environment, you need to make sure that all of the ModeShape
+			JARs are on the appropriate classpath. Two different scenarios are covered in this section: Maven-based, and using
+			JARs with the traditional classpath.
 		</para>
+		<sect2 id="using_modeshape_via_maven">
+			<title>Building against ModeShape via Maven</title>
+			<para>
+				By far the easiest way to use ModeShape is to use Maven, because with just a few lines of code, Maven will automatically 
+				pull all the JARs and source for all of the ModeShape libraries as well as everything those libraries need. 
+				All of ModeShape's artifacts for each release are published in the new <ulink url="&JBossMaven;">JBoss Maven repository</ulink> 
+				under the "<ulink url="&ModeShapeMaven;">org.modeshape</ulink>" group ID.
+			</para>
+			<sect3 id="using_jboss_maven_repository">
+				<title>Using the JBoss Maven repository</title>
+				<para>
+					The JBoss Maven repository not only contains all of the artifacts for ModeShape and other open source projects
+					hosted at <ulink url="http://www.jboss.org">JBoss.org</ulink>, but it also 
+					<ulink url="&JBossMavenDoc;">proxies quite a few other repositories</ulink> that contain many other third-party
+					libraries.
+				</para>
+				<para>
+				  So if you're using Maven (or Ivy), first make sure your project knows about this new JBoss Maven repository.
+					One way to do this is to add the following to your project POM (you'll still likely want to use other Maven repositories 
+					for third-party artifacts):
+				</para>
+<programlisting role="XML"><![CDATA[<repositories>
+  <repository>
+    <id>jboss</id>
+    <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+  </repository>
+</repositories>
+]]></programlisting>
+				<para>
+					Or, you can add this information to your <code>~/.m2/settings.xml</code> file. For more information,
+					see the <ulink url="&JBossMavenUsing;">JBoss wiki page</ulink>.
+				</para>
+			</sect3>
+			<sect3 id="adding_modeshape_dependencies">
+				<title>Add dependency to ModeShape</title>
+				<para>
+					Then, simply modify your project's POM by adding dependencies on the ModeShape JCR library:
+			  </para>
 <programlisting role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-jcr</artifactId>
-  <version>1.1.0.Final</version>
+  <version>2.0.0.Final</version>
+</dependency>
+]]></programlisting>
+				<para>
+					This adds only the minimal libraries required to use ModeShape, so you need to add dependencies for 
+					each of the connectors and sequencers you want to use. Here is the list of available sequencers:
+				</para>
+<programlisting role="XML"><![CDATA[<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-sequencer-cnd</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-sequencer-ddl</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshapce</groupid>
+  <artifactid>modeshape-sequencer-images</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-sequencer-classfile</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-sequencer-java</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-sequencer-mp3</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-sequencer-msoffice</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-sequencer-xml</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-sequencer-text</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-sequencer-zip</artifactid>
+  <version>2.0.0.Final</version>
 </dependency>
 ]]></programlisting>
 			<para>
-				plus dependencies for each optional extension (sequencers, connectors, MIME type detectors, etc.):
+				Here is the list of available connectors:
 			</para>
 <programlisting role="XML"><![CDATA[<dependency>
-  <groupId>org.modeshape</groupId>
-  <artifactId>modeshape-connector-store-jpa</artifactId>
-  <version>1.1.0.Final</version>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-connector-filesystem</artifactid>
+  <version>2.0.0.Final</version>
 </dependency>
-...
 <dependency>
-  <groupId>org.modeshape</groupId>
-  <artifactId>modeshape-sequencer-java</artifactId>
-  <version>1.1.0.Final</version>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-connector-infinispan</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-connector-jcr</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-connector-jbosscache</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-connector-jdbc-metadata</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-connector-store-jpa</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-connector-svn</artifactid>
+  <version>2.0.0.Final</version>
+</dependency>]]></programlisting>
+	      <para>
+		      The sequencer and connector libraries you choose, plus every third-party library they need, will be pulled in automatically 
+		      by Maven into your project.
+		    </para>
+			</sect3>
+		</sect2>
+			<sect2 id="adding_logging_dependencies">
+				<title>Add dependencies for logging</title>
+				<para>
+					ModeShape is designed to use the same logging framework as your application, and it uses SLF4J to accomplish this. 
+					In other words, ModeShape depends upon the SLF4J API library, but requires you to provide provide a logging implementation 
+					as well as the appropriate SLF4J binding JAR.
+				</para>
+				<para>
+					For example, if your application is using <ulink url="&Log4J;">Log4J</ulink>, your application will already have a dependency 
+					for it, and so ModeShape log messages will be sent to the same logging system used in your application, you need to add a 
+					dependency to the SLF4J-to-Log4J binding JAR:
+				</para>
+<programlisting role="XML"><![CDATA[<dependency>
+  <groupId>org.slf4j</groupId>
+  <artifactId>slf4j-log4j12</artifactId>
+  <version>1.5.11</version>
+</dependency>
+<dependency>
+  <groupId>log4j</groupId>
+  <artifactId>log4j</artifactId>
+  <version>1.2.16</version>
 </dependency>
 ]]></programlisting>
-		<para>
-			Then, continue by defining a configuration file and using the &JcrRepositoryFactory; to access the defined repositories, as discussed <link linkend="jcr-configuration">earlier</link>.
-			This is very straightforward, and this is similar to what the <link linkend="downloading_and_running">ModeShape examples</link> do.
-		</para>
-		<note>
+        <para>
+	        Of course, SLF4J works with other logging frameworks, too. Some logging implementations (such as <ulink url="&LogBack;">LogBack</ulink>) 
+	        implement the SLF4J API natively, meaning they require no binding JAR. For details on the options and how to configure them, see the 
+	        <ulink url="&SLF4JManual;">SLF4J manual</ulink>.
+        </para>
+		</sect2>
+		<sect2 id="using_modeshape_via_jars">
+			<title>Building against ModeShape via JARs</title>
 			<para>
-				The ModeShape community has solicited input on how we can make it easier to consume and use ModeShape in applications
-				that do not use Maven. Check out the <ulink url="http://community.jboss.org/thread/146589">discussion thread</ulink>,
-				and please add any suggestions or opinions!
+				If your application doesn't use Maven, you'll need to obtain the ModeShape JARs and place them onto your application's classpath. 
+				ModeShape provides a <ulink url="&SingleDownload;">single download</ulink> with all of the JARs for all ModeShape components 
+				and all dependencies. This file contains the following:
+				<itemizedlist>
+	        <listitem>
+	          <para>
+	            <emphasis role="strong"><code>modeshape-jcr-&versionNumber;-with-dependencies.jar</code></emphasis> contains the JARs 
+							necessary to run the core ModeShape JCR repository engine, 
+	            the in-memory connector, and the federating connector;
+	          </para>
+	        </listitem>
+	        <listitem>
+	          <para>
+	            one <emphasis role="strong"><code>modeshape-connector-&lt;type>-&versionNumber;-with-dependencies.jar</code></emphasis> 
+							for each type of connector, each containing the JARs necessary 
+	            for that connector;
+	          </para>
+	        </listitem>
+	        <listitem>
+	          <para>
+	            one <emphasis role="strong"><code>modeshape-sequencer-&lt;type>-&versionNumber;-with-dependencies.jar</code></emphasis> 
+							for each type of sequencer, each containing the JARs necessary
+	            for that sequencer;
+	          </para>
+	        </listitem>
+	        <listitem>
+	          <para>
+	            <emphasis role="strong"><code>modeshape-mimetype-detector-aperture-&versionNumber;-with-dependencies.jar</code></emphasis> 
+							contains all of the JARs required for the component that detects 
+	            the MIME type of files based upon names and/or content; and
+	          </para>
+	        </listitem>
+	        <listitem>
+	          <para>
+	            <emphasis role="strong"><code>modeshape-jpa-ddl-gen-&versionNumber;-jar-with-dependencies.jar</code></emphasis> 
+							contains all of the JARs required to run the DDL generation utility.
+	          </para>
+	        </listitem>
+	      </itemizedlist>
+				Note that the core engine is required in all configurations. The <code>jcr-2.0.jar</code> file is not included and must be provided by you. 
+				And, as mentioned in the <link linkend="adding_logging_dependencies">previous section</link>, ModeShape uses SLF4J for logging and you must provide 
+				a logging implementation as well as the appropriate SLF4J binding JAR.
 			</para>
-		</note>
+		</sect2>
 	</sect1>
 	<sect1 id="using_modeshape_whats_next">
 		<title>What's next</title>

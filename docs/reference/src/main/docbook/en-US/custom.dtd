@@ -46,8 +46,6 @@
 <!ENTITY GettingStarted           		"<ulink url='&DocHome;/&versionNumber;/manuals/gettingstarted/html/index.html'>Getting Started</ulink>">
 <!ENTITY ReferenceGuide           		"<ulink url='&DocHome;/&versionNumber;/manuals/reference/html/index.html'>Reference Guide</ulink>">
 
-<!ENTITY CND			      							"<ulink url='http://jackrabbit.apache.org/node-type-notation.html'>Compact Node Definition</ulink>">
-
 <!-- Types in JRE -->
 
 <!ENTITY String							      		"<ulink url='&Java;java/lang/String.html'><interface>String</interface></ulink>">

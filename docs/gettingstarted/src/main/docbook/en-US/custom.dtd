@@ -1,4 +1,4 @@
-<!ENTITY versionNumber "1.2.0.Final">
+<!ENTITY versionNumber "2.0.0.Final">
 <!ENTITY copyrightYears "2008-2010">
 <!ENTITY copyrightHolder "Red Hat, Inc.">
 
@@ -24,9 +24,14 @@
 <!ENTITY JSR203  							"http://www.jcp.org/en/jsr/detail?id=203">
 <!ENTITY MailTo     					"mailto:modeshape-users@lists.jboss.org">
 <!ENTITY Wikipedia						"http://en.wikipedia.org/wiki/">
-<!ENTITY JBossMaven						"http://repository.jboss.com/maven2/">
+<!ENTITY JBossMaven						"https://repository.jboss.org/nexus/">
+<!ENTITY JBossMavenDoc        "http://community.jboss.org/wiki/MavenRepository">
+<!ENTITY JBossMavenHowTo      "http://community.jboss.org/docs/DOC-15442">
+<!ENTITY JBossMavenUsing      "http://community.jboss.org/wiki/MavenGettingStarted-Developers">
+<!ENTITY ModeShapeMaven       "https://repository.jboss.org/nexus/content/repositories/public/org/modeshape/">
 
-<!ENTITY Java									"http://java.sun.com/j2se/1.5.0/docs/api/">
+<!ENTITY Java									"http://java.sun.com/javase/6/docs/api/">
+<!ENTITY JcrApi               "http://www.day.com/maven/javax.jcr/javadocs/jcr-2.0/">
 
 <!ENTITY GettingStarted           		"<ulink url='&DocHome;/&versionNumber;/manuals/gettingstarted/html/index.html'>Getting Started</ulink>">
 <!ENTITY ReferenceGuide           		"<ulink url='&DocHome;/&versionNumber;/manuals/reference/html/index.html'>Reference Guide</ulink>">
@@ -52,11 +57,11 @@
 
 <!-- Types in JCR API -->
 
-<!ENTITY Repository					       		"<interface>Repository</interface>">
-<!ENTITY RepositoryFactory					       		"<interface>RepositoryFactory</interface>">
-<!ENTITY Session						       		"<interface>Session</interface>">
-<!ENTITY Credentials					       	"<interface>Credentials</interface>">
-<!ENTITY SimpleCredentials					  "<interface>SimpleCredentials</interface>">
+<!ENTITY Repository					       		"<ulink url='&JcrApi;javax/jcr/Repository.html'><interface>Repository</interface></ulink>">
+<!ENTITY RepositoryFactory					  "<ulink url='&JcrApi;javax/jcr/RepositoryFactory.html'><interface>RepositoryFactory</interface></ulink>">
+<!ENTITY Session						       		"<ulink url='&JcrApi;javax/jcr/Session.html'><interface>Session</interface></ulink>">
+<!ENTITY Credentials					       	"<ulink url='&JcrApi;javax/jcr/Credentials.html'><interface>Credentials</interface></ulink>">
+<!ENTITY SimpleCredentials					  "<ulink url='&JcrApi;javax/jcr/SimpleCredentials.html'><classname>SimpleCredentials</classname></ulink>">
 
 <!-- Types in modeshape-common -->
 

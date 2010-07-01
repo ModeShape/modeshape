@@ -889,7 +889,7 @@ nodeTypeManager.registerNodeType(nodeType,false);
 			the template.
 			</para>
 			<para>
-			Custom node types can be defined more succinctly through the &CND; file format.  In fact, this is how JBoss
+			Custom node types can be defined more succinctly through the CND file format defined by the JCR 2.0 specification.  In fact, this is how JBoss
 			ModeShape defines its built-in node types. An example CND file that declares the same node type as above would be:
 <programlisting>
 [searchable] mixin
