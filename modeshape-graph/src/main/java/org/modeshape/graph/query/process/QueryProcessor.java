@@ -80,7 +80,10 @@ public abstract class QueryProcessor implements Processor {
             List<Column> projectedColumns = project.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
             assert projectedColumns != null;
             assert !projectedColumns.isEmpty();
-            columns = new QueryResultColumns(projectedColumns, context.getHints().hasFullTextSearch);
+            List<String> columnTypes = project.getPropertyAsList(Property.PROJECT_COLUMN_TYPES, String.class);
+            assert columnTypes != null;
+            assert columnTypes.size() == projectedColumns.size();
+            columns = new QueryResultColumns(projectedColumns, columnTypes, context.getHints().hasFullTextSearch);
 
             // Go through the plan and create the corresponding ProcessingComponents ...
             Analyzer analyzer = createAnalyzer(context);
@@ -369,8 +372,11 @@ public abstract class QueryProcessor implements Processor {
         PlanNode project = node.findAtOrBelow(Type.PROJECT);
         assert project != null;
         List<Column> columns = project.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
+        List<String> columnTypes = project.getPropertyAsList(Property.PROJECT_COLUMN_TYPES, String.class);
         assert columns != null;
         assert !columns.isEmpty();
-        return new QueryResultColumns(columns, projectedColumns.hasFullTextSearchScores());
+        assert columnTypes != null;
+        assert columnTypes.size() == columns.size();
+        return new QueryResultColumns(columns, columnTypes, projectedColumns.hasFullTextSearchScores());
     }
 }

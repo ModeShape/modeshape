@@ -61,6 +61,7 @@ import org.modeshape.graph.property.InvalidPathException;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
+import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.QueryResults.Columns;
 import org.modeshape.graph.query.QueryResults.Statistics;
@@ -1321,12 +1322,24 @@ public class GraphTest {
 
     protected Columns columns( String tableName,
                                String... columnNames ) {
-        return new QueryResultColumns(columnList(tableName, columnNames), false);
+        List<Column> columnList = columnList(tableName, columnNames);
+        List<String> columnTypes = typesFor(columnList);
+        return new QueryResultColumns(columnList, columnTypes, false);
     }
 
     protected Columns columnsWithScores( String tableName,
                                          String... columnNames ) {
-        return new QueryResultColumns(columnList(tableName, columnNames), true);
+        List<Column> columnList = columnList(tableName, columnNames);
+        List<String> columnTypes = typesFor(columnList);
+        return new QueryResultColumns(columnList, columnTypes, true);
+    }
+
+    protected List<String> typesFor( List<Column> columns ) {
+        List<String> types = new ArrayList<String>();
+        for (int i = 0; i != columns.size(); ++i) {
+            types.add(PropertyType.STRING.getName());
+        }
+        return types;
     }
 
     protected List<Column> columnList( String tableName,

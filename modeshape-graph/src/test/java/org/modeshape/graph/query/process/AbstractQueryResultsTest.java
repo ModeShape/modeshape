@@ -83,25 +83,31 @@ public abstract class AbstractQueryResultsTest extends AbstractQueryTest {
     }
 
     protected Columns resultColumns( String selectorName,
-                                     String... columnNames ) {
+                                     String[] columnNames,
+                                     PropertyType... columnTypes ) {
         // Define the columns ...
         List<Column> columnObj = new ArrayList<Column>();
+        List<String> types = new ArrayList<String>();
         SelectorName selector = selector(selectorName);
+        int i = 0;
         for (String columnName : columnNames) {
             columnObj.add(new Column(selector, columnName, columnName));
+            types.add(columnTypes[i++].getName());
         }
-        return new QueryResultColumns(columnObj, false);
+        return new QueryResultColumns(columnObj, types, false);
     }
 
     protected Columns resultColumnsWithSearchResults( String selectorName,
                                                       String... columnNames ) {
         // Define the columns ...
         List<Column> columnObj = new ArrayList<Column>();
+        List<String> types = new ArrayList<String>();
         SelectorName selector = selector(selectorName);
         for (String columnName : columnNames) {
             columnObj.add(new Column(selector, columnName, columnName));
+            types.add(PropertyType.STRING.getName());
         }
-        return new QueryResultColumns(columnObj, true);
+        return new QueryResultColumns(columnObj, types, true);
     }
 
     protected Object[] tuple( Columns columns,

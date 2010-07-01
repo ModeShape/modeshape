@@ -52,7 +52,8 @@ public class QueryResultColumns implements Columns {
     private static final long serialVersionUID = 1L;
 
     protected static final List<Column> NO_COLUMNS = Collections.<Column>emptyList();
-    protected static final QueryResultColumns EMPTY = new QueryResultColumns(false, null);
+    protected static final List<String> NO_TYPES = Collections.<String>emptyList();
+    protected static final QueryResultColumns EMPTY = new QueryResultColumns(false, null, null);
 
     protected static final String DEFAULT_SELECTOR_NAME = "Results";
 
@@ -68,6 +69,7 @@ public class QueryResultColumns implements Columns {
     private final int tupleSize;
     private final List<Column> columns;
     private final List<String> columnNames;
+    private final List<String> columnTypes;
     private final List<String> selectorNames;
     private List<String> tupleValueNames;
     private final Map<String, Integer> columnIndexByColumnName;
@@ -81,13 +83,16 @@ public class QueryResultColumns implements Columns {
      * Create a new definition for the query results given the supplied columns.
      * 
      * @param columns the columns that define the results; should never be modified directly
+     * @param columnTypes the names of the types for each column in <code>columns</code>
      * @param includeFullTextSearchScores true if room should be made in the tuples for the full-text search scores for each
      *        {@link Location}, or false otherwise
      */
     public QueryResultColumns( List<? extends Column> columns,
+                               List<String> columnTypes,
                                boolean includeFullTextSearchScores ) {
-        this(includeFullTextSearchScores, columns);
+        this(includeFullTextSearchScores, columns, columnTypes);
         CheckArg.isNotEmpty(columns, "columns");
+        CheckArg.isNotEmpty(columnTypes, "columnTypes");
     }
 
     /**
@@ -96,10 +101,13 @@ public class QueryResultColumns implements Columns {
      * @param includeFullTextSearchScores true if room should be made in the tuples for the full-text search scores for each
      *        {@link Location}, or false otherwise
      * @param columns the columns that define the results; should never be modified directly
+     * @param columnTypes the names of the types for each column in <code>columns</code>
      */
     protected QueryResultColumns( boolean includeFullTextSearchScores,
-                                  List<? extends Column> columns ) {
+                                  List<? extends Column> columns,
+                                  List<String> columnTypes ) {
         this.columns = columns != null ? Collections.<Column>unmodifiableList(columns) : NO_COLUMNS;
+        this.columnTypes = columnTypes != null ? Collections.<String>unmodifiableList(columnTypes) : NO_TYPES;
         this.columnIndexByColumnName = new HashMap<String, Integer>();
         Set<String> selectors = new HashSet<String>();
         final int columnCount = this.columns.size();
@@ -162,6 +170,7 @@ public class QueryResultColumns implements Columns {
         this.locationIndexByColumnName = new HashMap<String, Integer>();
         this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, Integer>>();
         this.selectorNames = new ArrayList<String>(columns.size());
+        List<String> types = new ArrayList<String>(columns.size());
         List<String> names = new ArrayList<String>(columns.size());
         for (int i = 0, max = this.columns.size(); i != max; ++i) {
             Column column = this.columns.get(i);
@@ -170,8 +179,10 @@ public class QueryResultColumns implements Columns {
             if (!selectorNames.contains(selectorName)) selectorNames.add(selectorName);
             String columnName = columnNameFor(column, names);
             assert columnName != null;
-            Integer columnIndex = new Integer(wrappedAround.getColumnIndexForName(columnName));
+            int columnIndexInt = wrappedAround.getColumnIndexForName(columnName);
+            Integer columnIndex = new Integer(columnIndexInt);
             columnIndexByColumnName.put(columnName, columnIndex);
+            types.add(wrappedAround.getColumnTypes().get(columnIndexInt));
             Integer selectorIndex = new Integer(wrappedAround.getLocationIndex(selectorName));
             locationIndexBySelectorName.put(selectorName, selectorIndex);
             locationIndexByColumnIndex.put(columnIndex, selectorIndex);
@@ -190,6 +201,7 @@ public class QueryResultColumns implements Columns {
             locationIndexBySelectorName.put(selectorName, 0);
         }
         this.columnNames = Collections.unmodifiableList(names);
+        this.columnTypes = Collections.unmodifiableList(types);
         if (wrappedAround.fullTextSearchScoreIndexBySelectorName != null) {
             this.fullTextSearchScoreIndexBySelectorName = new HashMap<String, Integer>();
             int index = columnNames.size() + selectorNames.size();
@@ -251,8 +263,11 @@ public class QueryResultColumns implements Columns {
         List<Column> columns = new ArrayList<Column>(this.getColumnCount() + rightColumns.getColumnCount());
         columns.addAll(this.getColumns());
         columns.addAll(rightColumns.getColumns());
+        List<String> types = new ArrayList<String>(this.getColumnCount() + rightColumns.getColumnCount());
+        types.addAll(this.getColumnTypes());
+        types.addAll(rightColumns.getColumnTypes());
         boolean includeFullTextScores = this.hasFullTextSearchScores() || rightColumns.hasFullTextSearchScores();
-        return new QueryResultColumns(columns, includeFullTextScores);
+        return new QueryResultColumns(columns, types, includeFullTextScores);
     }
 
     /**
@@ -281,6 +296,15 @@ public class QueryResultColumns implements Columns {
      */
     public List<String> getColumnNames() {
         return columnNames;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.QueryResults.Columns#getColumnTypes()
+     */
+    public List<String> getColumnTypes() {
+        return columnTypes;
     }
 
     /**

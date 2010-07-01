@@ -92,17 +92,21 @@ public class PushProjects implements OptimizerRule {
 
                 // We need to make sure we have all of the columns needed for any ancestor ...
                 List<Column> requiredColumns = PlanUtil.findRequiredColumns(context, project);
+                List<String> requiredTypes = PlanUtil.findRequiredColumnTypes(context, requiredColumns, child);
                 project.setProperty(Property.PROJECT_COLUMNS, requiredColumns);
+                project.setProperty(Property.PROJECT_COLUMN_TYPES, requiredTypes);
                 project.addSelectors(getSelectorsFor(requiredColumns));
                 continue;
             }
 
             // There is no PROJECT, so find the columns that are required by the plan above this point ...
             List<Column> requiredColumns = PlanUtil.findRequiredColumns(context, child);
+            List<String> requiredTypes = PlanUtil.findRequiredColumnTypes(context, requiredColumns, child);
 
             // And insert the PROJECT ...
             PlanNode projectNode = new PlanNode(Type.PROJECT);
             projectNode.setProperty(Property.PROJECT_COLUMNS, requiredColumns);
+            projectNode.setProperty(Property.PROJECT_COLUMN_TYPES, requiredTypes);
             projectNode.addSelectors(getSelectorsFor(requiredColumns));
             child.insertAsParent(projectNode);
         }

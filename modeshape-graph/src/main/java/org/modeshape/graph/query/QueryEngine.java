@@ -125,6 +125,7 @@ public class QueryEngine implements Queryable {
         PlanNode project = optimizedPlan.findAtOrBelow(Traversal.LEVEL_ORDER, Type.PROJECT);
         if (project != null) {
             List<Column> columns = project.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
+            List<String> columnTypes = project.getPropertyAsList(Property.PROJECT_COLUMN_TYPES, String.class);
             // Determine whether to include the full-text search scores in the results ...
             boolean includeFullTextSearchScores = hints.hasFullTextSearch;
             if (!includeFullTextSearchScores) {
@@ -136,7 +137,7 @@ public class QueryEngine implements Queryable {
                     }
                 }
             }
-            return new QueryResultColumns(columns, includeFullTextSearchScores);
+            return new QueryResultColumns(columns, columnTypes, includeFullTextSearchScores);
         }
         return QueryResultColumns.empty();
     }

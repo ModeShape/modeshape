@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.query.plan;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -390,6 +391,7 @@ public class CanonicalPlanner implements Planner {
         PlanNode projectNode = new PlanNode(Type.PROJECT);
 
         List<Column> newColumns = new LinkedList<Column>();
+        List<String> newTypes = new ArrayList<String>();
         if (columns == null || columns.isEmpty()) {
             // SELECT *, so find all of the columns that are available from all the sources ...
             for (Map.Entry<SelectorName, Table> entry : selectors.entrySet()) {
@@ -398,7 +400,7 @@ public class CanonicalPlanner implements Planner {
                 // Add the selector that is being used ...
                 projectNode.addSelector(tableName);
                 // Compute the columns from this selector ...
-                allColumnsFor(table, tableName, newColumns);
+                allColumnsFor(table, tableName, newColumns, newTypes);
             }
         } else {
             // Add the selector used by each column ...
@@ -416,10 +418,16 @@ public class CanonicalPlanner implements Planner {
                     String columnName = column.propertyName();
                     if ("*".equals(columnName)) {
                         // This is a 'SELECT *' on this source, but this source is one of multiple sources ...
-                        allColumnsFor(table, tableName, newColumns);
+                        allColumnsFor(table, tableName, newColumns, newTypes);
                     } else {
                         // This is a particular column, so add it ...
                         newColumns.add(column);
+                        org.modeshape.graph.query.validate.Schemata.Column schemaColumn = table.getColumn(columnName);
+                        if (schemaColumn != null) {
+                            newTypes.add(schemaColumn.getPropertyType());
+                        } else {
+                            newTypes.add(context.getTypeSystem().getStringFactory().getTypeName());
+                        }
                     }
                     if (table.getColumn(columnName) == null && context.getHints().validateColumnExistance) {
                         context.getProblems().addError(GraphI18n.columnDoesNotExistOnTable, columnName, tableName);
@@ -428,19 +436,22 @@ public class CanonicalPlanner implements Planner {
             }
         }
         projectNode.setProperty(Property.PROJECT_COLUMNS, newColumns);
+        projectNode.setProperty(Property.PROJECT_COLUMN_TYPES, newTypes);
         projectNode.addLastChild(plan);
         return projectNode;
     }
 
     protected void allColumnsFor( Table table,
                                   SelectorName tableName,
-                                  List<Column> columns ) {
+                                  List<Column> columns,
+                                  List<String> columnTypes ) {
         // Compute the columns from this selector ...
         for (Schemata.Column column : table.getColumns()) {
             String columnName = column.getName();
             String propertyName = columnName;
             Column newColumn = new Column(tableName, propertyName, columnName);
             columns.add(newColumn);
+            columnTypes.add(column.getPropertyType());
         }
     }
 

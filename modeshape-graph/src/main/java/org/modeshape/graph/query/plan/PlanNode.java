@@ -171,6 +171,11 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
 
         /** For PROJECT nodes, the ordered collection of columns being projected. Value is a Collection of {@link Column} objects. */
         PROJECT_COLUMNS,
+        /**
+         * For PROJECT nodes, the ordered collection of the type names for the columns being projected. Value is a Collection of
+         * {@link String} objects.
+         */
+        PROJECT_COLUMN_TYPES,
 
         /**
          * For GROUP nodes, the ordered collection of columns used to group the result tuples. Value is a Collection of
@@ -1082,6 +1087,29 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
             node = parent;
         }
         return null;
+    }
+
+    /**
+     * Look at nodes below this node, searching for nodes that have the supplied type. As soon as a node with a matching type is
+     * found, then no other nodes below it are searched.
+     * 
+     * @param typeToFind the type of node to find; may not be null
+     * @return the collection of nodes that are at or below this node that all have the supplied type; never null but possibly
+     *         empty
+     */
+    public List<PlanNode> findAllFirstNodesAtOrBelow( Type typeToFind ) {
+        List<PlanNode> results = new LinkedList<PlanNode>();
+        LinkedList<PlanNode> queue = new LinkedList<PlanNode>();
+        queue.add(this);
+        while (!queue.isEmpty()) {
+            PlanNode aNode = queue.poll();
+            if (aNode.getType() == Type.PROJECT) {
+                results.add(aNode);
+            } else {
+                queue.addAll(0, aNode.getChildren());
+            }
+        }
+        return results;
     }
 
     public static enum Traversal {

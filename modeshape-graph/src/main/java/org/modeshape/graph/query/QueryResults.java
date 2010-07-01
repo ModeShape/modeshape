@@ -33,6 +33,7 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.query.model.Column;
+import org.modeshape.graph.query.model.TypeSystem.TypeFactory;
 
 /**
  * The resulting output of a query.
@@ -192,6 +193,13 @@ public interface QueryResults extends Serializable {
          * @return the immutable list of column names, with size equal to {@link #getColumnCount()}; never null
          */
         public List<String> getColumnNames();
+
+        /**
+         * Get the {@link TypeFactory#getTypeName() type name} for each column.
+         * 
+         * @return the immutable list of type names, with size equal to {@link #getColumnCount()}; never null
+         */
+        public List<String> getColumnTypes();
 
         /**
          * Get the number of columns in each tuple.

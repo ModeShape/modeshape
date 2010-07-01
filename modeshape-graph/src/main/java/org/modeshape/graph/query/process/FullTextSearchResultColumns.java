@@ -42,16 +42,18 @@ public class FullTextSearchResultColumns extends QueryResultColumns {
      * Create a new definition for the query results containing just the locations and the full-text search scores.
      */
     public FullTextSearchResultColumns() {
-        super(true, NO_COLUMNS);
+        super(true, NO_COLUMNS, NO_TYPES);
     }
 
     /**
      * Create a new definition for the query results given the supplied columns.
      * 
      * @param columns the columns that define the results; should never be modified directly
+     * @param columnTypes the type name for each of the Column objects in <code>columns</code>
      */
-    public FullTextSearchResultColumns( List<Column> columns ) {
-        super(true, columns != null ? columns : NO_COLUMNS);
+    public FullTextSearchResultColumns( List<Column> columns,
+                                        List<String> columnTypes ) {
+        super(true, columns != null ? columns : NO_COLUMNS, columnTypes != null ? columnTypes : NO_TYPES);
         CheckArg.isNotEmpty(columns, "columns");
     }
 

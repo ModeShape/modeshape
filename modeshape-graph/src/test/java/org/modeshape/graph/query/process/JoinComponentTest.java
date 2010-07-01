@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.query.QueryResults.Columns;
 import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.model.SelectorName;
@@ -56,12 +57,24 @@ public class JoinComponentTest {
 
     protected Columns columns( String tableName,
                                String... columnNames ) {
-        return new QueryResultColumns(columnList(tableName, columnNames), false);
+        List<Column> columnList = columnList(tableName, columnNames);
+        List<String> columnTypes = typesFor(columnList);
+        return new QueryResultColumns(columnList, columnTypes, false);
     }
 
     protected Columns columnsWithScores( String tableName,
                                          String... columnNames ) {
-        return new QueryResultColumns(columnList(tableName, columnNames), true);
+        List<Column> columnList = columnList(tableName, columnNames);
+        List<String> columnTypes = typesFor(columnList);
+        return new QueryResultColumns(columnList, columnTypes, true);
+    }
+
+    protected List<String> typesFor( List<Column> columns ) {
+        List<String> types = new ArrayList<String>();
+        for (int i = 0; i != columns.size(); ++i) {
+            types.add(PropertyType.STRING.getName());
+        }
+        return types;
     }
 
     protected List<Column> columnList( String tableName,
@@ -109,7 +122,7 @@ public class JoinComponentTest {
     public void shouldCreateMergerAndThenMergeTuplesForColumnsWithoutFullTextScore() {
         List<Column> columns = columnList("t1", "c11", "c12", "c13");
         columns.addAll(columnList("t2", "c21", "c22", "c23"));
-        mergedColumns = new QueryResultColumns(columns, false);
+        mergedColumns = new QueryResultColumns(columns, typesFor(columns), false);
 
         leftColumns = columns("t1", "c11", "c12", "c13");
         rightColumns = columns("t2", "c21", "c22", "c23");
@@ -134,7 +147,7 @@ public class JoinComponentTest {
     public void shouldCreateMergerAndThenMergeTuplesForColumnsWithFullTextScore() {
         List<Column> columns = columnList("t1", "c11", "c12", "c13");
         columns.addAll(columnList("t2", "c21", "c22", "c23"));
-        mergedColumns = new QueryResultColumns(columns, true);
+        mergedColumns = new QueryResultColumns(columns, typesFor(columns), true);
 
         leftColumns = columnsWithScores("t1", "c11", "c12", "c13");
         rightColumns = columnsWithScores("t2", "c21", "c22", "c23");

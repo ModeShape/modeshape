@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.query.QueryResults.Columns;
 import org.modeshape.graph.query.model.Column;
 
@@ -39,6 +40,7 @@ import org.modeshape.graph.query.model.Column;
 public class QueryResultsTest extends AbstractQueryResultsTest {
 
     private List<Column> columnList;
+    private List<String> columnTypes;
     private QueryResultColumns columnsWithoutScores;
     private QueryResultColumns columnsWithScores;
 
@@ -51,8 +53,12 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
         columnList.add(new Column(selector("table2"), "colA", "colA2"));
         columnList.add(new Column(selector("table2"), "colB", "colB2"));
         columnList.add(new Column(selector("table2"), "colX", "colX"));
-        columnsWithoutScores = new QueryResultColumns(columnList, false);
-        columnsWithScores = new QueryResultColumns(columnList, true);
+        columnTypes = new ArrayList<String>();
+        for (int i = 0; i != columnList.size(); ++i) {
+            columnTypes.add(PropertyType.STRING.getName());
+        }
+        columnsWithoutScores = new QueryResultColumns(columnList, columnTypes, false);
+        columnsWithScores = new QueryResultColumns(columnList, columnTypes, true);
     }
 
     @Test
@@ -287,7 +293,11 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
         subset.add(columnList.get(0));
         subset.add(columnList.get(1));
         subset.add(columnList.get(4));
-        Columns other = new QueryResultColumns(subset, false);
+        List<String> subsetTypes = new ArrayList<String>();
+        subsetTypes.add(PropertyType.STRING.getName());
+        subsetTypes.add(PropertyType.STRING.getName());
+        subsetTypes.add(PropertyType.STRING.getName());
+        Columns other = new QueryResultColumns(subset, subsetTypes, false);
         assertThat(columnsWithScores.includes(other), is(true));
         assertThat(columnsWithoutScores.includes(other), is(true));
         assertThat(columnsWithoutScores.includes(columnsWithScores), is(true));
@@ -306,51 +316,62 @@ public class QueryResultsTest extends AbstractQueryResultsTest {
 
     @Test
     public void shouldNotBeUnionCompatibleUnlessBothHaveFullTextSearchScores() {
-        Columns other = new QueryResultColumns(columnsWithoutScores.getColumns(), !columnsWithoutScores.hasFullTextSearchScores());
+        Columns other = new QueryResultColumns(columnsWithoutScores.getColumns(), columnsWithoutScores.getColumnTypes(),
+                                               !columnsWithoutScores.hasFullTextSearchScores());
         assertThat(columnsWithoutScores.isUnionCompatible(other), is(false));
     }
 
     @Test
     public void shouldNotBeUnionCompatibleUnlessBothDoNotHaveFullTextSearchScores() {
-        Columns other = new QueryResultColumns(columnsWithScores.getColumns(), !columnsWithScores.hasFullTextSearchScores());
+        Columns other = new QueryResultColumns(columnsWithScores.getColumns(), columnsWithoutScores.getColumnTypes(),
+                                               !columnsWithScores.hasFullTextSearchScores());
         assertThat(columnsWithScores.isUnionCompatible(other), is(false));
     }
 
     @Test
     public void shouldBeUnionCompatibleWithEquivalentColumns() {
         List<Column> columnListCopy = new ArrayList<Column>();
+        List<String> columnTypeCopy = new ArrayList<String>();
         for (Column column : columnsWithScores.getColumns()) {
             columnListCopy.add(new Column(column.selectorName(), column.propertyName(), column.columnName()));
+            columnTypeCopy.add(PropertyType.STRING.getName());
         }
-        Columns other = new QueryResultColumns(columnListCopy, columnsWithScores.hasFullTextSearchScores());
+        Columns other = new QueryResultColumns(columnListCopy, columnTypeCopy, columnsWithScores.hasFullTextSearchScores());
         assertThat(columnsWithScores.isUnionCompatible(other), is(true));
     }
 
     @Test
     public void shouldNotBeUnionCompatibleWithSubsetOfColumns() {
         List<Column> columnListCopy = new ArrayList<Column>();
+        List<String> columnTypeCopy = new ArrayList<String>();
         for (Column column : columnsWithScores.getColumns()) {
             columnListCopy.add(new Column(column.selectorName(), column.propertyName(), column.columnName()));
+            columnTypeCopy.add(PropertyType.STRING.getName());
         }
         columnListCopy.remove(3);
-        Columns other = new QueryResultColumns(columnListCopy, columnsWithScores.hasFullTextSearchScores());
+        columnTypeCopy.remove(3);
+        Columns other = new QueryResultColumns(columnListCopy, columnTypeCopy, columnsWithScores.hasFullTextSearchScores());
         assertThat(columnsWithScores.isUnionCompatible(other), is(false));
     }
 
     @Test
     public void shouldNotBeUnionCompatibleWithExtraColumns() {
         List<Column> columnListCopy = new ArrayList<Column>();
+        List<String> columnTypeCopy = new ArrayList<String>();
         for (Column column : columnsWithScores.getColumns()) {
             columnListCopy.add(new Column(column.selectorName(), column.propertyName(), column.columnName()));
+            columnTypeCopy.add(PropertyType.STRING.getName());
         }
         columnListCopy.add(new Column(selector("table2"), "colZ", "colZ"));
-        Columns other = new QueryResultColumns(columnListCopy, columnsWithScores.hasFullTextSearchScores());
+        columnTypeCopy.add(PropertyType.STRING.getName());
+        Columns other = new QueryResultColumns(columnListCopy, columnTypeCopy, columnsWithScores.hasFullTextSearchScores());
         assertThat(columnsWithScores.isUnionCompatible(other), is(false));
     }
 
     @Test
     public void shouldBeUnionCompatibleWithSameColumns() {
-        Columns other = new QueryResultColumns(columnsWithScores.getColumns(), columnsWithScores.hasFullTextSearchScores());
+        Columns other = new QueryResultColumns(columnsWithScores.getColumns(), columnsWithScores.getColumnTypes(),
+                                               columnsWithScores.hasFullTextSearchScores());
         assertThat(columnsWithScores.isUnionCompatible(other), is(true));
     }
 

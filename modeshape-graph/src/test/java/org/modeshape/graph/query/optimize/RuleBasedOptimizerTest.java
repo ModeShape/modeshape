@@ -59,6 +59,7 @@ import org.modeshape.graph.query.plan.CanonicalPlanner;
 import org.modeshape.graph.query.plan.JoinAlgorithm;
 import org.modeshape.graph.query.plan.PlanHints;
 import org.modeshape.graph.query.plan.PlanNode;
+import org.modeshape.graph.query.plan.PlanUtil;
 import org.modeshape.graph.query.plan.PlanNode.Property;
 import org.modeshape.graph.query.plan.PlanNode.Type;
 import org.modeshape.graph.query.validate.ImmutableSchemata;
@@ -804,6 +805,9 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
     // ----------------------------------------------------------------------------------------------------------------
 
     protected void assertPlanMatches( PlanNode expected ) {
+        // Make sure the projected types are there ...
+        ensureProjectTypesOn(expected);
+
         if (!node.isSameAs(expected)) {
             String message = "Plan was\n " + node.getString() + "\n but was expecting\n " + expected.getString();
             assertThat(message, node.isSameAs(expected), is(true));
@@ -872,5 +876,14 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
             System.out.println();
         }
         return optimized;
+    }
+
+    protected void ensureProjectTypesOn( PlanNode node ) {
+        for (PlanNode project : node.findAllAtOrBelow(Type.PROJECT)) {
+            List<Column> columns = project.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
+            List<String> types = PlanUtil.findRequiredColumnTypes(context, columns, project);
+            assertThat(columns.size(), is(types.size()));
+            project.setProperty(Property.PROJECT_COLUMN_TYPES, types);
+        }
     }
 }

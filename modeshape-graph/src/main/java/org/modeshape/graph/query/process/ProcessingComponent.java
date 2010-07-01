@@ -47,8 +47,6 @@ import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.model.UpperCase;
 import org.modeshape.graph.query.model.TypeSystem.TypeFactory;
 import org.modeshape.graph.query.validate.Schemata;
-import org.modeshape.graph.query.validate.Schemata.Column;
-import org.modeshape.graph.query.validate.Schemata.Table;
 
 /**
  * A component that performs (some) portion of the query processing by {@link #execute() returning the tuples} that result from
@@ -159,9 +157,7 @@ public abstract class ProcessingComponent {
             String selectorName = propValue.selectorName().name();
             final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
             // Find the expected property type of the value ...
-            Table table = schemata.getTable(propValue.selectorName());
-            Column schemaColumn = table.getColumn(propertyName);
-            final String expectedType = schemaColumn.getPropertyType();
+            final String expectedType = columns.getColumnTypes().get(index);
             final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
             return new DynamicOperation() {
                 public String getExpectedType() {
@@ -179,9 +175,7 @@ public abstract class ProcessingComponent {
             String selectorName = refValue.selectorName().name();
             final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
             // Find the expected property type of the value ...
-            Table table = schemata.getTable(refValue.selectorName());
-            Column schemaColumn = table.getColumn(propertyName);
-            final String expectedType = schemaColumn.getPropertyType();
+            final String expectedType = columns.getColumnTypes().get(index);
             final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
             return new DynamicOperation() {
                 public String getExpectedType() {
@@ -201,9 +195,7 @@ public abstract class ProcessingComponent {
             String selectorName = value.selectorName().name();
             final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
             // Find the expected property type of the value ...
-            Table table = schemata.getTable(value.selectorName());
-            Column schemaColumn = table.getColumn(propertyName);
-            final String expectedType = schemaColumn.getPropertyType();
+            final String expectedType = columns.getColumnTypes().get(index);
             final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);
             final TypeFactory<Long> longFactory = typeSystem.getLongFactory();
             return new DynamicOperation() {

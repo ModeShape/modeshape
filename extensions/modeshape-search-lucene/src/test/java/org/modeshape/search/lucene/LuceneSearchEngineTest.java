@@ -46,6 +46,7 @@ import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.QueryResults.Columns;
 import org.modeshape.graph.query.model.And;
@@ -220,7 +221,12 @@ public class LuceneSearchEngineTest {
         assertThat(source, is(instanceOf(Selector.class)));
         SelectorName tableName = ((Selector)source).name();
         Constraint constraint = query.constraint();
-        Columns resultColumns = new QueryResultColumns(query.columns(), QueryResultColumns.includeFullTextScores(constraint));
+        List<String> types = new ArrayList<String>();
+        for (int i = 0; i != query.columns().size(); ++i) {
+            types.add(PropertyType.STRING.getName());
+        }
+        Columns resultColumns = new QueryResultColumns(query.columns(), types,
+                                                       QueryResultColumns.includeFullTextScores(constraint));
         List<Constraint> andedConstraints = getAndedConstraint(constraint, new ArrayList<Constraint>());
         Limit limit = query.limits();
         RequestProcessor processor = engine.createProcessor(context, null, true);

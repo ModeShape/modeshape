@@ -51,7 +51,11 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
     @Before
     public void beforeEach() {
         // Define the columns for the results ...
-        columns = resultColumns("Selector1", "ColA", "ColB", "ColC");
+        columns = resultColumns("Selector1",
+                                new String[] {"ColA", "ColB", "ColC"},
+                                PropertyType.STRING,
+                                PropertyType.LONG,
+                                PropertyType.STRING);
         schemata = schemataFor(columns, PropertyType.STRING, PropertyType.LONG, PropertyType.STRING);
         // Define the context ...
         context = new QueryContext(schemata, typeSystem);

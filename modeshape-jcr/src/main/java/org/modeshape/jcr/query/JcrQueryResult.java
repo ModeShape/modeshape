@@ -33,7 +33,6 @@ import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
@@ -62,7 +61,6 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
     protected final QueryResults results;
     protected final Schemata schemata;
     protected final String queryStatement;
-    private List<String> columnTypes;
     private List<String> columnTables;
 
     protected JcrQueryResult( JcrQueryContext context,
@@ -87,6 +85,10 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
         return results.getColumns().getColumnNames();
     }
 
+    public List<String> getColumnTypeList() {
+        return results.getColumns().getColumnTypes();
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -104,30 +106,8 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
      */
     @Override
     public String[] getColumnTypes() {
-        if (columnTypes == null) {
-            // Discover the types ...
-            columnTypes = loadColumnTypes(results.getColumns());
-        }
-        return columnTypes.toArray(new String[columnTypes.size()]);
-    }
-
-    protected List<String> loadColumnTypes( Columns columns ) {
-        List<String> types = new ArrayList<String>(columns.getColumnCount());
-        for (Column column : columns) {
-            String typeName = null;
-            Table table = schemata.getTable(column.selectorName());
-            if (table != null) {
-                Schemata.Column typedColumn = table.getColumn(column.propertyName());
-                typeName = typedColumn.getPropertyType();
-            }
-            if (typeName == null) {
-                // Might be fabricated column, so just assume string ...
-                typeName = PropertyType.nameFromValue(PropertyType.STRING);
-            }
-            types.add(typeName);
-        }
-
-        return types;
+        List<String> types = getColumnTypeList();
+        return types.toArray(new String[types.size()]); // make a defensive copy ...
     }
 
     /**

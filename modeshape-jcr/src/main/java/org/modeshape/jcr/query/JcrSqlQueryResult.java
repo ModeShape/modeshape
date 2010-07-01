@@ -23,7 +23,6 @@
  */
 package org.modeshape.jcr.query;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -38,10 +37,7 @@ import javax.jcr.query.RowIterator;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.query.QueryResults;
-import org.modeshape.graph.query.QueryResults.Columns;
-import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.validate.Schemata;
-import org.modeshape.graph.query.validate.Schemata.Table;
 
 /**
  * 
@@ -50,10 +46,12 @@ public class JcrSqlQueryResult extends JcrQueryResult {
 
     public static final String JCR_SCORE_COLUMN_NAME = "jcr:score";
     public static final String JCR_PATH_COLUMN_NAME = "jcr:path";
+    /* The TypeFactory.getTypeName() always returns an uppercased type */
+    public static final String JCR_SCORE_COLUMN_TYPE = PropertyType.nameFromValue(PropertyType.DOUBLE).toUpperCase();
+    public static final String JCR_PATH_COLUMN_TYPE = PropertyType.nameFromValue(PropertyType.STRING).toUpperCase();
 
     private final List<String> columnNames;
-    private boolean addedScoreColumn;
-    private boolean addedPathColumn;
+    private final List<String> columnTypes;
 
     public JcrSqlQueryResult( JcrQueryContext context,
                               String query,
@@ -61,15 +59,17 @@ public class JcrSqlQueryResult extends JcrQueryResult {
                               Schemata schemata ) {
         super(context, query, graphResults, schemata);
         List<String> columnNames = new LinkedList<String>(graphResults.getColumns().getColumnNames());
+        List<String> columnTypes = new LinkedList<String>(graphResults.getColumns().getColumnTypes());
         if (!columnNames.contains(JCR_SCORE_COLUMN_NAME)) {
             columnNames.add(0, JCR_SCORE_COLUMN_NAME);
-            addedScoreColumn = true;
+            columnTypes.add(0, JCR_SCORE_COLUMN_TYPE);
         }
         if (!columnNames.contains(JCR_PATH_COLUMN_NAME)) {
             columnNames.add(0, JCR_PATH_COLUMN_NAME);
-            addedPathColumn = true;
+            columnTypes.add(0, JCR_PATH_COLUMN_TYPE);
         }
         this.columnNames = Collections.unmodifiableList(columnNames);
+        this.columnTypes = Collections.unmodifiableList(columnTypes);
     }
 
     /**
@@ -82,29 +82,14 @@ public class JcrSqlQueryResult extends JcrQueryResult {
         return columnNames;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.query.JcrQueryResult#getColumnTypeList()
+     */
     @Override
-    protected List<String> loadColumnTypes( Columns columns ) {
-        List<String> types = new ArrayList<String>(columns.getColumnCount() + (addedScoreColumn ? 1 : 0)
-                                                   + (addedPathColumn ? 1 : 0));
-        String stringtype = PropertyType.nameFromValue(PropertyType.STRING);
-        if (addedScoreColumn) types.add(0, stringtype);
-        if (addedPathColumn) types.add(0, stringtype);
-
-        for (Column column : columns) {
-            String typeName = null;
-            Table table = schemata.getTable(column.selectorName());
-            if (table != null) {
-                Schemata.Column typedColumn = table.getColumn(column.propertyName());
-                typeName = typedColumn.getPropertyType();
-            }
-            if (typeName == null) {
-                // Might be fabricated column, so just assume string ...
-                typeName = stringtype;
-            }
-            types.add(typeName);
-        }
-
-        return types;
+    public java.util.List<String> getColumnTypeList() {
+        return columnTypes;
     }
 
     /**

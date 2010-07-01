@@ -46,10 +46,10 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.modeshape.common.FixFor;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
@@ -335,24 +335,17 @@ public class JcrDriverIntegrationTest {
 
     }
 
-    /**
-     * JIRA: https://jira.jboss.org/browse/MODE-772
-     * 
-     * @throws SQLException
-     */
-    @Ignore
+    @FixFor( "MODE-722" )
     @Test
     public void shouldBeAbleToExecuteSqlQueryUsingJoinToFindAllCarsUnderHybrid() throws SQLException {
-	String[] expected = {
-		"jcr:path[String]    jcr:score[String]    jcr:primaryType[STRING]",
-		"/Cars/Utility    1.0    nt:unstructured",
-		"/Cars/Hybrid    1.0    nt:unstructured",
-		"/Cars/Sports    1.0    nt:unstructured",
-		"/Cars/Luxury    1.0    nt:unstructured"
-		};
-	
+        String[] expected = {"car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]",
+            "Nissan    Altima    2008    $18,260", "Toyota    Prius    2008    $21,500",
+            "Toyota    Highlander    2008    $34,200"};
+
         DriverTestUtil.executeTest(this.connection,
-                                           "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid'", expected, 4);
+                                   "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid'",
+                                   expected,
+                                   3);
 
     }
 
@@ -374,7 +367,7 @@ public class JcrDriverIntegrationTest {
      */
     @Test
     public void shouldBeAbleToExecuteSqlQueryWithChildAxisCriteria() throws SQLException {
-        String[] expected = {"jcr:path[String]    jcr:score[String]    jcr:primaryType[STRING]",
+        String[] expected = {"jcr:path[STRING]    jcr:score[DOUBLE]    jcr:primaryType[STRING]",
             "/Cars/Utility    1.0    nt:unstructured", "/Cars/Hybrid    1.0    nt:unstructured",
             "/Cars/Sports    1.0    nt:unstructured", "/Cars/Luxury    1.0    nt:unstructured"};
         DriverTestUtil.executeTest(this.connection,
@@ -392,7 +385,7 @@ public class JcrDriverIntegrationTest {
      */
     @Test
     public void shouldBeAbleToExecuteSqlQueryWithContainsCriteria() throws SQLException {
-        String[] expected = {"jcr:path[String]    jcr:score[String]    jcr:primaryType[STRING]",
+        String[] expected = {"jcr:path[STRING]    jcr:score[DOUBLE]    jcr:primaryType[STRING]",
             "/Cars/Utility    1.0    nt:unstructured", "/Cars/Hybrid    1.0    nt:unstructured",
             "/Cars/Sports    1.0    nt:unstructured", "/Cars/Luxury    1.0    nt:unstructured"};
 

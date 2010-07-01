@@ -35,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.QueryResults.Columns;
 import org.modeshape.graph.query.QueryResults.Cursor;
@@ -49,6 +50,7 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
 
     private QueryContext context;
     private List<Column> columnList;
+    private List<String> columnTypes;
     private Columns columns;
     private QueryResults results;
     private List<Object[]> tuples;
@@ -68,7 +70,11 @@ public class QueryResultColumnsTest extends AbstractQueryResultsTest {
         columnList.add(new Column(selector("table2"), "colA", "colA2"));
         columnList.add(new Column(selector("table2"), "colB", "colB2"));
         columnList.add(new Column(selector("table2"), "colX", "colX"));
-        columns = new QueryResultColumns(columnList, false);
+        columnTypes = new ArrayList<String>();
+        for (int i = 0; i != columnList.size(); ++i) {
+            columnTypes.add(PropertyType.STRING.getName());
+        }
+        columns = new QueryResultColumns(columnList, columnTypes, false);
         tuples = new ArrayList<Object[]>();
         tuples.add(tuple(columns, new String[] {"/a/b/c", "/a/x/y"}, 1, 2, 3, "2a", "2b", "x"));
         tuples.add(tuple(columns, new String[] {"/a/b/d", "/a/x/y"}, 4, 5, 6, "2a", "2b", "x"));

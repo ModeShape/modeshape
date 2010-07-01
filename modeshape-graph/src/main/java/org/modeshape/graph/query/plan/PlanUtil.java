@@ -71,6 +71,7 @@ import org.modeshape.graph.query.model.Visitors;
 import org.modeshape.graph.query.model.Visitors.AbstractVisitor;
 import org.modeshape.graph.query.plan.PlanNode.Property;
 import org.modeshape.graph.query.plan.PlanNode.Type;
+import org.modeshape.graph.query.validate.Schemata;
 import org.modeshape.graph.query.validate.Schemata.Table;
 import org.modeshape.graph.query.validate.Schemata.View;
 
@@ -167,6 +168,62 @@ public class PlanUtil {
             node = node.getParent();
         } while (node != null);
         return collectionVisitor.getRequiredColumns();
+    }
+
+    public static List<String> findRequiredColumnTypes( QueryContext context,
+                                                        List<Column> columns,
+                                                        PlanNode node ) {
+        if (node.getType() == Type.PROJECT) {
+            assert node.getChildCount() == 1;
+            node = node.getFirstChild();
+        }
+        // See if there are any PROJECT nodes below this node ...
+        List<PlanNode> projects = node.findAllFirstNodesAtOrBelow(Type.PROJECT);
+        if (!projects.isEmpty()) {
+            List<String> types = new ArrayList<String>(columns.size());
+            for (Column column : columns) {
+                boolean added = false;
+                for (PlanNode project : projects) {
+                    List<Column> projectedColumns = project.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
+                    List<String> projectedTypes = project.getPropertyAsList(Property.PROJECT_COLUMN_TYPES, String.class);
+                    if (projectedTypes == null) continue;
+                    for (int i = 0; i != projectedColumns.size(); ++i) {
+                        Column projectedColumn = projectedColumns.get(i);
+                        if (column.equals(projectedColumn)) {
+                            types.add(projectedTypes.get(i));
+                            added = true;
+                            break;
+                        }
+                    }
+                    if (added) break;
+                }
+            }
+            if (types.size() == columns.size()) return types;
+        }
+
+        // Otherwise, look for the sources ...
+        List<String> types = new ArrayList<String>(columns.size());
+        List<PlanNode> sources = node.findAllAtOrBelow(Type.SOURCE);
+        for (Column column : columns) {
+            boolean added = false;
+            for (PlanNode source : sources) {
+                SelectorName alias = source.getProperty(Property.SOURCE_ALIAS, SelectorName.class);
+                SelectorName name = source.getProperty(Property.SOURCE_NAME, SelectorName.class);
+                if ((alias != null && alias.equals(column.selectorName())) || name.equals(column.selectorName())) {
+                    List<Schemata.Column> sourceColumns = source.getPropertyAsList(Property.SOURCE_COLUMNS, Schemata.Column.class);
+                    for (Schemata.Column sourceColumn : sourceColumns) {
+                        if (sourceColumn.getName().equals(column.columnName())
+                            || sourceColumn.getName().equals(column.propertyName())) {
+                            types.add(sourceColumn.getPropertyType());
+                            added = true;
+                            break;
+                        }
+                    }
+                    if (added) break;
+                }
+            }
+        }
+        return types;
     }
 
     protected static class RequiredColumnVisitor extends AbstractVisitor {
