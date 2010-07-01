@@ -326,12 +326,26 @@ public class PlanUtil {
                     }
                 }
                 break;
+            case SOURCE:
+                // Check the source alias ...
+                SelectorName sourceAlias = planNode.getProperty(Property.SOURCE_ALIAS, SelectorName.class);
+                SelectorName replacement = rewrittenSelectors.get(sourceAlias);
+                if (replacement == null) {
+                    // Try the source name ...
+                    SelectorName sourceName = planNode.getProperty(Property.SOURCE_NAME, SelectorName.class);
+                    replacement = rewrittenSelectors.get(sourceName);
+                }
+                if (replacement != null) {
+                    planNode.setProperty(Property.SOURCE_ALIAS, replacement);
+                    planNode.getSelectors().remove(sourceAlias);
+                    planNode.getSelectors().add(replacement);
+                }
+                break;
             case GROUP:
             case SET_OPERATION:
             case DUP_REMOVE:
             case LIMIT:
             case NULL:
-            case SOURCE:
             case ACCESS:
                 // None of these have to be changed ...
                 break;
@@ -492,6 +506,13 @@ public class PlanUtil {
             if (lhs == newLhs) return comparison;
             return new Comparison(newLhs, comparison.operator(), rhs);
         }
+        if (constraint instanceof SetCriteria) {
+            SetCriteria criteria = (SetCriteria)constraint;
+            DynamicOperand lhs = criteria.leftOperand();
+            DynamicOperand newLhs = replaceReferencesToRemovedSource(context, lhs, rewrittenSelectors);
+            if (lhs == newLhs) return constraint;
+            return new SetCriteria(newLhs, criteria.rightOperands());
+        }
         return constraint;
     }
 
@@ -539,110 +560,8 @@ public class PlanUtil {
         PlanNode node = topOfViewInPlan;
         List<PlanNode> potentiallyRemovableSources = new LinkedList<PlanNode>();
         do {
-            // Remove the view from the selectors ...
-            if (node.getSelectors().remove(viewName)) {
-                switch (node.getType()) {
-                    case PROJECT:
-                        // Adjust the columns ...
-                        List<Column> columns = node.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
-                        if (columns != null) {
-                            for (int i = 0; i != columns.size(); ++i) {
-                                Column column = columns.get(i);
-                                if (column.selectorName().equals(viewName)) {
-                                    // This column references the view ...
-                                    String columnName = column.propertyName();
-                                    String columnAlias = column.columnName();
-                                    // Find the source column that this view column corresponds to ...
-                                    Column sourceColumn = mappings.getMappedColumn(columnName);
-                                    if (sourceColumn != null) {
-                                        SelectorName sourceName = sourceColumn.selectorName();
-                                        // Replace the view column with one that uses the same alias but that references the
-                                        // source
-                                        // column ...
-                                        columns.set(i, new Column(sourceName, sourceColumn.propertyName(), columnAlias));
-                                        node.addSelector(sourceName);
-                                    } else {
-                                        if (mappings.getMappedSelectorNames().size() == 1) {
-                                            SelectorName sourceName = mappings.getSingleMappedSelectorName();
-                                            if (sourceName != null) {
-                                                columns.set(i, new Column(sourceName, columnName, columnAlias));
-                                                node.addSelector(sourceName);
-                                            } else {
-                                                node.addSelector(column.selectorName());
-                                            }
-                                        } else {
-                                            node.addSelector(column.selectorName());
-                                        }
-                                    }
-                                } else {
-                                    node.addSelector(column.selectorName());
-                                }
-                            }
-                        }
-                        break;
-                    case SELECT:
-                        Constraint constraint = node.getProperty(Property.SELECT_CRITERIA, Constraint.class);
-                        Constraint newConstraint = replaceReferences(context, constraint, mappings, node);
-                        if (constraint != newConstraint) {
-                            node.getSelectors().clear();
-                            node.addSelectors(Visitors.getSelectorsReferencedBy(newConstraint));
-                            node.setProperty(Property.SELECT_CRITERIA, newConstraint);
-                        }
-                        break;
-                    case SOURCE:
-                        SelectorName sourceName = node.getProperty(Property.SOURCE_NAME, SelectorName.class);
-                        assert sourceName.equals(sourceName); // selector name already matches
-                        potentiallyRemovableSources.add(node);
-                        break;
-                    case JOIN:
-                        JoinCondition joinCondition = node.getProperty(Property.JOIN_CONDITION, JoinCondition.class);
-                        JoinCondition newJoinCondition = replaceViewReferences(context, joinCondition, mappings, node);
-                        node.getSelectors().clear();
-                        node.setProperty(Property.JOIN_CONDITION, newJoinCondition);
-                        node.addSelectors(Visitors.getSelectorsReferencedBy(newJoinCondition));
-                        List<Constraint> joinConstraints = node.getPropertyAsList(Property.JOIN_CONSTRAINTS, Constraint.class);
-                        if (joinConstraints != null && !joinConstraints.isEmpty()) {
-                            List<Constraint> newConstraints = new ArrayList<Constraint>(joinConstraints.size());
-                            for (Constraint joinConstraint : joinConstraints) {
-                                newConstraint = replaceReferences(context, joinConstraint, mappings, node);
-                                newConstraints.add(newConstraint);
-                                node.addSelectors(Visitors.getSelectorsReferencedBy(newConstraint));
-                            }
-                            node.setProperty(Property.JOIN_CONSTRAINTS, newConstraints);
-                        }
-                        break;
-                    case ACCESS:
-                        // Add all the selectors used by the subnodes ...
-                        for (PlanNode child : node) {
-                            node.addSelectors(child.getSelectors());
-                        }
-                        break;
-                    case SORT:
-                        // The selector names and Ordering objects needs to be changed ...
-                        List<Ordering> orderings = node.getPropertyAsList(Property.SORT_ORDER_BY, Ordering.class);
-                        List<Ordering> newOrderings = new ArrayList<Ordering>(orderings.size());
-                        node.getSelectors().clear();
-                        for (Ordering ordering : orderings) {
-                            DynamicOperand operand = ordering.operand();
-                            DynamicOperand newOperand = replaceViewReferences(context, operand, mappings, node);
-                            if (newOperand != operand) {
-                                ordering = new Ordering(newOperand, ordering.order());
-                            }
-                            node.addSelectors(Visitors.getSelectorsReferencedBy(ordering));
-                            newOrderings.add(ordering);
-                        }
-                        node.setProperty(Property.SORT_ORDER_BY, newOrderings);
-                        break;
-                    case GROUP:
-                        // Don't yet use GROUP BY
-                    case SET_OPERATION:
-                    case DUP_REMOVE:
-                    case LIMIT:
-                    case NULL:
-                        break;
-                }
-            }
             // Move to the parent ...
+            replaceViewReferences(context, node, mappings, viewName, potentiallyRemovableSources);
             node = node.getParent();
         } while (node != null);
 
@@ -660,6 +579,119 @@ public class PlanUtil {
             if (!stillRequired) {
                 assert sourceNode.getParent() != null;
                 sourceNode.extractFromParent();
+            }
+        }
+    }
+
+    protected static void replaceViewReferences( QueryContext context,
+                                                 PlanNode node,
+                                                 ColumnMapping mappings,
+                                                 SelectorName viewName,
+                                                 List<PlanNode> potentiallyRemovableSources ) {
+        assert node != null;
+        assert viewName != null;
+
+        // Remove the view from the selectors ...
+        if (node.getSelectors().remove(viewName)) {
+            switch (node.getType()) {
+                case PROJECT:
+                    // Adjust the columns ...
+                    List<Column> columns = node.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
+                    if (columns != null) {
+                        for (int i = 0; i != columns.size(); ++i) {
+                            Column column = columns.get(i);
+                            if (column.selectorName().equals(viewName)) {
+                                // This column references the view ...
+                                String columnName = column.propertyName();
+                                String columnAlias = column.columnName();
+                                // Find the source column that this view column corresponds to ...
+                                Column sourceColumn = mappings.getMappedColumn(columnName);
+                                if (sourceColumn != null) {
+                                    SelectorName sourceName = sourceColumn.selectorName();
+                                    // Replace the view column with one that uses the same alias but that references the
+                                    // source
+                                    // column ...
+                                    columns.set(i, new Column(sourceName, sourceColumn.propertyName(), columnAlias));
+                                    node.addSelector(sourceName);
+                                } else {
+                                    if (mappings.getMappedSelectorNames().size() == 1) {
+                                        SelectorName sourceName = mappings.getSingleMappedSelectorName();
+                                        if (sourceName != null) {
+                                            columns.set(i, new Column(sourceName, columnName, columnAlias));
+                                            node.addSelector(sourceName);
+                                        } else {
+                                            node.addSelector(column.selectorName());
+                                        }
+                                    } else {
+                                        node.addSelector(column.selectorName());
+                                    }
+                                }
+                            } else {
+                                node.addSelector(column.selectorName());
+                            }
+                        }
+                    }
+                    break;
+                case SELECT:
+                    Constraint constraint = node.getProperty(Property.SELECT_CRITERIA, Constraint.class);
+                    Constraint newConstraint = replaceReferences(context, constraint, mappings, node);
+                    if (constraint != newConstraint) {
+                        node.getSelectors().clear();
+                        node.addSelectors(Visitors.getSelectorsReferencedBy(newConstraint));
+                        node.setProperty(Property.SELECT_CRITERIA, newConstraint);
+                    }
+                    break;
+                case SOURCE:
+                    SelectorName sourceName = node.getProperty(Property.SOURCE_NAME, SelectorName.class);
+                    assert sourceName.equals(sourceName); // selector name already matches
+                    potentiallyRemovableSources.add(node);
+                    break;
+                case JOIN:
+                    JoinCondition joinCondition = node.getProperty(Property.JOIN_CONDITION, JoinCondition.class);
+                    JoinCondition newJoinCondition = replaceViewReferences(context, joinCondition, mappings, node);
+                    node.getSelectors().clear();
+                    node.setProperty(Property.JOIN_CONDITION, newJoinCondition);
+                    node.addSelectors(Visitors.getSelectorsReferencedBy(newJoinCondition));
+                    List<Constraint> joinConstraints = node.getPropertyAsList(Property.JOIN_CONSTRAINTS, Constraint.class);
+                    if (joinConstraints != null && !joinConstraints.isEmpty()) {
+                        List<Constraint> newConstraints = new ArrayList<Constraint>(joinConstraints.size());
+                        for (Constraint joinConstraint : joinConstraints) {
+                            newConstraint = replaceReferences(context, joinConstraint, mappings, node);
+                            newConstraints.add(newConstraint);
+                            node.addSelectors(Visitors.getSelectorsReferencedBy(newConstraint));
+                        }
+                        node.setProperty(Property.JOIN_CONSTRAINTS, newConstraints);
+                    }
+                    break;
+                case ACCESS:
+                    // Add all the selectors used by the subnodes ...
+                    for (PlanNode child : node) {
+                        node.addSelectors(child.getSelectors());
+                    }
+                    break;
+                case SORT:
+                    // The selector names and Ordering objects needs to be changed ...
+                    List<Ordering> orderings = node.getPropertyAsList(Property.SORT_ORDER_BY, Ordering.class);
+                    List<Ordering> newOrderings = new ArrayList<Ordering>(orderings.size());
+                    node.getSelectors().clear();
+                    for (Ordering ordering : orderings) {
+                        DynamicOperand operand = ordering.operand();
+                        DynamicOperand newOperand = replaceViewReferences(context, operand, mappings, node);
+                        if (newOperand != operand) {
+                            ordering = new Ordering(newOperand, ordering.order());
+                        }
+                        node.addSelectors(Visitors.getSelectorsReferencedBy(ordering));
+                        newOrderings.add(ordering);
+                    }
+                    node.setProperty(Property.SORT_ORDER_BY, newOrderings);
+                    break;
+                case GROUP:
+                    // Don't yet use GROUP BY
+                case SET_OPERATION:
+                case DUP_REMOVE:
+                case LIMIT:
+                case NULL:
+                    break;
             }
         }
     }
@@ -1000,6 +1032,15 @@ public class PlanUtil {
             }
         }
         return mapping;
+    }
+
+    public static void setSelectorsOnSubplan( PlanNode subplan,
+                                              Set<SelectorName> selectors ) {
+        subplan.getSelectors().clear();
+        subplan.getSelectors().addAll(selectors);
+        for (PlanNode child : subplan.getChildren()) {
+            setSelectorsOnSubplan(child, selectors);
+        }
     }
 
     /**

@@ -27,13 +27,13 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.QueryResults.Columns;
 import org.modeshape.graph.query.model.Ordering;
 import org.modeshape.graph.query.validate.Schemata;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 
@@ -66,13 +66,13 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
         };
         // Create the component we're testing ...
         orderings = new ArrayList<Ordering>();
-        component = new SortValuesComponent(delegate, orderings);
+        component = new SortValuesComponent(delegate, orderings, null);
     }
 
     @Test
     public void shouldReturnAllResultsOrderedByNodeName() {
         orderings.add(orderByNodeName("Selector1"));
-        component = new SortValuesComponent(delegate, orderings);
+        component = new SortValuesComponent(delegate, orderings, null);
         inputTuples.add(tuple(columns, "/a/b1/c1", "v1", 100, "v4"));
         inputTuples.add(tuple(columns, "/a/b2/c4", "v4", 100, "v3"));
         inputTuples.add(tuple(columns, "/a/b3/c2", 100, 100, "v2"));
@@ -88,7 +88,7 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
     @Test
     public void shouldReturnAllResultsOrderedByNodeNameWhenThereAreDuplicateTuples() {
         orderings.add(orderByNodeName("Selector1"));
-        component = new SortValuesComponent(delegate, orderings);
+        component = new SortValuesComponent(delegate, orderings, null);
         inputTuples.add(tuple(columns, "/a/b1/c1", "v1", 100, "v3"));
         inputTuples.add(tuple(columns, "/a/b2/c4", "v1", 100, "v3"));
         inputTuples.add(tuple(columns, "/a/b3/c2", "v1", 100, "v3"));
@@ -110,7 +110,7 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
     @Test
     public void shouldReturnAllResultsOrderedByNodeDepth() {
         orderings.add(orderByNodeDepth("Selector1"));
-        component = new SortValuesComponent(delegate, orderings);
+        component = new SortValuesComponent(delegate, orderings, null);
         inputTuples.add(tuple(columns, "/a/b1", "v1", 100, "v4"));
         inputTuples.add(tuple(columns, "/a/b2/c4", "v4", 100, "v3"));
         inputTuples.add(tuple(columns, "/a", 100, 100, "v2"));
@@ -126,7 +126,7 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
     @Test
     public void shouldReturnAllResultsOrderedByNodePath() {
         orderings.add(orderByNodePath("Selector1"));
-        component = new SortValuesComponent(delegate, orderings);
+        component = new SortValuesComponent(delegate, orderings, null);
         inputTuples.add(tuple(columns, "/a/b1", "v1", 100, "v4"));
         inputTuples.add(tuple(columns, "/a/b1/c4[2]", "v4", 100, "v3"));
         inputTuples.add(tuple(columns, "/a/b1/c2", 100, 100, "v2"));
@@ -142,7 +142,7 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
     @Test
     public void shouldReturnAllResultsOrderedByNodeLocalName() {
         orderings.add(orderByNodeLocalName("Selector1"));
-        component = new SortValuesComponent(delegate, orderings);
+        component = new SortValuesComponent(delegate, orderings, null);
         inputTuples.add(tuple(columns, "/a/b1/c1", "v1", 100, "v4"));
         inputTuples.add(tuple(columns, "/a/b2/c4", "v4", 100, "v3"));
         inputTuples.add(tuple(columns, "/a/b3/c2", 100, 100, "v2"));
@@ -158,7 +158,7 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
     @Test
     public void shouldReturnAllResultsOrderedByNodeLocalNameWhenThereAreDuplicateTuples() {
         orderings.add(orderByNodeName("Selector1"));
-        component = new SortValuesComponent(delegate, orderings);
+        component = new SortValuesComponent(delegate, orderings, null);
         inputTuples.add(tuple(columns, "/a/b1/mode:c1", "v1", 100, "v3"));
         inputTuples.add(tuple(columns, "/a/b2/mode:c4", "v1", 100, "v3"));
         inputTuples.add(tuple(columns, "/a/b3/mode:c2", "v1", 100, "v3"));
@@ -180,7 +180,7 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
     @Test
     public void shouldReturnAllResultsOrderedByValueLengthOfLong() {
         orderings.add(orderByPropertyLength(columns.getColumns().get(1)));
-        component = new SortValuesComponent(delegate, orderings);
+        component = new SortValuesComponent(delegate, orderings, null);
         inputTuples.add(tuple(columns, "/a/b/c1", "v1", 1L, "v4"));
         inputTuples.add(tuple(columns, "/a/b/c4", "v1", 1114L, "v3"));
         inputTuples.add(tuple(columns, "/a/b/c2", "v1", 113L, "v2"));
@@ -196,7 +196,7 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
     @Test
     public void shouldReturnAllResultsOrderedByValueLengthOfString() {
         orderings.add(orderByPropertyLength(columns.getColumns().get(0)));
-        component = new SortValuesComponent(delegate, orderings);
+        component = new SortValuesComponent(delegate, orderings, null);
         inputTuples.add(tuple(columns, "/a/b/c1", "v1", 100L, "v4"));
         inputTuples.add(tuple(columns, "/a/b/c4", "v1111", 100L, "v3"));
         inputTuples.add(tuple(columns, "/a/b/c2", "v111", 100L, "v2"));
@@ -212,7 +212,7 @@ public class SortValuesComponentTest extends AbstractQueryResultsTest {
     @Test
     public void shouldReturnAllResultsInSuppliedOrderWhenThereAreNoOrderings() {
         orderings.clear();
-        component = new SortValuesComponent(delegate, orderings);
+        component = new SortValuesComponent(delegate, orderings, null);
         inputTuples.add(tuple(columns, "/a/b/c1", "v1", 100L, "v3"));
         inputTuples.add(tuple(columns, "/a/b/c4", "v1", 100L, "v3"));
         inputTuples.add(tuple(columns, "/a/b/c2", "v1", 100L, "v3"));

@@ -70,7 +70,6 @@ public class QueryResultColumns implements Columns {
     private final List<String> columnNames;
     private final List<String> selectorNames;
     private List<String> tupleValueNames;
-    private final Map<String, Column> columnsByName;
     private final Map<String, Integer> columnIndexByColumnName;
     private final Map<String, Integer> locationIndexBySelectorName;
     private final Map<String, Integer> locationIndexByColumnName;
@@ -101,7 +100,6 @@ public class QueryResultColumns implements Columns {
     protected QueryResultColumns( boolean includeFullTextSearchScores,
                                   List<? extends Column> columns ) {
         this.columns = columns != null ? Collections.<Column>unmodifiableList(columns) : NO_COLUMNS;
-        this.columnsByName = new HashMap<String, Column>();
         this.columnIndexByColumnName = new HashMap<String, Integer>();
         Set<String> selectors = new HashSet<String>();
         final int columnCount = this.columns.size();
@@ -115,19 +113,15 @@ public class QueryResultColumns implements Columns {
         for (int i = 0, max = this.columns.size(); i != max; ++i) {
             Column column = this.columns.get(i);
             assert column != null;
-            String columnName = column.columnName();
-            assert columnName != null;
-            if (columnsByName.put(columnName, column) != null) {
-                assert false : "Column names must be unique";
-            }
-            names.add(columnName);
-            columnIndexByColumnName.put(columnName, new Integer(i));
             String selectorName = column.selectorName().name();
             if (selectors.add(selectorName)) {
                 selectorNames.add(selectorName);
                 selectorIndex = new Integer(selectorIndex.intValue() + 1);
                 locationIndexBySelectorName.put(selectorName, selectorIndex);
             }
+            String columnName = columnNameFor(column, names);
+            assert columnName != null;
+            columnIndexByColumnName.put(columnName, new Integer(i));
             locationIndexByColumnIndex.put(new Integer(i), selectorIndex);
             locationIndexByColumnName.put(columnName, selectorIndex);
             // Insert the entry by selector name and property name ...
@@ -146,6 +140,57 @@ public class QueryResultColumns implements Columns {
         this.selectorNames = Collections.unmodifiableList(selectorNames);
         this.columnNames = Collections.unmodifiableList(names);
         if (includeFullTextSearchScores) {
+            this.fullTextSearchScoreIndexBySelectorName = new HashMap<String, Integer>();
+            int index = columnNames.size() + selectorNames.size();
+            for (String selectorName : selectorNames) {
+                fullTextSearchScoreIndexBySelectorName.put(selectorName, new Integer(index++));
+            }
+            this.tupleSize = columnNames.size() + selectorNames.size() + selectorNames.size();
+        } else {
+            this.fullTextSearchScoreIndexBySelectorName = null;
+            this.tupleSize = columnNames.size() + selectorNames.size();
+        }
+    }
+
+    private QueryResultColumns( List<Column> columns,
+                                QueryResultColumns wrappedAround ) {
+        assert columns != null;
+        this.columns = Collections.unmodifiableList(columns);
+        this.columnIndexByColumnName = new HashMap<String, Integer>();
+        this.locationIndexBySelectorName = new HashMap<String, Integer>();
+        this.locationIndexByColumnIndex = new HashMap<Integer, Integer>();
+        this.locationIndexByColumnName = new HashMap<String, Integer>();
+        this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, Integer>>();
+        this.selectorNames = new ArrayList<String>(columns.size());
+        List<String> names = new ArrayList<String>(columns.size());
+        for (int i = 0, max = this.columns.size(); i != max; ++i) {
+            Column column = this.columns.get(i);
+            assert column != null;
+            String selectorName = column.selectorName().name();
+            if (!selectorNames.contains(selectorName)) selectorNames.add(selectorName);
+            String columnName = columnNameFor(column, names);
+            assert columnName != null;
+            Integer columnIndex = new Integer(wrappedAround.getColumnIndexForName(columnName));
+            columnIndexByColumnName.put(columnName, columnIndex);
+            Integer selectorIndex = new Integer(wrappedAround.getLocationIndex(selectorName));
+            locationIndexBySelectorName.put(selectorName, selectorIndex);
+            locationIndexByColumnIndex.put(columnIndex, selectorIndex);
+            locationIndexByColumnName.put(columnName, selectorIndex);
+            // Insert the entry by selector name and property name ...
+            Map<String, Integer> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
+            if (byPropertyName == null) {
+                byPropertyName = new HashMap<String, Integer>();
+                columnIndexByPropertyNameBySelectorName.put(selectorName, byPropertyName);
+            }
+            byPropertyName.put(column.propertyName(), columnIndex);
+        }
+        if (selectorNames.isEmpty()) {
+            String selectorName = DEFAULT_SELECTOR_NAME;
+            selectorNames.add(selectorName);
+            locationIndexBySelectorName.put(selectorName, 0);
+        }
+        this.columnNames = Collections.unmodifiableList(names);
+        if (wrappedAround.fullTextSearchScoreIndexBySelectorName != null) {
             this.fullTextSearchScoreIndexBySelectorName = new HashMap<String, Integer>();
             int index = columnNames.size() + selectorNames.size();
             for (String selectorName : selectorNames) {
@@ -196,60 +241,18 @@ public class QueryResultColumns implements Columns {
         return new QueryResultColumns(Arrays.asList(columns), this);
     }
 
-    private QueryResultColumns( List<Column> columns,
-                                QueryResultColumns wrappedAround ) {
-        assert columns != null;
-        this.columns = Collections.unmodifiableList(columns);
-        this.columnsByName = new HashMap<String, Column>();
-        this.columnIndexByColumnName = new HashMap<String, Integer>();
-        this.locationIndexBySelectorName = new HashMap<String, Integer>();
-        this.locationIndexByColumnIndex = new HashMap<Integer, Integer>();
-        this.locationIndexByColumnName = new HashMap<String, Integer>();
-        this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, Integer>>();
-        this.selectorNames = new ArrayList<String>(columns.size());
-        List<String> names = new ArrayList<String>(columns.size());
-        for (int i = 0, max = this.columns.size(); i != max; ++i) {
-            Column column = this.columns.get(i);
-            assert column != null;
-            String columnName = column.columnName();
-            assert columnName != null;
-            if (columnsByName.put(columnName, column) != null) {
-                assert false : "Column names must be unique";
-            }
-            names.add(columnName);
-            Integer columnIndex = new Integer(wrappedAround.getColumnIndexForName(columnName));
-            columnIndexByColumnName.put(columnName, columnIndex);
-            String selectorName = column.selectorName().name();
-            if (!selectorNames.contains(selectorName)) selectorNames.add(selectorName);
-            Integer selectorIndex = new Integer(wrappedAround.getLocationIndex(selectorName));
-            locationIndexBySelectorName.put(selectorName, selectorIndex);
-            locationIndexByColumnIndex.put(new Integer(0), selectorIndex);
-            locationIndexByColumnName.put(columnName, selectorIndex);
-            // Insert the entry by selector name and property name ...
-            Map<String, Integer> byPropertyName = columnIndexByPropertyNameBySelectorName.get(selectorName);
-            if (byPropertyName == null) {
-                byPropertyName = new HashMap<String, Integer>();
-                columnIndexByPropertyNameBySelectorName.put(selectorName, byPropertyName);
-            }
-            byPropertyName.put(column.propertyName(), columnIndex);
-        }
-        if (selectorNames.isEmpty()) {
-            String selectorName = DEFAULT_SELECTOR_NAME;
-            selectorNames.add(selectorName);
-            locationIndexBySelectorName.put(selectorName, 0);
-        }
-        this.columnNames = Collections.unmodifiableList(names);
-        if (wrappedAround.fullTextSearchScoreIndexBySelectorName != null) {
-            this.fullTextSearchScoreIndexBySelectorName = new HashMap<String, Integer>();
-            int index = columnNames.size() + selectorNames.size();
-            for (String selectorName : selectorNames) {
-                fullTextSearchScoreIndexBySelectorName.put(selectorName, new Integer(index++));
-            }
-            this.tupleSize = columnNames.size() + selectorNames.size() + selectorNames.size();
-        } else {
-            this.fullTextSearchScoreIndexBySelectorName = null;
-            this.tupleSize = columnNames.size() + selectorNames.size();
-        }
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.QueryResults.Columns#joinWith(org.modeshape.graph.query.QueryResults.Columns)
+     */
+    public Columns joinWith( Columns rightColumns ) {
+        if (this == rightColumns) return this;
+        List<Column> columns = new ArrayList<Column>(this.getColumnCount() + rightColumns.getColumnCount());
+        columns.addAll(this.getColumns());
+        columns.addAll(rightColumns.getColumns());
+        boolean includeFullTextScores = this.hasFullTextSearchScores() || rightColumns.hasFullTextSearchScores();
+        return new QueryResultColumns(columns, includeFullTextScores);
     }
 
     /**
@@ -406,19 +409,6 @@ public class QueryResultColumns implements Columns {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.graph.query.QueryResults.Columns#getPropertyNameForColumn(java.lang.String)
-     */
-    public String getPropertyNameForColumn( String columnName ) {
-        Column result = columnsByName.get(columnName);
-        if (result == null) {
-            throw new NoSuchElementException(GraphI18n.columnDoesNotExistInQuery.text(columnName));
-        }
-        return result.propertyName();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.graph.query.QueryResults.Columns#getColumnIndexForName(java.lang.String)
      */
     public int getColumnIndexForName( String columnName ) {
@@ -509,6 +499,16 @@ public class QueryResultColumns implements Columns {
         return false;
     }
 
+    protected static String columnNameFor( Column column,
+                                           List<String> columnNames ) {
+        String columnName = column.columnName() != null ? column.columnName() : column.propertyName();
+        if (columnNames.contains(columnName)) {
+            columnName = column.selectorName() + "." + columnName;
+        }
+        columnNames.add(columnName);
+        return columnName;
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -517,12 +517,14 @@ public class QueryResultColumns implements Columns {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(" [");
+        sb.append('[');
         boolean first = true;
+        Iterator<String> nameIter = this.columnNames.iterator();
         for (Column column : getColumns()) {
             if (first) first = false;
             else sb.append(", ");
             sb.append(column);
+            sb.append('(').append(getColumnIndexForName(nameIter.next())).append(')');
         }
         sb.append("] => Locations[");
         first = true;

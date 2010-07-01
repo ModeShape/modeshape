@@ -274,15 +274,6 @@ public interface QueryResults extends Serializable {
         public String getPropertyNameForColumn( int columnIndex );
 
         /**
-         * Get the name of the property that corresponds to the supplied column in each tuple.
-         * 
-         * @param columnName the column name
-         * @return the property name; never null
-         * @throws NoSuchElementException if the column name is invalid or doesn't match an existing column
-         */
-        public String getPropertyNameForColumn( String columnName );
-
-        /**
          * Get the index of the column given the column name.
          * 
          * @param columnName the column name
@@ -355,6 +346,16 @@ public interface QueryResults extends Serializable {
          * @return the new columns definition; never null
          */
         public Columns subSelect( Column... columns );
+
+        /**
+         * Obtain a new definition for the query results that is a combination of the these columns and the supplied columns,
+         * where the columns from this object appear first, followed by columns from the supplied set. This is useful in a JOIN
+         * operation.
+         * 
+         * @param columns the new columns, which must be a subset of the columns in this definition; may not be null
+         * @return the new columns definition; never null
+         */
+        public Columns joinWith( Columns columns );
     }
 
     @Immutable

@@ -23,16 +23,13 @@
  */
 package org.modeshape.graph.query.process;
 
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.ValueComparators;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.QueryResults.Columns;
 import org.modeshape.graph.query.model.ChildNodeJoinCondition;
-import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.model.DescendantNodeJoinCondition;
 import org.modeshape.graph.query.model.EquiJoinCondition;
 import org.modeshape.graph.query.model.JoinCondition;
@@ -60,7 +57,7 @@ public abstract class JoinComponent extends ProcessingComponent {
                              ProcessingComponent right,
                              JoinCondition condition,
                              JoinType joinType ) {
-        super(context, computeJoinedColumns(left.getColumns(), right.getColumns()));
+        super(context, left.getColumns().joinWith(right.getColumns()));
         this.left = left;
         this.right = right;
         this.joinType = joinType;
@@ -124,16 +121,26 @@ public abstract class JoinComponent extends ProcessingComponent {
         return right.getColumns();
     }
 
-    protected static Columns computeJoinedColumns( Columns leftColumns,
-                                                   Columns rightColumns ) {
-        if (leftColumns == rightColumns) return leftColumns;
-        List<Column> columns = new ArrayList<Column>(leftColumns.getColumnCount() + rightColumns.getColumnCount());
-        columns.addAll(leftColumns.getColumns());
-        columns.addAll(rightColumns.getColumns());
-        boolean includeFullTextScores = leftColumns.hasFullTextSearchScores() || rightColumns.hasFullTextSearchScores();
-        return new QueryResultColumns(columns, includeFullTextScores);
-    }
-
+    /**
+     * Create a {@link TupleMerger} implementation that will combine a tuple fitting the left columns with a tuple fitting the
+     * right columns. This merger will properly place all of the values, locations, and scores such that the tuples always have
+     * this arrangement:
+     * 
+     * <pre>
+     *    [ <i>v1</i>, <i>v2</i>, ..., <i>vM</i>, <i>loc1</i>, <i>loc2</i>, ..., <i>locN</i>, <i>s1</i>, <i>s2</i>, ..., <i>sN</i> ]
+     * </pre>
+     * 
+     * where <i>M</i> is the number of values in the tuple, and <i>N</i> is the number of sources in the tuple.
+     * <p>
+     * Note that this merger does not actually reduce or combine values. That is done with a particular {@link JoinComponent}
+     * subclass.
+     * </p>
+     * 
+     * @param joinColumns the Columns specification for the joined/merged tuples; may not be null
+     * @param leftColumns the Columns specification for the tuple on the left side of the join; may not be null
+     * @param rightColumns the Columns specification for the tuple on the right side of the join; may not be null
+     * @return the merger implementation that will combine tuples from the left and right to form the merged tuples; never null
+     */
     protected static TupleMerger createMerger( Columns joinColumns,
                                                Columns leftColumns,
                                                Columns rightColumns ) {
@@ -159,8 +166,8 @@ public abstract class JoinComponent extends ProcessingComponent {
             final int rightScoreCount = rightTupleSize - rightColumnCount - rightLocationCount;
             final int startLeftScores = startRightLocations + rightLocationCount;
             final int startRightScores = startLeftScores + leftScoreCount;
-            final boolean leftScores = leftScoreCount > 0;
-            final boolean rightScores = rightScoreCount > 0;
+            final int leftScoreIndex = leftTupleSize - leftScoreCount;
+            final int rightScoreIndex = rightTupleSize - rightScoreCount;
 
             return new TupleMerger() {
                 /**
@@ -175,19 +182,19 @@ public abstract class JoinComponent extends ProcessingComponent {
                     // initialized to null values.
                     if (leftTuple != null) {
                         // Copy the left tuple values ...
-                        System.arraycopy(result, 0, leftTuple, 0, leftColumnCount);
-                        System.arraycopy(result, startLeftLocations, leftTuple, leftColumnCount, leftLocationCount);
-                        if (leftScores) {
-                            System.arraycopy(result, startLeftScores, leftTuple, leftLocationCount, leftScoreCount);
-                        }
+                        System.arraycopy(leftTuple, 0, result, 0, leftColumnCount);
+                        // Copy the left tuple locations ...
+                        System.arraycopy(leftTuple, leftColumnCount, result, startLeftLocations, leftLocationCount);
+                        // Copy the left tuple scores ...
+                        System.arraycopy(leftTuple, leftScoreIndex, result, startLeftScores, leftScoreCount);
                     }
                     if (rightTuple != null) {
                         // Copy the right tuple values ...
-                        System.arraycopy(result, leftColumnCount, rightTuple, 0, rightColumnCount);
-                        System.arraycopy(result, startRightLocations, rightTuple, rightColumnCount, rightLocationCount);
-                        if (rightScores) {
-                            System.arraycopy(result, startRightScores, rightTuple, rightLocationCount, rightScoreCount);
-                        }
+                        System.arraycopy(rightTuple, 0, result, leftColumnCount, rightColumnCount);
+                        // Copy the right tuple locations ...
+                        System.arraycopy(rightTuple, rightColumnCount, result, startRightLocations, rightLocationCount);
+                        // Copy the right tuple scores ...
+                        System.arraycopy(rightTuple, rightScoreIndex, result, startRightScores, rightScoreCount);
                     }
                     return result;
                 }
@@ -207,19 +214,23 @@ public abstract class JoinComponent extends ProcessingComponent {
                 // initialized to null values.
                 if (leftTuple != null) {
                     // Copy the left tuple values ...
-                    System.arraycopy(result, 0, leftTuple, 0, leftColumnCount);
-                    System.arraycopy(result, startLeftLocations, leftTuple, leftColumnCount, leftLocationCount);
+                    System.arraycopy(leftTuple, 0, result, 0, leftColumnCount);
+                    System.arraycopy(leftTuple, leftColumnCount, result, startLeftLocations, leftLocationCount);
                 }
                 if (rightTuple != null) {
                     // Copy the right tuple values ...
-                    System.arraycopy(result, leftColumnCount, rightTuple, 0, rightColumnCount);
-                    System.arraycopy(result, startRightLocations, rightTuple, rightColumnCount, rightLocationCount);
+                    System.arraycopy(rightTuple, 0, result, leftColumnCount, rightColumnCount);
+                    System.arraycopy(rightTuple, rightColumnCount, result, startRightLocations, rightLocationCount);
                 }
                 return result;
             }
         };
     }
 
+    /**
+     * A component that will merge the supplied tuple on the left side of a join with the supplied tuple on the right side of the
+     * join, to produce a single tuple with all components from the left and right tuples.
+     */
     protected static interface TupleMerger {
         Object[] merge( Object[] leftTuple,
                         Object[] rightTuple );
@@ -290,8 +301,7 @@ public abstract class JoinComponent extends ProcessingComponent {
         final int index = component.getColumns().getLocationIndex(selectorName);
         return new ValueSelector() {
             public Object evaluate( Object[] tuple ) {
-                Location location = (Location)tuple[index];
-                return location != null ? location.getPath() : null;
+                return tuple[index]; // Location
             }
         };
     }

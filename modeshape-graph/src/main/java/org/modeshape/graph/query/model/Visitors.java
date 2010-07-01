@@ -23,9 +23,11 @@
  */
 package org.modeshape.graph.query.model;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
@@ -78,6 +80,60 @@ public class Visitors {
      */
     public static String readable( Visitable visitable ) {
         return visit(visitable, new ReadableVisitor()).getString();
+    }
+
+    /**
+     * Get a map of the selector names keyed by their aliases.
+     * 
+     * @param visitable the object to be visited
+     * @return the map from the aliases to the aliased selector name; never null but possibly empty
+     */
+    public static Map<SelectorName, SelectorName> getSelectorNamesByAlias( Visitable visitable ) {
+        // Find all of the selectors that have aliases ...
+        final Map<SelectorName, SelectorName> result = new HashMap<SelectorName, SelectorName>();
+        Visitors.visitAll(visitable, new Visitors.AbstractVisitor() {
+            @Override
+            public void visit( AllNodes allNodes ) {
+                if (allNodes.hasAlias()) {
+                    result.put(allNodes.alias(), allNodes.name());
+                }
+            }
+
+            @Override
+            public void visit( NamedSelector selector ) {
+                if (selector.hasAlias()) {
+                    result.put(selector.alias(), selector.name());
+                }
+            }
+        });
+        return result;
+    }
+
+    /**
+     * Get a map of the selector aliases keyed by their names.
+     * 
+     * @param visitable the object to be visited
+     * @return the map from the selector names to their alias (or name if there is no alias); never null but possibly empty
+     */
+    public static Map<SelectorName, SelectorName> getSelectorAliasesByName( Visitable visitable ) {
+        // Find all of the selectors that have aliases ...
+        final Map<SelectorName, SelectorName> result = new HashMap<SelectorName, SelectorName>();
+        Visitors.visitAll(visitable, new Visitors.AbstractVisitor() {
+            @Override
+            public void visit( AllNodes allNodes ) {
+                if (allNodes.hasAlias()) {
+                    result.put(allNodes.name(), allNodes.aliasOrName());
+                }
+            }
+
+            @Override
+            public void visit( NamedSelector selector ) {
+                if (selector.hasAlias()) {
+                    result.put(selector.name(), selector.aliasOrName());
+                }
+            }
+        });
+        return result;
     }
 
     /**
@@ -1462,7 +1518,7 @@ public class Visitors {
         public void visit( SetCriteria criteria ) {
             criteria.leftOperand().accept(this);
             append(" IN (");
-            Iterator<StaticOperand> iter = criteria.rightOperands().iterator();
+            Iterator<? extends StaticOperand> iter = criteria.rightOperands().iterator();
             if (iter.hasNext()) {
                 iter.next().accept(this);
                 while (iter.hasNext()) {

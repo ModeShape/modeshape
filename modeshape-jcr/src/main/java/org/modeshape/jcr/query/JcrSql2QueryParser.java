@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.List;
 import javax.jcr.Binary;
 import javax.jcr.Node;
@@ -37,6 +38,7 @@ import javax.jcr.query.Query;
 import org.modeshape.common.text.TokenStream;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.query.model.ArithmeticOperator;
+import org.modeshape.graph.query.model.Between;
 import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.model.Constraint;
 import org.modeshape.graph.query.model.DynamicOperand;
@@ -50,6 +52,7 @@ import org.modeshape.graph.query.model.Ordering;
 import org.modeshape.graph.query.model.PropertyValue;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.SelectorName;
+import org.modeshape.graph.query.model.SetCriteria;
 import org.modeshape.graph.query.model.SetQuery;
 import org.modeshape.graph.query.model.Source;
 import org.modeshape.graph.query.model.StaticOperand;
@@ -59,6 +62,7 @@ import org.modeshape.graph.query.model.SetQuery.Operation;
 import org.modeshape.graph.query.parse.SqlQueryParser;
 import org.modeshape.jcr.query.qom.JcrAnd;
 import org.modeshape.jcr.query.qom.JcrArithmeticOperand;
+import org.modeshape.jcr.query.qom.JcrBetween;
 import org.modeshape.jcr.query.qom.JcrBindVariableName;
 import org.modeshape.jcr.query.qom.JcrChildNode;
 import org.modeshape.jcr.query.qom.JcrChildNodeJoinCondition;
@@ -92,6 +96,7 @@ import org.modeshape.jcr.query.qom.JcrReferenceValue;
 import org.modeshape.jcr.query.qom.JcrSameNode;
 import org.modeshape.jcr.query.qom.JcrSameNodeJoinCondition;
 import org.modeshape.jcr.query.qom.JcrSelectQuery;
+import org.modeshape.jcr.query.qom.JcrSetCriteria;
 import org.modeshape.jcr.query.qom.JcrSetQuery;
 import org.modeshape.jcr.query.qom.JcrSource;
 import org.modeshape.jcr.query.qom.JcrStaticOperand;
@@ -486,6 +491,35 @@ public class JcrSql2QueryParser extends SqlQueryParser {
     @Override
     protected JcrFullTextSearchScore fullTextSearchScore( SelectorName selector ) {
         return new JcrFullTextSearchScore(selector);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.parse.SqlQueryParser#between(org.modeshape.graph.query.model.DynamicOperand,
+     *      org.modeshape.graph.query.model.StaticOperand, org.modeshape.graph.query.model.StaticOperand, boolean, boolean)
+     */
+    @Override
+    protected Between between( DynamicOperand operand,
+                               StaticOperand lowerBound,
+                               StaticOperand upperBound,
+                               boolean lowerInclusive,
+                               boolean upperInclusive ) {
+        return new JcrBetween((JcrDynamicOperand)operand, (JcrStaticOperand)lowerBound, (JcrStaticOperand)upperBound,
+                              lowerInclusive, upperInclusive);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.parse.SqlQueryParser#setCriteria(org.modeshape.graph.query.model.DynamicOperand,
+     *      java.util.Collection)
+     */
+    @SuppressWarnings( "unchecked" )
+    @Override
+    protected SetCriteria setCriteria( DynamicOperand operand,
+                                       Collection<? extends StaticOperand> values ) {
+        return new JcrSetCriteria((JcrDynamicOperand)operand, (Collection<? extends JcrStaticOperand>)values);
     }
 
     /**

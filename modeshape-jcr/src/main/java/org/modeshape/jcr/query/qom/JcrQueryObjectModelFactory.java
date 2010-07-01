@@ -74,6 +74,7 @@ import org.modeshape.jcr.api.query.qom.NodeDepth;
 import org.modeshape.jcr.api.query.qom.NodePath;
 import org.modeshape.jcr.api.query.qom.QueryCommand;
 import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
+import org.modeshape.jcr.api.query.qom.SetCriteria;
 import org.modeshape.jcr.api.query.qom.SetQuery;
 import org.modeshape.jcr.query.JcrQueryContext;
 
@@ -640,6 +641,24 @@ public class JcrQueryObjectModelFactory
         JcrStaticOperand lower = CheckArg.getInstanceOf(lowerBound, JcrStaticOperand.class, "lowerBound");
         JcrStaticOperand upper = CheckArg.getInstanceOf(upperBound, JcrStaticOperand.class, "upperBound");
         return new JcrBetween(jcrOperand, lower, upper, includeLowerBound, includeUpperBound);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#in(javax.jcr.query.qom.DynamicOperand,
+     *      javax.jcr.query.qom.StaticOperand[])
+     */
+    @Override
+    public SetCriteria in( DynamicOperand operand,
+                           StaticOperand... values ) {
+        JcrDynamicOperand jcrOperand = CheckArg.getInstanceOf(operand, JcrDynamicOperand.class, "operand");
+        List<JcrStaticOperand> jcrValues = new ArrayList<JcrStaticOperand>();
+        for (StaticOperand value : values) {
+            JcrStaticOperand jcrValue = CheckArg.getInstanceOf(value, JcrStaticOperand.class, "values");
+            jcrValues.add(jcrValue);
+        }
+        return new JcrSetCriteria(jcrOperand, jcrValues);
     }
 
     /**

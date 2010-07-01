@@ -25,8 +25,10 @@ package org.modeshape.graph.query.process;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.QueryResults.Columns;
@@ -41,6 +43,7 @@ import org.modeshape.graph.query.model.Limit;
 import org.modeshape.graph.query.model.Ordering;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.SameNodeJoinCondition;
+import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.model.SetQuery.Operation;
 import org.modeshape.graph.query.plan.JoinAlgorithm;
 import org.modeshape.graph.query.plan.PlanNode;
@@ -89,6 +92,7 @@ public abstract class QueryProcessor implements Processor {
             if (component != null) {
                 // Now execute the component ...
                 try {
+                    columns = component.getColumns();
                     preExecute(context);
                     tuples = component.execute();
                 } finally {
@@ -213,8 +217,15 @@ public abstract class QueryProcessor implements Processor {
             case JOIN:
                 // Create the components under the JOIN ...
                 assert node.getChildCount() == 2;
-                ProcessingComponent left = createComponent(originalQuery, context, node.getFirstChild(), columns, analyzer);
-                ProcessingComponent right = createComponent(originalQuery, context, node.getLastChild(), columns, analyzer);
+                PlanNode leftPlan = node.getFirstChild();
+                PlanNode rightPlan = node.getLastChild();
+
+                // Define the columns for each side, taken from the supplied columns ...
+                Columns leftColumns = createColumnsFor(leftPlan, columns);
+                Columns rightColumns = createColumnsFor(rightPlan, columns);
+
+                ProcessingComponent left = createComponent(originalQuery, context, leftPlan, leftColumns, analyzer);
+                ProcessingComponent right = createComponent(originalQuery, context, rightPlan, rightColumns, analyzer);
                 // Create the join component ...
                 JoinAlgorithm algorithm = node.getProperty(Property.JOIN_ALGORITHM, JoinAlgorithm.class);
                 JoinType joinType = node.getProperty(Property.JOIN_TYPE, JoinType.class);
@@ -330,7 +341,15 @@ public abstract class QueryProcessor implements Processor {
                         for (Object orderBy : orderBys) {
                             orderings.add((Ordering)orderBy);
                         }
-                        component = new SortValuesComponent(sortDelegate, orderings);
+                        // Determine the alias-to-name mappings for the selectors in the orderings ...
+                        Map<SelectorName, SelectorName> sourceNamesByAlias = new HashMap<SelectorName, SelectorName>();
+                        for (PlanNode source : node.findAllAtOrBelow(Type.SOURCE)) {
+                            SelectorName name = source.getProperty(Property.SOURCE_NAME, SelectorName.class);
+                            SelectorName alias = source.getProperty(Property.SOURCE_ALIAS, SelectorName.class);
+                            if (alias != null) sourceNamesByAlias.put(alias, name);
+                        }
+                        // Now create the sorting component ...
+                        component = new SortValuesComponent(sortDelegate, orderings, sourceNamesByAlias);
                     } else {
                         // Order by the location(s) because it's before a merge-join ...
                         component = new SortLocationsComponent(sortDelegate);
@@ -343,5 +362,15 @@ public abstract class QueryProcessor implements Processor {
         }
         assert component != null;
         return component;
+    }
+
+    protected Columns createColumnsFor( PlanNode node,
+                                        Columns projectedColumns ) {
+        PlanNode project = node.findAtOrBelow(Type.PROJECT);
+        assert project != null;
+        List<Column> columns = project.getPropertyAsList(Property.PROJECT_COLUMNS, Column.class);
+        assert columns != null;
+        assert !columns.isEmpty();
+        return new QueryResultColumns(columns, projectedColumns.hasFullTextSearchScores());
     }
 }

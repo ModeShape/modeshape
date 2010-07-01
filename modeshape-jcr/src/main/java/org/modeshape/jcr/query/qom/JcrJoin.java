@@ -31,7 +31,7 @@ import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
 /**
  * Implementation of the join for the JCR Query Object Model and the Graph API.
  */
-public class JcrJoin extends Join implements javax.jcr.query.qom.Join {
+public class JcrJoin extends Join implements javax.jcr.query.qom.Join, JcrSource {
 
     private static final long serialVersionUID = 1L;
 

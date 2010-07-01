@@ -88,7 +88,7 @@ public class PushProjects implements OptimizerRule {
                     project.extractFromParent();
                 }
                 child.insertAsParent(project);
-                if (plan == access) return plan;
+                if (plan == access) break;
 
                 // We need to make sure we have all of the columns needed for any ancestor ...
                 List<Column> requiredColumns = PlanUtil.findRequiredColumns(context, project);

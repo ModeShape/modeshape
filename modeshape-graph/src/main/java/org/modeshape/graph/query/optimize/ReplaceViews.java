@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.query.optimize;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -114,17 +115,32 @@ public class ReplaceViews implements OptimizerRule {
                     if (viewPlan == null) continue; // there were likely errors when creating the plan
                     viewPlan = viewPlan.clone();
 
+                    // If the view doesn't have an alias, or if the view's alias doesn't match the table's name/alias ...
+                    PlanNode viewProjectNode = viewPlan.findAtOrBelow(Type.PROJECT);
+                    if (viewProjectNode.getSelectors().size() == 1) {
+                        SelectorName tableAliasOrName = tableAlias != null ? tableAlias : tableName;
+                        SelectorName viewAlias = viewProjectNode.getSelectors().iterator().next();
+                        // Replace the view's alias ...
+                        Map<SelectorName, SelectorName> replacements = Collections.singletonMap(viewAlias, tableAliasOrName);
+                        PlanUtil.replaceReferencesToRemovedSource(context, viewPlan, replacements);
+                    }
+
                     // Insert the view plan under the parent SOURCE node ...
                     sourceNode.addLastChild(viewPlan);
 
-                    // Update the plan above this node to replace references to the view columns with references to the
-                    // tables/views used by the view ...
-                    PlanUtil.ColumnMapping viewMappings = PlanUtil.createMappingFor(view, viewPlan);
-                    PlanUtil.replaceViewReferences(context, viewPlan, viewMappings);
-                    if (tableAlias != null) {
-                        // We also need to replace references to the alias for the view ...
-                        PlanUtil.ColumnMapping aliasMappings = PlanUtil.createMappingForAliased(tableAlias, view, viewPlan);
-                        PlanUtil.replaceViewReferences(context, viewPlan, aliasMappings);
+                    // Remove the source node ...
+                    sourceNode.extractFromParent();
+
+                    // // Replace the original view's name with the name/alias ...
+                    PlanNode parent = viewPlan.getParent();
+                    if (parent != null) {
+                        PlanUtil.ColumnMapping aliasMappings = null;
+                        if (tableAlias != null) {
+                            aliasMappings = PlanUtil.createMappingForAliased(tableAlias, view, viewPlan);
+                            PlanUtil.replaceViewReferences(context, parent, aliasMappings);
+                        }
+                        PlanUtil.ColumnMapping viewMappings = PlanUtil.createMappingFor(view, viewPlan);
+                        PlanUtil.replaceViewReferences(context, parent, viewMappings);
                     }
 
                     if (viewPlan.is(Type.PROJECT)) {

@@ -37,10 +37,10 @@ public class SetCriteria implements Constraint {
     private static final long serialVersionUID = 1L;
 
     private final DynamicOperand left;
-    private final Collection<StaticOperand> setOperands;
+    private final Collection<? extends StaticOperand> setOperands;
 
     public SetCriteria( DynamicOperand left,
-                        Collection<StaticOperand> setOperands ) {
+                        Collection<? extends StaticOperand> setOperands ) {
         CheckArg.isNotNull(left, "left");
         CheckArg.isNotNull(setOperands, "setOperands");
         CheckArg.isNotEmpty(setOperands, "setOperands");
@@ -71,7 +71,7 @@ public class SetCriteria implements Constraint {
      * 
      * @return the right-hand-side static operands; never null and never empty
      */
-    public final Collection<StaticOperand> rightOperands() {
+    public final Collection<? extends StaticOperand> rightOperands() {
         return setOperands;
     }
 

@@ -545,7 +545,7 @@ public class SqlQueryParser implements QueryParser {
             String propertyName = expression.getPropertyName();
             if (selectorName == null) {
                 if (source instanceof Selector) {
-                    selectorName = ((Selector)source).name();
+                    selectorName = ((Selector)source).aliasOrName();
                 } else {
                     Position pos = expression.getPosition();
                     String msg = GraphI18n.mustBeScopedAtLineAndColumn.text(expression, pos.getLine(), pos.getColumn());
@@ -778,7 +778,7 @@ public class SqlQueryParser implements QueryParser {
                     if (tokens.matches("IN", "(") || tokens.matches("NOT", "IN", "(")) {
                         boolean not = tokens.canConsume("NOT");
                         Collection<StaticOperand> staticOperands = parseInClause(tokens, typeSystem);
-                        constraint = new SetCriteria(left, staticOperands);
+                        constraint = setCriteria(left, staticOperands);
                         if (not) constraint = not(constraint);
                     } else if (tokens.matches("BETWEEN") || tokens.matches("NOT", "BETWEEN")) {
                         boolean not = tokens.canConsume("NOT");
@@ -788,7 +788,7 @@ public class SqlQueryParser implements QueryParser {
                         tokens.consume("AND");
                         StaticOperand upperBound = parseStaticOperand(tokens, typeSystem);
                         boolean upperInclusive = !tokens.canConsume("EXCLUSIVE");
-                        constraint = new Between(left, lowerBound, upperBound, lowerInclusive, upperInclusive);
+                        constraint = between(left, lowerBound, upperBound, lowerInclusive, upperInclusive);
                         if (not) constraint = not(constraint);
                     } else {
                         Operator operator = parseComparisonOperator(tokens);
@@ -1425,6 +1425,19 @@ public class SqlQueryParser implements QueryParser {
     protected Or or( Constraint constraint1,
                      Constraint constraint2 ) {
         return new Or(constraint1, constraint2);
+    }
+
+    protected Between between( DynamicOperand operand,
+                               StaticOperand lowerBound,
+                               StaticOperand upperBound,
+                               boolean lowerInclusive,
+                               boolean upperInclusive ) {
+        return new Between(operand, lowerBound, upperBound, lowerInclusive, upperInclusive);
+    }
+
+    protected SetCriteria setCriteria( DynamicOperand operand,
+                                       Collection<? extends StaticOperand> values ) {
+        return new SetCriteria(operand, values);
     }
 
     protected FullTextSearch fullTextSearch( SelectorName name,

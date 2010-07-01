@@ -138,8 +138,7 @@ public class RewriteIdentityJoins implements OptimizerRule {
                 }
             } else if (condition instanceof SameNodeJoinCondition) {
                 SameNodeJoinCondition sameNodeCondition = (SameNodeJoinCondition)condition;
-                if (sameNodeCondition.selector1Name().equals(sameNodeCondition.selector2Name())
-                    && sameNodeCondition.selector2Path() == null) {
+                if (sameNodeCondition.selector2Path() == null) {
                     // It meets all the criteria, so rewrite this join node ...
                     if (rewrittenSelectors == null) rewrittenSelectors = new HashMap<SelectorName, SelectorName>();
                     rewriteJoinNode(context, joinNode, rewrittenSelectors);

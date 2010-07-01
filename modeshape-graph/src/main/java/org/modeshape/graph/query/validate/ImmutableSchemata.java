@@ -323,18 +323,29 @@ public class ImmutableSchemata implements Schemata {
                     assert !columns.isEmpty();
 
                     // Go through all the columns and look up the types ...
+                    Map<SelectorName, SelectorName> tableNameByAlias = null;
                     List<Column> viewColumns = new ArrayList<Column>(columns.size());
                     for (org.modeshape.graph.query.model.Column column : columns) {
                         // Find the table that the column came from ...
                         Table source = schemata.getTable(column.selectorName());
-                        if (source == null) break;
+                        if (source == null) {
+                            // The column may be referring to the alias of the table ...
+                            if (tableNameByAlias == null) {
+                                tableNameByAlias = Visitors.getSelectorNamesByAlias(command);
+                            }
+                            SelectorName tableName = tableNameByAlias.get(column.selectorName());
+                            if (tableName != null) source = schemata.getTable(tableName);
+                            if (source == null) {
+                                continue;
+                            }
+                        }
                         String viewColumnName = column.columnName();
                         String sourceColumnName = column.propertyName(); // getColumnName() returns alias
                         Column sourceColumn = source.getColumn(sourceColumnName);
                         if (sourceColumn == null) {
                             throw new InvalidQueryException(Visitors.readable(command),
-                                                            "The view references a non-existant column '"
-                                                            + column.columnName() + "' in '" + source.getName() + "'");
+                                                            "The view references a non-existant column '" + column.columnName()
+                                                            + "' in '" + source.getName() + "'");
                         }
                         viewColumns.add(new ImmutableColumn(viewColumnName, sourceColumn.getPropertyType(),
                                                             sourceColumn.isFullTextSearchable()));

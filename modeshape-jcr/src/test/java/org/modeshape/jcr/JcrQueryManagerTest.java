@@ -383,6 +383,32 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, "jcr:primaryType");
     }
 
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithChildNodeJoin() throws RepositoryException {
+        String sql = "SELECT car.* from [car:Car] as car JOIN [nt:unstructured] as category ON ISCHILDNODE(car,category) WHERE NAME(category) LIKE 'Utility'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 4);
+        assertResultsHaveColumns(result, carColumnNames());
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithChildNodeJoinAndColumnsFromBothSidesOfJoin() throws RepositoryException {
+        String sql = "SELECT car.*, category.[jcr:primaryType] from [car:Car] as car JOIN [nt:unstructured] as category ON ISCHILDNODE(car,category) WHERE NAME(category) LIKE 'Utility'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        print = true;
+        assertResults(query, result, 4L);
+        String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
+            "car:mpgHighway", "car:valueRating", "jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model", "car:msrp",
+            "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
+        assertResultsHaveColumns(result, expectedColumnNames);
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // JCR-SQL Queries
     // ----------------------------------------------------------------------------------------------------------------
@@ -393,6 +419,20 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace()
                              .getQueryManager()
                              .createQuery("SELECT car:model FROM car:Car WHERE car:model IS NOT NULL ORDER BY car:model ASC",
+                                          Query.SQL);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 12);
+        assertResultsHaveColumns(result, "jcr:path", "jcr:score", "car:model");
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithPathCriteriaAndOrderByClause() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT car:model FROM car:Car WHERE jcr:path LIKE '/Cars/%' ORDER BY car:model ASC",
                                           Query.SQL);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();

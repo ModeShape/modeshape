@@ -273,7 +273,7 @@ class NodeTypeSchemata implements Schemata {
             // All the properties were skipped ...
             return;
         }
-        viewDefinition.append(" FROM ").append(AllNodes.ALL_NODES_NAME);
+        viewDefinition.append(" FROM ").append(AllNodes.ALL_NODES_NAME).append(" AS [").append(tableName).append(']');
 
         // The 'nt:base' node type will have every single object in it, so we don't need to add the type criteria ...
         if (!JcrNtLexicon.BASE.equals(nodeType.getInternalName())) {

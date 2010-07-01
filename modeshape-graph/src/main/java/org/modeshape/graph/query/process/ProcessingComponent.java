@@ -153,7 +153,6 @@ public abstract class ProcessingComponent {
                                                        DynamicOperand operand ) {
         assert operand != null;
         assert columns != null;
-        assert context != null;
         if (operand instanceof PropertyValue) {
             PropertyValue propValue = (PropertyValue)operand;
             String propertyName = propValue.propertyName();
@@ -202,7 +201,7 @@ public abstract class ProcessingComponent {
             String selectorName = value.selectorName().name();
             final int index = columns.getColumnIndexForProperty(selectorName, propertyName);
             // Find the expected property type of the value ...
-            Table table = context.getSchemata().getTable(value.selectorName());
+            Table table = schemata.getTable(value.selectorName());
             Column schemaColumn = table.getColumn(propertyName);
             final String expectedType = schemaColumn.getPropertyType();
             final TypeFactory<?> typeFactory = typeSystem.getTypeFactory(expectedType);

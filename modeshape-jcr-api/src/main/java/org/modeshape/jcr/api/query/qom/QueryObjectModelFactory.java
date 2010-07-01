@@ -193,6 +193,19 @@ public interface QueryObjectModelFactory extends javax.jcr.query.qom.QueryObject
                             boolean includeUpperBound ) throws InvalidQueryException, RepositoryException;
 
     /**
+     * Tests that the value (or values) defined by the supplied dynamic operand are found within the specified set of values.
+     * 
+     * @param operand the dynamic operand describing the values that are to be constrained
+     * @param values the static operand values; may not be null or empty
+     * @return the constraint; non-null
+     * @throws InvalidQueryException if a particular validity test is possible on this method, the implemention chooses to perform
+     *         that test (and not leave it until later, on {@link #createQuery}), and the parameters given fail that test
+     * @throws RepositoryException if the operation otherwise fails
+     */
+    public SetCriteria in( DynamicOperand operand,
+                           StaticOperand... values ) throws InvalidQueryException, RepositoryException;
+
+    /**
      * Create an arithmetic dynamic operand that adds the numeric value of the two supplied operand(s).
      * 
      * @param left the left-hand-side operand; not null
