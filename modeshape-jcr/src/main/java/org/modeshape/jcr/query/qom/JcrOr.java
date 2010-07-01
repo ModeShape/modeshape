@@ -28,7 +28,7 @@ import org.modeshape.graph.query.model.Or;
 /**
  * Implementation of the 'or' constraint for the JCR Query Object Model and the Graph API.
  */
-public class JcrOr extends Or implements javax.jcr.query.qom.Or {
+public class JcrOr extends Or implements javax.jcr.query.qom.Or, JcrConstraint {
 
     private static final long serialVersionUID = 1L;
 

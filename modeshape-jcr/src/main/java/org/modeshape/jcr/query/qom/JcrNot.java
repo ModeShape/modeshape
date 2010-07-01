@@ -28,7 +28,7 @@ import org.modeshape.graph.query.model.Not;
 /**
  * Implementation of the 'not' constraint for the JCR Query Object Model and the Graph API.
  */
-public class JcrNot extends Not implements javax.jcr.query.qom.Not {
+public class JcrNot extends Not implements javax.jcr.query.qom.Not, JcrConstraint {
 
     private static final long serialVersionUID = 1L;
 

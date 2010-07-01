@@ -899,7 +899,7 @@ public class SqlQueryParser implements QueryParser {
                     throw new ParsingException(pos, msg);
                 }
                 selectorName = ((Selector)source).name();
-                propertyName = firstWord;
+                propertyName = parseName(firstWord, typeSystem);
             }
             if (tokens.canConsume("IS", "NOT", "NULL")) {
                 return propertyExistence(selectorName, propertyName);
@@ -1321,6 +1321,11 @@ public class SqlQueryParser implements QueryParser {
     protected String parseName( TokenStream tokens,
                                 TypeSystem typeSystem ) {
         return removeBracketsAndQuotes(tokens.consume());
+    }
+
+    protected String parseName( String token,
+                                TypeSystem typeSystem ) {
+        return removeBracketsAndQuotes(token);
     }
 
     protected Query query( Source source,

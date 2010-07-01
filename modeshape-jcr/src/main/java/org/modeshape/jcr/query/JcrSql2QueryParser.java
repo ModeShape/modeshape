@@ -584,13 +584,14 @@ public class JcrSql2QueryParser extends SqlQueryParser {
      * 
      * @see org.modeshape.graph.query.parse.SqlQueryParser#literal(TypeSystem, Object)
      */
-    @SuppressWarnings( "deprecation" )
     @Override
     protected JcrLiteral literal( TypeSystem typeSystem,
                                   Object value ) throws org.modeshape.graph.property.ValueFormatException {
         ValueFactory factory = ((JcrTypeSystem)typeSystem).getValueFactory();
         Value jcrValue = null;
-        if (value instanceof Boolean) {
+        if (value instanceof String) {
+            jcrValue = factory.createValue((String)value);
+        } else if (value instanceof Boolean) {
             jcrValue = factory.createValue(((Boolean)value).booleanValue());
         } else if (value instanceof Binary) {
             jcrValue = factory.createValue((Binary)value);
@@ -605,9 +606,14 @@ public class JcrSql2QueryParser extends SqlQueryParser {
         } else if (value instanceof Long) {
             jcrValue = factory.createValue((Long)value);
         } else if (value instanceof InputStream) {
-            jcrValue = factory.createValue((InputStream)value);
-        } else if (value instanceof String) {
-            jcrValue = factory.createValue((String)value);
+            try {
+                Binary binary = factory.createBinary((InputStream)value);
+                jcrValue = factory.createValue(binary);
+            } catch (RepositoryException e) {
+                throw new org.modeshape.graph.property.ValueFormatException(value,
+                                                                            org.modeshape.graph.property.PropertyType.BINARY,
+                                                                            e.getMessage());
+            }
         } else if (value instanceof Node) {
             try {
                 jcrValue = factory.createValue((Node)value);

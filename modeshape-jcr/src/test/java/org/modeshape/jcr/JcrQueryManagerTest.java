@@ -409,6 +409,47 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, expectedColumnNames);
     }
 
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithDescendantNodeJoinWithoutCriteria() throws RepositoryException {
+        String sql = "SELECT * FROM [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category)";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 12L);
+        String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
+            "car:mpgHighway", "car:valueRating", "jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model", "car:msrp",
+            "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
+        assertResultsHaveColumns(result, expectedColumnNames);
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithDescendantNodeJoin() throws RepositoryException {
+        String sql = "SELECT car.* from [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE NAME(category) LIKE 'Utility'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 4);
+        assertResultsHaveColumns(result, carColumnNames());
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithDescendantNodeJoinAndColumnsFromBothSidesOfJoin()
+        throws RepositoryException {
+        String sql = "SELECT car.*, category.[jcr:primaryType] from [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE NAME(category) LIKE 'Utility'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        print = true;
+        assertResults(query, result, 4L);
+        String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
+            "car:mpgHighway", "car:valueRating", "jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model", "car:msrp",
+            "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
+        assertResultsHaveColumns(result, expectedColumnNames);
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // JCR-SQL Queries
     // ----------------------------------------------------------------------------------------------------------------
