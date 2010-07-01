@@ -297,7 +297,7 @@ client.setUserInterface(new ConsoleInput(client, args));
 		The <code>startRepositories()</code> method builds the <code>JcrEngine</code> component from the configuration, starts the engine,
 		and obtains the JCR <code>javax.jcr.Repository</code> instance that the client will use.  Note that the client has not yet
 		obtained a <code>javax.jcr.Session</code> instance, since this will be done each time the client needs to access content from
-		the repository.  (This is actually a common practice according to the JCR specification, since Sessions are lightweight.)
+		the repository. (This is actually a common practice according to the JCR specification, since Sessions are lightweight.)
    </para>
 	<programlisting role="JAVA"><![CDATA[
 public void startRepositories() throws IOException, SAXException {
@@ -306,14 +306,6 @@ public void startRepositories() throws IOException, SAXException {
     // Load the configuration from a file, as provided by the user interface ...
     JcrConfiguration configuration = new JcrConfiguration();
     configuration.loadFrom(userInterface.getRepositoryConfiguration());
-
-    // Load the node types for each JCR repository, via a CND file. These could have been defined
-    // in the configuration file, but this approach is easy and allows us to define the node types
-    // using the CND format in one or multiple files.
-    String locationOfCndFiles = userInterface.getLocationOfCndFiles();
-    configuration.repository("Aircraft").addNodeTypes(locationOfCndFiles + "/aircraft.cnd");
-    configuration.repository("Cars").addNodeTypes(locationOfCndFiles + "/cars.cnd");
-    configuration.repository("Vehicles").addNodeTypes(locationOfCndFiles + "/vehicles.cnd");
 
     // Now create the JCR engine ...
     engine = configuration.build();
@@ -337,8 +329,7 @@ public void startRepositories() throws IOException, SAXException {
 		<para>
 			This method does a number of different things.  First, it checks to make sure the repositories are not already running; if so
 			the method just returns.  Then, it creates a ModeShape <code>JcrConfiguration</code> instance and loads the configuration
-			from a file provided by the user interface.  The method then loads the node types for each of the repositories; this could
-			have been done in the configuration, but it would have made the configuration file larger and more difficult to understand.
+			from a file provided by the user interface.
 			It then creates the <code>JcrEngine</code> from the configuration and starts it.  Finally, it obtains the location of the
 			content files from the user interface, and imports them into the "Cars" and "Aircraft" repositories.  Again, this is
 			done to keep the example simple.

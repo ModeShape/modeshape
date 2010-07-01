@@ -52,10 +52,18 @@
 	</para>
 	<sect1 id="future">
 		<title>Future directions</title>
-		<para>
-			At this point, ModeShape passes all of the JCR Technology Compatibility Kit (TCK) tests 
-			for Level 1, Level 2, and the optional locking, versioning, observation, and query features.
-			We'll soon begin the process of attaining JCR certification for ModeShape.
+	  <para>
+			With version &versionNumber;, ModeShape introduces support for the <link linkend="jcr-spec-support">JCR 2.0 API</link>,
+			improvements to existing connectors, and quite a few <ulink url="&ReleaseNotes;">bug fixes and improvements</ulink>.
+		</para>
+		<para>This means that <emphasis role="strong">ModeShape now implements all of the required JCR 2.0 features</emphasis>: 
+			repository acquisition, authentication, reading/navigating, query, export, node type discovery, and permissions and 
+			capability checking. 
+			<emphasis role="strong">ModeShape also implements most of the optional JCR 2.0 features</emphasis>:
+			writing, import, observation, workspace management, versioning, locking, node type management, same-name siblings, 
+			and orderable child nodes.
+			The remaining optional features (shareable nodes, access control management, lifecycle management, 
+			retention and hold, and transactions) may be introduced in future versions.
 		</para>
 		<para>
 			We also plan to add support for clustering multiple ModeShape engines spread across multiple JVM processes.

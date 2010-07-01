@@ -33,15 +33,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
-import org.modeshape.graph.JaasSecurityContext;
-import org.modeshape.graph.property.Binary;
 import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.modeshape.graph.JaasSecurityContext;
+import org.modeshape.graph.property.Binary;
 
 /**
  * @author Randall Hauch
@@ -65,7 +65,6 @@ public class RepositoryClientTest {
         client.setUserInterface(userInterface);
         client.setApi(getApi());
         when(userInterface.getLocationOfRepositoryFiles()).thenReturn(new File("src/main/resources").getAbsolutePath());
-        when(userInterface.getLocationOfCndFiles()).thenReturn(new File("src/main/resources").getAbsolutePath());
         when(userInterface.getRepositoryConfiguration()).thenReturn(new File("src/main/resources/configRepository.xml"));
 
         // Set up the JAAS provider (IDTrust) and a policy file (which defines the "modeshape-jcr" login config name)

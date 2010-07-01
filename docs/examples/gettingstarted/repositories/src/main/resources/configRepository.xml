@@ -166,7 +166,7 @@
                 <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
             </mode:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
-            <mode:nodeTypes jcr:primaryType="mode:nodeTypes"/>
+            <jcr:nodeTypes mode:resource="/cars.cnd" />
             <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape -->
             <namespaces jcr:primaryType="mode:namespaces">
                 <car jcr:primaryType="mode:namespace" mode:uri="http://jboss.org/dna/examples/cars/1.0"/>
@@ -179,6 +179,8 @@
         <mode:repository jcr:name="Aircraft">
             <!-- Specify the source that should be used for the repository -->
             <mode:source>Aircraft</mode:source>
+            <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
+            <jcr:nodeTypes mode:resource="/aircraft.cnd" />
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
             <mode:options jcr:primaryType="mode:options">
                 <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
@@ -226,7 +228,7 @@
             	<myCustomDescriptor mode:value="foo" />
             </mode:descriptors>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
-            <mode:nodeTypes jcr:primaryType="mode:nodeTypes"/>
+            <jcr:nodeTypes mode:resource="/aircraft.cnd,/cars.cnd" />
             <!-- Define any namespaces for this repository, other than those already defined by JCR, ModeShape or by imported content. -->
             <mode:namespaces jcr:primaryType="mode:namespaces">
                 <car jcr:primaryType="mode:namespace" mode:uri="http://www.modeshape.org/examples/cars/1.0"/>

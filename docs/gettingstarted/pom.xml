@@ -71,34 +71,39 @@
     </plugins>
   </build>
 	<repositories>
-	<repository>
-      <id>apiviz.release</id>
-      <name>APIviz releases</name>
-      <url>http://apiviz.googlecode.com/svn/site/repo/mvn/release</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-	
-	
-		<repository>
-			<id>jboss</id>
-			<url>http://repository.jboss.com/maven2</url>
-		</repository>
-		<repository>
-			<id>jboss-snapshot</id>
-			<url>http://snapshots.jboss.org/maven2</url>
-		</repository>
+	  <repository>
+	    <id>jboss-public-repository-group</id>
+	    <name>JBoss Public Repository Group</name>
+	    <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+	    <layout>default</layout>
+	    <releases>
+	      <enabled>true</enabled>
+	      <updatePolicy>never</updatePolicy>
+	    </releases>
+	    <snapshots>
+	      <enabled>true</enabled>
+	      <updatePolicy>never</updatePolicy>
+	    </snapshots>
+	  </repository>
 	</repositories>
+	<pluginRepositories>
+	  <pluginRepository>
+	    <id>jboss-public-repository-group</id>
+	    <name>JBoss Public Repository Group</name>
+	    <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+	    <releases>
+	      <enabled>true</enabled>
+	    </releases>
+	    <snapshots>
+	      <enabled>true</enabled>
+	    </snapshots>
+	  </pluginRepository>
+	</pluginRepositories>
 	<distributionManagement>
-		<repository>
-			<!-- Copy the distribution jar file to a local checkout of the maven repository 
- 			  -  This variable can be set in $MAVEN_HOME/conf/settings.xml -->
-			<id>repository.jboss.org</id>
-			<url>file://${jboss.repository.root}</url>
-		</repository>
-	</distributionManagement>
+    <repository>
+      <id>jboss-releases-repository</id>
+      <name>JBoss Releases Repository</name>
+      <url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
 </project>

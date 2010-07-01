@@ -68,20 +68,25 @@ for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
 	  </para>
     <programlisting><![CDATA[ file://path/to/configFile.xml?repositoryName=MyRepository ]]></programlisting>
     <para>
-	    or points to a &JcrEngine; instance in JNDI:
+	    that references a file on the local file system, or
+	  </para>
+    <programlisting><![CDATA[ classpath:path/to/configFile.xml?repositoryName=MyRepository ]]></programlisting>
+    <para>
+	    that references a file on the local classpath, or
 	  </para>
     <programlisting><![CDATA[ jndi://name/in/jndi?repositoryName=MyRepository ]]></programlisting>
 		<para>
+			to point to an existing &Repositories; or &JcrEngine; instance registered in JNDI.
 			Pointing directly to a configuration file often works well in stand-alone applications, while using JNDI works great
 			for applications deployed to server platforms (e.g., an application server or servlet container) where multiple applications
-			might want to use the same JCR repository. We'll see in the <link linkend="jcr_engine">next section</link> 
+			might want to use the same JCR repository while hiding all of the configuration details from the JCR clients. 
+			We'll see in the <link linkend="jcr_engine">next section</link> 
 			how to configure ModeShape's &JcrEngine; explicitly and register it in JNDI.
 		</para>
 		<para>
 			So, here's the ServiceLoader example again, but with ModeShape-specific parameters:
 		</para>
-    <programlisting role="JAVA"><![CDATA[
-String configUrl = ... ; // URL that points to your configuration file
+    <programlisting role="JAVA"><![CDATA[String configUrl = ... ; // URL that points to your configuration file
 Map<String,String> parameters = Collections.singletonMap("org.modeshape.jcr.URL", configUrl);
 
 Repository repository = null;
@@ -92,8 +97,7 @@ for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
 		<para>
 			Once you've gotten hold of a &Repository; instance, you can use it to create &Session;s, using code similar to:
     </para>			
-    <programlisting role="JAVA"><![CDATA[
-Credentials credentials = ...; // JCR credentials
+    <programlisting role="JAVA"><![CDATA[Credentials credentials = ...; // JCR credentials
 String workspaceName = ...;  // Name of repository workspace
 Session session = repository.login(credentials,workspaceName);
 ]]></programlisting>
@@ -101,7 +105,9 @@ Session session = repository.login(credentials,workspaceName);
 	<sect1 id="jcr_configuration">
 		<title>ModeShape Configuration Files</title>
 		<para>
-			The previous section assumed the existence of a configuration file.  Creating a configuration file isn't very difficult at all.
+			The previous section showed how easy it was to obtain a Repository and Session using the standard JCR API, using
+			a URL to point to an existing configuration file. This section provides an introduction to ModeShape configuration
+			files, although you will likely want to look at the &ReferenceGuide; for a more detailed explanation.
 		</para>
 		<para>
 			Each configuration file defines the components that are used to create the repository:
@@ -156,6 +162,7 @@ Session session = repository.login(credentials,workspaceName);
 	      -->
 	      <mode:repository jcr:name="car repository" mode:source="Cars">
 	          <mode:options jcr:primaryType="mode:options">
+                <systemSourceName jcr:primaryType="mode:option" mode:value="system@Cars"/>
 	              <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
 	              <!--
 	              As a convenience, ModeShape defaults to granting guest users full access.  
@@ -178,11 +185,8 @@ Session session = repository.login(credentials,workspaceName);
     <mode:sources jcr:primaryType="nt:unstructured">
         <mode:source jcr:name="Cars" 
                     mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" 
-                    mode:retryLimit="3" mode:defaultWorkspaceName="workspace1"/>
-        <mode:source jcr:name="Aircraft" 
-                    mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource">
-            <!-- Define the name of the workspace used by default.  Optional, but convenient. -->
-            <defaultWorkspaceName>workspace2</defaultWorkspaceName>
+                    mode:retryLimit="3" mode:defaultWorkspaceName="workspace1">
+            <predefinedWorkspaceNames>system</predefinedWorkspaceNames>
         </mode:source>
     </mode:sources>
     <!-- 
@@ -197,12 +201,13 @@ Session session = repository.login(credentials,workspaceName);
         </mode:sequencer>
     </mode:sequencers>
     <!--
-	  Define how ModeShape will determine the MIME type of files. This is an optional section 
-	  (and the default works pretty well).
+	  Define how ModeShape will determine the MIME type of files. This is an optional section;
+	  if you do not specify a MIME type detector, ModeShape will use a built-in one that is based
+	  filename extensions for most commonly-used files.
     -->
     <mode:mimeTypeDetectors>
         <mode:mimeTypeDetector jcr:name="Detector" 
-                              mode:description="Standard extension-based MIME type detector"/>
+                 mode:description="Standard extension-based MIME type detector"/>
     </mode:mimeTypeDetectors>
 </configuration>]]></programlisting>
 		</sect2>
@@ -210,8 +215,8 @@ Session session = repository.login(credentials,workspaceName);
 	<sect1 id="modeshape_and_jndi">
 		<title>Deploying ModeShape via JNDI</title>
 		<para>
-			Sometimes your applications can simply define a configuration file and use the &JcrRepositoryFactory; to manage
-			the repository instances.
+			Sometimes your applications can simply define a configuration file and use the &RepositoryFactory; to access its
+			repositories.
 			This is very straightforward, and this is useful for many simple applications.
 		</para>
 		<para>
@@ -227,7 +232,6 @@ Session session = repository.login(credentials,workspaceName);
 				and then close the session when completed.  
 			</para>
     	<programlisting role="JAVA"><![CDATA[Session session = null;
-
 try {
   // Look up the JCR Repository object ...
 	InitialContext initCtx = new InitialContext();

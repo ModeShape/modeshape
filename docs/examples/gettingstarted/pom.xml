@@ -55,27 +55,21 @@
         <artifactId>modeshape-connector-jbosscache</artifactId>
         <version>${project.version}</version>
       </dependency>
-      <dependency>
-        <groupId>org.modeshape</groupId>
-        <artifactId>modeshape-connector-federation</artifactId>
-        <version>${project.version}</version>
-        <scope>runtime</scope>
-      </dependency>
       <!-- Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) -->
       <dependency>
 		    <groupId>org.slf4j</groupId>
 		    <artifactId>slf4j-api</artifactId>
-		    <version>1.5.8</version>
+		    <version>1.5.11</version>
       </dependency>
       <dependency>
 		    <groupId>org.slf4j</groupId>
 		    <artifactId>slf4j-log4j12</artifactId>
-		    <version>1.5.8</version>
+		    <version>1.5.11</version>
       </dependency>
 	   <dependency>
 		    <groupId>log4j</groupId>
 		    <artifactId>log4j</artifactId>
-		    <version>1.2.14</version>
+		    <version>1.2.16</version>
       </dependency>
       <!-- Java Content Repository API -->
       <dependency>
@@ -94,7 +88,7 @@
 			<dependency>
 				<groupId>org.mockito</groupId>
 				<artifactId>mockito-all</artifactId>
-				<version>1.8.1</version>
+				<version>1.8.4</version>
 				<scope>test</scope>
 			</dependency>
     </dependencies>
@@ -107,8 +101,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>2.0.2</version>
         <configuration>
-          <source>1.5</source>
-          <target>1.5</target>
+          <source>1.6</source>
+          <target>1.6</target>
           <debug>true</debug>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
@@ -138,34 +132,39 @@
   </build>
 
 	<repositories>
-	<repository>
-      <id>apiviz.release</id>
-      <name>APIviz releases</name>
-      <url>http://apiviz.googlecode.com/svn/site/repo/mvn/release</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-	
-	
-		<repository>
-			<id>jboss</id>
-			<url>http://repository.jboss.com/maven2</url>
-		</repository>
-		<repository>
-			<id>jboss-snapshot</id>
-			<url>http://snapshots.jboss.org/maven2</url>
-		</repository>
+	  <repository>
+	    <id>jboss-public-repository-group</id>
+	    <name>JBoss Public Repository Group</name>
+	    <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+	    <layout>default</layout>
+	    <releases>
+	      <enabled>true</enabled>
+	      <updatePolicy>never</updatePolicy>
+	    </releases>
+	    <snapshots>
+	      <enabled>true</enabled>
+	      <updatePolicy>never</updatePolicy>
+	    </snapshots>
+	  </repository>
 	</repositories>
+	<pluginRepositories>
+	  <pluginRepository>
+	    <id>jboss-public-repository-group</id>
+	    <name>JBoss Public Repository Group</name>
+	    <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+	    <releases>
+	      <enabled>true</enabled>
+	    </releases>
+	    <snapshots>
+	      <enabled>true</enabled>
+	    </snapshots>
+	  </pluginRepository>
+	</pluginRepositories>
 	<distributionManagement>
-		<repository>
-			<!-- Copy the distribution jar file to a local checkout of the maven repository 
- 			  -  This variable can be set in $MAVEN_HOME/conf/settings.xml -->
-			<id>repository.jboss.org</id>
-			<url>file://${jboss.repository.root}</url>
-		</repository>
-	</distributionManagement>
+    <repository>
+      <id>jboss-releases-repository</id>
+      <name>JBoss Releases Repository</name>
+      <url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
 </project>

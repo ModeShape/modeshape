@@ -639,7 +639,8 @@ try {
 		      by Maven into your project.
 		    </para>
 			</sect3>
-			<sect3 id="adding_logging_dependencies">
+		</sect2>
+			<sect2 id="adding_logging_dependencies">
 				<title>Add dependencies for logging</title>
 				<para>
 					ModeShape is designed to use the same logging framework as your application, and it uses SLF4J to accomplish this. 
@@ -667,7 +668,6 @@ try {
 	        implement the SLF4J API natively, meaning they require no binding JAR. For details on the options and how to configure them, see the 
 	        <ulink url="&SLF4JManual;">SLF4J manual</ulink>.
         </para>
-			</sect3>
 		</sect2>
 		<sect2 id="using_modeshape_via_jars">
 			<title>Building against ModeShape via JARs</title>

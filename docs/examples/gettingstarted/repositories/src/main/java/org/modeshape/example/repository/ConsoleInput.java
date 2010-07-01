@@ -311,15 +311,6 @@ public class ConsoleInput implements UserInterface {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.example.repository.UserInterface#getLocationOfCndFiles()
-     */
-    public String getLocationOfCndFiles() {
-        return new File("").getAbsolutePath();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.example.repository.UserInterface#getCallbackHandler()
      */
     public CallbackHandler getCallbackHandler() {

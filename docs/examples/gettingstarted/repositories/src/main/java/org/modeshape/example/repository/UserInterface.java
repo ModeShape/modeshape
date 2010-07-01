@@ -35,8 +35,6 @@ public interface UserInterface {
 
     File getRepositoryConfiguration();
 
-    String getLocationOfCndFiles();
-
     CallbackHandler getCallbackHandler();
 
     void displayError( String activity,

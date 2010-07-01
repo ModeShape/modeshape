@@ -40,6 +40,7 @@ import javax.jcr.Value;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import net.jcip.annotations.Immutable;
+import org.jboss.security.config.IDTrustConfiguration;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.text.NoOpEncoder;
 import org.modeshape.common.util.CheckArg;
@@ -54,7 +55,6 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
-import org.jboss.security.config.IDTrustConfiguration;
 import org.xml.sax.SAXException;
 
 /**
@@ -139,14 +139,6 @@ public class RepositoryClient {
         // Load the configuration from a file, as provided by the user interface ...
         JcrConfiguration configuration = new JcrConfiguration();
         configuration.loadFrom(userInterface.getRepositoryConfiguration());
-
-        // Load the node types for each JCR repository, via a CND file. These could have been defined
-        // in the configuration file, but this approach is easy and allows us to define the node types
-        // using the CND format in one or multiple files.
-        String locationOfCndFiles = userInterface.getLocationOfCndFiles();
-        configuration.repository("Aircraft").addNodeTypes(locationOfCndFiles + "/aircraft.cnd");
-        configuration.repository("Cars").addNodeTypes(locationOfCndFiles + "/cars.cnd");
-        configuration.repository("Vehicles").addNodeTypes(locationOfCndFiles + "/vehicles.cnd");
 
         // Now create the JCR engine ...
         engine = configuration.build();

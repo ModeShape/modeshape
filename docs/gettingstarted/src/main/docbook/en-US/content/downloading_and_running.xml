@@ -39,62 +39,32 @@
     the ability to manage dependencies. If a library is needed, Maven automatically finds and downloads that library, plus
     everything that library needs. This means that it's very easy to build the examples - or even create a maven project that
     depends on the ModeShape JARs.</para>
-	<note>
+	<para>
+     To use Maven with ModeShape, you'll need to have <ulink url="http://java.sun.com/javase/downloads/index_jdk5.jsp">JDK 6</ulink>
+     and Maven 2.0.9 (or higher).</para>
+  <note>
 		<para>
-      To use Maven with ModeShape, you'll need to have <ulink url="http://java.sun.com/javase/downloads/index_jdk5.jsp">JDK 5 or 6</ulink>
-      and Maven 2.0.9 (or higher).</para>
+	     Maven can be downloaded from <ulink url="http://maven.apache.org/">http://maven.apache.org/</ulink>, and is installed by unzipping the
+	     <code>maven-2.0.9-bin.zip</code> file to a convenient location on your local disk. Simply add <code>$MAVEN_HOME/bin</code>
+	     to your path.
+    </para>
 		<para>
-      Maven can be downloaded from <ulink url="http://maven.apache.org/">http://maven.apache.org/</ulink>, and is installed by unzipping the
-      <code>maven-2.0.9-bin.zip</code> file to a convenient location on your local disk. Simply add <code>$MAVEN_HOME/bin</code>
-      to your path and add the following profile to your <code>~/.m2/settings.xml</code> file:</para>
-		<programlisting role="XML"><![CDATA[<settings>
-  <profiles>
-    <profile>
-      <id>jboss.repository</id>
-      <activation>
-        <property>
-          <name>!jboss.repository.off</name>
-        </property>
-      </activation>
-      <repositories>
-        <repository>
-          <id>snapshots.jboss.org</id>
-          <url>http://snapshots.jboss.org/maven2</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-        </repository>
-        <repository>
-          <id>repository.jboss.org</id>
-          <url>http://repository.jboss.org/maven2</url>
-          <snapshots>
-            <enabled>false</enabled>
-          </snapshots>
-        </repository>
-      </repositories>
-      <pluginRepositories>
-        <pluginRepository>
-          <id>repository.jboss.org</id>
-          <url>http://repository.jboss.org/maven2</url>
-          <snapshots>
-            <enabled>false</enabled>
-          </snapshots>
-        </pluginRepository>
-        <pluginRepository>
-          <id>snapshots.jboss.org</id>
-          <url>http://snapshots.jboss.org/maven2</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-        </pluginRepository>
-      </pluginRepositories>
-    </profile>
-  </profiles>
-</settings>
-]]></programlisting>
-		<para>This profile informs Maven of the two JBoss repositories (snapshots and releases) that contain 
-        all of the JARs for ModeShape and all dependent libraries.</para>
-	</note>
+			The examples are already configured to use the new <ulink url="https://repository.jboss.org/nexus">JBoss.org Maven repository</ulink>, 
+			which provides a central location for the artifacts produced by the JBoss.org projects (well, at least those
+			that use Maven) as well as proxying other repositories and caching artifacts for third party libraries.
+			This simplifies the builds, helps ensure that developers have easy access to these artifacts (including sources) so that 
+			the project (and dependencies) can always be rebuilt when needed.
+		</para>
+		<para>
+			For more information about the JBoss Maven repository, see the 
+			<ulink url="http://community.jboss.org/en/build/blog/2010/04/20/announcement--new-maven-repository-infrastructure">announcement</ulink>
+			and <ulink url="http://community.jboss.org/wiki/MavenRepository">documentation</ulink>.
+		</para>
+	  <para>
+		  Previous versions of ModeShape made use of the older JBoss.org Maven repository, and required modifying your local
+		  <code>~/.m2/settings.xml</code> file.  This is no longer required.
+	  </para>
+  </note>
 	<sect1 id="downloading">
 		<title>Downloading and compiling</title>
 		<para>The next step is to <ulink url="&DownloadHome;/modeshape-&versionNumber;-gettingstarted-examples.zip">download</ulink>
