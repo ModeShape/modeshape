@@ -4,7 +4,7 @@
     parent> <groupId>org.jboss</groupId> <artifactId>documentation</artifactId> <version>1.0</version> </parent -->
   <groupId>org.modeshape</groupId>
   <artifactId>getting-started-en</artifactId>
-  <version>2.0.0.Final</version>
+  <version>2.1-SNAPSHOT</version>
   <packaging>jdocbook</packaging>
   <name>ModeShape Getting Started manual</name>
   <description>The ModeShape Getting Started manual</description>
