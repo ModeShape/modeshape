@@ -680,8 +680,8 @@ final &LoginContext; loginContext = ...;
 			  <ulink url="https://issues.apache.org/jira/browse/JCR-2662">JCR-2662</ulink>, and
 			  <ulink url="https://issues.apache.org/jira/browse/JCR-2663">JCR-2663</ulink>). The remaining 3 failures are
 			  due to known issues (see 
-			  <ulink url="&JIRA;-760">MODE-760</ulink> and
-			  <ulink url="&JIRA;-786">MODE-786</ulink>).
+			  <ulink url="&MODE;-760">MODE-760</ulink> and
+			  <ulink url="&MODE;-786">MODE-786</ulink>).
 		  </para>
 		</sect2>
 		<sect2 id="modeshape_jcr_security">
