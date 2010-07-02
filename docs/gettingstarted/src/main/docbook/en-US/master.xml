@@ -52,7 +52,7 @@
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/introduction.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/use_cases.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/using_modeshape.xml"/>
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/downloading_and_running.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/downloading_and_building.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencer_example.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/repository_example.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/conclusion.xml"/>

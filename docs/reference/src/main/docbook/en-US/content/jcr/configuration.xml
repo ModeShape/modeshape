@@ -332,7 +332,7 @@ configuration.loadFrom(configSource);
 		<title>Deploying ModeShape via JNDI</title>
 		<para>
 			Sometimes your applications can simply define a &JcrConfiguration; and instantiate the &JcrEngine; instance directly.
-			This is very straightforward, and this is what the <link linkend="downloading_and_running">ModeShape examples</link> do.
+			This is very straightforward, and this is what the examples in the &GettingStarted; guide do.
 		</para>
 		<para>
 			Web applications are a different story. Often, you may not want your web application to contain the code that initializes

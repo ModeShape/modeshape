@@ -13,6 +13,7 @@
 <!ENTITY DocHome    					"http://docs.jboss.org/modeshape">
 <!ENTITY DownloadHome					"http://downloads.jboss.org/modeshape/&versionNumber;">
 <!ENTITY API        					"&DocHome;/&versionNumber;/api/org/modeshape/">
+<!ENTITY ReleaseNotes					"&DocHome;/&versionNumber;/release.html">
 <!ENTITY JIRA       					"http://jira.jboss.org/browse/MODE">
 <!ENTITY Roadmap       				"&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">
 <!ENTITY Subversion  					"http://anonsvn.jboss.org/repos/modeshape/">

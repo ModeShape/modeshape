@@ -31,7 +31,7 @@
 <chapter id="repository_example">
 	<title>The Repository Example</title>
 	<para>
-		<link linkend="downloading_and_running">Chapter 4</link> walked through the process of downloading and building the examples,
+		<link linkend="downloading_and_building">Chapter 4</link> walked through the process of downloading and building the examples,
 		while the <link linkend="sequencer_example">previous chapter</link> showed how to run the sequencer example and walked
 		through the code.  In this chapter, we'll run the repository example and walk through that example code to see what
 		it's doing.

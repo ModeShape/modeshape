@@ -28,14 +28,14 @@
 <!ENTITY % CustomDTD SYSTEM "../custom.dtd">
 %CustomDTD;
 ]>
-<chapter id="downloading_and_running">
-	<title>Running the example applications</title>
+<chapter id="downloading_and_building">
+	<title>Building the example applications</title>
 	<para>
-    This chapter provides instructions for downloading and running a sample application that demonstrates how ModeShape works
+    This chapter provides instructions for downloading and compiling two sample applications that demonstrates how ModeShape works
     with a JCR repository to automatically sequence changing content to extract useful information. So read on to get the simple
     application running.
   </para>
-	<para>ModeShape uses Maven 2 for its build system, as does this example. Using Maven 2 has several advantages, including
+	<para>ModeShape uses Maven 2 for its build system, as do these examples. Using Maven 2 has several advantages, including
     the ability to manage dependencies. If a library is needed, Maven automatically finds and downloads that library, plus
     everything that library needs. This means that it's very easy to build the examples - or even create a maven project that
     depends on the ModeShape JARs.</para>
@@ -227,10 +227,10 @@ $ ]]></programlisting>
 			</itemizedlist>
     </para>
 	</sect1>
-	<sect1 id="downloading_and_running_whats_next">
+	<sect1 id="downloading_and_building_whats_next">
 		<title>What's next</title>
-		<para>In this chapter you downloaded, installed, and built the two example applications.  In the next two chapters, we'll
-			run these examples and walk through the code.
+		<para>In this chapter you downloaded, installed, and built the two example applications.  In the next <link linkend="sequencer_example">two</link>
+		  <link linkend="repository_example">chapters</link> we'll run these examples and walk through the code.
 		</para>
 	</sect1>
 </chapter>

@@ -136,7 +136,7 @@
 			and work with the content.
 		</para>
 		<para>
-			<link linkend="downloading_and_running">Chapter 4</link> walks you through downloading
+			<link linkend="downloading_and_building">Chapter 4</link> walks you through downloading
 			and building the ModeShape examples, while <link linkend="sequencer_example">Chapter 5</link>
 			and <link linkend="repository_example">Chapter 6</link> will run these very simple examples and walk through their code.  
 			<link linkend="conclusion">Chapter 7</link> wraps things up with a discussion about the future of ModeShape

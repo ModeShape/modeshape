@@ -598,8 +598,9 @@ try {
 		<para>
 			This chapter outline how you configure ModeShape, how you then access a <code>javax.jcr.Repository</code> instance,
 			and use the standard JCR API to interact with the repository. The
-			<link linkend="downloading_and_running">next chapter </link> walks you through downloading
-			and running the ModeShape examples. 
+			<link linkend="downloading_and_building">next chapter </link> walks you through downloading
+			and building the ModeShape examples, while <link linkend="sequencer_example">Chapter 5</link>
+			and <link linkend="repository_example">Chapter 6</link> shows how to run the examples.
 		</para>
 	</sect1>
 </chapter>
