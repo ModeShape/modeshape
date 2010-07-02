@@ -57,8 +57,8 @@ public class JcrResourcesTest {
     public void beforeEach() {
 
         // Configured in pom
-        final String login = "dnauser";
-        final String password = "password";
+        final String login = "admin";
+        final String password = "admin";
 
         Authenticator.setDefault(new Authenticator() {
             @Override
