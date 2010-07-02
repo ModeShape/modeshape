@@ -11,7 +11,8 @@
 <!ENTITY SourceCode  					"http://www.jboss.org/modeshape/sourcecode.html">
 <!ENTITY MailingLists					"http://www.jboss.org/modeshape/mailinglists.html">
 <!ENTITY DocHome    					"http://docs.jboss.org/modeshape">
-<!ENTITY DownloadHome					"http://downloads.jboss.org/modeshape/&versionNumber;">
+<!ENTITY Downloads   					"http://downloads.jboss.org/modeshape">
+<!ENTITY DownloadHome					"&Download;/&versionNumber;">
 <!ENTITY API        					"&DocHome;/&versionNumber;/api/org/modeshape/">
 <!ENTITY ReleaseNotes					"&DocHome;/&versionNumber;/release.html">
 <!ENTITY MODE       					"http://jira.jboss.org/browse/MODE">
@@ -21,6 +22,7 @@
 <!ENTITY SecureSubversion  		"https://svn.jboss.org/repos/modeshape/">
 <!ENTITY Fisheye							"http://fisheye.jboss.org/browse/modeshape/">
 <!ENTITY Forums     					"http://community.jboss.org/community/modeshape">
+<!ENTITY SingleDownload       "&Downloads;/&versionNumber;/modeshape-&versionNumber;-all-with-dependencies.jar">
 <!ENTITY JSR170  							"http://www.jcp.org/en/jsr/detail?id=170">
 <!ENTITY JSR283  							"http://www.jcp.org/en/jsr/detail?id=283">
 <!ENTITY JSR203  							"http://www.jcp.org/en/jsr/detail?id=203">
@@ -31,6 +33,10 @@
 <!ENTITY JBossMavenHowTo      "http://community.jboss.org/docs/DOC-15442">
 <!ENTITY JBossMavenUsing      "http://community.jboss.org/wiki/MavenGettingStarted-Developers">
 <!ENTITY ModeShapeMaven       "https://repository.jboss.org/nexus/content/repositories/public/org/modeshape/">
+<!ENTITY Git									"http://git-scm.com/">
+<!ENTITY Log4J                "http://logging.apache.org/log4j/">
+<!ENTITY LogBack              "http://logback.qos.ch/">
+<!ENTITY SLF4JManual          "http://www.slf4j.org/manual.html">
 
 <!ENTITY Java									"http://java.sun.com/javase/6/docs/api/">
 <!ENTITY JcrApi               "http://www.day.com/maven/javax.jcr/javadocs/jcr-2.0/">
