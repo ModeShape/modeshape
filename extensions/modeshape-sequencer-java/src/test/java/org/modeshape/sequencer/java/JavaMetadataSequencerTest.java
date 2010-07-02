@@ -102,6 +102,7 @@ public class JavaMetadataSequencerTest {
     public void shouldGenerateMetadataForJavaSourceFile() throws IOException {
         content = getJavaSrc(source);
         assertThat(content, is(notNullValue()));
+        sequencer.setSourceFileRecorder(new OriginalFormatSourceFileRecorder());
         sequencer.sequence(content, output, context);
         assertThat(output.getPropertyValues(path(JavaMetadataLexicon.COMPILATION_UNIT_NODE), "jcr:primaryType"),
                    is(new Object[] {JavaMetadataLexicon.COMPILATION_UNIT_NODE}));

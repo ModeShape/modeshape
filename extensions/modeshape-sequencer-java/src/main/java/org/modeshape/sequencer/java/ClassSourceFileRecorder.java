@@ -21,6 +21,10 @@ import org.modeshape.sequencer.java.metadata.JavaMetadata;
 import org.modeshape.sequencer.java.metadata.MethodMetadata;
 import org.modeshape.sequencer.java.metadata.TypeMetadata;
 
+/**
+ * A source file recorder that writes the Java metadata from the source file to the repository, using the same structure as the
+ * default mode of the Java Class File sequencer.
+ */
 public class ClassSourceFileRecorder implements SourceFileRecorder {
 
     public void record( StreamSequencerContext context,
@@ -98,7 +102,11 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
 
         output.setProperty(classPath, ClassFileSequencerLexicon.NAME, cmd.getName());
         output.setProperty(classPath, ClassFileSequencerLexicon.SEQUENCED_DATE, dateFactory.create());
-        output.setProperty(classPath, ClassFileSequencerLexicon.SUPER_CLASS_NAME, cmd.getSuperClassName());
+        String superClassName = cmd.getSuperClassName();
+        if (superClassName == null || superClassName.length() == 0) {
+            superClassName = Object.class.getCanonicalName();
+        }
+        output.setProperty(classPath, ClassFileSequencerLexicon.SUPER_CLASS_NAME, superClassName);
         output.setProperty(classPath, ClassFileSequencerLexicon.VISIBILITY, visibilityFor(cmd).getDescription());
         output.setProperty(classPath, ClassFileSequencerLexicon.ABSTRACT, cmd.hasModifierNamed("abstract"));
         output.setProperty(classPath, ClassFileSequencerLexicon.INTERFACE, (cmd instanceof InterfaceMetadata));
@@ -178,7 +186,7 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
             for (Map.Entry<String, String> entry : annotation.getMemberValues().entrySet()) {
                 String key = entry.getKey();
                 if (key == null) key = "default";
-                
+
                 Path annotationMemberPath = pathFactory.create(annotationPath, key);
                 output.setProperty(annotationMemberPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.ANNOTATION_MEMBER);
                 output.setProperty(annotationMemberPath, ClassFileSequencerLexicon.NAME, entry.getKey());
@@ -217,7 +225,7 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
             output.setProperty(fieldPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.FIELD);
             output.setProperty(fieldPath, ClassFileSequencerLexicon.NAME, field.getName());
             output.setProperty(fieldPath, ClassFileSequencerLexicon.TYPE_CLASS_NAME, field.getType());
-            output.setProperty(fieldPath, ClassFileSequencerLexicon.VISIBILITY, visibilityFor(field));
+            output.setProperty(fieldPath, ClassFileSequencerLexicon.VISIBILITY, visibilityFor(field).getDescription());
             output.setProperty(classPath, ClassFileSequencerLexicon.STATIC, field.hasModifierNamed("static"));
             output.setProperty(classPath, ClassFileSequencerLexicon.FINAL, field.hasModifierNamed("final"));
             output.setProperty(classPath, ClassFileSequencerLexicon.TRANSIENT, field.hasModifierNamed("transient"));
@@ -253,15 +261,15 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
 
             output.setProperty(methodPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.METHOD);
             output.setProperty(methodPath, ClassFileSequencerLexicon.NAME, method.getName());
-            output.setProperty(methodPath, ClassFileSequencerLexicon.RETURN_TYPE_CLASS_NAME, method.getReturnType());
-            output.setProperty(methodPath, ClassFileSequencerLexicon.VISIBILITY, visibilityFor(method));
+            output.setProperty(methodPath, ClassFileSequencerLexicon.RETURN_TYPE_CLASS_NAME, method.getReturnTypeName());
+            output.setProperty(methodPath, ClassFileSequencerLexicon.VISIBILITY, visibilityFor(method).getDescription());
             output.setProperty(methodPath, ClassFileSequencerLexicon.STATIC, method.hasModifierNamed("static"));
             output.setProperty(methodPath, ClassFileSequencerLexicon.FINAL, method.hasModifierNamed("final"));
             output.setProperty(methodPath, ClassFileSequencerLexicon.ABSTRACT, method.hasModifierNamed("abstract"));
             output.setProperty(methodPath, ClassFileSequencerLexicon.STRICT_FP, method.hasModifierNamed("strictfp"));
             output.setProperty(methodPath, ClassFileSequencerLexicon.NATIVE, method.hasModifierNamed("native"));
             output.setProperty(methodPath, ClassFileSequencerLexicon.SYNCHRONIZED, method.hasModifierNamed("synchronized"));
-            output.setProperty(methodPath, ClassFileSequencerLexicon.PARAMETERS, method.getParameters().toArray());
+            output.setProperty(methodPath, ClassFileSequencerLexicon.PARAMETERS, method.getParameterTypes().toArray());
 
             writeAnnotationsNode(output, pathFactory, methodPath, method.getAnnotations());
 

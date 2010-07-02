@@ -163,7 +163,7 @@ import org.modeshape.sequencer.java.metadata.Variable;
  * </ul>
  * </p>
  */
-public class DefaultSourceFileRecorder implements SourceFileRecorder {
+public class OriginalFormatSourceFileRecorder implements SourceFileRecorder {
 
     public void record( StreamSequencerContext context,
                         SequencerOutput output,

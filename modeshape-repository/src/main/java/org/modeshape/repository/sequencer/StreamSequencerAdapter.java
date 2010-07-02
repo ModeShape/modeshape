@@ -281,7 +281,7 @@ public class StreamSequencerAdapter implements Sequencer {
                 if (property.getValue() instanceof Object[]) {
                     // Have to force this cast or a single-valued property gets created with a value that is an Object[]
                     properties.add(propertyFactory.create(property.getName(), (Object[])property.getValue()));
-                } else {
+                } else if (property.getValue() != null) {
                     properties.add(propertyFactory.create(property.getName(), property.getValue()));
                 }
                 // TODO: Handle reference properties - currently passed in as Paths
@@ -312,7 +312,8 @@ public class StreamSequencerAdapter implements Sequencer {
         ValueFactories factories = context.getExecutionContext().getValueFactories();
         Path path = factories.getPathFactory().create(input.getLocation().getPath());
 
-        Set<org.modeshape.graph.property.Property> props = Collections.<Property>unmodifiableSet(input.getPropertiesByName().values());
+        Set<org.modeshape.graph.property.Property> props = Collections.<Property>unmodifiableSet(input.getPropertiesByName()
+                                                                                                      .values());
         Name fileName = path.getLastSegment().getName();
         if (JcrLexicon.CONTENT.equals(fileName) && !path.isRoot()) {
             // We're actually sequencing the "jcr:content" child node of an "nt:file" node, but the name of

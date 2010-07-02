@@ -43,7 +43,7 @@ public abstract class MethodMetadata {
     private List<FieldMetadata> parameters = new ArrayList<FieldMetadata>();
 
     private List<AnnotationMetadata> annotations = new LinkedList<AnnotationMetadata>();
-    
+
     public List<AnnotationMetadata> getAnnotations() {
         return annotations;
     }
@@ -99,6 +99,17 @@ public abstract class MethodMetadata {
     }
 
     /**
+     * @return parameters
+     */
+    public List<String> getParameterTypes() {
+        List<String> params = new ArrayList<String>(parameters.size());
+        for (FieldMetadata param : parameters) {
+            params.add(param.getType());
+        }
+        return params;
+    }
+
+    /**
      * @param parameters Sets parameters to the specified value.
      */
     public void setParameters( List<FieldMetadata> parameters ) {
@@ -110,6 +121,10 @@ public abstract class MethodMetadata {
      */
     public FieldMetadata getReturnType() {
         return returnType;
+    }
+
+    public String getReturnTypeName() {
+        return returnType == null ? Void.TYPE.getCanonicalName() : returnType.getType();
     }
 
     /**
@@ -130,7 +145,7 @@ public abstract class MethodMetadata {
             } else {
                 buff.append(", ");
             }
-            
+
             buff.append(shortNameFor(parameter.getName()).replace("[]", " array"));
         }
 
@@ -141,7 +156,7 @@ public abstract class MethodMetadata {
 
     private String shortNameFor( String type ) {
         assert type != null;
-        
+
         int lastDotPos = type.lastIndexOf('.');
         if (lastDotPos < 0) return type;
         return type.substring(lastDotPos + 1);

@@ -86,8 +86,7 @@ public class SequencingClientTest {
         // Set up the JCR repository to use the source ...
         config.repository(repositoryId)
               .addNodeTypes(getClass().getClassLoader().getResource("sequencing.cnd"))
-              .registerNamespace(ClassFileSequencerLexicon.Namespace.PREFIX,
-                                 ClassFileSequencerLexicon.Namespace.URI)              
+              .registerNamespace(ClassFileSequencerLexicon.Namespace.PREFIX, ClassFileSequencerLexicon.Namespace.URI)
               .setSource("store")
               .setOption(JcrRepository.Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
         // Set up the image sequencer ...
@@ -114,7 +113,8 @@ public class SequencingClientTest {
               .usingClass(JavaMetadataSequencer.class)
               .setDescription("Sequences Java files to extract the AST structure of the Java source code")
               .sequencingFrom("//(*.java[*])/jcr:content[@jcr:data]")
-              .andOutputtingTo("/java/$1");
+              .andOutputtingTo("/classes");
+        // .andOutputtingTo("/java/$1");
         // Set up the Java class file sequencer ...
         // Only looking for one class to make verification easier
         config.sequencer("Java Class Sequencer")
@@ -135,7 +135,7 @@ public class SequencingClientTest {
               .loadedFromClasspath()
               .setDescription("Sequences fixed width files to extract the contents")
               .setProperty("commentMarker", "#")
-              .setProperty("columnStartPositions", new int[] { 10, 20, 30, 40})
+              .setProperty("columnStartPositions", new int[] {10, 20, 30, 40})
               .sequencingFrom("//(*.txt[*])/jcr:content[@jcr:data]")
               .andOutputtingTo("/txt/$1");
 

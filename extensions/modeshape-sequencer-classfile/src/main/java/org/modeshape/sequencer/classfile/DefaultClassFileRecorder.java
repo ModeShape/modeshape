@@ -94,7 +94,11 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
 
         output.setProperty(classPath, ClassFileSequencerLexicon.NAME, cmd.getClassName());
         output.setProperty(classPath, ClassFileSequencerLexicon.SEQUENCED_DATE, dateFactory.create());
-        output.setProperty(classPath, ClassFileSequencerLexicon.SUPER_CLASS_NAME, cmd.getSuperclassName());
+        String superClassName = cmd.getSuperclassName();
+        if (superClassName == null || superClassName.length() == 0) {
+            superClassName = Object.class.getCanonicalName();
+        }
+        output.setProperty(classPath, ClassFileSequencerLexicon.SUPER_CLASS_NAME, superClassName);
         output.setProperty(classPath, ClassFileSequencerLexicon.VISIBILITY, cmd.getVisibility().getDescription());
         output.setProperty(classPath, ClassFileSequencerLexicon.ABSTRACT, cmd.isAbstract());
         output.setProperty(classPath, ClassFileSequencerLexicon.INTERFACE, cmd.isInterface());
@@ -117,8 +121,7 @@ public class DefaultClassFileRecorder implements ClassFileRecorder {
             output.setProperty(classPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.ENUM);
 
             output.setProperty(classPath, ClassFileSequencerLexicon.ENUM_VALUES, ((EnumMetadata)cmd).getValues().toArray());
-        }
-        else {
+        } else {
             output.setProperty(classPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.CLASS);
         }
     }

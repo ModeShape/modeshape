@@ -31,7 +31,7 @@ import org.modeshape.sequencer.java.metadata.JavaMetadata;
 
 public class JavaMetadataSequencer implements StreamSequencer {
 
-    private static final SourceFileRecorder DEFAULT_SOURCE_FILE_RECORDER = new DefaultSourceFileRecorder();
+    private static final SourceFileRecorder DEFAULT_SOURCE_FILE_RECORDER = new ClassSourceFileRecorder();
 
     private SourceFileRecorder sourceFileRecorder = DEFAULT_SOURCE_FILE_RECORDER;
 
@@ -59,7 +59,7 @@ public class JavaMetadataSequencer implements StreamSequencer {
      * the custom {@link SourceFileRecorder} class prior to ensure that the new value represents a valid implementation.
      * 
      * @param sourceFileRecorderClassName the fully-qualified class name of the new custom class file recorder implementation;
-     *        null indicates that {@link DefaultSourceFileRecorder the default class file recorder} should be used.
+     *        null indicates that {@link ClassSourceFileRecorder the class file recorder} should be used.
      * @throws ClassNotFoundException if the the class for the {@code SourceFileRecorder} implementation cannot be located
      * @throws IllegalAccessException if the row factory class or its nullary constructor is not accessible.
      * @throws InstantiationException if the row factory represents an abstract class, an interface, an array class, a primitive
@@ -80,11 +80,11 @@ public class JavaMetadataSequencer implements StreamSequencer {
     }
 
     /**
-     * Sets a custom {@link SourceFileRecorder}. If {@code sourceFileRecorder} is null, then the {@link DefaultSourceFileRecorder
-     * default class file recorder} will be used.
+     * Sets a custom {@link SourceFileRecorder}. If {@code sourceFileRecorder} is null, then the {@link ClassSourceFileRecorder
+     * class file recorder} will be used.
      * 
      * @param sourceFileRecorder the new custom class file recorder implementation; null indicates that
-     *        {@link DefaultSourceFileRecorder the default class file recorder} should be used.
+     *        {@link ClassSourceFileRecorder the class file recorder} should be used.
      */
     public void setSourceFileRecorder( SourceFileRecorder sourceFileRecorder ) {
         this.sourceFileRecorder = sourceFileRecorder == null ? DEFAULT_SOURCE_FILE_RECORDER : sourceFileRecorder;
