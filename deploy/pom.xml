@@ -12,6 +12,6 @@
   <url>http://www.modeshape.org</url>
   <description>ModeShape Deployment Components</description>
   <modules>
-    <module>jboss</module>
+    <module>jbossas</module>
   </modules>
 </project>
