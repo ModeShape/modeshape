@@ -47,10 +47,13 @@
 /web/modeshape-web-jcr-rest-client/target/
 /web/modeshape-web-jcr-webdav/target
 /web/modeshape-web-jcr-webdav-war/target/
+
 /utils/modeshape-jdbc/target/
 /utils/modeshape-jpa-ddl-gen/target/
-/deploy/jbossas/modeshape-jboss-service/target/
-/deploy/jbossas/modeshape-web-rest-war/target/
+
+/deploy/jbossas/target/
+/deploy/jbossas/modeshape-jbossas-service/target/
+/deploy/jbossas/modeshape-jbossas-web-rest-war/target/
 
 /extensions/modeshape-search-lucene/target
 /extensions/modeshape-classloader-maven/target

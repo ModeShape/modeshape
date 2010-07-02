@@ -6,10 +6,10 @@
 	    <version>2.0-SNAPSHOT</version>
 	</parent>
 	<!-- The groupId and version values are inherited from parent -->
-	<artifactId>modeshape-jboss-service</artifactId>
+	<artifactId>modeshape-jbossas-service</artifactId>
     <packaging>jar</packaging>
-	<name>ModeShape JBoss Service Deployment</name>
-	<description>ModeShape deployment as a JBoss Service</description>
+	<name>ModeShape Service Deployment for JBoss Application Server</name>
+	<description>ModeShape deployment as a service within the JBoss Application Server</description>
 	<url>http://www.modeshape.org</url>
 
 	<!--
