@@ -105,9 +105,9 @@
 			Along with a good library of connectors, which is what we're planning to create.
 		</para>
 		<para>
-			For instance, we want to build a connector to access <ulink url="&JIRA;-282">existing relational databases</ulink> so that some
+			For instance, we want to build a connector to access <ulink url="&MODE;-282">existing relational databases</ulink> so that some
 			or all of the existing data (in whatever structure) can be accessed through JCR.  For more information, check out our
-			<ulink url="&JIRA;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">roadmap</ulink>.
+			<ulink url="&MODE;?report=com.atlassian.jira.plugin.system.project:roadmap-panel">roadmap</ulink>.
 			Of course, if we don't have a connector to suit your needs, you can <link linkend="custom-connectors">write your own</link>.
 			<figure id="modeshape-connectors-future">
 				<title>Future ModeShape connectors</title>
