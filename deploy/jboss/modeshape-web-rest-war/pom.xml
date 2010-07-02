@@ -40,7 +40,18 @@
 	</dependencies>
 	<build>
 		<finalName>resources</finalName>
+
 		<plugins>
+            <plugin>
+                <artifactId>maven-war-plugin</artifactId>
+
+                <configuration>
+                            <excludes>
+                                <exclude>**/*slf4j*.jar</exclude>
+                            </excludes>
+                </configuration>
+            </plugin>
+
 			<plugin>
 				<groupId>org.codehaus.cargo</groupId>
 				<artifactId>cargo-maven2-plugin</artifactId>

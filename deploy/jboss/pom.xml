@@ -14,6 +14,6 @@
   <description>ModeShape JBoss Deployment Components</description>
   <modules>
     <module>modeshape-jboss-service</module>
-    <module>web-rest-war</module>
+    <module>modeshape-web-rest-war</module>
   </modules>
 </project>
