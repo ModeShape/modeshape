@@ -25,22 +25,23 @@
 	<!--
 		This parameter provides the fully-qualified name of a class that implements
 		the o.m.w.jcr.spi.RepositoryProvider interface.  It is required
-		by the ModeShapeJcrDeployer that controls the lifecycle for the ModeShape WebDAV server.
+		by the ModeShapeJcrDeployer that controls the lifecycle for the ModeShape REST server.
 	-->
 	<context-param>
 		<param-name>org.modeshape.web.jcr.REPOSITORY_PROVIDER</param-name>
-		<param-value>org.modeshape.web.jcr.spi.ModeShapeJcrRepositoryProvider</param-value>
+		<param-value>org.modeshape.web.jcr.spi.FactoryRepositoryProvider</param-value>
 	</context-param>
 
 	<!--
-		This parameter, specific to the ModeShapeJcrRepositoryProvider implementation, specifies
-		the name of the configuration file to initialize the repository or repositories.
-		This configuration file must be on the classpath and is given as a classpath-relative
-		directory.
+		This parameter, specific to the FactoryRepositoryProvider implementation, specifies
+		an URL that references a configuration file to initialize the repository or 
+		repositories.  ModeShape will first check for a file at this path in the filesystem.
+		If not file exists at this path, ModeShape will attempt to load this as a resource
+		from the classpath.
 	-->
 	<context-param>
-		<param-name>org.modeshape.web.jcr.CONFIG_FILE</param-name>
-		<param-value>/configRepository.xml</param-value>
+		<param-name>org.modeshape.web.jcr.JCR_URL</param-name>
+		<param-value>file:/configRepository.xml</param-value>
 	</context-param>
 
 	<!--

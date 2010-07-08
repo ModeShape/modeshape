@@ -135,56 +135,16 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         if (rawUrl instanceof URL) {
             url = (URL)rawUrl;
         } else {
-            try {
-                url = new URL(rawUrl.toString());
-            } catch (MalformedURLException mue) {
-                LOG.debug("Could not parse URL: " + mue.getMessage());
-                return null;
-            }
+            url = urlFor(rawUrl.toString());
         }
 
-        if (url.getPath() == null || url.getPath().trim().length() == 0) {
-            LOG.debug("Cannot have null or empty path in repository URL");
-            return null;
-        }
+        if (url == null) return null;
 
-        JcrEngine engine = null;
+        JcrEngine engine = engineFor(url, parameters);
+        if (engine == null) return null;
 
-        if ("jndi".equals(url.getProtocol())) {
-            engine = getEngineFromJndi(url.getPath(), parameters);
-        } else {
-            engine = getEngineFromConfigFile(url);
-        }
-
-        if (engine == null) {
-            LOG.debug("Could not load engine from URL: " + url);
-            return null;
-        }
-
-        String query = url.getQuery();
-        String repositoryName = null;
-        if (query != null) {
-            for (String keyValuePair : query.split("&")) {
-                String[] splitPair = keyValuePair.split("=");
-
-                if (splitPair.length == 2 && REPOSITORY_NAME_PARAM.equals(splitPair[0])) {
-                    repositoryName = splitPair[1];
-                    break;
-                }
-            }
-        }
-
-        if (repositoryName == null) {
-            Set<String> repositoryNames = engine.getRepositoryNames();
-
-            if (repositoryNames.size() != 1) {
-                LOG.debug("No repository name provided in URL and multiple repositories configured in engine with following names: "
-                          + repositoryNames);
-                return null;
-            }
-
-            repositoryName = repositoryNames.iterator().next();
-        }
+        String repositoryName = repositoryNameFor(engine, url);
+        if (repositoryName == null) return null;
 
         try {
             LOG.debug("Trying to access repository: " + repositoryName);
@@ -330,5 +290,161 @@ public class JcrRepositoryFactory implements RepositoryFactory {
             ENGINES.clear();
             return allShutDownClean;
         }
+    }
+
+    /**
+     * Returns the repository with the given name from the {@link JcrEngine} referenced by {@code jcrUrl} if the engine and the
+     * named repository exist, null otherwise.
+     * <p>
+     * If the {@code jcrUrl} parameter contains a valid, ModeShape-compatible URL for a {@link JcrEngine} that has not yet been
+     * started, that {@code JcrEngine} will be created and {@link JcrEngine#start() started} as a side effect of this method.
+     * </p>
+     * <p>
+     * If the {@code repositoryName} parameter is null, the repository name specified in the {@code jcrUrl} parameter will be used
+     * instead. If no repository name is specified in the {@code jcrUrl} parameter and the {@code JcrEngine} has exactly one
+     * repository, that repository will be used. Otherwise, this method will return {@code null}.
+     * </p>
+     * 
+     * @param jcrUrl the ModeShape-compatible URL that specifies the {@link JcrEngine} to be used; may not be null
+     * @param repositoryName the name of the repository to return; may be null
+     * @return the repository with the given name from the {@link JcrEngine} referenced by {@code jcrUrl} if the engine exists and
+     *         can be started (or is already started), and the named repository exists or {@code null} is provided as the {@code
+     *         repositoryName} and the given engine has exactly one repository or the {@code jcrUrl} specifies a repository. If
+     *         any of these conditions do not hold, {@code null} is returned.
+     * @throws RepositoryException if the named repository exists but cannot be accessed
+     * @see JcrEngine#getRepository(String)
+     */
+    public JcrRepository getRepository( String jcrUrl,
+                                        String repositoryName ) throws RepositoryException {
+        URL url = urlFor(jcrUrl);
+        if (url == null) return null;
+
+        JcrEngine engine = engineFor(url, null);
+        if (engine == null) return null;
+
+        if (repositoryName == null) {
+            repositoryName = repositoryNameFor(engine, url);
+        }
+
+        return engine.getRepository(repositoryName);
+    }
+
+    /**
+     * Returns the repository names in the {@link JcrEngine} referenced by the {@code jcrUrl} parameter.
+     * <p>
+     * If the {@code jcrUrl} parameter contains a valid, ModeShape-compatible URL for a {@link JcrEngine} that has not yet been
+     * started, that {@code JcrEngine} will be created and {@link JcrEngine#start() started} as a side effect of this method.
+     * </p>
+     * 
+     * @param jcrUrl the ModeShape-compatible URL that specifies the {@link JcrEngine} to be used; may not be null
+     * @return the set of repository names in the given engine referred to by the {@code jcrUrl} parameter if that engine exists
+     *         and it can be started (or is already started), otherwise {@code null}
+     */
+    public Set<String> getRepositoryNames( String jcrUrl ) {
+        URL url = urlFor(jcrUrl);
+        if (url == null) return null;
+
+        JcrEngine engine = engineFor(url, null);
+
+        if (engine == null) return null;
+
+        return engine.getRepositoryNames();
+    }
+
+    /**
+     * Returns the {@link JcrEngine} referenced by the {@code url} parameter.
+     * <p>
+     * If the {@code url} parameter contains a valid, ModeShape-compatible URL for a {@link JcrEngine} that has not yet been
+     * started, that {@code JcrEngine} will be created and {@link JcrEngine#start() started} as a side effect of this method.
+     * </p>
+     * 
+     * @param url the ModeShape-compatible URL that specifies the {@link JcrEngine} to be used; may not be null
+     * @param parameters an optional list of parameters that will be passed into the JNDI {@link InitialContext} if the {@code
+     *        url} parameter specifies a ModeShape URL that uses the JNDI protocol; may be null
+     * @return the {@code JcrEngine} referenced by the given URL if it can be accessed and started (if not already started),
+     *         otherwise {@code null}.
+     */
+    private JcrEngine engineFor( URL url,
+                                 Map<String, String> parameters ) {
+        if (url.getPath() == null || url.getPath().trim().length() == 0) {
+            LOG.debug("Cannot have null or empty path in repository URL");
+            return null;
+        }
+
+        JcrEngine engine = null;
+
+        if ("jndi".equals(url.getProtocol())) {
+            engine = getEngineFromJndi(url.getPath(), parameters);
+        } else {
+            engine = getEngineFromConfigFile(url);
+        }
+
+        if (engine == null) {
+            LOG.debug("Could not load engine from URL: " + url);
+            return null;
+        }
+
+        return engine;
+    }
+
+    /**
+     * Convenience method to convert a {@code String} into an {@code URL}. This method never throws a
+     * {@link MalformedURLException}, but may throw a {@link NullPointerException} if {@code jcrUrl} is null.
+     * 
+     * @param jcrUrl the string representation of an URL that should be converted into an URL; may not be null
+     * @return the URL version of {@code jcrUrl} if {@code jcrUrl} is a valid URL, otherwise null
+     */
+    private URL urlFor( String jcrUrl ) {
+        try {
+            return new URL(jcrUrl.toString());
+        } catch (MalformedURLException mue) {
+            LOG.debug("Could not parse URL: " + mue.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Returns the repository name to use for the given URL. If the {@code url} contains a query parameter named {@code
+     * repositoryName}, the value of that query parameter is returned. If the {@code url} does not contain a query paramer named
+     * {@code repositoryName} then {@code engine} is checked to see if it contains exactly one repository. If so, that repository
+     * is returned. If {@code engine} contains more than one JCR repository and the {@code repositoryName} parameter is {@code
+     * null}, then {@code null} is returned.
+     * <p>
+     * NOTE: If a repository name is provided in the {@code url} parameter, this method does not validate that a repository with
+     * that name exists in {@code engine}.
+     * </p>
+     * 
+     * @param engine the engine that is used to check for a default repository name if none is provided in the {@code url}; may be
+     *        null only if {@code url} explicitly provides a repository name
+     * @param url the url for which the repository name should be returned; may not be null
+     * @return the repository name to use based on the algorithm described above; may be null
+     */
+    private String repositoryNameFor( JcrEngine engine,
+                                      URL url ) {
+        String repositoryName = null;
+        String query = url.getQuery();
+        if (query != null) {
+            for (String keyValuePair : query.split("&")) {
+                String[] splitPair = keyValuePair.split("=");
+
+                if (splitPair.length == 2 && REPOSITORY_NAME_PARAM.equals(splitPair[0])) {
+                    repositoryName = splitPair[1];
+                    break;
+                }
+            }
+        }
+
+        if (repositoryName == null) {
+            Set<String> repositoryNames = engine.getRepositoryNames();
+
+            if (repositoryNames.size() != 1) {
+                LOG.debug("No repository name provided in URL and multiple repositories configured in engine with following names: "
+                          + repositoryNames);
+                return null;
+            }
+
+            repositoryName = repositoryNames.iterator().next();
+        }
+        return repositoryName;
     }
 }
