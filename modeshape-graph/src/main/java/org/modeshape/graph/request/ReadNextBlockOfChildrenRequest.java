@@ -203,16 +203,12 @@ public class ReadNextBlockOfChildrenRequest extends CacheableRequest {
      * 
      * @param actual the actual location of the node being read, or null if the {@link #startingAfter() starting after location}
      *        should be used
-     * @throws IllegalArgumentException if the actual location is not {@link Location#equals(Object) equal to} the
-     *         {@link #startingAfter() starting after location}, or if the actual location does not have a path.
+     * @throws IllegalArgumentException if the actual location is null or does not have a path.
      * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocationOfStartingAfterNode( Location actual ) {
         checkNotFrozen();
-        if (!startingAfter.equals(actual)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actual, startingAfter));
-        }
-        assert actual != null;
+        CheckArg.isNotNull(actual, "actual");
         if (!actual.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualLocationMustHavePath.text(actual));
         }

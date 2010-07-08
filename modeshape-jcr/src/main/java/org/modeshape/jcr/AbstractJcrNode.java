@@ -97,7 +97,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     private static final NodeType[] EMPTY_NODE_TYPES = new NodeType[] {};
 
     protected final NodeId nodeId;
-    protected final Location location;
+    protected Location location;
 
     AbstractJcrNode( SessionCache cache,
                      NodeId nodeId,
@@ -130,9 +130,28 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     final Node<JcrNodePayload, JcrPropertyPayload> nodeInfo()
         throws InvalidItemStateException, AccessDeniedException, RepositoryException {
         try {
+            // This method will find the node if the 'nodeId' is still valid and cached...
             return cache.findNode(nodeId, location.getPath());
         } catch (ItemNotFoundException infe) {
-            throw new InvalidItemStateException(infe.getMessage());
+            // However, if this node has changed (e.g., moved), the path may not be sufficient to find the node,
+            // so try to find by location ...
+            try {
+                Node<JcrNodePayload, JcrPropertyPayload> info = null;
+                if (location.getUuid() != null) {
+                    info = cache.findNodeWith(location.with((Path)null));
+                } else {
+                    info = cache.findNodeWith(location);
+                }
+                // Update this node's location if required ...
+                Location newLocation = info.getLocation();
+                if (!newLocation.equals(location)) {
+                    location = newLocation;
+                }
+                return info;
+            } catch (ItemNotFoundException infe2) {
+                // Use the first exception ...
+                throw new InvalidItemStateException(infe.getMessage());
+            }
         }
     }
 
@@ -2209,7 +2228,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      */
     @Override
     public int hashCode() {
-        return HashCode.compute(cache, location);
+        return HashCode.compute(cache, location.getUuid());
     }
 
     /**

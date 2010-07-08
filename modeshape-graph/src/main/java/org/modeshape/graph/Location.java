@@ -207,7 +207,20 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
         names.add(firstIdProperty.getName());
         idProperties.add(firstIdProperty);
         for (Property property : remainingIdProperties) {
+            if (property == null) continue;
             if (names.add(property.getName())) idProperties.add(property);
+        }
+        if (idProperties.isEmpty()) return new LocationWithPath(path);
+        if (idProperties.size() == 1) {
+            Property property = idProperties.get(0);
+            if (property.isSingle()
+                && (property.getName().equals(JcrLexicon.UUID) || property.getName().equals(ModeShapeLexicon.UUID))) {
+                Object value = property.getFirstValue();
+                if (value instanceof UUID) {
+                    return new LocationWithPathAndUuid(path, (UUID)value);
+                }
+            }
+            return new LocationWithPathAndProperty(path, idProperties.get(0));
         }
         return new LocationWithPathAndProperties(path, idProperties);
     }
@@ -227,9 +240,21 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
         List<Property> idPropertiesList = new ArrayList<Property>();
         Set<Name> names = new HashSet<Name>();
         for (Property property : idProperties) {
+            if (property == null) continue;
             if (names.add(property.getName())) idPropertiesList.add(property);
         }
         if (idPropertiesList.isEmpty()) return new LocationWithPath(path);
+        if (idPropertiesList.size() == 1) {
+            Property property = idPropertiesList.get(0);
+            if (property.isSingle()
+                && (property.getName().equals(JcrLexicon.UUID) || property.getName().equals(ModeShapeLexicon.UUID))) {
+                Object value = property.getFirstValue();
+                if (value instanceof UUID) {
+                    return new LocationWithPathAndUuid(path, (UUID)value);
+                }
+            }
+            return new LocationWithPathAndProperty(path, idPropertiesList.get(0));
+        }
         return new LocationWithPathAndProperties(path, idPropertiesList);
     }
 
@@ -457,22 +482,6 @@ public abstract class Location implements Iterable<Property>, Comparable<Locatio
      */
     public boolean equals( Object obj,
                            boolean requireSameNameSiblingIndexes ) {
-        // if (obj instanceof Location) {
-        // Location that = (Location)obj;
-        // if (this.hasPath()) {
-        // if (!this.getPath().equals(that.getPath())) return false;
-        // } else {
-        // if (that.hasPath()) return false;
-        // }
-        // if (this.hasIdProperties()) {
-        // if (!this.getIdProperties().equals(that.getIdProperties())) return
-        // false;
-        // } else {
-        // if (that.hasIdProperties()) return false;
-        // }
-        // return true;
-        // }
-        // return false;
         if (obj instanceof Location) {
             Location that = (Location)obj;
 

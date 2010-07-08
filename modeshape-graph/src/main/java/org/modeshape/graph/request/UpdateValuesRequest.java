@@ -131,10 +131,7 @@ public class UpdateValuesRequest extends ChangeRequest {
                                    List<Object> actualAddedValues,
                                    List<Object> actualRemovedValues ) {
         checkNotFrozen();
-        if (!on.equals(actual)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actual, on));
-        }
-        assert actual != null;
+        CheckArg.isNotNull(actual, "actual");
         if (!actual.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualLocationMustHavePath.text(actual));
         }
@@ -152,7 +149,8 @@ public class UpdateValuesRequest extends ChangeRequest {
 
     /**
      * Record that the property did not exist prior to the processing of this request and was actually created by this request.
-     * This method must be called when processing the request, and the actual location must have a {@link Location#getPath() path}.
+     * This method must be called when processing the request, and the actual location must have a {@link Location#getPath() path}
+     * .
      * 
      * @param property the property being created or updated (may not be <code>null</code>)
      * @param created true if the property was created by this request, or false if this request updated an existing property
@@ -166,7 +164,7 @@ public class UpdateValuesRequest extends ChangeRequest {
         this.actualProperty = property;
         this.actualCreation = created;
     }
-    
+
     /**
      * Get the actual node property that was created or updated.
      * 
@@ -226,11 +224,11 @@ public class UpdateValuesRequest extends ChangeRequest {
         UpdateValuesRequest request = new UpdateValuesRequest(workspaceName, actualLocation != null ? actualLocation : on,
                                                               propertyName, addedValues, removedValues);
         request.setActualLocation(actualLocation, actualAddedValues, actualRemovedValues);
-        
+
         // don't call request.setActualProperty(Property, boolean) here as the actual property may have not been set
         request.actualProperty = actualProperty;
         request.actualCreation = actualCreation;
-        
+
         return request;
     }
 

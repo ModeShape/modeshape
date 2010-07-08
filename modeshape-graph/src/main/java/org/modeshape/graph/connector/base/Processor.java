@@ -605,13 +605,7 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
     protected Location getActualLocation( WorkspaceType workspace,
                                           Location location,
                                           NodeType node ) {
-        Path path = location.getPath();
-        if (path == null) {
-            // Find the path on the node ...
-            path = txn.pathFor(workspace, node);
-        }
-        // If there is a UUID in the location, it should match the node's.
-        assert location.getUuid() == null || location.getUuid().equals(node.getUuid());
+        Path path = txn.pathFor(workspace, node); // the location's path might not be right
         if (location.hasIdProperties()) {
             return location.with(path);
         }

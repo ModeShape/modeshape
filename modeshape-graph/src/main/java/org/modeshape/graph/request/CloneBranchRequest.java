@@ -167,29 +167,19 @@ public class CloneBranchRequest extends ChangeRequest {
      * 
      * @param fromLocation the actual location of the node being cloned
      * @param intoLocation the actual location of the new clone of the node
-     * @throws IllegalArgumentException if the either location is null; if the old location is not {@link Location#equals(Object)
-     *         equal to} the {@link #from() from location}; if the new location is not {@link Location#equals(Object) equal to}
-     *         the {@link #into() into location}; if the either location does not have a path
+     * @throws IllegalArgumentException if the either location is null; or if the either location does not have a path
      * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocations( Location fromLocation,
                                     Location intoLocation ) {
         checkNotFrozen();
-        if (!from.equals(fromLocation)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(fromLocation, from));
-        }
+        CheckArg.isNotNull(fromLocation, "intoLocation");
         CheckArg.isNotNull(intoLocation, "intoLocation");
-        assert fromLocation != null;
-        assert intoLocation != null;
         if (!fromLocation.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualOldLocationMustHavePath.text(fromLocation));
         }
         if (!intoLocation.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualNewLocationMustHavePath.text(intoLocation));
-        }
-        // The 'into' should be the parent of the 'newLocation' ...
-        if (into.hasPath() && !intoLocation.getPath().getParent().equals(into.getPath())) {
-            throw new IllegalArgumentException(GraphI18n.actualLocationIsNotChildOfInputLocation.text(intoLocation, into));
         }
 
         if (desiredSegment != null && !desiredSegment.equals(intoLocation.getPath().getLastSegment())) {

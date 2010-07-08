@@ -1205,4 +1205,28 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         String etagValue = root.getNode("someNewNode3").getProperty("jcr:etag").getString();
         assertThat(etagValue, is(etagExpected));
     }
+
+    @FixFor( "MODE-796" )
+    public void testNodeReferenceRemainsValidAfterSave() throws Exception {
+        session = getHelper().getReadWriteSession();
+
+        Node root = session.getRootNode();
+        Node nodeA = root.addNode("nodeA", "nt:unstructured");
+        nodeA.setProperty("foo", "bar A");
+        Node nodeB = root.addNode("nodeB", "nt:unstructured");
+        nodeB.setProperty("foo", "bar B");
+        session.save();
+
+        // Verify that the node references still have a path ...
+        assertThat(nodeA.getPath(), is("/nodeA"));
+        assertThat(nodeB.getPath(), is("/nodeB"));
+
+        // Move 'nodeA' under 'nodeB' ...
+        session.move(nodeA.getPath(), "/nodeB/nodeA");
+        assertThat(nodeA.getPath(), is("/nodeB/nodeA"));
+        assertThat(nodeB.getPath(), is("/nodeB"));
+        session.save();
+        assertThat(nodeA.getPath(), is("/nodeB/nodeA"));
+        assertThat(nodeB.getPath(), is("/nodeB"));
+    }
 }

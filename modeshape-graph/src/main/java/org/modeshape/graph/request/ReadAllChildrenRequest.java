@@ -187,15 +187,13 @@ public class ReadAllChildrenRequest extends CacheableRequest implements Iterable
      * 
      * @param actualLocation the actual location of the node being read, or null if the {@link #of() current location} should be
      *        used
-     * @throws IllegalArgumentException if the actual location is not {@link Location#equals(Object) equal to} the {@link #of()
-     *         current location}; if the actual location does not have a path; or if the actual workspace name is null
+     * @throws IllegalArgumentException if the actual location is null; if the actual location does not have a path; or if the
+     *         actual workspace name is null
      * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocationOfNode( Location actualLocation ) {
         checkNotFrozen();
-        if (!this.of.equals(actualLocation)) { // not same if actualLocation is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actualLocation, of));
-        }
+        CheckArg.isNotNull(actualLocation, "actualLocation");
         assert actualLocation != null;
         if (!actualLocation.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualLocationMustHavePath.text(actualLocation));

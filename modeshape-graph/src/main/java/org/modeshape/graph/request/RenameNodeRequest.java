@@ -106,22 +106,16 @@ public class RenameNodeRequest extends ChangeRequest {
      * 
      * @param oldLocation the actual location of the node before being renamed
      * @param newLocation the actual location of the node after being renamed
-     * @throws IllegalArgumentException if the either location is null or is missing its path, if the old location is not
-     *         {@link Location#equals(Object) equal to} the {@link #at() current location}, if the new location does not have the
-     *         same parent as the old location, or if the new location does not have the same {@link Path.Segment#getName() name}
-     *         on {@link Path#getLastSegment() last segment} as that {@link #toName() specified on the request}
+     * @throws IllegalArgumentException if the either location is null or is missing its path, or if the new location does not
+     *         have the same {@link Path.Segment#getName() name} on {@link Path#getLastSegment() last segment} as that
+     *         {@link #toName() specified on the request}
      * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocations( Location oldLocation,
                                     Location newLocation ) {
         checkNotFrozen();
-        if (!at.equals(oldLocation)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(oldLocation, at));
-        }
-        assert oldLocation != null;
-        if (newLocation == null) {
-            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(newLocation, at));
-        }
+        CheckArg.isNotNull(oldLocation, "oldLocation");
+        CheckArg.isNotNull(newLocation, "newLocation");
         if (!oldLocation.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualOldLocationMustHavePath.text(oldLocation));
         }
@@ -129,10 +123,6 @@ public class RenameNodeRequest extends ChangeRequest {
             throw new IllegalArgumentException(GraphI18n.actualNewLocationMustHavePath.text(newLocation));
         }
         Path newPath = newLocation.getPath();
-        if (!newPath.getParent().equals(oldLocation.getPath().getParent())) {
-            String msg = GraphI18n.actualNewLocationMustHaveSameParentAsOldLocation.text(newLocation, oldLocation);
-            throw new IllegalArgumentException(msg);
-        }
         if (!newPath.getLastSegment().getName().equals(toName())) {
             String msg = GraphI18n.actualNewLocationMustHaveSameNameAsRequest.text(newLocation, toName());
             throw new IllegalArgumentException(msg);

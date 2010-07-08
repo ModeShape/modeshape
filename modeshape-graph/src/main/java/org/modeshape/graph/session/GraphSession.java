@@ -247,17 +247,15 @@ public class GraphSession<Payload, PropertyPayload> {
      * @throws IllegalArgumentException if the location is null
      */
     public Node<Payload, PropertyPayload> findNodeWith( Location location ) throws PathNotFoundException, AccessControlException {
-        if (!location.hasPath()) {
-            UUID uuid = location.getUuid();
-            if (uuid != null) {
+        UUID uuid = location.getUuid();
+        if (uuid != null) {
 
-                // Try to find the node in the cache
-                for (Node<Payload, PropertyPayload> node : nodes.values()) {
-                    UUID nodeUuid = uuidFor(node.getLocation());
+            // Try to find the node in the cache
+            for (Node<Payload, PropertyPayload> node : nodes.values()) {
+                UUID nodeUuid = uuidFor(node.getLocation());
 
-                    if (uuid.equals(nodeUuid)) {
-                        return node;
-                    }
+                if (uuid.equals(nodeUuid)) {
+                    return node;
                 }
             }
 
@@ -1513,6 +1511,7 @@ public class GraphSession<Payload, PropertyPayload> {
         private Map<Name, PropertyInfo<PropertyPayload>> properties;
         private ListMultimap<Name, Node<Payload, PropertyPayload>> childrenByName;
         private Payload payload;
+        private Location originalLocation;
 
         public Node( GraphSession<Payload, PropertyPayload> cache,
                      Node<Payload, PropertyPayload> parent,
@@ -1522,6 +1521,7 @@ public class GraphSession<Payload, PropertyPayload> {
             this.parent = parent;
             this.nodeId = nodeId;
             this.location = location;
+            this.originalLocation = location;
             assert this.cache != null;
             assert this.nodeId != null;
             assert this.location != null;
@@ -1602,22 +1602,22 @@ public class GraphSession<Payload, PropertyPayload> {
             int depth = cache.getDepthForLoadingNodes();
             if (depth == 1) {
                 // Then read the node from the store ...
-                org.modeshape.graph.Node persistentNode = cache.store.getNodeAt(getLocation());
+                org.modeshape.graph.Node persistentNode = cache.store.getNodeAt(getOriginalLocation());
                 // Check the actual location ...
                 Location actualLocation = persistentNode.getLocation();
                 if (!this.location.isSame(actualLocation)) {
                     // The actual location is changed, so update it ...
-                    this.location = actualLocation;
+                    this.originalLocation = this.location = actualLocation;
                 }
                 // Update the persistent information ...
                 cache.nodeOperations.materialize(persistentNode, this);
             } else {
                 // Then read the node from the store ...
-                Subgraph subgraph = cache.store.getSubgraphOfDepth(depth).at(getLocation());
+                Subgraph subgraph = cache.store.getSubgraphOfDepth(depth).at(getOriginalLocation());
                 Location actualLocation = subgraph.getLocation();
                 if (!this.location.isSame(actualLocation)) {
                     // The actual location is changed, so update it ...
-                    this.location = actualLocation;
+                    this.originalLocation = this.location = actualLocation;
                 }
                 // Update the persistent information ...
                 cache.nodeOperations.materialize(subgraph.getRoot(), this);
@@ -1828,9 +1828,7 @@ public class GraphSession<Payload, PropertyPayload> {
         protected void updateLocation( Path.Segment segment ) {
             assert !isStale();
             Path newPath = null;
-            Path currentPath = getPath();
             if (segment != null) {
-                if (segment.equals(currentPath.getLastSegment())) return;
                 // Recompute the path based upon the parent path ...
                 Path parentPath = getParent().getPath();
                 newPath = cache.pathFactory.create(parentPath, segment);
@@ -2445,6 +2443,15 @@ public class GraphSession<Payload, PropertyPayload> {
          */
         public final Location getLocation() {
             return location;
+        }
+
+        /**
+         * Get the original location for this node prior to making any transient changes.
+         * 
+         * @return the current location; never null
+         */
+        public final Location getOriginalLocation() {
+            return originalLocation;
         }
 
         /**
@@ -3203,7 +3210,7 @@ public class GraphSession<Payload, PropertyPayload> {
         protected void load( Node<Payload, PropertyPayload> node ) {
             if (node != null && !node.isLoaded() && !node.isNew()) {
                 nodesToLoad.add(node);
-                batch.read(node.getLocation());
+                batch.read(node.getOriginalLocation());
             }
         }
 
@@ -3220,7 +3227,7 @@ public class GraphSession<Payload, PropertyPayload> {
                 Results results = batch.execute();
                 // Now load all of the children into the correct node ...
                 for (Node<Payload, PropertyPayload> childToBeRead : nodesToLoad) {
-                    org.modeshape.graph.Node persistentNode = results.getNode(childToBeRead.getLocation());
+                    org.modeshape.graph.Node persistentNode = results.getNode(childToBeRead.getOriginalLocation());
                     nodeOperations.materialize(persistentNode, childToBeRead);
                     finishNodeAfterLoading(childToBeRead);
                 }

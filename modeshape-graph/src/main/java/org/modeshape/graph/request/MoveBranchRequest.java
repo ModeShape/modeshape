@@ -225,9 +225,7 @@ public class MoveBranchRequest extends ChangeRequest {
      * 
      * @param oldLocation the actual location of the node before being moved
      * @param newLocation the actual new location of the node
-     * @throws IllegalArgumentException if the either location is null, if the old location is not {@link Location#equals(Object)
-     *         equal to} the {@link #from() from location}, if the new location is not {@link Location#equals(Object) equal to}
-     *         the {@link #into() into location}, or if the either location does not have a path
+     * @throws IllegalArgumentException if the either location is null, or if the either location does not have a path
      * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocations( Location oldLocation,
@@ -235,17 +233,11 @@ public class MoveBranchRequest extends ChangeRequest {
         checkNotFrozen();
         CheckArg.isNotNull(oldLocation, "oldLocation");
         CheckArg.isNotNull(newLocation, "newLocation");
-        if (!from.equals(oldLocation)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(oldLocation, from));
-        }
         if (!oldLocation.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualOldLocationMustHavePath.text(oldLocation));
         }
         if (!newLocation.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualNewLocationMustHavePath.text(newLocation));
-        }
-        if (into() != null && into().hasPath() && !newLocation.getPath().getParent().isSameAs(into.getPath())) {
-            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(newLocation, into));
         }
         Name actualNewName = newLocation.getPath().getLastSegment().getName();
         Name expectedNewName = desiredName() != null ? desiredName() : oldLocation.getPath().getLastSegment().getName();

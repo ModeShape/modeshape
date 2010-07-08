@@ -104,16 +104,12 @@ public class RemovePropertyRequest extends ChangeRequest {
      * and the actual location must have a {@link Location#getPath() path}.
      * 
      * @param actual the actual location of the node being updated, or null if the {@link #from() current location} should be used
-     * @throws IllegalArgumentException if the actual location is not {@link Location#equals(Object) equal to} the {@link #from()
-     *         current location}, or if the actual location does not have a path.
+     * @throws IllegalArgumentException if the actual location is null or does not have a path.
      * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocationOfNode( Location actual ) {
         checkNotFrozen();
-        if (!from.equals(actual)) { // not same if actual is null
-            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actual, from));
-        }
-        assert actual != null;
+        CheckArg.isNotNull(actual, "actual");
         if (!actual.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualLocationMustHavePath.text(actual));
         }

@@ -275,23 +275,16 @@ public class CreateNodeRequest extends ChangeRequest implements Iterable<Propert
      * 
      * @param actual the actual location of the node being created, or null if the {@link #under() current location} should be
      *        used
-     * @throws IllegalArgumentException if the actual location is not {@link Location#equals(Object) equal to} the
-     *         {@link #under() current location}, or if the actual location does not have a path.
+     * @throws IllegalArgumentException the actual location is null or does not have a path
      * @throws IllegalStateException if the request is frozen
      */
     public void setActualLocationOfNode( Location actual ) {
         checkNotFrozen();
         CheckArg.isNotNull(actual, "actual");
-        if (!under.equals(actual, false)) { // not same if actual is null
-        }
-        assert actual != null;
         if (!actual.hasPath()) {
             throw new IllegalArgumentException(GraphI18n.actualLocationMustHavePath.text(actual));
         }
         assert actual.hasPath();
-        if (under.hasPath() && !under.getPath().equals(actual.getPath().getParent())) {
-            throw new IllegalArgumentException(GraphI18n.actualLocationNotEqualToInputLocation.text(actual, under));
-        }
         this.actualLocation = actual;
     }
 

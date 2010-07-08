@@ -1398,6 +1398,10 @@ class SessionCache {
                     }
                 }
 
+                // Update the location of the JcrNode object...
+                Path newPath = existingChild.getPath();
+                existingChild.getPayload().getJcrNode().location = existingChild.getLocation().with(newPath);
+
                 return existingChild;
             } catch (ValidationException e) {
                 throw new ConstraintViolationException(e.getMessage(), e);
