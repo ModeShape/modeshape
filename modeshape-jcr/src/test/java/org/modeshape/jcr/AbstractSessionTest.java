@@ -146,7 +146,7 @@ public abstract class AbstractSessionTest {
         when(repository.getRepositoryTypeManager()).thenReturn(repoTypeManager);
 
         try {
-            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/modeshape/jcr/jsr_170_builtins.cnd",
+            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/modeshape/jcr/jsr_283_builtins.cnd",
                 "/org/modeshape/jcr/dna_builtins.cnd"}));
             this.repoTypeManager.registerNodeTypes(new NodeTemplateNodeTypeSource(getTestTypes()));
 

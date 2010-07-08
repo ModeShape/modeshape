@@ -65,7 +65,7 @@ public class CndNodeTypeRegistrationTest {
 
         repoTypeManager = new RepositoryNodeTypeManager(repository, true);
         try {
-            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/modeshape/jcr/jsr_170_builtins.cnd",
+            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/modeshape/jcr/jsr_283_builtins.cnd",
                 "/org/modeshape/jcr/dna_builtins.cnd"}));
         } catch (RepositoryException re) {
             re.printStackTrace();

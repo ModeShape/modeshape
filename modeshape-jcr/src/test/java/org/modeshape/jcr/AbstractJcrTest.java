@@ -81,7 +81,7 @@ public abstract class AbstractJcrTest {
 
         rntm = new RepositoryNodeTypeManager(repository, true);
         try {
-            rntm.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/modeshape/jcr/jsr_170_builtins.cnd",
+            rntm.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/modeshape/jcr/jsr_283_builtins.cnd",
                 "/org/modeshape/jcr/dna_builtins.cnd"}));
             rntm.registerNodeTypes(new NodeTemplateNodeTypeSource(Vehicles.getNodeTypes(context)));
         } catch (RepositoryException re) {

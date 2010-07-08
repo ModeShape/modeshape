@@ -172,7 +172,7 @@ class JcrSession implements Session {
         // Create an execution context for this session, which should use the local namespace registry ...
         this.executionContext = sessionContext;
         NamespaceRegistry local = sessionContext.getNamespaceRegistry();
-        this.sessionRegistry = new JcrNamespaceRegistry(Behavior.JSR283_SESSION, local, globalNamespaceRegistry, this);
+        this.sessionRegistry = new JcrNamespaceRegistry(Behavior.SESSION, local, globalNamespaceRegistry, this);
         this.rootPath = this.executionContext.getValueFactories().getPathFactory().createRootPath();
 
         // Set up the graph to use for this session (which uses the session's namespace registry and context) ...

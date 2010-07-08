@@ -57,8 +57,7 @@ import org.modeshape.graph.property.NamespaceRegistry.Namespace;
 class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
 
     public static enum Behavior {
-        JSR170_SESSION,
-        JSR283_SESSION,
+        SESSION,
         WORKSPACE;
     }
 
@@ -227,52 +226,7 @@ class JcrNamespaceRegistry implements javax.jcr.NamespaceRegistry {
 
         boolean global = false;
         switch (behavior) {
-            case JSR170_SESSION:
-                // ----------------------------------------------------------
-                // JSR-170 Session remapping behavior (see Section 6.3.3) ...
-                // ----------------------------------------------------------
-                // Section 6.3.3:
-                // "If existingUri is not registered in the NamespaceRegistry a NamespaceException will be thrown.
-                //
-                // If newPrefix is already locally mapped to existingUri (i.e., within this Session, by virtue
-                // of an earlier setNamespaceRegistry call) then this method returns silently and has no effect.
-                //
-                // If newPrefix is already locally mapped to a URI other than existingUri, then that URI reverts to its
-                // globally mapped prefix (as set in the NamespaceRegistry) and newPrefix is locally mapped to existingUri.
-                //
-                // If newPrefix is already assigned in the global NamespaceRegistry to otheruri (which differs from
-                // existingUri) and otherUri has not been locally mapped to another prefix which differs from newPrefix,
-                // then a NamespaceException will be thrown. In order to successfully locally map newPrefix to existingUri,
-                // otherUri must first be locally mapped to another prefix."
-
-                // The URI must already be registered ...
-                String existingPrefix = registry.getPrefixForNamespaceUri(uri, false);
-                if (existingPrefix == null) {
-                    // Paragraph 1 ...
-                    throw new NamespaceException(JcrI18n.unableToRemapUriNotRegisteredInNamespaceRegistry.text(prefix, uri));
-                }
-                if (existingPrefix.equals(prefix)) return; // Paragraph 2
-
-                // Is the prefix already used in a mapping ...
-                String existingUri = registry.getNamespaceForPrefix(prefix);
-                if (existingUri != null) {
-                    // Is this existing mapping local, or is it in the global (workspace) registry?
-                    String globalPrefix = workspaceRegistry.getPrefixForNamespaceUri(existingUri, false);
-                    if (!prefix.equals(globalPrefix)) {
-                        // Paragraph 3: The mapping is local to the session, so this local mapping should just be reverted ...
-                        registry.unregister(existingUri);
-                    }
-
-                    // Paragraph 4: The mapping is global, so this is not allowed; the existing ...
-                    String msg = JcrI18n.unableToRemapUriUsingPrefixUsedInNamespaceRegistry.text(prefix, uri, existingUri);
-                    throw new NamespaceException(msg);
-                }
-
-                // Otherwise, the prefix is not already used in a mapping, so we can continue ...
-
-                break;
-
-            case JSR283_SESSION:
+            case SESSION:
                 // --------------------------------------
                 // JSR-283 Session remapping behavior ...
                 // --------------------------------------
