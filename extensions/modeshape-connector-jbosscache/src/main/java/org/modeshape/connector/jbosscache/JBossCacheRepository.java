@@ -93,6 +93,6 @@ public class JBossCacheRepository extends Repository<JBossCacheNode, JBossCacheW
                                                    boolean readonly ) {
         final Lock lock = readonly ? this.lock.readLock() : this.lock.writeLock();
         lock.lock();
-        return new JBossCacheTransaction(this, getRootNodeUuid(), lock);
+        return new JBossCacheTransaction(context, this, getRootNodeUuid(), lock);
     }
 }

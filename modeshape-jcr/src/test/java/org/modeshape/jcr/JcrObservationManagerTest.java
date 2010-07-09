@@ -24,6 +24,7 @@
 package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -36,6 +37,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Credentials;
+import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.Repository;
@@ -47,6 +49,8 @@ import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
 import javax.jcr.observation.ObservationManager;
+import javax.jcr.version.Version;
+import javax.jcr.version.VersionHistory;
 import junit.framework.TestSuite;
 import org.apache.jackrabbit.test.api.observation.AddEventListenerTest;
 import org.apache.jackrabbit.test.api.observation.EventIteratorTest;
@@ -67,6 +71,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.jcr.JcrObservationManager.JcrEventBundle;
@@ -670,7 +675,7 @@ public final class JcrObservationManagerTest extends TestSuite {
         save();
 
         // register listener
-        TestListener listener = addListener(2, Event.PROPERTY_ADDED, null, false, null, null, false);
+        TestListener listener = addListener(2, 2, Event.PROPERTY_ADDED, testRootNode.getPath(), true, null, null, false);
 
         // lock node (no save needed)
         session.getWorkspace().getLockManager().lock(lockable.getPath(), false, true, 1L, "me");
@@ -1821,6 +1826,144 @@ public final class JcrObservationManagerTest extends TestSuite {
         checkResults(addListener1);
         checkResults(listener2);
         checkResults(addListener2);
+    }
+
+    @FixFor( "MODE-786" )
+    @Test
+    public void shouldReceiveEventsForChangesToSessionNamespacesInSystemContent() throws Exception {
+        String uri = "http://acme.com/example/foobar/";
+        String prefix = "foobar";
+        assertNoSessionNamespace(uri, prefix);
+
+        TestListener listener = addListener(session, 0, ALL_EVENTS, "/jcr:system", true, null, null, false);
+        session.setNamespacePrefix(prefix, uri);
+
+        // Wait for the events on the session's listeners (that should NOT get the events) ...
+        listener.waitForEvents();
+        removeListener(listener);
+
+        // Verify the expected events were received ...
+        checkResults(listener);
+    }
+
+    @FixFor( "MODE-786" )
+    @Test
+    public void shouldReceiveEventsForChangesToRepositoryNamespacesInSystemContent() throws Exception {
+        String uri = "http://acme.com/example/foobar/";
+        String prefix = "foobar";
+        assertNoRepositoryNamespace(uri, prefix);
+
+        Session session2 = login(REPOSITORY, "ws2", USER_ID, USER_ID.toCharArray());
+
+        TestListener listener = addListener(session, 3, ALL_EVENTS, "/jcr:system", true, null, null, false);
+        TestListener listener2 = addListener(session2, 3, ALL_EVENTS, "/jcr:system", true, null, null, false);
+
+        session.getWorkspace().getNamespaceRegistry().registerNamespace(prefix, uri);
+
+        // Wait for the events on the session's listeners (that should get the events) ...
+        listener.waitForEvents();
+        listener2.waitForEvents();
+        removeListener(listener);
+        removeListener(listener2);
+
+        assertThat(session.getWorkspace().getNamespaceRegistry().getPrefix(uri), is(prefix));
+        assertThat(session.getWorkspace().getNamespaceRegistry().getURI(prefix), is(uri));
+
+        // Verify the expected events were received ...
+        checkResults(listener);
+        checkResults(listener2);
+    }
+
+    @FixFor( "MODE-786" )
+    @Test
+    public void shouldReceiveEventsForChangesToLocksInSystemContent() throws Exception {
+        Node root = session.getRootNode();
+        Node parentNode = root.addNode("lockedPropParent");
+        parentNode.addMixin("mix:lockable");
+
+        Node targetNode = parentNode.addNode("lockedTarget");
+        targetNode.setProperty("foo", "bar");
+        session.save();
+
+        TestListener listener = addListener(session, 11, 2, ALL_EVENTS, "/jcr:system", true, null, null, false);
+
+        lock(parentNode, true, true); // SHOULD GENERATE AN EVENT TO CREATE A LOCK
+
+        // Wait for the events on the session's listeners (that should get the events) ...
+        listener.waitForEvents();
+        removeListener(listener);
+
+        // Verify the expected events were received ...
+        checkResults(listener);
+    }
+
+    @FixFor( "MODE-786" )
+    @Test
+    public void shouldReceiveEventsForChangesToVersionsInSystemContent() throws Exception {
+        TestListener listener = addListener(session, 15, ALL_EVENTS, "/jcr:system", true, null, null, false);
+
+        Node node = session.getRootNode().addNode("/test", "nt:unstructured");
+        node.addMixin("mix:versionable");
+        session.save(); // SHOULD GENERATE AN EVENT TO CREATE VERSION HISTORY FOR THE NODE
+
+        // Wait for the events on the session's listeners (that should get the events) ...
+        listener.waitForEvents();
+        removeListener(listener);
+
+        Node history = node.getProperty("jcr:versionHistory").getNode();
+        assertThat(history, is(notNullValue()));
+
+        assertThat(node.hasProperty("jcr:baseVersion"), is(true));
+        Node version = node.getProperty("jcr:baseVersion").getNode();
+        assertThat(version, is(notNullValue()));
+
+        assertThat(version.getParent(), is(history));
+
+        assertThat(node.hasProperty("jcr:uuid"), is(true));
+        assertThat(node.getProperty("jcr:uuid").getString(), is(history.getProperty("jcr:versionableUuid").getString()));
+
+        assertThat(versionHistory(node).getIdentifier(), is(history.getIdentifier()));
+        assertThat(versionHistory(node).getPath(), is(history.getPath()));
+
+        assertThat(baseVersion(node).getIdentifier(), is(version.getIdentifier()));
+        assertThat(baseVersion(node).getPath(), is(version.getPath()));
+
+        // Verify the expected events were received ...
+        checkResults(listener);
+    }
+
+    protected void assertNoRepositoryNamespace( String uri,
+                                                String prefix ) throws RepositoryException {
+        NamespaceRegistry registry = session.getWorkspace().getNamespaceRegistry();
+        for (String existingPrefix : registry.getPrefixes()) {
+            assertThat(existingPrefix.equals(prefix), is(false));
+        }
+        for (String existingUri : registry.getURIs()) {
+            assertThat(existingUri.equals(uri), is(false));
+        }
+    }
+
+    protected void assertNoSessionNamespace( String uri,
+                                             String prefix ) throws RepositoryException {
+        for (String existingPrefix : session.getNamespacePrefixes()) {
+            assertThat(existingPrefix.equals(prefix), is(false));
+            String existingUri = session.getNamespaceURI(existingPrefix);
+            assertThat(existingUri.equals(uri), is(false));
+        }
+    }
+
+    protected VersionHistory versionHistory( Node node ) throws RepositoryException {
+        return session.getWorkspace().getVersionManager().getVersionHistory(node.getPath());
+    }
+
+    protected Version baseVersion( Node node ) throws RepositoryException {
+        return session.getWorkspace().getVersionManager().getBaseVersion(node.getPath());
+    }
+
+    protected void lock( Node node,
+                         boolean isDeep,
+                         boolean isSessionScoped ) throws RepositoryException {
+        session.getWorkspace().getLockManager().lock(node.getPath(), isDeep, isSessionScoped, 1L, "owner");
     }
 
     // ===========================================================================================================================

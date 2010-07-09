@@ -28,6 +28,7 @@ import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import net.jcip.annotations.NotThreadSafe;
 import org.infinispan.Cache;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.base.MapTransaction;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.Path.Segment;
@@ -42,10 +43,11 @@ public class InfinispanTransaction extends MapTransaction<InfinispanNode, Infini
     private final InfinispanRepository repository;
     private final Lock lock;
 
-    protected InfinispanTransaction( InfinispanRepository repository,
+    protected InfinispanTransaction( ExecutionContext context,
+                                     InfinispanRepository repository,
                                      UUID rootNodeUuid,
                                      Lock lock ) {
-        super(repository, rootNodeUuid);
+        super(context, repository, rootNodeUuid);
         this.repository = repository;
         this.lock = lock;
     }

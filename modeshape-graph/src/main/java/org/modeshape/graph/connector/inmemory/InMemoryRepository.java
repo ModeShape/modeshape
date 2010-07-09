@@ -53,6 +53,6 @@ public class InMemoryRepository extends Repository<InMemoryNode, InMemoryWorkspa
                                                  boolean readonly ) {
         final Lock lock = readonly ? this.lock.readLock() : this.lock.writeLock();
         lock.lock();
-        return new InMemoryTransaction(this, getRootNodeUuid(), lock);
+        return new InMemoryTransaction(context, this, getRootNodeUuid(), lock);
     }
 }

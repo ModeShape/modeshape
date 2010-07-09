@@ -28,6 +28,7 @@ import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import net.jcip.annotations.NotThreadSafe;
 import org.jboss.cache.Cache;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.base.MapTransaction;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.Path.Segment;
@@ -42,10 +43,11 @@ public class JBossCacheTransaction extends MapTransaction<JBossCacheNode, JBossC
     private final JBossCacheRepository repository;
     private final Lock lock;
 
-    protected JBossCacheTransaction( JBossCacheRepository repository,
+    protected JBossCacheTransaction( ExecutionContext context,
+                                     JBossCacheRepository repository,
                                      UUID rootNodeUuid,
                                      Lock lock ) {
-        super(repository, rootNodeUuid);
+        super(context, repository, rootNodeUuid);
         this.repository = repository;
         this.lock = lock;
     }

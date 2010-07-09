@@ -26,6 +26,7 @@ package org.modeshape.graph.connector.inmemory;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.base.MapTransaction;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.Path.Segment;
@@ -39,10 +40,11 @@ public class InMemoryTransaction extends MapTransaction<InMemoryNode, InMemoryWo
     private final InMemoryRepository repository;
     private final Lock lock;
 
-    protected InMemoryTransaction( InMemoryRepository repository,
+    protected InMemoryTransaction( ExecutionContext context,
+                                   InMemoryRepository repository,
                                    UUID rootNodeUuid,
                                    Lock lock ) {
-        super(repository, rootNodeUuid);
+        super(context, repository, rootNodeUuid);
         this.repository = repository;
         this.lock = lock;
         assert this.lock != null;

@@ -145,6 +145,7 @@ import org.apache.jackrabbit.test.api.observation.GetDateTest;
 import org.apache.jackrabbit.test.api.observation.GetIdentifierTest;
 import org.apache.jackrabbit.test.api.observation.GetInfoTest;
 import org.apache.jackrabbit.test.api.observation.GetRegisteredEventListenersTest;
+import org.apache.jackrabbit.test.api.observation.GetUserDataTest;
 import org.apache.jackrabbit.test.api.observation.LockingTest;
 import org.apache.jackrabbit.test.api.observation.NodeAddedTest;
 import org.apache.jackrabbit.test.api.observation.NodeMovedTest;
@@ -530,7 +531,7 @@ public class JcrTckTest {
             addTestSuite(GetDateTest.class);
             addTestSuite(GetIdentifierTest.class);
             addTestSuite(GetInfoTest.class);
-            // addTestSuite(GetUserDataTest.class); // see MODE-786
+            addTestSuite(GetUserDataTest.class);
         }
     }
 

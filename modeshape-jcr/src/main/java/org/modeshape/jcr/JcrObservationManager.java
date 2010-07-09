@@ -113,12 +113,22 @@ final class JcrObservationManager implements ObservationManager {
     private final String workspaceName;
 
     /**
+     * The name of the workspace used for this session's system content; cached for performance reasons.
+     */
+    private final String systemWorkspaceName;
+
+    /**
+     * The name of the repository source used for this session's system content; cached for performance reasons.
+     */
+    private final String systemSourceName;
+
+    /**
      * @param session the owning session (never <code>null</code>)
      * @param repositoryObservable the repository observable used to register JCR listeners (never <code>null</code>)
      * @throws IllegalArgumentException if either parameter is <code>null</code>
      */
-    public JcrObservationManager( JcrSession session,
-                                  Observable repositoryObservable ) {
+    JcrObservationManager( JcrSession session,
+                           Observable repositoryObservable ) {
         CheckArg.isNotNull(session, "session");
         CheckArg.isNotNull(repositoryObservable, "repositoryObservable");
 
@@ -129,6 +139,8 @@ final class JcrObservationManager implements ObservationManager {
         this.valueFactories = this.session.getExecutionContext().getValueFactories();
         this.stringFactory = this.valueFactories.getStringFactory();
         this.workspaceName = this.session.getWorkspace().getName();
+        this.systemWorkspaceName = this.session.repository().getSystemWorkspaceName();
+        this.systemSourceName = this.session.repository().getSystemSourceName();
     }
 
     /**
@@ -234,6 +246,14 @@ final class JcrObservationManager implements ObservationManager {
      */
     final String getWorkspaceName() {
         return workspaceName;
+    }
+
+    final String getSystemWorkspaceName() {
+        return systemWorkspaceName;
+    }
+
+    final String getSystemSourceName() {
+        return systemSourceName;
     }
 
     /**
@@ -901,6 +921,8 @@ final class JcrObservationManager implements ObservationManager {
          */
         @Override
         public void notify( Changes changes ) {
+            // This method should only be called when the events are coming from one of the repository sources
+            // managing content for this JCR Repository instance.
             // check source first
             if (!acceptBasedOnEventSource(changes)) {
                 return;
@@ -912,9 +934,15 @@ final class JcrObservationManager implements ObservationManager {
 
                     // loop through changes saving the parent locations of the changed locations
                     for (ChangeRequest request : changes.getChangeRequests()) {
-                        // ignore all events other than those on this workspace ...
-                        if (!getWorkspaceName().equals(request.changedWorkspace())) {
-                            continue;
+                        String changedWorkspaceName = request.changedWorkspace();
+                        // If this event is not from this session's workspace ...
+                        if (!getWorkspaceName().equals(changedWorkspaceName)) {
+                            // And not in the system workspace in the system source ...
+                            if (!getSystemWorkspaceName().equals(changedWorkspaceName)
+                                && !changes.getSourceName().equals(getSystemSourceName())) {
+                                // We ignore it ...
+                                continue;
+                            }
                         }
                         Path changedPath = request.changedLocation().getPath();
                         Path parentPath = changedPath.getParent();
@@ -946,9 +974,15 @@ final class JcrObservationManager implements ObservationManager {
             JcrEventBundle bundle = new JcrEventBundle(netChanges.getTimestamp(), netChanges.getUserName(), userData);
 
             for (NetChange change : netChanges.getNetChanges()) {
-                // ignore all events other than those on this workspace ...
-                if (!getWorkspaceName().equals(change.getRepositoryWorkspaceName())) {
-                    continue;
+                String changedWorkspaceName = change.getRepositoryWorkspaceName();
+                // If this event is not from this session's workspace ...
+                if (!getWorkspaceName().equals(changedWorkspaceName)) {
+                    // And not in the system workspace in the system source ...
+                    if (!getSystemWorkspaceName().equals(changedWorkspaceName)
+                        && !netChanges.getSourceName().equals(getSystemSourceName())) {
+                        // We ignore it ...
+                        continue;
+                    }
                 }
 
                 // ignore if lock/unlock

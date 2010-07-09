@@ -466,9 +466,6 @@ public class JcrRepository implements Repository {
             this.options = Collections.unmodifiableMap(localOptions);
         }
 
-        // Initialize the observer, which receives events from all repository sources
-        this.repositoryObservationManager = new RepositoryObservationManager(repositoryObservable);
-
         // Set up the system source ...
         String systemSourceNameValue = this.options.get(Option.SYSTEM_SOURCE_NAME);
         String systemSourceName = null;
@@ -506,6 +503,7 @@ public class JcrRepository implements Repository {
                 LOGGER.warn(msg, systemSourceNameValue);
             }
         }
+        InMemoryRepositorySource transientSystemSource = null;
         if (systemSourceName == null) {
             // Create the in-memory repository source that we'll use for the "/jcr:system" branch in this repository.
             // All workspaces will be set up with a federation connector that projects this system repository into
@@ -513,7 +511,7 @@ public class JcrRepository implements Repository {
             // (The federation connector refers to this configuration as an "offset mirror".)
             systemWorkspaceName = "jcr:system";
             systemSourceName = "jcr:system source";
-            InMemoryRepositorySource transientSystemSource = new InMemoryRepositorySource();
+            transientSystemSource = new InMemoryRepositorySource();
             transientSystemSource.setName(systemSourceName);
             transientSystemSource.setDefaultWorkspaceName(systemWorkspaceName);
             connectionFactoryWithSystem = new DelegatingConnectionFactory(connectionFactory, transientSystemSource);
@@ -646,6 +644,35 @@ public class JcrRepository implements Repository {
             }
         } else {
             this.queryManager = new RepositoryQueryManager.Disabled(this.sourceName);
+        }
+
+        // Initialize the observer, which receives events from all repository sources
+        this.repositoryObservationManager = new RepositoryObservationManager(repositoryObservable);
+        if (transientSystemSource != null) {
+            // The transient RepositorySource for the system content is not in the RepositoryLibrary, so we need to observe it ...
+            final Observer observer = this.repositoryObservationManager;
+            final ExecutionContext context = executionContext;
+            transientSystemSource.initialize(new RepositoryContext() {
+                @Override
+                public Observer getObserver() {
+                    return observer;
+                }
+
+                @Override
+                public ExecutionContext getExecutionContext() {
+                    return context;
+                }
+
+                @Override
+                public Subgraph getConfiguration( int depth ) {
+                    return null; // not needed for the in-memory transient repository
+                }
+
+                @Override
+                public RepositoryConnectionFactory getRepositoryConnectionFactory() {
+                    return null; // not needed for the in-memory transient repository
+                }
+            });
         }
 
         /*
@@ -864,6 +891,10 @@ public class JcrRepository implements Repository {
 
     String getSystemSourceName() {
         return systemSourceName;
+    }
+
+    String getSystemWorkspaceName() {
+        return systemWorkspaceName;
     }
 
     /**
@@ -1579,6 +1610,8 @@ public class JcrRepository implements Repository {
         private final ExecutorService observerService = Executors.newSingleThreadExecutor();
         private final CopyOnWriteArrayList<Observer> observers = new CopyOnWriteArrayList<Observer>();
         private final Observable repositoryObservable;
+        private final String sourceName;
+        private final String systemSourceName;
 
         /**
          * @param repositoryObservable the repository library observable this observer should register with
@@ -1586,6 +1619,8 @@ public class JcrRepository implements Repository {
         protected RepositoryObservationManager( Observable repositoryObservable ) {
             this.repositoryObservable = repositoryObservable;
             this.repositoryObservable.register(this);
+            this.sourceName = getObservableSourceName();
+            this.systemSourceName = getSystemSourceName();
         }
 
         /**
@@ -1594,30 +1629,32 @@ public class JcrRepository implements Repository {
          * @see org.modeshape.graph.observe.Observer#notify(org.modeshape.graph.observe.Changes)
          */
         public void notify( final Changes changes ) {
-            // We only care about events that come from the federated source ...
-            if (!changes.getSourceName().equals(getObservableSourceName())) return;
+            // We only care about events that come from the repository source or the system source ...
+            String changedSourceName = changes.getSourceName();
+            if (sourceName.equals(changedSourceName) || systemSourceName.equals(changedSourceName)) {
 
-            // We're still in the thread where the connector published its changes,
-            // so we need to create a runnable that will send these changes to all
-            // of the observers <i>at this moment</i>. Because 'observers' is
-            // a CopyOnWriteArrayList, we can't old onto the list (because the list's content
-            // might change). Instead, hold onto the Iterator over the listeners,
-            // and that will be a snapshot of the listeners <i>at this moment</i>
-            if (observers.isEmpty()) return;
-            final Iterator<Observer> observerIterator = observers.iterator();
+                // We're still in the thread where the connector published its changes,
+                // so we need to create a runnable that will send these changes to all
+                // of the observers <i>at this moment</i>. Because 'observers' is
+                // a CopyOnWriteArrayList, we can't old onto the list (because the list's content
+                // might change). Instead, hold onto the Iterator over the listeners,
+                // and that will be a snapshot of the listeners <i>at this moment</i>
+                if (observers.isEmpty()) return;
+                final Iterator<Observer> observerIterator = observers.iterator();
 
-            Runnable sender = new Runnable() {
-                public void run() {
-                    while (observerIterator.hasNext()) {
-                        Observer observer = observerIterator.next();
-                        assert observer != null;
-                        observer.notify(changes);
+                Runnable sender = new Runnable() {
+                    public void run() {
+                        while (observerIterator.hasNext()) {
+                            Observer observer = observerIterator.next();
+                            assert observer != null;
+                            observer.notify(changes);
+                        }
                     }
-                }
-            };
+                };
 
-            // Now let the executor service run this in another thread ...
-            this.observerService.execute(sender);
+                // Now let the executor service run this in another thread ...
+                this.observerService.execute(sender);
+            }
         }
 
         /**

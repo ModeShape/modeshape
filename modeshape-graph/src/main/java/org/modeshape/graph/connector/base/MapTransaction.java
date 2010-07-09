@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.UUID;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.RepositorySourceException;
@@ -70,12 +71,14 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
     /**
      * Create a new transaction.
      * 
+     * @param context the execution context for this transaction; may not be null
      * @param repository the repository against which the transaction will be operating; may not be null
      * @param rootNodeUuid the UUID of the root node; may not be null
      */
-    protected MapTransaction( Repository<NodeType, WorkspaceType> repository,
+    protected MapTransaction( ExecutionContext context,
+                              Repository<NodeType, WorkspaceType> repository,
                               UUID rootNodeUuid ) {
-        super(repository.getContext(), repository, rootNodeUuid);
+        super(context, repository, rootNodeUuid);
     }
 
     /**

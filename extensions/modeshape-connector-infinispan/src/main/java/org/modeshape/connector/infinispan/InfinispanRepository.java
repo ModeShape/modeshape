@@ -95,6 +95,6 @@ public class InfinispanRepository extends Repository<InfinispanNode, InfinispanW
                                                    boolean readonly ) {
         final Lock lock = readonly ? this.lock.readLock() : this.lock.writeLock();
         lock.lock();
-        return new InfinispanTransaction(this, getRootNodeUuid(), lock);
+        return new InfinispanTransaction(context, this, getRootNodeUuid(), lock);
     }
 }
