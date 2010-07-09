@@ -44,7 +44,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.modeshape.jdbc.JcrDriver.ConnectionInfo;
+import org.modeshape.jdbc.delegate.ConnectionInfo;
 
 /**
  * 

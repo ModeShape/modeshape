@@ -30,6 +30,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -48,7 +49,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.modeshape.jdbc.JcrDriver.ConnectionInfo;
+import org.modeshape.jdbc.delegate.ConnectionInfo;
+import org.modeshape.jdbc.delegate.RepositoryDelegate;
 
 /**
  * 
@@ -67,21 +69,33 @@ public class JcrConnectionTest {
 
     @Mock
     private Session session;
+    
+    @Mock 
+    private RepositoryDelegate jcrDelegate;
+    
+    @Mock
+    private JcrMetaData  jcrmetadata;
+
 
     @Before
     public void beforeEach() throws Exception {
 	MockitoAnnotations.initMocks(this);
-	conn = new JcrConnection(repository, connInfo);
+
+	conn = new JcrConnection(repository, connInfo, jcrDelegate);
 
 	// Set up the connection information ...
 	when(connInfo.getWorkspaceName()).thenReturn("workspaceName");
 	when(connInfo.getRepositoryName()).thenReturn(REPOSITORY_NAME);
+	
+	when(jcrDelegate.isValid(anyInt())).thenReturn(Boolean.TRUE);
 
 	when(repository.login(anyString())).thenReturn(session);
 	when(repository.getDescriptor(anyString())).thenReturn("modeshape");
 
 	when(session.getRepository()).thenReturn(repository);
-
+	
+	
+	when(jcrDelegate.createMetaData((JcrConnection) conn)).thenReturn(jcrmetadata);
     }
 
     @After
@@ -196,23 +210,35 @@ public class JcrConnectionTest {
 	conn.nativeSQL("sql");
     }
 
-    @Test
-    public void shouldCallPrepareStatementAutoGenKeys() throws SQLException {
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallPrepareStatementAutoGenKeys() throws SQLException {
 	conn.prepareStatement("sql", 1);
     }
 
-    @Test
-    public void shouldCallPrepareStatementColumnIndexes() throws SQLException {
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallPrepareStatementColumnIndexes() throws SQLException {
 	conn.prepareStatement("sql", new int[] {});
     }
 
-    @Test
-    public void shouldCallPrepareStatementColumnNames() throws SQLException {
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallPrepareStatementColumnNames() throws SQLException {
 	conn.prepareStatement("sql", new String[] {});
     }
 
-    @Test
-    public void shouldCallPrepareStatement() throws SQLException {
+    /**
+     * @throws SQLException
+     */
+    @Test(expected = SQLFeatureNotSupportedException.class)
+    public void featureNotSupportedCallingPrepareStatement() throws SQLException {
 	conn.prepareStatement("sql");
     }
 

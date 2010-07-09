@@ -37,6 +37,7 @@ public final class JdbcI18n {
     public static I18n driverVendorUrl;
     public static I18n driverVersion;
 
+    public static I18n invalidUrlPrefix;
     public static I18n failedToReadPropertiesFromManifest;
     public static I18n unableToGetJndiContext;
     public static I18n urlMustContainJndiNameOfRepositoryOrRepositoriesObject;

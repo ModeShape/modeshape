@@ -29,17 +29,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import javax.jcr.Session;
-import javax.jcr.Workspace;
-import javax.jcr.query.Query;
-import javax.jcr.query.QueryManager;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.QueryResult;
 
 import org.junit.After;
@@ -47,6 +44,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.modeshape.jdbc.delegate.ConnectionInfo;
+import org.modeshape.jdbc.delegate.RepositoryDelegate;
 
 /**
  * 
@@ -58,16 +57,8 @@ public class JcrStatementTest {
     @Mock
     private JcrConnection connection;
     @Mock
-    private Session session;
-    @Mock
-    private QueryManager queryMgr;
-    @Mock
     private QueryResult queryResult;
-    @Mock
-    private Query jcrQuery;
-    @Mock
-    private Workspace workspace;
- 
+
     @After
     public void afterEach() {
 	if (stmt != null) {
@@ -80,17 +71,11 @@ public class JcrStatementTest {
     public void beforeEach() throws Exception  {
 	MockitoAnnotations.initMocks(this);
 	
-        stmt =  new JcrStatement(connection, session);
+        stmt =  new JcrStatement(connection);
+        
+        when(connection.getRepositoryDelegate()).thenReturn(new TestJcrCommRepositoryInterface());
         
         when(queryResult.getColumnNames()).thenReturn(TestUtil.COLUMN_NAMES);
-       
-        when(session.getWorkspace()).thenReturn(workspace);
-        
-        when(workspace.getQueryManager()).thenReturn(queryMgr);
-        
-	when(queryMgr.createQuery(anyString(), anyString())).thenReturn(jcrQuery);
-
-	when(jcrQuery.execute()).thenReturn(queryResult);
     }
     
     @Test
@@ -248,7 +233,7 @@ public class JcrStatementTest {
 	
 	JcrStatement stmt2 = null;
 	try {
-	    stmt2 =  new JcrStatement(connection, session);
+	    stmt2 =  new JcrStatement(connection);
 	       	
 	    assertFalse(stmt.equals(stmt2));
 
@@ -327,6 +312,76 @@ public class JcrStatementTest {
     @Test
     public void shouldSetQueryTimeout() throws SQLException {
 	stmt.setQueryTimeout(60);
+    }
+    
+    public class TestJcrCommRepositoryInterface implements RepositoryDelegate {
+
+	@Override
+	public Connection createConnection()  {
+	    return null;
+	}
+
+	@SuppressWarnings("synthetic-access")
+	@Override
+	public QueryResult execute(String query, String language)  {
+	    return queryResult;
+	}
+
+	@Override
+	public ConnectionInfo getConnectionInfo() {
+	    return null;
+	}
+
+	@Override
+	public void close() {
+	}
+
+	@Override
+	public void commit()  {
+	}
+
+	@Override
+	public JcrMetaData createMetaData(JcrConnection connection) {
+	    return null;
+	}
+
+	@Override
+	public boolean isValid(int timeout)  {
+	    return false;
+	}
+
+	@Override
+	public NodeType nodeType(String name) {
+	    return null;
+	}
+
+	@Override
+	public void rollback()  {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see org.modeshape.jdbc.delegate.RepositoryDelegate#isWrapperFor(java.lang.Class)
+	 */
+	@Override
+	public boolean isWrapperFor(Class<?> iface) {
+	    return false;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see org.modeshape.jdbc.delegate.RepositoryDelegate#unwrap(java.lang.Class)
+	 */
+	@Override
+	public <T> T unwrap(Class<T> iface)  {
+	    return null;
+	}
+	
+	
+
+
     }
     
 }

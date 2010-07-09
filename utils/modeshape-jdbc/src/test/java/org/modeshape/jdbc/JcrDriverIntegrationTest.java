@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
+
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,11 +37,12 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.Session;
-import javax.jcr.query.Query;
 import javax.naming.Context;
+
 import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -109,9 +111,8 @@ public class JcrDriverIntegrationTest {
 
     private static String jndiNameForRepository = "java:MyRepository";
     private static String validUrl = "jdbc:jcr:jndi://" + jndiNameForRepository;
-    private JcrDriver.JndiContextFactory contextFactory;
+    private JcrDriver.JcrContextFactory contextFactory;
 
-    @SuppressWarnings( "deprecation" )
     @BeforeClass
     public static void beforeAll() throws Exception {
 
@@ -167,7 +168,6 @@ public class JcrDriverIntegrationTest {
             session.save();
 
             // Prime creating a first XPath query and SQL query ...
-            session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
             session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", JcrRepository.QueryLanguage.JCR_SQL2);
         } finally {
             session.logout();
@@ -187,10 +187,10 @@ public class JcrDriverIntegrationTest {
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-
+        
         when(jndi.lookup(jndiNameForRepository)).thenReturn(repository);
 
-        contextFactory = new JcrDriver.JndiContextFactory() {
+        contextFactory = new JcrDriver.JcrContextFactory() {
             @SuppressWarnings( "synthetic-access" )
             @Override
             public Context createContext( Properties properties ) {
@@ -230,7 +230,7 @@ public class JcrDriverIntegrationTest {
     public void shouldStartUp() {
         assertThat(engine.getRepositoryService(), is(notNullValue()));
     }
-
+    
     // ----------------------------------------------------------------------------------------------------------------
     // JCR-SQL2 Queries
     // ----------------------------------------------------------------------------------------------------------------

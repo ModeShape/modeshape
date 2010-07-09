@@ -41,7 +41,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.jcr.api.Repositories;
-import org.modeshape.jdbc.JcrDriver.ConnectionInfo;
+import org.modeshape.jdbc.delegate.ConnectionInfo;
 
 /**
  * 
@@ -54,7 +54,7 @@ public class JcrDriverTest {
     private String validUrl;
     private Properties validProperties;
     private String validRepositoryName;
-    private JcrDriver.JndiContextFactory contextFactory;
+    
     @Mock
     private Context jndi;
     @Mock
@@ -70,12 +70,12 @@ public class JcrDriverTest {
         jndiNameForRepositories = "java:Repositories";
         validUrl = "jdbc:jcr:jndi://" + jndiNameForRepository + "?workspace=MyWorkspace&username=jsmith&password=secret";
         validProperties = new Properties();
-
+        
         when(jndi.lookup(jndiNameForRepository)).thenReturn(repository);
         when(jndi.lookup(jndiNameForRepositories)).thenReturn(repositories);
         when(repositories.getRepository(validRepositoryName)).thenReturn(repository);
 
-        contextFactory = new JcrDriver.JndiContextFactory() {
+        JcrDriver.JcrContextFactory contextFactory = new JcrDriver.JcrContextFactory() {
             @SuppressWarnings( "synthetic-access" )
             @Override
             public Context createContext( Properties properties ) {
@@ -94,7 +94,6 @@ public class JcrDriverTest {
         } finally {
             jndi = null;
             repositories = null;
-            contextFactory = null;
             driver = null;
         }
     }
@@ -130,13 +129,13 @@ public class JcrDriverTest {
     }
 
     @Test
-    public void shouldReturnEmptyPropertyInfosWhenSuppliedValidAndCompleteUrlAndNoProperties() {
+    public void shouldReturnEmptyPropertyInfosWhenSuppliedValidAndCompleteUrlAndNoProperties() throws SQLException{
         DriverPropertyInfo[] infos = driver.getPropertyInfo(validUrl, validProperties);
         assertThat(infos.length, is(0));
     }
 
     @Test
-    public void shouldReturnEmptyPropertyInfosWhenSuppliedValidUrlAndAllPropertiesWithRepositoryInJndi() {
+    public void shouldReturnEmptyPropertyInfosWhenSuppliedValidUrlAndAllPropertiesWithRepositoryInJndi() throws SQLException{
         validUrl = "jdbc:jcr:jndi://" + jndiNameForRepository;
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
@@ -147,7 +146,7 @@ public class JcrDriverTest {
     }
 
     @Test
-    public void shouldReturnEmptyPropertyInfosWhenSuppliedValidUrlAndAllPropertiesWithRepositoriesInJndi() {
+    public void shouldReturnEmptyPropertyInfosWhenSuppliedValidUrlAndAllPropertiesWithRepositoriesInJndi() throws SQLException{
         validUrl = "jdbc:jcr:jndi://" + jndiNameForRepositories;
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
@@ -158,7 +157,7 @@ public class JcrDriverTest {
     }
 
     @Test
-    public void shouldReturnRepositoryPropertyInfoWhenMissingRequiredRepositoryName() {
+    public void shouldReturnRepositoryPropertyInfoWhenMissingRequiredRepositoryName() throws SQLException{
         validUrl = "jdbc:jcr:jndi://" + jndiNameForRepositories;
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
@@ -172,7 +171,7 @@ public class JcrDriverTest {
     }
 
     @Test
-    public void shouldReturnRepositoryPropertyInfoWhenMissingWorkspaceName() {
+    public void shouldReturnRepositoryPropertyInfoWhenMissingWorkspaceName() throws SQLException{
         validUrl = "jdbc:jcr:jndi://" + jndiNameForRepositories;
         // validProperties.put(JdbcDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
@@ -186,7 +185,7 @@ public class JcrDriverTest {
     }
 
     @Test
-    public void shouldReturnRepositoryPropertyInfoWhenMissingUsername() {
+    public void shouldReturnRepositoryPropertyInfoWhenMissingUsername() throws SQLException{
         validUrl = "jdbc:jcr:jndi://" + jndiNameForRepositories;
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         // validProperties.put(JdbcDriver.USERNAME_PROPERTY_NAME, "jsmith");
@@ -200,7 +199,7 @@ public class JcrDriverTest {
     }
 
     @Test
-    public void shouldReturnRepositoryPropertyInfoWhenMissingPassword() {
+    public void shouldReturnRepositoryPropertyInfoWhenMissingPassword() throws SQLException{
         validUrl = "jdbc:jcr:jndi://" + jndiNameForRepositories;
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
@@ -237,7 +236,7 @@ public class JcrDriverTest {
     }
 
     @Test
-    public void shouldCreateConnectionInfoForUrlWithEscapedCharacters() {
+    public void shouldCreateConnectionInfoForUrlWithEscapedCharacters() throws SQLException{
         validUrl = "jdbc:jcr:jndi://java:nameInJndi?workspace=My%20Workspace&username=j%20smith&password=secret&repository=My%20Repository";
         ConnectionInfo info = driver.createConnectionInfo(validUrl, validProperties);
         assertThat(info.getWorkspaceName(), is("My Workspace"));

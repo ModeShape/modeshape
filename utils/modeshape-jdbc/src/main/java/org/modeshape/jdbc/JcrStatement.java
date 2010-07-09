@@ -28,12 +28,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
+
 import net.jcip.annotations.NotThreadSafe;
+
 import org.modeshape.common.CommonI18n;
+import org.modeshape.jdbc.delegate.RepositoryDelegate;
 /**
  * 
  */
@@ -43,8 +45,6 @@ class JcrStatement implements Statement {
     public static final String JCR_SQL2 = "JCR-SQL2"; // will eventually be Query.JCR_SQL2
 
     private final JcrConnection connection;
-    private final Session session;
-    private Query jcrQuery;
     private QueryResult jcrResults;
     private ResultSet results;
     private boolean closed;
@@ -53,15 +53,12 @@ class JcrStatement implements Statement {
     private int fetchDirection = ResultSet.FETCH_FORWARD;
     private boolean poolable;
     private int moreResults = 0;
-    
+     
     private String sqlLanguage = JCR_SQL2;
 
-    JcrStatement( JcrConnection connection,
-                  Session session ) {
+    JcrStatement( JcrConnection connection) {
         this.connection = connection;
-        this.session = session;
         assert this.connection != null;
-        assert this.session != null;
     }
 
     JcrConnection connection() {
@@ -294,7 +291,6 @@ class JcrStatement implements Statement {
     @Override
     public void close() {
         if (!closed) {
-            jcrQuery = null;
             closed = true;
         }
     }
@@ -430,15 +426,12 @@ class JcrStatement implements Statement {
     public boolean execute( String sql ) throws SQLException {
         notClosed();
         warning = null;
-        jcrQuery = null;
-        jcrResults = null;
         moreResults = 0;
         try {
             // Convert the supplied SQL into JCR-SQL2 ...
             String jcrSql2 = connection.nativeSQL(sql);
             // Create the query ...
-            jcrQuery = session.getWorkspace().getQueryManager().createQuery(jcrSql2, sqlLanguage);
-            jcrResults = jcrQuery.execute();
+            jcrResults = getJcrCommRepositoryInterface().execute(jcrSql2, sqlLanguage);
             results = new JcrResultSet(this, jcrResults);
             moreResults = 1;
         } catch (RepositoryException e) {
@@ -446,6 +439,12 @@ class JcrStatement implements Statement {
         }
         return true; // always a ResultSet
     }
+    
+    protected RepositoryDelegate getJcrCommRepositoryInterface() {
+	return this.connection.getRepositoryDelegate();
+    }
+    
+    
 
     /**
      * {@inheritDoc}
@@ -597,7 +596,7 @@ class JcrStatement implements Statement {
      */
     @Override
     public boolean isWrapperFor( Class<?> iface ) /*throws SQLException*/{
-        return iface.isInstance(this) || iface.isInstance(jcrQuery);
+        return iface.isInstance(this) ;
     }
 
     /**
@@ -609,9 +608,6 @@ class JcrStatement implements Statement {
     public <T> T unwrap( Class<T> iface ) throws SQLException {
         if (iface.isInstance(this)) {
             return iface.cast(this);
-        }
-        if (iface.isInstance(jcrQuery)) {
-            return iface.cast(jcrQuery);
         }
         throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text(Statement.class.getSimpleName(), iface.getName()));
     }

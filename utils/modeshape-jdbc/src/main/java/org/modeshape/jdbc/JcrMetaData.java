@@ -42,7 +42,7 @@ public class JcrMetaData implements DatabaseMetaData {
     private Session session;
     private JcrConnection connection;
 
-    protected JcrMetaData( JcrConnection connection,
+    public JcrMetaData( JcrConnection connection,
                            Session session ) {
         this.connection = connection;
         this.session = session;

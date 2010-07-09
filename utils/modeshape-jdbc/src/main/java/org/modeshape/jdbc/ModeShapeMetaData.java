@@ -30,7 +30,7 @@ import javax.jcr.Session;
  */
 public class ModeShapeMetaData extends JcrMetaData {
 
-    protected ModeShapeMetaData( JcrConnection connection,
+    public ModeShapeMetaData( JcrConnection connection,
                                  Session session ) {
         super(connection, session);
     }

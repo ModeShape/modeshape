@@ -44,14 +44,15 @@ import java.sql.Struct;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import javax.jcr.Credentials;
+
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.Workspace;
 import javax.jcr.nodetype.NodeType;
+
 import net.jcip.annotations.NotThreadSafe;
-import org.modeshape.jdbc.JcrDriver.ConnectionInfo;
+
+import org.modeshape.jdbc.delegate.ConnectionInfo;
+import org.modeshape.jdbc.delegate.RepositoryDelegate;
 
 /**
  * This driver's implementation of JDBC {@link Connection}.
@@ -61,7 +62,6 @@ public class JcrConnection implements Connection {
 
     private final ConnectionInfo info;
     private final Repository repository;
-    private Session session;
     private boolean closed;
     private boolean autoCommit = true;
     private int isolation = Connection.TRANSACTION_READ_COMMITTED;
@@ -70,20 +70,24 @@ public class JcrConnection implements Connection {
     // TODO: populate clientInfo from metadata.getClientInfoProperties():ResultSet
     // once metadata implements method.
     private Properties clientInfo = new Properties();
-    private JcrMetaData metadata;
+    private DatabaseMetaData metadata;
     private Map<String, Class<?>> typeMap = new HashMap<String, Class<?>>();
     private Map<String, JcrType> builtInTypeMap;
+    private RepositoryDelegate jcrDelegate;
 
-    protected JcrConnection( Repository repository,
-                             ConnectionInfo info ) {
-        this(repository, info, null);
+    public JcrConnection( Repository repository,
+                             ConnectionInfo info, 
+                             RepositoryDelegate jcrDelegate ) {
+        this(repository, info, jcrDelegate, null);
     }
 
     protected JcrConnection( Repository repository,
                              ConnectionInfo info,
+                             RepositoryDelegate jcrDelegate,
                              Map<String, JcrType> builtInTypeMap ) {
         this.info = info;
         this.repository = repository;
+        this.jcrDelegate = jcrDelegate;
         this.builtInTypeMap = builtInTypeMap != null ? builtInTypeMap : JcrType.builtInTypeMap();
         assert this.info != null;
         assert this.repository != null;
@@ -93,31 +97,19 @@ public class JcrConnection implements Connection {
     public ConnectionInfo info() {
         return info;
     }
-
-    protected Session session() throws SQLException {
-        if (session == null) {
-            Credentials credentials = info.getCredentials();
-            String workspaceName = info.getWorkspaceName();
-            try {
-
-                if (workspaceName != null) {
-                    this.session = credentials != null ? repository.login(credentials, workspaceName) : repository.login(workspaceName);
-                } else {
-                    this.session = credentials != null ? repository.login(credentials) : repository.login();
-                }
-            } catch (RepositoryException e) {
-                throw new SQLException(e.getLocalizedMessage());
-            }
-            // this shouldn't happen, but in testing it did occur only because of the repository not being setup correctly
-            assert session != null;
-        }
-        return session;
+    
+    /**
+     * Returns the interface used to communicate to the Jcr Repository. 
+     * @return RepositoryDelegate
+     */
+    public RepositoryDelegate getRepositoryDelegate() {
+	return this.jcrDelegate;
     }
 
     protected NodeType nodeType( String name ) throws SQLException {
         try {
-            return session().getWorkspace().getNodeTypeManager().getNodeType(name);
-        } catch (RepositoryException e) {
+            return getRepositoryDelegate().nodeType(name);
+         } catch (RepositoryException e) {
             throw new SQLException(e.getLocalizedMessage());
         }
     }
@@ -183,8 +175,7 @@ public class JcrConnection implements Connection {
         if (closed) return false;
         if (timeout < 0) throw new SQLException(JdbcI18n.timeoutMayNotBeNegative.text());
         try {
-            session().getRootNode();
-            return true;
+            return this.getRepositoryDelegate().isValid(timeout);
         } catch (RepositoryException e) {
             throw new SQLException(e.getLocalizedMessage());
         }
@@ -199,10 +190,9 @@ public class JcrConnection implements Connection {
     public void close() {
         if (!closed) {
             try {
-                if (session != null) session.logout();
+        	this.getRepositoryDelegate().close();
             } finally {
                 metadata = null;
-                session = null;
                 closed = true;
             }
         }
@@ -229,13 +219,11 @@ public class JcrConnection implements Connection {
      */
     @Override
     public void commit() throws SQLException {
-        notClosed();
-        if (session != null) {
-            try {
-                session.save();
-            } catch (RepositoryException e) {
-                throw new SQLException(e.getLocalizedMessage());
-            }
+        notClosed();      
+        try {
+    	 this.getRepositoryDelegate().commit();
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage());
         }
     }
 
@@ -247,12 +235,10 @@ public class JcrConnection implements Connection {
     @Override
     public void rollback() throws SQLException {
         notClosed();
-        if (session != null) {
-            try {
-                session.refresh(false);
-            } catch (RepositoryException e) {
-                throw new SQLException(e.getLocalizedMessage());
-            }
+        try {
+    	 this.getRepositoryDelegate().rollback();
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage());
         }
     }
 
@@ -472,16 +458,13 @@ public class JcrConnection implements Connection {
     public DatabaseMetaData getMetaData() throws SQLException {
         notClosed();
         if (metadata == null) {
-            metadata = createMetaData(session());
+            try {
+        	metadata = this.getRepositoryDelegate().createMetaData(this);
+            } catch (RepositoryException e) {
+                throw new SQLException(e.getLocalizedMessage());
+            }
         }
         return metadata;
-    }
-
-    protected JcrMetaData createMetaData( Session session ) {
-        if (session.getRepository().getDescriptor(Repository.REP_NAME_DESC).toLowerCase().contains("modeshape")) {
-            return new ModeShapeMetaData(this, session);
-        }
-        return new JcrMetaData(this, session);
     }
 
     /**
@@ -523,8 +506,8 @@ public class JcrConnection implements Connection {
      * @see java.sql.Connection#createStatement()
      */
     @Override
-    public Statement createStatement() throws SQLException {
-        return new JcrStatement(this, this.session());
+    public Statement createStatement() {
+        return new JcrStatement(this);
     }
 
     /**
@@ -557,7 +540,7 @@ public class JcrConnection implements Connection {
      */
     @Override
     public PreparedStatement prepareStatement( String sql ) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -567,8 +550,8 @@ public class JcrConnection implements Connection {
      */
     @Override
     public PreparedStatement prepareStatement( String sql,
-                                               int autoGeneratedKeys ) throws SQLException {
-        return null;
+                                               int autoGeneratedKeys )  throws SQLException {
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -579,7 +562,7 @@ public class JcrConnection implements Connection {
     @Override
     public PreparedStatement prepareStatement( String sql,
                                                int[] columnIndexes ) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -590,7 +573,7 @@ public class JcrConnection implements Connection {
     @Override
     public PreparedStatement prepareStatement( String sql,
                                                String[] columnNames ) throws SQLException {
-        return null;
+	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -727,8 +710,11 @@ public class JcrConnection implements Connection {
      */
     @Override
     public boolean isWrapperFor( Class<?> iface ) /*throws SQLException*/{
-        return iface.isInstance(this) || iface.isInstance(repository) || iface.isInstance(session)
-               || iface.isInstance(session.getWorkspace());
+	if ( iface.isInstance(this) ) {
+	    return true;
+	}
+	
+	return this.getRepositoryDelegate().isWrapperFor(iface); 
     }
 
     /**
@@ -738,19 +724,9 @@ public class JcrConnection implements Connection {
      */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
-        if (iface.isInstance(this)) {
-            return iface.cast(this);
-        }
-        if (iface.isInstance(session)) {
-            return iface.cast(session);
-        }
-        if (iface.isInstance(repository)) {
-            return iface.cast(repository);
-        }
-        Workspace workspace = session.getWorkspace();
-        if (iface.isInstance(workspace)) {
-            return iface.cast(workspace);
-        }
-        throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text(Connection.class.getSimpleName(), iface.getName()));
+	if (iface.isInstance(this)) {
+	    return iface.cast(this);
+	}
+	return getRepositoryDelegate().unwrap(iface);
     }
 }
