@@ -33,12 +33,10 @@ import javax.jcr.Binary;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import net.jcip.annotations.Immutable;
 
 /**
  * The JDBC {@link Blob} wrapper around a JCR binary {@link Value} object.
  */
-@Immutable
 public class JcrBlob implements Blob {
 
     private final Value value;

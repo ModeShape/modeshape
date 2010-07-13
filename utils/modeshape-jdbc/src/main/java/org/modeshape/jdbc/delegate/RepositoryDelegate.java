@@ -26,13 +26,12 @@ package org.modeshape.jdbc.delegate;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.util.Set;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.QueryResult;
 
-import org.modeshape.common.text.TextDecoder;
-import org.modeshape.common.text.UrlEncoder;
 import org.modeshape.jdbc.JcrConnection;
 
 
@@ -42,9 +41,6 @@ import org.modeshape.jdbc.JcrConnection;
  */
 
 public interface RepositoryDelegate {
-    public static final TextDecoder URL_DECODER = new UrlEncoder();
-
-    public static final String JCR_SQL2 = "JCR-SQL2"; // will eventually be Query.JCR_SQL2
     
     /**
      * Call to get the connection information.
@@ -143,8 +139,12 @@ public interface RepositoryDelegate {
 
      */
     <T> T unwrap( Class<T> iface ) throws SQLException;
-
-
-
+   
+    /**
+     * Called to get all the repository names currently available in the JcrEngine.
+     * @return Set<String> of repository names
+     * @throws RepositoryException
+     */
+    Set<String> getRepositoryNames() throws RepositoryException;
 
 }

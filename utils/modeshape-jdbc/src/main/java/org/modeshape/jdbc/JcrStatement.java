@@ -32,18 +32,13 @@ import java.sql.Statement;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.QueryResult;
 
-import net.jcip.annotations.NotThreadSafe;
-
-import org.modeshape.common.CommonI18n;
 import org.modeshape.jdbc.delegate.RepositoryDelegate;
 /**
  * 
  */
-@NotThreadSafe
 class JcrStatement implements Statement {
 
-    public static final String JCR_SQL2 = "JCR-SQL2"; // will eventually be Query.JCR_SQL2
-
+ 
     private final JcrConnection connection;
     private QueryResult jcrResults;
     private ResultSet results;
@@ -54,7 +49,7 @@ class JcrStatement implements Statement {
     private boolean poolable;
     private int moreResults = 0;
      
-    private String sqlLanguage = JCR_SQL2;
+    private String sqlLanguage = JcrConnection.JCR_SQL2;
 
     JcrStatement( JcrConnection connection) {
         this.connection = connection;
@@ -66,7 +61,7 @@ class JcrStatement implements Statement {
     }
     
     public void setJcrSqlLanguage(String jcrSQL) {
-	this.sqlLanguage = jcrSQL;
+	this.sqlLanguage = (jcrSQL != null ? jcrSQL : JcrConnection.JCR_SQL2);
     }
 
     /**
@@ -146,7 +141,7 @@ class JcrStatement implements Statement {
     public void setMaxFieldSize( int max ) throws SQLException {
         notClosed();
         if (max < 0) {
-            throw new SQLException(CommonI18n.argumentMayNotBeNegative.text("max", max));
+            throw new SQLException(JdbcI18n.argumentMayNotBeNegative.text("max", max));
         }
         // ignored otherwise
     }
@@ -174,7 +169,7 @@ class JcrStatement implements Statement {
     public void setMaxRows( int max ) throws SQLException {
         notClosed();
         if (max < 0) {
-            throw new SQLException(CommonI18n.argumentMayNotBeNegative.text("max", max));
+            throw new SQLException(JdbcI18n.argumentMayNotBeNegative.text("max", max));
         }
         rowLimit = max;
     }
@@ -202,7 +197,7 @@ class JcrStatement implements Statement {
     public void setQueryTimeout( int seconds ) throws SQLException {
         notClosed();
         if (seconds < 0) {
-            throw new SQLException(CommonI18n.argumentMayNotBeNegative.text("seconds", seconds));
+            throw new SQLException(JdbcI18n.argumentMayNotBeNegative.text("seconds", seconds));
         }
         // Otherwise ignore
     }
@@ -431,7 +426,7 @@ class JcrStatement implements Statement {
             // Convert the supplied SQL into JCR-SQL2 ...
             String jcrSql2 = connection.nativeSQL(sql);
             // Create the query ...
-            jcrResults = getJcrCommRepositoryInterface().execute(jcrSql2, sqlLanguage);
+            jcrResults = getJcrCommRepositoryInterface().execute(jcrSql2, this.sqlLanguage);
             results = new JcrResultSet(this, jcrResults);
             moreResults = 1;
         } catch (RepositoryException e) {

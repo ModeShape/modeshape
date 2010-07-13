@@ -23,14 +23,25 @@
  */
 package org.modeshape.jdbc;
 
-import net.jcip.annotations.Immutable;
-import org.modeshape.common.i18n.I18n;
+import org.modeshape.jdbc.util.I18n;
 
 /**
  * The internationalized string constants for the <code>org.modeshape.jdbc*</code> packages.
  */
-@Immutable
 public final class JdbcI18n {
+    
+    public static I18n i18nClassInterface;
+    public static I18n i18nClassNotPublic;
+    public static I18n i18nFieldFinal;
+    public static I18n i18nFieldInvalidType;
+    public static I18n i18nFieldNotPublic;
+    public static I18n i18nFieldNotStatic;
+    public static I18n i18nLocalizationFileNotFound;
+    public static I18n i18nLocalizationProblems;
+    public static I18n i18nPropertyDuplicate;
+    public static I18n i18nPropertyMissing;
+    public static I18n i18nPropertyUnused;
+    public static I18n i18nRequiredToSuppliedParameterMismatch;
 
     public static I18n driverName;
     public static I18n driverVendor;
@@ -55,6 +66,10 @@ public final class JdbcI18n {
     public static I18n unableToFindNamedRepository;
     public static I18n objectInJndiMustBeRepositoryOrRepositories;
     public static I18n unableToFindObjectInJndi;
+    public static I18n argumentMayNotBeNegative;
+    public static I18n argumentMayNotBeNull;
+    public static I18n requiredToSuppliedParameterMismatch;
+
 
     public static I18n connectionIsClosed;
     public static I18n statementIsClosed;
@@ -68,7 +83,8 @@ public final class JdbcI18n {
     public static I18n invalidArgument;
     public static I18n invalidColumnIndex;
     public static I18n currentRowNotSet;
-    public static I18n noJcrTypeMapped;
+    public static I18n noJcrTypeMapped;    
+    public static I18n noRepositoryNamesFound;
 
     static {
         try {

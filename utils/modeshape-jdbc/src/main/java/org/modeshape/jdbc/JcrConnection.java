@@ -48,8 +48,7 @@ import java.util.Properties;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
-
-import net.jcip.annotations.NotThreadSafe;
+import javax.jcr.query.Query;
 
 import org.modeshape.jdbc.delegate.ConnectionInfo;
 import org.modeshape.jdbc.delegate.RepositoryDelegate;
@@ -57,8 +56,12 @@ import org.modeshape.jdbc.delegate.RepositoryDelegate;
 /**
  * This driver's implementation of JDBC {@link Connection}.
  */
-@NotThreadSafe
 public class JcrConnection implements Connection {
+    
+    public static final String JCR_SQL2 = Query.JCR_SQL2; // will eventually be Query.JCR_SQL2
+    @SuppressWarnings("deprecation")
+    public static final String JCR_SQL = Query.SQL;
+
 
     private final ConnectionInfo info;
     private final Repository repository;

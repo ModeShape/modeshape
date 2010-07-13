@@ -31,13 +31,11 @@ import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.query.QueryResult;
-import net.jcip.annotations.Immutable;
 
 /**
  * This driver's {@link ResultSetMetaData} implementation that obtains the metadata information from the JCR query result and
  * (where possible) the column's corresponding property definitions.
  */
-@Immutable
 public class JcrResultSetMetaData implements ResultSetMetaData {
 
     private final JcrConnection connection;

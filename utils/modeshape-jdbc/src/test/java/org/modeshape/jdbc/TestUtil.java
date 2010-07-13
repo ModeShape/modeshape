@@ -45,7 +45,6 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
-import net.jcip.annotations.NotThreadSafe;
 import org.mockito.Mockito;
 
 /**
@@ -194,7 +193,6 @@ public class TestUtil {
 
 /**
  */
-@NotThreadSafe
 class QueryResultNodeIterator implements NodeIterator {
     private final Iterator<? extends Node> nodes;
     private final int size;

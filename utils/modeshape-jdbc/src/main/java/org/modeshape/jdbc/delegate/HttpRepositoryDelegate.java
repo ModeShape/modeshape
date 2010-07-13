@@ -27,7 +27,9 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -103,8 +105,12 @@ public class HttpRepositoryDelegate implements RepositoryDelegate {
     }
 
     @Override
-    public boolean isValid(int timeout) throws RepositoryException {
+    public boolean isValid(int timeout)  {
 	return true;
+    }
+    
+    public Set<String> getRepositoryNames()  {
+	return Collections.EMPTY_SET;
     }
     
     /**

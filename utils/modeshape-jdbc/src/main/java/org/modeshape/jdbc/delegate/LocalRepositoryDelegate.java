@@ -28,6 +28,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -44,15 +45,17 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-import org.modeshape.common.collection.UnmodifiableProperties;
-import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.Repositories;
+import org.modeshape.jdbc.util.UnmodifiableProperties;
+import org.modeshape.jdbc.util.StringUtil;
 import org.modeshape.jdbc.JcrConnection;
 import org.modeshape.jdbc.JcrDriver;
 import org.modeshape.jdbc.JcrMetaData;
 import org.modeshape.jdbc.JdbcI18n;
 import org.modeshape.jdbc.ModeShapeMetaData;
 import org.modeshape.jdbc.JcrDriver.JcrContextFactory;
+import org.modeshape.jdbc.util.TextDecoder;
+import org.modeshape.jdbc.util.UrlEncoder;
 
 /**
  * The LocalRepositoryDelegate provides a local Repository implementation to access the Jcr layer via JNDI Lookup.
@@ -60,6 +63,9 @@ import org.modeshape.jdbc.JcrDriver.JcrContextFactory;
 public class LocalRepositoryDelegate implements RepositoryDelegate {
     private static final String JNDI_EXAMPLE_URL = JcrDriver.JNDI_URL_PREFIX
 	    + "{jndiName}";
+    
+    public static final TextDecoder URL_DECODER = new UrlEncoder();
+
 
      private JcrContextFactory jcrContext = null;
     
@@ -68,6 +74,7 @@ public class LocalRepositoryDelegate implements RepositoryDelegate {
     private JNDIConnectionInfo connInfo = null;
     private Session session;
     private Repository repository = null;
+    private Set<String> repositoryNames = null;
 
     public LocalRepositoryDelegate(String url, Properties info,
 	    JcrContextFactory contextFactory) {
@@ -163,12 +170,15 @@ public class LocalRepositoryDelegate implements RepositoryDelegate {
 		Repositories repositories = (Repositories) target;
 		String repositoryName = connInfo.getRepositoryName();
 		if (repositoryName == null) {
-		    Set<String> repoNames = repositories.getRepositoryNames();
-		    if(repoNames != null &&
-			    	repoNames.size() == 1) {
-			repositoryName = repoNames.iterator().next();
+		    repositoryNames = repositories.getRepositoryNames();
+		    if (repositoryNames == null || repositoryNames.isEmpty()) {
+			throw new SQLException(JdbcI18n.noRepositoryNamesFound.text());
+			
+		    }
+		    if(repositoryNames != null &&
+			    repositoryNames.size() == 1) {
+			repositoryName = repositoryNames.iterator().next();
 		    } else {
-		    
 			throw new SQLException(JdbcI18n.objectInJndiIsRepositories
 				.text(jndiName));
 		    }
@@ -181,6 +191,8 @@ public class LocalRepositoryDelegate implements RepositoryDelegate {
 		}
 	    } else if (target instanceof Repository) {
 		repository = (Repository) target;
+		repositoryNames = new HashSet<String>(1);
+		repositoryNames.add("DefaultRepository");
 	    } else {
 		throw new SQLException(
 			JdbcI18n.objectInJndiMustBeRepositoryOrRepositories
@@ -289,6 +301,10 @@ public class LocalRepositoryDelegate implements RepositoryDelegate {
         return true;
     }
     
+    public Set<String> getRepositoryNames()  {
+	return this.repositoryNames;
+    }
+    
     public DatabaseMetaData createMetaData(final JcrConnection connection ) throws RepositoryException {
 	Session localSession = session();
 	
@@ -299,7 +315,6 @@ public class LocalRepositoryDelegate implements RepositoryDelegate {
 	}
         return new JcrMetaData(connection, localSession);
     }
-    
 
     protected class JNDIConnectionInfo extends ConnectionInfo {
 	private String jndiName;

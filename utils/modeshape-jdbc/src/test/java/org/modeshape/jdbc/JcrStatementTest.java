@@ -35,7 +35,9 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Set;
 
+import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.QueryResult;
 
@@ -376,6 +378,11 @@ public class JcrStatementTest {
 	 */
 	@Override
 	public <T> T unwrap(Class<T> iface)  {
+	    return null;
+	}
+
+	@Override
+	public Set<String> getRepositoryNames() throws RepositoryException {
 	    return null;
 	}
 	

@@ -58,7 +58,8 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
-import org.modeshape.common.util.IoUtil;
+
+import org.modeshape.jdbc.util.IoUtil;
 
 /**
  * 

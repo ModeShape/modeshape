@@ -34,14 +34,9 @@ import javax.jcr.Repository;
 import javax.naming.Context;
 import javax.naming.NamingException;
 
-import net.jcip.annotations.Immutable;
-
-import org.modeshape.common.collection.Collections;
-import org.modeshape.common.text.TextDecoder;
-import org.modeshape.common.text.UrlEncoder;
-import org.modeshape.jcr.api.Repositories;
 import org.modeshape.jdbc.delegate.ConnectionInfo;
 import org.modeshape.jdbc.delegate.RepositoryDelegateFactory;
+import org.modeshape.jdbc.util.Collections;
 
 /**
  * A JDBC driver implementation that is able to access a JCR repository to query its contents using JCR-SQL2. <h3>Connection URLs</h3>
@@ -62,7 +57,7 @@ import org.modeshape.jdbc.delegate.RepositoryDelegateFactory;
  * 
  * where
  * <ul>
- * <li><strong>{jndiName}</strong> is the JNDI name where the {@link Repository} or {@link Repositories} instance can be found;</li>
+ * <li><strong>{jndiName}</strong> is the JNDI name where the {@link Repository} or  {@literal org.modeshape.jcr.api.Repositories} instance can be found;</li>
  * <li><strong>{firstProperty}</strong> consists of the first property name followed by '=' followed by the property's value;</li>
  * <li><strong>{secondProperty}</strong> consists of the second property name followed by '=' followed by the property's value;</li>
  * </ul>
@@ -76,7 +71,7 @@ import org.modeshape.jdbc.delegate.RepositoryDelegateFactory;
  *     jdbc:jcr:jndi://javax%3AMyJcrRepository?username=jsmith&amp;password=secret&amp;workspace=My%20Workspace
  * </pre>
  * 
- * The "repository" property is required only if the object in JNDI is a {@link Repositories} object.
+ * The "repository" property is required only if the object in JNDI is a {@literal org.modeshape.jcr.api.Repositories} object.
  * <br /><br />
  * <li>configured for <i>remote</i> access using REST interface.
  * <pre>
@@ -84,8 +79,8 @@ import org.modeshape.jdbc.delegate.RepositoryDelegateFactory;
  * </pre>
  * where
  * <ul>
- * <li><strong>{hostname}</strong> is the host name where the {@link Repository} or {@link Repositories} instance can be found;</li>
- * <li><strong>{port}</strong> is the port to access the {@link Repository} or {@link Repositories} on the specified <i>hostname</i>;</li>
+ * <li><strong>{hostname}</strong> is the host name where the {@link Repository} or {@literal org.modeshape.jcr.api.Repositories} instance can be found;</li>
+ * <li><strong>{port}</strong> is the port to access the {@link Repository} or {@literal org.modeshape.jcr.api.Repositories} on the specified <i>hostname</i>;</li>
  * <li><strong>{firstProperty}</strong> consists of the first property name followed by '=' followed by the property's value;</li>
  * <li><strong>{secondProperty}</strong> consists of the second property name followed by '=' followed by the property's value;</li>
  * </ul>
@@ -99,7 +94,7 @@ import org.modeshape.jdbc.delegate.RepositoryDelegateFactory;
  *     jdbc:jcr:jndi://javax%3AMyJcrRepository?username=jsmith&amp;password=secret&amp;workspace=My%20Workspace
  * </pre>
  * 
- * The "repository" property is required only if the object in JNDI is a {@link Repositories} object.
+ * The "repository" property is required only if the object in JNDI is a {@literal org.modeshape.jcr.api.Repositories} object.
 
  * </ol>
  * </p>
@@ -123,8 +118,6 @@ public class JcrDriver implements java.sql.Driver {
  
     private static DriverMetadata driverMetadata;
 
-    protected static final TextDecoder URL_DECODER = new UrlEncoder();
- 
     public JcrContextFactory contextFactory = null;
 	
 
@@ -236,7 +229,6 @@ public class JcrDriver implements java.sql.Driver {
         return driverMetadata;
     }
 
-    @Immutable
     static class DriverMetadata {
         private final int major;
         private final int minor;

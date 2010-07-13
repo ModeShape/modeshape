@@ -42,6 +42,7 @@ import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.Session;
 import javax.naming.Context;
+import javax.jcr.RepositoryException;
 
 import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
@@ -51,7 +52,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.modeshape.common.FixFor;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
@@ -59,6 +59,7 @@ import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeRoles;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
+
 
 /**
  * This is a test suite that operates against a complete JcrRepository instance created and managed using the JcrEngine.
@@ -143,8 +144,11 @@ public class JcrDriverIntegrationTest {
         }
 
         // Start the repository ...
+        try {
         repository = engine.getRepository("cars");
-
+        } catch (RepositoryException e){
+            
+        }
         // Use a session to load the contents ...
         Session session = repository.login();
         try {
@@ -335,7 +339,9 @@ public class JcrDriverIntegrationTest {
 
     }
 
-    @FixFor( "MODE-722" )
+    /*
+     * FixFor( "MODE-722" )
+     */
     @Test
     public void shouldBeAbleToExecuteSqlQueryUsingJoinToFindAllCarsUnderHybrid() throws SQLException {
         String[] expected = {"car:maker[STRING]    car:model[STRING]    car:year[STRING]    car:msrp[STRING]",

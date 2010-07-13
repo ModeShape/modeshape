@@ -29,14 +29,15 @@ import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
-import net.jcip.annotations.NotThreadSafe;
+import javax.jcr.query.QueryResult;
+
 
 /**
  * This driver's implementation of JDBC {@link DatabaseMetaData}.
  */
-@NotThreadSafe
 public class JcrMetaData implements DatabaseMetaData {
 
     private Session session;
@@ -1965,6 +1966,17 @@ public class JcrMetaData implements DatabaseMetaData {
         }
         throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text(DatabaseMetaData.class.getSimpleName(),
                                                                             iface.getName()));
+    }
+    
+    private void executeQuery(String query) throws SQLException {
+	
+	try {
+	    QueryResult result = this.connection.getRepositoryDelegate().execute(query, JcrConnection.JCR_SQL2);
+	    
+	} catch (RepositoryException re) {
+	    	throw new SQLException(re.getLocalizedMessage());
+	}
+	
     }
 
 }
