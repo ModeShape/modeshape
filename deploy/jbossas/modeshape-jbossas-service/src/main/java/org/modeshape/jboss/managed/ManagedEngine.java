@@ -51,8 +51,6 @@ import org.modeshape.jcr.JcrRepository;
 @ManagementObject( name = "ModeShapeEngine", description = "A ModeShape engine", componentType = @ManagementComponent( type = "Modeshape", subtype = "Engine" ), properties = ManagementProperties.EXPLICIT )
 public final class ManagedEngine implements ModeShapeManagedObject {
     
-    private String configFile = null;
-
     public ManagedEngine() {
         this.engine = null;
     }
@@ -215,8 +213,11 @@ public final class ManagedEngine implements ModeShapeManagedObject {
     @ManagementOperation( description = "Starts this engine", impact = Impact.Lifecycle )
     public void start() {
         this.engine.start();
+        // force initialization and loading
+        this.getRepositories();
     }
 
+    static int cnt = 0;
     protected JcrEngine getEngine() {
 	return this.engine;
     }
@@ -225,10 +226,8 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	this.engine = jcrEngine;
     }
     
-    public void setConfigFile(String configurationFile) throws Exception {
-	this.configFile = configurationFile;
-	JcrConfiguration jcrConfig = new JcrConfiguration().loadFrom(this.configFile);
+    public void setConfigURL(java.net.URL configurationUrl) throws Exception {
+	JcrConfiguration jcrConfig = new JcrConfiguration().loadFrom(configurationUrl);
 	this.engine = jcrConfig.build();
-	this.start();
     }
 }
