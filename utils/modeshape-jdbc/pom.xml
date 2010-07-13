@@ -29,10 +29,8 @@
     <dependency>
       <groupId>org.modeshape</groupId>
       <artifactId>modeshape-common</artifactId>
+      <scope>test</scope>
     </dependency>
-    <!-- 
-    Testing (note the scope)
-    -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -48,19 +46,16 @@
     </dependency>
     <dependency>
       <groupId>org.modeshape</groupId>
+      <artifactId>modeshape-jcr</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.modeshape</groupId>
       <artifactId>modeshape-common</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-jcr</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <!-- 
-    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
-    -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
@@ -75,9 +70,6 @@
       <artifactId>log4j</artifactId>
       <scope>test</scope>
     </dependency>
-		<!-- 
-      ID Trust (JAAS Dependency) for testing
-    -->
     <dependency>
       <groupId>org.jboss.security</groupId>
       <artifactId>jboss-idtrust</artifactId>
@@ -106,6 +98,15 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <!-- 
+    Testing (note the scope)
+    -->
+    <!-- 
+    Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
+    -->
+		<!-- 
+      ID Trust (JAAS Dependency) for testing
+    -->
   </dependencies>
   <build>
     <resources>
