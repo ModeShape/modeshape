@@ -32,6 +32,10 @@ public final class JBossManagedI18n {
 
     public static I18n errorDeterminingIfConnectionIsAlive;
     public static I18n errorGettingRepositoryFromEngine;
+    public static I18n errorBindingToJNDI;
+        
+    public static I18n logModeShapeBoundToJNDI;
+    public static I18n logModeShapeUnBoundToJNDI;
 
     static {
         try {

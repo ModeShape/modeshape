@@ -46,7 +46,7 @@ import org.modeshape.jcr.JcrRepository.Option;
 /**
  * The <code>ManagedRepository</code> is a JBoss managed object for a {@link JcrRepository repository}.
  */
-@ManagementObject( name = "ModeShapeRepository", description = "A ModeShape repository", componentType = @ManagementComponent( type = "Repository", subtype = "ModeShape" ), properties = ManagementProperties.EXPLICIT )
+@ManagementObject( name = "ModeShapeRepository", description = "A ModeShape repository", componentType = @ManagementComponent( type = "ModeShape", subtype = "Repository" ), properties = ManagementProperties.EXPLICIT )
 public class ManagedRepository implements ModeShapeManagedObject {
 
     // TODO get rid of this constructor

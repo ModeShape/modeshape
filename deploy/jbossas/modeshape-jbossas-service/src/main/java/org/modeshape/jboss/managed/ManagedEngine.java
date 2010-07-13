@@ -26,8 +26,11 @@ package org.modeshape.jboss.managed;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+
 import javax.jcr.RepositoryException;
+
 import net.jcip.annotations.Immutable;
+
 import org.jboss.managed.api.ManagedOperation.Impact;
 import org.jboss.managed.api.annotation.ManagementComponent;
 import org.jboss.managed.api.annotation.ManagementObject;
@@ -37,7 +40,7 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.Logger.Level;
 import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.jboss.managed.temp.TempEngine;
+import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
 
@@ -45,30 +48,25 @@ import org.modeshape.jcr.JcrRepository;
  * A <code>ManagedEngine</code> instance is a JBoss managed object for a {@link JcrEngine}.
  */
 @Immutable
-@ManagementObject( name = "ModeShapeEngine", description = "A ModeShape engine", componentType = @ManagementComponent( type = "ModeShape", subtype = "Engine" ), properties = ManagementProperties.EXPLICIT )
+@ManagementObject( name = "ModeShapeEngine", description = "A ModeShape engine", componentType = @ManagementComponent( type = "Modeshape", subtype = "Engine" ), properties = ManagementProperties.EXPLICIT )
 public final class ManagedEngine implements ModeShapeManagedObject {
-
-    // TODO remove TESTING variable and this constructor
-    private static boolean TESTING = true;
+    
+    private String configFile = null;
 
     public ManagedEngine() {
         this.engine = null;
     }
 
-    /****************************** above for temporary testing only ***********************************************************/
-
-    // TODO (1) look up engine in JNDI or (2) subclass engine
-
     /**
      * The ModeShape object being managed and delegated to (never <code>null</code>).
      */
-    private final JcrEngine engine;
+    private JcrEngine engine;
 
     /**
      * The managed object of the sequencing service of the engine.
      */
     private ManagedSequencingService sequencingService;
-
+    
     /**
      * Creates a JBoss managed object from the specified engine.
      * 
@@ -86,9 +84,6 @@ public final class ManagedEngine implements ModeShapeManagedObject {
      */
     @ManagementOperation( description = "Obtains the managed connectors of this engine", impact = Impact.ReadOnly )
     public Collection<ManagedConnector> getConnectors() {
-        if (TESTING) {
-            return TempEngine.INSTANCE.getConnectors();
-        }
 
         Collection<ManagedConnector> connectors = new ArrayList<ManagedConnector>();
 
@@ -110,9 +105,6 @@ public final class ManagedEngine implements ModeShapeManagedObject {
      */
     @ManagementOperation( description = "Obtains the managed repositories of this engine", impact = Impact.ReadOnly )
     public Collection<ManagedRepository> getRepositories() {
-        if (TESTING) {
-            return TempEngine.INSTANCE.getRepositories();
-        }
 
         Collection<ManagedRepository> repositories = new ArrayList<ManagedRepository>();
 
@@ -132,6 +124,32 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 
         return Collections.unmodifiableCollection(repositories);
     }
+    
+    /**
+     * Obtains the specified managed repository of this engine. This is called by the JNDIManagedRepositories when a
+     * JNID lookup is performed to find a repository.
+     * @param repositoryName for the repository to be returned
+     * 
+     * @return a repository or <code>null</code> if repository doesn't exist
+     */
+     public ManagedRepository getRepository(String repositoryName) {
+        if (isRunning()) {
+                try {
+                   JcrRepository repository = this.engine.getRepository(repositoryName);
+                   if (repository != null) {
+                       return (new ManagedRepository(repository));
+                   }
+                   
+                } catch (RepositoryException e) {
+                    Logger.getLogger(getClass()).log(Level.ERROR,
+                                                     e,
+                                                     JBossManagedI18n.errorGettingRepositoryFromEngine,
+                                                     repositoryName);
+                }
+        }
+
+        return null;
+    }
 
     /**
      * Obtains the managed sequencing service. This is a JBoss managed operation.
@@ -140,10 +158,6 @@ public final class ManagedEngine implements ModeShapeManagedObject {
      */
     @ManagementOperation( description = "Obtains the managed sequencing service of this engine", impact = Impact.ReadOnly )
     public ManagedSequencingService getSequencingService() {
-        if (TESTING) {
-            return TempEngine.INSTANCE.getSequencingService();
-        }
-
         if (isRunning()) {
             if (this.sequencingService == null) {
                 this.sequencingService = new ManagedSequencingService(this.engine.getSequencingService());
@@ -162,10 +176,6 @@ public final class ManagedEngine implements ModeShapeManagedObject {
      */
     @ManagementOperation( description = "Indicates if this engine is running", impact = Impact.ReadOnly )
     public boolean isRunning() {
-        if (TESTING) {
-            return true;
-        }
-
         try {
             this.engine.getRepositoryService();
             return true;
@@ -194,10 +204,6 @@ public final class ManagedEngine implements ModeShapeManagedObject {
      */
     @ManagementOperation( description = "Shutdowns this engine", impact = Impact.Lifecycle )
     public void shutdown() {
-        if (TESTING) {
-            return;
-        }
-
         this.engine.shutdown();
     }
 
@@ -208,11 +214,21 @@ public final class ManagedEngine implements ModeShapeManagedObject {
      */
     @ManagementOperation( description = "Starts this engine", impact = Impact.Lifecycle )
     public void start() {
-        if (TESTING) {
-            return;
-        }
-
         this.engine.start();
     }
 
+    protected JcrEngine getEngine() {
+	return this.engine;
+    }
+    
+    public void setEngine(JcrEngine jcrEngine) {
+	this.engine = jcrEngine;
+    }
+    
+    public void setConfigFile(String configurationFile) throws Exception {
+	this.configFile = configurationFile;
+	JcrConfiguration jcrConfig = new JcrConfiguration().loadFrom(this.configFile);
+	this.engine = jcrConfig.build();
+	this.start();
+    }
 }
