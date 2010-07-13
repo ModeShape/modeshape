@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment xmlns="urn:jboss:bean-deployer:2.0">
- 
+
+  <bean name="URL" class="java.net.URL">
+    <constructor>
+        <parameter>file://${jboss.server.home.url}${/}deploy${/}resources-modeshape.war${/}managedConfigRepository.xml</parameter>
+    </constructor>
+  </bean>
+
+    <bean name="ModeShapeEngine" class="org.modeshape.jboss.managed.ManagedEngine">
+        <property name="configURL"><inject bean="URL"/></property>  
+    </bean>
+
+    <bean name="JNDIManaged" class="org.modeshape.jboss.managed.JNDIManagedRepositories">
+        <property name="managedEngine"><inject bean="ModeShapeEngine"/></property>
+        <property name="jndiName">jcr/local</property>
+        <depends>ModeShapeEngine</depends>
+    </bean>
+
     <!-- modeshapes default security domain, replace this with your own if needs to be any other JAAS domain  -->
     <application-policy xmlns="urn:jboss:security-beans:1.0" name="modeshape">
         <authentication>
