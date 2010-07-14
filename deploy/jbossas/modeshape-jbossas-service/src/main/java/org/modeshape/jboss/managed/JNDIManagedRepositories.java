@@ -44,7 +44,7 @@ public final class JNDIManagedRepositories implements Repositories,
 
     /**
      */
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -7904326959888003685L;
 
     /**
      */
@@ -56,6 +56,7 @@ public final class JNDIManagedRepositories implements Repositories,
     private transient ManagedEngine managedEngine = null;
 
     public JNDIManagedRepositories() {
+	
     }
 
     public void setJndiName(String jndiName) throws Exception {
