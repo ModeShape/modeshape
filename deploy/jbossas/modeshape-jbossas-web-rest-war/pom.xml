@@ -11,6 +11,20 @@
 	<description>ModeShape servlet that provides RESTful access to JCR items in a JBoss Application Server</description>
 	<url>http://www.modeshape.org</url>
 	<dependencies>
+
+
+        <dependency>
+            <groupId>org.modeshape.deploy</groupId>
+            <artifactId>modeshape-jbossas-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jdbc</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
 		<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-web-jcr-rest</artifactId>
@@ -41,17 +55,23 @@
 	<build>
 		<finalName>resources</finalName>
 
+<!--   
+        there are 2 wars being built, a test war and a deployment war
+        the deployment war is built with the limited jars that are needed for Jboss deployment kit
+        This war cant be used in testing because, at the moment, been unsuccessful
+        in passing to cargo an overriding classpath 
+    -->
 		<plugins>
-            <plugin>
-                <artifactId>maven-war-plugin</artifactId>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
                 <configuration>
-                            <excludes>
+                              <excludes>
                                 <exclude>**/*slf4j*.jar</exclude>
                             </excludes>
                 </configuration>
             </plugin>
-
 			<plugin>
 				<groupId>org.codehaus.cargo</groupId>
 				<artifactId>cargo-maven2-plugin</artifactId>
@@ -106,6 +126,28 @@
 					</execution>
 				</executions>
 			</plugin>
+
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2-beta-2</version>
+                
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/assembly/kit.xml</descriptor>
+                    </descriptors>
+                    <outputDirectory>target/distribution</outputDirectory>
+                    <workDirectory>target/assembly/work</workDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attached</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 		</plugins>
 	</build>
 

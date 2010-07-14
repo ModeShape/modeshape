@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ===================================================================== -->
+<!--                                                                       -->
+<!--  JBoss Server Configuration                                           -->
+<!--                                                                       -->
+<!-- ===================================================================== -->
+
+<!-- See http://www.jboss.org/community/wiki/Multiple1PC for information about local-tx-datasource -->
+<!-- ==================================================================== -->
+<!--  Datasource config for ModeShape originally done by Van Halbert            -->
+<!-- ==================================================================== -->
+
+
+<datasources>
+  <local-tx-datasource>
+    <jndi-name>ModeShape-DS</jndi-name>
+    <connection-url>jdbc:jcr:jndi://jcr/local</connection-url>
+
+    <driver-class>org.modeshape.jdbc.JcrDriver</driver-class>
+    <user-name>admin</user-name>
+    <password>admin</password>
+<!--
+    <exception-sorter-class-name>org.jboss.resource.adapter.jdbc.vendor.oracleExceptionSorter</exception-sorter-class-name>
+-->
+      <metadata>
+         <type-mapping>jcrrepo</type-mapping>
+      </metadata>
+  </local-tx-datasource>
+
+</datasources>

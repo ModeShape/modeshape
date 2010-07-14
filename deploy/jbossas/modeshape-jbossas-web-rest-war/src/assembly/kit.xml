@@ -1,0 +1,113 @@
+<!--This script builds a kit for the ctc-client -->
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
+
+  
+  <id>modeshape</id>
+  
+  <formats>
+	<format>zip</format>
+  </formats>
+
+  <includeBaseDirectory>false</includeBaseDirectory>
+
+  <baseDirectory>/</baseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+          <outputDirectory>deploy/resources-modeshape.war/WEB-INF/lib</outputDirectory>
+        <useTransitiveDependencies>true</useTransitiveDependencies>
+
+
+           <includes>
+            <include>org.modeshape:modeshape-common</include>
+            <include>org.modeshape:modeshape-graph</include>
+            <include>org.modeshape:modeshape-cnd</include>
+            <include>org.modeshape:modeshape-repository</include>
+            <include>org.modeshape:modeshape-web-jcr</include>
+            <include>org.modeshape:modeshape-jcr</include>
+            <include>org.modeshape:modeshape-web-jcr-rest</include>
+            <include>org.modeshape:modeshape-search-lucene</include>
+            <include>org.modeshape.deploy:modeshape-jbossas-service</include>
+
+            <include>joda-time:joda-time</include>
+            <include>org.scannotation:scannotation</include>
+            <include>com.google.collections:google-collections</include>
+            <include>org.apache.lucene:lucene-core</include>
+            <include>org.apache.lucene:lucene-analyzers</include>
+            <include>org.apache.lucene:lucene-snowball</include>
+            <include>org.apache.lucene:lucene-regex</include>
+
+          </includes>
+          <excludes>
+             <exclude>org.modeshape:modeshape-jcr-api</exclude>
+            <exclude>javax.jcr:jcr</exclude>
+           </excludes>
+    
+        </dependencySet>
+
+        <dependencySet>
+          <outputDirectory>deploy/resources-modeshape.war/WEB-INF/lib</outputDirectory>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+
+           <includes>
+            <include>org.jboss.resteasy:resteasy-jaxrs</include>
+            <include>org.jboss.resteasy:resteasy-jaxb-provider</include>
+            <include>org.jboss.resteasy:resteasy-jettison-provider</include>
+            <include>org.jboss.resteasy:jaxrs-api</include>
+          </includes>
+    
+        </dependencySet>
+
+        <dependencySet>
+          <outputDirectory>lib</outputDirectory>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+
+
+        <includes>
+            <include>org.modeshape:modeshape-jcr-api</include>
+            <include>org.modeshape:modeshape-jdbc</include>
+            <include>javax.jcr:jcr</include>
+        </includes>
+    
+        </dependencySet>
+    </dependencySets>
+
+    <fileSets>
+
+        <fileSet>
+            <directory>src/main/webapp</directory>
+            <outputDirectory>deploy/resources-modeshape.war/</outputDirectory>
+
+        </fileSet>
+        <fileSet>
+          <directory>${project.build.directory}/classes</directory>
+            <outputDirectory>deploy/resources-modeshape.war/WEB-INF/classes</outputDirectory>
+        </fileSet>
+
+        <fileSet>
+          <directory>src/kit/deploy</directory>
+            <outputDirectory>deploy/</outputDirectory>
+        </fileSet>
+
+    </fileSets>
+
+    <moduleSets>
+
+
+    <!-- Include the JOPR plugin -->    
+    <moduleSet>
+        <includes>
+            <include>org.modeshape.deploy:org.modeshape.console</include>
+        </includes>
+
+        <binaries>        
+           <outputDirectory>deploy/admin-console.war/plugins</outputDirectory>
+          <fileMode>0644</fileMode>
+        </binaries>
+      
+    </moduleSet>        
+    </moduleSets> 
+
+</assembly>
