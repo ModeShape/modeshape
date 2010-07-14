@@ -40,6 +40,7 @@ import javax.naming.NamingException;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.util.Logger;
+import org.modeshape.jcr.api.Repositories;
 import org.modeshape.jcr.api.RepositoryFactory;
 import org.xml.sax.SAXException;
 
@@ -73,8 +74,8 @@ import org.xml.sax.SAXException;
  * </p>
  * <p>
  * The <code>configUrl</code> used in the sample above should point to a configuration file (e.g., {@code
- * file:src/test/resources/configRepository.xml?repositoryName=MyRepository}) OR a {@link JcrEngine} stored in the JNDI tree
- * (e.g., {@code jndi://name/of/JcrEngine/resource?repositoryName=MyRepository}).
+ * file:src/test/resources/configRepository.xml?repositoryName=MyRepository}) OR a {@link Repositories} instance stored in the
+ * JNDI tree (e.g., {@code jndi://name/of/Repositories/resource?repositoryName=MyRepository}).
  * </p>
  * 
  * @see #getRepository(Map)
@@ -86,7 +87,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     private static final Logger LOG = Logger.getLogger(JcrRepositoryFactory.class);
 
     /**
-     * A map of configuration file locations to existing engines. This map helps ensure that JcrEngines are not recreated with
+     * A map of configuration file locations to existing engines. This map helps ensure that Repositories are not recreated with
      * every call to {@link #getRepository(Map)}.
      */
     private static final Map<String, JcrEngine> ENGINES = new HashMap<String, JcrEngine>();
@@ -140,15 +141,15 @@ public class JcrRepositoryFactory implements RepositoryFactory {
 
         if (url == null) return null;
 
-        JcrEngine engine = engineFor(url, parameters);
-        if (engine == null) return null;
+        Repositories repositories = repositoriesFor(url, parameters);
+        if (repositories == null) return null;
 
-        String repositoryName = repositoryNameFor(engine, url);
+        String repositoryName = repositoryNameFor(repositories, url);
         if (repositoryName == null) return null;
 
         try {
             LOG.debug("Trying to access repository: " + repositoryName);
-            return engine.getRepository(repositoryName);
+            return repositories.getRepository(repositoryName);
         } catch (RepositoryException re) {
             LOG.debug(re, "Could not load repository named '{0}'", repositoryName);
             return null;
@@ -242,22 +243,24 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     }
 
     /**
-     * Attempts to look up a JcrEngine at the given JNDI name. All parameters in the parameters map are passed to the
+     * Attempts to look up a {@link Repositories} at the given JNDI name. All parameters in the parameters map are passed to the
      * {@link InitialContext} constructor in a {@link Hashtable}.
      * 
      * @param engineJndiName the JNDI name of the JCR engine; may not be null
      * @param parameters any additional parameters that should be passed to the {@code InitialContext}'s constructor; may be empty
      *        but may not be null
-     * @return the JcrEngine from JNDI, if one exists at the given name
+     * @return the Repositories object from JNDI, if one exists at the given name
      */
-    private JcrEngine getEngineFromJndi( String engineJndiName,
-                                         Map<String, String> parameters ) {
+    private Repositories getRepositoriesFromJndi( String engineJndiName,
+                                                  Map<String, String> parameters ) {
         try {
             InitialContext ic = new InitialContext(hashtable(parameters));
 
             Object ob = ic.lookup(engineJndiName);
-            if (!(ob instanceof JcrEngine)) return null;
-            return (JcrEngine)ob;
+            if (ob instanceof Repositories) {
+                return (Repositories)ob;
+            }
+            return null;
         } catch (NamingException ne) {
             return null;
         }
@@ -293,7 +296,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     }
 
     /**
-     * Returns the repository with the given name from the {@link JcrEngine} referenced by {@code jcrUrl} if the engine and the
+     * Returns the repository with the given name from the {@link Repositories} referenced by {@code jcrUrl} if the engine and the
      * named repository exist, null otherwise.
      * <p>
      * If the {@code jcrUrl} parameter contains a valid, ModeShape-compatible URL for a {@link JcrEngine} that has not yet been
@@ -305,28 +308,28 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * repository, that repository will be used. Otherwise, this method will return {@code null}.
      * </p>
      * 
-     * @param jcrUrl the ModeShape-compatible URL that specifies the {@link JcrEngine} to be used; may not be null
+     * @param jcrUrl the ModeShape-compatible URL that specifies the {@link Repositories} to be used; may not be null
      * @param repositoryName the name of the repository to return; may be null
-     * @return the repository with the given name from the {@link JcrEngine} referenced by {@code jcrUrl} if the engine exists and
-     *         can be started (or is already started), and the named repository exists or {@code null} is provided as the {@code
-     *         repositoryName} and the given engine has exactly one repository or the {@code jcrUrl} specifies a repository. If
-     *         any of these conditions do not hold, {@code null} is returned.
+     * @return the {@link Repository} with the given name from the {@link Repositories} referenced by {@code jcrUrl} if the engine
+     *         exists and can be started (or is already started), and the named repository exists or {@code null} is provided as
+     *         the {@code repositoryName} and the given engine has exactly one repository or the {@code jcrUrl} specifies a
+     *         repository. If any of these conditions do not hold, {@code null} is returned.
      * @throws RepositoryException if the named repository exists but cannot be accessed
      * @see JcrEngine#getRepository(String)
      */
-    public JcrRepository getRepository( String jcrUrl,
-                                        String repositoryName ) throws RepositoryException {
+    public Repository getRepository( String jcrUrl,
+                                     String repositoryName ) throws RepositoryException {
         URL url = urlFor(jcrUrl);
         if (url == null) return null;
 
-        JcrEngine engine = engineFor(url, null);
-        if (engine == null) return null;
+        Repositories repositories = repositoriesFor(url, null);
+        if (repositories == null) return null;
 
         if (repositoryName == null) {
-            repositoryName = repositoryNameFor(engine, url);
+            repositoryName = repositoryNameFor(repositories, url);
         }
 
-        return engine.getRepository(repositoryName);
+        return repositories.getRepository(repositoryName);
     }
 
     /**
@@ -344,11 +347,11 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         URL url = urlFor(jcrUrl);
         if (url == null) return null;
 
-        JcrEngine engine = engineFor(url, null);
+        Repositories repositories = repositoriesFor(url, null);
 
-        if (engine == null) return null;
+        if (repositories == null) return null;
 
-        return engine.getRepositoryNames();
+        return repositories.getRepositoryNames();
     }
 
     /**
@@ -364,27 +367,27 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * @return the {@code JcrEngine} referenced by the given URL if it can be accessed and started (if not already started),
      *         otherwise {@code null}.
      */
-    private JcrEngine engineFor( URL url,
-                                 Map<String, String> parameters ) {
+    private Repositories repositoriesFor( URL url,
+                                          Map<String, String> parameters ) {
         if (url.getPath() == null || url.getPath().trim().length() == 0) {
             LOG.debug("Cannot have null or empty path in repository URL");
             return null;
         }
 
-        JcrEngine engine = null;
+        Repositories repositories = null;
 
         if ("jndi".equals(url.getProtocol())) {
-            engine = getEngineFromJndi(url.getPath(), parameters);
+            repositories = getRepositoriesFromJndi(url.getPath(), parameters);
         } else {
-            engine = getEngineFromConfigFile(url);
+            repositories = getEngineFromConfigFile(url);
         }
 
-        if (engine == null) {
+        if (repositories == null) {
             LOG.debug("Could not load engine from URL: " + url);
             return null;
         }
 
-        return engine;
+        return repositories;
     }
 
     /**
@@ -414,12 +417,12 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * that name exists in {@code engine}.
      * </p>
      * 
-     * @param engine the engine that is used to check for a default repository name if none is provided in the {@code url}; may be
-     *        null only if {@code url} explicitly provides a repository name
+     * @param repositories the container of the named repositories, used to check for a default repository name if none is
+     *        provided in the {@code url}; may be null only if {@code url} explicitly provides a repository name
      * @param url the url for which the repository name should be returned; may not be null
      * @return the repository name to use based on the algorithm described above; may be null
      */
-    private String repositoryNameFor( JcrEngine engine,
+    private String repositoryNameFor( Repositories repositories,
                                       URL url ) {
         String repositoryName = null;
         String query = url.getQuery();
@@ -435,7 +438,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         }
 
         if (repositoryName == null) {
-            Set<String> repositoryNames = engine.getRepositoryNames();
+            Set<String> repositoryNames = repositories.getRepositoryNames();
 
             if (repositoryNames.size() != 1) {
                 LOG.debug("No repository name provided in URL and multiple repositories configured in engine with following names: "
