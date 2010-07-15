@@ -118,9 +118,9 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
     }
 
     @Override
-    public void shutdown() {
+    protected void preShutdown() {
         scheduler.shutdown();
-        super.shutdown();
+        super.preShutdown();
 
         try {
             this.repositoriesLock.lock();

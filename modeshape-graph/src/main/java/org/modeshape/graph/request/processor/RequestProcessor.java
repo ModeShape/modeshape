@@ -1026,7 +1026,7 @@ public abstract class RequestProcessor {
         String userName = context.getSecurityContext() != null ? context.getSecurityContext().getUserName() : null;
         if (userName == null) userName = "";
         String contextId = context.getId();
-        String processId = null;
+        String processId = context.getProcessId();
         Map<String, String> userData = context.getData();
         Changes changes = new Changes(processId, contextId, userName, getSourceName(), getNowInUtc(), this.changes, userData);
         observer.notify(changes);

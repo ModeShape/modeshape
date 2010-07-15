@@ -71,6 +71,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     private final SecurityContext securityContext;
     /** The unique ID string, which is always generated so that it can be final and not volatile. */
     private final String id = UUID.randomUUID().toString();
+    private final String processId;
     private final Map<String, String> data;
 
     /**
@@ -80,7 +81,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     @SuppressWarnings( "synthetic-access" )
     public ExecutionContext() {
-        this(new NullSecurityContext(), null, null, null, null, null, null);
+        this(new NullSecurityContext(), null, null, null, null, null, null, null);
         initializeDefaultNamespaces(this.getNamespaceRegistry());
         assert securityContext != null;
 
@@ -101,6 +102,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         this.classLoaderFactory = original.getClassLoaderFactory();
         this.mimeTypeDetector = original.getMimeTypeDetector();
         this.data = original.getData();
+        this.processId = original.getProcessId();
     }
 
     /**
@@ -121,6 +123,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         this.classLoaderFactory = original.getClassLoaderFactory();
         this.mimeTypeDetector = original.getMimeTypeDetector();
         this.data = original.getData();
+        this.processId = original.getProcessId();
     }
 
     /**
@@ -138,6 +141,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      * @param classLoaderFactory the {@link ClassLoaderFactory} implementation, or null if a {@link StandardClassLoaderFactory}
      *        instance should be used
      * @param data the custom data for this context, or null if there is no such data
+     * @param processId the unique identifier of the process in which this context exists, or null if it should be generated
      */
     protected ExecutionContext( SecurityContext securityContext,
                                 NamespaceRegistry namespaceRegistry,
@@ -145,7 +149,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
                                 PropertyFactory propertyFactory,
                                 MimeTypeDetector mimeTypeDetector,
                                 ClassLoaderFactory classLoaderFactory,
-                                Map<String, String> data ) {
+                                Map<String, String> data,
+                                String processId ) {
         assert securityContext != null;
         this.securityContext = securityContext;
         this.namespaceRegistry = namespaceRegistry != null ? namespaceRegistry : new ThreadSafeNamespaceRegistry(
@@ -155,6 +160,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         this.classLoaderFactory = classLoaderFactory == null ? new StandardClassLoaderFactory() : classLoaderFactory;
         this.mimeTypeDetector = mimeTypeDetector != null ? mimeTypeDetector : createDefaultMimeTypeDetector();
         this.data = data != null ? data : Collections.<String, String>emptyMap();
+        this.processId = processId != null ? processId : UUID.randomUUID().toString();
     }
 
     private MimeTypeDetector createDefaultMimeTypeDetector() {
@@ -253,12 +259,22 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     }
 
     /**
-     * Get the unique identifier for this context.
+     * Get the unique identifier for this context. Each context will always have a unique identifier.
      * 
      * @return the unique identifier string; never null and never empty
      */
     public String getId() {
         return id;
+    }
+
+    /**
+     * Get the identifier for the process in which this context exists. Multiple contexts running in the same "process" will all
+     * have the same identifier.
+     * 
+     * @return the identifier for the process; never null and never empty
+     */
+    public String getProcessId() {
+        return processId;
     }
 
     /**
@@ -283,7 +299,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
         return new ExecutionContext(this.getSecurityContext(), namespaceRegistry, null, null, this.getMimeTypeDetector(),
-                                    this.getClassLoaderFactory(), this.getData());
+                                    this.getClassLoaderFactory(), this.getData(), getProcessId());
     }
 
     /**
@@ -299,7 +315,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
         return new ExecutionContext(this.getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    mimeTypeDetector, getClassLoaderFactory(), this.getData());
+                                    mimeTypeDetector, getClassLoaderFactory(), this.getData(), getProcessId());
     }
 
     /**
@@ -314,7 +330,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
         return new ExecutionContext(this.getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), classLoaderFactory, this.getData());
+                                    getMimeTypeDetector(), classLoaderFactory, this.getData(), getProcessId());
     }
 
     /**
@@ -348,7 +364,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
             newData = Collections.unmodifiableMap(new HashMap<String, String>(data));
         }
         return new ExecutionContext(this.getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getClassLoaderFactory(), newData);
+                                    getMimeTypeDetector(), getClassLoaderFactory(), newData, getProcessId());
     }
 
     /**
@@ -380,7 +396,20 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
             newData = Collections.unmodifiableMap(newData);
         }
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getClassLoaderFactory(), newData);
+                                    getMimeTypeDetector(), getClassLoaderFactory(), newData, getProcessId());
+    }
+
+    /**
+     * Create a new execution context that mirrors this context but that contains the supplied process identifier.
+     * 
+     * @param processId the identifier of the process
+     * @return the execution context that is identical with this execution context, but which uses the supplied process
+     *         identifier; never null
+     * @since 2.1
+     */
+    public ExecutionContext with( String processId ) {
+        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
+                                    getMimeTypeDetector(), getClassLoaderFactory(), getData(), processId);
     }
 
     /**

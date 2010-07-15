@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.jgroups.ChannelListener;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
@@ -341,7 +342,7 @@ public class ClusteredObservationBusTest {
         }
 
         public void await() throws InterruptedException {
-            latch.await();
+            latch.await(250, TimeUnit.MILLISECONDS);
         }
 
         public List<Changes> getObservedChanges() {

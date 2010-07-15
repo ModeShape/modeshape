@@ -43,7 +43,6 @@ import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositoryConnectionPool;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.graph.observe.LocalObservationBus;
 import org.modeshape.graph.observe.Observable;
 import org.modeshape.graph.observe.ObservationBus;
 import org.modeshape.graph.observe.Observer;
@@ -110,7 +109,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     private final Map<String, RepositoryConnectionPool> pools = new HashMap<String, RepositoryConnectionPool>();
     private RepositoryConnectionFactory delegate;
     private final ExecutionContext executionContext;
-    private final ObservationBus observationBus = new LocalObservationBus();
+    private final ObservationBus observationBus;
     private final RepositorySource configurationSource;
     private final String configurationWorkspaceName;
     private final Path pathToConfigurationRoot;
@@ -122,21 +121,27 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
      * @param configurationWorkspaceName the name of the workspace in the {@link RepositorySource} that is the configuration
      *        repository, or null if the default workspace of the source should be used (if there is one)
      * @param pathToSourcesConfigurationRoot the path of the node in the configuration source repository that should be treated by
-     *        this service as the root of the service's configuration; if null, then "/dna:system" is used
+     *        this service as the root of the service's configuration
      * @param context the execution context in which this service should run
-     * @throws IllegalArgumentException if the <code>executionContextFactory</code> reference is null
+     * @param observationBus the {@link ObservationBus} instance that should be used for changes in the sources
+     * @throws IllegalArgumentException if any of the <code>configurationSource</code>,
+     *         <code>pathToSourcesConfigurationRoot</code>, <code>observationBus</code>, or <code>context</code> references are
+     *         null
      */
     public RepositoryLibrary( RepositorySource configurationSource,
                               String configurationWorkspaceName,
                               Path pathToSourcesConfigurationRoot,
-                              final ExecutionContext context ) {
+                              final ExecutionContext context,
+                              ObservationBus observationBus ) {
         CheckArg.isNotNull(configurationSource, "configurationSource");
         CheckArg.isNotNull(context, "context");
         CheckArg.isNotNull(pathToSourcesConfigurationRoot, "pathToSourcesConfigurationRoot");
+        CheckArg.isNotNull(observationBus, "observationBus");
         this.executionContext = context;
         this.configurationSource = configurationSource;
         this.configurationWorkspaceName = configurationWorkspaceName;
         this.pathToConfigurationRoot = pathToSourcesConfigurationRoot;
+        this.observationBus = observationBus;
     }
 
     /**
@@ -226,8 +231,6 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
         } finally {
             this.sourcesLock.readLock().unlock();
         }
-        // Remove all listeners ...
-        this.observationBus.shutdown();
     }
 
     /**

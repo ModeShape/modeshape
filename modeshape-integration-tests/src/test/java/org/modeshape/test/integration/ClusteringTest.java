@@ -30,11 +30,17 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.observation.Event;
+import javax.jcr.observation.EventIterator;
+import javax.jcr.observation.EventListener;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -160,6 +166,49 @@ public class ClusteringTest {
         assertThat(node, is(notNullValue()));
     }
 
+    @Test
+    public void shouldReceiveNotificationsFromAllEnginesWhenChangingContentInOne() throws Exception {
+        Session session1 = sessionFrom(engine1);
+        Session session2 = sessionFrom(engine2);
+        Session session3 = sessionFrom(engine3);
+
+        int eventTypes = Event.NODE_ADDED | Event.NODE_REMOVED; // |Event.PROPERTY_ADDED|Event.PROPERTY_CHANGED|Event.PROPERTY_REMOVED
+        CustomListener listener1 = addListenerTo(session1, eventTypes, 1);
+        CustomListener listener2 = addListenerTo(session2, eventTypes, 1);
+        CustomListener listener3 = addListenerTo(session3, eventTypes, 1);
+        CustomListener remoteListener1 = addRemoteListenerTo(session1, eventTypes, 0);
+        CustomListener remoteListener2 = addRemoteListenerTo(session2, eventTypes, 1);
+        CustomListener remoteListener3 = addRemoteListenerTo(session2, eventTypes, 1);
+
+        // Make some changes ...
+        session1.getRootNode().addNode("SomeNewNode");
+        session1.save();
+
+        // Wait for all the listeners ...
+        listener1.await();
+        listener2.await();
+        listener3.await();
+        remoteListener1.await();
+        remoteListener2.await();
+        remoteListener3.await();
+
+        // Disconnect the listeners ...
+        listener1.disconnect();
+        listener2.disconnect();
+        listener3.disconnect();
+        remoteListener1.disconnect();
+        remoteListener2.disconnect();
+        remoteListener3.disconnect();
+
+        // Now check the events ...
+        listener1.checkObservedEvents();
+        listener2.checkObservedEvents();
+        listener3.checkObservedEvents();
+        remoteListener1.checkObservedEvents();
+        remoteListener2.checkObservedEvents();
+        remoteListener3.checkObservedEvents();
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Utility Methods
     // ----------------------------------------------------------------------------------------------------------------
@@ -171,6 +220,44 @@ public class ClusteringTest {
         return session;
     }
 
+    /**
+     * Add a listener for only remote events.
+     * 
+     * @param session the session
+     * @param eventTypes the type of events
+     * @param expectedEventCount the number of expected events
+     * @return the listener
+     * @throws UnsupportedRepositoryOperationException
+     * @throws RepositoryException
+     */
+    protected CustomListener addRemoteListenerTo( Session session,
+                                                  int eventTypes,
+                                                  int expectedEventCount )
+        throws UnsupportedRepositoryOperationException, RepositoryException {
+        CustomListener listener = new CustomListener(session, expectedEventCount);
+        session.getWorkspace().getObservationManager().addEventListener(listener, eventTypes, null, true, null, null, true);
+        return listener;
+    }
+
+    /**
+     * Add a listener for local and remote events.
+     * 
+     * @param session the session
+     * @param eventTypes the type of events
+     * @param expectedEventCount the number of expected events
+     * @return the listener
+     * @throws UnsupportedRepositoryOperationException
+     * @throws RepositoryException
+     */
+    protected CustomListener addListenerTo( Session session,
+                                            int eventTypes,
+                                            int expectedEventCount )
+        throws UnsupportedRepositoryOperationException, RepositoryException {
+        CustomListener listener = new CustomListener(session, expectedEventCount);
+        session.getWorkspace().getObservationManager().addEventListener(listener, eventTypes, null, true, null, null, false);
+        return listener;
+    }
+
     protected static URL resourceUrl( String name ) {
         return ClusteringTest.class.getClassLoader().getResource(name);
     }
@@ -179,4 +266,52 @@ public class ClusteringTest {
         return ClusteringTest.class.getClassLoader().getResourceAsStream(name);
     }
 
+    protected static class CustomListener implements EventListener {
+        private final List<Event> receivedEvents = new ArrayList<Event>();
+        private final int expectedEventCount;
+        private final CountDownLatch latch;
+        private final Session session;
+
+        protected CustomListener( Session session,
+                                  int expectedEventCount ) {
+            this.latch = new CountDownLatch(expectedEventCount);
+            this.expectedEventCount = expectedEventCount;
+            this.session = session;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.observation.EventListener#onEvent(javax.jcr.observation.EventIterator)
+         */
+        @Override
+        public void onEvent( EventIterator events ) {
+            while (events.hasNext()) {
+                receivedEvents.add(events.nextEvent());
+                latch.countDown();
+            }
+        }
+
+        public void await() throws InterruptedException {
+            latch.await(3, TimeUnit.SECONDS);
+        }
+
+        public List<Event> getObservedEvents() {
+            return receivedEvents;
+        }
+
+        public void checkObservedEvents() {
+            StringBuilder msg = new StringBuilder("Expected ");
+            msg.append(expectedEventCount);
+            msg.append(" events but received ");
+            msg.append(receivedEvents.size());
+            msg.append(": ");
+            msg.append(receivedEvents);
+            assertThat(msg.toString(), receivedEvents.size(), is(expectedEventCount));
+        }
+
+        public void disconnect() throws RepositoryException {
+            this.session.getWorkspace().getObservationManager().removeEventListener(this);
+        }
+    }
 }

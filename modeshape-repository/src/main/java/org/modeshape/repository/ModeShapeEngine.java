@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -85,6 +86,7 @@ public class ModeShapeEngine {
     private final ExecutorService executorService;
     private final ClusteringService clusteringService;
     private final MimeTypeDetectors detectors;
+    private final String engineId = UUID.randomUUID().toString();
     private static final Logger LOGGER = Logger.getLogger(ModeShapeEngine.class);
 
     protected ModeShapeEngine( ExecutionContext context,
@@ -93,7 +95,7 @@ public class ModeShapeEngine {
 
         // Use the configuration's context ...
         this.detectors = new MimeTypeDetectors();
-        this.context = context.with(detectors);
+        this.context = context.with(detectors).with(engineId);
 
         // And set up the scanner ...
         this.configuration = configuration;
@@ -117,7 +119,8 @@ public class ModeShapeEngine {
         Path pathToConfigurationRoot = this.configuration.getPath();
         String configWorkspaceName = this.configuration.getWorkspace();
         RepositorySource configSource = this.configuration.getRepositorySource();
-        repositoryService = new RepositoryService(configSource, configWorkspaceName, pathToConfigurationRoot, context, problems);
+        repositoryService = new RepositoryService(configSource, configWorkspaceName, pathToConfigurationRoot, context,
+                                                  clusteringService, problems);
 
         // Create the executor service (which starts out with 0 threads, so it's okay to do here) ...
         ThreadFactory threadPoolFactory = new NamedThreadFactory(configuration.getName());
@@ -295,7 +298,11 @@ public class ModeShapeEngine {
      * @see #start()
      */
     public void shutdown() {
+        preShutdown();
+        postShutdown();
+    }
 
+    protected void preShutdown() {
         // Terminate the executor service, which may be running background jobs that are not yet completed
         // and which will prevent new jobs being submitted (to the sequencing service) ...
         executorService.shutdown();
@@ -305,7 +312,9 @@ public class ModeShapeEngine {
 
         // Shut down the repository source, which closes all connections ...
         repositoryService.getAdministrator().shutdown();
+    }
 
+    protected void postShutdown() {
         // Finally shut down the clustering service ...
         clusteringService.shutdown();
     }

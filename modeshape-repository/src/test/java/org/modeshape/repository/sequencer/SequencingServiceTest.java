@@ -39,6 +39,7 @@ import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.graph.observe.LocalObservationBus;
 import org.modeshape.graph.property.Path;
 import org.modeshape.repository.RepositoryLibrary;
 import org.modeshape.repository.service.ServiceAdministrator;
@@ -62,7 +63,7 @@ public class SequencingServiceTest {
         configSource.setDefaultWorkspaceName("default");
         Path configPath = context.getValueFactories().getPathFactory().create("/");
 
-        sources = new RepositoryLibrary(configSource, "default", configPath, context);
+        sources = new RepositoryLibrary(configSource, "default", configPath, context, new LocalObservationBus());
         InMemoryRepositorySource source = new InMemoryRepositorySource();
         source.setName(REPOSITORY_SOURCE_NAME);
         sources.addSource(source);

@@ -1612,6 +1612,8 @@ public class JcrRepository implements Repository {
         private final Observable repositoryObservable;
         private final String sourceName;
         private final String systemSourceName;
+        private final String repositorySourceName;
+        private final String processId;
 
         /**
          * @param repositoryObservable the repository library observable this observer should register with
@@ -1621,6 +1623,8 @@ public class JcrRepository implements Repository {
             this.repositoryObservable.register(this);
             this.sourceName = getObservableSourceName();
             this.systemSourceName = getSystemSourceName();
+            this.repositorySourceName = getRepositorySourceName();
+            this.processId = getExecutionContext().getProcessId();
         }
 
         /**
@@ -1628,10 +1632,9 @@ public class JcrRepository implements Repository {
          * 
          * @see org.modeshape.graph.observe.Observer#notify(org.modeshape.graph.observe.Changes)
          */
-        public void notify( final Changes changes ) {
-            // We only care about events that come from the repository source or the system source ...
-            String changedSourceName = changes.getSourceName();
-            if (sourceName.equals(changedSourceName) || systemSourceName.equals(changedSourceName)) {
+        public void notify( Changes changes ) {
+            final Changes acceptableChanges = filter(changes);
+            if (acceptableChanges != null) {
 
                 // We're still in the thread where the connector published its changes,
                 // so we need to create a runnable that will send these changes to all
@@ -1647,7 +1650,7 @@ public class JcrRepository implements Repository {
                         while (observerIterator.hasNext()) {
                             Observer observer = observerIterator.next();
                             assert observer != null;
-                            observer.notify(changes);
+                            observer.notify(acceptableChanges);
                         }
                     }
                 };
@@ -1655,6 +1658,33 @@ public class JcrRepository implements Repository {
                 // Now let the executor service run this in another thread ...
                 this.observerService.execute(sender);
             }
+        }
+
+        private Changes filter( Changes changes ) {
+            // We only care about events that come from the repository source, the system source,
+            // or the repository source name (for remote events only) ...
+            String changedSourceName = changes.getSourceName();
+            if (sourceName.equals(changedSourceName)) {
+                // These are changes made locally by this repository ...
+                return changes;
+            }
+            if (systemSourceName.equals(changedSourceName)) {
+                // These are changes made locally by this repository ...
+                return changes;
+            }
+            if (repositorySourceName.equals(changedSourceName)) {
+                // These may be events generated locally or from a remote engine in the cluster ...
+                if (this.processId.equals(changes.getProcessId())) {
+                    // These events were made locally and are being handled above, so we can ignore these ...
+                    return null;
+                }
+                // Otherwise, the changes were recieved from another engine in the cluster and
+                // we do want to respond to these changes. However, the source name of the changes
+                // needs to be altered to match the 'sourceName' ...
+                return new Changes(changes.getProcessId(), changes.getContextId(), changes.getUserName(), sourceName,
+                                   changes.getTimestamp(), changes.getChangeRequests(), changes.getData());
+            }
+            return null;
         }
 
         /**

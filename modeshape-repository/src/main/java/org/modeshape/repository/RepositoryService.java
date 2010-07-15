@@ -43,6 +43,7 @@ import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.observe.Changes;
 import org.modeshape.graph.observe.NetChangeObserver;
+import org.modeshape.graph.observe.ObservationBus;
 import org.modeshape.graph.observe.Observer;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
@@ -134,6 +135,7 @@ public class RepositoryService implements AdministeredService, Observer {
      * @param pathToConfigurationRoot the path of the node in the configuration source repository that should be treated by this
      *        service as the root of the service's configuration; if null, then "/dna:system" is used
      * @param context the execution context in which this service should run
+     * @param observationBus the {@link ObservationBus} instance that should be used for changes in the sources
      * @param problems the {@link Problems} instance that this service should use to report problems starting repositories
      * @throws IllegalArgumentException if the bootstrap source is null or the execution context is null
      */
@@ -141,15 +143,18 @@ public class RepositoryService implements AdministeredService, Observer {
                               String configurationWorkspaceName,
                               Path pathToConfigurationRoot,
                               ExecutionContext context,
+                              ObservationBus observationBus,
                               Problems problems ) {
         CheckArg.isNotNull(configurationSource, "configurationSource");
         CheckArg.isNotNull(context, "context");
+        CheckArg.isNotNull(observationBus, "observationBus");
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         if (pathToConfigurationRoot == null) pathToConfigurationRoot = pathFactory.create("/dna:system");
         if (problems == null) problems = new SimpleProblems();
         Path sourcesPath = pathFactory.create(pathToConfigurationRoot, ModeShapeLexicon.SOURCES);
 
-        this.sources = new RepositoryLibrary(configurationSource, configurationWorkspaceName, sourcesPath, context);
+        this.sources = new RepositoryLibrary(configurationSource, configurationWorkspaceName, sourcesPath, context,
+                                             observationBus);
         this.sources.addSource(configurationSource);
         this.pathToConfigurationRoot = pathToConfigurationRoot;
         this.configurationSourceName = configurationSource.getName();

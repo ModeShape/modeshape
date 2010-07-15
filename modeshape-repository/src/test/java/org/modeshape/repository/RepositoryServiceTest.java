@@ -29,25 +29,27 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 import java.util.concurrent.TimeUnit;
-import org.modeshape.common.collection.Problems;
-import org.modeshape.common.collection.SimpleProblems;
-import org.modeshape.common.util.Logger;
-import org.modeshape.graph.ModeShapeLexicon;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.Graph;
-import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.graph.property.Path;
-import org.modeshape.repository.service.ServiceAdministrator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.modeshape.common.collection.Problems;
+import org.modeshape.common.collection.SimpleProblems;
+import org.modeshape.common.util.Logger;
+import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.Graph;
+import org.modeshape.graph.ModeShapeLexicon;
+import org.modeshape.graph.connector.RepositoryConnection;
+import org.modeshape.graph.connector.RepositorySource;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.graph.observe.LocalObservationBus;
+import org.modeshape.graph.observe.ObservationBus;
+import org.modeshape.graph.property.Path;
+import org.modeshape.repository.service.ServiceAdministrator;
 
 /**
  * @author Randall Hauch
@@ -62,6 +64,7 @@ public class RepositoryServiceTest {
     private ExecutionContext context;
     private Path root;
     private Problems problems;
+    private ObservationBus bus;
     @Mock
     private RepositoryLibrary sources;
 
@@ -80,7 +83,8 @@ public class RepositoryServiceTest {
         when(sources.createConnection(configSourceName)).thenReturn(configRepositoryConnection);
         root = context.getValueFactories().getPathFactory().createRootPath();
         problems = new SimpleProblems();
-        service = new RepositoryService(configRepositorySource, configWorkspaceName, root, context, problems);
+        bus = new LocalObservationBus();
+        service = new RepositoryService(configRepositorySource, configWorkspaceName, root, context, bus, problems);
     }
 
     @After
@@ -193,7 +197,7 @@ public class RepositoryServiceTest {
     @Test
     public void shouldConfigureRepositorySourceWithSetterThatTakesArrayButWithSingleValues() {
         Path configPath = context.getValueFactories().getPathFactory().create("/mode:system");
-        service = new RepositoryService(configRepositorySource, configWorkspaceName, configPath, context, problems);
+        service = new RepositoryService(configRepositorySource, configWorkspaceName, configPath, context, bus, problems);
 
         // Set up the configuration repository ...
         configRepository.useWorkspace("default");
