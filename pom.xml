@@ -823,6 +823,10 @@
 							<name>java.io.tmpdir</name>
 							<value>${basedir}/target</value>
 						</property>
+						<property>
+						  <name>java.net.preferIPv4Stack</name>
+						  <value>true</value>
+						</property>
 					</systemProperties>
 					<argLine>-Xmx128M</argLine>
 				</configuration>
@@ -918,6 +922,11 @@
 			<dependency>
 				<groupId>org.modeshape</groupId>
 				<artifactId>modeshape-jcr-tck</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-clustering</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
