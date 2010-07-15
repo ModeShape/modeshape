@@ -21,6 +21,16 @@
  */
 package org.modeshape.repository;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
@@ -44,28 +54,19 @@ import org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.modeshape.graph.mimetype.MimeTypeDetector;
 import org.modeshape.graph.mimetype.MimeTypeDetectorConfig;
 import org.modeshape.graph.mimetype.MimeTypeDetectors;
-import org.modeshape.graph.observe.ObservationBus;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathExpression;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
+import org.modeshape.repository.cluster.ClusteringConfig;
+import org.modeshape.repository.cluster.ClusteringService;
 import org.modeshape.repository.sequencer.SequencerConfig;
 import org.modeshape.repository.sequencer.SequencingService;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
 /**
- * A single instance of the ModeShape services, which is obtained after setting up the {@link ModeShapeConfiguration#build() configuration}.
+ * A single instance of the ModeShape services, which is obtained after setting up the {@link ModeShapeConfiguration#build()
+ * configuration}.
  * 
  * @see ModeShapeConfiguration
  */
@@ -82,11 +83,12 @@ public class ModeShapeEngine {
     private final RepositoryService repositoryService;
     private final SequencingService sequencingService;
     private final ExecutorService executorService;
+    private final ClusteringService clusteringService;
     private final MimeTypeDetectors detectors;
     private static final Logger LOGGER = Logger.getLogger(ModeShapeEngine.class);
 
     protected ModeShapeEngine( ExecutionContext context,
-                         ModeShapeConfiguration.ConfigurationDefinition configuration ) {
+                               ModeShapeConfiguration.ConfigurationDefinition configuration ) {
         this.problems = new SimpleProblems();
 
         // Use the configuration's context ...
@@ -105,23 +107,23 @@ public class ModeShapeEngine {
         detectors.addDetector(new MimeTypeDetectorConfig("ExtensionDetector", "Extension-based MIME type detector",
                                                          ExtensionBasedMimeTypeDetector.class));
 
-        // Create the RepositoryContext that the configuration repository source should use ...
-        ObservationBus configurationChangeBus = new ObservationBus();
-        RepositoryContext configContext = new SimpleRepositoryContext(context, configurationChangeBus, null);
-        final RepositorySource configSource = this.configuration.getRepositorySource();
-        configSource.initialize(configContext);
+        // Create the clustering service ...
+        ClusteringConfig clusterConfig = scanner.getClusteringConfiguration();
+        clusteringService = new ClusteringService();
+        clusteringService.setExecutionContext(context);
+        clusteringService.setClusteringConfig(clusterConfig);
 
         // Create the RepositoryService, pointing it to the configuration repository ...
         Path pathToConfigurationRoot = this.configuration.getPath();
         String configWorkspaceName = this.configuration.getWorkspace();
+        RepositorySource configSource = this.configuration.getRepositorySource();
         repositoryService = new RepositoryService(configSource, configWorkspaceName, pathToConfigurationRoot, context, problems);
 
-        // Now register the repository service to be notified of changes to the configuration ...
-        configurationChangeBus.register(repositoryService);
+        // Create the executor service (which starts out with 0 threads, so it's okay to do here) ...
+        ThreadFactory threadPoolFactory = new NamedThreadFactory(configuration.getName());
+        executorService = Executors.newCachedThreadPool(threadPoolFactory);
 
         // Create the sequencing service ...
-        ThreadFactory threadPoolFactory = new NamedThreadFactory(configuration.getName());
-        executorService = Executors.newScheduledThreadPool(10, threadPoolFactory);
         sequencingService = new SequencingService();
         sequencingService.setExecutionContext(context);
         sequencingService.setExecutorService(executorService);
@@ -129,8 +131,9 @@ public class ModeShapeEngine {
         for (SequencerConfig sequencerConfig : scanner.getSequencingConfigurations()) {
             sequencingService.addSequencer(sequencerConfig);
         }
-    }
 
+        // The rest of the instantiation/configuration will be done in start()
+    }
 
     /**
      * Get the problems that were encountered when setting up this engine from the configuration.
@@ -270,8 +273,18 @@ public class ModeShapeEngine {
             // Then throw an exception ...
             throw new IllegalStateException(RepositoryI18n.errorsPreventStarting.text());
         }
+
+        // Create the RepositoryContext that the configuration repository source should use ...
+        RepositoryContext configContext = new SimpleRepositoryContext(context, clusteringService, null);
+        configuration.getRepositorySource().initialize(configContext);
+
+        // Start the various services ...
+        clusteringService.getAdministrator().start();
         repositoryService.getAdministrator().start();
         sequencingService.getAdministrator().start();
+
+        // Now register the repository service to be notified of changes to the configuration ...
+        clusteringService.register(repositoryService);
     }
 
     /**
@@ -282,15 +295,19 @@ public class ModeShapeEngine {
      * @see #start()
      */
     public void shutdown() {
-        // Then terminate the executor service, which may be running background jobs that are not yet completed
+
+        // Terminate the executor service, which may be running background jobs that are not yet completed
         // and which will prevent new jobs being submitted (to the sequencing service) ...
         executorService.shutdown();
 
-        // First, shutdown the sequencing service, which will prevent any additional jobs from going through ...
+        // Next, shutdown the sequencing service, which will prevent any additional jobs from going through ...
         sequencingService.getAdministrator().shutdown();
 
-        // Finally shut down the repository source, which closes all connections ...
+        // Shut down the repository source, which closes all connections ...
         repositoryService.getAdministrator().shutdown();
+
+        // Finally shut down the clustering service ...
+        clusteringService.shutdown();
     }
 
     /**
@@ -385,6 +402,49 @@ public class ModeShapeEngine {
                 // no detectors registered ...
             }
             return detectors;
+        }
+
+        public ClusteringConfig getClusteringConfiguration() {
+            Graph graph = Graph.create(configurationRepository.getRepositorySource(), context);
+            Path pathToClusteringNode = context.getValueFactories().getPathFactory().create(configurationRepository.getPath(),
+                                                                                            ModeShapeLexicon.CLUSTERING);
+            try {
+                Subgraph subgraph = graph.getSubgraphOfDepth(2).at(pathToClusteringNode);
+
+                Set<Name> skipProperties = new HashSet<Name>();
+                skipProperties.add(ModeShapeLexicon.DESCRIPTION);
+                skipProperties.add(ModeShapeLexicon.CLASSNAME);
+                skipProperties.add(ModeShapeLexicon.CLASSPATH);
+                Set<String> skipNamespaces = new HashSet<String>();
+                skipNamespaces.add(JcrLexicon.Namespace.URI);
+                skipNamespaces.add(JcrNtLexicon.Namespace.URI);
+                skipNamespaces.add(JcrMixLexicon.Namespace.URI);
+
+                Node clusterNode = subgraph.getRoot();
+                String name = stringValueOf(clusterNode);
+                String desc = stringValueOf(clusterNode, ModeShapeLexicon.DESCRIPTION);
+                String classname = stringValueOf(clusterNode, ModeShapeLexicon.CLASSNAME);
+                String[] classpath = stringValuesOf(clusterNode, ModeShapeLexicon.CLASSPATH);
+                if (classname == null || classname.trim().length() == 0) {
+                    classname = "org.modeshape.clustering.ClusteredObservationBus";
+                }
+
+                Map<String, Object> properties = new HashMap<String, Object>();
+                for (Property property : clusterNode.getProperties()) {
+                    Name propertyName = property.getName();
+                    if (skipNamespaces.contains(propertyName.getNamespaceUri())) continue;
+                    if (skipProperties.contains(propertyName)) continue;
+                    if (property.isSingle()) {
+                        properties.put(propertyName.getLocalName(), property.getFirstValue());
+                    } else {
+                        properties.put(propertyName.getLocalName(), property.getValuesAsArray());
+                    }
+                }
+                return new ClusteringConfig(name, desc, properties, classname, classpath);
+            } catch (PathNotFoundException e) {
+                // no detectors registered ...
+            }
+            return null;
         }
 
         public List<SequencerConfig> getSequencingConfigurations() {

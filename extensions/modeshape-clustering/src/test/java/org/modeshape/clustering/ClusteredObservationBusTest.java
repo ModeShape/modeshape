@@ -21,31 +21,27 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.graph.observe;
+package org.modeshape.clustering;
 
-import net.jcip.annotations.ThreadSafe;
+import org.junit.Before;
+import org.junit.Test;
 
-/**
- * A simple {@link Observer} that is itself {@link Observable}. This interface essentially multiplexes the events from a single
- * Observable to disseminate each event to multiple Observers.
- */
-@ThreadSafe
-public interface ObservationBus extends Observable, Observer {
+public class ClusteredObservationBusTest {
 
-    /**
-     * Prepare this bus for operation by starting any resources.
-     */
-    public void start();
+    private ClusteredObservationBus bus;
 
-    /**
-     * Determine whether this particular bus currently has any observers.
-     * 
-     * @return true if there is at least one observer, or false otherwise
-     */
-    public boolean hasObservers();
+    @Before
+    public void beforeEach() {
+        bus = new ClusteredObservationBus();
+    }
 
-    /**
-     * Unregister all registered observers, and mark this as no longer accepting new registered observers.
-     */
-    public void shutdown();
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldNotAllowSettingNullClusterName() {
+        bus.setClusterName(null);
+    }
+
+    @Test
+    public void shouldAllowSettingBlankClusterName() {
+        bus.setClusterName("");
+    }
 }

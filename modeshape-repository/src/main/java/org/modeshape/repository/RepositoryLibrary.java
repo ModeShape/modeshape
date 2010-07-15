@@ -43,6 +43,7 @@ import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositoryConnectionPool;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySource;
+import org.modeshape.graph.observe.LocalObservationBus;
 import org.modeshape.graph.observe.Observable;
 import org.modeshape.graph.observe.ObservationBus;
 import org.modeshape.graph.observe.Observer;
@@ -65,7 +66,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     protected class Administrator extends AbstractServiceAdministrator {
 
         protected Administrator() {
-            super(RepositoryI18n.federationServiceName, State.STARTED);
+            super(RepositoryI18n.repositoryServiceName, State.STARTED);
         }
 
         /**
@@ -109,7 +110,7 @@ public class RepositoryLibrary implements RepositoryConnectionFactory, Observabl
     private final Map<String, RepositoryConnectionPool> pools = new HashMap<String, RepositoryConnectionPool>();
     private RepositoryConnectionFactory delegate;
     private final ExecutionContext executionContext;
-    private final ObservationBus observationBus = new ObservationBus();
+    private final ObservationBus observationBus = new LocalObservationBus();
     private final RepositorySource configurationSource;
     private final String configurationWorkspaceName;
     private final Path pathToConfigurationRoot;

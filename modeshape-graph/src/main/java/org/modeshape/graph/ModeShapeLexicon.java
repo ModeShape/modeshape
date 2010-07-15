@@ -48,7 +48,12 @@ public class ModeShapeLexicon {
     public static final Name RESOURCE = new BasicName(Namespace.URI, "resource");
     public static final Name ROOT = new BasicName(Namespace.URI, "root");
     public static final Name TIME_TO_EXPIRE = new BasicName(Namespace.URI, "timeToExpire");
-    public static final Name NAMESPACE_URI = new BasicName(Namespace.URI, "uri");
+    public static final Name URI = new BasicName(Namespace.URI, "uri");
+    /**
+     * @deprecated Use {@link #URI} instead.
+     */
+    @Deprecated
+    public static final Name NAMESPACE_URI = URI;
 
     public static final Name WORKSPACES = new BasicName(Namespace.URI, "workspaces");
     public static final Name SOURCE_NAME = new BasicName(Namespace.URI, "source");

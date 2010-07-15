@@ -253,7 +253,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         Node namespacesNode = subgraph.getNode(ModeShapeLexicon.NAMESPACES);
         if (namespacesNode != null) {
             GraphNamespaceRegistry registry = new GraphNamespaceRegistry(configuration, namespacesNode.getLocation().getPath(),
-                                                                         ModeShapeLexicon.NAMESPACE_URI);
+                                                                         ModeShapeLexicon.URI);
             context = context.with(registry);
         }
 

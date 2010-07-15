@@ -131,6 +131,7 @@
 		<module>modeshape-repository</module>
 		<module>modeshape-cnd</module>
 		<module>extensions/modeshape-search-lucene</module>
+		<module>extensions/modeshape-clustering</module>
 		<module>modeshape-jcr-api</module>
 		<module>modeshape-jcr</module>
 		<module>extensions/modeshape-classloader-maven</module>

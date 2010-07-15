@@ -23,6 +23,11 @@
  */
 package org.modeshape.repository;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
@@ -52,12 +57,6 @@ import org.modeshape.repository.service.AbstractServiceAdministrator;
 import org.modeshape.repository.service.AdministeredService;
 import org.modeshape.repository.service.ServiceAdministrator;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 /**
  * A service that manages the {@link RepositorySource}es defined within a configuration repository.
  */
@@ -72,7 +71,7 @@ public class RepositoryService implements AdministeredService, Observer {
     protected class Administrator extends AbstractServiceAdministrator {
 
         protected Administrator() {
-            super(RepositoryI18n.federationServiceName, State.PAUSED);
+            super(RepositoryI18n.repositoryServiceName, State.PAUSED);
         }
 
         /**
@@ -535,6 +534,10 @@ public class RepositoryService implements AdministeredService, Observer {
          */
         @Override
         protected void notify( NetChanges netChanges ) {
+            if (getConfigurationWorkspaceName() == null) {
+                // This was a transient configuration source, so it should never change ...
+                return;
+            }
             if (!getConfigurationSourceName().equals(netChanges.getSourceName())) return;
             for (NetChange change : netChanges.getNetChanges()) {
                 if (!getConfigurationWorkspaceName().equals(change.getRepositoryWorkspaceName())) return;

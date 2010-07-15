@@ -540,7 +540,7 @@ public class JcrRepository implements Repository {
 
         // Create the namespace registry and corresponding execution context.
         // Note that this persistent registry has direct access to the system workspace.
-        Name uriProperty = ModeShapeLexicon.NAMESPACE_URI;
+        Name uriProperty = ModeShapeLexicon.URI;
         PathFactory pathFactory = executionContext.getValueFactories().getPathFactory();
         Path systemPath = pathFactory.create(JcrLexicon.SYSTEM);
         Path namespacesPath = pathFactory.create(systemPath, ModeShapeLexicon.NAMESPACES);

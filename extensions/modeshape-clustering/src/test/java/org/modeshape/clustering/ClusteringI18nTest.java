@@ -21,31 +21,13 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.graph.observe;
+package org.modeshape.clustering;
 
-import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.AbstractI18nTest;
 
-/**
- * A simple {@link Observer} that is itself {@link Observable}. This interface essentially multiplexes the events from a single
- * Observable to disseminate each event to multiple Observers.
- */
-@ThreadSafe
-public interface ObservationBus extends Observable, Observer {
+public class ClusteringI18nTest extends AbstractI18nTest {
 
-    /**
-     * Prepare this bus for operation by starting any resources.
-     */
-    public void start();
-
-    /**
-     * Determine whether this particular bus currently has any observers.
-     * 
-     * @return true if there is at least one observer, or false otherwise
-     */
-    public boolean hasObservers();
-
-    /**
-     * Unregister all registered observers, and mark this as no longer accepting new registered observers.
-     */
-    public void shutdown();
+    public ClusteringI18nTest() {
+        super(ClusteringI18n.class);
+    }
 }

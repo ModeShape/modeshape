@@ -48,4 +48,7 @@ public class ModeShapeLexicon extends org.modeshape.graph.ModeShapeLexicon {
     public static final Name VALUE = new BasicName(Namespace.URI, "value");
     public static final Name RETRY_LIMIT = new BasicName(Namespace.URI, "retryLimit");
     public static final Name DEFAULT_CACHE_POLICY = new BasicName(Namespace.URI, "defaultCachePolicy");
+    public static final Name CLUSTERING = new BasicName(Namespace.URI, "clustering");
+    public static final Name CONFIGURATION = new BasicName(Namespace.URI, "configuration");
+    public static final Name CLUSTER_NAME = new BasicName(Namespace.URI, "clusterName");
 }

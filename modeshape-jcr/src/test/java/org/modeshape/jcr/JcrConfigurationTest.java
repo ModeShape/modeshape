@@ -383,7 +383,7 @@ public class JcrConfigurationTest {
         assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:namespaces").getChildren(),
                    hasChild(segment("modetest")));
         assertThat(subgraph.getNode("/mode:repositories/Car Repository/mode:namespaces/modetest"),
-                   hasProperty(ModeShapeLexicon.NAMESPACE_URI, "http://www.modeshape.org/test/1.0"));
+                   hasProperty(ModeShapeLexicon.URI, "http://www.modeshape.org/test/1.0"));
 
         // Initialize IDTrust and a policy file (which defines the "modeshape-jcr" login config name)
         String configFile = "security/jaas.conf.xml";

@@ -41,7 +41,7 @@
 
 		<!-- 
       Testing (note the scope)
-    -->
+        -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -75,6 +75,12 @@
 			<scope>test</scope>
 		</dependency>
 
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-clustering</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
 		<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-connector-jbosscache</artifactId>

@@ -7041,6 +7041,34 @@ public class Graph {
             return getLocation().hashCode();
         }
 
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj instanceof SubgraphResults) {
+                SubgraphResults that = (SubgraphResults)obj;
+                return getLocation().equals(that.getLocation()) && request.equals(that.request);
+            } else if (obj instanceof Subgraph) {
+                Subgraph that = (Subgraph)obj;
+                if (!getLocation().equals(that.getLocation())) return false;
+                Iterator<SubgraphNode> thisIter = this.iterator();
+                Iterator<SubgraphNode> thatIter = that.iterator();
+                while (thisIter.hasNext() && thatIter.hasNext()) {
+                    SubgraphNode thisNode = thisIter.next();
+                    SubgraphNode thatNode = thatIter.next();
+                    if (!thisNode.getLocation().equals(thatNode.getLocation())) return false;
+                    if (!thisNode.getProperties().equals(thatNode.getProperties())) return false;
+                    if (!thisNode.getChildren().equals(thatNode.getChildren())) return false;
+                }
+                if (thisIter.hasNext() || thatIter.hasNext()) return false;
+                return true;
+            }
+            return false;
+        }
+
         @Override
         public String toString() {
             return "Subgraph\n" + getToString(getContext());

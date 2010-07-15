@@ -55,27 +55,14 @@ public final class RepositoryI18n {
     public static I18n errorFindingPropertyNameInPropertyChangedEvent;
     public static I18n errorFindingPropertyNameInPropertyRemovedEvent;
 
-    // Rules
-    public static I18n unableToObtainJsr94RuleAdministrator;
-    public static I18n errorUsingJsr94RuleAdministrator;
-    public static I18n unableToObtainJsr94ServiceProvider;
-    public static I18n errorAddingOrUpdatingRuleSet;
-    public static I18n errorRollingBackRuleSetAfterUpdateFailed;
-    public static I18n errorReadingRulesAndProperties;
-    public static I18n errorDeregisteringRuleSetBeforeUpdatingIt;
-    public static I18n errorRecreatingRuleSet;
-    public static I18n errorRemovingRuleSet;
-    public static I18n errorRemovingRuleSetUponShutdown;
-    public static I18n unableToFindRuleSet;
-    public static I18n errorExecutingRuleSetWithGlobalsAndFacts;
-    public static I18n unableToBuildRuleSetRegularExpressionPattern;
+    // Repository service ...
+    public static I18n repositoryServiceName;
 
-    public static I18n errorObtainingSessionToRepositoryWorkspace;
-    public static I18n errorWritingProblemsOnRuleSet;
-
-    public static I18n federationServiceName;
-    public static I18n observationServiceName;
-    public static I18n ruleServiceName;
+    // Clustering service ...
+    public static I18n clusteringServiceName;
+    public static I18n unableToRegisterObserverOnUnstartedClusteringService;
+    public static I18n unableToUnregisterObserverOnUnstartedClusteringService;
+    public static I18n unableToNotifyObserversOnUnstartedClusteringService;
 
     // Sequencing
     public static I18n sequencingServiceName;

@@ -220,6 +220,27 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
         }
     }
 
+    public boolean removeAll() {
+        try {
+            this.lock.lock();
+            this.configs.clear();
+            this.instances.clear();
+            return true;
+        } finally {
+            this.lock.unlock();
+        }
+    }
+
+    public boolean removeAllAndAdd( ConfigType config ) {
+        try {
+            this.lock.lock();
+            removeAll();
+            return add(config);
+        } finally {
+            this.lock.unlock();
+        }
+    }
+
     /**
      * Refresh the instances by attempting to re-instantiate each registered configuration.
      * 
@@ -282,6 +303,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
                     reflection.invokeSetterMethodOnTarget(entry.getKey(), newInstance, entry.getValue());
                 }
             }
+            configure(newInstance, config);
         } catch (Throwable e) {
             throw new SystemFailureException(e);
         }
@@ -289,6 +311,11 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
             throw new SystemFailureException(CommonI18n.componentNotConfigured.text(config.getName()));
         }
         return newInstance;
+    }
+
+    protected void configure( ComponentType newInstance,
+                              ConfigType configuration ) throws Exception {
+        // do nothing
     }
 
     /**

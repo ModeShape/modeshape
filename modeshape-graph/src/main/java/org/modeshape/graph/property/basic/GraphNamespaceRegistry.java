@@ -53,7 +53,7 @@ import org.modeshape.graph.property.ValueFactory;
 @NotThreadSafe
 public class GraphNamespaceRegistry implements NamespaceRegistry {
 
-    public static final Name DEFAULT_URI_PROPERTY_NAME = ModeShapeLexicon.NAMESPACE_URI;
+    public static final Name DEFAULT_URI_PROPERTY_NAME = ModeShapeLexicon.URI;
     public static final String GENERATED_PREFIX = "ns";
 
     private SimpleNamespaceRegistry cache;

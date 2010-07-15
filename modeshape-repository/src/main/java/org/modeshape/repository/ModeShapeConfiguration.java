@@ -56,6 +56,7 @@ import org.modeshape.graph.Workspace;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.mimetype.MimeTypeDetector;
+import org.modeshape.graph.observe.ObservationBus;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
@@ -101,6 +102,7 @@ public class ModeShapeConfiguration {
     private final Map<String, SequencerDefinition<? extends ModeShapeConfiguration>> sequencerDefinitions = new HashMap<String, SequencerDefinition<? extends ModeShapeConfiguration>>();
     private final Map<String, RepositorySourceDefinition<? extends ModeShapeConfiguration>> repositorySourceDefinitions = new HashMap<String, RepositorySourceDefinition<? extends ModeShapeConfiguration>>();
     private final Map<String, MimeTypeDetectorDefinition<? extends ModeShapeConfiguration>> mimeTypeDetectorDefinitions = new HashMap<String, MimeTypeDetectorDefinition<? extends ModeShapeConfiguration>>();
+    private ClusterDefinition<? extends ModeShapeConfiguration> clusterDefinition;
 
     /**
      * Create a new configuration, using a default-constructed {@link ExecutionContext}.
@@ -283,8 +285,9 @@ public class ModeShapeConfiguration {
         graph.importXmlFrom(configurationFileInputStream).skippingRootElement(true).into(pathToParent);
 
         // The file was imported successfully, so now create the content information ...
-        configurationContent = new ConfigurationDefinition(configurationContent.getName(), source, null, pathToParent, context,
-                                                           null);
+        configurationContent = configurationContent.with(pathToParent)
+                                                   .with(source)
+                                                   .withWorkspace(source.getDefaultWorkspaceName());
         return this;
     }
 
@@ -348,6 +351,8 @@ public class ModeShapeConfiguration {
                 workspace = graph.createWorkspace().named(workspaceName);
             }
             assert workspace.getRoot() != null;
+        } else {
+            workspaceName = graph.getCurrentWorkspaceName(); // will be the default
         }
 
         // Verify the path ...
@@ -356,8 +361,7 @@ public class ModeShapeConfiguration {
         assert parent != null;
 
         // Now create the content information ...
-        configurationContent = new ConfigurationDefinition(configurationContent.getName(), source, workspaceName, path, context,
-                                                           null);
+        configurationContent = configurationContent.with(source).withWorkspace(workspaceName).with(path);
         return this;
     }
 
@@ -675,6 +679,15 @@ public class ModeShapeConfiguration {
     }
 
     /**
+     * Obtain the definition for this engine's clustering. If no clustering definition exists, one will be created.
+     * 
+     * @return the clustering definition; never null
+     */
+    public ClusterDefinition<? extends ModeShapeConfiguration> clustering() {
+        return clusterDefinition(this);
+    }
+
+    /**
      * Convenience method to make the code that sets up this configuration easier to read. This method simply returns this object.
      * 
      * @return this configuration component; never null
@@ -950,6 +963,15 @@ public class ModeShapeConfiguration {
     }
 
     /**
+     * Interface used to set up and define the cluster configuration.
+     * 
+     * @param <ReturnType> the type of the configuration component that owns this definition object
+     */
+    public interface ClusterDefinition<ReturnType>
+        extends Returnable<ReturnType>, SetProperties<ClusterDefinition<ReturnType>>, Removable<ReturnType> {
+    }
+
+    /**
      * Interface used to set up and define a MIME type detector instance.
      * 
      * @param <ReturnType> the type of the configuration component that owns this definition object
@@ -1092,6 +1114,21 @@ public class ModeShapeConfiguration {
             sequencerDefinitions.put(name, definition);
         }
         return definition;
+    }
+
+    /**
+     * Utility method to construct a definition object for the clustering with the supplied name and return type.
+     * 
+     * @param <ReturnType> the type of the return object
+     * @param returnObject the return object
+     * @return the definition for the clustering; never null
+     */
+    @SuppressWarnings( "unchecked" )
+    protected <ReturnType extends ModeShapeConfiguration> ClusterDefinition<ReturnType> clusterDefinition( ReturnType returnObject ) {
+        if (clusterDefinition == null) {
+            clusterDefinition = new ClusterBuilder<ReturnType>(returnObject, changes(), path(), ModeShapeLexicon.CLUSTERING);
+        }
+        return (ClusterDefinition<ReturnType>)clusterDefinition;
     }
 
     protected static class BaseReturnable<ReturnType> implements Returnable<ReturnType> {
@@ -1463,6 +1500,23 @@ public class ModeShapeConfiguration {
         }
     }
 
+    protected static class ClusterBuilder<ReturnType>
+        extends GraphComponentBuilder<ReturnType, ClusterDefinition<ReturnType>, ObservationBus>
+        implements ClusterDefinition<ReturnType> {
+
+        protected ClusterBuilder( ReturnType returnObject,
+                                  Graph.Batch batch,
+                                  Path path,
+                                  Name... names ) {
+            super(returnObject, batch, path, names);
+        }
+
+        @Override
+        protected ClusterDefinition<ReturnType> thisType() {
+            return this;
+        }
+    }
+
     /**
      * Representation of the current configuration content.
      */
@@ -1483,6 +1537,7 @@ public class ModeShapeConfiguration {
                                            ExecutionContext context,
                                            ClassLoaderFactory classLoaderFactory ) {
             assert configurationName != null;
+            assert source != null;
             this.name = configurationName;
             this.source = source;
             this.path = path != null ? path : RootPath.INSTANCE;
@@ -1581,6 +1636,18 @@ public class ModeShapeConfiguration {
          * @return the new configuration
          */
         public ConfigurationDefinition with( ClassLoaderFactory classLoaderFactory ) {
+            CheckArg.isNotNull(source, "source");
+            return new ConfigurationDefinition(name, source, workspace, path, context, classLoaderFactory);
+        }
+
+        /**
+         * Return a copy of this configuration that uses the supplied repository source instead of this object's
+         * {@link #getRepositorySource() repository source}.
+         * 
+         * @param source the repository source containing the configuration
+         * @return the new configuration
+         */
+        public ConfigurationDefinition with( RepositorySource source ) {
             return new ConfigurationDefinition(name, source, workspace, path, context, classLoaderFactory);
         }
 
