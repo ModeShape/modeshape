@@ -121,7 +121,7 @@ public class ClusteredObservationBus implements ObservationBus {
      * @throws IllegalStateException if this method is called after this bus has been {@link #start() started} but before it has
      *         been {@link #shutdown() shutdown}
      */
-    public void setConfigurationFile( String configuration ) {
+    public void setConfiguration( String configuration ) {
         if (channel != null) {
             String name = this.clusterName;
             throw new IllegalStateException(ClusteringI18n.clusteringChannelIsRunningAndCannotBeChangedUnlessShutdown.text(name));
@@ -172,30 +172,8 @@ public class ClusteredObservationBus implements ObservationBus {
             channel.setReceiver(null);
         }
         try {
-            if (configuration == null) {
-                channel = new JChannel();
-            } else {
-                // Try the XML configuration first ...
-                ProtocolStackConfigurator configurator = null;
-                InputStream stream = new ByteArrayInputStream(configuration.getBytes());
-                try {
-                    configurator = XmlConfigurator.getInstance(stream);
-                } catch (IOException e) {
-                    // ignore, since the configuration may be of another form ...
-                } finally {
-                    try {
-                        stream.close();
-                    } catch (IOException e) {
-                        // ignore this
-                    }
-                }
-                if (configurator != null) {
-                    channel = new JChannel(configurator);
-                } else {
-                    // Otherwise, just try the regular configuration ...
-                    channel = new JChannel(configuration);
-                }
-            }
+            // Create the new channel by calling the delegate method ...
+            channel = newChannel(configuration);
             assert channel != null;
             // Add a listener through which we'll know what's going on within the cluster ...
             channel.addChannelListener(listener);
@@ -208,6 +186,39 @@ public class ClusteredObservationBus implements ObservationBus {
         } catch (ChannelException e) {
             throw new IllegalStateException(ClusteringI18n.errorWhileStartingJGroups.text(configuration), e);
         }
+    }
+
+    /**
+     * A method that is used to instantiate the {@link JChannel} object with the supplied configuration. Subclasses can override
+     * this method to specialize this behavior.
+     * 
+     * @param configuration the configuration; may be null if the default configuration should be used
+     * @return the JChannel instance; never null
+     * @throws ChannelException if there is a problem creating the new channel object
+     */
+    protected JChannel newChannel( String configuration ) throws ChannelException {
+        if (configuration == null) {
+            return new JChannel();
+        }
+        // Try the XML configuration first ...
+        ProtocolStackConfigurator configurator = null;
+        InputStream stream = new ByteArrayInputStream(configuration.getBytes());
+        try {
+            configurator = XmlConfigurator.getInstance(stream);
+        } catch (IOException e) {
+            // ignore, since the configuration may be of another form ...
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                // ignore this
+            }
+        }
+        if (configurator != null) {
+            return new JChannel(configurator);
+        }
+        // Otherwise, just try the regular configuration ...
+        return new JChannel(configuration);
     }
 
     /**
@@ -252,7 +263,7 @@ public class ClusteredObservationBus implements ObservationBus {
                              changes.getProcessId(),
                              changes.getTimestamp());
             }
-            byte[] data = Util.objectToByteBuffer(changes);
+            byte[] data = serialize(changes);
             Message message = new Message(null, null, data);
             channel.send(message);
         } catch (ChannelClosedException e) {
@@ -315,6 +326,15 @@ public class ClusteredObservationBus implements ObservationBus {
     }
 
     /**
+     * Return whether this bus has been {@link #start() started} and not yet {@link #shutdown() shut down}.
+     * 
+     * @return true if {@link #start()} has been called but {@link #shutdown()} has not, or false otherwise
+     */
+    public boolean isStarted() {
+        return channel != null;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.modeshape.graph.observe.ObservationBus#shutdown()
@@ -335,6 +355,14 @@ public class ClusteredObservationBus implements ObservationBus {
                 observers.shutdown();
             }
         }
+    }
+
+    protected static byte[] serialize( Changes changes ) throws Exception {
+        return Util.objectToByteBuffer(changes);
+    }
+
+    protected static Changes deserialize( byte[] data ) throws Exception {
+        return (Changes)Util.objectFromByteBuffer(data);
     }
 
     protected class Receiver implements org.jgroups.Receiver {
@@ -361,7 +389,7 @@ public class ClusteredObservationBus implements ObservationBus {
                 // We have at least one observer ...
                 try {
                     // Deserialize the changes ...
-                    Changes changes = (Changes)Util.objectFromByteBuffer(message.getBuffer());
+                    Changes changes = deserialize(message.getBuffer());
                     // and broadcast to all of our observers ...
                     observers.broadcast(changes);
                     if (LOGGER.isTraceEnabled()) {
@@ -418,12 +446,18 @@ public class ClusteredObservationBus implements ObservationBus {
          */
         @Override
         public void viewAccepted( View newView ) {
+            LOGGER.trace("Members of '{0}' cluster have changed: {1}", getClusterName(), newView);
             if (newView.getMembers().size() > 1) {
-                multipleAddressesInCluster.compareAndSet(false, true);
+                if (multipleAddressesInCluster.compareAndSet(false, true)) {
+                    LOGGER.debug("There are now multiple members of cluster '{0}'; changes will be propagated throughout the cluster",
+                                 getClusterName());
+                }
             } else {
-                multipleAddressesInCluster.compareAndSet(true, false);
+                if (multipleAddressesInCluster.compareAndSet(true, false)) {
+                    LOGGER.debug("There is only one member of cluster '{0}'; changes will be propagated locally only",
+                                 getClusterName());
+                }
             }
-            LOGGER.debug("Members of '{0}' cluster have changed: {1}", getClusterName(), newView);
         }
     }
 
