@@ -5,7 +5,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.util.UUID;
 import org.infinispan.Cache;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
@@ -24,7 +23,6 @@ import org.modeshape.graph.property.PathNotFoundException;
  * 
  * This test is currently ignored. See MODE-764 for details.
  */
-@Ignore
 public class InfinispanClusterTest {
 
     private static final String CONFIG_FILE = "./src/test/resources/infinispan_clustered_config.xml";
