@@ -192,9 +192,25 @@
 		<jpaSource.rootNodeUuid />
 		<jpaSource.showSql>false</jpaSource.showSql>
     <metadata.collectorClassName>org.modeshape.connector.meta.jdbc.JdbcMetadataCollector</metadata.collectorClassName>
+		<jgroups.preferIpv4>false</jgroups.preferIpv4>
+		<jgroups.preferIpv6>false</jgroups.preferIpv6>
 	</properties>
 
 	<profiles>
+		<profile>
+			<id>preferIpv4</id>
+			<properties>
+				<jgroups.preferIpv4>true</jgroups.preferIpv4>
+				<jgroups.preferIpv6>false</jgroups.preferIpv6>
+			</properties>
+		</profile>
+		<profile>
+			<id>preferIpv6</id>
+			<properties>
+				<jgroups.preferIpv4>false</jgroups.preferIpv4>
+				<jgroups.preferIpv6>true</jgroups.preferIpv6>
+			</properties>
+		</profile>
 		<profile>
 			<id>release</id>
 			<modules>
@@ -825,7 +841,11 @@
 						</property>
 						<property>
 						  <name>java.net.preferIPv4Stack</name>
-						  <value>true</value>
+						  <value>${jgroups.preferIpv4}</value>
+						</property>
+						<property>
+						  <name>java.net.preferIPv6Stack</name>
+						  <value>${jgroups.preferIpv6}</value>
 						</property>
 					</systemProperties>
 					<argLine>-Xmx128M</argLine>
