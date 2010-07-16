@@ -103,6 +103,7 @@ import org.modeshape.graph.query.parse.QueryParsers;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.jcr.RepositoryQueryManager.PushDown;
 import org.modeshape.jcr.api.Repository;
+import org.modeshape.jcr.api.SecurityContextCredentials;
 import org.modeshape.jcr.query.JcrQomQueryParser;
 import org.modeshape.jcr.query.JcrSql2QueryParser;
 import org.modeshape.jcr.query.JcrSqlQueryParser;
@@ -1086,9 +1087,10 @@ public class JcrRepository implements Repository {
                         Object attributeValue = simple.getAttribute(attributeName);
                         sessionAttributes.put(attributeName, attributeValue);
                     }
-
                 } else if (credentials instanceof SecurityContextCredentials) {
-                    execContext = executionContext.with(((SecurityContextCredentials)credentials).getSecurityContext());
+                    execContext = executionContext.with(contextFor((SecurityContextCredentials)credentials));
+                } else if (credentials instanceof JcrSecurityContextCredentials) {
+                    execContext = executionContext.with(((JcrSecurityContextCredentials)credentials).getSecurityContext());
                 } else {
                     // Check if credentials provide a login context
                     try {
@@ -1115,6 +1117,38 @@ public class JcrRepository implements Repository {
             }
         }
         return sessionForContext(execContext, workspaceName, sessionAttributes);
+    }
+
+    /**
+     * Adapts the modeshape-jcr-api {@link org.modeshape.jcr.api.SecurityContext} to the modeshape-graph {@link SecurityContext}
+     * needed for repository login.
+     * 
+     * @param credentials the credentials containing the modeshape-jcr-api {@code SecurityContext}
+     * @return an equivalent modeshape-graph {@code SecurityContext}
+     */
+    private SecurityContext contextFor( SecurityContextCredentials credentials ) {
+        assert credentials != null;
+
+        final org.modeshape.jcr.api.SecurityContext jcrSecurityContext = credentials.getSecurityContext();
+        assert jcrSecurityContext != null;
+
+        return new SecurityContext() {
+            @Override
+            public String getUserName() {
+                return jcrSecurityContext.getUserName();
+            }
+
+            @Override
+            public boolean hasRole( String roleName ) {
+                return jcrSecurityContext.hasRole(roleName);
+            }
+
+            @Override
+            public void logout() {
+                jcrSecurityContext.logout();
+            }
+
+        };
     }
 
     /**

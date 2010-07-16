@@ -48,7 +48,7 @@ import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrTools;
-import org.modeshape.jcr.SecurityContextCredentials;
+import org.modeshape.jcr.api.SecurityContextCredentials;
 import org.modeshape.repository.sequencer.SequencingService;
 import org.modeshape.sequencer.classfile.ClassFileSequencer;
 import org.modeshape.sequencer.classfile.ClassFileSequencerLexicon;

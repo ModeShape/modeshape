@@ -23,32 +23,31 @@
  */
 package org.modeshape.web.jcr.spi;
 
-import java.io.InputStream;
+import java.util.ServiceLoader;
 import java.util.Set;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
-import net.jcip.annotations.ThreadSafe;
-import org.modeshape.jcr.JcrConfiguration;
-import org.modeshape.jcr.JcrEngine;
-import org.modeshape.jcr.JcrRepositoryFactory;
-import org.modeshape.jcr.SecurityContextCredentials;
+import org.modeshape.jcr.api.RepositoryFactory;
+import org.modeshape.jcr.api.SecurityContextCredentials;
 import org.modeshape.web.jcr.ServletSecurityContext;
 
 /**
- * Repository provider backed by the ModeShape {@link JcrRepositoryFactory} implementation.
+ * Repository provider backed by the ModeShape {@link RepositoryFactory} implementation.
  * <p>
- * The provider instantiates a {@link JcrEngine} that is {@link JcrConfiguration#loadFrom(InputStream) configured from} the file
- * in the location specified by the servlet context parameter {@code org.modeshape.web.jcr.rest.CONFIG_FILE}. This location must
- * be accessible by the classloader for this class.
+ * The provider instantiates a {code JcrEngine} that is configured from the file in the location specified by the servlet context
+ * parameter {@code org.modeshape.web.jcr.rest.CONFIG_FILE}. This location must be accessible by the classloader for this class.
+ * </p>
+ * *
+ * <p>
+ * This class is thread-safe.
  * </p>
  * 
  * @see RepositoryProvider
  * @see Class#getResourceAsStream(String)
  */
-@ThreadSafe
 public class FactoryRepositoryProvider implements RepositoryProvider {
 
     public static final String JCR_URL = "org.modeshape.web.jcr.JCR_URL";
@@ -74,8 +73,13 @@ public class FactoryRepositoryProvider implements RepositoryProvider {
         factory().shutdown();
     }
 
-    private final JcrRepositoryFactory factory() {
-        return new JcrRepositoryFactory();
+    private final RepositoryFactory factory() {
+        
+        for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
+            return factory;
+        }
+        
+        throw new IllegalStateException("No RepositoryFactory implementation on the classpath");
     }
 
     /**

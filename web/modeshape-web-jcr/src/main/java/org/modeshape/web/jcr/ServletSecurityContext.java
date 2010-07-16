@@ -24,9 +24,8 @@
 package org.modeshape.web.jcr;
 
 import javax.servlet.http.HttpServletRequest;
-import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.graph.SecurityContext;
+import org.modeshape.jcr.api.SecurityContext;
 
 /**
  * Servlet-based {@link SecurityContext security context} that assumes servlet-based authentication and provides authorization
@@ -36,7 +35,6 @@ import org.modeshape.graph.SecurityContext;
  * only be used to support longer-lasting session scopes with great care. * 
  * </p>
  */
-@ThreadSafe
 public class ServletSecurityContext implements SecurityContext {
 
     private final String userName;

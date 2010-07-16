@@ -37,7 +37,7 @@ import org.junit.Test;
 import org.modeshape.graph.SecurityContext;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
-import org.modeshape.jcr.SecurityContextCredentials;
+import org.modeshape.jcr.JcrSecurityContextCredentials;
 import org.modeshape.test.integration.jpa.JcrRepositoryWithJpaConfigurationTest.CustomSecurityContext;
 
 public class JcrRepositoryWithJpaSourceTest {
@@ -63,7 +63,7 @@ public class JcrRepositoryWithJpaSourceTest {
 
         // Set up the fake credentials ...
         SecurityContext securityContext = new CustomSecurityContext("bill");
-        credentials = new SecurityContextCredentials(securityContext);
+        credentials = new JcrSecurityContextCredentials(securityContext);
 
         repository = engine.getRepository("Test Repository Source");
         assert repository != null;

@@ -14,7 +14,12 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-jcr</artifactId>
+			<artifactId>modeshape-jcr-api</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.modeshape</groupId>
+			<artifactId>modeshape-graph</artifactId>
 		</dependency>
 
 		<!-- 
@@ -48,6 +53,11 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>1.5.8</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.modeshape</groupId>
+			<artifactId>modeshape-jcr</artifactId>
 			<scope>test</scope>
 		</dependency>
 

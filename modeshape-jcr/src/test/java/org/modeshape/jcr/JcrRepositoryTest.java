@@ -283,7 +283,7 @@ public class JcrRepositoryTest {
     @Test
     public void shouldAllowLoginWithProperCredentials() throws Exception {
         repository.login(credentials);
-        repository.login(new SecurityContextCredentials(
+        repository.login(new JcrSecurityContextCredentials(
                                                         new MockSecurityContext(null, Collections.singleton(ModeShapeRoles.ADMIN))));
     }
 
@@ -292,7 +292,7 @@ public class JcrRepositoryTest {
         Session session = repository.login(credentials, null);
         assertThat(session, notNullValue());
         session.logout();
-        session = repository.login(new SecurityContextCredentials(
+        session = repository.login(new JcrSecurityContextCredentials(
                                                                   new MockSecurityContext(
                                                                                           null,
                                                                                           Collections.singleton(ModeShapeRoles.ADMIN))),

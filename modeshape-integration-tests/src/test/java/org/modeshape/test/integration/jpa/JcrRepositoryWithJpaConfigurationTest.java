@@ -41,7 +41,7 @@ import org.modeshape.graph.SecurityContext;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
-import org.modeshape.jcr.SecurityContextCredentials;
+import org.modeshape.jcr.JcrSecurityContextCredentials;
 
 /**
  * 
@@ -131,7 +131,7 @@ public class JcrRepositoryWithJpaConfigurationTest {
                 Session session = null;
                 if (securityContext != null) {
                     // Create a JCR Credentials with our custom security context ...
-                    Credentials credentials = new SecurityContextCredentials(securityContext);
+                    Credentials credentials = new JcrSecurityContextCredentials(securityContext);
                     // And then login ...
                     session = myRepository.login(credentials, workspaceName);
                 } else {

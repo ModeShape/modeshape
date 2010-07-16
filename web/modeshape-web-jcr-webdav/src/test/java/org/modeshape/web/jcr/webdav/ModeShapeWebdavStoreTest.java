@@ -29,7 +29,7 @@ import org.mockito.MockitoAnnotations;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.web.jcr.ModeShapeJcrDeployer;
 import org.modeshape.web.jcr.RepositoryFactory;
-import org.modeshape.web.jcr.spi.ModeShapeJcrRepositoryProvider;
+import org.modeshape.web.jcr.spi.FactoryRepositoryProvider;
 import org.modeshape.web.jcr.webdav.ModeShapeWebdavStore.JcrSessionTransaction;
 
 public class ModeShapeWebdavStoreTest {
@@ -59,8 +59,8 @@ public class ModeShapeWebdavStoreTest {
         when(principal.getName()).thenReturn("testuser");
         when(request.getUserPrincipal()).thenReturn(principal);
         when(request.isUserInRole("readwrite")).thenReturn(true);
-        when(context.getInitParameter(RepositoryFactory.PROVIDER_KEY)).thenReturn(ModeShapeJcrRepositoryProvider.class.getName());
-        when(context.getInitParameter(ModeShapeJcrRepositoryProvider.CONFIG_FILE)).thenReturn("/configRepository.xml");
+        when(context.getInitParameter(RepositoryFactory.PROVIDER_KEY)).thenReturn(FactoryRepositoryProvider.class.getName());
+        when(context.getInitParameter(FactoryRepositoryProvider.JCR_URL)).thenReturn("file:///configRepository.xml");
         when(context.getInitParameter(DefaultRequestResolver.INIT_REPOSITORY_NAME)).thenReturn("mode:repository");
         when(context.getInitParameter(DefaultRequestResolver.INIT_WORKSPACE_NAME)).thenReturn("default");
         when(event.getServletContext()).thenReturn(context);

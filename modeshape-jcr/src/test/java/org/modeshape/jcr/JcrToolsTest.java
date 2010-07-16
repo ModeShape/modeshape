@@ -31,13 +31,13 @@ import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.graph.SecurityContext;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  *
@@ -76,7 +76,7 @@ public class JcrToolsTest {
         this.engine.start();
 
         this.session = this.engine.getRepository(repositoryName)
-                                  .login(new SecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
+                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
         
         Node rootNode = session.getRootNode();
         

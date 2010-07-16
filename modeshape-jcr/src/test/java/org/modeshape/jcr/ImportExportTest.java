@@ -87,7 +87,7 @@ public class ImportExportTest {
         repository = new JcrRepository(context, connectionFactory, "unused", new MockObservable(), null, null, null);
 
         SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(ModeShapeRoles.READWRITE));
-        session = (JcrSession)repository.login(new SecurityContextCredentials(mockSecurityContext));
+        session = (JcrSession)repository.login(new JcrSecurityContextCredentials(mockSecurityContext));
     }
 
     @After

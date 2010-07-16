@@ -85,8 +85,9 @@ public abstract class AbstractJcrAccessTest {
 
         repository = new JcrRepository(context, connectionFactory, "unused", new MockObservable(), null, null, null);
 
-        SecurityContext mockSecurityContext = new MockSecurityContext("testuser", Collections.singleton(ModeShapeRoles.READWRITE));
-        session = (JcrSession)repository.login(new SecurityContextCredentials(mockSecurityContext));
+        SecurityContext mockSecurityContext = new MockSecurityContext("testuser",
+                                                                         Collections.singleton(ModeShapeRoles.READWRITE));
+        session = (JcrSession)repository.login(new JcrSecurityContextCredentials(mockSecurityContext));
     }
 
     @After

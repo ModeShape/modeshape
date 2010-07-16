@@ -34,8 +34,8 @@ import org.junit.Test;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
+import org.modeshape.jcr.JcrSecurityContextCredentials;
 import org.modeshape.jcr.JcrTools;
-import org.modeshape.jcr.SecurityContextCredentials;
 import org.modeshape.sequencer.ddl.DdlParserScorer;
 import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import org.modeshape.sequencer.ddl.StandardDdlParser;
@@ -63,28 +63,20 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
 
         config = new JcrConfiguration();
         // Set up the in-memory source where we'll upload the content and where the sequenced output will be stored ...
-        config.repositorySource(repositorySource)
-              .usingClass(InMemoryRepositorySource.class)
-              .setDescription("The repository for our content")
-              .setProperty("defaultWorkspaceName", workspaceName);
+        config.repositorySource(repositorySource).usingClass(InMemoryRepositorySource.class).setDescription("The repository for our content").setProperty("defaultWorkspaceName",
+                                                                                                                                                          workspaceName);
         // Set up the JCR repository to use the source ...
-        config.repository(repositoryName)
-              .addNodeTypes(getUrl(ddlTestResourceRootFolder + "StandardDdl.cnd"))
-              .registerNamespace(StandardDdlLexicon.Namespace.PREFIX, StandardDdlLexicon.Namespace.URI)
-              .setSource(repositorySource);
+        config.repository(repositoryName).addNodeTypes(getUrl(ddlTestResourceRootFolder + "StandardDdl.cnd")).registerNamespace(StandardDdlLexicon.Namespace.PREFIX,
+                                                                                                                                StandardDdlLexicon.Namespace.URI).setSource(repositorySource);
         // Set up the DDL sequencer ...
-        config.sequencer("DDL Sequencer")
-              .usingClass("org.modeshape.sequencer.ddl.DdlSequencer")
-              .loadedFromClasspath()
-              .setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values")
-              .sequencingFrom("//(*.(ddl)[*])/jcr:content[@jcr:data]")
-              .andOutputtingTo("/ddls/$1");
+        config.sequencer("DDL Sequencer").usingClass("org.modeshape.sequencer.ddl.DdlSequencer").loadedFromClasspath().setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values").sequencingFrom("//(*.(ddl)[*])/jcr:content[@jcr:data]").andOutputtingTo("/ddls/$1");
         config.save();
         this.engine = config.build();
         this.engine.start();
 
-        this.session = this.engine.getRepository(repositoryName)
-                                  .login(new SecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
+        this.session = this.engine.getRepository(repositoryName).login(new JcrSecurityContextCredentials(
+                                                                                                         new MyCustomSecurityContext()),
+                                                                       workspaceName);
 
     }
 
@@ -365,8 +357,9 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         this.engine = config.build();
         this.engine.start();
 
-        this.session = this.engine.getRepository(repositoryName)
-                                  .login(new SecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
+        this.session = this.engine.getRepository(repositoryName).login(new JcrSecurityContextCredentials(
+                                                                                                         new MyCustomSecurityContext()),
+                                                                       workspaceName);
 
         ArgleDdlParser.parsed = 0;
         ArgleDdlParser.scored = 0;

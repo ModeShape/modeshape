@@ -38,7 +38,7 @@ import org.modeshape.connector.svn.SvnRepositorySource;
 import org.modeshape.graph.SecurityContext;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
-import org.modeshape.jcr.SecurityContextCredentials;
+import org.modeshape.jcr.JcrSecurityContextCredentials;
 import org.modeshape.jcr.JcrRepository.Option;
 
 /**
@@ -55,14 +55,12 @@ public class SvnAndJcrIntegrationTest {
         final String svnRepositorySource = "svnRepositorySource";
         final String repositoryName = "svnRepository";
         final JcrConfiguration configuration = new JcrConfiguration();
-        configuration.repositorySource(svnRepositorySource)
-                     .usingClass(SvnRepositorySource.class)
-                     .setProperty("password", "")
-                     .setProperty("username", "anonymous")
-                     .setProperty("repositoryRootUrl", repositoryUrl)
-                     .setProperty("predefinedWorkspaceNames", predefinedWorkspaceNames)
-                     .setProperty("defaultWorkspaceName", predefinedWorkspaceNames[0])
-                     .setProperty("creatingWorkspacesAllowed", false);
+        configuration.repositorySource(svnRepositorySource).usingClass(SvnRepositorySource.class).setProperty("password", "").setProperty("username",
+                                                                                                                                          "anonymous").setProperty("repositoryRootUrl",
+                                                                                                                                                                   repositoryUrl).setProperty("predefinedWorkspaceNames",
+                                                                                                                                                                                              predefinedWorkspaceNames).setProperty("defaultWorkspaceName",
+                                                                                                                                                                                                                                    predefinedWorkspaceNames[0]).setProperty("creatingWorkspacesAllowed",
+                                                                                                                                                                                                                                                                             false);
 
         configuration.repository(repositoryName).setSource(svnRepositorySource).setOption(Option.QUERY_EXECUTION_ENABLED, "true");
 
@@ -70,8 +68,8 @@ public class SvnAndJcrIntegrationTest {
         this.engine = configuration.build();
         this.engine.start();
 
-        this.session = this.engine.getRepository(repositoryName)
-                                  .login(new SecurityContextCredentials(new MyCustomSecurityContext()));
+        this.session = this.engine.getRepository(repositoryName).login(new JcrSecurityContextCredentials(
+                                                                                                         new MyCustomSecurityContext()));
 
     }
 

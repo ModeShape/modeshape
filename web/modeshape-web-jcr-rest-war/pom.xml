@@ -44,6 +44,11 @@
 			<version>4.4</version>
 			<scope>integration-test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.modeshape</groupId>
+			<artifactId>modeshape-jcr</artifactId>
+			<scope>integration-test</scope>
+		</dependency>
 	</dependencies>
 	<build>
 		<finalName>resources</finalName>

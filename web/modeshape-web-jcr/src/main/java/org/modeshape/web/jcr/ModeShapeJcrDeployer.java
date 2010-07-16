@@ -25,7 +25,6 @@ package org.modeshape.web.jcr;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.web.jcr.spi.RepositoryProvider;
 
 /**
@@ -35,10 +34,12 @@ import org.modeshape.web.jcr.spi.RepositoryProvider;
  * This class is not thread safe, but in practice this does not matter as the servlet container must ensure that only a single
  * instance of this exists per web context and that it is only called in a single-threaded manner.
  * </p>
+ * <p>
+ * This class is not thread-safe.
+ * </p>
  * 
  * @see RepositoryFactory
  */
-@NotThreadSafe
 public class ModeShapeJcrDeployer implements ServletContextListener {
 
     /**

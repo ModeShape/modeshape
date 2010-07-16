@@ -12,11 +12,7 @@
 	<description>ModeShape JCR WebDAV Library</description>
 	<url>http://www.modeshape.org</url>
 	<dependencies>
-		<dependency>
-			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-jcr</artifactId>
-		</dependency>
-		<dependency>
+			<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-mimetype-detector-aperture</artifactId>
 		</dependency>
@@ -72,6 +68,11 @@
 			<artifactId>modeshape-common</artifactId>
 			<version>${project.version}</version>
 			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.modeshape</groupId>
+			<artifactId>modeshape-jcr</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
