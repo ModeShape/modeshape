@@ -1534,10 +1534,10 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 // CONSUME COLUMNS
                 boolean columnsAdded = parseColumnNameList(tokens, constraintNode, TYPE_COLUMN_REFERENCE);
 
-                if( !columnsAdded ) {
-                	nodeFactory().node(colName, constraintNode, TYPE_COLUMN_REFERENCE);
+                if (!columnsAdded) {
+                    nodeFactory().node(colName, constraintNode, TYPE_COLUMN_REFERENCE);
                 }
-                
+
                 parseConstraintAttributes(tokens, constraintNode);
             } else if (tokens.matches("PRIMARY", "KEY")) {
                 // CONSTRAINT U_KEY_2a PRIMARY KEY (PERMISSIONUID)
@@ -2429,15 +2429,17 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
     /**
      * Adds column reference nodes to a parent node. Returns true if column references added, false if not.
+     * 
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
      * @param parentNode the parent node
      * @param referenceType the type of the reference node to create
-     * @return
+     * @return true if the column references were found and added to the node, or false if there were no column references found
+     *         in the stream
      */
     protected boolean parseColumnNameList( DdlTokenStream tokens,
-                                        AstNode parentNode,
-                                        Name referenceType ) {
-    	boolean parsedColumns = false;
+                                           AstNode parentNode,
+                                           Name referenceType ) {
+        boolean parsedColumns = false;
         // CONSUME COLUMNS
         List<String> columnNameList = new ArrayList<String>();
         if (tokens.matches(L_PAREN)) {
@@ -2450,7 +2452,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             nodeFactory().node(columnName, parentNode, referenceType);
             parsedColumns = true;
         }
-        
+
         return parsedColumns;
     }
 
