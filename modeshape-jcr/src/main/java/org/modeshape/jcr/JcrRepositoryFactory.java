@@ -450,4 +450,12 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         }
         return repositoryName;
     }
+
+    @Override
+    public Repositories getRepositories( String jcrUrl ) {
+        URL url = urlFor(jcrUrl);
+        if (url == null) return null;
+        return repositoriesFor(url, null);
+    }
+
 }

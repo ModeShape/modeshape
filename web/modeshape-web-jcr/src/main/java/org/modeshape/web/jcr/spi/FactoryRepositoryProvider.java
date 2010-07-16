@@ -58,11 +58,17 @@ public class FactoryRepositoryProvider implements RepositoryProvider {
     }
 
     public Set<String> getJcrRepositoryNames() {
-        return factory().getRepositoryNames(jcrUrl);
+        RepositoryFactory factory = factory();
+        if (factory == null) return null;
+
+        return factory.getRepositories(jcrUrl).getRepositoryNames();
     }
 
     private Repository getRepository( String repositoryName ) throws RepositoryException {
-        return factory().getRepository(jcrUrl, repositoryName);
+        RepositoryFactory factory = factory();
+        if (factory == null) return null;
+
+        return factory.getRepositories(jcrUrl).getRepository(repositoryName);
     }
 
     public void startup( ServletContext context ) {

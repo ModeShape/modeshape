@@ -24,10 +24,7 @@
 package org.modeshape.jcr.api;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import javax.jcr.Repository;
-import javax.jcr.RepositoryException;
 
 public interface RepositoryFactory extends javax.jcr.RepositoryFactory {
 
@@ -79,42 +76,17 @@ public interface RepositoryFactory extends javax.jcr.RepositoryFactory {
     public boolean shutdown( long timeout,
                              TimeUnit unit ) throws InterruptedException;
 
-    /**
-     * Returns the repository with the given name from the {@link Repositories} referenced by {@code jcrUrl} if the engine and the
-     * named repository exist, null otherwise.
-     * <p>
-     * If the {@code jcrUrl} parameter contains a valid, ModeShape-compatible URL for a {code JcrEngine} that has not yet been
-     * started, that {@code JcrEngine} will be created and started as a side effect of this method.
-     * </p>
-     * <p>
-     * If the {@code repositoryName} parameter is null, the repository name specified in the {@code jcrUrl} parameter will be used
-     * instead. If no repository name is specified in the {@code jcrUrl} parameter and the {@code JcrEngine} has exactly one
-     * repository, that repository will be used. Otherwise, this method will return {@code null}.
-     * </p>
-     * 
-     * @param jcrUrl the ModeShape-compatible URL that specifies the {@link Repositories} to be used; may not be null
-     * @param repositoryName the name of the repository to return; may be null
-     * @return the {@link Repository} with the given name from the {@link Repositories} referenced by {@code jcrUrl} if the engine
-     *         exists and can be started (or is already started), and the named repository exists or {@code null} is provided as
-     *         the {@code repositoryName} and the given engine has exactly one repository or the {@code jcrUrl} specifies a
-     *         repository. If any of these conditions do not hold, {@code null} is returned.
-     * @throws RepositoryException if the named repository exists but cannot be accessed
-     */
-    public Repository getRepository( String jcrUrl,
-                                     String repositoryName ) throws RepositoryException;
-
 
     /**
-     * Returns the repository names in the {@code JcrEngine} referenced by the {@code jcrUrl} parameter.
+     * Returns the {@link Repositories} instance referenced by the {@code jcrUrl} parameter.
      * <p>
-     * If the {@code jcrUrl} parameter contains a valid, ModeShape-compatible URL for a {@code JcrEngine} that has not yet been
-     * started, that {@code JcrEngine} will be created and started as a side effect of this method.
+     * If the {@code jcrUrl} parameter contains a valid, ModeShape-compatible URL for a {@code Repositories} instance that has not
+     * yet been started, that {@code Repositories instance} will be created and started as a side effect of this method.
      * </p>
      * 
      * @param jcrUrl the ModeShape-compatible URL that specifies the {@code JcrEngine} to be used; may not be null
-     * @return the set of repository names in the given engine referred to by the {@code jcrUrl} parameter if that engine exists
-     *         and it can be started (or is already started), otherwise {@code null}
+     * @return the {@code Repositories} instance specified by the given url if one exists, otherwise {@code null}
      */
-    public Set<String> getRepositoryNames( String jcrUrl );
+    public Repositories getRepositories( String jcrUrl );
 
 }
