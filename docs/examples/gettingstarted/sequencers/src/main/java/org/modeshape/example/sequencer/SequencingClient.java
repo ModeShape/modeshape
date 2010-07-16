@@ -43,11 +43,11 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-import org.modeshape.graph.SecurityContext;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrTools;
+import org.modeshape.jcr.api.SecurityContext;
 import org.modeshape.jcr.api.SecurityContextCredentials;
 import org.modeshape.repository.sequencer.SequencingService;
 import org.modeshape.sequencer.classfile.ClassFileSequencer;
@@ -591,7 +591,7 @@ public class SequencingClient {
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.graph.SecurityContext#getUserName()
+         * @see org.modeshape.jcr.api.SecurityContext#getUserName()
          */
         public String getUserName() {
             return "Fred";
@@ -600,7 +600,7 @@ public class SequencingClient {
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.graph.SecurityContext#hasRole(java.lang.String)
+         * @see org.modeshape.jcr.api.SecurityContext#hasRole(java.lang.String)
          */
         public boolean hasRole( String roleName ) {
             return true;
@@ -609,7 +609,7 @@ public class SequencingClient {
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.graph.SecurityContext#logout()
+         * @see org.modeshape.jcr.api.SecurityContext#logout()
          */
         public void logout() {
             // do something
