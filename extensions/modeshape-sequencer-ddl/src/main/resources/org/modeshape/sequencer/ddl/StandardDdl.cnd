@@ -108,9 +108,9 @@
       < 'DEFERRABLE', 'NOT DEFERRABLE'
   - ddl:checkSearchCondition (STRING)
       < 'INITIALLY DEFERRED', 'INITIALLY IMMEDIATE'
-  + * (ddl:columnReference) = ddl:columnReference multiple
-  + * (ddl:tableReference) = ddl:tableReference
-  + * (ddl:fkColumnReference) = ddl:fkColumnReference multiple
+  + * (ddl:columnReference) = ddl:columnReference multiple mandatory  // the column(s) referenced by the constraint
+  + * (ddl:tableReference) = ddl:tableReference                       // the table(s) referenced by the foreign key
+  + * (ddl:fkColumnReference) = ddl:fkColumnReference multiple        // the columns in the table referenced by the foreign key
   + ddl:constraintAttribute (ddl:simpleProperty) = ddl:simpleProperty multiple
   
 // =============================================================================
