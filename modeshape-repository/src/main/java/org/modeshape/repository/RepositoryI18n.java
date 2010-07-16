@@ -60,6 +60,7 @@ public final class RepositoryI18n {
 
     // Clustering service ...
     public static I18n clusteringServiceName;
+    public static I18n clusteringConfigurationRequiresClusterName;
     public static I18n unableToRegisterObserverOnUnstartedClusteringService;
     public static I18n unableToUnregisterObserverOnUnstartedClusteringService;
     public static I18n unableToNotifyObserversOnUnstartedClusteringService;

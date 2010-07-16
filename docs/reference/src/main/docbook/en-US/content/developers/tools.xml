@@ -342,12 +342,22 @@
 			<warning>
 				<para>
 					ModeShape clustering uses <ulink url="&JGroups;">JGroups</ulink> for communication between members of a cluster, and some of our 
-					unit and integration tests test this clustering capability. The JGroups configurations used in these tests attempt to use a network 
-					stack that supports both IPv4 and IPv6 addresses. However, these may fail if your machine is configured only for IPv4 or IPv6.
+					unit and integration tests test this clustering capability. There are two common issues that you may run into when building
+					and testing ModeShape.
+				</para>
+				<para>
+					Firstly, the JGroups configurations used in these tests attempt to use a network 
+					stack that supports both IPv4 and IPv6 addresses. However, these may fail (by the various engines failing to find other members
+					in the cluster) if your machine is configured only for IPv4 or IPv6.
 					We've defined two Maven profiles ("<code>preferIpv4</code>" and "<code>preferIpv6</code>") that you may need to use to say
 					whether IPv4 or IPv6 (respectively) is preferred, and you can enable these on the Maven command line by adding
 					"<code>-PpreferIpv4</code>" or "<code>-PpreferIpv6</code>". Of course, if your command already specifies other profiles,
 					just combine the profile names with a comma (e.g., "<code>mvn clean install -Pintegration,preferIpv4</code>").
+				</para>
+				<para>
+					Secondly, as with all network communications, your firewall may be blocking incoming connections to Java. If test tests
+					fail (again, where each engine fails to find other members in the cluster), check your firewall settings. Temporarily
+					disabling your firewall and rerunning the tests may help determine if your firewall is involved.
 				</para>
 			</warning>
 		</sect2>

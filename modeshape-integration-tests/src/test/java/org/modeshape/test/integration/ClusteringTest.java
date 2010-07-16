@@ -44,6 +44,7 @@ import javax.jcr.observation.EventListener;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.common.collection.Problem;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.connector.store.jpa.JpaSource;
 import org.modeshape.jcr.JcrConfiguration;
@@ -97,7 +98,16 @@ public class ClusteringTest {
 
         // Create an engine and use it to populate the source ...
         engine1 = configuration.build();
-        engine1.start();
+        try {
+            engine1.start();
+        } catch (RuntimeException e) {
+            // There was a problem starting the engine ...
+            System.err.println("There were problems starting the engine:");
+            for (Problem problem : engine1.getProblems()) {
+                System.err.println(problem);
+            }
+            throw e;
+        }
 
         Repository repository = engine1.getRepository("cars");
 

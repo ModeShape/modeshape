@@ -55,6 +55,7 @@ import org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector;
 import org.modeshape.graph.mimetype.MimeTypeDetector;
 import org.modeshape.graph.mimetype.MimeTypeDetectorConfig;
 import org.modeshape.graph.mimetype.MimeTypeDetectors;
+import org.modeshape.graph.observe.ObservationBus;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathExpression;
@@ -355,6 +356,12 @@ public class ModeShapeEngine {
      * configuration repository into the services.
      */
     protected class ConfigurationScanner {
+        /**
+         * The name of the {@link ObservationBus} implementation class that will be used when clustering. This class will be
+         * loaded reflectively (so that this library doesn't always require the clustering dependencies).
+         */
+        protected static final String CLUSTERED_OBSERVATION_BUS_CLASSNAME = "org.modeshape.clustering.ClusteredObservationBus";
+
         private final Problems problems;
         private final ExecutionContext context;
         private final ModeShapeConfiguration.ConfigurationDefinition configurationRepository;
@@ -430,12 +437,17 @@ public class ModeShapeEngine {
                 skipNamespaces.add(JcrMixLexicon.Namespace.URI);
 
                 Node clusterNode = subgraph.getRoot();
-                String name = stringValueOf(clusterNode);
+                // String name = stringValueOf(clusterNode);
+                String clusterName = stringValueOf(clusterNode, ModeShapeLexicon.CLUSTER_NAME);
                 String desc = stringValueOf(clusterNode, ModeShapeLexicon.DESCRIPTION);
                 String classname = stringValueOf(clusterNode, ModeShapeLexicon.CLASSNAME);
                 String[] classpath = stringValuesOf(clusterNode, ModeShapeLexicon.CLASSPATH);
                 if (classname == null || classname.trim().length() == 0) {
-                    classname = "org.modeshape.clustering.ClusteredObservationBus";
+                    classname = CLUSTERED_OBSERVATION_BUS_CLASSNAME;
+                }
+                if (clusterName == null || clusterName.trim().length() == 0) {
+                    problems.addError(RepositoryI18n.clusteringConfigurationRequiresClusterName);
+                    return null;
                 }
 
                 Map<String, Object> properties = new HashMap<String, Object>();
@@ -449,7 +461,7 @@ public class ModeShapeEngine {
                         properties.put(propertyName.getLocalName(), property.getValuesAsArray());
                     }
                 }
-                return new ClusteringConfig(name, desc, properties, classname, classpath);
+                return new ClusteringConfig(clusterName, desc, properties, classname, classpath);
             } catch (PathNotFoundException e) {
                 // no detectors registered ...
             }
@@ -530,7 +542,11 @@ public class ModeShapeEngine {
         private String stringValueOf( Node node,
                                       Name propertyName ) {
             Property property = node.getProperty(propertyName);
-            if (property == null) return null;
+            if (property == null) {
+                // Check whether the property exists with no namespace ...
+                property = node.getProperty(context.getValueFactories().getNameFactory().create(propertyName.getLocalName()));
+                if (property == null) return null;
+            }
             if (property.isEmpty()) return null;
             return context.getValueFactories().getStringFactory().create(property.getFirstValue());
         }
@@ -538,7 +554,11 @@ public class ModeShapeEngine {
         private String[] stringValuesOf( Node node,
                                          Name propertyName ) {
             Property property = node.getProperty(propertyName);
-            if (property == null) return null;
+            if (property == null) {
+                // Check whether the property exists with no namespace ...
+                property = node.getProperty(context.getValueFactories().getNameFactory().create(propertyName.getLocalName()));
+                if (property == null) return null;
+            }
             return context.getValueFactories().getStringFactory().create(property.getValuesAsArray());
         }
 
