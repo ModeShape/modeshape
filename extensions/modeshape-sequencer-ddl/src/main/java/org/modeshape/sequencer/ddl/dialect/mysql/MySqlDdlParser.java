@@ -590,12 +590,6 @@ public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstan
         }
 
         @Override
-        protected int parseBracketedInteger( DdlTokenStream tokens,
-                                             DataType dataType ) {
-            return super.parseBracketedInteger(tokens, dataType);
-        }
-
-        @Override
         protected DataType parseCharStringType( DdlTokenStream tokens ) throws ParsingException {
             DataType result = super.parseCharStringType(tokens);
 
@@ -618,9 +612,9 @@ public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstan
 
                 if (tokens.matches(L_PAREN)) {
                     consume(tokens, dataType, false, L_PAREN);
-                    precision = parseInteger(tokens, dataType);
+                    precision = (int)parseLong(tokens, dataType);
                     if (tokens.canConsume(COMMA)) {
-                        scale = parseInteger(tokens, dataType);
+                        scale = (int)parseLong(tokens, dataType);
                     } else {
                         scale = getDefaultScale();
                     }
@@ -640,18 +634,18 @@ public class MySqlDdlParser extends StandardDdlParser implements MySqlDdlConstan
                        || tokens.matches(DTYPE_BINARY) || tokens.matches(DTYPE_BIGINT)) {
                 String typeName = tokens.consume();
                 dataType = new DataType(typeName);
-                int length = getDefaultLength();
+                long length = getDefaultLength();
                 if (tokens.matches(L_PAREN)) {
-                    length = parseBracketedInteger(tokens, dataType);
+                    length = parseBracketedLong(tokens, dataType);
                 }
                 dataType.setLength(length);
             } else if (tokens.matches(DTYPE_NATIONAL_VARCHAR)) {
                 String typeName = getStatementTypeName(DTYPE_NATIONAL_VARCHAR);
                 dataType = new DataType(typeName);
                 tokens.consume(DTYPE_NATIONAL_VARCHAR);
-                int length = getDefaultLength();
+                long length = getDefaultLength();
                 if (tokens.matches(L_PAREN)) {
-                    length = parseBracketedInteger(tokens, dataType);
+                    length = parseBracketedLong(tokens, dataType);
                 }
                 dataType.setLength(length);
             } else if (tokens.matches(DTYPE_MEDIUMTEXT) || tokens.matches(DTYPE_TEXT) || tokens.matches(DTYPE_LONGTEXT)

@@ -1260,18 +1260,6 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.sequencer.ddl.datatype.DataTypeParser#parseBracketedInteger(org.modeshape.sequencer.ddl.DdlTokenStream,
-         *      org.modeshape.sequencer.ddl.datatype.DataType)
-         */
-        @Override
-        protected int parseBracketedInteger( DdlTokenStream tokens,
-                                             DataType dataType ) {
-            return super.parseBracketedInteger(tokens, dataType);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
          * @see org.modeshape.sequencer.ddl.datatype.DataTypeParser#parseCharStringType(org.modeshape.sequencer.ddl.DdlTokenStream)
          */
         @Override
@@ -1292,50 +1280,30 @@ public class DerbyDdlParser extends StandardDdlParser implements DerbyDdlConstan
         protected DataType parseCustomType( DdlTokenStream tokens ) throws ParsingException {
             DataType dataType = null;
             String typeName = null;
-            int length = 0;
+            long length = 0;
 
             if (tokens.matches(DerbyDataTypes.DTYPE_BINARY_LARGE_OBJECT)
                 || tokens.matches(DerbyDataTypes.DTYPE_CHARACTER_LARGE_OBJECT)) {
                 dataType = new DataType();
                 typeName = consume(tokens, dataType, true) + SPACE + consume(tokens, dataType, true) + SPACE
                            + consume(tokens, dataType, true);
-                boolean isKMGLength = false;
-                String kmgValue = null;
                 if (canConsume(tokens, dataType, true, L_PAREN)) {
                     String lengthValue = consume(tokens, dataType, false);
-                    kmgValue = getKMG(lengthValue);
-
-                    isKMGLength = isKMGInteger(lengthValue);
-
-                    length = parseInteger(lengthValue);
-
+                    length = parseLong(lengthValue);
                     consume(tokens, dataType, true, R_PAREN);
                 }
-
                 dataType.setName(typeName);
                 dataType.setLength(length);
-                dataType.setKMGLength(isKMGLength);
-                dataType.setKMGValue(kmgValue);
             } else if (tokens.matches(DerbyDataTypes.DTYPE_CLOB) || tokens.matches(DerbyDataTypes.DTYPE_BLOB)) {
                 dataType = new DataType();
                 typeName = consume(tokens, dataType, true);
-                boolean isKMGLength = false;
-                String kmgValue = null;
                 if (canConsume(tokens, dataType, true, L_PAREN)) {
                     String lengthValue = consume(tokens, dataType, false);
-                    kmgValue = getKMG(lengthValue);
-
-                    isKMGLength = isKMGInteger(lengthValue);
-
-                    length = parseInteger(lengthValue);
-
+                    length = parseLong(lengthValue);
                     consume(tokens, dataType, true, R_PAREN);
                 }
-
                 dataType.setName(typeName);
                 dataType.setLength(length);
-                dataType.setKMGLength(isKMGLength);
-                dataType.setKMGValue(kmgValue);
             } else if (tokens.matches(DerbyDataTypes.DTYPE_BIGINT)) {
                 dataType = new DataType();
                 typeName = consume(tokens, dataType, true);

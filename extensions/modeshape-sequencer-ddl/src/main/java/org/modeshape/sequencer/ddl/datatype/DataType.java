@@ -30,11 +30,9 @@ import org.modeshape.sequencer.ddl.DdlConstants;
  */
 public class DataType {
     private String name;
-    private int length = -1;
+    private long length = -1;
     private int precision = -1;
     private int scale = -1;
-    private boolean isKMGLength = false;
-    private String kmgValue = null;
 
     /**
      * The statement source.
@@ -74,11 +72,11 @@ public class DataType {
         this.name = value;
     }
 
-    public void setLength( int value ) {
+    public void setLength( long value ) {
         this.length = value;
     }
 
-    public int getLength() {
+    public long getLength() {
         return this.length;
     }
 
@@ -104,22 +102,6 @@ public class DataType {
         result.append("DataType()").append(" ").append(name);
 
         return result.toString();
-    }
-
-    public boolean isKMGLength() {
-        return isKMGLength;
-    }
-
-    public void setKMGLength( boolean isKMGLength ) {
-        this.isKMGLength = isKMGLength;
-    }
-
-    public String getKMGValue() {
-        return kmgValue;
-    }
-
-    public void setKMGValue( String kmgValue ) {
-        this.kmgValue = kmgValue;
     }
 
     /**

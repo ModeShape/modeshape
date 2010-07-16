@@ -787,10 +787,10 @@ public class OracleDdlParser extends StandardDdlParser
         // tokens.matches(GRANT, "SELECT") ||
         // tokens.matches(GRANT, "RESTRICTED") ||
         // //
-        //========================================================================================================================
+        // ========================================================================================================================
         // ===
         // //
-        //========================================================================================================================
+        // ========================================================================================================================
         // ===
         // tokens.matches(GRANT, "FLASHBACK") ||
         // tokens.matches(GRANT, "GLOBAL") ||
@@ -1517,7 +1517,7 @@ public class OracleDdlParser extends StandardDdlParser
         if (stopAtStatementStart) {
             while (tokens.hasNext()
 
-            && !tokens.matches(DdlTokenizer.STATEMENT_KEY) && !tokens.matches('/')) { //!tokens.matches(DdlTokenizer.STATEMENT_KEY
+            && !tokens.matches(DdlTokenizer.STATEMENT_KEY) && !tokens.matches('/')) { // !tokens.matches(DdlTokenizer.STATEMENT_KEY
                 // )
                 // &&
                 sb.append(SPACE).append(tokens.consume());
@@ -1610,7 +1610,7 @@ public class OracleDdlParser extends StandardDdlParser
                 // VARCHAR2(size [BYTE | CHAR])
                 typeName = consume(tokens, dataType, true, OracleDataTypes.DTYPE_VARCHAR2); // VARCHAR2
                 consume(tokens, dataType, false, L_PAREN);
-                int length = parseInteger(tokens, dataType);
+                long length = parseLong(tokens, dataType);
                 canConsume(tokens, dataType, true, "BYTE");
                 canConsume(tokens, dataType, true, "CHAR");
                 consume(tokens, dataType, false, R_PAREN);
@@ -1619,13 +1619,13 @@ public class OracleDdlParser extends StandardDdlParser
             } else if (tokens.matches(OracleDataTypes.DTYPE_RAW)) {
                 dataType = new DataType();
                 typeName = consume(tokens, dataType, true, OracleDataTypes.DTYPE_RAW);
-                int length = parseBracketedInteger(tokens, dataType);
+                long length = parseBracketedLong(tokens, dataType);
                 dataType.setName(typeName);
                 dataType.setLength(length);
             } else if (tokens.matches(OracleDataTypes.DTYPE_NVARCHAR2)) {
                 dataType = new DataType();
                 typeName = consume(tokens, dataType, true, OracleDataTypes.DTYPE_NVARCHAR2);
-                int length = parseBracketedInteger(tokens, dataType);
+                long length = parseBracketedLong(tokens, dataType);
                 dataType.setName(typeName);
                 dataType.setLength(length);
             } else if (tokens.matches(OracleDataTypes.DTYPE_NUMBER)) {
@@ -1635,9 +1635,9 @@ public class OracleDdlParser extends StandardDdlParser
                 int scale = 0;
                 if (tokens.matches(L_PAREN)) {
                     consume(tokens, dataType, false, L_PAREN);
-                    precision = parseInteger(tokens, dataType);
+                    precision = (int)parseLong(tokens, dataType);
                     if (canConsume(tokens, dataType, false, COMMA)) {
-                        scale = parseInteger(tokens, dataType);
+                        scale = (int)parseLong(tokens, dataType);
                     } else {
                         scale = getDefaultScale();
                     }
@@ -1677,7 +1677,7 @@ public class OracleDdlParser extends StandardDdlParser
                 dataType = new DataType();
                 String typeName = consume(tokens, dataType, true, OracleDataTypes.DTYPE_CHAR_ORACLE);
                 consume(tokens, dataType, false, L_PAREN);
-                int length = parseInteger(tokens, dataType);
+                long length = parseLong(tokens, dataType);
                 canConsume(tokens, dataType, true, "BYTE");
                 canConsume(tokens, dataType, true, "CHAR");
                 consume(tokens, dataType, false, R_PAREN);

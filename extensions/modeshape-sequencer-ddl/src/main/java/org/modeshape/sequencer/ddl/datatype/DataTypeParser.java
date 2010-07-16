@@ -313,27 +313,27 @@ public class DataTypeParser implements DdlConstants {
             typeName = getStatementTypeName(DataTypes.DTYPE_VARCHAR);
             dataType = new DataType(typeName);
             consume(tokens, dataType, false, DataTypes.DTYPE_VARCHAR);
-            int length = parseBracketedInteger(tokens, dataType);
+            long length = parseBracketedLong(tokens, dataType);
             dataType.setLength(length);
         } else if (tokens.matches(DataTypes.DTYPE_CHAR_VARYING)) {
             typeName = getStatementTypeName(DataTypes.DTYPE_CHAR_VARYING);
             dataType = new DataType(typeName);
             consume(tokens, dataType, false, DataTypes.DTYPE_CHAR_VARYING);
-            int length = parseBracketedInteger(tokens, dataType);
+            long length = parseBracketedLong(tokens, dataType);
             dataType.setLength(length);
         } else if (tokens.matches(DataTypes.DTYPE_CHARACTER_VARYING)) {
             typeName = getStatementTypeName(DataTypes.DTYPE_CHARACTER_VARYING);
             dataType = new DataType(typeName);
             consume(tokens, dataType, false, DataTypes.DTYPE_CHARACTER_VARYING);
-            int length = parseBracketedInteger(tokens, dataType);
+            long length = parseBracketedLong(tokens, dataType);
             dataType.setLength(length);
         } else if (tokens.matches(DataTypes.DTYPE_CHAR) || tokens.matches(DataTypes.DTYPE_CHARACTER)) {
             dataType = new DataType();
             typeName = consume(tokens, dataType, false); // "CHARACTER", "CHAR",
             dataType.setName(typeName);
-            int length = getDefaultLength();
+            long length = getDefaultLength();
             if (tokens.matches(L_PAREN)) {
-                length = parseBracketedInteger(tokens, dataType);
+                length = parseBracketedLong(tokens, dataType);
             }
             dataType.setLength(length);
         }
@@ -359,48 +359,48 @@ public class DataTypeParser implements DdlConstants {
             typeName = getStatementTypeName(DataTypes.DTYPE_NCHAR_VARYING);
             dataType = new DataType(typeName);
             consume(tokens, dataType, false, DataTypes.DTYPE_NCHAR_VARYING);
-            int length = parseBracketedInteger(tokens, dataType);
+            long length = parseBracketedLong(tokens, dataType);
 
             dataType.setLength(length);
         } else if (tokens.matches(DataTypes.DTYPE_NATIONAL_CHAR_VARYING)) {
             typeName = getStatementTypeName(DataTypes.DTYPE_NATIONAL_CHAR_VARYING);
             dataType = new DataType(typeName);
             consume(tokens, dataType, false, DataTypes.DTYPE_NATIONAL_CHAR_VARYING);
-            int length = parseBracketedInteger(tokens, dataType);
+            long length = parseBracketedLong(tokens, dataType);
 
             dataType.setLength(length);
         } else if (tokens.matches(DataTypes.DTYPE_NATIONAL_CHARACTER_VARYING)) {
             typeName = getStatementTypeName(DataTypes.DTYPE_NATIONAL_CHARACTER_VARYING);
             dataType = new DataType(typeName);
             consume(tokens, dataType, false, DataTypes.DTYPE_NATIONAL_CHARACTER_VARYING);
-            int length = parseBracketedInteger(tokens, dataType);
+            long length = parseBracketedLong(tokens, dataType);
 
             dataType.setLength(length);
         } else if (tokens.matches(DataTypes.DTYPE_NCHAR)) {
             typeName = getStatementTypeName(DataTypes.DTYPE_NCHAR);
             dataType = new DataType(typeName);
             consume(tokens, dataType, false, DataTypes.DTYPE_NCHAR);
-            int length = getDefaultLength();
+            long length = getDefaultLength();
             if (tokens.matches(L_PAREN)) {
-                length = parseBracketedInteger(tokens, dataType);
+                length = parseBracketedLong(tokens, dataType);
             }
             dataType.setLength(length);
         } else if (tokens.matches(DataTypes.DTYPE_NATIONAL_CHAR)) {
             typeName = getStatementTypeName(DataTypes.DTYPE_NATIONAL_CHAR);
             dataType = new DataType(typeName);
             consume(tokens, dataType, false, DataTypes.DTYPE_NATIONAL_CHAR);
-            int length = getDefaultLength();
+            long length = getDefaultLength();
             if (tokens.matches(L_PAREN)) {
-                length = parseBracketedInteger(tokens, dataType);
+                length = parseBracketedLong(tokens, dataType);
             }
             dataType.setLength(length);
         } else if (tokens.matches(DataTypes.DTYPE_NATIONAL_CHARACTER)) {
             typeName = getStatementTypeName(DataTypes.DTYPE_NATIONAL_CHARACTER);
             dataType = new DataType(typeName);
             consume(tokens, dataType, false, DataTypes.DTYPE_NATIONAL_CHARACTER);
-            int length = getDefaultLength();
+            long length = getDefaultLength();
             if (tokens.matches(L_PAREN)) {
-                length = parseBracketedInteger(tokens, dataType);
+                length = parseBracketedLong(tokens, dataType);
             }
             dataType.setLength(length);
         }
@@ -424,16 +424,16 @@ public class DataTypeParser implements DdlConstants {
             typeName = getStatementTypeName(DataTypes.DTYPE_BIT_VARYING);
             dataType = new DataType(typeName);
             consume(tokens, dataType, false, DataTypes.DTYPE_BIT_VARYING);
-            int length = parseBracketedInteger(tokens, dataType);
+            long length = parseBracketedLong(tokens, dataType);
 
             dataType.setLength(length);
         } else if (tokens.matches(DataTypes.DTYPE_BIT)) {
             typeName = getStatementTypeName(DataTypes.DTYPE_BIT);
             dataType = new DataType(typeName);
             consume(tokens, dataType, false, DataTypes.DTYPE_BIT);
-            int length = getDefaultLength();
+            long length = getDefaultLength();
             if (tokens.matches(L_PAREN)) {
-                length = parseBracketedInteger(tokens, dataType);
+                length = parseBracketedLong(tokens, dataType);
             }
             dataType.setLength(length);
         }
@@ -468,9 +468,9 @@ public class DataTypeParser implements DdlConstants {
 
             if (tokens.matches(L_PAREN)) {
                 consume(tokens, dataType, false, L_PAREN);
-                precision = parseInteger(tokens, dataType);
+                precision = (int)parseLong(tokens, dataType);
                 if (canConsume(tokens, dataType, false, COMMA)) {
-                    scale = parseInteger(tokens, dataType);
+                    scale = (int)parseLong(tokens, dataType);
                 } else {
                     scale = getDefaultScale();
                 }
@@ -512,7 +512,7 @@ public class DataTypeParser implements DdlConstants {
             dataType.setName(typeName);
             int precision = 0;
             if (tokens.matches(L_PAREN)) {
-                precision = parseBracketedInteger(tokens, dataType);
+                precision = (int)parseBracketedLong(tokens, dataType);
             }
             dataType.setPrecision(precision);
         }
@@ -543,7 +543,7 @@ public class DataTypeParser implements DdlConstants {
 
             int precision = 0;
             if (tokens.matches(L_PAREN)) {
-                precision = parseBracketedInteger(tokens, dataType);
+                precision = (int)parseBracketedLong(tokens, dataType);
             }
             dataType.setPrecision(precision);
 
@@ -555,7 +555,7 @@ public class DataTypeParser implements DdlConstants {
 
             int precision = 0;
             if (tokens.matches(L_PAREN)) {
-                precision = parseBracketedInteger(tokens, dataType);
+                precision = (int)parseBracketedLong(tokens, dataType);
             }
             dataType.setPrecision(precision);
 
@@ -683,48 +683,31 @@ public class DataTypeParser implements DdlConstants {
     }
 
     /**
-     * Returns an integer value from the input token stream assuming the integer is not bracketed with parenthesis.
+     * Returns a long value from the input token stream assuming the long is not bracketed with parenthesis.
      * 
      * @param tokens
      * @param dataType
-     * @return integer value
+     * @return the long value
      */
-    protected int parseInteger( DdlTokenStream tokens,
-                                DataType dataType ) {
+    protected long parseLong( DdlTokenStream tokens,
+                              DataType dataType ) {
         String value = consume(tokens, dataType, false);
-
-        if (isKMGInteger(value)) {
-            value = value.substring(0, value.length() - 1);
-        }
-
-        return new BigInteger(value).intValue();
+        return parseLong(value);
     }
 
     /**
-     * Returns an integer value from the input token stream assuming the integer is bracketed with parenthesis. Example: (255)
+     * Returns a long value from the input token stream assuming the long is bracketed with parenthesis.
      * 
      * @param tokens
      * @param dataType
-     * @return integer value
+     * @return the long value
      */
-    protected int parseBracketedInteger( DdlTokenStream tokens,
-                                         DataType dataType ) {
+    protected long parseBracketedLong( DdlTokenStream tokens,
+                                       DataType dataType ) {
         consume(tokens, dataType, false, L_PAREN);
-        int length = parseInteger(tokens, dataType);
+        String value = consume(tokens, dataType, false);
         consume(tokens, dataType, false, R_PAREN);
-
-        return length;
-    }
-
-    /**
-     * Returns the whether or not a tokenized string is a complex BLOB or CLOB length value ending in K, M or G. Example: BLOB
-     * (100M) or CLOB(64K)
-     * 
-     * @param value
-     * @return true if value ends with M, K or G
-     */
-    protected boolean isKMGInteger( String value ) {
-        return (value.endsWith("M") || value.endsWith("K") || value.endsWith("G"));
+        return parseLong(value);
     }
 
     /**
@@ -734,26 +717,19 @@ public class DataTypeParser implements DdlConstants {
      * @return integer value
      * @throws NumberFormatException if a valid integer is not found
      */
-    protected int parseInteger( String value ) {
-        if (isKMGInteger(value)) {
+    protected long parseLong( String value ) {
+        long factor = 1;
+        if (value.endsWith("K")) {
+            factor = KILO;
+        } else if (value.endsWith("M")) {
+            factor = MEGA;
+        } else if (value.endsWith("G")) {
+            factor = GIGA;
+        }
+        if (factor > 1) {
             value = value.substring(0, value.length() - 1);
         }
-
-        return new BigInteger(value).intValue();
-    }
-
-    /**
-     * Returns the K, M or G string value of a tokenized complex BLOB or CLOB length value Example: BLOB (100M) or CLOB(64K)
-     * 
-     * @param value
-     * @return K, M or G or NULL if not found.
-     */
-    protected String getKMG( String value ) {
-        if (value.endsWith("M")) return "M";
-        if (value.endsWith("K")) return "K";
-        if (value.endsWith("G")) return "G";
-
-        return null;
+        return new BigInteger(value).longValue() * factor;
     }
 
     /**

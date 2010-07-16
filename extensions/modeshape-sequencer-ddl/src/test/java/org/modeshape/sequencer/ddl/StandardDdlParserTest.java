@@ -61,6 +61,7 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.sequencer.ddl.node.AstNode;
 
@@ -366,7 +367,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertEquals(1, tableNode.getChildCount());
         AstNode column = tableNode.getChildren().get(0);
         assertEquals("VARCHAR", column.getProperty(DATATYPE_NAME).getFirstValue());
-        assertEquals(255, column.getProperty(DATATYPE_LENGTH).getFirstValue());
+        assertEquals(255L, column.getProperty(DATATYPE_LENGTH).getFirstValue());
         assertTrue(column.getProperty(DATATYPE_PRECISION) == null);
         assertEquals("NOT NULL", column.getProperty(NULLABLE).getFirstValue());
         assertEquals(DEFAULT_ID_LITERAL, column.getProperty(DEFAULT_OPTION).getFirstValue());
@@ -384,7 +385,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertEquals(1, tableNode.getChildCount());
         column = tableNode.getChildren().get(0);
         assertEquals("CHARACTER", column.getProperty(DATATYPE_NAME).getFirstValue());
-        assertEquals(255, column.getProperty(DATATYPE_LENGTH).getFirstValue());
+        assertEquals(255L, column.getProperty(DATATYPE_LENGTH).getFirstValue());
         assertTrue(column.getProperty(DATATYPE_PRECISION) == null);
         assertEquals("NULL", column.getProperty(NULLABLE).getFirstValue());
         assertEquals(DEFAULT_ID_LITERAL, column.getProperty(DEFAULT_OPTION).getFirstValue());
@@ -407,6 +408,75 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertTrue(column.getProperty(DATATYPE_LENGTH) == null);
         assertEquals(DEFAULT_ID_LITERAL, column.getProperty(DEFAULT_OPTION).getFirstValue());
         assertEquals("6.213", column.getProperty(DEFAULT_VALUE).getFirstValue());
+    }
+
+    @FixFor( "MODE-820" )
+    @Test
+    public void shouldParseColumnDefinitionWithKilobyteInSize() {
+        printTest("shouldParseColumnDefinitionWithKilobyteInSize()");
+
+        String content = "PARTID CHAR(2K) NOT NULL";
+
+        DdlTokenStream tokens = getTokens(content);
+
+        AstNode tableNode = parser.nodeFactory().node("PARTID", rootNode, TYPE_CREATE_TABLE_STATEMENT, rootNode);
+        parser.setRootNode(rootNode);
+        parser.parseColumnDefinition(tokens, tableNode, false);
+
+        assertEquals(1, tableNode.getChildCount());
+        AstNode column = tableNode.getChildren().get(0);
+        assertEquals("CHAR", column.getProperty(DATATYPE_NAME).getFirstValue());
+        assertEquals(2048L, column.getProperty(DATATYPE_LENGTH).getFirstValue());
+        assertTrue(column.getProperty(DATATYPE_PRECISION) == null);
+        assertEquals("NOT NULL", column.getProperty(NULLABLE).getFirstValue());
+
+        tableNode.removeAllChildren();
+    }
+
+    @FixFor( "MODE-820" )
+    @Test
+    public void shouldParseColumnDefinitionWithMegabyteInSize() {
+        printTest("shouldParseColumnDefinitionWithKilobyteInSize()");
+
+        String content = "PARTID CHAR(4M) NOT NULL";
+
+        DdlTokenStream tokens = getTokens(content);
+
+        AstNode tableNode = parser.nodeFactory().node("PARTID", rootNode, TYPE_CREATE_TABLE_STATEMENT, rootNode);
+        parser.setRootNode(rootNode);
+        parser.parseColumnDefinition(tokens, tableNode, false);
+
+        assertEquals(1, tableNode.getChildCount());
+        AstNode column = tableNode.getChildren().get(0);
+        assertEquals("CHAR", column.getProperty(DATATYPE_NAME).getFirstValue());
+        assertEquals(4194304L, column.getProperty(DATATYPE_LENGTH).getFirstValue());
+        assertTrue(column.getProperty(DATATYPE_PRECISION) == null);
+        assertEquals("NOT NULL", column.getProperty(NULLABLE).getFirstValue());
+
+        tableNode.removeAllChildren();
+    }
+
+    @FixFor( "MODE-820" )
+    @Test
+    public void shouldParseColumnDefinitionWithGigabyteInSize() {
+        printTest("shouldParseColumnDefinitionWithKilobyteInSize()");
+
+        String content = "PARTID CHAR(5G) NOT NULL";
+
+        DdlTokenStream tokens = getTokens(content);
+
+        AstNode tableNode = parser.nodeFactory().node("PARTID", rootNode, TYPE_CREATE_TABLE_STATEMENT, rootNode);
+        parser.setRootNode(rootNode);
+        parser.parseColumnDefinition(tokens, tableNode, false);
+
+        assertEquals(1, tableNode.getChildCount());
+        AstNode column = tableNode.getChildren().get(0);
+        assertEquals("CHAR", column.getProperty(DATATYPE_NAME).getFirstValue());
+        assertEquals(5368709120L, column.getProperty(DATATYPE_LENGTH).getFirstValue());
+        assertTrue(column.getProperty(DATATYPE_PRECISION) == null);
+        assertEquals("NOT NULL", column.getProperty(NULLABLE).getFirstValue());
+
+        tableNode.removeAllChildren();
     }
 
     @Test
@@ -444,13 +514,48 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         AstNode column = tableNode.getChildren().get(0);
         assertEquals("PARTID", column.getName().getString());
         assertEquals("VARCHAR", column.getProperty(DATATYPE_NAME).getFirstValue());
-        assertEquals(255, column.getProperty(DATATYPE_LENGTH).getFirstValue());
+        assertEquals(255L, column.getProperty(DATATYPE_LENGTH).getFirstValue());
         assertTrue(column.getProperty(DATATYPE_PRECISION) == null);
 
         List<AstNode> tableOptions = parser.nodeFactory().getChildrenForType(tableNode, TYPE_STATEMENT_OPTION);
         assertEquals(1, tableOptions.size());
         assertEquals("ON COMMIT DELETE ROWS", tableOptions.get(0).getProperty(VALUE).getFirstValue());
 
+    }
+
+    @FixFor( "MODE-820" )
+    @Test
+    public void shouldParseCreateTableWithKilobyteInSize() {
+        printTest("shouldParseCreateTable()");
+
+        String content = "CREATE TABLE MY_TABLE_A (PARTID CHAR (2K) NOT NULL, "
+                         + " -- COLUMN 1 COMMENT with comma \nPARTCOLOR CHAR(4M) NOT NULL) ON COMMIT DELETE ROWS;";
+
+        DdlTokenStream tokens = getTokens(content);
+
+        parser.setRootNode(rootNode);
+
+        AstNode result = parser.parseCreateTableStatement(tokens, rootNode);
+
+        assertEquals(1, rootNode.getChildCount());
+        AstNode tableNode = rootNode.getChildren().get(0);
+        assertThat(result, is(tableNode));
+        assertEquals("MY_TABLE_A", tableNode.getName().getString());
+        assertEquals(3, tableNode.getChildCount()); // 2 COLUMNS + 1 Table Option
+        AstNode column1 = tableNode.getChildren().get(0);
+        assertEquals("PARTID", column1.getName().getString());
+        assertEquals("CHAR", column1.getProperty(DATATYPE_NAME).getFirstValue());
+        assertEquals(2048L, column1.getProperty(DATATYPE_LENGTH).getFirstValue());
+        assertTrue(column1.getProperty(DATATYPE_PRECISION) == null);
+        AstNode column2 = tableNode.getChildren().get(1);
+        assertEquals("PARTCOLOR", column2.getName().getString());
+        assertEquals("CHAR", column2.getProperty(DATATYPE_NAME).getFirstValue());
+        assertEquals(4194304L, column2.getProperty(DATATYPE_LENGTH).getFirstValue());
+        assertTrue(column2.getProperty(DATATYPE_PRECISION) == null);
+
+        List<AstNode> tableOptions = parser.nodeFactory().getChildrenForType(tableNode, TYPE_STATEMENT_OPTION);
+        assertEquals(1, tableOptions.size());
+        assertEquals("ON COMMIT DELETE ROWS", tableOptions.get(0).getProperty(VALUE).getFirstValue());
     }
 
     @Test
@@ -597,7 +702,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         AstNode column = parser.nodeFactory().getChildforNameAndType(tableNode, "PART_COLOR", TYPE_COLUMN_DEFINITION);
         assertNotNull(column);
         assertEquals("VARCHAR", column.getProperty(DATATYPE_NAME).getFirstValue());
-        assertEquals(255, column.getProperty(DATATYPE_LENGTH).getFirstValue());
+        assertEquals(255L, column.getProperty(DATATYPE_LENGTH).getFirstValue());
         assertTrue(column.getProperty(DATATYPE_PRECISION) == null);
         assertTrue(column.getProperty(DATATYPE_SCALE) == null);
         assertEquals("NOT NULL", column.getProperty(NULLABLE).getFirstValue());
@@ -628,7 +733,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertEquals(2, tableNode.getChildCount());
         AstNode column = tableNode.getChildren().get(0);
         assertEquals("VARCHAR", column.getProperty(DATATYPE_NAME).getFirstValue());
-        assertEquals(255, column.getProperty(DATATYPE_LENGTH).getFirstValue());
+        assertEquals(255L, column.getProperty(DATATYPE_LENGTH).getFirstValue());
         assertTrue(column.getProperty(DATATYPE_PRECISION) == null);
         assertEquals("NOT NULL", column.getProperty(NULLABLE).getFirstValue());
         assertEquals(DEFAULT_ID_LITERAL, column.getProperty(DEFAULT_OPTION).getFirstValue());
@@ -653,7 +758,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertEquals(4, tableNode.getChildCount()); // 2 COLUMNs + 2 PRIMARY KEY CONSTRAINTS (BOGUS)
         AstNode column1 = tableNode.getChildren().get(0);
         assertEquals("VARCHAR", column1.getProperty(DATATYPE_NAME).getFirstValue());
-        assertEquals(255, column1.getProperty(DATATYPE_LENGTH).getFirstValue());
+        assertEquals(255L, column1.getProperty(DATATYPE_LENGTH).getFirstValue());
         assertTrue(column1.getProperty(DATATYPE_PRECISION) == null);
     }
 
@@ -675,10 +780,10 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertEquals(2, tableNode.getChildCount()); // 1 COLUMN & 1 CONSTRAINT
         AstNode column = tableNode.getChildren().get(0);
         assertEquals("VARCHAR", column.getProperty(DATATYPE_NAME).getFirstValue());
-        assertEquals(255, column.getProperty(DATATYPE_LENGTH).getFirstValue());
+        assertEquals(255L, column.getProperty(DATATYPE_LENGTH).getFirstValue());
         assertTrue(column.getProperty(DATATYPE_PRECISION) == null);
     }
-    
+
     @Test
     public void shouldParseCreateTableWithInlineUniqueConstraint() {
         printTest("shouldParseCreateTableWithInlineUniqueConstraint()");
@@ -699,12 +804,12 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertEquals("NUMERIC", column.getProperty(DATATYPE_NAME).getFirstValue());
         assertEquals(10, column.getProperty(DATATYPE_PRECISION).getFirstValue());
         assertTrue(column.getProperty(DATATYPE_LENGTH) == null);
-        
+
         AstNode prim_key = tableNode.getChildren().get(1);
         AstNode columnRef = prim_key.getChildren().get(0);
         assertEquals("REALMUID", columnRef.getName().getString());
     }
-    
+
     @Test
     public void shouldParseCreateTableWithInlineUniqueConstraintWithColumns() {
         printTest("shouldParseCreateTableWithInlineUniqueConstraint()");
@@ -725,13 +830,12 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertEquals("NUMERIC", column.getProperty(DATATYPE_NAME).getFirstValue());
         assertEquals(10, column.getProperty(DATATYPE_PRECISION).getFirstValue());
         assertTrue(column.getProperty(DATATYPE_LENGTH) == null);
-        
+
         AstNode prim_key = tableNode.getChildren().get(1);
         assertEquals(2, prim_key.getChildCount()); // 2 column references
         AstNode columnRef = prim_key.getChildren().get(0);
         assertEquals("columnA", columnRef.getName().getString());
     }
-    
 
     @Test
     public void shouldParseCreateTables() {

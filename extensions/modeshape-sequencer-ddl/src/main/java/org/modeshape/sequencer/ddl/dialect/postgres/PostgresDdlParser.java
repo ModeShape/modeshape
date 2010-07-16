@@ -1738,7 +1738,7 @@ public class PostgresDdlParser extends StandardDdlParser
                 result = new DataType(typeName);
                 int precision = 0;
                 if (tokens.matches('(')) {
-                    precision = parseBracketedInteger(tokens, result);
+                    precision = (int)parseBracketedLong(tokens, result);
                 }
                 result.setPrecision(precision);
             }
@@ -1758,18 +1758,6 @@ public class PostgresDdlParser extends StandardDdlParser
         @Override
         protected DataType parseBitStringType( DdlTokenStream tokens ) throws ParsingException {
             return super.parseBitStringType(tokens);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.sequencer.ddl.datatype.DataTypeParser#parseBracketedInteger(org.modeshape.sequencer.ddl.DdlTokenStream,
-         *      org.modeshape.sequencer.ddl.datatype.DataType)
-         */
-        @Override
-        protected int parseBracketedInteger( DdlTokenStream tokens,
-                                             DataType dataType ) {
-            return super.parseBracketedInteger(tokens, dataType);
         }
 
         /**

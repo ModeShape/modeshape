@@ -5,6 +5,11 @@ import java.util.List;
 import org.modeshape.graph.property.Name;
 
 public interface DdlConstants {
+
+    public static final long KILO = 1024;
+    public static final long MEGA = KILO * 1024;
+    public static final long GIGA = MEGA * 1024;
+
     public static final String DEFAULT_TERMINATOR = ";";
 
     /*
