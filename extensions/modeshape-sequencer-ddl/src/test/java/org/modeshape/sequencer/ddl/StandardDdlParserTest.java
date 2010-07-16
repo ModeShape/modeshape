@@ -678,6 +678,60 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertEquals(255, column.getProperty(DATATYPE_LENGTH).getFirstValue());
         assertTrue(column.getProperty(DATATYPE_PRECISION) == null);
     }
+    
+    @Test
+    public void shouldParseCreateTableWithInlineUniqueConstraint() {
+        printTest("shouldParseCreateTableWithInlineUniqueConstraint()");
+
+        String tableName = "table_name_22_B";
+        String content = "CREATE TABLE table_name_22_B ( REALMUID     NUMERIC(10) NOT NULL CONSTRAINT PK_AUTHREALMS UNIQUE);";
+
+        DdlTokenStream tokens = getTokens(content);
+
+        AstNode result = parser.parseCreateTableStatement(tokens, rootNode);
+
+        assertEquals(1, rootNode.getChildCount()); // COLUMN + PRIMARY KEY CONSTRAINT
+        AstNode tableNode = rootNode.getChildren().get(0);
+        assertThat(result, is(tableNode));
+        assertEquals(tableName, tableNode.getName().getString());
+        assertEquals(2, tableNode.getChildCount()); // 1 COLUMN & 1 CONSTRAINT
+        AstNode column = tableNode.getChildren().get(0);
+        assertEquals("NUMERIC", column.getProperty(DATATYPE_NAME).getFirstValue());
+        assertEquals(10, column.getProperty(DATATYPE_PRECISION).getFirstValue());
+        assertTrue(column.getProperty(DATATYPE_LENGTH) == null);
+        
+        AstNode prim_key = tableNode.getChildren().get(1);
+        AstNode columnRef = prim_key.getChildren().get(0);
+        assertEquals("REALMUID", columnRef.getName().getString());
+    }
+    
+    @Test
+    public void shouldParseCreateTableWithInlineUniqueConstraintWithColumns() {
+        printTest("shouldParseCreateTableWithInlineUniqueConstraint()");
+
+        String tableName = "table_name_24_B";
+        String content = "CREATE TABLE table_name_24_B ( REALMUID     NUMERIC(10) NOT NULL CONSTRAINT PK_AUTHREALMS UNIQUE (columnA, columnB));";
+
+        DdlTokenStream tokens = getTokens(content);
+
+        AstNode result = parser.parseCreateTableStatement(tokens, rootNode);
+
+        assertEquals(1, rootNode.getChildCount()); // COLUMN + PRIMARY KEY CONSTRAINT
+        AstNode tableNode = rootNode.getChildren().get(0);
+        assertThat(result, is(tableNode));
+        assertEquals(tableName, tableNode.getName().getString());
+        assertEquals(2, tableNode.getChildCount()); // 1 COLUMN & 1 CONSTRAINT
+        AstNode column = tableNode.getChildren().get(0);
+        assertEquals("NUMERIC", column.getProperty(DATATYPE_NAME).getFirstValue());
+        assertEquals(10, column.getProperty(DATATYPE_PRECISION).getFirstValue());
+        assertTrue(column.getProperty(DATATYPE_LENGTH) == null);
+        
+        AstNode prim_key = tableNode.getChildren().get(1);
+        assertEquals(2, prim_key.getChildCount()); // 2 column references
+        AstNode columnRef = prim_key.getChildren().get(0);
+        assertEquals("columnA", columnRef.getName().getString());
+    }
+    
 
     @Test
     public void shouldParseCreateTables() {

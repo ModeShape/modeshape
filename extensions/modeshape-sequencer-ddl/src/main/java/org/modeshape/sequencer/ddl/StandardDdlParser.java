@@ -1532,8 +1532,12 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 constraintNode.setProperty(CONSTRAINT_TYPE, UNIQUE);
 
                 // CONSUME COLUMNS
-                parseColumnNameList(tokens, constraintNode, TYPE_COLUMN_REFERENCE);
+                boolean columnsAdded = parseColumnNameList(tokens, constraintNode, TYPE_COLUMN_REFERENCE);
 
+                if( !columnsAdded ) {
+                	nodeFactory().node(colName, constraintNode, TYPE_COLUMN_REFERENCE);
+                }
+                
                 parseConstraintAttributes(tokens, constraintNode);
             } else if (tokens.matches("PRIMARY", "KEY")) {
                 // CONSTRAINT U_KEY_2a PRIMARY KEY (PERMISSIONUID)
@@ -2423,9 +2427,17 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         return result;
     }
 
-    protected void parseColumnNameList( DdlTokenStream tokens,
+    /**
+     * Adds column reference nodes to a parent node. Returns true if column references added, false if not.
+     * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
+     * @param parentNode the parent node
+     * @param referenceType the type of the reference node to create
+     * @return
+     */
+    protected boolean parseColumnNameList( DdlTokenStream tokens,
                                         AstNode parentNode,
                                         Name referenceType ) {
+    	boolean parsedColumns = false;
         // CONSUME COLUMNS
         List<String> columnNameList = new ArrayList<String>();
         if (tokens.matches(L_PAREN)) {
@@ -2436,7 +2448,10 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         for (String columnName : columnNameList) {
             nodeFactory().node(columnName, parentNode, referenceType);
+            parsedColumns = true;
         }
+        
+        return parsedColumns;
     }
 
     /**
