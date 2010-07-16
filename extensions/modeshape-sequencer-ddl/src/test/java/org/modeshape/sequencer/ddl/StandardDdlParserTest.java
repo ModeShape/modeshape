@@ -837,6 +837,20 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         assertEquals("columnA", columnRef.getName().getString());
     }
 
+    @FixFor( "MODE-817" )
+    @Test
+    public void shouldParseAlterTables() {
+        printTest("shouldParseAlterTables()");
+
+        String content = getFileContent(DDL_FILE_PATH + "alterTables.ddl");
+        assertScoreAndParse(content, "alterTables.ddl", 31);
+
+        List<AstNode> theNodes = parser.nodeFactory().getChildrenForType(rootNode, TYPE_CREATE_TABLE_STATEMENT);
+        assertThat(theNodes.size(), is(0));
+        theNodes = parser.nodeFactory().getChildrenForType(rootNode, TYPE_ALTER_TABLE_STATEMENT);
+        assertThat(theNodes.size(), is(13));
+    }
+
     @Test
     public void shouldParseCreateTables() {
         printTest("shouldParseCreateTables()");

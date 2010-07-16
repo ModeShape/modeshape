@@ -59,11 +59,11 @@ DROP SCHEMA schema_name RESTRICT
 
 ALTER TABLE table_name ADD COLUMN column_name VARCHAR(25) NOT NULL
 
-ALTER TABLE table_name ADD (COLUMN column1_name INTEGER NOT NULL, COLUMN column2_name, VARCHAR(25))
-
 ALTER TABLE table_name ADD column_name INTEGER NOT NULL DEFAref_table_nameULT (25)
 
-ALTER TABLE table_name ADD (column1_name INTEGER NOT NULL DEFAULT (25), column2_name, VARCHAR(25))
+-- Adding multiple columns is not valid SQL-92
+--ALTER TABLE table_name ADD (COLUMN column1_name INTEGER NOT NULL, COLUMN column2_name VARCHAR(25))
+--ALTER TABLE table_name ADD (column1_name INTEGER NOT NULL DEFAULT (25), column2_name VARCHAR(25))
 
 --<alter column definition> ::=
 --    ALTER [ COLUMN ] <column name> <alter column action>

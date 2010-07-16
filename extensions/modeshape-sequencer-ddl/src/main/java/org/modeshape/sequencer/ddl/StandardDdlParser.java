@@ -1384,12 +1384,13 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         while (tokens.hasNext() && !tokens.matches(getTerminator()) && !tokens.matches(DdlTokenizer.STATEMENT_KEY)) {
             boolean parsedDefaultClause = parseDefaultClause(tokens, columnNode);
+            boolean foundSomething = parsedDefaultClause;
             if (!parsedDefaultClause) {
-                parseCollateClause(tokens, columnNode);
-                parseColumnConstraint(tokens, columnNode, isAlterTable);
+                foundSomething |= parseCollateClause(tokens, columnNode);
+                foundSomething |= parseColumnConstraint(tokens, columnNode, isAlterTable);
             }
-            consumeComment(tokens);
-            if (tokens.canConsume(COMMA)) break;
+            foundSomething |= consumeComment(tokens);
+            if (tokens.canConsume(COMMA) || !foundSomething) break;
         }
     }
 
@@ -2260,10 +2261,11 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
      * Consumes an an end-of-line comment or in-line comment
      * 
      * @param tokens the {@link DdlTokenStream} representing the tokenized DDL content; may not be null
+     * @return true if a comment was found and consumed
      * @throws ParsingException
      */
-    protected void consumeComment( DdlTokenStream tokens ) throws ParsingException {
-        tokens.canConsume(DdlTokenizer.COMMENT);
+    protected boolean consumeComment( DdlTokenStream tokens ) throws ParsingException {
+        return tokens.canConsume(DdlTokenizer.COMMENT);
     }
 
     /**
