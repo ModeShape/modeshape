@@ -296,6 +296,16 @@
       <itemizedlist>
         <listitem>
           <para>
+            <emphasis role="strong">modeshape-clustering</emphasis>
+            contains ModeShape's clustering components and are needed only when two or more ModeShape engines are
+            to be clustered together (so listeners in one session get notifications made from within any of the engines).
+            ModeShape clustering uses the powerful, flexible and mature <ulink url="&JGroups;">JGroups</ulink> reliable multicast 
+            communication library. Simply <link linkend="clustering">enable clustering</link> in ModeShape's configuration,
+            include this library, and start your cluster. Engines can be dynamically added and removed from the cluster.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
             <emphasis role="strong">modeshape-connector-infinispan</emphasis>
             is the preferred ModeShape repository connector for persistently storing content.
             <ulink url="http://infinispan.org">Infinispan</ulink> is an extremely scalable, highly available data grid platform

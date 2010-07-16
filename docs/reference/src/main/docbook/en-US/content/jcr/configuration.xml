@@ -328,7 +328,257 @@ configuration.loadFrom(configSource);
 		</para>
 	</sect2>
  </sect1>
-	<sect1 id="modeshape_and_jndi">
+ <sect1 id="clustering">
+	  <title>Clustering</title>
+	  <para>
+	    ModeShape 2.1 introduced the ability to have a cluster of &JcrEngine; instances distributed across multiple processes while
+	    behaving as though everything was happening in a single process. With clusters, the workload can be distributed across multiple
+			machines, increasing tolerance against failure while allowing ModeShape to scale out to handle more workload.
+	  </para>
+		<para>
+			ModeShape clustering uses the powerful, flexible and mature <ulink url="&JGroups;">JGroups</ulink> library to handle
+			all network communication within the cluster. JGroups provides a wealth of capabilities, including automatically detecting
+			new engines in the cluster (called discovery), reliable multicast communication, and automatic determination of the master 
+			node in the cluster. JGroups has a flexible protocol stack, works across firewalls, WANs and LANs, and supports multiple 
+			transport protocols, failure detection, reliable unicast and multicast message transmission, and encryption.
+		</para>
+		<para>
+			By default, clustering is <emphasis>not</emphasis> enabled. This means that each &JcrEngine; instance is self-contained
+			and will not be aware of changes made in other &JcrEngine; instances. This is perfect in many lightweight or embedded
+			scenarios, because it does not introduce any overhead associated with network communication.
+		</para>
+		<para>
+			However, clustering ModeShape is very easy and requires only a few simple steps:
+			<orderedlist>
+				<listitem>
+					<para>
+						Enable clustering in the ModeShape configuration (more on this in a bit).
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						Include the <code>modeshape-clustering</code> module in your application, either by 
+						<link linkend="using_modeshape_via_jars">JAR file</link> or <link linkend="using_modeshape_via_maven">Maven dependency</link>.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						Start (or deploy) multiple &JcrEngine; instances using the same configuration. For embedded scenarios, this means simply
+						instantiating multiple &JcrEngine; instances in multiple processes. In other cases, this means deploying ModeShape
+						to multiple servers (either using the <link linkend="webdav_server">WebDAV</link> server, <link linkend="rest_serve">REST server</link>,
+						or <link linkend="modeshape_and_jndi">into JNDI</link> and using with your own applications).
+					</para>
+				</listitem>
+			</orderedlist>
+			Your JCR-based application doesn't need to change in any other ways. Any &EventListener; implementations registered in
+			&Session;s on any of the engines will be notified of all events, regardless of whether those events were due to changes
+			in the local or remote engines.
+		</para>
+		<para>
+			It also doesn't matter how many &Repository; instances are defined in the configuration and managed by each &JcrEngine; instance:
+			each engine in the cluster can manage multiple named repositories.
+			ModeShape ensures that all &Session;s for a named repository see the changes made to that repository, regardless of where those
+			sessions are located in the cluster. Likewise, those same changes will not be visible to the sessions for any other named repository.
+		</para>
+	  <sect2 id="clustering_configuration">
+		  <title>Enabling Clustering in ModeShape</title>
+		  <para>
+			  A ModeShape configuration can have a "<code>clustering</code>" fragment that defines the name of the cluster and the
+			  JGroups configuration:
+			</para>
+    	<programlisting role="XML"><![CDATA[<clustering clusterName="modeshape-cluster" configuration="jgroups-modeshape.xml" />]]></programlisting>
+			<para>
+				The "<code>clusterName</code>" is a string that is a logical name of the cluster; all engines connecting to the same name
+				form a cluster. Any messages multicast from one engine in the cluster will be received by all other members of the cluster.
+				Again, the cluster name is <emphasis>independent</emphasis> of the repositories managed by th
+			</para>
+			<para>
+				The "<code>configuration</code>" value is a string that is one of:
+				<itemizedlist>
+					<listitem>
+						<para>the absolute file system path to the file containing the JGroups XML configuration;</para>
+					</listitem>
+					<listitem>
+						<para>the relative file system path to the file containing the JGroups XML configuration, relative to the current working directory of the Java process;</para>
+					</listitem>
+					<listitem>
+						<para>the name of a resource on the classpath containing the JGroups XML configuration;</para>
+					</listitem>
+					<listitem>
+						<para>the URL that can be resolved to the JGroups XML configuration; or</para>
+					</listitem>
+					<listitem>
+						<para>the string representation of JGroups configuration, either in XML format or the older string format.</para>
+					</listitem>
+				</itemizedlist>
+				The format of this JGroups configuration will be described in the <link linkend="jgroups_clustering_configuration">next section</link>.
+				If the "<code>configuration</code>" property is not given, ModeShape will use the default JGroups configuration (as defined by the specific
+				JGroups version).
+			</para>
+			<note>
+				<para>
+					Note that all engines in the cluster must have the same JGroups configuration. In fact, all engines in the cluster will
+					almost always have exactly the same ModeShape configuration.
+				</para>
+			</note>
+			<para>
+				Here is an example of a "<code>clustering</code>" fragment defining a cluster named "modeshape-cluster" using the JGroups
+				configuration defined in the "jgroups-modeshape.xml" file at the supplied URL:
+			</para>
+    	<programlisting role="XML"><![CDATA[<clustering clusterName="modeshape-cluster" 
+	  configuration="file://some/path/jgroups-modeshape.xml" />]]></programlisting>
+			<para>
+				This next example uses the JGroups configuration defined in the "jgroups-modeshape.xml" resource file on the classpath
+				(or as an absolute path on a *nix system):
+			</para>
+    	<programlisting role="XML"><![CDATA[<clustering clusterName="modeshape-cluster" 
+	  configuration="/some/path/jgroups-modeshape.xml" />]]></programlisting>
+			<para>
+				Next is an example that specifies the JGroups configuration using the older string representation of the form:
+			</para>
+    	<programlisting role="XML"><![CDATA[<clustering clusterName="modeshape-cluster" 
+	  configuration="PROTOCOL(param=value;param=value):PROTOCOL:PROTOCOL" />]]></programlisting>
+			<para>
+				Of course, the "<code>configuration</code>" property can be specified as a child element, too (line breaks added for readability):
+			</para>
+    	<programlisting role="XML"><![CDATA[<clustering clusterName="modeshape-cluster">
+	     <configuration>UDP(max_bundle_size="60000":max_bundle_timeout="30"):
+		                  PING(timeout="2000"):...</configuration>
+</clustering>]]></programlisting>
+			<para>
+				And finally an example that specifies the JGroups configuration using the newer XML representation (line breaks added for readability):
+			</para>
+    	<programlisting role="XML">&lt;clustering clusterName="modeshape-cluster">
+	 &lt;configuration>&lt;![CDATA[&lt;config>&lt;UDP max_bundle_size="60000" 
+	      max_bundle_timeout="30".../>&lt;PING timeout="2000"/>...&lt;/config>]]&gt;
+	 &lt;/configuration>
+&lt;/clustering></programlisting>
+      <para>
+	      Note that the this example uses a child XML element for the "<code>configuration</code>", along with
+	      a CDATA section, so that the XML configuration can be nested within the ModeShape configuration.
+	    </para>
+		</sect2>
+	  <sect2 id="jgroups_clustering_configuration">
+		  <title>JGroups configuration</title>
+		  <para>
+			  The JGroups configuration defines a protocol stack that is used for messaging, starting with the bottom-most protocol
+			  and ending with the top-most protocol.
+			</para>
+		  <para>
+				An example of the newer-style JGroups XML format is:
+			</para>
+    	<programlisting role="XML"><![CDATA[<config>
+   <UDP
+        mcast_addr="${jgroups.udp.mcast_addr:228.10.10.10}"
+        mcast_port="${jgroups.udp.mcast_port:45588}"
+        discard_incompatible_packets="true"
+        max_bundle_size="60000"
+        max_bundle_timeout="30"
+        ip_ttl="${jgroups.udp.ip_ttl:2}"
+        enable_bundling="true"
+        thread_pool.enabled="true"
+        thread_pool.min_threads="1"
+        thread_pool.max_threads="25"
+        thread_pool.keep_alive_time="5000"
+        thread_pool.queue_enabled="false"
+        thread_pool.queue_max_size="100"
+        thread_pool.rejection_policy="Run"
+        oob_thread_pool.enabled="true"
+        oob_thread_pool.min_threads="1"
+        oob_thread_pool.max_threads="8"
+        oob_thread_pool.keep_alive_time="5000"
+        oob_thread_pool.queue_enabled="false"
+        oob_thread_pool.queue_max_size="100"
+        oob_thread_pool.rejection_policy="Run"/>
+   <PING timeout="2000"
+           num_initial_members="3"/>
+   <MERGE2 max_interval="30000"
+           min_interval="10000"/>
+   <FD_SOCK/>
+   <FD timeout="10000" max_tries="5" />
+   <VERIFY_SUSPECT timeout="1500"  />
+   <BARRIER />
+   <pbcast.NAKACK
+                  use_mcast_xmit="false" gc_lag="0"
+                  retransmit_timeout="300,600,1200,2400,4800"
+                  discard_delivered_msgs="true"/>
+   <UNICAST timeout="300,600,1200,2400,3600"/>
+   <pbcast.STABLE stability_delay="1000" desired_avg_gossip="50000"
+                  max_bytes="400000"/>
+   <VIEW_SYNC avg_send_interval="60000"   />
+   <pbcast.GMS print_local_addr="true" join_timeout="3000"
+               view_bundling="true"/>
+   <FC max_credits="20000000"
+                   min_threshold="0.10"/>
+   <FRAG2 frag_size="60000"  />
+   <pbcast.STATE_TRANSFER  />
+</config>]]></programlisting>
+		  <para>
+				The older-style JGroups string format is of the form:
+			</para>
+			<programlisting>PROTOCOL(param1=value1:param2=value2):PROTOCOL:PROTOCOL</programlisting>
+		  <para>
+				This format is generally harder to read and generally discouraged.
+				Nevertheless, here's an example of the older string format defining the same stack as the previous XML example 
+				(line breaks have been added for readability):
+			</para>
+			<programlisting>UDP(
+        mcast_addr="${jgroups.udp.mcast_addr:228.10.10.10}":
+        mcast_port="${jgroups.udp.mcast_port:45588}":
+        discard_incompatible_packets="true":
+        max_bundle_size="60000":
+        max_bundle_timeout="30":
+        ip_ttl="${jgroups.udp.ip_ttl:2}":
+        enable_bundling="true":
+        thread_pool.enabled="true":
+        thread_pool.min_threads="1":
+        thread_pool.max_threads="25":
+        thread_pool.keep_alive_time="5000":
+        thread_pool.queue_enabled="false":
+        thread_pool.queue_max_size="100":
+        thread_pool.rejection_policy="Run":
+        oob_thread_pool.enabled="true":
+        oob_thread_pool.min_threads="1":
+        oob_thread_pool.max_threads="8":
+        oob_thread_pool.keep_alive_time="5000":
+        oob_thread_pool.queue_enabled="false":
+        oob_thread_pool.queue_max_size="100":
+        oob_thread_pool.rejection_policy="Run"):
+   PING(timeout="2000":
+        num_initial_members="3"):
+   MERGE2(max_interval="30000":
+          min_interval="10000"):
+   FD_SOCK:
+   FD(timeout="10000":max_tries="5"):
+   VERIFY_SUSPECT(timeout="1500"):
+   BARRIER:
+   pbcast.NAKACK(use_mcast_xmit="false":gc_lag="0":
+                 retransmit_timeout="300,600,1200,2400,4800":
+                 discard_delivered_msgs="true"):
+   UNICAST(timeout="300,600,1200,2400,3600"):
+   pbcast.STABLE(stability_delay="1000":desired_avg_gossip="50000":
+                 max_bytes="400000"):
+   VIEW_SYNC(avg_send_interval="60000"):
+   pbcast.GMS(print_local_addr="true":join_timeout="3000"
+              view_bundling="true"):
+   FC(max_credits="20000000":
+      min_threshold="0.10"):
+   FRAG2(frag_size="60000"):
+   pbcast.STATE_TRANSFER</programlisting>
+		  <para>
+				For more details on how to configure the JGroups stack, see the <ulink url="&JGroupsManual;">JGroups Manual</ulink>.
+			</para>
+			<note>
+			  <para>
+				  JGroups is also used in Infinispan, JBoss AS, and other open source projects, and many of the JGroups configurations 
+				  will work with ModeShape deployed in those same environments. For example, 
+				  <ulink url="http://infinispan.blogspot.com/2010/05/infinispan-ec2-demo.html">this blog post</ulink>
+				  describes how to configure JGroups with three autodiscovery options available on Amazon EC2.
+				</para>
+			</note>
+		</sect2>
+ </sect1>
+ <sect1 id="modeshape_and_jndi">
 		<title>Deploying ModeShape via JNDI</title>
 		<para>
 			Sometimes your applications can simply define a &JcrConfiguration; and instantiate the &JcrEngine; instance directly.
@@ -538,62 +788,72 @@ try {
 <programlisting role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-jcr</artifactId>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 ]]></programlisting>
 				<para>
-					This adds only the minimal libraries required to use ModeShape, so you need to add dependencies for 
+					This adds only the minimal libraries required to use ModeShape. If your application is going
+					to use clustering, you'll need to also depend upon the clustering module:
+				</para>
+<programlisting role="XML"><![CDATA[<dependency>
+  <groupId>org.modeshape</groupId>
+  <artifactId>modeshape-clustering</artifactId>
+  <version>2.1.0.Final</version>
+</dependency>
+]]></programlisting>
+				<para>
+					You also need to add dependencies for 
 					each of the connectors and sequencers you want to use. Here is the list of available sequencers:
 				</para>
 <programlisting role="XML"><![CDATA[<dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-cnd</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-ddl</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshapce</groupid>
   <artifactid>modeshape-sequencer-images</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-classfile</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-java</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-mp3</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-msoffice</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-xml</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-text</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-zip</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 ]]></programlisting>
 			<para>
@@ -602,37 +862,37 @@ try {
 <programlisting role="XML"><![CDATA[<dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-filesystem</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-infinispan</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-jcr</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-jbosscache</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-jdbc-metadata</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-store-jpa</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-svn</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>]]></programlisting>
 	      <para>
 		      The sequencer and connector libraries you choose, plus every third-party library they need, will be pulled in automatically 

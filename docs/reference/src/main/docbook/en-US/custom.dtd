@@ -1,4 +1,4 @@
-<!ENTITY versionNumber "2.0.0.Final">
+<!ENTITY versionNumber "2.1.0.Final">
 <!ENTITY copyrightYears "2008-2010">
 <!ENTITY copyrightHolder "Red Hat, Inc.">
 
@@ -39,10 +39,13 @@
 <!ENTITY Log4J                "http://logging.apache.org/log4j/">
 <!ENTITY LogBack              "http://logback.qos.ch/">
 <!ENTITY SLF4JManual          "http://www.slf4j.org/manual.html">
+<!ENTITY JGroups							"http://jgroups.org">
+<!ENTITY JGroupsManual				"&JGroups;/ug.html">
 
 <!ENTITY Java									"http://java.sun.com/javase/6/docs/api/">
 <!ENTITY JavaEE               "http://java.sun.com/javaee/6/docs/api/">
 <!ENTITY JcrApi               "http://www.day.com/maven/javax.jcr/javadocs/jcr-2.0/">
+<!ENTITY JGroupsApi           "&JGroups;/javadocs/">
 
 <!ENTITY GettingStarted           		"<ulink url='&DocHome;/&versionNumber;/manuals/gettingstarted/html/index.html'>Getting Started</ulink>">
 <!ENTITY ReferenceGuide           		"<ulink url='&DocHome;/&versionNumber;/manuals/reference/html/index.html'>Reference Guide</ulink>">

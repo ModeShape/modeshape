@@ -190,6 +190,11 @@ Session session = repository.login(credentials,workspaceName);
         </mode:source>
     </mode:sources>
     <!-- 
+    Define the clustering configuration. This is an optional section; leave it out when
+    running in a non-clustered (single-process) mode.
+    -->
+    <mode:clustering clusterName="modeshape-cluster" configuration="jgroups-modeshape.xml" />
+    <!-- 
     Define the sequencers. This is an optional section. 
     -->
     <mode:sequencers>
@@ -414,62 +419,72 @@ try {
 <programlisting role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-jcr</artifactId>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 ]]></programlisting>
 				<para>
-					This adds only the minimal libraries required to use ModeShape, so you need to add dependencies for 
+					This adds only the minimal libraries required to use ModeShape. If your application is going
+					to use clustering, you'll need to also depend upon the clustering module:
+				</para>
+<programlisting role="XML"><![CDATA[<dependency>
+  <groupId>org.modeshape</groupId>
+  <artifactId>modeshape-clustering</artifactId>
+  <version>2.1.0.Final</version>
+</dependency>
+]]></programlisting>
+				<para>
+					You also need to add dependencies for 
 					each of the connectors and sequencers you want to use. Here is the list of available sequencers:
 				</para>
 <programlisting role="XML"><![CDATA[<dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-cnd</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-ddl</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshapce</groupid>
   <artifactid>modeshape-sequencer-images</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-classfile</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-java</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-mp3</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-msoffice</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-xml</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-text</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-zip</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 ]]></programlisting>
 			<para>
@@ -478,37 +493,37 @@ try {
 <programlisting role="XML"><![CDATA[<dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-filesystem</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-infinispan</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-jcr</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-jbosscache</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-jdbc-metadata</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-store-jpa</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-svn</artifactid>
-  <version>2.0.0.Final</version>
+  <version>2.1.0.Final</version>
 </dependency>]]></programlisting>
 	      <para>
 		      The sequencer and connector libraries you choose, plus every third-party library they need, will be pulled in automatically 
