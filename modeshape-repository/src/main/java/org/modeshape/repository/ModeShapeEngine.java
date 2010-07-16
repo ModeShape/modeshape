@@ -76,6 +76,7 @@ import org.modeshape.repository.sequencer.SequencingService;
 public class ModeShapeEngine {
 
     public static final String CONFIGURATION_REPOSITORY_NAME = "dna:configuration";
+    protected static final Logger LOGGER = Logger.getLogger(ModeShapeEngine.class);
 
     protected final ModeShapeConfiguration.ConfigurationDefinition configuration;
     private final ConfigurationScanner scanner;
@@ -88,7 +89,6 @@ public class ModeShapeEngine {
     private final ClusteringService clusteringService;
     private final MimeTypeDetectors detectors;
     private final String engineId = UUID.randomUUID().toString();
-    private static final Logger LOGGER = Logger.getLogger(ModeShapeEngine.class);
 
     protected ModeShapeEngine( ExecutionContext context,
                                ModeShapeConfiguration.ConfigurationDefinition configuration ) {
@@ -446,8 +446,9 @@ public class ModeShapeEngine {
                     classname = CLUSTERED_OBSERVATION_BUS_CLASSNAME;
                 }
                 if (clusterName == null || clusterName.trim().length() == 0) {
-                    problems.addError(RepositoryI18n.clusteringConfigurationRequiresClusterName);
-                    return null;
+                    LOGGER.warn(RepositoryI18n.clusteringConfigurationRequiresClusterName);
+                    problems.addWarning(RepositoryI18n.clusteringConfigurationRequiresClusterName);
+                    return null; // Signifies no clustering
                 }
 
                 Map<String, Object> properties = new HashMap<String, Object>();

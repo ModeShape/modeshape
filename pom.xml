@@ -199,6 +199,11 @@
 	<profiles>
 		<profile>
 			<id>preferIpv4</id>
+      <activation>
+        <property>
+          <name>!preferIpv6</name>
+        </property>
+      </activation>
 			<properties>
 				<jgroups.preferIpv4>true</jgroups.preferIpv4>
 				<jgroups.preferIpv6>false</jgroups.preferIpv6>
