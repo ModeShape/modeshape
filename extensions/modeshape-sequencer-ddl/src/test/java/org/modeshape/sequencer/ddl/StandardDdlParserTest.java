@@ -526,7 +526,7 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
     @FixFor( "MODE-820" )
     @Test
     public void shouldParseCreateTableWithKilobyteInSize() {
-        printTest("shouldParseCreateTable()");
+        printTest("shouldParseCreateTableWithKilobyteInSize()");
 
         String content = "CREATE TABLE MY_TABLE_A (PARTID CHAR (2K) NOT NULL, "
                          + " -- COLUMN 1 COMMENT with comma \nPARTCOLOR CHAR(4M) NOT NULL) ON COMMIT DELETE ROWS;";

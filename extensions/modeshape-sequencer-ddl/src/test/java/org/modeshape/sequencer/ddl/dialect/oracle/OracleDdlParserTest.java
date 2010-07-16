@@ -17,6 +17,7 @@ import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_C
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_ROLLBACK_STATEMENT;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.sequencer.ddl.DdlConstants;
 import org.modeshape.sequencer.ddl.DdlParserScorer;
@@ -150,6 +151,26 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         assertScoreAndParse(content, null, 1);
         AstNode childNode = rootNode.getChildren().get(0);
         assertTrue(hasMixinType(childNode.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_GRANT_STATEMENT));
+    }
+
+    @Test
+    public void shouldParseCreateTable() {
+        printTest("shouldParseCreateTable()");
+
+        String content = "CREATE TABLE MY_TABLE_A (PARTID BLOB (255) NOT NULL DEFAULT (100), "
+                         + " -- COLUMN 1 COMMENT with comma \nPARTCOLOR INTEGER NOT NULL) ON COMMIT DELETE ROWS;";
+        assertScoreAndParse(content, null, 2);
+    }
+
+    @FixFor( "MODE-820" )
+    @Test
+    public void shouldParseCreateTableWithKilobyteInSize() {
+        printTest("shouldParseCreateTableWithKilobyteInSize()");
+
+        String content = "CREATE TABLE MY_TABLE_A (PARTID BLOB (2K) NOT NULL, "
+                         + " -- COLUMN 1 COMMENT with comma \nPARTCOLOR CHAR(4M) NOT NULL) ON COMMIT DELETE ROWS;";
+
+        assertScoreAndParse(content, null, 2);
     }
 
     @Test

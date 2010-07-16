@@ -34,6 +34,7 @@ import static org.modeshape.sequencer.ddl.dialect.mysql.MySqlDdlLexicon.TYPE_CRE
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.sequencer.ddl.DdlParserScorer;
 import org.modeshape.sequencer.ddl.DdlParserTestHelper;
 import org.modeshape.sequencer.ddl.node.AstNode;
@@ -53,6 +54,26 @@ public class MySqlDdlParserTest extends DdlParserTestHelper {
         parser.setDoUseTerminator(true);
         rootNode = parser.nodeFactory().node("ddlRootNode");
         scorer = new DdlParserScorer();
+    }
+
+    @Test
+    public void shouldParseCreateTable() {
+        printTest("shouldParseCreateTable()");
+
+        String content = "CREATE TABLE MY_TABLE_A (PARTID BLOB (255) NOT NULL DEFAULT (100), "
+                         + " -- COLUMN 1 COMMENT with comma \nPARTCOLOR INTEGER NOT NULL) ON COMMIT DELETE ROWS;";
+        assertScoreAndParse(content, null, 2);
+    }
+
+    @FixFor( "MODE-820" )
+    @Test
+    public void shouldParseCreateTableWithKilobyteInSize() {
+        printTest("shouldParseCreateTableWithKilobyteInSize()");
+
+        String content = "CREATE TABLE MY_TABLE_A (PARTID BLOB (2K) NOT NULL, "
+                         + " -- COLUMN 1 COMMENT with comma \nPARTCOLOR CHAR(4M) NOT NULL) ON COMMIT DELETE ROWS;";
+
+        assertScoreAndParse(content, null, 2);
     }
 
     @Test
