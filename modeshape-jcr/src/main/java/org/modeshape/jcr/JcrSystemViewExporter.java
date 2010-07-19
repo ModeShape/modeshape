@@ -45,7 +45,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 /**
- * Implementation of {@link AbstractJcrExporter} that implements the system view mapping described in section 6.4.1 of the JCR 1.0
+ * Implementation of {@link AbstractJcrExporter} that implements the system view mapping described in section 7.2 of the JCR 2.0
  * specification.
  * 
  * @see JcrSession#exportSystemView(String, ContentHandler, boolean, boolean)
@@ -263,7 +263,7 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
         } else {
             String s = value.getString();
 
-            // Per 6.4.1.2 Rule #7 of the JCR 1.0 spec, need to check invalid XML characters
+            // Per Section 7.2 Rule 11a of the JCR 2.0 spec, need to check invalid XML characters
 
             char[] chars = s.toCharArray();
 

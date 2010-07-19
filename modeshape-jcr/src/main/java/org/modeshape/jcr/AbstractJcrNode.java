@@ -1014,7 +1014,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * </p>
      * <p>
      * ModeShape imposes the following additional restrictions on the addition of mixin types in addition to the restrictions
-     * provided by the JCR 1.0 specification:
+     * provided by the JCR 1.0 and JCR 2.0 specifications:
      * <ol>
      * <li>No properties defined by the mixin type can have the same name as any property defined by the node's primary type or
      * any of its existing mixin types.</li>
@@ -1115,8 +1115,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
      * <b>ModeShape Implementation Notes</b>
      * </p>
      * <p>
-     * The criteria noted in {@link #canAddMixin(String)} must be satisifed in addition to the criteria defined in the JCR 1.0
-     * specification.
+     * The criteria noted in {@link #canAddMixin(String)} must be satisifed in addition to the criteria defined in the JCR 1.0 and
+     * JCR 2.0 specifications.
      * </p>
      * 
      * @see javax.jcr.Node#addMixin(java.lang.String)

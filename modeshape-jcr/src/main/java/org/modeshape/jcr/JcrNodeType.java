@@ -290,8 +290,8 @@ class JcrNodeType implements NodeType {
     /**
      * {@inheritDoc}
      * <p>
-     * According to the JCR 1.0 JavaDoc, this method applies to all children. However, this appears to be changed in the JSR-283
-     * draft to apply only to nodes, and it is also deprecated.
+     * In JCR 1.0, this method applied to all children. However, this was changed in the JSR-283 specification to apply only to
+     * nodes, and it is also deprecated.
      * </p>
      * 
      * @see javax.jcr.nodetype.NodeType#canRemoveItem(java.lang.String)
@@ -304,7 +304,7 @@ class JcrNodeType implements NodeType {
 
     /**
      * Returns <code>true</code> if <code>value</code> can be cast to <code>property.getRequiredType()</code> per the type
-     * conversion rules in section 6.2.6 of the JCR 1.0 specification AND <code>value</code> satisfies the constraints (if any)
+     * conversion rules in section 3.6.4 of the JCR 2.0 specification AND <code>value</code> satisfies the constraints (if any)
      * for the property definition. If the property definition has a required type of {@link PropertyType#UNDEFINED}, the cast
      * will be considered to have succeeded and the value constraints (if any) will be interpreted using the semantics for the
      * type specified in <code>value.getType()</code>.
@@ -330,7 +330,7 @@ class JcrNodeType implements NodeType {
 
     /**
      * Returns <code>true</code> if <code>value</code> can be cast to <code>property.getRequiredType()</code> per the type
-     * conversion rules in section 6.2.6 of the JCR 1.0 specification AND <code>value</code> satisfies the constraints (if any)
+     * conversion rules in section 3.6.4 of the JCR 2.0 specification AND <code>value</code> satisfies the constraints (if any)
      * for the property definition. If the property definition has a required type of {@link PropertyType#UNDEFINED}, the cast
      * will be considered to have succeeded and the value constraints (if any) will be interpreted using the semantics for the
      * type specified in <code>value.getType()</code>.

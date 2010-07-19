@@ -950,9 +950,9 @@ final class JcrVersionManager implements VersionManager {
 
         /**
          * Restores the child nodes and mixin types for {@code targetNode} based on the frozen version stored at {@code
-         * sourceNode}. This method will remove and add child nodes as necessary based on the documentation in the JCR 1.0.1
-         * specification (sections 8.27 and 8.2.11), but this method will not modify properties (other than jcr:mixinTypes,
-         * jcr:baseVersion, and jcr:isCheckedOut).
+         * sourceNode}. This method will remove and add child nodes as necessary based on the documentation in the JCR 2.0
+         * specification (sections 15.7), but this method will not modify properties (other than jcr:mixinTypes, jcr:baseVersion,
+         * and jcr:isCheckedOut).
          * 
          * @param sourceNode a node in the subgraph of frozen nodes under a version; may not be null, but may be a node with
          *        primary type of nt:version or nt:versionedChild

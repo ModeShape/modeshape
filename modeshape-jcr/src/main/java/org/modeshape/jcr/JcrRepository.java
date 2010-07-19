@@ -1188,6 +1188,8 @@ public class JcrRepository implements Repository {
                         this.federatedSource.removeWorkspace(workspaceName);
                     }
                     // Per JCR 1.0 6.1.1, if the workspaceName is not recognized, a NoSuchWorkspaceException is thrown
+                    // JCR 2.0 does not explicitely state the behavior if the workspace name is not found, though the JavaDoc
+                    // does.
                     throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(sourceName, workspaceName));
                 }
 

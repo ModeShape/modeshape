@@ -49,7 +49,7 @@ public class Jsr170LevelOneTckTest {
         // return new JCRTestSuite();
 
         // Or uncomment the following lines to execute the different sets/suites of tests ...
-        TestSuite suite = new TestSuite("JCR 1.0 Level 1 Compliance tests");
+        TestSuite suite = new TestSuite("JCR 2.0 Level 1 Compliance tests");
 
         suite.addTest(new LevelOneFeatureTests());
 

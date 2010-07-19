@@ -295,7 +295,7 @@ class RepositoryNodeTypeManager {
             nodeTypeManagerLock.readLock().unlock();
         }
     }
-    
+
     /**
      * Searches the supplied primary node type and the mixin node types for a property definition that is the best match for the
      * given property name, property type, and value.
@@ -671,7 +671,7 @@ class RepositoryNodeTypeManager {
                 assert values != null;
                 // We can use the definition if it matches the type and satisfies the constraints ...
                 int type = definition.getRequiredType();
-                boolean typeMatches = values.length == 0 || type == PropertyType.UNDEFINED || type == propertyType; 
+                boolean typeMatches = values.length == 0 || type == PropertyType.UNDEFINED || type == propertyType;
                 // Don't check constraints on reference properties
                 if (typeMatches && type == PropertyType.REFERENCE) return definition;
                 if (typeMatches && definition.satisfiesConstraints(values)) return definition;
@@ -717,7 +717,7 @@ class RepositoryNodeTypeManager {
                     assert values != null;
                     // We can use the definition if it matches the type and satisfies the constraints ...
                     int type = definition.getRequiredType();
-                    boolean typeMatches = values.length == 0 || type == PropertyType.UNDEFINED || type == propertyType; 
+                    boolean typeMatches = values.length == 0 || type == PropertyType.UNDEFINED || type == propertyType;
                     // Don't check constraints on reference properties
                     if (typeMatches && type == PropertyType.REFERENCE) return definition;
                     if (typeMatches && definition.satisfiesConstraints(values)) return definition;
@@ -1095,8 +1095,8 @@ class RepositoryNodeTypeManager {
      * <p>
      * For each node type, a node is created as a child node of <code>parentOfPathNodes</code>. The created node has a name that
      * corresponds to the node types name and a primary type of <code>nt:nodeType</code>. All other properties and child nodes for
-     * the newly created node are added in a manner consistent with the guidance provide in section 6.7.22 of the JCR 1.0
-     * specification and section 4.7.24 of the (draft) JCR 2.0 specification where possible.
+     * the newly created node are added in a manner consistent with the guidance provided in section 6.7.22 of the JCR 1.0
+     * specification and section 4.7.24 of the JCR 2.0 specification where possible.
      * </p>
      * 
      * @param graph the graph onto which the type information should be projected
@@ -1448,8 +1448,8 @@ class RepositoryNodeTypeManager {
      * <b>ModeShape Implementation Notes</b>
      * </p>
      * <p>
-     * ModeShape currently supports registration of batches of types with some constraints. ModeShape will allow types to be registered if
-     * they meet the following criteria:
+     * ModeShape currently supports registration of batches of types with some constraints. ModeShape will allow types to be
+     * registered if they meet the following criteria:
      * <ol>
      * <li>The batch must consist of {@code NodeTypeDefinitionTemplate node type definition templates} created through the user's
      * JCR session.</li>
@@ -1480,7 +1480,7 @@ class RepositoryNodeTypeManager {
      * version of ModeShape.</i></li>
      * <li>If the property overrides an existing property definition from a supertype, the new definition must have the same
      * required type as the old definition or a required type that can ALWAYS be cast to the required type of the ancestor (see
-     * section 6.2.6 of the JCR 1.0.1 specification)</li>
+     * section 3.6.4 of the JCR 2.0 specification)</li>
      * </ol>
      * Note that an empty set of properties would meet the above criteria.</li>
      * <li>The type must have a valid set of child nodes - that is, the types's child nodes must meet the following criteria:
@@ -1504,8 +1504,8 @@ class RepositoryNodeTypeManager {
      * @param allowUpdates indicates whether existing node types should be updated by the given definition; must be set to {@code
      *        false} in the current implementation
      * @return the newly registered (or updated) {@link NodeType NodeTypes}
-     * @throws UnsupportedRepositoryOperationException if {@code allowUpdates == true}. ModeShape does not support this capability at
-     *         this time but the parameter has been retained for API compatibility.
+     * @throws UnsupportedRepositoryOperationException if {@code allowUpdates == true}. ModeShape does not support this capability
+     *         at this time but the parameter has been retained for API compatibility.
      * @throws InvalidNodeTypeDefinitionException if the {@link NodeTypeDefinition} is invalid
      * @throws NodeTypeExistsException if <code>allowUpdate</code> is false and the {@link NodeTypeDefinition} specifies a node
      *         type name that is already registered
@@ -1539,8 +1539,8 @@ class RepositoryNodeTypeManager {
      * <b>ModeShape Implementation Notes</b>
      * </p>
      * <p>
-     * ModeShape currently supports registration of batches of types with some constraints. ModeShape will allow types to be registered if
-     * they meet the following criteria:
+     * ModeShape currently supports registration of batches of types with some constraints. ModeShape will allow types to be
+     * registered if they meet the following criteria:
      * <ol>
      * <li>Existing types cannot be modified in-place - They must be unregistered and re-registered</li>
      * <li>Types must have a non-null, non-empty name</li>
@@ -1569,7 +1569,7 @@ class RepositoryNodeTypeManager {
      * version of ModeShape.</i></li>
      * <li>If the property overrides an existing property definition from a supertype, the new definition must have the same
      * required type as the old definition or a required type that can ALWAYS be cast to the required type of the ancestor (see
-     * section 6.2.6 of the JCR 1.0.1 specification)</li>
+     * section 3.6.4 of the JCR 2.0 specification)</li>
      * </ol>
      * Note that an empty set of properties would meet the above criteria.</li>
      * <li>The type must have a valid set of child nodes - that is, the types's child nodes must meet the following criteria:
@@ -1591,8 +1591,8 @@ class RepositoryNodeTypeManager {
      * 
      * @param nodeTypeSource the batch of {@link NodeType node types} to register
      * @return the newly registered (or updated) {@link NodeType NodeTypes}
-     * @throws UnsupportedRepositoryOperationException if {@code allowUpdates == true}. ModeShape does not support this capability at
-     *         this time but the parameter has been retained for API compatibility.
+     * @throws UnsupportedRepositoryOperationException if {@code allowUpdates == true}. ModeShape does not support this capability
+     *         at this time but the parameter has been retained for API compatibility.
      * @throws InvalidNodeTypeDefinitionException if the {@link NodeTypeDefinition} is invalid
      * @throws NodeTypeExistsException if <code>allowUpdate</code> is false and the {@link NodeTypeDefinition} specifies a node
      *         type name that is already registered
@@ -1615,8 +1615,8 @@ class RepositoryNodeTypeManager {
      * <b>ModeShape Implementation Notes</b>
      * </p>
      * <p>
-     * ModeShape currently supports registration of batches of types with some constraints. ModeShape will allow types to be registered if
-     * they meet the following criteria:
+     * ModeShape currently supports registration of batches of types with some constraints. ModeShape will allow types to be
+     * registered if they meet the following criteria:
      * <ol>
      * <li>Existing types cannot be modified in-place - They must be unregistered and re-registered</li>
      * <li>Types must have a non-null, non-empty name</li>
@@ -1645,7 +1645,7 @@ class RepositoryNodeTypeManager {
      * version of ModeShape.</i></li>
      * <li>If the property overrides an existing property definition from a supertype, the new definition must have the same
      * required type as the old definition or a required type that can ALWAYS be cast to the required type of the ancestor (see
-     * section 6.2.6 of the JCR 1.0.1 specification)</li>
+     * section 3.6.4 of the JCR 2.0 specification)</li>
      * </ol>
      * Note that an empty set of properties would meet the above criteria.</li>
      * <li>The type must have a valid set of child nodes - that is, the types's child nodes must meet the following criteria:
@@ -1668,8 +1668,8 @@ class RepositoryNodeTypeManager {
      * @param nodeTypeSubgraph the subgraph containing the of {@link NodeType node types} to register
      * @param locationOfParentOfNodeTypes the location of the parent node under which the node types are found
      * @return the newly registered (or updated) {@link NodeType NodeTypes}
-     * @throws UnsupportedRepositoryOperationException if {@code allowUpdates == true}. ModeShape does not support this capability at
-     *         this time but the parameter has been retained for API compatibility.
+     * @throws UnsupportedRepositoryOperationException if {@code allowUpdates == true}. ModeShape does not support this capability
+     *         at this time but the parameter has been retained for API compatibility.
      * @throws InvalidNodeTypeDefinitionException if the {@link NodeTypeDefinition} is invalid
      * @throws NodeTypeExistsException if <code>allowUpdate</code> is false and the {@link NodeTypeDefinition} specifies a node
      *         type name that is already registered
@@ -1807,8 +1807,7 @@ class RepositoryNodeTypeManager {
         boolean orderableChildNodes = booleanFactory.create(getFirstPropertyValue(nodeProperties.get(JcrLexicon.HAS_ORDERABLE_CHILD_NODES)));
 
         return new JcrNodeType(this.context, this, name, supertypes, primaryItemName, childNodes, properties, mixin, isAbstract,
-                               queryable,
-                               orderableChildNodes);
+                               queryable, orderableChildNodes);
     }
 
     private JcrPropertyDefinition propertyDefinitionFrom( Subgraph nodeTypeGraph,
@@ -2200,13 +2199,15 @@ class RepositoryNodeTypeManager {
         for (JcrNodeDefinition ancestor : ancestors) {
             if (ancestor.isProtected()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType().getName(),
+                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType()
+                                                                                                                    .getName(),
                                                                                                             "child node"));
             }
 
             if (ancestor.isMandatory() && !node.isMandatory()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType().getName(),
+                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType()
+                                                                                                                        .getName(),
                                                                                                                 "child node"));
 
             }
@@ -2257,7 +2258,7 @@ class RepositoryNodeTypeManager {
      * <li>The property cannot override an existing property definition from a supertype if the ancestor definition is protected</li>
      * <li>If the property overrides an existing property definition from a supertype, the new definition must have the same
      * required type as the old definition or a required type that can ALWAYS be cast to the required type of the ancestor (see
-     * section 6.2.6 of the JCR 1.0.1 specification)</li>
+     * section 3.6.4 of the JCR 2.0 specification)</li>
      * </ol>
      * Note that an empty set of properties would meet the criteria above.
      * </p>
@@ -2280,15 +2281,16 @@ class RepositoryNodeTypeManager {
 
         Value[] defaultValues = prop.getDefaultValues();
         if (prop.isAutoCreated() && !prop.isProtected() && (defaultValues == null || defaultValues.length == 0)) {
-            throw new InvalidNodeTypeDefinitionException(
-                                                         JcrI18n.autocreatedPropertyNeedsDefault.text(prop.getName(),
-                                                                                                      prop.getDeclaringNodeType().getName()));
+            throw new InvalidNodeTypeDefinitionException(JcrI18n.autocreatedPropertyNeedsDefault.text(prop.getName(),
+                                                                                                      prop.getDeclaringNodeType()
+                                                                                                          .getName()));
         }
 
         if (!prop.isMultiple() && (defaultValues != null && defaultValues.length > 1)) {
             throw new InvalidNodeTypeDefinitionException(
                                                          JcrI18n.singleValuedPropertyNeedsSingleValuedDefault.text(prop.getName(),
-                                                                                                                   prop.getDeclaringNodeType().getName()));
+                                                                                                                   prop.getDeclaringNodeType()
+                                                                                                                       .getName()));
         }
 
         Name propName = context.getValueFactories().getNameFactory().create(prop.getName());
@@ -2302,13 +2304,15 @@ class RepositoryNodeTypeManager {
         for (JcrPropertyDefinition ancestor : ancestors) {
             if (ancestor.isProtected()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType().getName(),
+                                                             JcrI18n.cannotOverrideProtectedDefinition.text(ancestor.getDeclaringNodeType()
+                                                                                                                    .getName(),
                                                                                                             "property"));
             }
 
             if (ancestor.isMandatory() && !prop.isMandatory()) {
                 throw new InvalidNodeTypeDefinitionException(
-                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType().getName(),
+                                                             JcrI18n.cannotMakeMandatoryDefinitionOptional.text(ancestor.getDeclaringNodeType()
+                                                                                                                        .getName(),
                                                                                                                 "property"));
 
             }
@@ -2319,14 +2323,16 @@ class RepositoryNodeTypeManager {
                 && !Arrays.equals(ancestor.getValueConstraints(), prop.getValueConstraints())) {
                 throw new InvalidNodeTypeDefinitionException(
                                                              JcrI18n.constraintsChangedInSubtype.text(propName,
-                                                                                                      ancestor.getDeclaringNodeType().getName()));
+                                                                                                      ancestor.getDeclaringNodeType()
+                                                                                                              .getName()));
             }
 
             if (!isAlwaysSafeConversion(prop.getRequiredType(), ancestor.getRequiredType())) {
                 throw new InvalidNodeTypeDefinitionException(
                                                              JcrI18n.cannotRedefineProperty.text(propName,
                                                                                                  PropertyType.nameFromValue(prop.getRequiredType()),
-                                                                                                 ancestor.getDeclaringNodeType().getName(),
+                                                                                                 ancestor.getDeclaringNodeType()
+                                                                                                         .getName(),
                                                                                                  PropertyType.nameFromValue(ancestor.getRequiredType())));
 
             }
@@ -2336,7 +2342,7 @@ class RepositoryNodeTypeManager {
     /**
      * Returns whether it is always possible to convert a value with JCR property type {@code fromType} to {@code toType}.
      * <p>
-     * This method is based on the conversions which can never throw an exception in the chart in section 6.2.6 of the JCR 1.0.1
+     * This method is based on the conversions which can never throw an exception in the chart in section 3.6.4 of the JCR 2.0
      * specification.
      * </p>
      * 

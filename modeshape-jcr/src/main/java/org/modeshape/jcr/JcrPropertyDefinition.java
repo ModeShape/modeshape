@@ -316,7 +316,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
     /**
      * Returns <code>true</code> if <code>value</code> can be cast to <code>property.getRequiredType()</code> per the type
-     * conversion rules in section 6.2.6 of the JCR 1.0 specification. If the property definition has a required type of
+     * conversion rules in section 3.6.4 of the JCR 2.0 specification. If the property definition has a required type of
      * {@link PropertyType#UNDEFINED}, the cast will be considered to have succeeded.
      * 
      * @param value the value to be validated
@@ -335,7 +335,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
     /**
      * Returns <code>true</code> if <code>value</code> can be cast to <code>property.getRequiredType()</code> per the type
-     * conversion rules in section 6.2.6 of the JCR 1.0 specification. If the property definition has a required type of
+     * conversion rules in section 3.6.4 of the JCR 2.0 specification. If the property definition has a required type of
      * {@link PropertyType#UNDEFINED}, the cast will be considered to have succeeded.
      * 
      * @param values the values to be validated
@@ -350,7 +350,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
     /**
      * Returns <code>true</code> if <code>value</code> can be cast to <code>property.getRequiredType()</code> per the type
-     * conversion rules in section 6.2.6 of the JCR 1.0 specification AND <code>value</code> satisfies the constraints (if any)
+     * conversion rules in section 3.6.4 of the JCR 2.0 specification AND <code>value</code> satisfies the constraints (if any)
      * for the property definition. If the property definition has a required type of {@link PropertyType#UNDEFINED}, the cast
      * will be considered to have succeeded and the value constraints (if any) will be interpreted using the semantics for the
      * type specified in <code>value.getType()</code>.
@@ -374,7 +374,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
     /**
      * Returns <code>true</code> if <code>value</code> can be cast to <code>property.getRequiredType()</code> per the type
-     * conversion rules in section 6.2.6 of the JCR 1.0 specification AND <code>value</code> satisfies the constraints (if any)
+     * conversion rules in section 3.6.4 of the JCR 2.0 specification AND <code>value</code> satisfies the constraints (if any)
      * for the property definition. If the property definition has a required type of {@link PropertyType#UNDEFINED}, the cast
      * will be considered to have succeeded and the value constraints (if any) will be interpreted using the semantics for the
      * type specified in <code>value.getType()</code>.
@@ -394,13 +394,13 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
     /**
      * Returns a {@link ConstraintChecker} that will interpret the constraints described by <code>valueConstraints</code> using
-     * the semantics defined in section 6.7.16 of the JCR 1.0 specification for the type indicated by <code>type</code> (where
+     * the semantics defined in section 3.6.4 of the JCR 2.0 specification for the type indicated by <code>type</code> (where
      * <code>type</code> is a value from {@link PropertyType}) for the given <code>context</code>. The {@link ExecutionContext} is
      * used to provide namespace mappings and value factories for the other constraint checkers.
      * 
      * @param context the execution context
      * @param type the type of constraint checker that should be created (based on values from {@link PropertyType}).
-     *        Type-specific semantics are defined in section 6.7.16 of the JCR 1.0 specification.
+     *        Type-specific semantics are defined in section 3.7.3.6 of the JCR 2.0 specification.
      * @param valueConstraints the constraints for the node as provided by {@link PropertyDefinition#getValueConstraints()}.
      * @return a constraint checker that matches the given parameters
      */

@@ -903,8 +903,8 @@ class SessionCache {
 
         /**
          * Checks whether there is an existing property with this name that does not match the given cardinality. If such a
-         * property exists, a {@code javax.jcr.ValueFormatException} is thrown, as per section 7.1.5 of the JCR 1.0.1
-         * specification.
+         * property exists, a {@code javax.jcr.ValueFormatException} is thrown, as per section 10.4.2.6 of the JCR 2.0
+         * specification
          * 
          * @param propertyName the name of the property
          * @param isMultiple whether the property must have multiple values
@@ -1170,7 +1170,7 @@ class SessionCache {
                     if (expectedType == -1) {
                         expectedType = value.getType();
                     } else if (value.getType() != expectedType) {
-                        // Make sure the type of each value is the same, as per Javadoc in section 7.1.5 of the JCR 1.0.1 spec
+                        // Make sure the type of each value is the same, as per Javadoc in section 10.4.2.6 of the JCR 2.0 spec
                         StringBuilder sb = new StringBuilder();
                         sb.append('[');
                         for (int j = 0; j != values.length; ++j) {

@@ -46,7 +46,7 @@ public class Jsr170OptionalObservationTckTest {
      * @return a new instance of {@link JCRTestSuite}.
      */
     public static Test suite() {
-        TestSuite suite = new TestSuite("JCR 1.0 Optional Feature (Observation) Compliance tests");
+        TestSuite suite = new TestSuite("JCR 2.0 Optional Feature (Observation) Compliance tests");
 
         suite.addTest(new OptionalObservationFeatureTests());
 

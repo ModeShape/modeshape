@@ -109,7 +109,7 @@ public class Jsr170LevelTwoTckTest {
      * @return a new instance of {@link JCRTestSuite}.
      */
     public static Test suite() {
-        TestSuite suite = new TestSuite("JCR 1.0 Level 2 Compliance tests");
+        TestSuite suite = new TestSuite("JCR 2.0 Level 2 Compliance tests");
 
         suite.addTest(new LevelTwoFeatureTests());
 

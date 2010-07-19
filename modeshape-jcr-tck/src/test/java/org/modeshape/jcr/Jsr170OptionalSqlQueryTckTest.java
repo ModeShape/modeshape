@@ -51,7 +51,7 @@ public class Jsr170OptionalSqlQueryTckTest {
      * @return a new instance of {@link JCRTestSuite}.
      */
     public static Test suite() {
-        TestSuite suite = new TestSuite("JCR 1.0 Optional Feature (JCR-SQL Query) Compliance tests");
+        TestSuite suite = new TestSuite("JCR 2.0 Optional Feature (JCR-SQL Query) Compliance tests");
 
         suite.addTest(new OptionalSqlQueryFeatureTests());
 

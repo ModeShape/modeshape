@@ -337,7 +337,6 @@ import org.modeshape.graph.query.model.TypeSystem.TypeFactory;
  * 
  * PropertyType ::= 'STRING' | 'BINARY' | 'DATE' | 'LONG' | 'DOUBLE' | 'DECIMAL' | 'BOOLEAN' | 'NAME' | 'PATH' | 
  *                  'REFERENCE' | 'WEAKREFERENCE' | 'URI'
- *                  /* 'WEAKREFERENCE' is not currently supported in JCR 1.0 *&#47;
  *                  
  * UncastLiteral ::= UnquotedLiteral | ''' UnquotedLiteral ''' | '"' UnquotedLiteral '"'
  * 
