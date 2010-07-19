@@ -64,11 +64,6 @@
     -->
     <dependency>
       <groupId>org.modeshape</groupId>
-      <artifactId>modeshape-search-lucene</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.modeshape</groupId>
       <artifactId>modeshape-clustering</artifactId>
       <scope>test</scope>
     </dependency>
