@@ -30,7 +30,6 @@ import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -704,9 +703,7 @@ public class JcrRepository implements Repository {
 
         repositoryLockManager = new RepositoryLockManager(this);
 
-        this.jcrSystemObservers = Collections.unmodifiableCollection(Arrays.asList(new JcrSystemObserver[] {
-repositoryLockManager,
-        }));
+        this.jcrSystemObservers = Collections.<JcrSystemObserver>singletonList(repositoryLockManager);
 
         // This observer picks up notification of changes to the system graph in a cluster. It's a NOP if there is no cluster.
         this.repositoryObservationManager.register(new SystemChangeObserver());
@@ -910,6 +907,13 @@ repositoryLockManager,
 
     String getSystemWorkspaceName() {
         return systemWorkspaceName;
+    }
+
+    /**
+     * @return jcrSystemObservers
+     */
+    Collection<JcrSystemObserver> getSystemObservers() {
+        return jcrSystemObservers;
     }
 
     /**
@@ -1725,8 +1729,8 @@ repositoryLockManager,
 
                 Path changedPath = change.changedLocation().getPath();
                 if (changedPath == null) continue;
-                
-                for (JcrSystemObserver jcrSystemObserver : jcrSystemObservers) {
+
+                for (JcrSystemObserver jcrSystemObserver : getSystemObservers()) {
                     if (changedPath.isAtOrAbove(jcrSystemObserver.getObservedRootPath())) {
                         systemChanges.put(jcrSystemObserver, change);
                     }
