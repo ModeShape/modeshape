@@ -54,6 +54,7 @@ public abstract class AbstractJcrTest {
 
     protected static ExecutionContext context;
     protected static JcrRepository repository;
+    protected static RepositoryLockManager repoLockManager;
     protected static RepositoryNodeTypeManager rntm;
     protected InMemoryRepositorySource source;
     protected Graph store;
@@ -78,6 +79,9 @@ public abstract class AbstractJcrTest {
         context.getNamespaceRegistry().register(Vehicles.Lexicon.Namespace.PREFIX, Vehicles.Lexicon.Namespace.URI);
         repository = mock(JcrRepository.class);
         when(repository.getExecutionContext()).thenReturn(context);
+
+        repoLockManager = mock(RepositoryLockManager.class);
+        when(repository.getRepositoryLockManager()).thenReturn(repoLockManager);
 
         rntm = new RepositoryNodeTypeManager(repository, true);
         try {
@@ -132,7 +136,7 @@ public abstract class AbstractJcrTest {
         when(jcrSession.isLive()).thenReturn(true);
         when(jcrSession.getUserID()).thenReturn("username");
 
-        lockManager = new WorkspaceLockManager(context, repository, workspaceName, null);
+        lockManager = new WorkspaceLockManager(context, repoLockManager, workspaceName, null);
         jcrLockManager = new JcrLockManager(jcrSession, lockManager);
 
         when(jcrSession.lockManager()).thenReturn(jcrLockManager);

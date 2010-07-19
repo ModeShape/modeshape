@@ -91,7 +91,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
 
     /**
      * Clean up session-scoped locks created by session that are no longer active by iterating over the {@link JcrRepository
-     * repositories} and calling their {@link JcrRepository#cleanUpLocks() clean-up method}.
+     * repositories} and calling their {@link RepositoryLockManager#cleanUpLocks() clean-up method}.
      * <p>
      * It should not be possible for a session to be terminated without cleaning up its locks, but this method will help clean-up
      * dangling locks should a session terminate abnormally.
@@ -110,7 +110,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
 
         for (JcrRepository repository : repos) {
             try {
-                repository.cleanUpLocks();
+                repository.getRepositoryLockManager().cleanUpLocks();
             } catch (Throwable t) {
                 log.error(t, JcrI18n.errorCleaningUpLocks, repository.getRepositorySourceName());
             }

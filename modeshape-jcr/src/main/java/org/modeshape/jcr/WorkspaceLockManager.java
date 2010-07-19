@@ -57,26 +57,20 @@ class WorkspaceLockManager {
 
     private final ExecutionContext context;
     private final Path locksPath;
-    private final JcrRepository repository;
+    private final RepositoryLockManager repositoryLockManager;
     private final String workspaceName;
     private final ConcurrentMap<UUID, ModeShapeLock> workspaceLocksByNodeUuid;
 
     WorkspaceLockManager( ExecutionContext context,
-                          JcrRepository repository,
+                          RepositoryLockManager repositoryLockManager,
                           String workspaceName,
                           Path locksPath ) {
         this.context = context;
-        this.repository = repository;
+        this.repositoryLockManager = repositoryLockManager;
         this.workspaceName = workspaceName;
         this.locksPath = locksPath;
 
         this.workspaceLocksByNodeUuid = new ConcurrentHashMap<UUID, ModeShapeLock>();
-
-        Property locksPrimaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.LOCKS);
-
-        if (locksPath != null) {
-            repository.createSystemGraph(context).create(locksPath, locksPrimaryType).ifAbsent().and();
-        }
     }
 
     /**
@@ -109,35 +103,44 @@ class WorkspaceLockManager {
 
         ExecutionContext sessionContext = session.getExecutionContext();
         String lockOwner = session.getUserID();
-        ModeShapeLock lock = createLock(lockOwner, lockUuid, nodeUuid, isDeep, isSessionScoped);
-
-        Graph.Batch batch = repository.createSystemGraph(sessionContext).batch();
-
-        PropertyFactory propFactory = sessionContext.getPropertyFactory();
-        PathFactory pathFactory = sessionContext.getValueFactories().getPathFactory();
-        Property lockOwnerProp = propFactory.create(JcrLexicon.LOCK_OWNER, lockOwner);
-        Property lockIsDeepProp = propFactory.create(JcrLexicon.LOCK_IS_DEEP, isDeep);
 
         DateTimeFactory dateFactory = sessionContext.getValueFactories().getDateFactory();
         DateTime expirationDate = dateFactory.create();
         expirationDate = expirationDate.plusMillis(JcrEngine.LOCK_EXTENSION_INTERVAL_IN_MILLIS);
 
-        batch.create(pathFactory.create(locksPath, pathFactory.createSegment(lockUuid.toString())),
-                     propFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.LOCK),
-                     propFactory.create(ModeShapeLexicon.WORKSPACE, workspaceName),
-                     propFactory.create(ModeShapeLexicon.LOCKED_UUID, nodeUuid.toString()),
-                     propFactory.create(ModeShapeLexicon.IS_SESSION_SCOPED, isSessionScoped),
-                     propFactory.create(ModeShapeLexicon.LOCKING_SESSION, session.sessionId()),
-                     propFactory.create(ModeShapeLexicon.EXPIRATION_DATE, expirationDate),
-                     // This gets set after the lock succeeds and the lock token gets added to the session
-                     propFactory.create(ModeShapeLexicon.IS_HELD_BY_SESSION, false),
-                     lockOwnerProp,
-                     lockIsDeepProp).ifAbsent().and();
-        batch.execute();
+        lockNodeInSystemGraph(sessionContext,
+                              nodeUuid,
+                              lockUuid,
+                              workspaceName,
+                              isSessionScoped,
+                              isDeep,
+                              session.sessionId(),
+                              session.getUserID(),
+                              expirationDate);
 
-        lockNodeInRepository(session, nodeUuid, lockOwnerProp, lockIsDeepProp, lock, isDeep);
+        try {
+            lockNodeInRepository(session, nodeUuid, session.getUserID(), isDeep);
+        } catch (LockFailedException lfe) {
+            // Attempt to lock node at the repo level failed - cancel lock
+            unlockNodeInSystemGraph(session.getExecutionContext(), nodeUuid);
+            throw new RepositoryException(lfe);
+        }
+
+        ModeShapeLock lock = lockNodeInternally(lockOwner, lockUuid, nodeUuid, isDeep, isSessionScoped);
+
         session.cache().refreshProperties(Location.create(nodeUuid));
-        workspaceLocksByNodeUuid.put(nodeUuid, lock);
+
+        return lock;
+    }
+
+    ModeShapeLock lockNodeInternally( String lockOwner,
+                             UUID lockUuid,
+                             UUID lockedNodeUuid,
+                             boolean isDeep,
+                             boolean isSessionScoped ) {
+        ModeShapeLock lock = createLock(lockOwner, lockUuid, lockedNodeUuid, isDeep, isSessionScoped);
+
+        workspaceLocksByNodeUuid.put(lockedNodeUuid, lock);
 
         return lock;
     }
@@ -171,39 +174,58 @@ class WorkspaceLockManager {
      * 
      * @param session the session in which the node is being locked and that loaded the node
      * @param nodeUuid the UUID of the node to lock
-     * @param lockOwnerProp an existing property with name {@link JcrLexicon#LOCK_OWNER} and the value being the name of the lock
-     *        owner
-     * @param lockIsDeepProp an existing property with name {@link JcrLexicon#LOCK_IS_DEEP} and the value being {@code true} if
-     *        the lock should include all descendants of the locked node or {@code false} if the lock should only include the
-     *        specified node and not its descendants
-     * @param lock the internal lock representation
+     * @param lockOwner a string containing the lock owner's name
      * @param isDeep {@code true} if the lock should include all descendants of the locked node or {@code false} if the lock
      *        should only include the specified node and not its descendants. This value is redundant with the lockIsDeep
      *        parameter, but is included separately as a minor performance optimization
+     * @throws LockFailedException if the repository supports locking nodes, but could not lock this particular node
      * @throws RepositoryException if the repository in which the node represented by {@code nodeUuid} supports locking but
      *         signals that the lock for the node cannot be acquired
      */
     void lockNodeInRepository( JcrSession session,
                                UUID nodeUuid,
-                               Property lockOwnerProp,
-                               Property lockIsDeepProp,
-                               ModeShapeLock lock,
-                               boolean isDeep ) throws RepositoryException {
+                               String lockOwner,
+                               boolean isDeep ) throws LockFailedException, RepositoryException {
+        PropertyFactory propFactory = session.getExecutionContext().getPropertyFactory();
+        Property lockOwnerProp = propFactory.create(JcrLexicon.LOCK_OWNER, lockOwner);
+        Property lockIsDeepProp = propFactory.create(JcrLexicon.LOCK_IS_DEEP, isDeep);
+
         // Write them directly to the underlying graph
-        Graph.Batch workspaceBatch = repository.createWorkspaceGraph(workspaceName, session.getExecutionContext()).batch();
+        Graph.Batch workspaceBatch = repositoryLockManager.createWorkspaceGraph(workspaceName, session.getExecutionContext()).batch();
         workspaceBatch.set(lockOwnerProp, lockIsDeepProp).on(nodeUuid);
         if (isDeep) {
             workspaceBatch.lock(nodeUuid).andItsDescendants().withDefaultTimeout();
         } else {
             workspaceBatch.lock(nodeUuid).only().withDefaultTimeout();
         }
-        try {
             workspaceBatch.execute();
-        } catch (LockFailedException lfe) {
-            // Attempt to lock node at the repo level failed - cancel lock
-            unlock(session.getExecutionContext(), lock);
-            throw new RepositoryException(lfe);
-        }
+
+    }
+
+    private final void lockNodeInSystemGraph( ExecutionContext sessionContext,
+                                              UUID nodeUuid,
+                                              UUID lockUuid,
+                                              String workspaceName,
+                                              boolean isSessionScoped,
+                                              boolean lockIsDeep,
+                                              String sessionId,
+                                              String lockOwner,
+                                              DateTime expirationDate ) {
+        PathFactory pathFactory = sessionContext.getValueFactories().getPathFactory();
+        PropertyFactory propFactory = sessionContext.getPropertyFactory();
+
+        Graph graph = repositoryLockManager.createSystemGraph(sessionContext);
+        graph.create(pathFactory.create(locksPath, pathFactory.createSegment(lockUuid.toString())),
+                     propFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.LOCK),
+                     propFactory.create(ModeShapeLexicon.WORKSPACE, workspaceName),
+                     propFactory.create(ModeShapeLexicon.LOCKED_UUID, nodeUuid.toString()),
+                     propFactory.create(ModeShapeLexicon.IS_SESSION_SCOPED, isSessionScoped),
+                     propFactory.create(ModeShapeLexicon.LOCKING_SESSION, sessionId),
+                     propFactory.create(ModeShapeLexicon.EXPIRATION_DATE, expirationDate),
+                     // This gets set after the lock succeeds and the lock token gets added to the session
+                     propFactory.create(ModeShapeLexicon.IS_HELD_BY_SESSION, false),
+                     propFactory.create(JcrLexicon.LOCK_OWNER, lockOwner),
+                     propFactory.create(JcrLexicon.LOCK_IS_DEEP, lockIsDeep)).ifAbsent().and();
 
     }
 
@@ -216,17 +238,13 @@ class WorkspaceLockManager {
     void unlock( ExecutionContext sessionExecutionContext,
                  ModeShapeLock lock ) {
         try {
-            PathFactory pathFactory = sessionExecutionContext.getValueFactories().getPathFactory();
-
             // Remove the lock node under the /jcr:system branch ...
-            Graph.Batch batch = repository.createSystemGraph(sessionExecutionContext).batch();
-            batch.delete(pathFactory.create(locksPath, pathFactory.createSegment(lock.getUuid().toString())));
-            batch.execute();
+            unlockNodeInSystemGraph(sessionExecutionContext, lock.getUuid());
 
             // Unlock the node in the repository graph ...
             unlockNodeInRepository(sessionExecutionContext, lock);
 
-            workspaceLocksByNodeUuid.remove(lock.nodeUuid);
+            unlockNodeInternally(lock.nodeUuid);
         } catch (PathNotFoundException pnfe) {
             /*
              * This can legitimately happen if there is a session-scoped lock on a node which is then deleted by the lock owner and the lock
@@ -254,12 +272,24 @@ class WorkspaceLockManager {
      */
     void unlockNodeInRepository( ExecutionContext sessionExecutionContext,
                                  ModeShapeLock lock ) {
-        Graph.Batch workspaceBatch = repository.createWorkspaceGraph(this.workspaceName, sessionExecutionContext).batch();
+        Graph.Batch workspaceBatch = repositoryLockManager.createWorkspaceGraph(this.workspaceName, sessionExecutionContext).batch();
 
         workspaceBatch.remove(JcrLexicon.LOCK_OWNER, JcrLexicon.LOCK_IS_DEEP).on(lock.nodeUuid);
         workspaceBatch.unlock(lock.nodeUuid);
 
         workspaceBatch.execute();
+    }
+
+    void unlockNodeInSystemGraph( ExecutionContext sessionExecutionContext,
+                                  UUID lockUuid ) {
+        PathFactory pathFactory = sessionExecutionContext.getValueFactories().getPathFactory();
+        Graph systemGraph = repositoryLockManager.createSystemGraph(sessionExecutionContext);
+        systemGraph.delete(pathFactory.create(locksPath, pathFactory.createSegment(lockUuid.toString())));
+
+    }
+
+    boolean unlockNodeInternally( UUID lockedNodeUuid ) {
+        return workspaceLocksByNodeUuid.remove(lockedNodeUuid) != null;
     }
 
     /**
@@ -280,9 +310,8 @@ class WorkspaceLockManager {
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
         try {
-            org.modeshape.graph.Node lockNode = repository.createSystemGraph(context)
-                                                          .getNodeAt(pathFactory.create(locksPath,
-                                                                                        pathFactory.createSegment(lockToken)));
+            org.modeshape.graph.Node lockNode = repositoryLockManager.createSystemGraph(context).getNodeAt(pathFactory.create(locksPath,
+                                                                                                                              pathFactory.createSegment(lockToken)));
 
             return booleanFactory.create(lockNode.getProperty(ModeShapeLexicon.IS_HELD_BY_SESSION).getFirstValue());
         } catch (PathNotFoundException pnfe) {
@@ -310,9 +339,8 @@ class WorkspaceLockManager {
         PropertyFactory propFactory = context.getPropertyFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
 
-        repository.createSystemGraph(context)
-                  .set(propFactory.create(ModeShapeLexicon.IS_HELD_BY_SESSION, value))
-                  .on(pathFactory.create(locksPath, pathFactory.createSegment(lockToken)));
+        repositoryLockManager.createSystemGraph(context).set(propFactory.create(ModeShapeLexicon.IS_HELD_BY_SESSION, value)).on(pathFactory.create(locksPath,
+                                                                                                                                                   pathFactory.createSegment(lockToken)));
     }
 
     /**

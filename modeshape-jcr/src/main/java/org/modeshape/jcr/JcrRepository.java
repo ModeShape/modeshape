@@ -30,6 +30,8 @@ import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -40,8 +42,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,7 +57,6 @@ import javax.jcr.query.Query;
 import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
-import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.collection.UnmodifiableProperties;
@@ -69,8 +68,6 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.JaasSecurityContext;
-import org.modeshape.graph.Location;
-import org.modeshape.graph.Node;
 import org.modeshape.graph.SecurityContext;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.Workspace;
@@ -87,19 +84,16 @@ import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.observe.Changes;
 import org.modeshape.graph.observe.Observable;
 import org.modeshape.graph.observe.Observer;
-import org.modeshape.graph.property.DateTime;
-import org.modeshape.graph.property.DateTimeFactory;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
-import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.ValueFactories;
-import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
 import org.modeshape.graph.query.parse.QueryParsers;
+import org.modeshape.graph.request.ChangeRequest;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.jcr.RepositoryQueryManager.PushDown;
 import org.modeshape.jcr.api.Repository;
@@ -108,6 +102,8 @@ import org.modeshape.jcr.query.JcrQomQueryParser;
 import org.modeshape.jcr.query.JcrSql2QueryParser;
 import org.modeshape.jcr.query.JcrSqlQueryParser;
 import org.modeshape.jcr.xpath.XPathQueryParser;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * Creates JCR {@link Session sessions} to an underlying repository (which may be a federated repository).
@@ -410,9 +406,7 @@ public class JcrRepository implements Repository {
     private final ExecutionContext executionContext;
     private final RepositoryConnectionFactory connectionFactory;
     private final RepositoryNodeTypeManager repositoryTypeManager;
-    @GuardedBy( "lockManagersLock" )
-    private final ConcurrentMap<String, WorkspaceLockManager> lockManagers;
-    private final Path locksPath;
+    private final RepositoryLockManager repositoryLockManager;
     private final Map<Option, String> options;
     private final String systemSourceName;
     private final String systemWorkspaceName;
@@ -422,6 +416,11 @@ public class JcrRepository implements Repository {
     private final RepositoryObservationManager repositoryObservationManager;
     private final SecurityContext anonymousUserContext;
     private final QueryParsers queryParsers;
+    /**
+     * Immutable collection of objects observing changes to the system graph
+     */
+    private final Collection<JcrSystemObserver> jcrSystemObservers;
+
     // Until the federated connector supports queries, we have to use a search engine ...
     private final RepositoryQueryManager queryManager;
 
@@ -617,9 +616,6 @@ public class JcrRepository implements Repository {
         // Initialize required JCR descriptors.
         this.descriptors = initializeDescriptors(executionContext.getValueFactories(), descriptors);
 
-        this.lockManagers = new ConcurrentHashMap<String, WorkspaceLockManager>();
-        this.locksPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, ModeShapeLexicon.LOCKS);
-
         // If the repository is to support searching ...
         if (Boolean.valueOf(this.options.get(Option.QUERY_EXECUTION_ENABLED)) && WORKSPACES_SHARE_SYSTEM_BRANCH) {
             // Determine whether the federated source and original source support queries and searches ...
@@ -705,6 +701,15 @@ public class JcrRepository implements Repository {
         }
 
         this.anonymousUserContext = anonymousUserContext;
+
+        repositoryLockManager = new RepositoryLockManager(this);
+
+        this.jcrSystemObservers = Collections.unmodifiableCollection(Arrays.asList(new JcrSystemObserver[] {
+repositoryLockManager,
+        }));
+
+        // This observer picks up notification of changes to the system graph in a cluster. It's a NOP if there is no cluster.
+        this.repositoryObservationManager.register(new SystemChangeObserver());
     }
 
     protected void addWorkspace( String workspaceName,
@@ -870,6 +875,15 @@ public class JcrRepository implements Repository {
      */
     RepositoryNodeTypeManager getRepositoryTypeManager() {
         return repositoryTypeManager;
+    }
+
+    /**
+     * Returns the repository-level lock manager
+     * 
+     * @return the repository-level lock manager
+     */
+    RepositoryLockManager getRepositoryLockManager() {
+        return repositoryLockManager;
     }
 
     /**
@@ -1253,24 +1267,6 @@ public class JcrRepository implements Repository {
     }
 
     /**
-     * Returns the lock manager for the named workspace (if one already exists) or creates a new lock manager and returns it. This
-     * method is thread-safe.
-     * 
-     * @param workspaceName the name of the workspace for which the lock manager should be returned
-     * @return the lock manager for the workspace; never null
-     */
-    WorkspaceLockManager getLockManager( String workspaceName ) {
-        WorkspaceLockManager lockManager = lockManagers.get(workspaceName);
-        if (lockManager != null) return lockManager;
-
-        lockManager = new WorkspaceLockManager(executionContext, this, workspaceName, locksPath);
-        WorkspaceLockManager newLockManager = lockManagers.putIfAbsent(workspaceName, lockManager);
-
-        if (newLockManager != null) return newLockManager;
-        return lockManager;
-    }
-
-    /**
      * Marks the given session as inactive (by removing it from the {@link #activeSessions active sessions map}.
      * 
      * @param session the session to be marked as inactive
@@ -1302,70 +1298,6 @@ public class JcrRepository implements Repository {
         }
 
         return activeSessions;
-    }
-
-    /**
-     * Iterates through the list of session-scoped locks in this repository, deleting any session-scoped locks that were created
-     * by a session that is no longer active.
-     */
-    void cleanUpLocks() {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(JcrI18n.cleaningUpLocks.text());
-        }
-
-        Set<JcrSession> activeSessions = activeSessions();
-        Set<String> activeSessionIds = new HashSet<String>(activeSessions.size());
-
-        for (JcrSession activeSession : activeSessions) {
-            activeSessionIds.add(activeSession.sessionId());
-        }
-
-        Graph systemGraph = createSystemGraph(executionContext);
-        PathFactory pathFactory = executionContext.getValueFactories().getPathFactory();
-        ValueFactory<Boolean> booleanFactory = executionContext.getValueFactories().getBooleanFactory();
-        ValueFactory<String> stringFactory = executionContext.getValueFactories().getStringFactory();
-
-        DateTimeFactory dateFactory = executionContext.getValueFactories().getDateFactory();
-        DateTime now = dateFactory.create();
-        DateTime newExpirationDate = now.plusMillis(JcrEngine.LOCK_EXTENSION_INTERVAL_IN_MILLIS);
-
-        Path locksPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, ModeShapeLexicon.LOCKS);
-
-        Subgraph locksGraph = null;
-        try {
-            locksGraph = systemGraph.getSubgraphOfDepth(2).at(locksPath);
-        } catch (PathNotFoundException pnfe) {
-            // It's possible for this to run before the dna:locks child node gets added to the /jcr:system node.
-            return;
-        }
-
-        for (Location lockLocation : locksGraph.getRoot().getChildren()) {
-            Node lockNode = locksGraph.getNode(lockLocation);
-
-            Boolean isSessionScoped = booleanFactory.create(lockNode.getProperty(ModeShapeLexicon.IS_SESSION_SCOPED)
-                                                                    .getFirstValue());
-
-            if (!isSessionScoped) continue;
-            String lockingSession = stringFactory.create(lockNode.getProperty(ModeShapeLexicon.LOCKING_SESSION).getFirstValue());
-
-            // Extend locks held by active sessions
-            if (activeSessionIds.contains(lockingSession)) {
-                systemGraph.set(ModeShapeLexicon.EXPIRATION_DATE).on(lockLocation).to(newExpirationDate);
-            } else {
-                DateTime expirationDate = dateFactory.create(lockNode.getProperty(ModeShapeLexicon.EXPIRATION_DATE)
-                                                                     .getFirstValue());
-                // Destroy expired locks (if it was still held by an active session, it would have been extended by now)
-                if (expirationDate.isBefore(now)) {
-                    String workspaceName = stringFactory.create(lockNode.getProperty(ModeShapeLexicon.WORKSPACE).getFirstValue());
-                    WorkspaceLockManager lockManager = lockManagers.get(workspaceName);
-                    lockManager.unlock(executionContext, lockManager.createLock(lockNode));
-                }
-            }
-        }
-
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(JcrI18n.cleanedUpLocks.text());
-        }
     }
 
     protected static Properties getBundleProperties() {
@@ -1714,7 +1646,7 @@ public class JcrRepository implements Repository {
                     // These events were made locally and are being handled above, so we can ignore these ...
                     return null;
                 }
-                // Otherwise, the changes were recieved from another engine in the cluster and
+                // Otherwise, the changes were received from another engine in the cluster and
                 // we do want to respond to these changes. However, the source name of the changes
                 // needs to be altered to match the 'sourceName' ...
                 return new Changes(changes.getProcessId(), changes.getContextId(), changes.getUserName(), sourceName,
@@ -1752,6 +1684,63 @@ public class JcrRepository implements Repository {
         public boolean unregister( Observer observer ) {
             if (observer == null) return false;
             return this.observers.remove(observer);
+        }
+    }
+
+    /**
+     * Observer that forwards changes to the system workspace in the system repository source to registered
+     * {@link JcrSystemObserver JcrSystemObservers}. This method is intended to support consistency of internal data structures in
+     * a cluster and only forwards changes from <i>other</i> processes.
+     */
+    class SystemChangeObserver implements Observer {
+
+        private final String processId;
+        private final String systemSourceName;
+        private final String systemWorkspaceName;
+
+        SystemChangeObserver() {
+            processId = getExecutionContext().getProcessId();
+            systemSourceName = getSystemSourceName();
+            systemWorkspaceName = getSystemWorkspaceName();
+
+            assert processId != null;
+            assert systemSourceName != null;
+            assert systemWorkspaceName != null;
+        }
+
+        @Override
+        public void notify( Changes changes ) {
+
+            // Don't process changes from outside the system graph
+            if (!changes.getSourceName().equals(systemSourceName)) return;
+
+            // Don't process changes from this repository
+            if (changes.getProcessId().equals(processId)) return;
+
+            Multimap<JcrSystemObserver, ChangeRequest> systemChanges = LinkedListMultimap.create();
+
+            for (ChangeRequest change : changes.getChangeRequests()) {
+                // Don't process changes from outside the system workspace
+                if (!systemWorkspaceName.equals(change.changedWorkspace())) continue;
+
+                Path changedPath = change.changedLocation().getPath();
+                if (changedPath == null) continue;
+                
+                for (JcrSystemObserver jcrSystemObserver : jcrSystemObservers) {
+                    if (changedPath.isAtOrAbove(jcrSystemObserver.getObservedRootPath())) {
+                        systemChanges.put(jcrSystemObserver, change);
+                    }
+                }
+            }
+
+            // Parcel out the new change objects
+            for (JcrSystemObserver jcrSystemObserver : systemChanges.keySet()) {
+                List<ChangeRequest> changesForObserver = (List<ChangeRequest>)systemChanges.get(jcrSystemObserver);
+                Changes filteredChanges = new Changes(changes.getProcessId(), changes.getContextId(), changes.getUserName(),
+                                                      systemSourceName, changes.getTimestamp(), changesForObserver,
+                                                      changes.getData());
+                jcrSystemObserver.notify(filteredChanges);
+            }
         }
     }
 }

@@ -563,7 +563,7 @@ public class JcrRepositoryTest {
         assertThat(readerNode.isLocked(), is(true));
 
         // No locks should have changed yet.
-        repository.cleanUpLocks();
+        repository.getRepositoryLockManager().cleanUpLocks();
         assertThat(lockedNode.isLocked(), is(true));
         assertThat(readerNode.isLocked(), is(true));
 
@@ -578,7 +578,7 @@ public class JcrRepositoryTest {
         Thread.sleep(JcrEngine.LOCK_EXTENSION_INTERVAL_IN_MILLIS + 100);
 
         // The locker thread should be inactive and the lock cleaned up
-        repository.cleanUpLocks();
+        repository.getRepositoryLockManager().cleanUpLocks();
         assertThat(readerNode.isLocked(), is(false));
     }
 

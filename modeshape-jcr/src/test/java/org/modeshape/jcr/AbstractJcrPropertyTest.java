@@ -144,7 +144,8 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         SessionCache cache2 = new SessionCache(jcrSession2, store2.getCurrentWorkspaceName(), context, nodeTypes, store2);
 
         Workspace workspace2 = mock(Workspace.class);
-        Repository repository2 = mock(Repository.class);
+        Repository repository2 = mock(JcrRepository.class);
+
         when(jcrSession2.getWorkspace()).thenReturn(workspace2);
         when(jcrSession2.getRepository()).thenReturn(repository2);
         when(workspace2.getName()).thenReturn("workspace1");
@@ -173,11 +174,12 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
 
         Workspace workspace2 = mock(Workspace.class);
         JcrRepository repository2 = mock(JcrRepository.class);
+        RepositoryLockManager repoLockManager2 = mock(RepositoryLockManager.class);
         when(jcrSession2.getWorkspace()).thenReturn(workspace2);
         when(jcrSession2.getRepository()).thenReturn(repository2);
         when(workspace2.getName()).thenReturn("workspace2");
 
-        WorkspaceLockManager lockManager = new WorkspaceLockManager(context, repository2, "workspace2", null);
+        WorkspaceLockManager lockManager = new WorkspaceLockManager(context, repoLockManager2, "workspace2", null);
         JcrLockManager jcrLockManager = new JcrLockManager(jcrSession2, lockManager);
         when(jcrSession2.lockManager()).thenReturn(jcrLockManager);
 
@@ -211,11 +213,12 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
 
         Workspace workspace2 = mock(Workspace.class);
         JcrRepository repository2 = mock(JcrRepository.class);
+        RepositoryLockManager repoLockManager2 = mock(RepositoryLockManager.class);
         when(jcrSession2.getWorkspace()).thenReturn(workspace2);
         when(jcrSession2.getRepository()).thenReturn(repository2);
         when(workspace2.getName()).thenReturn("workspace1");
 
-        WorkspaceLockManager lockManager = new WorkspaceLockManager(context, repository2, "workspace2", null);
+        WorkspaceLockManager lockManager = new WorkspaceLockManager(context, repoLockManager2, "workspace2", null);
         JcrLockManager jcrLockManager = new JcrLockManager(jcrSession2, lockManager);
         when(jcrSession2.lockManager()).thenReturn(jcrLockManager);
 
@@ -252,7 +255,7 @@ public class AbstractJcrPropertyTest extends AbstractJcrTest {
         when(jcrSession2.getRepository()).thenReturn(repository);
         when(workspace2.getName()).thenReturn("workspace1");
 
-        WorkspaceLockManager lockManager = new WorkspaceLockManager(context, repository, "workspace2", null);
+        WorkspaceLockManager lockManager = new WorkspaceLockManager(context, repoLockManager, "workspace2", null);
         JcrLockManager jcrLockManager = new JcrLockManager(jcrSession2, lockManager);
         when(jcrSession2.lockManager()).thenReturn(jcrLockManager);
 

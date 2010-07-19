@@ -25,7 +25,6 @@ import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
-import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.request.LockBranchRequest;
 import org.modeshape.graph.request.Request;
 import org.modeshape.graph.request.UnlockBranchRequest;
@@ -50,6 +49,8 @@ public class WorkspaceLockManagerTest {
     private RepositoryConnectionFactory connectionFactory;
     @Mock
     protected JcrRepository repository;
+    @Mock
+    protected RepositoryLockManager repoLockManager;
 
     @Before
     public void beforeEach() {
@@ -81,11 +82,21 @@ public class WorkspaceLockManagerTest {
         });
 
         Path locksPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, ModeShapeLexicon.LOCKS);
-        workspaceLockManager = new WorkspaceLockManager(context, repository, workspaceName, locksPath);
+        workspaceLockManager = new WorkspaceLockManager(context, repoLockManager, workspaceName, locksPath);
 
-        when(repository.getLockManager(anyString())).thenAnswer(new Answer<WorkspaceLockManager>() {
+        when(repoLockManager.getLockManager(anyString())).thenAnswer(new Answer<WorkspaceLockManager>() {
             public WorkspaceLockManager answer( InvocationOnMock invocation ) throws Throwable {
                 return workspaceLockManager;
+            }
+        });
+        when(repoLockManager.createWorkspaceGraph(anyString(), (ExecutionContext)anyObject())).thenAnswer(new Answer<Graph>() {
+            public Graph answer( InvocationOnMock invocation ) throws Throwable {
+                return graph;
+            }
+        });
+        when(repoLockManager.createSystemGraph(context)).thenAnswer(new Answer<Graph>() {
+            public Graph answer( InvocationOnMock invocation ) throws Throwable {
+                return graph;
             }
         });
 
@@ -135,18 +146,15 @@ public class WorkspaceLockManagerTest {
 
     @Test
     public void shouldCreateLockRequestWhenLockingNode() throws RepositoryException {
-        ModeShapeLock lock = workspaceLockManager.createLock("testOwner", UUID.randomUUID(), validUuid, false, false);
-        PropertyFactory propFactory = context.getPropertyFactory();
         String lockOwner = "testOwner";
         boolean isDeep = false;
 
-        Property lockOwnerProp = propFactory.create(JcrLexicon.LOCK_OWNER, lockOwner);
-        Property lockIsDeepProp = propFactory.create(JcrLexicon.LOCK_IS_DEEP, isDeep);
-
         JcrSession session = mock(JcrSession.class);
         when(session.getExecutionContext()).thenReturn(context);
-        workspaceLockManager.lockNodeInRepository(session, validUuid, lockOwnerProp, lockIsDeepProp, lock, isDeep);
+        workspaceLockManager.lockNodeInRepository(session, validUuid, lockOwner, isDeep);
 
+        // At the moment, a VerifyWorkspaceRequest is being executed when the graph is created.
+        executedRequests.poll();
         assertNextRequestIsLock(validLocation, LockScope.SELF_ONLY, 0);
     }
 
@@ -155,6 +163,8 @@ public class WorkspaceLockManagerTest {
         ModeShapeLock lock = workspaceLockManager.createLock("testOwner", UUID.randomUUID(), validUuid, false, false);
         workspaceLockManager.unlockNodeInRepository(context, lock);
 
+        // At the moment, a VerifyWorkspaceRequest is being executed when the graph is created.
+        executedRequests.poll();
         assertNextRequestIsUnlock(validLocation);
     }
 

@@ -79,6 +79,8 @@ public abstract class AbstractSessionTest {
     protected QueryParsers parsers;
     @Mock
     protected JcrRepository repository;
+    @Mock
+    protected RepositoryLockManager repoLockManager;
 
     protected void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -140,6 +142,7 @@ public abstract class AbstractSessionTest {
             }
         });
         when(this.repository.getRepositoryObservable()).thenReturn(new MockObservable());
+        when(repository.getRepositoryLockManager()).thenReturn(repoLockManager);
 
         // Stub out the repository, since we only need a few methods ...
         repoTypeManager = new RepositoryNodeTypeManager(repository, true);
@@ -160,9 +163,9 @@ public abstract class AbstractSessionTest {
         this.repoTypeManager.projectOnto(graph, pathFactory.create("/jcr:system/jcr:nodeTypes"));
 
         Path locksPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, ModeShapeLexicon.LOCKS);
-        workspaceLockManager = new WorkspaceLockManager(context, repository, workspaceName, locksPath);
+        workspaceLockManager = new WorkspaceLockManager(context, repoLockManager, workspaceName, locksPath);
 
-        when(repository.getLockManager(anyString())).thenAnswer(new Answer<WorkspaceLockManager>() {
+        when(repoLockManager.getLockManager(anyString())).thenAnswer(new Answer<WorkspaceLockManager>() {
             public WorkspaceLockManager answer( InvocationOnMock invocation ) throws Throwable {
                 return workspaceLockManager;
             }

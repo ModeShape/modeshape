@@ -189,7 +189,7 @@ class JcrWorkspace implements Workspace {
         //
         // Set up and initialize the persistent JCR namespace registry ...
         this.workspaceRegistry = new JcrNamespaceRegistry(this.repository.getPersistentRegistry(), this.session);
-        this.lockManager = new JcrLockManager(session, repository.getLockManager(workspaceName));
+        this.lockManager = new JcrLockManager(session, repository.getRepositoryLockManager().getLockManager(workspaceName));
 
     }
 
