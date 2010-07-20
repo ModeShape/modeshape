@@ -170,6 +170,10 @@ class JcrWorkspace implements Workspace {
         LocalNamespaceRegistry localRegistry = new LocalNamespaceRegistry(globalRegistry);
         this.context = context.with(localRegistry);
 
+        // Pre-cache all of the namespaces to be a snapshot of what's in the global registry at this time.
+        // This behavior is specified in Section 3.5.2 of the JCR 2.0 specification.
+        localRegistry.getNamespaces();
+
         // Now create a graph for the session ...
         this.graph = this.repository.createWorkspaceGraph(this.name, this.context);
 

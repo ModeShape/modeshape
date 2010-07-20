@@ -30,10 +30,10 @@ import java.util.List;
 import java.util.Set;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.property.Name;
@@ -91,6 +91,13 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
             this.store.create(parentOfNamespaceNodes).and();
             this.store.set(JcrLexicon.PRIMARY_TYPE).on(parentOfNamespaceNodes).to(ModeShapeLexicon.NAMESPACES);
         }
+    }
+
+    /**
+     * @return parentOfNamespaceNodes
+     */
+    public Path getParentOfNamespaceNodes() {
+        return parentOfNamespaceNodes;
     }
 
     /**
@@ -196,6 +203,9 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
         return cache.getNamespaces();
     }
 
+    /**
+     * Refresh the namespaces from the persistent store, and update the embedded cache. This operation is done atomically.
+     */
     public void refresh() {
         SimpleNamespaceRegistry newCache = new SimpleNamespaceRegistry();
         initializeCacheFromStore(newCache);

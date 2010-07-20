@@ -168,6 +168,12 @@ try {
 				options available when defining property definitions (e.g., searchable, queryable, etc.). Note that node type discovery is
 				largely unchanged.
 			</para>
+	    <note>
+		    <para>
+					Remember to specify the <link linkend="system_workspace_configuration">system workspace name</link> for your repositories
+					if dynamically adding or modifying node types. Otherwise, ModeShape will not persist your node type changes.
+				</para>
+		  </note>
 		</sect2>
 		<sect2 id="jcr2_query_feature">
 			<title>Queries</title>
@@ -225,6 +231,12 @@ try {
 				be aware that many of the locking-related methods on &Node; were deprecated in JCR 2.0 and moved to the new &LockManager; interface.
 				However, locking semantics remain unchanged.
 			</para>
+	    <note>
+		    <para>
+					Remember to specify the <link linkend="system_workspace_configuration">system workspace name</link> for your repositories
+					if clustering or if the lock information is to be persisted beyond the lifetime of the ModeShape engine.
+				</para>
+		  </note>
 		</sect2>
 		<sect2 id="jcr2_versioning">
 			<title>Versioning</title>
@@ -241,6 +253,12 @@ try {
 				be aware that many of the version-related methods on &Node; were deprecated in JCR 2.0 and moved to the new &VersionManager; interface.
 				Also, any reliance upon ModeShape's recursive restore operation must be changed, per the JCR 2.0 specification.
 			</para>
+	    <note>
+		    <para>
+					Remember to specify the <link linkend="system_workspace_configuration">system workspace name</link> for your repositories
+					if using versioning. Otherwise, ModeShape will not persist your versioning information.
+				</para>
+		  </note>
 		</sect2>
 		<sect2 id="jcr2_importing_and_exporting">
 			<title>Importing and Exporting</title>

@@ -328,6 +328,133 @@ configuration.loadFrom(configSource);
 		</para>
 	</sect2>
  </sect1>
+ <sect1 id="system_workspace_configuration">
+	  <title>Repository system content</title>
+	  <para>
+		  Each JCR repository contains information about the system in the "<code>/jcr:system</code>" area of the repository content.
+		  All of this system content applies to the whole repository (e.g., namespaces, node types, locks, versions, etc.) and
+		  therefore every session for each workspace sees the exact same "<code>/jcr:system</code>" content.
+		</para>
+		<para>
+			ModeShape implements this behavior by storing all "<code>/jcr:system</code>" content in a separate workspace, and then
+			using <link linkend="federation-connector">federation</link> to project that content into each workspace. This ensures
+			that all workspaces see the same content, without having to duplicate the "<code>/jcr:system</code>" content in each workspace
+			and ensure those copies stay in sync. Federation is better than duplication.
+		</para>
+		<para>
+			By default, ModeShape creates this separate system workspace in a transient, in-memory store. This works great for some
+			simplistic cases, but this doesn't work when using <link linkend="clustering">clustering</link>, 
+			<link linkend="jcr2_versioning">versioning</link>, or dynamically registering namespaces or
+			<link linkend="jcr2_node_type_management">adding or changing node types</link>. 
+			This is because these features all rely upon changing or adding content in the "<code>/jcr:system</code>"
+			area. For example, version histories are stored under "<code>/jcr:system/jcr:versionStorage</code>", node types
+			under "<code>/jcr:system/jcr:versionStorage</code>", and namespaces under "<code>/jcr:system/mode:namespaces</code>".
+		</para>
+		<para>
+			In these situations, it is necessary to persist the system content in a repository source, and if clustering is enabled
+			this source needs to be accessible to all members of the cluster. Many times, the easiest approach is to simply define
+			an extra workspace in your repository source where the system content can be stored. It's also possible to define
+			a separate repository source with a separate workspace for each repository's system content. (Using a separate source is required
+			when the repository is using a single repository source that can only store limited kinds of nodes, like the
+			<link linkend="file-system-connector">file system connector</link> or <link linkend="subversion-connector">Subversion connector</link>
+			that can only store <code>nt:file</code> and <code>nt:folder</code> nodes.)
+		</para>
+		<para>
+			You should always configure each ModeShape repository with a source for its system workspace by using the
+			<code>SYSTEM_WORKSPACE_NAME</code> repository option with a value that defines the name of source and name of the workspace
+			in that source where the system content should be stored, in the format:
+		</para>
+   	<programlisting>  workspaceName@sourceName</programlisting>
+		<para>
+			This specifies the system content should be stored in the workspace named "<code>workspaceName</code>" in the 
+			"<code>sourceName</code>" repository source.
+		</para>
+		<para>
+			The system content can be stored in any repository source capable of storing any content and, in the case
+			of clustering, is accessible across multiple processes. For most people, this will mean a relational database.
+			Here is an abbreviated example of an XML configuration that defines a source for the system storage (in a MySQL database)
+			and a repository that uses it:
+		</para>
+   	<programlisting role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:mode="http://www.modeshape.org/1.0" 
+	             xmlns:jcr="http://www.jcp.org/jcr/1.0">
+  <mode:repositories>
+    <mode:repository jcr:name="car repository" mode:source="Cars">
+      <mode:options jcr:primaryType="mode:options">
+        <!-- Explicitly specify the "system" workspace in the "SystemStore" source. -->
+        <systemWorkspaceName jcr:primaryType="mode:option" 
+	                           mode:value="system@SystemStore"/>
+        ...
+      </mode:options>
+      ...
+    </mode:repository>
+    ...
+  </mode:repositories>
+  <mode:sources jcr:primaryType="nt:unstructured">
+    <!-- One source for the "/jcr:system" content ... -->
+    <mode:source jcr:name="SystemStore" 
+                 mode:classname="org.modeshape.connector.store.jpa.JpaSource"
+                 mode:description="The database store for our system content"
+                 mode:dialect="org.hibernate.dialect.MySQLDialect"
+                 mode:dataSourceJndiName="java:/MyDataSource"
+                 mode:defaultWorkspaceName="system"
+                 mode:autoGenerateSchema="validate"/>    
+    </mode:sources>
+    <!-- An another source for the regular content ... -->
+    <mode:source jcr:name="Cars" 
+                 mode:classname="org.modeshape.connector.store.jpa.JpaSource"
+                 mode:description="The database store for our system content"
+                 mode:dialect="org.hibernate.dialect.MySQLDialect"
+                 mode:dataSourceJndiName="java:/MyDataSource"
+                 mode:defaultWorkspaceName="workspace1"
+                 mode:autoGenerateSchema="validate">
+      <mode:predefinedWorkspaceNames>workspace1</mode:predefinedWorkspaceNames>
+      <mode:predefinedWorkspaceNames>workspace2</mode:predefinedWorkspaceNames>
+      <mode:predefinedWorkspaceNames>workspace3</mode:predefinedWorkspaceNames>
+    </mode:sources>
+    ...
+  </mode:sources>
+  ...
+</configuration>
+]]></programlisting>
+		<para>
+			Of course, you can always use a separate workspace in your main source, too:
+		</para>
+   	<programlisting role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+  <mode:repositories>
+    <mode:repository jcr:name="car repository" mode:source="Cars">
+      <mode:options jcr:primaryType="mode:options">
+        <!-- Explicitly specify the "system" workspace in the "Cars" source. -->
+        <systemWorkspaceName jcr:primaryType="mode:option" mode:value="system@Cars"/>
+        ...
+      </mode:options>
+      ...
+    </mode:repository>
+    ...
+  </mode:repositories>
+  <mode:sources jcr:primaryType="nt:unstructured">
+    <!-- 
+    Define one source for the regular content with a special workspace for the system content.
+    -->
+    <mode:source jcr:name="Cars" 
+                 mode:classname="org.modeshape.connector.store.jpa.JpaSource"
+                 mode:description="The database store for our system content"
+                 mode:dialect="org.hibernate.dialect.MySQLDialect"
+                 mode:dataSourceJndiName="java:/MyDataSource"
+                 mode:defaultWorkspaceName="workspace1"
+                 mode:autoGenerateSchema="validate">
+      <mode:predefinedWorkspaceNames>workspace1</mode:predefinedWorkspaceNames>    
+      <mode:predefinedWorkspaceNames>workspace2</mode:predefinedWorkspaceNames>    
+      <mode:predefinedWorkspaceNames>workspace3</mode:predefinedWorkspaceNames>    
+      <mode:predefinedWorkspaceNames>system</mode:predefinedWorkspaceNames>    
+    </mode:sources>
+    ...
+  </mode:sources>
+  ...
+</configuration>
+]]></programlisting>
+	</sect1>
  <sect1 id="clustering">
 	  <title>Clustering</title>
 	  <para>
@@ -457,6 +584,12 @@ configuration.loadFrom(configSource);
 	      Note that the this example uses a child XML element for the "<code>configuration</code>", along with
 	      a CDATA section, so that the XML configuration can be nested within the ModeShape configuration.
 	    </para>
+	    <warning>
+		    <para>
+					Remember to specify the <link linkend="system_workspace_configuration">system workspace name</link>
+					for each repository that is clustered.
+				</para>
+		  </warning>
 		</sect2>
 	  <sect2 id="jgroups_clustering_configuration">
 		  <title>JGroups configuration</title>

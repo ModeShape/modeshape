@@ -231,6 +231,7 @@
 <!ENTITY JcrEngine					       		"<ulink url='&API;jcr/JcrEngine.html'><classname>JcrEngine</classname></ulink>">
 <!ENTITY JcrConfiguration		       		"<ulink url='&API;jcr/JcrConfiguration.html'><classname>JcrConfiguration</classname></ulink>">
 <!ENTITY JcrRepository			       		"<ulink url='&API;jcr/JcrRepository.html'><classname>JcrRepository</classname></ulink>">
+<!ENTITY JcrRepositoryOption      		"<ulink url='&API;jcr/JcrRepository.Option.html'><classname>JcrRepository.Option</classname></ulink>">
 <!ENTITY JcrRepositoryFactory			    "<ulink url='&API;jcr/JcrRepositoryFactory.html'><classname>JcrRepositoryFactory</classname></ulink>">
 <!ENTITY JcrSession					       		"<ulink url='&API;jcr/JcrSession.html'><classname>JcrSession</classname></ulink>">
 <!ENTITY JndiRepositoryFactory			  "<ulink url='&API;jcr/JcrRepository.html'><classname>JndiRepositoryFactory</classname></ulink>">

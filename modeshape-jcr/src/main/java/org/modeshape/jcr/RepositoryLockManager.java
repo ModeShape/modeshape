@@ -118,7 +118,8 @@ class RepositoryLockManager implements JcrSystemObserver {
         for (Location lockLocation : locksGraph.getRoot().getChildren()) {
             Node lockNode = locksGraph.getNode(lockLocation);
 
-            Boolean isSessionScoped = booleanFactory.create(lockNode.getProperty(ModeShapeLexicon.IS_SESSION_SCOPED).getFirstValue());
+            Boolean isSessionScoped = booleanFactory.create(lockNode.getProperty(ModeShapeLexicon.IS_SESSION_SCOPED)
+                                                                    .getFirstValue());
 
             if (!isSessionScoped) continue;
             String lockingSession = stringFactory.create(lockNode.getProperty(ModeShapeLexicon.LOCKING_SESSION).getFirstValue());
@@ -127,7 +128,8 @@ class RepositoryLockManager implements JcrSystemObserver {
             if (activeSessionIds.contains(lockingSession)) {
                 systemGraph.set(ModeShapeLexicon.EXPIRATION_DATE).on(lockLocation).to(newExpirationDate);
             } else {
-                DateTime expirationDate = dateFactory.create(lockNode.getProperty(ModeShapeLexicon.EXPIRATION_DATE).getFirstValue());
+                DateTime expirationDate = dateFactory.create(lockNode.getProperty(ModeShapeLexicon.EXPIRATION_DATE)
+                                                                     .getFirstValue());
                 // Destroy expired locks (if it was still held by an active session, it would have been extended by now)
                 if (expirationDate.isBefore(now)) {
                     String workspaceName = stringFactory.create(lockNode.getProperty(ModeShapeLexicon.WORKSPACE).getFirstValue());
@@ -142,8 +144,13 @@ class RepositoryLockManager implements JcrSystemObserver {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.JcrSystemObserver#getObservedPath()
+     */
     @Override
-    public Path getObservedRootPath() {
+    public Path getObservedPath() {
         return locksPath;
     }
 
@@ -153,6 +160,10 @@ class RepositoryLockManager implements JcrSystemObserver {
             assert change.changedLocation().hasPath();
 
             Path changedPath = change.changedLocation().getPath();
+            if (changedPath.equals(locksPath)) {
+                // nothing to do with the "/jcr:system/mode:locks" node ...
+                continue;
+            }
             assert locksPath.isAncestorOf(changedPath);
 
             Segment rawUuid = changedPath.getLastSegment();
@@ -165,35 +176,32 @@ class RepositoryLockManager implements JcrSystemObserver {
 
             switch (change.getType()) {
                 case CREATE_NODE:
-                    CreateNodeRequest create = (CreateNodeRequest) change;
-                    
-                    Property lockOwnerProp=  null;
+                    CreateNodeRequest create = (CreateNodeRequest)change;
+
+                    Property lockOwnerProp = null;
                     Property lockUuidProp = null;
                     Property isDeepProp = null;
                     Property isSessionScopedProp = null;
- 
+
                     for (Property prop : create.properties()) {
                         if (JcrLexicon.LOCK_OWNER.equals(prop.getName())) {
                             lockOwnerProp = prop;
-                        }
-                        else if (JcrLexicon.LOCK_IS_DEEP.equals(prop.getName())) {
+                        } else if (JcrLexicon.LOCK_IS_DEEP.equals(prop.getName())) {
                             isDeepProp = prop;
-                        }
-                        else if (ModeShapeLexicon.IS_HELD_BY_SESSION.equals(prop.getName())) {
+                        } else if (ModeShapeLexicon.IS_HELD_BY_SESSION.equals(prop.getName())) {
                             isSessionScopedProp = prop;
-                        }
-                        else if (JcrLexicon.UUID.equals(prop.getName())) {
+                        } else if (JcrLexicon.UUID.equals(prop.getName())) {
                             isSessionScopedProp = prop;
                         }
                     }
-                    
+
                     String lockOwner = firstString(lockOwnerProp);
                     UUID lockUuid = firstUuid(lockUuidProp);
                     boolean isDeep = firstBoolean(isDeepProp);
                     boolean isSessionScoped = firstBoolean(isSessionScopedProp);
 
                     workspaceManager.lockNodeInternally(lockOwner, lockUuid, lockedNodeUuid, isDeep, isSessionScoped);
-                    
+
                     break;
                 case DELETE_BRANCH:
                     boolean success = workspaceManager.unlockNodeInternally(lockedNodeUuid);
@@ -202,37 +210,37 @@ class RepositoryLockManager implements JcrSystemObserver {
 
                     break;
                 default:
-                    assert false :"Unexpected change request: " + change;
+                    assert false : "Unexpected change request: " + change;
             }
-            
+
         }
     }
 
-    private final String string(Segment rawString) {
+    private final String string( Segment rawString ) {
         ExecutionContext context = repository.getExecutionContext();
         return context.getValueFactories().getStringFactory().create(rawString);
     }
 
-    private final String firstString(Property property) {
+    private final String firstString( Property property ) {
         if (property == null) return null;
         Object firstValue = property.getFirstValue();
-        
+
         ExecutionContext context = repository.getExecutionContext();
         return context.getValueFactories().getStringFactory().create(firstValue);
     }
 
-    private final UUID firstUuid(Property property) {
+    private final UUID firstUuid( Property property ) {
         if (property == null) return null;
         Object firstValue = property.getFirstValue();
-        
+
         ExecutionContext context = repository.getExecutionContext();
         return context.getValueFactories().getUuidFactory().create(firstValue);
     }
-    
-    private final boolean firstBoolean(Property property) {
+
+    private final boolean firstBoolean( Property property ) {
         if (property == null) return false;
         Object firstValue = property.getFirstValue();
-        
+
         ExecutionContext context = repository.getExecutionContext();
         return context.getValueFactories().getBooleanFactory().create(firstValue);
     }

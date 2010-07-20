@@ -23,6 +23,10 @@
  */
 package org.modeshape.graph.property.basic;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -52,9 +56,9 @@ public class BasicPath extends AbstractPath {
 
     public static final Path PARENT_PATH = new BasicPath(Collections.singletonList(Path.PARENT_SEGMENT), false);
 
-    private final List<Segment> segments;
-    private final boolean absolute;
-    private final boolean normalized;
+    private/*final*/List<Segment> segments;
+    private/*final*/boolean absolute;
+    private/*final*/boolean normalized;
 
     /**
      * @param segments the segments
@@ -128,6 +132,32 @@ public class BasicPath extends AbstractPath {
      */
     public int size() {
         return this.segments.size();
+    }
+
+    /**
+     * Custom deserialization is needed, since the 'segments' list may not be serializable (e.g., java.util.RandomAccessSubList).
+     * 
+     * @param aStream the input stream to which this object should be serialized; never null
+     * @throws IOException if there is a problem reading from the stream
+     * @throws ClassNotFoundException if there is a problem loading any required classes
+     */
+    @SuppressWarnings( "unchecked" )
+    private void readObject( ObjectInputStream aStream ) throws IOException, ClassNotFoundException {
+        absolute = aStream.readBoolean();
+        normalized = aStream.readBoolean();
+        segments = (List<Path.Segment>)aStream.readObject();
+    }
+
+    /**
+     * Custom serialization is needed, since the 'segments' list may not be serializable (e.g., java.util.RandomAccessSubList).
+     * 
+     * @param aStream the input stream to which this object should be serialized; never null
+     * @throws IOException if there is a problem writing to the stream
+     */
+    private void writeObject( ObjectOutputStream aStream ) throws IOException {
+        aStream.writeBoolean(absolute);
+        aStream.writeBoolean(normalized);
+        aStream.writeObject(Collections.unmodifiableList(new ArrayList<Path.Segment>(segments))); // make a copy!
     }
 
 }

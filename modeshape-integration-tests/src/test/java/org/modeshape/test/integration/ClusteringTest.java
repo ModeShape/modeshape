@@ -44,6 +44,7 @@ import javax.jcr.observation.EventListener;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.connector.store.jpa.JpaSource;
@@ -88,12 +89,15 @@ public class ClusteringTest {
                      .setProperty("largeValueSizeInBytes", "150")
                      .setProperty("autoGenerateSchema", "update")
                      .setProperty("retryLimit", "3")
-                     .setProperty("showSql", "false");
+                     .setProperty("showSql", "false")
+                     .setProperty("defaultWorkspaceName", "content")
+                     .setProperty("predefinedWorkspaceNames", new String[] {"content", "system"});
         configuration.repository("cars")
                      .setSource("car-source")
                      .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
                      .addNodeTypes(resourceUrl("cars.cnd"))
-                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN)
+                     .setOption(Option.SYSTEM_SOURCE_NAME, "system@car-source");
         configuration.clustering().setProperty("clusterName", "MyCluster");// .setProperty("configuration", "");
 
         // Create an engine and use it to populate the source ...
@@ -182,16 +186,20 @@ public class ClusteringTest {
         Session session2 = sessionFrom(engine2);
         Session session3 = sessionFrom(engine3);
 
-        int eventTypes = Event.NODE_ADDED | Event.NODE_REMOVED; // |Event.PROPERTY_ADDED|Event.PROPERTY_CHANGED|Event.PROPERTY_REMOVED
-        CustomListener listener1 = addListenerTo(session1, eventTypes, 1);
-        CustomListener listener2 = addListenerTo(session2, eventTypes, 1);
-        CustomListener listener3 = addListenerTo(session3, eventTypes, 1);
-        CustomListener remoteListener1 = addRemoteListenerTo(session1, eventTypes, 0);
-        CustomListener remoteListener2 = addRemoteListenerTo(session2, eventTypes, 1);
-        CustomListener remoteListener3 = addRemoteListenerTo(session2, eventTypes, 1);
+        // Make a place under which we can make our changes, because ADD events will be filtered by parent path ...
+        session1.getRootNode().addNode("Base");
+        session1.save();
+
+        int eventTypes = Event.NODE_ADDED | Event.NODE_REMOVED;
+        CustomListener listener1 = addListenerTo(session1, null, eventTypes, 1);
+        CustomListener listener2 = addListenerTo(session2, "/Base", eventTypes, 1);
+        CustomListener listener3 = addListenerTo(session3, "/Base", eventTypes, 1);
+        CustomListener remoteListener1 = addRemoteListenerTo(session1, "/Base", eventTypes, 0);
+        CustomListener remoteListener2 = addRemoteListenerTo(session2, "/Base", eventTypes, 1);
+        CustomListener remoteListener3 = addRemoteListenerTo(session2, "/Base", eventTypes, 1);
 
         // Make some changes ...
-        session1.getRootNode().addNode("SomeNewNode");
+        session1.getNode("/Base").addNode("SomeNewNode");
         session1.save();
 
         // Wait for all the listeners ...
@@ -219,6 +227,74 @@ public class ClusteringTest {
         remoteListener3.checkObservedEvents();
     }
 
+    @FixFor( "MODE-809" )
+    @Test
+    public void shouldUpdateWorkspaceNamespaceRegistryAcrossCluster() throws Exception {
+        Session session1 = sessionFrom(engine1);
+        Session session2 = sessionFrom(engine2);
+        Session session3 = sessionFrom(engine3);
+
+        // Register a new prefix in one session ...
+        String nsUri = "http://example.com/foo/bar/baz";
+        String nsPrefix = "foo";
+        session1.getWorkspace().getNamespaceRegistry().registerNamespace(nsPrefix, nsUri);
+
+        // Make a place under which we can make our changes, because ADD events will be filtered by parent path ...
+        session1.getRootNode().addNode("Base");
+        session1.save();
+
+        // Register some listeners for the workspace content changes we'll make shortly ...
+        int eventTypes = Event.NODE_ADDED | Event.NODE_REMOVED;
+        CustomListener listener1 = addListenerTo(session1, "/Base", eventTypes, 1);
+        CustomListener listener2 = addListenerTo(session2, "/Base", eventTypes, 1);
+        CustomListener listener3 = addListenerTo(session3, "/Base", eventTypes, 1);
+        CustomListener remoteListener1 = addRemoteListenerTo(session1, "/Base", eventTypes, 0);
+        CustomListener remoteListener2 = addRemoteListenerTo(session2, "/Base", eventTypes, 1);
+        CustomListener remoteListener3 = addRemoteListenerTo(session2, "/Base", eventTypes, 1);
+
+        // Now create a node using this namespace ...
+        String propName = "foo:description";
+        String propValue = "This is the foobar description";
+        Node newNode = session1.getNode("/Base").addNode("SomeNewNode");
+        newNode.setProperty(propName, propValue);
+        session1.save();
+        final String path = newNode.getPath();
+
+        // Wait for all the listeners ...
+        listener1.await();
+        listener2.await();
+        listener3.await();
+        remoteListener1.await();
+        remoteListener2.await();
+        remoteListener3.await();
+
+        // Disconnect the listeners ...
+        listener1.disconnect();
+        listener2.disconnect();
+        listener3.disconnect();
+        remoteListener1.disconnect();
+        remoteListener2.disconnect();
+        remoteListener3.disconnect();
+
+        // Now check the events ...
+        listener1.checkObservedEvents();
+        listener2.checkObservedEvents();
+        listener3.checkObservedEvents();
+        remoteListener1.checkObservedEvents();
+        remoteListener2.checkObservedEvents();
+        remoteListener3.checkObservedEvents();
+
+        // Check the namespace registry in each session ...
+        assertThat(session1.getWorkspace().getNamespaceRegistry().getURI(nsPrefix), is(nsUri));
+        assertThat(session2.getWorkspace().getNamespaceRegistry().getURI(nsPrefix), is(nsUri));
+        assertThat(session3.getWorkspace().getNamespaceRegistry().getURI(nsPrefix), is(nsUri));
+
+        // Now, load the node using the various sessions and verify the correct namespace registry has been used ...
+        assertThat(session1.getNode(path).getProperty(propName).getString(), is(propValue));
+        assertThat(session2.getNode(path).getProperty(propName).getString(), is(propValue));
+        assertThat(session3.getNode(path).getProperty(propName).getString(), is(propValue));
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Utility Methods
     // ----------------------------------------------------------------------------------------------------------------
@@ -234,6 +310,7 @@ public class ClusteringTest {
      * Add a listener for only remote events.
      * 
      * @param session the session
+     * @param absPath the absolute path at or below which the listener is interested in
      * @param eventTypes the type of events
      * @param expectedEventCount the number of expected events
      * @return the listener
@@ -241,11 +318,12 @@ public class ClusteringTest {
      * @throws RepositoryException
      */
     protected CustomListener addRemoteListenerTo( Session session,
+                                                  String absPath,
                                                   int eventTypes,
                                                   int expectedEventCount )
         throws UnsupportedRepositoryOperationException, RepositoryException {
         CustomListener listener = new CustomListener(session, expectedEventCount);
-        session.getWorkspace().getObservationManager().addEventListener(listener, eventTypes, null, true, null, null, true);
+        session.getWorkspace().getObservationManager().addEventListener(listener, eventTypes, absPath, true, null, null, true);
         return listener;
     }
 
@@ -253,6 +331,8 @@ public class ClusteringTest {
      * Add a listener for local and remote events.
      * 
      * @param session the session
+     * @param absPath the absolute path at or below which the listener is interested in, or null if the listener is interested in
+     *        all nodes
      * @param eventTypes the type of events
      * @param expectedEventCount the number of expected events
      * @return the listener
@@ -260,11 +340,12 @@ public class ClusteringTest {
      * @throws RepositoryException
      */
     protected CustomListener addListenerTo( Session session,
+                                            String absPath,
                                             int eventTypes,
                                             int expectedEventCount )
         throws UnsupportedRepositoryOperationException, RepositoryException {
         CustomListener listener = new CustomListener(session, expectedEventCount);
-        session.getWorkspace().getObservationManager().addEventListener(listener, eventTypes, null, true, null, null, false);
+        session.getWorkspace().getObservationManager().addEventListener(listener, eventTypes, absPath, true, null, null, false);
         return listener;
     }
 

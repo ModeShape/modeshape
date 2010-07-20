@@ -30,6 +30,7 @@ import java.security.AccessControlContext;
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -411,7 +412,7 @@ public class JcrRepository implements Repository {
     private final String systemWorkspaceName;
     private final Projection systemSourceProjection;
     private final FederatedRepositorySource federatedSource;
-    private final NamespaceRegistry persistentRegistry;
+    private final GraphNamespaceRegistry persistentRegistry;
     private final RepositoryObservationManager repositoryObservationManager;
     private final SecurityContext anonymousUserContext;
     private final QueryParsers queryParsers;
@@ -542,7 +543,7 @@ public class JcrRepository implements Repository {
         Name uriProperty = ModeShapeLexicon.URI;
         PathFactory pathFactory = executionContext.getValueFactories().getPathFactory();
         Path systemPath = pathFactory.create(JcrLexicon.SYSTEM);
-        Path namespacesPath = pathFactory.create(systemPath, ModeShapeLexicon.NAMESPACES);
+        final Path namespacesPath = pathFactory.create(systemPath, ModeShapeLexicon.NAMESPACES);
         PropertyFactory propertyFactory = executionContext.getPropertyFactory();
         Property namespaceType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.NAMESPACE);
 
@@ -703,7 +704,32 @@ public class JcrRepository implements Repository {
 
         repositoryLockManager = new RepositoryLockManager(this);
 
-        this.jcrSystemObservers = Collections.<JcrSystemObserver>singletonList(repositoryLockManager);
+        // Create a system observer to update the namespace registry cache ...
+        final GraphNamespaceRegistry persistentRegistry = this.persistentRegistry;
+        final JcrSystemObserver namespaceObserver = new JcrSystemObserver() {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.jcr.JcrSystemObserver#getObservedPath()
+             */
+            public Path getObservedPath() {
+                return namespacesPath;
+            }
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.observe.Observer#notify(org.modeshape.graph.observe.Changes)
+             */
+            public void notify( Changes changes ) {
+                // These changes apply to anything at or below the namespaces path ...
+                persistentRegistry.refresh();
+            }
+        };
+
+        // Define the set of "/jcr:system" observers ...
+        this.jcrSystemObservers = Collections.unmodifiableList(Arrays.asList(new JcrSystemObserver[] {repositoryLockManager,
+            namespaceObserver}));
 
         // This observer picks up notification of changes to the system graph in a cluster. It's a NOP if there is no cluster.
         this.repositoryObservationManager.register(new SystemChangeObserver());
@@ -1640,10 +1666,6 @@ public class JcrRepository implements Repository {
                 // These are changes made locally by this repository ...
                 return changes;
             }
-            if (systemSourceName.equals(changedSourceName)) {
-                // These are changes made locally by this repository ...
-                return changes;
-            }
             if (repositorySourceName.equals(changedSourceName)) {
                 // These may be events generated locally or from a remote engine in the cluster ...
                 if (this.processId.equals(changes.getProcessId())) {
@@ -1655,6 +1677,11 @@ public class JcrRepository implements Repository {
                 // needs to be altered to match the 'sourceName' ...
                 return new Changes(changes.getProcessId(), changes.getContextId(), changes.getUserName(), sourceName,
                                    changes.getTimestamp(), changes.getChangeRequests(), changes.getData());
+            }
+            assert !changedSourceName.equals(repositorySourceName);
+            if (systemSourceName.equals(changedSourceName)) {
+                // These are changes made locally by this repository ...
+                return changes;
             }
             return null;
         }
@@ -1731,7 +1758,7 @@ public class JcrRepository implements Repository {
                 if (changedPath == null) continue;
 
                 for (JcrSystemObserver jcrSystemObserver : getSystemObservers()) {
-                    if (changedPath.isAtOrAbove(jcrSystemObserver.getObservedRootPath())) {
+                    if (changedPath.isAtOrBelow(jcrSystemObserver.getObservedPath())) {
                         systemChanges.put(jcrSystemObserver, change);
                     }
                 }
