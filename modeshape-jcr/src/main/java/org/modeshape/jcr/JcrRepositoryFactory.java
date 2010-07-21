@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
@@ -248,12 +249,13 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * 
      * @param engineJndiName the JNDI name of the JCR engine; may not be null
      * @param parameters any additional parameters that should be passed to the {@code InitialContext}'s constructor; may be empty
-     *        but may not be null
+     *        or null
      * @return the Repositories object from JNDI, if one exists at the given name
      */
     private Repositories getRepositoriesFromJndi( String engineJndiName,
                                                   Map<String, String> parameters ) {
         try {
+            if (parameters == null) parameters = Collections.emptyMap();
             InitialContext ic = new InitialContext(hashtable(parameters));
 
             Object ob = ic.lookup(engineJndiName);
@@ -363,7 +365,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * 
      * @param url the ModeShape-compatible URL that specifies the {@link JcrEngine} to be used; may not be null
      * @param parameters an optional list of parameters that will be passed into the JNDI {@link InitialContext} if the {@code
-     *        url} parameter specifies a ModeShape URL that uses the JNDI protocol; may be null
+     *        url} parameter specifies a ModeShape URL that uses the JNDI protocol; may be null or empty
      * @return the {@code JcrEngine} referenced by the given URL if it can be accessed and started (if not already started),
      *         otherwise {@code null}.
      */
