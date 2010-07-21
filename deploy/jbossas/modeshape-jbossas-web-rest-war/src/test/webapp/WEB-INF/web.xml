@@ -27,10 +27,10 @@
 		the o.m.w.jcr.spi.RepositoryProvider interface.  It is required
 		by the ModeShapeJcrDeployer that controls the lifecycle for the ModeShape REST server.
 	-->
-	<context-param>
-		<param-name>org.modeshape.web.jcr.REPOSITORY_PROVIDER</param-name>
-		<param-value>org.modeshape.web.jcr.spi.FactoryRepositoryProvider</param-value>
-	</context-param>
+    <context-param>
+        <param-name>org.modeshape.web.jcr.REPOSITORY_PROVIDER</param-name>
+        <param-value>org.modeshape.web.jcr.spi.FactoryRepositoryProvider</param-value>
+    </context-param>
 
 	<!--
 		This parameter, specific to the ModeShapeJcrRepositoryProvider implementation, specifies
@@ -38,10 +38,10 @@
 		This configuration file must be on the classpath and is given as a classpath-relative
 		directory.
 	-->
-	<context-param>
-		<param-name>org.modeshape.web.jcr.JCR_URL</param-name>
-        <param-value>jndi://jcr/local</param-value>
-	</context-param>
+    <context-param>
+        <param-name>org.modeshape.web.jcr.JCR_URL</param-name>
+        <param-value>file:/configRepository.xml</param-value>
+    </context-param>
 
 	<!--
 		This parameter defines the JAX-RS application class, which is really just a metadata class

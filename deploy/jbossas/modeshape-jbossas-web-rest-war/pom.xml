@@ -67,6 +67,13 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <configuration>
+                    <webResources>
+                        <resource>
+                        <!--  override the main web.xml with a web.xml that enables running locally  -->
+                            <directory>${project.basedir}/src/test/webapp/</directory>
+                        </resource>
+                    </webResources>
+                
                               <excludes>
                                 <exclude>**/*slf4j*.jar</exclude>
                             </excludes>
