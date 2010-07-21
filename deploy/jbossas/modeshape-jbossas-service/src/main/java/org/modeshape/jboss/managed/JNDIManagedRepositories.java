@@ -24,6 +24,7 @@
 package org.modeshape.jboss.managed;
 
 import java.io.Serializable;
+import java.net.URL;
 import java.util.Collections;
 import java.util.Set;
 
@@ -52,16 +53,16 @@ public final class JNDIManagedRepositories implements Repositories,
     private static final Logger LOGGER = Logger
 	    .getLogger(JNDIManagedRepositories.class.getName());
 
-    private String jndiName = null;
+    private URL url = null;
     private transient ManagedEngine managedEngine = null;
 
     public JNDIManagedRepositories() {
 	
     }
 
-    public void setJndiName(String jndiName) throws Exception {
-	CheckArg.isNotNull(jndiName, "jndiName");
-	this.jndiName = jndiName;
+    public void setModeshapeUrl(String url) throws Exception {
+	CheckArg.isNotNull(url, "url");
+	this.url = new URL(url);
     }
 
     public void start() throws NamingException {
@@ -70,14 +71,14 @@ public final class JNDIManagedRepositories implements Repositories,
 	} catch (NamingException e) {
 	    NamingException ne = new NamingException(StringUtil
 		    .createString(JBossManagedI18n.errorBindingToJNDI
-			    .text(new Object[] { this.jndiName })));
+			    .text(new Object[] { this.url.getPath() })));
 	    ne.setRootCause(e);
 	    throw ne;
 	}
     }
 
     public void stop() {
-	unbind(this.jndiName);
+	unbind(this.url.getPath());
     }
 
     public void setManagedEngine(ManagedEngine engine) {
@@ -104,10 +105,10 @@ public final class JNDIManagedRepositories implements Repositories,
     private void rebind() throws NamingException {
 	Context ctx = new InitialContext();
 
-	Util.rebind(ctx, jndiName, this);
+	Util.rebind(ctx, url.getPath(), this);
 
 	LOGGER.log(Level.INFO, JBossManagedI18n.logModeShapeBoundToJNDI,
-		new Object[] { jndiName });
+		new Object[] { url.getPath() });
     }
 
     private void unbind(String jndiName) {

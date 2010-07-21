@@ -13,7 +13,7 @@
 
     <bean name="JNDIManaged" class="org.modeshape.jboss.managed.JNDIManagedRepositories">
         <property name="managedEngine"><inject bean="ModeShapeEngine"/></property>
-        <property name="jndiName">jcr/local</property>
+        <property name="modeshapeUrl">jndi:jcr/local</property>
         <depends>ModeShapeEngine</depends>
     </bean>
 

@@ -125,7 +125,7 @@ public final class ManagedEngine implements ModeShapeManagedObject {
     
     /**
      * Obtains the specified managed repository of this engine. This is called by the JNDIManagedRepositories when a
-     * JNID lookup is performed to find a repository.
+     * JNDI lookup is performed to find a repository.
      * @param repositoryName for the repository to be returned
      * 
      * @return a repository or <code>null</code> if repository doesn't exist
@@ -217,17 +217,16 @@ public final class ManagedEngine implements ModeShapeManagedObject {
         this.getRepositories();
     }
 
-    static int cnt = 0;
     protected JcrEngine getEngine() {
-	return this.engine;
+    	return this.engine;
     }
     
     public void setEngine(JcrEngine jcrEngine) {
-	this.engine = jcrEngine;
+    	this.engine = jcrEngine;
     }
     
-    public void setConfigURL(java.net.URL configurationUrl) throws Exception {
-	JcrConfiguration jcrConfig = new JcrConfiguration().loadFrom(configurationUrl);
-	this.engine = jcrConfig.build();
+    public void setConfigURL(java.net.URL configurationUrl) throws Exception {   	
+    	JcrConfiguration jcrConfig = new JcrConfiguration().loadFrom(configurationUrl);
+    	this.engine = jcrConfig.build();
     }
 }

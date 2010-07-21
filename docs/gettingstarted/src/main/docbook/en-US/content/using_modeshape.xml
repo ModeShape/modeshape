@@ -74,7 +74,7 @@ for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
     <para>
 	    that references a file on the local classpath, or
 	  </para>
-    <programlisting><![CDATA[ jndi://name/in/jndi?repositoryName=MyRepository ]]></programlisting>
+    <programlisting><![CDATA[ jndi:name/in/jndi?repositoryName=MyRepository ]]></programlisting>
 		<para>
 			to point to an existing &Repositories; or &JcrEngine; instance registered in JNDI.
 			Pointing directly to a configuration file often works well in stand-alone applications, while using JNDI works great
@@ -240,8 +240,7 @@ Session session = repository.login(credentials,workspaceName);
 try {
   // Look up the JCR Repository object ...
 	InitialContext initCtx = new InitialContext();
-	Context envCtx = (Context) initCtx.lookup("java:comp/env");
-	Repository repo = (Repository) envCtx.lookup("jcr/local");		// name in JNDI is defined by configuration
+	Repositories repositories = (Repositories) initCtx.lookup("jcr/local");  // name in JNDI is defined by configuration
 	
 	// Obtain a JCR Session using simple authentication
 	// (or use anonymous authentication if desired)
