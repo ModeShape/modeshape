@@ -52,15 +52,14 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
      * @see org.modeshape.jcr.nodetype.PropertyDefinitionTemplate#setDefaultValues(java.lang.String[])
      */
     public void setDefaultValues( String[] defaultValues ) {
-        if (defaultValues == null) {
+        if (defaultValues != null) {
+            this.defaultValues = new Value[defaultValues.length];
+            ValueFactories factories = getExecutionContext().getValueFactories();
+            for (int i = 0; i < defaultValues.length; i++) {
+                this.defaultValues[i] = new JcrValue(factories, null, PropertyType.STRING, defaultValues[i]);
+            }
+        } else {
             this.defaultValues = null;
-            return;
-        }
-
-        this.defaultValues = new Value[defaultValues.length];
-        ValueFactories factories = getExecutionContext().getValueFactories();
-        for (int i = 0; i < defaultValues.length; i++) {
-            this.defaultValues[i] = new JcrValue(factories, null, PropertyType.STRING, defaultValues[i]);
         }
     }
 
@@ -92,8 +91,8 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
                || requiredType == PropertyType.DOUBLE || requiredType == PropertyType.DECIMAL
                || requiredType == PropertyType.LONG || requiredType == PropertyType.NAME || requiredType == PropertyType.PATH
                || requiredType == PropertyType.REFERENCE || requiredType == PropertyType.WEAKREFERENCE
-               || requiredType == PropertyType.URI
-               || requiredType == PropertyType.STRING || requiredType == PropertyType.UNDEFINED;
+               || requiredType == PropertyType.URI || requiredType == PropertyType.STRING
+               || requiredType == PropertyType.UNDEFINED;
         this.requiredType = requiredType;
     }
 

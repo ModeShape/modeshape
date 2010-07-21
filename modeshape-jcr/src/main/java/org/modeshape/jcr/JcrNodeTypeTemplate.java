@@ -166,15 +166,22 @@ public class JcrNodeTypeTemplate implements NodeTypeDefinition, NodeTypeTemplate
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Passing a null or blank name is equivalent to "unsetting" (or removing) the primary item name.
+     * </p>
      * 
      * @see org.modeshape.jcr.nodetype.NodeTypeDefinition#getPrimaryItemName()
      *      type.NodeTypeTemplate#setPrimaryItemName(java.lang.String)
      */
     public void setPrimaryItemName( String name ) throws ConstraintViolationException {
-        try {
-            this.primaryItemName = context.getValueFactories().getNameFactory().create(name);
-        } catch (ValueFormatException vfe) {
-            throw new ConstraintViolationException(vfe);
+        if (name == null || name.trim().length() == 0) {
+            this.primaryItemName = null;
+        } else {
+            try {
+                this.primaryItemName = context.getValueFactories().getNameFactory().create(name);
+            } catch (ValueFormatException vfe) {
+                throw new ConstraintViolationException(vfe);
+            }
         }
     }
 

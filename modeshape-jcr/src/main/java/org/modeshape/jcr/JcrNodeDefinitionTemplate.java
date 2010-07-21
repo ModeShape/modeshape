@@ -49,6 +49,9 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Passing a null or blank name is equivalent to "unsetting" (or removing) the primary item name.
+     * </p>
      * 
      * @see org.modeshape.jcr.nodetype.NodeDefinitionTemplate#setDefaultPrimaryType(String)
      */
@@ -59,14 +62,18 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
     /**
      * Set the name of the primary type that should be used by default when creating children using this node definition
      * 
-     * @param defaultPrimaryType the default primary type for this child node
+     * @param defaultPrimaryType the default primary type for this child node, or null if there is to be no default primary type
      * @throws ConstraintViolationException
      */
     public void setDefaultPrimaryTypeName( String defaultPrimaryType ) throws ConstraintViolationException {
-        try {
-            this.defaultPrimaryType = getContext().getValueFactories().getNameFactory().create(defaultPrimaryType);
-        } catch (ValueFormatException vfe) {
-            throw new ConstraintViolationException(vfe);
+        if (defaultPrimaryType == null || defaultPrimaryType.trim().length() == 0) {
+            this.defaultPrimaryType = null;
+        } else {
+            try {
+                this.defaultPrimaryType = getContext().getValueFactories().getNameFactory().create(defaultPrimaryType);
+            } catch (ValueFormatException vfe) {
+                throw new ConstraintViolationException(vfe);
+            }
         }
     }
 
@@ -142,9 +149,15 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
      * @see javax.jcr.nodetype.NodeDefinition#getRequiredPrimaryTypes()
      */
     public NodeType[] getRequiredPrimaryTypes() {
+        // This method should return null since it's not attached to a registered node type ...
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.nodetype.NodeDefinition#getRequiredPrimaryTypeNames()
+     */
     public String[] getRequiredPrimaryTypeNames() {
         if (requiredPrimaryTypes == null) return null;
 

@@ -173,6 +173,13 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
      */
     public NodeType[] getRequiredPrimaryTypes() {
         ensureRequiredPrimaryTypesLoaded();
+        if (requiredPrimaryTypes.length == 0) {
+            // Per the JavaDoc, this method should never return null or an empty array; if there are no constraints,
+            // then this method should include an array with 'nt:base' as the required primary type.
+            NodeType[] result = new NodeType[1];
+            result[0] = nodeTypeManager.getNodeType(JcrNtLexicon.BASE);
+            return result;
+        }
         // Make a copy so that the caller can't modify our content ...
         NodeType[] result = new NodeType[requiredPrimaryTypes.length];
         for (int i = 0; i != requiredPrimaryTypes.length; ++i) {
