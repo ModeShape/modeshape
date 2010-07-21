@@ -46,14 +46,13 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import org.modeshape.jcr.api.Repositories;
-import org.modeshape.jdbc.util.UnmodifiableProperties;
-import org.modeshape.jdbc.util.StringUtil;
 import org.modeshape.jdbc.JcrConnection;
 import org.modeshape.jdbc.JcrDriver;
 import org.modeshape.jdbc.JcrMetaData;
 import org.modeshape.jdbc.JdbcI18n;
 import org.modeshape.jdbc.ModeShapeMetaData;
 import org.modeshape.jdbc.JcrDriver.JcrContextFactory;
+import org.modeshape.jdbc.util.StringUtil;
 import org.modeshape.jdbc.util.TextDecoder;
 import org.modeshape.jdbc.util.UrlEncoder;
 
@@ -334,8 +333,7 @@ public class LocalRepositoryDelegate implements RepositoryDelegate {
 	}
 
 	private void init() {
-	    Properties props = getProperties() != null ? new Properties(
-		    getProperties()) : new Properties();
+	    Properties props = getProperties() != null ? (Properties) getProperties().clone() : new Properties();
 	    jndiName = getUrl().substring(
 		    JcrDriver.JNDI_URL_PREFIX.length());
 
@@ -362,7 +360,7 @@ public class LocalRepositoryDelegate implements RepositoryDelegate {
 		jndiName = jndiName.substring(0, questionMarkIndex).trim();
 	    }
 
-	    Properties newprops = new UnmodifiableProperties(props);
+	    Properties newprops = new Properties(props);
 	    this.setProperties(newprops);
 	    String url = getUrl();
 	    this.setUrl(url != null ? url.trim() : null);

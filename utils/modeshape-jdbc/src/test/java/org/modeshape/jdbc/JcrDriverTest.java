@@ -68,7 +68,7 @@ public class JcrDriverTest {
         validRepositoryName = "MyRepository";
         jndiNameForRepository = "java:MyRepository";
         jndiNameForRepositories = "java:Repositories";
-        validUrl = "jdbc:jcr:jndi://" + jndiNameForRepository + "?workspace=MyWorkspace&username=jsmith&password=secret";
+        validUrl = JcrDriver.JNDI_URL_PREFIX + jndiNameForRepository + "?workspace=MyWorkspace&username=jsmith&password=secret";
         validProperties = new Properties();
         
         when(jndi.lookup(jndiNameForRepository)).thenReturn(repository);
@@ -136,7 +136,7 @@ public class JcrDriverTest {
 
     @Test
     public void shouldReturnEmptyPropertyInfosWhenSuppliedValidUrlAndAllPropertiesWithRepositoryInJndi() throws SQLException{
-        validUrl = "jdbc:jcr:jndi://" + jndiNameForRepository;
+        validUrl = JcrDriver.JNDI_URL_PREFIX + jndiNameForRepository;
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
         validProperties.put(JcrDriver.PASSWORD_PROPERTY_NAME, "secret");
@@ -147,7 +147,7 @@ public class JcrDriverTest {
 
     @Test
     public void shouldReturnEmptyPropertyInfosWhenSuppliedValidUrlAndAllPropertiesWithRepositoriesInJndi() throws SQLException{
-        validUrl = "jdbc:jcr:jndi://" + jndiNameForRepositories;
+        validUrl = JcrDriver.JNDI_URL_PREFIX + jndiNameForRepositories;
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
         validProperties.put(JcrDriver.PASSWORD_PROPERTY_NAME, "secret");
@@ -158,7 +158,7 @@ public class JcrDriverTest {
 
     @Test
     public void shouldReturnRepositoryPropertyInfoWhenMissingRequiredRepositoryName() throws SQLException{
-        validUrl = "jdbc:jcr:jndi://" + jndiNameForRepositories;
+        validUrl = JcrDriver.JNDI_URL_PREFIX + jndiNameForRepositories;
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
         validProperties.put(JcrDriver.PASSWORD_PROPERTY_NAME, "secret");
@@ -172,7 +172,7 @@ public class JcrDriverTest {
 
     @Test
     public void shouldReturnRepositoryPropertyInfoWhenMissingWorkspaceName() throws SQLException{
-        validUrl = "jdbc:jcr:jndi://" + jndiNameForRepositories;
+        validUrl = JcrDriver.JNDI_URL_PREFIX + jndiNameForRepositories;
         // validProperties.put(JdbcDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
         validProperties.put(JcrDriver.PASSWORD_PROPERTY_NAME, "secret");
@@ -186,7 +186,7 @@ public class JcrDriverTest {
 
     @Test
     public void shouldReturnRepositoryPropertyInfoWhenMissingUsername() throws SQLException{
-        validUrl = "jdbc:jcr:jndi://" + jndiNameForRepositories;
+        validUrl = JcrDriver.JNDI_URL_PREFIX + jndiNameForRepositories;
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         // validProperties.put(JdbcDriver.USERNAME_PROPERTY_NAME, "jsmith");
         validProperties.put(JcrDriver.PASSWORD_PROPERTY_NAME, "secret");
@@ -200,7 +200,7 @@ public class JcrDriverTest {
 
     @Test
     public void shouldReturnRepositoryPropertyInfoWhenMissingPassword() throws SQLException{
-        validUrl = "jdbc:jcr:jndi://" + jndiNameForRepositories;
+        validUrl = JcrDriver.JNDI_URL_PREFIX + jndiNameForRepositories;
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
         // validProperties.put(JdbcDriver.PASSWORD_PROPERTY_NAME, "secret");
@@ -214,30 +214,30 @@ public class JcrDriverTest {
 
     @Test
     public void shouldAcceptValidUrls() {
-        assertThat(driver.acceptsURL("jdbc:jcr:jndi://java:nameInJndi?workspace=MyWorkspace&username=jsmith&password=secret"),
+        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=MyWorkspace&username=jsmith&password=secret"),
                    is(true));
-        assertThat(driver.acceptsURL("jdbc:jcr:jndi://java:nameInJndi?workspace=MyWorkspace&username=jsmith"), is(true));
-        assertThat(driver.acceptsURL("jdbc:jcr:jndi://java:nameInJndi?workspace=My%20Workspace"), is(true));
-        assertThat(driver.acceptsURL("jdbc:jcr:jndi://java:nameInJndi"), is(true));
-        assertThat(driver.acceptsURL("jdbc:jcr:jndi://java:nameInJndi?"), is(true));
-        assertThat(driver.acceptsURL("jdbc:jcr:jndi://java"), is(true));
-        assertThat(driver.acceptsURL("jdbc:jcr:jndi://j"), is(true));
-        assertThat(driver.acceptsURL("jdbc:jcr:jndi://j "), is(true));
-        assertThat(driver.acceptsURL("jdbc:jcr:jndi:// j"), is(true));
+        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=MyWorkspace&username=jsmith"), is(true));
+        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=My%20Workspace"), is(true));
+        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi"), is(true));
+        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?"), is(true));
+        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java"), is(true));
+        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "j"), is(true));
+        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "j "), is(true));
+        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + " j"), is(true));
     }
 
     @Test
     public void shouldNotAcceptInvalidUrls() {
-        assertThat(driver.acceptsURL("jdbc:jcr:jndi:/"), is(false));
-        assertThat(driver.acceptsURL("jdbc:jcr:jndi://"), is(false));
-        assertThat(driver.acceptsURL("jdbc:jcr:jndi:// "), is(false));
+        assertThat(driver.acceptsURL("jdbc:jcr:jndi"), is(false));
+        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX), is(false));
+        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + " "), is(false));
         assertThat(driver.acceptsURL("file://"), is(false));
         assertThat(driver.acceptsURL("jdbc://"), is(false));
     }
 
     @Test
     public void shouldCreateConnectionInfoForUrlWithEscapedCharacters() throws SQLException{
-        validUrl = "jdbc:jcr:jndi://java:nameInJndi?workspace=My%20Workspace&username=j%20smith&password=secret&repository=My%20Repository";
+        validUrl = JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=My%20Workspace&username=j%20smith&password=secret&repository=My%20Repository";
         ConnectionInfo info = driver.createConnectionInfo(validUrl, validProperties);
         assertThat(info.getWorkspaceName(), is("My Workspace"));
         assertThat(info.getUsername(), is("j smith"));

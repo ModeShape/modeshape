@@ -110,8 +110,8 @@ public class JcrDriverIntegrationTest {
     private static JcrRepository repository;
     private JcrConnection connection;
 
-    private static String jndiNameForRepository = "java:MyRepository";
-    private static String validUrl = "jdbc:jcr:jndi://" + jndiNameForRepository;
+    private static String jndiNameForRepository = "jcr/local";
+    private static String validUrl = JcrDriver.JNDI_URL_PREFIX + jndiNameForRepository + "?repositoryName=cars";
     private JcrDriver.JcrContextFactory contextFactory;
 
     @BeforeClass

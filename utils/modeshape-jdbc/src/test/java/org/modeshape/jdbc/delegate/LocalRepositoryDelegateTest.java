@@ -47,7 +47,7 @@ public class LocalRepositoryDelegateTest {
     private static final String USER_NAME="jsmith";
     private static final String PASSWORD="secret";
     private static final String WORKSPACE="MyWorkspace";
-    private static final String JNDINAME="java:MyRepository";
+    private static final String JNDINAME="jcr/local";
     private static final String INVALID_URL =  JcrDriver.JNDI_URL_PREFIX + "notExist" ;
     
 
@@ -89,7 +89,7 @@ public class LocalRepositoryDelegateTest {
 	assertThat(delegate.getConnectionInfo().getWorkspaceName(), is(WORKSPACE) );
 	assertThat(delegate.getConnectionInfo().getRepositoryName(), is(REPOSITORY_NAME) );
 	
-	assertThat(delegate.getConnectionInfo().getEffectiveUrl(), is( "jdbc:jcr:jndi://java:MyRepository?workspace=MyWorkspace&password=******&repository=repositoryName&username=jsmith" ) );
+	assertThat(delegate.getConnectionInfo().getEffectiveUrl(), is( JcrDriver.JNDI_URL_PREFIX + "jcr/local?workspace=MyWorkspace&password=******&repository=repositoryName&username=jsmith" ) );
 	
         DriverPropertyInfo[] infos = delegate.getConnectionInfo().getPropertyInfos();
         assertThat(infos.length, is(0));

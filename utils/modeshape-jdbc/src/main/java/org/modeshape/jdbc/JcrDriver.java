@@ -46,13 +46,13 @@ import org.modeshape.jdbc.util.Collections;
  * <ol>
  * <li>configured for <i>local</i> access using JNDI 
  * <pre>
- *     jdbc:jcr:jndi://{jndiName}
+ *     jdbc:jcr:jndi:{jndiName}
  * </pre>
  * 
  * or
  * 
  * <pre>
- *     jdbc:jcr:jndi://{jndiName}?{firstProperty}&amp;{secondProperty}&amp;...
+ *     jdbc:jcr:jndi:{jndiName}?{firstProperty}&amp;{secondProperty}&amp;...
  * </pre>
  * 
  * where
@@ -64,11 +64,11 @@ import org.modeshape.jdbc.util.Collections;
  * Note that any use of URL encoding ('%' followed by a two-digit hexadecimal value) will be decoded before being used.
  * </p>
  * <p>
- * Here's an example of a URL that defines a {@link Repository} instance located at "<code>javax:MyJcrRepository</code>" with a
- * username of "jsmith", password of "secret", and workspace name of "My Workspace":
+ * Here's an example of a URL that defines a {@link Repository} instance located at "<code>jcr/local</code>" with a 
+ * repository name of "repository" and a username of "jsmith", password of "secret", and workspace name of "My Workspace":
  * 
  * <pre>
- *     jdbc:jcr:jndi://javax%3AMyJcrRepository?username=jsmith&amp;password=secret&amp;workspace=My%20Workspace
+ *     jdbc:jcr:jndi:jcr/local?repositoryName=repository&username=jsmith&amp;password=secret&amp;workspace=My%20Workspace
  * </pre>
  * 
  * The "repository" property is required only if the object in JNDI is a {@literal org.modeshape.jcr.api.Repositories} object.
@@ -86,18 +86,6 @@ import org.modeshape.jdbc.util.Collections;
  * </ul>
  * Note that any use of URL encoding ('%' followed by a two-digit hexadecimal value) will be decoded before being used.
  * </p>
- * <p>
- * Here's an example of a URL that defines a {@link Repository} instance located at "<code>javax:MyJcrRepository</code>" with a
- * username of "jsmith", password of "secret", and workspace name of "My Workspace":
- * 
- * <pre>
- *     jdbc:jcr:jndi://javax%3AMyJcrRepository?username=jsmith&amp;password=secret&amp;workspace=My%20Workspace
- * </pre>
- * 
- * The "repository" property is required only if the object in JNDI is a {@literal org.modeshape.jcr.api.Repositories} object.
-
- * </ol>
- * </p>
  */
 
 public class JcrDriver implements java.sql.Driver {
@@ -112,7 +100,7 @@ public class JcrDriver implements java.sql.Driver {
                                                                                         USERNAME_PROPERTY_NAME,
                                                                                         PASSWORD_PROPERTY_NAME);
 
-    public static final String JNDI_URL_PREFIX = "jdbc:jcr:jndi://";
+    public static final String JNDI_URL_PREFIX = "jdbc:jcr:jndi:";
      
     public static final String HTTP_URL_PREFIX = "jdbc:jcr:http://";
  
