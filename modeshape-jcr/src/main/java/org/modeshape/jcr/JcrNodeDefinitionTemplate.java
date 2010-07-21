@@ -168,4 +168,54 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
         }
         return rpts;
     }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.nodetype.NodeDefinitionTemplate#setName(java.lang.String)
+     */
+    @Override
+    public void setName( String name ) throws ConstraintViolationException {
+        super.setName(name);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.nodetype.NodeDefinitionTemplate#setAutoCreated(boolean)
+     */
+    @Override
+    public void setAutoCreated( boolean autoCreated ) {
+        super.setAutoCreated(autoCreated);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.nodetype.NodeDefinitionTemplate#setMandatory(boolean)
+     */
+    @Override
+    public void setMandatory( boolean mandatory ) {
+        super.setMandatory(mandatory);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.nodetype.NodeDefinitionTemplate#setOnParentVersion(int)
+     */
+    @Override
+    public void setOnParentVersion( int onParentVersion ) {
+        super.setOnParentVersion(onParentVersion);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.nodetype.NodeDefinitionTemplate#setProtected(boolean)
+     */
+    @Override
+    public void setProtected( boolean isProtected ) {
+        super.setProtected(isProtected);
+    }
 }

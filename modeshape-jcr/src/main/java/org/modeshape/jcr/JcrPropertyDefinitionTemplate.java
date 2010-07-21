@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
+import javax.jcr.nodetype.ConstraintViolationException;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
@@ -178,5 +179,55 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
      */
     public void setQueryOrderable( boolean queryOrderable ) {
         this.queryOrderable = queryOrderable;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.nodetype.PropertyDefinitionTemplate#setName(java.lang.String)
+     */
+    @Override
+    public void setName( String name ) throws ConstraintViolationException {
+        super.setName(name);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.nodetype.PropertyDefinitionTemplate#setAutoCreated(boolean)
+     */
+    @Override
+    public void setAutoCreated( boolean autoCreated ) {
+        super.setAutoCreated(autoCreated);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.nodetype.PropertyDefinitionTemplate#setMandatory(boolean)
+     */
+    @Override
+    public void setMandatory( boolean mandatory ) {
+        super.setMandatory(mandatory);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.nodetype.PropertyDefinitionTemplate#setOnParentVersion(int)
+     */
+    @Override
+    public void setOnParentVersion( int onParentVersion ) {
+        super.setOnParentVersion(onParentVersion);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.nodetype.PropertyDefinitionTemplate#setProtected(boolean)
+     */
+    @Override
+    public void setProtected( boolean isProtected ) {
+        super.setProtected(isProtected);
     }
 }

@@ -38,6 +38,7 @@ import javax.jcr.nodetype.PropertyDefinition;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
@@ -814,6 +815,91 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         assertThat(repoTypeManager.getNodeType(typeNameAsName), is(nullValue()));
         assertThat(repoTypeManager.getNodeType(type2NameAsName), is(nullValue()));
 
+    }
+
+    @FixFor( "MODE-826" )
+    @Test
+    public void shouldAllowRegisteringNodeTypeWithOnlyResidualChildNodeDefinition() throws Exception {
+        ntTemplate.setName(TEST_TYPE_NAME);
+
+        // Create the residual child node definition ...
+        JcrNodeDefinitionTemplate childNode = new JcrNodeDefinitionTemplate(this.context);
+        childNode.setDefaultPrimaryType(TEST_TYPE_NAME2);
+        childNode.setName("*");
+        ntTemplate.getNodeDefinitionTemplates().add(childNode);
+
+        // And register it ...
+        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}), false);
+    }
+
+    @FixFor( "MODE-826" )
+    @Test
+    public void shouldAllowRegisteringNodeTypeWithPrimaryItemNameAndOnlyNonResidualPropertyNodeDefinition() throws Exception {
+        ntTemplate.setName(TEST_TYPE_NAME);
+        // Set the primary item name to be a name that DOES match the property definition ...
+        ntTemplate.setPrimaryItemName(TEST_PROPERTY_NAME);
+
+        // Create the residual property definition ...
+        JcrPropertyDefinitionTemplate propertyDefn = new JcrPropertyDefinitionTemplate(this.context);
+        propertyDefn.setRequiredType(PropertyType.STRING);
+        propertyDefn.setName(TEST_PROPERTY_NAME);
+        ntTemplate.getPropertyDefinitionTemplates().add(propertyDefn);
+
+        // And register it ...
+        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}), false);
+    }
+
+    @FixFor( "MODE-826" )
+    @Test
+    public void shouldAllowRegisteringNodeTypeWithPrimaryItemNameAndOnlyResidualPropertyNodeDefinition() throws Exception {
+        ntTemplate.setName(TEST_TYPE_NAME);
+        // Set the primary item name to be a name that doesn't explicitly match a child node definition or a property definition
+        // but that is covered by the residual property definition ...
+        ntTemplate.setPrimaryItemName(TEST_PROPERTY_NAME);
+
+        // Create the residual child node definition ...
+        JcrPropertyDefinitionTemplate propertyDefn = new JcrPropertyDefinitionTemplate(this.context);
+        propertyDefn.setRequiredType(PropertyType.STRING);
+        propertyDefn.setName("*");
+        ntTemplate.getPropertyDefinitionTemplates().add(propertyDefn);
+
+        // And register it ...
+        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}), false);
+    }
+
+    @FixFor( "MODE-826" )
+    @Test
+    public void shouldAllowRegisteringNodeTypeWithPrimaryItemNameAndOnlyNonResidualChildNodeDefinition() throws Exception {
+        ntTemplate.setName(TEST_TYPE_NAME);
+        // Set the primary item name to be a name that DOES match the child node definition ...
+        ntTemplate.setPrimaryItemName(TEST_CHILD_NODE_NAME);
+
+        // Create the residual child node definition ...
+        JcrNodeDefinitionTemplate childNode = new JcrNodeDefinitionTemplate(this.context);
+        childNode.setDefaultPrimaryType(TEST_TYPE_NAME2);
+        childNode.setName(TEST_CHILD_NODE_NAME);
+        ntTemplate.getNodeDefinitionTemplates().add(childNode);
+
+        // And register it ...
+        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}), false);
+    }
+
+    @FixFor( "MODE-826" )
+    @Test
+    public void shouldAllowRegisteringNodeTypeWithPrimaryItemNameAndOnlyResidualChildNodeDefinition() throws Exception {
+        ntTemplate.setName(TEST_TYPE_NAME);
+        // Set the primary item name to be a name that doesn't explicitly match a child node definition but that is
+        // covered by the residual child node definition ...
+        ntTemplate.setPrimaryItemName(TEST_CHILD_NODE_NAME);
+
+        // Create the residual child node definition ...
+        JcrNodeDefinitionTemplate childNode = new JcrNodeDefinitionTemplate(this.context);
+        childNode.setDefaultPrimaryType(TEST_TYPE_NAME2);
+        childNode.setName("*");
+        ntTemplate.getNodeDefinitionTemplates().add(childNode);
+
+        // And register it ...
+        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}), false);
     }
 
     private void compareTemplatesToNodeTypes( List<NodeTypeDefinition> templates,

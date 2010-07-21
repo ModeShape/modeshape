@@ -2131,28 +2131,31 @@ class RepositoryNodeTypeManager {
         for (JcrNodeType supertype : supertypes)
             supertypeNames.add(supertype.getInternalName());
 
-        boolean found = false;
+        boolean foundExact = false;
+        boolean foundResidual = false;
         Name primaryItemName = nodeType.getInternalPrimaryItemName();
 
         for (JcrNodeDefinition node : nodeType.getDeclaredChildNodeDefinitions()) {
             validate(node, supertypeNames, pendingTypes);
+            if (node.isResidual()) foundResidual = true;
 
             if (primaryItemName != null && primaryItemName.equals(node.getInternalName())) {
-                found = true;
+                foundExact = true;
             }
         }
 
         for (JcrPropertyDefinition prop : nodeType.getDeclaredPropertyDefinitions()) {
             validate(prop, supertypeNames, pendingTypes);
+            if (prop.isResidual()) foundResidual = true;
             if (primaryItemName != null && primaryItemName.equals(prop.getInternalName())) {
-                if (found) {
+                if (foundExact) {
                     throw new RepositoryException(JcrI18n.ambiguousPrimaryItemName.text(primaryItemName));
                 }
-                found = true;
+                foundExact = true;
             }
         }
 
-        if (primaryItemName != null && !found) {
+        if (primaryItemName != null && !foundExact && !foundResidual) {
             throw new RepositoryException(JcrI18n.invalidPrimaryItemName.text(primaryItemName));
         }
     }
