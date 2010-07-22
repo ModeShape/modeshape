@@ -337,6 +337,9 @@ public class CndImporter {
             } else if (tokens.canConsumeAnyOf("NOQUERY", "NOQ")) {
                 tokens.canConsume('?');
                 isQueryable = false;
+            } else if (tokens.canConsumeAnyOf("QUERY", "Q")) {
+                tokens.canConsume('?');
+                isQueryable = true;
             } else if (tokens.canConsumeAnyOf("PRIMARYITEM", "!")) {
                 primaryItem = parseName(tokens);
                 tokens.canConsume('?');

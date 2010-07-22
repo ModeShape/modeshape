@@ -35,6 +35,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.text.Jsr283Encoder;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.graph.ExecutionContext;
@@ -47,8 +49,6 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.request.CreateNodeRequest;
-import org.junit.Before;
-import org.junit.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -365,7 +365,7 @@ public class XmlHandlerTest {
         assertNode("Cars/Sports/car", unstructPrimaryType, "name=Infiniti G37", "maker=Infiniti", "model=G37");
         assertProperties("Cars/Sports", unstructPrimaryType);
         assertProperties("Cars", unstructPrimaryType);
-        
+
     }
 
     @Test
@@ -402,17 +402,21 @@ public class XmlHandlerTest {
         assertNode("Cars");
         assertNode("Cars/Hybrid");
         assertNode("Cars/Hybrid/car", "name=Toyota Prius", "maker=Toyota", "model=Prius");
-        assertNode("Cars/Hybrid/car", "name=Toyota Highlander", "maker=Toyota", "model=Highlander");
-        assertNode("Cars/Hybrid/car");
-        assertProperties("Cars/Hybrid/car", "name=Nissan Altima", "maker=Nissan", "model=Altima");
+        assertNode("Cars/Hybrid/car[2]", "name=Toyota Highlander", "maker=Toyota", "model=Highlander");
+        assertNode("Cars/Hybrid/car[3]");
+        assertProperties("Cars/Hybrid/car[3]", "name=Nissan Altima", "maker=Nissan", "model=Altima");
         assertNode("Cars/Sports");
         assertNode("Cars/Sports/car", "name=Aston Martin DB9", "maker=Aston Martin", "model=DB9");
         assertNode("Cars/Sports/car");
-        assertNode("Cars/Sports/car/driver", "name=Tony Stewart");
-        assertProperties("Cars/Sports/car", "name=Infiniti G37", "maker=Infiniti", "model=G37", "category=Turbocharged=My Sedan");
-        assertNode("Cars/Sports/car");
-        assertNode("Cars/Sports/car/jcr:xmltext", "jcr:xmlcharacters=This is my text ");        
-        assertNode("Cars/Sports/car/jcr:xmltext", "jcr:xmlcharacters=that should be merged");
+        assertNode("Cars/Sports/car[2]/driver", "name=Tony Stewart");
+        assertProperties("Cars/Sports/car[2]",
+                         "name=Infiniti G37",
+                         "maker=Infiniti",
+                         "model=G37",
+                         "category=Turbocharged=My Sedan");
+        assertNode("Cars/Sports/car[3]");
+        assertNode("Cars/Sports/car[3]/jcr:xmltext", "jcr:xmlcharacters=This is my text ");
+        assertNode("Cars/Sports/car[3]/jcr:xmltext", "jcr:xmlcharacters=that should be merged");
         assertProperties("Cars/Sports/car", "name=Infiniti G37", "maker=Infiniti", "model=G37");
     }
 
@@ -463,7 +467,7 @@ public class XmlHandlerTest {
     }
 
     protected void assertProperties( String path,
-                               String... properties ) {
+                                     String... properties ) {
         // Create the expected path ...
         PathFactory factory = context.getValueFactories().getPathFactory();
         Path expectedPath = parentPath != null ? factory.create(parentPath, path) : factory.create("/" + path);
@@ -565,21 +569,19 @@ public class XmlHandlerTest {
             }
         }
 
-        public void setProperties( Path path, 
+        public void setProperties( Path path,
                                    Property... properties ) {
             if (properties.length == 0) {
                 return;
-            }
-            else if (properties.length == 1) {
+            } else if (properties.length == 1) {
                 create(path, properties[0]);
+            } else {
+                Property[] additionalProperties = new Property[properties.length - 1];
+                System.arraycopy(properties, 1, additionalProperties, 0, properties.length - 1);
+                create(path, properties[0], additionalProperties);
             }
-            else {
-               Property[] additionalProperties = new Property[properties.length - 1];
-               System.arraycopy(properties, 1, additionalProperties, 0, properties.length - 1);
-               create(path, properties[0], additionalProperties);
-            }
-        }        
-        
+        }
+
         @SuppressWarnings( "synthetic-access" )
         public ExecutionContext getExecutionContext() {
             return XmlHandlerTest.this.context;

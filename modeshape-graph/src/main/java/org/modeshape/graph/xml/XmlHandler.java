@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.parsers.SAXParser;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.text.TextDecoder;
@@ -328,12 +329,12 @@ public class XmlHandler extends DefaultHandler2 {
         Name nodeName = null;
 
         ElementEntry element;
-        if (!elementStack.isEmpty()) {
+        if (elementStack.isEmpty()) {
+            element = new ElementEntry(null, currentPath, null);
+        } else {
             // Add the parent
             elementStack.peek().addAsNode();
             element = new ElementEntry(elementStack.peek(), currentPath, null);
-        } else {
-            element = new ElementEntry(null, currentPath, null);
         }
         elementStack.addFirst(element);
 
@@ -505,6 +506,7 @@ public class XmlHandler extends DefaultHandler2 {
         private Name name;
         private Multimap<Name, Object> properties;
         private ElementEntryState state;
+        private Map<Name, AtomicInteger> childSnsIndexes = new HashMap<Name, AtomicInteger>();
 
         protected ElementEntry( ElementEntry parent,
                                 Path pathToParent,
@@ -516,9 +518,22 @@ public class XmlHandler extends DefaultHandler2 {
             properties = LinkedHashMultimap.create();
         }
 
+        private int getNextSnsForChildNamed( Name childName ) {
+            AtomicInteger snsIndex = childSnsIndexes.get(childName);
+            if (snsIndex == null) {
+                snsIndex = new AtomicInteger(0);
+                childSnsIndexes.put(childName, snsIndex);
+            }
+            return snsIndex.addAndGet(1);
+        }
+
         protected void setName( Name name ) {
             this.name = name;
-            pathToThisNode = pathFactory.create(pathToParent, name);
+            int snsIndex = 1;
+            if (parent != null) {
+                snsIndex = parent.getNextSnsForChildNamed(name);
+            }
+            pathToThisNode = pathFactory.create(pathToParent, name, snsIndex);
         }
 
         protected void addProperty( Name propertyName,
@@ -532,7 +547,7 @@ public class XmlHandler extends DefaultHandler2 {
             if (state == ElementEntryState.NODE) return;
 
             state = ElementEntryState.NODE;
-            destination.create(pathFactory.create(pathToParent, name), Collections.<Property>emptyList());
+            destination.create(pathToThisNode, Collections.<Property>emptyList());
         }
 
         protected void addAsPropertySetTo( Object value ) {
