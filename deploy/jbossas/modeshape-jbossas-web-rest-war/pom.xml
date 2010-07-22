@@ -18,6 +18,12 @@
             <artifactId>modeshape-jbossas-service</artifactId>
             <version>${project.version}</version>
         </dependency>
+        
+        <dependency>
+            <groupId>org.modeshape.deploy</groupId>
+            <artifactId>modeshape-jbossas-console</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
