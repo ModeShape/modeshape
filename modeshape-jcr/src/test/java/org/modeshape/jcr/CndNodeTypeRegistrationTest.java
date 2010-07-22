@@ -66,7 +66,7 @@ public class CndNodeTypeRegistrationTest {
         repoTypeManager = new RepositoryNodeTypeManager(repository, true);
         try {
             this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/modeshape/jcr/jsr_283_builtins.cnd",
-                "/org/modeshape/jcr/dna_builtins.cnd"}));
+                "/org/modeshape/jcr/modeshape_builtins.cnd"}));
         } catch (RepositoryException re) {
             re.printStackTrace();
             throw new IllegalStateException("Could not load node type definition files", re);

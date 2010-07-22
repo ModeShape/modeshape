@@ -28,50 +28,50 @@
 <jcr = "http://www.jcp.org/jcr/1.0">
 <nt  = "http://www.jcp.org/jcr/nt/1.0">
 <mix = "http://www.jcp.org/jcr/mix/1.0">
-<dna = "http://www.modeshape.org/1.0">
+<mode = "http://www.modeshape.org/1.0">
 
 //------------------------------------------------------------------------------
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
 
-[dna:namespace] > nt:base
-- dna:uri (string) primary protected version
+[mode:namespace] > nt:base
+- mode:uri (string) primary protected version
 
-[dna:namespaces] > nt:base
-+ * (dna:namespace) = dna:namespace protected version
+[mode:namespaces] > nt:base
++ * (mode:namespace) = mode:namespace protected version
 
-[dna:nodeTypes] > nt:base
+[mode:nodeTypes] > nt:base
 + * (nt:nodeType) = nt:nodeType protected version
 
-[dna:lock] > nt:base
-- dna:lockedUuid (string) protected ignore
+[mode:lock] > nt:base
+- mode:lockedUuid (string) protected ignore
 - jcr:lockOwner (string) protected ignore
-- dna:lockingSession (string) protected ignore
-- dna:expirationDate (date) protected ignore
-- dna:sessionScope (boolean) protected ignore
+- mode:lockingSession (string) protected ignore
+- mode:expirationDate (date) protected ignore
+- mode:sessionScope (boolean) protected ignore
 - jcr:isDeep (boolean) protected ignore
-- dna:isHeldBySession (boolean) protected ignore
-- dna:workspace (string) protected ignore
+- mode:isHeldBySession (boolean) protected ignore
+- mode:workspace (string) protected ignore
 
-[dna:locks] > nt:base
-+ * (dna:lock) = dna:lock protected ignore
+[mode:locks] > nt:base
++ * (mode:lock) = mode:lock protected ignore
 
-[dna:versionStorage] > nt:base
+[mode:versionStorage] > nt:base
 + * (nt:versionHistory) = nt:versionHistory protected ignore
 
-[dna:system] > nt:base
-+ dna:namespaces (dna:namespaces) = dna:namespaces autocreated mandatory protected abort
-+ dna:locks (dna:locks) = dna:locks autocreated mandatory protected abort
-+ jcr:nodeTypes (dna:nodeTypes) = dna:nodeTypes autocreated mandatory protected abort
-+ jcr:versionStorage (dna:versionStorage) = dna:versionStorage autocreated mandatory protected abort
+[mode:system] > nt:base
++ mode:namespaces (mode:namespaces) = mode:namespaces autocreated mandatory protected abort
++ mode:locks (mode:locks) = mode:locks autocreated mandatory protected abort
++ jcr:nodeTypes (mode:nodeTypes) = mode:nodeTypes autocreated mandatory protected abort
++ jcr:versionStorage (mode:versionStorage) = mode:versionStorage autocreated mandatory protected abort
 
-[dna:root] > nt:base, mix:referenceable orderable
+[mode:root] > nt:base, mix:referenceable orderable
 - * (undefined) multiple version
 - * (undefined) version
-+ jcr:system (dna:system) = dna:system autocreated mandatory protected ignore
++ jcr:system (mode:system) = mode:system autocreated mandatory protected ignore
 + * (nt:base) = nt:unstructured multiple version
 
-[dna:resource] > nt:base
+[mode:resource] > nt:base
 - jcr:data (binary) primary mandatory
 - jcr:encoding (string) copy
 - jcr:lastModified (date) mandatory ignore
