@@ -92,22 +92,24 @@
         </fileSet>
 
     </fileSets>
-
-    <moduleSets>
-
-
-    <!-- Include the JOPR plugin -->    
-    <moduleSet>
-        <includes>
-            <include>org.modeshape.deploy:org.modeshape.console</include>
-        </includes>
-
-        <binaries>        
-           <outputDirectory>deploy/admin-console.war/plugins</outputDirectory>
-          <fileMode>0644</fileMode>
-        </binaries>
+    <moduleSets> 
+        <!-- Include the JOPR plugin -->    
+        <moduleSet>
+	        <includeSubModules>true</includeSubModules>
+	               
+	        <includes>
+	            <include>org.modeshape.deploy:modeshape-jbossas-console</include>
+	        </includes>
+	
+	        <binaries>        
+	          <includeDependencies>false</includeDependencies>
+	          <unpack>false</unpack>
+	          <outputDirectory>deploy/admin-console.war/plugins</outputDirectory>
+	          <fileMode>0644</fileMode>
+	        </binaries>
       
-    </moduleSet>        
+        </moduleSet>        
     </moduleSets> 
+
 
 </assembly>
