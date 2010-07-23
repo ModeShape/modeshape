@@ -38,6 +38,7 @@
             <include>org.apache.lucene:lucene-analyzers</include>
             <include>org.apache.lucene:lucene-snowball</include>
             <include>org.apache.lucene:lucene-regex</include>
+            <include>org.codehaus.jettison:jettison</include>
 
           </includes>
           <excludes>
@@ -56,6 +57,7 @@
             <include>org.jboss.resteasy:resteasy-jaxb-provider</include>
             <include>org.jboss.resteasy:resteasy-jettison-provider</include>
             <include>org.jboss.resteasy:jaxrs-api</include>
+            
           </includes>
     
         </dependencySet>
