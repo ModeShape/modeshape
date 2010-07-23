@@ -48,7 +48,7 @@ import org.modeshape.jcr.JcrRepository;
  * A <code>ManagedEngine</code> instance is a JBoss managed object for a {@link JcrEngine}.
  */
 @Immutable
-@ManagementObject( name = "ModeShapeEngine", description = "A ModeShape engine", componentType = @ManagementComponent( type = "Modeshape", subtype = "Engine" ), properties = ManagementProperties.EXPLICIT )
+@ManagementObject( name = "ModeShapeEngine", description = "A ModeShape engine", componentType = @ManagementComponent( type = "ModeShape", subtype = "Engine" ), properties = ManagementProperties.EXPLICIT )
 public final class ManagedEngine implements ModeShapeManagedObject {
     
     public ManagedEngine() {
