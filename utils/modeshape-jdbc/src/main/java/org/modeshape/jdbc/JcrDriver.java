@@ -29,6 +29,8 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.jcr.Repository;
 import javax.naming.Context;
@@ -86,12 +88,26 @@ import org.modeshape.jdbc.util.Collections;
  * </ul>
  * Note that any use of URL encoding ('%' followed by a two-digit hexadecimal value) will be decoded before being used.
  * </p>
+ * <br /><br />
+ * <li>configured for <i>embedded</i> usage using local configuration file.
+ * * <pre>
+ *     jdbc:jcr:file:{configFileName}?{firstProperty}&amp;{secondProperty}&amp;...
+ * </pre>
+ * where
+ * <ul>
+ * <li><strong>{configFileName}</strong> is the file that defines how the JcrEngine is configured at boot time.</li>
+ * <li><strong>{firstProperty}</strong> consists of the first property name followed by '=' followed by the property's value;</li>
+ * <li><strong>{secondProperty}</strong> consists of the second property name followed by '=' followed by the property's value;</li>
+ * </ul>
+ * Note that any use of URL encoding ('%' followed by a two-digit hexadecimal value) will be decoded before being used.
+ *
  */
 
 public class JcrDriver implements java.sql.Driver {
+	private static Logger logger = Logger.getLogger("org.modeshape.jdbc"); //$NON-NLS-1$
 
     public static final String WORKSPACE_PROPERTY_NAME = "workspace";
-    public static final String REPOSITORY_PROPERTY_NAME = "repository";
+    public static final String REPOSITORY_PROPERTY_NAME = "repositoryName";
     public static final String USERNAME_PROPERTY_NAME = "username";
     public static final String PASSWORD_PROPERTY_NAME = "password";
 
@@ -100,13 +116,33 @@ public class JcrDriver implements java.sql.Driver {
                                                                                         USERNAME_PROPERTY_NAME,
                                                                                         PASSWORD_PROPERTY_NAME);
 
+    /* URL Prefix used for JNDI access */
     public static final String JNDI_URL_PREFIX = "jdbc:jcr:jndi:";
-     
+    /* URL Prefix used for remote access */ 
     public static final String HTTP_URL_PREFIX = "jdbc:jcr:http://";
+    /* URL Prefix used for embedded access */
+    public static final String FILE_URL_PREFIX = "jdbc:jcr:file:";
+
  
     private static DriverMetadata driverMetadata;
 
     public JcrContextFactory contextFactory = null;
+    
+    private static JcrDriver INSTANCE = new JcrDriver();
+    
+    static {
+        try {
+            DriverManager.registerDriver(INSTANCE);
+        } catch(SQLException e) {
+            // Logging
+            String logMsg = JdbcI18n.driverErrorRegistering.text(e.getMessage()); //$NON-NLS-1$
+            logger.log(Level.SEVERE, logMsg);
+        }
+    }
+    
+    public static JcrDriver getInstance() {
+        return INSTANCE;
+    }
 	
 
     /**

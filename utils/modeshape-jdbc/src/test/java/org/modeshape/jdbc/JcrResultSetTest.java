@@ -59,7 +59,7 @@ public class JcrResultSetTest {
         MockitoAnnotations.initMocks(this);
 
         result = TestUtil.createQueryResult();
-        resultSet = new JcrResultSet(statement, result);
+        resultSet = new JcrResultSet(statement, result, null);
     }
 
     @After

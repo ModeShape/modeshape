@@ -23,6 +23,7 @@
  */
 package org.modeshape.jdbc.delegate;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverPropertyInfo;
@@ -33,82 +34,57 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.jcr.Credentials;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.ValueFormatException;
 import javax.jcr.Workspace;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeIterator;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 
-import org.modeshape.jcr.api.Repositories;
+import org.modeshape.graph.property.NamespaceException;
+import org.modeshape.jcr.JcrConfiguration;
+import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jdbc.JcrConnection;
 import org.modeshape.jdbc.JcrDriver;
 import org.modeshape.jdbc.JcrMetaData;
 import org.modeshape.jdbc.JdbcI18n;
 import org.modeshape.jdbc.ModeShapeMetaData;
-import org.modeshape.jdbc.JcrDriver.JcrContextFactory;
 import org.modeshape.jdbc.util.StringUtil;
 import org.modeshape.jdbc.util.TextDecoder;
 import org.modeshape.jdbc.util.UrlEncoder;
 
 /**
- * The LocalRepositoryDelegate provides a local Repository implementation to access the Jcr layer via JNDI Lookup.
+ * The FileRepositoryDelegate provides a local Repository implementation so that ModeShape JcrEngine will
+ * be run local to the JcrDriver.   This is also referred to as an embedded mode.
  */
-public class LocalRepositoryDelegate implements RepositoryDelegate {
-    private static final String JNDI_EXAMPLE_URL = JcrDriver.JNDI_URL_PREFIX
-	    + "{jndiName}";
+public class FileRepositoryDelegate implements RepositoryDelegate {
+    private static final String FILE_EXAMPLE_URL = JcrDriver.FILE_URL_PREFIX
+	    + "//file.path";
     
     public static final TextDecoder URL_DECODER = new UrlEncoder();
 
-
-     private JcrContextFactory jcrContext = null;
-    
     private QueryResult jcrResults;
     private Query jcrQuery;
-    private JNDIConnectionInfo connInfo = null;
+    private FileConnectionInfo connInfo = null;
     private Session session;
     private Repository repository = null;
     private Set<String> repositoryNames = null;
-
-    public LocalRepositoryDelegate(String url, Properties info,
-	    JcrContextFactory contextFactory) {
+ 
+    public FileRepositoryDelegate(String url, Properties info) {
 	super();
 
-	if (contextFactory == null) {
-	    jcrContext = new JcrContextFactory() {
-		public Context createContext(Properties properties)
-				throws NamingException {
-		    		    
-		    InitialContext initContext = ( (properties == null || properties.isEmpty()) ? new InitialContext()
-		    : new InitialContext(properties));
-
-		    return initContext;
-		}
-	    };
-	} else {
-	    this.jcrContext = contextFactory;
-	}
-	connInfo = new JNDIConnectionInfo(url, info);
+		connInfo = new FileConnectionInfo(url, info);
 
     }
     
     protected Session session() throws RepositoryException {
         if (session == null) {
-            Credentials credentials = connInfo.getCredentials();
-            String workspaceName = connInfo.getWorkspaceName();
- 
-                if (workspaceName != null) {
-                    this.session = credentials != null ? repository.login(credentials, workspaceName) : repository.login(workspaceName);
-                } else {
-                    this.session = credentials != null ? repository.login(credentials) : repository.login();
-                }
-             // this shouldn't happen, but in testing it did occur only because of the repository not being setup correctly
+        	
+        	this.session =  repository.login();
+            // this shouldn't happen, but in testing it did occur only because of the repository not being setup correctly
             assert session != null;
         }
         return session;
@@ -136,99 +112,49 @@ public class LocalRepositoryDelegate implements RepositoryDelegate {
      */
     @Override
     public QueryResult execute(String query, String language) throws RepositoryException {
-	jcrQuery = null;
-	jcrResults = null;
-
-	// Create the query ...
-	jcrQuery = session().getWorkspace().getQueryManager().createQuery(query,
-		language);
-	jcrResults = jcrQuery.execute();
-
-	return jcrResults;// always a ResultSet
+		jcrQuery = null;
+		jcrResults = null;
+	
+		// Create the query ...
+		jcrQuery = session().getWorkspace().getQueryManager().createQuery(query,
+			language);
+		jcrResults = jcrQuery.execute();
+	
+		return jcrResults;// always a ResultSet
 
     }
 
     @Override
     public Connection createConnection() throws SQLException {
-    	// Look up the object in JNDI and find the JCR Repository object ...
- 	String jndiName = connInfo.getJndiName();
-	if (jndiName == null) {
-	    String msg = JdbcI18n.urlMustContainJndiNameOfRepositoryOrRepositoriesObject
-		    .text();
-	    throw new SQLException(msg);
-	}
-
-	Context context = null;
-	try {
-	    context = this.jcrContext.createContext(connInfo.getProperties());
-	} catch (NamingException e) {
-	    throw new SQLException(JdbcI18n.unableToGetJndiContext.text(e
-		    .getLocalizedMessage()));
-	}
-	if (context == null) {
-	    throw new SQLException(JdbcI18n.unableToFindObjectInJndi
-		    .text(jndiName));
-	    
-	}
-	repository = null;
-	try {
-	           
-	    Object target = context.lookup(jndiName);
-	    String repositoryName = connInfo.getRepositoryName();
-
-	    if (target instanceof Repositories) {
-		Repositories repositories = (Repositories) target;
-
-		if (repositoryName == null) {
-		    repositoryNames = repositories.getRepositoryNames();
-		    if (repositoryNames == null || repositoryNames.isEmpty()) {
-			throw new SQLException(JdbcI18n.noRepositoryNamesFound.text());
-			
-		    }
-		    if(repositoryNames != null &&
-			    repositoryNames.size() == 1) {
-		    	String repoName = repositoryNames.iterator().next();
-		    	if (repositoryName == null) {
-		    		repositoryName = repoName;
-				    connInfo.setRepositoryName(repositoryName);
-		    	} else if (!repositoryName.equals(repoName)) {
-				    throw new SQLException(JdbcI18n.unableToFindNamedRepository
-						    .text(jndiName, repositoryName));
-		    	}
-			
-		    } else {
-			throw new SQLException(JdbcI18n.objectInJndiIsRepositories
-				.text(jndiName));
-		    }
-		}
+    	
 		try {
-		    repository = repositories.getRepository(repositoryName);
-		} catch (RepositoryException e) {
-		    throw new SQLException(JdbcI18n.unableToFindNamedRepository
-			    .text(jndiName, repositoryName));
-		}
-	    } else if (target instanceof Repository) {
-			repository = (Repository) target;
-			repositoryNames = new HashSet<String>(1);
 			
-			if (repositoryName == null) {
-				repositoryName = ("DefaultRepository");
-				connInfo.setRepositoryName(repositoryName);
+			String filename = connInfo.getFileName();
+			if (filename == null) {
+			    String msg = JdbcI18n.unableToGetJndiContext.text(connInfo.getEffectiveUrl());
+			    throw new SQLException(msg);
 			}
 			
-			repositoryNames.add( repositoryName);
-	    } else {
-			throw new SQLException(
-				JdbcI18n.objectInJndiMustBeRepositoryOrRepositories
-					.text(jndiName));
-	    }
-	    assert repository != null;
-	} catch (NamingException e) {
-	    throw new SQLException(JdbcI18n.unableToFindObjectInJndi
-		    .text(jndiName), e);
-	}
+			File f = new File(filename);
+			JcrConfiguration  jcrConfig = new JcrConfiguration().loadFrom(f);
+		    JcrEngine eng = jcrConfig.build();
+		    eng.start();
+		    
+		    String repositoryName = eng.getRepositoryNames().iterator().next();
 
-	return new JcrConnection(repository, connInfo, this);
+		    repository = eng.getRepository(repositoryName);
+		    
+		    this.connInfo.setRepositoryName(repositoryName);
+		    
+			repositoryNames = new HashSet<String>(1);
+			repositoryNames.add(repositoryName);
+			
+		    assert repository != null;
+		} catch (Throwable e) {
+			throw new SQLException(e.getMessage(), e);
+		}
+
+		return new JcrConnection(repository, connInfo, this);
     }
 
     public ConnectionInfo getConnectionInfo() {
@@ -340,56 +266,56 @@ public class LocalRepositoryDelegate implements RepositoryDelegate {
         return new JcrMetaData(connection, localSession);
     }
 
-    protected class JNDIConnectionInfo extends ConnectionInfo {
-	private String jndiName;
+    protected class FileConnectionInfo extends ConnectionInfo {
+	private String fileName;
 
 	/**
 	 * @param url
 	 * @param properties
 	 */
-	protected JNDIConnectionInfo(String url, Properties properties) {
+	protected FileConnectionInfo(String url, Properties properties) {
 	    super(url, properties);
 	    init();
 
 	}
 
-	protected String getJndiName() {
-	    return jndiName;
+	
+	protected String getFileName() {
+	    return fileName;
 	}
 
 	private void init() {
 	    Properties props = getProperties() != null ? (Properties) getProperties().clone() : new Properties();
-	    jndiName = getUrl().substring(
-		    JcrDriver.JNDI_URL_PREFIX.length());
+	    fileName = getUrl().substring(
+		    JcrDriver.FILE_URL_PREFIX.length());
 
 	    // Find any URL parameters ...
-	    int questionMarkIndex = jndiName.indexOf('?');
+	    int questionMarkIndex = fileName.indexOf('?');
 	    if (questionMarkIndex != -1) {
-		if (jndiName.length() > questionMarkIndex + 1) {
-		    String paramStr = jndiName.substring(questionMarkIndex + 1);
-		    for (String param : paramStr.split("&")) {
-			String[] pair = param.split("=");
-			if (pair.length > 1) {
-			    String key = URL_DECODER
-				    .decode(pair[0] != null ? pair[0].trim()
-					    : null);
-			    String value = URL_DECODER
-				    .decode(pair[1] != null ? pair[1].trim()
-					    : null);
-			    if (!props.containsKey(key)) {
-				props.put(key, value);
+			if (fileName.length() > questionMarkIndex + 1) {
+			    String paramStr = fileName.substring(questionMarkIndex + 1);
+			    for (String param : paramStr.split("&")) {
+				String[] pair = param.split("=");
+				if (pair.length > 1) {
+				    String key = URL_DECODER
+					    .decode(pair[0] != null ? pair[0].trim()
+						    : null);
+				    String value = URL_DECODER
+					    .decode(pair[1] != null ? pair[1].trim()
+						    : null);
+				    if (!props.containsKey(key)) {
+					props.put(key, value);
+				    }
+				}
 			    }
 			}
-		    }
-		}
-		jndiName = jndiName.substring(0, questionMarkIndex).trim();
+			fileName = fileName.substring(0, questionMarkIndex).trim();
 	    }
 
 	    Properties newprops = new Properties(props);
 	    this.setProperties(newprops);
 	    String url = getUrl();
 	    this.setUrl(url != null ? url.trim() : null);
-
 	}
 
 	/**
@@ -400,8 +326,8 @@ public class LocalRepositoryDelegate implements RepositoryDelegate {
 	 */
 	@Override
 	public String getEffectiveUrl() {
-	    StringBuilder url = new StringBuilder(JcrDriver.JNDI_URL_PREFIX);
-	    url.append(this.jndiName);
+	    StringBuilder url = new StringBuilder(JcrDriver.FILE_URL_PREFIX);
+	    url.append(this.fileName);
 	    char propertyDelim = '?';
 	    for (String propertyName : getProperties().stringPropertyNames()) {
 		String value = getProperties().getProperty(propertyName);
@@ -417,20 +343,17 @@ public class LocalRepositoryDelegate implements RepositoryDelegate {
 	    return url.toString();
 	}
 	
-	    @SuppressWarnings("synthetic-access")
 	    @Override
 	    public DriverPropertyInfo[] getPropertyInfos() {
-		JcrDriver.JcrContextFactory cf = jcrContext;
 		List<DriverPropertyInfo> results = new ArrayList<DriverPropertyInfo>();
 		if (getUrl() == null) {
 		    DriverPropertyInfo info = new DriverPropertyInfo(
 			    JdbcI18n.urlPropertyName.text(), null);
 		    info.description = JdbcI18n.urlPropertyDescription
-			    .text(JNDI_EXAMPLE_URL);
+			    .text(FILE_EXAMPLE_URL);
 		    info.required = true;
-		    info.choices = new String[] { JNDI_EXAMPLE_URL };
+		    info.choices = new String[] { FILE_EXAMPLE_URL };
 		    results.add(info);
-		    cf = null;
 		}
 		if (getUsername() == null) {
 		    DriverPropertyInfo info = new DriverPropertyInfo(
@@ -448,34 +371,7 @@ public class LocalRepositoryDelegate implements RepositoryDelegate {
 		    info.choices = null;
 		    results.add(info);
 		}
-		boolean nameRequired = false;
-		if (getRepositoryName() == null) {
-		    boolean found = false;
-		    if (cf != null) {
-			try {
-			    Context context = cf
-				    .createContext(getProperties());
-			    Object obj = context.lookup(  ((JNDIConnectionInfo) getConnectionInfo()).getJndiName() );
-			    if (obj instanceof Repositories) {
-				nameRequired = true;
-				found = true;
-			    } else if (obj instanceof Repository) {
-				found = true;
-			    }
-			} catch (NamingException e) {
-			    // do nothing about it ...
-			}
-		    }
-		    if (nameRequired || !found) {
-			DriverPropertyInfo info = new DriverPropertyInfo(
-				JdbcI18n.repositoryNamePropertyName.text(), null);
-			info.description = JdbcI18n.repositoryNamePropertyDescription
-				.text();
-			info.required = nameRequired;
-			info.choices = null;
-			results.add(info);
-		    }
-		}
+
 		if (getWorkspaceName() == null) {
 		    DriverPropertyInfo info = new DriverPropertyInfo(
 			    JdbcI18n.workspaceNamePropertyName.text(), null);
@@ -485,7 +381,9 @@ public class LocalRepositoryDelegate implements RepositoryDelegate {
 		    results.add(info);
 		}
 		return results.toArray(new DriverPropertyInfo[results.size()]);
+
 	    }
+
     }
 
 }

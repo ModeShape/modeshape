@@ -35,6 +35,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 import java.util.Set;
 
 import javax.jcr.RepositoryException;
@@ -356,6 +357,11 @@ public class JcrStatementTest {
 	public NodeType nodeType(String name) {
 	    return null;
 	}
+	
+	@Override
+    public List<NodeType> nodeTypes( ) throws RepositoryException {
+    	return null;
+    }
 
 	@Override
 	public void rollback()  {

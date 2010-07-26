@@ -74,6 +74,15 @@ public abstract class ConnectionInfo {
     public String getRepositoryName() {
 	return properties.getProperty(JcrDriver.REPOSITORY_PROPERTY_NAME);
     }
+    
+    /**
+     * Call to set the repository name.  This is called when no repository name is set 
+     * on the URL, but there is only one repository in the list.
+     * @param repositoryName
+     */
+    void setRepositoryName(String repositoryName) {
+    	this.properties.setProperty(JcrDriver.REPOSITORY_PROPERTY_NAME, repositoryName);
+    }
 
     /**
      * Get the name of the workspace. This is not required, and if abscent
@@ -106,11 +115,11 @@ public abstract class ConnectionInfo {
 	return result != null ? result.toCharArray() : null;
     }
 
-    protected void setUrl(String url) {
+    void setUrl(String url) {
 	this.url = url;
     }
 
-    protected void setProperties(Properties properties) {
+    void setProperties(Properties properties) {
 	this.properties = properties;
     }
 

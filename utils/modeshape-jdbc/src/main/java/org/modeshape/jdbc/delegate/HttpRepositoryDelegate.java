@@ -28,6 +28,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -70,6 +71,11 @@ public class HttpRepositoryDelegate implements RepositoryDelegate {
     public NodeType nodeType( String name ) throws RepositoryException {
 	return null;
     }
+    
+    public List<NodeType> nodeTypes( ) throws RepositoryException {
+    	return null;
+    }
+
 
     @Override
     public Connection createConnection() throws SQLException {
@@ -110,7 +116,7 @@ public class HttpRepositoryDelegate implements RepositoryDelegate {
     }
     
     public Set<String> getRepositoryNames()  {
-	return Collections.EMPTY_SET;
+	return Collections.emptySet();
     }
     
     /**

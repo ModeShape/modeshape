@@ -24,6 +24,7 @@ package org.modeshape.jdbc.util;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.sql.SQLException;
 
 
 /** 
@@ -61,7 +62,11 @@ public abstract class StringLineReader extends Reader {
 
         int srcoff = currentLineIndex;        
         if (currentLine == null || (currentLine != null && (currentLine.length()-currentLineIndex) <= 0)) {            
-            currentLine = nextLine();
+            try {
+				currentLine = nextLine();
+			} catch (SQLException e) {
+				throw new IOException(e.getLocalizedMessage(), e);
+			}
             currentLineIndex = 0; 
             srcoff = currentLineIndex;
         }
@@ -87,6 +92,7 @@ public abstract class StringLineReader extends Reader {
      * Get the next line of data from the data source. 
      * @return String
      * @throws IOException
+     * @throws SQLException 
      */
-    abstract protected String nextLine() throws IOException; 
+    abstract protected String nextLine() throws IOException, SQLException; 
 }

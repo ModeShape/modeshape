@@ -32,7 +32,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.NClob;
 import java.sql.PreparedStatement;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -69,32 +68,19 @@ public class JcrConnection implements Connection {
     private boolean autoCommit = true;
     private int isolation = Connection.TRANSACTION_READ_COMMITTED;
     private SQLWarning warning;
-
-    // TODO: populate clientInfo from metadata.getClientInfoProperties():ResultSet
-    // once metadata implements method.
     private Properties clientInfo = new Properties();
     private DatabaseMetaData metadata;
-    private Map<String, Class<?>> typeMap = new HashMap<String, Class<?>>();
-    private Map<String, JcrType> builtInTypeMap;
     private RepositoryDelegate jcrDelegate;
 
     public JcrConnection( Repository repository,
                              ConnectionInfo info, 
                              RepositoryDelegate jcrDelegate ) {
-        this(repository, info, jcrDelegate, null);
-    }
 
-    protected JcrConnection( Repository repository,
-                             ConnectionInfo info,
-                             RepositoryDelegate jcrDelegate,
-                             Map<String, JcrType> builtInTypeMap ) {
         this.info = info;
         this.repository = repository;
         this.jcrDelegate = jcrDelegate;
-        this.builtInTypeMap = builtInTypeMap != null ? builtInTypeMap : JcrType.builtInTypeMap();
         assert this.info != null;
         assert this.repository != null;
-
     }
 
     public ConnectionInfo info() {
@@ -115,36 +101,6 @@ public class JcrConnection implements Connection {
          } catch (RepositoryException e) {
             throw new SQLException(e.getLocalizedMessage());
         }
-    }
-
-    /**
-     * Get the information about the type with the supplied name.
-     * 
-     * @param typeName the name of the type
-     * @return the type information for the type name
-     */
-    protected JcrType typeInfo( String typeName ) {
-        return builtInTypeMap.get(typeName);
-    }
-
-    /**
-     * Get the Java class that is used to represent values with the supplied JCR type name.
-     * 
-     * @param typeName the name of the type
-     * @return the class; never null
-     * @see ResultSetMetaData#getColumnClassName(int)
-     */
-    protected Class<?> typeClass( String typeName ) {
-        Class<?> type = typeMap.get(typeName);
-        if (type == null) {
-            JcrType typeInfo = builtInTypeMap.get(typeName);
-            if (typeInfo != null) {
-                type = typeInfo.getRepresentationClass();
-            } else {
-                type = String.class;
-            }
-        }
-        return type;
     }
 
     /**
@@ -471,13 +427,16 @@ public class JcrConnection implements Connection {
     }
 
     /**
+     * Retrieves the type map associated with this Connection object. The type map
+     * contains entries for undefined types. This method always returns an empty
+     * map since it is not possible to add entries to this type map
      * {@inheritDoc}
      * 
      * @see java.sql.Connection#getTypeMap()
      */
     @Override
     public Map<String, Class<?>> getTypeMap() {
-        return typeMap;
+        return new HashMap<String, Class<?>>(1);
     }
 
     /**
@@ -486,8 +445,8 @@ public class JcrConnection implements Connection {
      * @see java.sql.Connection#setTypeMap(java.util.Map)
      */
     @Override
-    public void setTypeMap( Map<String, Class<?>> map ) {
-        this.typeMap = map != null ? map : new HashMap<String, Class<?>>();
+    public void setTypeMap( Map<String, Class<?>> map ) throws SQLException {
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -521,7 +480,7 @@ public class JcrConnection implements Connection {
     @Override
     public Statement createStatement( int resultSetType,
                                       int resultSetConcurrency ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**

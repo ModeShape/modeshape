@@ -110,7 +110,7 @@ public class JcrDriverTest {
 
     @Test
     public void shouldHaveMinorVersion() {
-        assertThat(driver.getMinorVersion() > 0, is(TestUtil.hasMinorVersion()));
+        assertThat(driver.getMinorVersion(), is(TestUtil.minorVersion()));
     }
 
     @Test
@@ -237,7 +237,7 @@ public class JcrDriverTest {
 
     @Test
     public void shouldCreateConnectionInfoForUrlWithEscapedCharacters() throws SQLException{
-        validUrl = JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=My%20Workspace&username=j%20smith&password=secret&repository=My%20Repository";
+        validUrl = JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=My%20Workspace&username=j%20smith&password=secret&repositoryName=My%20Repository";
         ConnectionInfo info = driver.createConnectionInfo(validUrl, validProperties);
         assertThat(info.getWorkspaceName(), is("My Workspace"));
         assertThat(info.getUsername(), is("j smith"));

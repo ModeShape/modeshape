@@ -26,6 +26,7 @@ package org.modeshape.jdbc.delegate;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Set;
 
 import javax.jcr.RepositoryException;
@@ -56,8 +57,15 @@ public interface RepositoryDelegate {
      * @throws RepositoryException
      */
     NodeType nodeType( String name ) throws RepositoryException;
-
     
+    /**
+     * Call to get all the {@link NodeType}s defined.
+     * @return List of all the node types.
+     * @throws RepositoryException
+     */
+    List<NodeType> nodeTypes( ) throws RepositoryException;
+
+   
     /**
      * Call to execute the sql <code>query</code> based on the specified Jcr language.
      * 

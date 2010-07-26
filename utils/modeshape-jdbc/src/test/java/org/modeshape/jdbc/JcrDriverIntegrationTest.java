@@ -30,19 +30,19 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.naming.Context;
-import javax.jcr.RepositoryException;
 
 import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
@@ -82,11 +82,12 @@ import org.modeshape.jcr.JcrRepository.QueryLanguage;
  * example: DriverTestUtil.executeTest(this.connection, "SELECT * FROM [nt:base]", expected);
  * </p>
  */
-public class JcrDriverIntegrationTest {
+public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
 
-    protected static URI resourceUri( String name ) throws URISyntaxException {
-        return resourceUrl(name).toURI();
-    }
+	
+	public JcrDriverIntegrationTest() {
+		super();
+	}
 
     protected static URL resourceUrl( String name ) {
         return JcrDriverIntegrationTest.class.getClassLoader().getResource(name);
@@ -94,11 +95,6 @@ public class JcrDriverIntegrationTest {
 
     protected static InputStream resourceStream( String name ) {
         return JcrDriverIntegrationTest.class.getClassLoader().getResourceAsStream(name);
-    }
-
-    protected static String[] carColumnNames() {
-        return new String[] {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine", "car:mpgHighway",
-            "car:valueRating", "jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model", "car:msrp"};
     }
 
     @Mock
@@ -109,6 +105,8 @@ public class JcrDriverIntegrationTest {
     private static JcrEngine engine;
     private static JcrRepository repository;
     private JcrConnection connection;
+    private DatabaseMetaData dbmd;
+
 
     private static String jndiNameForRepository = "jcr/local";
     private static String validUrl = JcrDriver.JNDI_URL_PREFIX + jndiNameForRepository + "?repositoryName=cars";
@@ -171,11 +169,10 @@ public class JcrDriverIntegrationTest {
             session.getRootNode().addNode("NodeB", "nt:unstructured").setProperty("myUrl", "http://www.acme.com/foo/bar");
             session.save();
 
-            // Prime creating a first XPath query and SQL query ...
-            session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", JcrRepository.QueryLanguage.JCR_SQL2);
         } finally {
             session.logout();
         }
+        
 
     }
 
@@ -212,6 +209,11 @@ public class JcrDriverIntegrationTest {
         // validProperties.put(JcrDriver.PASSWORD_PROPERTY_NAME, "admin");
 
         connection = (JcrConnection)driver.connect(validUrl, validProperties);
+        
+       	dbmd = this.connection.getMetaData();
+       	
+       	// only test were comparing metadata is not available at this time
+        this.compareColumns = true;
 
     }
 
@@ -228,6 +230,7 @@ public class JcrDriverIntegrationTest {
         }
         driver = null;
         contextFactory = null;
+        dbmd = null;
     }
 
     @Test
@@ -246,8 +249,7 @@ public class JcrDriverIntegrationTest {
             "nt:unstructured", "car:Car", "car:Car", "car:Car", "car:Car", "nt:unstructured", "nt:unstructured",
             "nt:unstructured", "nt:unstructured", "nt:unstructured"};
 
-        DriverTestUtil.executeTest(this.connection, "SELECT * FROM [nt:base]", expected, 23);
-
+        executeTest(this.connection, "SELECT * FROM [nt:base]", expected, 23);
     }
 
     @Test
@@ -268,7 +270,7 @@ public class JcrDriverIntegrationTest {
             "Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    car:Car",
             "Lexus    IS350    2008    $36,305    4    5    18    25    null    null    null    car:Car",};
 
-        DriverTestUtil.executeTest(this.connection, "SELECT * FROM [car:Car]", expected, 12);
+        ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [car:Car]", expected, 12);
     }
 
     @Test
@@ -288,7 +290,7 @@ public class JcrDriverIntegrationTest {
             "Toyota    Prius    2008    $21,500    4    5    48    45    null    null    null    car:Car",
             "Toyota    Highlander    2008    $34,200    4    5    27    25    null    null    null    car:Car"};
 
-        DriverTestUtil.executeTest(this.connection, "SELECT * FROM [car:Car] ORDER BY [car:maker]", expected, 12);
+        ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [car:Car] ORDER BY [car:maker]", expected, 12);
 
     }
 
@@ -297,7 +299,7 @@ public class JcrDriverIntegrationTest {
         String[] expected = {"car:model[STRING]", "Altima", "Continental", "DB9", "DTS", "F-150", "G37", "H3", "Highlander",
             "IS350", "LR2", "LR3", "Prius"};
 
-        DriverTestUtil.executeTest(this.connection,
+        ConnectionResultsComparator.executeTest(this.connection,
                                    "SELECT car.[car:model] FROM [car:Car] As car WHERE car.[car:model] IS NOT NULL ORDER BY car.[car:model] ASC",
                                    expected,
                                    12);
@@ -321,7 +323,7 @@ public class JcrDriverIntegrationTest {
             "Bentley    Continental    2008    $170,990    null    null    10    17    null    null    null    car:Car",
             "Cadillac    DTS    2008    null    1    null    null    null    null    null    3.6 liter V6    car:Car"};
         // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
-        DriverTestUtil.executeTest(this.connection, "SELECT * FROM [car:Car] ORDER BY [car:msrp] DESC", expected, 12);
+        ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [car:Car] ORDER BY [car:msrp] DESC", expected, 12);
 
     }
 
@@ -332,7 +334,7 @@ public class JcrDriverIntegrationTest {
             "Nissan    Altima    2008    $18,260", "Toyota    Prius    2008    $21,500",
             "Toyota    Highlander    2008    $34,200"};
 
-        DriverTestUtil.executeTest(this.connection,
+        ConnectionResultsComparator.executeTest(this.connection,
                                    "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%'",
                                    expected,
                                    3);
@@ -348,7 +350,7 @@ public class JcrDriverIntegrationTest {
             "Nissan    Altima    2008    $18,260", "Toyota    Prius    2008    $21,500",
             "Toyota    Highlander    2008    $34,200"};
 
-        DriverTestUtil.executeTest(this.connection,
+        ConnectionResultsComparator.executeTest(this.connection,
                                    "SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid'",
                                    expected,
                                    3);
@@ -362,7 +364,7 @@ public class JcrDriverIntegrationTest {
             "nt:unstructured", "car:Car", "car:Car", "car:Car", "car:Car", "car:Car", "car:Car", "car:Car", "car:Car", "car:Car",
             "car:Car", "car:Car", "car:Car"};
 
-        DriverTestUtil.executeTest(this.connection, "SELECT * FROM [nt:unstructured]", expected, 22);
+        ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:unstructured]", expected, 22);
 
     }
 
@@ -376,7 +378,7 @@ public class JcrDriverIntegrationTest {
         String[] expected = {"jcr:path[STRING]    jcr:score[DOUBLE]    jcr:primaryType[STRING]",
             "/Cars/Utility    1.0    nt:unstructured", "/Cars/Hybrid    1.0    nt:unstructured",
             "/Cars/Sports    1.0    nt:unstructured", "/Cars/Luxury    1.0    nt:unstructured"};
-        DriverTestUtil.executeTest(this.connection,
+        ConnectionResultsComparator.executeTest(this.connection,
                                    "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%' ",
                                    expected,
                                    4,
@@ -395,12 +397,242 @@ public class JcrDriverIntegrationTest {
             "/Cars/Utility    1.0    nt:unstructured", "/Cars/Hybrid    1.0    nt:unstructured",
             "/Cars/Sports    1.0    nt:unstructured", "/Cars/Luxury    1.0    nt:unstructured"};
 
-        DriverTestUtil.executeTest(this.connection,
+        ConnectionResultsComparator.executeTest(this.connection,
                                    "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'",
                                    expected,
                                    4,
                                    QueryLanguage.JCR_SQL);
 
     }
+    
+    @Test
+    public void shouldGetCatalogs() throws SQLException {
+    	this.compareColumns = false;
+    	String[] expected = {
+    			"TABLE_CAT[String]",
+    			"cars"
+    			};
 
+    	ResultSet rs = dbmd.getCatalogs();
+	    assertResultsSetEquals(rs, expected); 	    
+	    assertRowCount(1);
+    }
+    
+    @Test
+    public void shouldGetTableTypes() throws SQLException {
+    	this.compareColumns = false;
+    	String[] expected = {
+    			"TABLE_TYPE[String]",
+    			"VIEW"
+    			};
+
+    	ResultSet rs = dbmd.getTableTypes();
+	    assertResultsSetEquals(rs, expected); 
+	    assertRowCount(1);
+    }
+    
+    @Test
+    public void shouldGetAllTables() throws SQLException {
+    	this.compareColumns = false;
+
+    	String[] expected = {
+    			"TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    TABLE_TYPE[String]    REMARKS[String]    TYPE_CAT[String]    TYPE_SCHEM[String]    TYPE_NAME[String]    SELF_REFERENCING_COL_NAME[String]    REF_GENERATION[String]",
+    			"cars    NULL    car:Car    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mix:created    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mix:etag    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mix:language    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mix:lastModified    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mix:lifecycle    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mix:lockable    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mix:managedRetention    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mix:mimeType    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mix:referenceable    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mix:shareable    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mix:simpleVersionable    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mix:title    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mix:versionable    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mode:defined    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mode:lock    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mode:locks    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mode:namespace    VIEW    Is Mixin: false    NULL    NULL    NULL    mode:uri    DERIVED",
+    			"cars    NULL    mode:namespaces    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mode:nodeTypes    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mode:resource    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:data    DERIVED",
+    			"cars    NULL    mode:root    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mode:system    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    mode:versionStorage    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:activity    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:address    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:base    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:childNodeDefinition    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:configuration    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:file    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:content    DERIVED",
+    			"cars    NULL    nt:folder    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:frozenNode    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:hierarchyNode    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:linkedFile    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:content    DERIVED",
+    			"cars    NULL    nt:naturalText    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:nodeType    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:propertyDefinition    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:query    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:resource    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:data    DERIVED",
+    			"cars    NULL    nt:unstructured    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:version    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:versionHistory    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:versionLabels    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:versionedChild    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED"    			};
+
+
+    	ResultSet rs = dbmd.getTables("%", "%", "%", new String[] {});
+    	
+	    assertResultsSetEquals(rs, expected); 
+	    assertRowCount(44);
+    }
+    
+    @Test
+    public void shouldGetNTPrefixedTables() throws SQLException {
+    	this.compareColumns = false;
+
+    	String[] expected = {
+    			"TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    TABLE_TYPE[String]    REMARKS[String]    TYPE_CAT[String]    TYPE_SCHEM[String]    TYPE_NAME[String]    SELF_REFERENCING_COL_NAME[String]    REF_GENERATION[String]",
+     			"cars    NULL    nt:activity    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:address    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:base    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:childNodeDefinition    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:configuration    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:file    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:content    DERIVED",
+    			"cars    NULL    nt:folder    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:frozenNode    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:hierarchyNode    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:linkedFile    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:content    DERIVED",
+    			"cars    NULL    nt:naturalText    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:nodeType    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:propertyDefinition    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:query    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:resource    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:data    DERIVED",
+    			"cars    NULL    nt:unstructured    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:version    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:versionHistory    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:versionLabels    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:versionedChild    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED"    			};
+
+
+    	ResultSet rs = dbmd.getTables("%", "%", "nt:%", new String[] {});
+	    assertResultsSetEquals(rs, expected); 
+	    assertRowCount(20);
+    }
+    
+    @Test
+    public void shouldGetResourceSuffixedTables() throws SQLException {
+    	this.compareColumns = false;
+
+    	String[] expected = {
+    			"TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    TABLE_TYPE[String]    REMARKS[String]    TYPE_CAT[String]    TYPE_SCHEM[String]    TYPE_NAME[String]    SELF_REFERENCING_COL_NAME[String]    REF_GENERATION[String]",
+    			"cars    NULL    mode:resource    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:data    DERIVED",
+    			"cars    NULL    nt:resource    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:data    DERIVED"
+    			};
+
+    	ResultSet rs = dbmd.getTables("%", "%", "%:resource", new String[] {});
+	    assertResultsSetEquals(rs, expected); 
+	    assertRowCount(20);
+    }
+    
+    @Test
+    public void shouldGetTablesThatContainNodeTpe() throws SQLException {
+    	this.compareColumns = false;
+
+    	String[] expected = {
+    			"TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    TABLE_TYPE[String]    REMARKS[String]    TYPE_CAT[String]    TYPE_SCHEM[String]    TYPE_NAME[String]    SELF_REFERENCING_COL_NAME[String]    REF_GENERATION[String]",
+    			"cars    NULL    mode:nodeTypes    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"cars    NULL    nt:nodeType    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED"
+    			};
+
+
+    	ResultSet rs = dbmd.getTables("%", "%", "%nodeType%", new String[] {});
+	    assertResultsSetEquals(rs, expected); 
+	    assertRowCount(2);
+    }
+    
+    @Test
+    public void shouldGetAllColumnsFor1Table() throws SQLException {
+    	this.compareColumns = false;
+    	
+    	String[] expected = {
+    			"TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
+    			"cars    NULL    car:Car    *    12    undefined    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    *    12    undefined    50    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:engine    12    String    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:lengthInInches    6    Double    20    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:maker    12    String    50    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:model    12    String    50    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:mpgCity    -5    Long    20    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:mpgHighway    -5    Long    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:msrp    12    String    50    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:userRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:valueRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:wheelbaseInInches    6    Double    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:year    12    String    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    jcr:mixinTypes    12    Name    20    NULL    0    0    2        NULL    0    0    0    14    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    15    NO    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"
+    			};
+
+
+    	ResultSet rs = dbmd.getColumns("%", "%", "car:Car", "%");
+	    assertResultsSetEquals(rs, expected); 
+	    assertRowCount(17);
+ 
+    }
+    
+    
+    @Test
+    public void shouldGetOnlyColumnsForCarPrefixedTables() throws SQLException {
+    	this.compareColumns = false;
+
+    	String[] expected = {
+    			"TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
+    			"cars    NULL    car:Car    *    12    undefined    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    *    12    undefined    50    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:engine    12    String    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:lengthInInches    6    Double    20    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:maker    12    String    50    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:model    12    String    50    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:mpgCity    -5    Long    20    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:mpgHighway    -5    Long    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:msrp    12    String    50    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:userRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:valueRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:wheelbaseInInches    6    Double    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    car:year    12    String    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    jcr:mixinTypes    12    Name    20    NULL    0    0    2        NULL    0    0    0    14    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    15    NO    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
+    			"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"
+    			};   	
+
+    	ResultSet rs = dbmd.getColumns("%", "%", "car%", "%");  
+	    assertResultsSetEquals(rs, expected); 
+	    assertRowCount(11);
+ 
+    }
+    
+    
+    
+    @Test
+    public void shouldGetOnlyMSRPColumnForCarTable() throws SQLException {
+    	this.compareColumns = false;
+    	
+    	String[] expected = {
+    			"TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
+    			"cars    NULL    car:Car    car:msrp    12    String    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0"
+    			};
+
+
+    	ResultSet rs = dbmd.getColumns("%", "%", "car:Car", "car:msrp");
+	    assertResultsSetEquals(rs, expected); 
+	    assertRowCount(1);
+ 
+    }
+ 
 }

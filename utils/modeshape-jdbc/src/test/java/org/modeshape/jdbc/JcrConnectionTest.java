@@ -276,15 +276,6 @@ public class JcrConnectionTest {
 	assertThat(conn.isReadOnly(), is(true));
     }
 
-    @Test
-    public void shouldCallSetTypeMap() throws SQLException {
-	// passing null resets the map to empty
-	conn.setTypeMap(null);
-	assertThat(conn.getTypeMap().size(), is(0));
-
-	conn.setTypeMap(new HashMap<String, Class<?>>());
-	assertEquals(conn.getTypeMap(), new HashMap<String, Class<?>>());
-    }
 
     @Test
     public void shouldCallIsWrapperFor() throws SQLException {

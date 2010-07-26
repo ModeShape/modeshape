@@ -47,6 +47,8 @@ public final class JdbcI18n {
     public static I18n driverVendor;
     public static I18n driverVendorUrl;
     public static I18n driverVersion;
+    
+    public static I18n driverErrorRegistering;
 
     public static I18n invalidUrlPrefix;
     public static I18n failedToReadPropertiesFromManifest;
@@ -85,6 +87,7 @@ public final class JdbcI18n {
     public static I18n currentRowNotSet;
     public static I18n noJcrTypeMapped;    
     public static I18n noRepositoryNamesFound;
+    public static I18n configurationFileNotSpecified;
 
     static {
         try {

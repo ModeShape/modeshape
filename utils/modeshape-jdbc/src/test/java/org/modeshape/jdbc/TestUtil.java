@@ -130,14 +130,14 @@ public class TestUtil {
         return nodes;
     }
 
-    public static boolean hasMinorVersion() {
+    public static int minorVersion() {
 
         String[] coords = DRIVER_VERSION.split("[.-]");
         @SuppressWarnings( "unused" )
         final int major = Integer.parseInt(coords[0]);
         final int minor = Integer.parseInt(coords[1]);
 
-        return (minor != 0);
+        return minor;
 
     }
 

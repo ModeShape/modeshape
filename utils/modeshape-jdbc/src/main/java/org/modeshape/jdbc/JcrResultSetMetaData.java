@@ -68,8 +68,8 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public String getColumnClassName( int column ) {
-        String typeName = getColumnTypeName(column);
-        return typeName != null ? connection.typeClass(typeName).getName() : String.class.getName();
+    	JcrType typeInfo = JcrType.typeInfo(getColumnTypeName(column));
+    	return typeInfo != null ? typeInfo.getRepresentationClass().getName() : String.class.getName();
     }
 
     /**
@@ -97,8 +97,7 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public int getColumnDisplaySize( int column ) {
-        String typeName = getColumnTypeName(column);
-        return connection.typeInfo(typeName).getNominalDisplaySize();
+    	return JcrType.typeInfo(getColumnTypeName(column)).getNominalDisplaySize();
     }
 
     /**
@@ -132,8 +131,8 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public int getColumnType( int column ) {
-        JcrType typeInfo = connection.typeInfo(getColumnTypeName(column));
-        return typeInfo != null ? typeInfo.getJdbcType() : Types.VARCHAR;
+    	JcrType typeInfo = JcrType.typeInfo(getColumnTypeName(column));
+    	return typeInfo != null ? typeInfo.getJdbcType() : Types.VARCHAR;
     }
 
     /**
@@ -159,8 +158,8 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public int getPrecision( int column ) {
-        JcrType typeInfo = connection.typeInfo(getColumnTypeName(column));
-        return typeInfo.getNominalDisplaySize();
+    	JcrType typeInfo = JcrType.typeInfo(getColumnTypeName(column));
+    	return typeInfo.getNominalDisplaySize();
     }
 
     /**
@@ -174,7 +173,7 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public int getScale( int column ) {
-        JcrType typeInfo = connection.typeInfo(getColumnTypeName(column));
+        JcrType typeInfo = JcrType.typeInfo(getColumnTypeName(column));
         if (typeInfo.getJcrType() == PropertyType.DOUBLE) {
             return 3; // pulled from thin air
         }
@@ -228,15 +227,8 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public boolean isCaseSensitive( int column ) {
-        JcrType typeInfo = connection.typeInfo(getColumnTypeName(column));
-        switch (typeInfo.getJcrType()) {
-            case PropertyType.DOUBLE:
-            case PropertyType.LONG:
-            case PropertyType.REFERENCE: // conversion is case-insensitive
-            case PropertyType.BOOLEAN: // conversion is case-insensitive
-                return false;
-        }
-        return true;
+        JcrType typeInfo = JcrType.typeInfo(getColumnTypeName(column));
+        return typeInfo.isCaseSensitive();
     }
 
     /**
@@ -356,14 +348,8 @@ public class JcrResultSetMetaData implements ResultSetMetaData {
      */
     @Override
     public boolean isSigned( int column ) {
-        JcrType typeInfo = connection.typeInfo(getColumnTypeName(column));
-        switch (typeInfo.getJcrType()) {
-            case PropertyType.DOUBLE:
-            case PropertyType.LONG:
-            case PropertyType.DATE:
-                return true;
-        }
-        return false;
+    	JcrType typeInfo = JcrType.typeInfo(getColumnTypeName(column));
+    	return typeInfo.isSigned();
     }
 
     /**

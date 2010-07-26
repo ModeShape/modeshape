@@ -48,7 +48,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
+
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
@@ -66,12 +66,10 @@ import org.modeshape.jdbc.util.IoUtil;
  */
 public class JcrResultSet implements ResultSet {
 
-    private static final Map<String, JcrType> TYPE_INFO = JcrType.builtInTypeMap();
-
     private boolean closed;
     private JcrStatement statement;
     private QueryResult jcrResults;
-    private JcrResultSetMetaData metadata;
+    private ResultSetMetaData metadata;
     private RowIterator rowIter;
     private Row row;
 
@@ -80,31 +78,37 @@ public class JcrResultSet implements ResultSet {
 
     private Map<String, Integer> columnIndexesByName;
 
-    // the length of columnIDs is number of columnnames plus 1, so that its 1 based, not zero based.
-    // and when method calls that takes an index arg, it doesn't need to be converted
     private String[] columnIDs = null;
 
     protected JcrResultSet( JcrStatement statement,
-                            QueryResult jcrResults ) throws SQLException {
+                            QueryResult jcrResults,
+                            ResultSetMetaData resultSetMetaData) throws SQLException {
         this.statement = statement;
         this.jcrResults = jcrResults;
-        this.metadata = new JcrResultSetMetaData(statement.connection(), jcrResults);
         assert this.statement != null;
         assert this.jcrResults != null;
-        try {
+        
+        if (resultSetMetaData != null) {
+        	this.metadata = resultSetMetaData;
+        } else {
+        	this.metadata = new JcrResultSetMetaData(this.statement.connection(), this.jcrResults);
+        }
             int index = 1; // not zero-based
-            columnIDs = new String[jcrResults.getColumnNames().length + 1];
-            columnIndexesByName = new HashMap<String, Integer>(jcrResults.getColumnNames().length + 1);
-            for (String name : jcrResults.getColumnNames()) {
+            int colCnt =  this.metadata.getColumnCount() ;
+
+            // add 1 because using 1 based location, not zero based, JDBC spec
+            columnIDs = new String[colCnt + 1];
+            columnIndexesByName = new HashMap<String, Integer>(colCnt);
+            while (index <= colCnt) {
+             	String name = this.metadata.getColumnName(index);
                 columnIndexesByName.put(name, index);
                 columnIDs[index] = name;
-                index++;
+                index++;    	
             }
-            assert columnIndexesByName.size() > 0;
+
+            assert !columnIndexesByName.isEmpty();
             this.columnIndexesByName = Collections.unmodifiableMap(columnIndexesByName);
-        } catch (RepositoryException e) {
-            throw new SQLException(e.getLocalizedMessage(), e);
-        }
+
         try {
             this.rowIter = this.jcrResults.getRows();
         } catch (RepositoryException e) {
@@ -367,12 +371,11 @@ public class JcrResultSet implements ResultSet {
     }
 
     private String findColumn( int columnIndex ) throws SQLException {
-        if (columnIndex >= 0 && columnIndex < this.columnIDs.length) {
+        if (columnIndex > 0 && columnIndex < this.columnIDs.length) {
             return columnIDs[columnIndex];
         }
 
         throw new SQLException(JdbcI18n.invalidColumnIndex.text(new Object[] {columnIndex, this.columnIDs.length}));
-
     }
 
     /**
@@ -1205,7 +1208,7 @@ public class JcrResultSet implements ResultSet {
                                    int type ) throws SQLException {
         if (value == null) return null;
 
-        try {
+       try {
             switch (type) {
 
                 case PropertyType.STRING:
@@ -1242,64 +1245,22 @@ public class JcrResultSet implements ResultSet {
     private Object getColumnTranslatedToJDBC( String columnName ) throws SQLException {
         notClosed();
         isRowSet();
+        
+        Value value = null;      
+        this.currentValue = null;
+
         try {
-
-            Value value = null;
-            this.currentValue = null;
-
-            try {
-                value = row.getValue(columnName);
-            } catch (javax.jcr.PathNotFoundException pnf) {
-            }
-
-            if (value == null) return null;
-
-            JcrType jcrType = TYPE_INFO.get(PropertyType.nameFromValue(value.getType()));
-
-            this.currentValue = getValueTranslatedToJDBC(value, jcrType);
-            return this.currentValue;
-
+            value = row.getValue(columnName);
+        } catch (javax.jcr.PathNotFoundException pnf) {
+        	// do nothing
         } catch (RepositoryException e) {
-            throw new SQLException(e.getLocalizedMessage(), e);
+        	throw new SQLException(e.getLocalizedMessage(), e);
         }
-    }
-
-    private Object getValueTranslatedToJDBC( Value value,
-                                             JcrType jcrType ) throws SQLException {
+        
         if (value == null) return null;
 
-        try {
-
-            if (jcrType.getRepresentationClass() == java.lang.String.class) {
-                return value.getString();
-            } else if (jcrType.getRepresentationClass() == java.lang.Long.class) {
-                return new Long(value.getLong());
-            } else if (jcrType.getRepresentationClass() == java.lang.Boolean.class) {
-                return new Boolean(value.getBoolean());
-            } else if (jcrType.getRepresentationClass() == java.lang.Double.class
-                       || jcrType.getRepresentationClass() == java.lang.Float.class) {
-                return new Float(value.getDouble());
-            } else if (jcrType.getRepresentationClass() == java.sql.Date.class) {
-                return new Date(value.getDate().getTime().getTime());
-            } else if (jcrType.getRepresentationClass() == java.sql.Timestamp.class) {
-                return new java.sql.Timestamp(value.getDate().getTime().getTime());
-            } else if (jcrType.getRepresentationClass() == java.sql.Blob.class) {
-                return new JcrBlob(value, 0L);
-            } else if (jcrType.getRepresentationClass() == UUID.class) {
-                return UUID.fromString(value.getString());
-
-            } else {
-                throw new SQLException(JdbcI18n.noJcrTypeMapped.text(jcrType.getRepresentationClass().getName()));
-            }
-
-        } catch (ValueFormatException ve) {
-            throw new SQLException(ve.getLocalizedMessage(), ve);
-        } catch (IllegalStateException ie) {
-            throw new SQLException(ie.getLocalizedMessage(), ie);
-        } catch (RepositoryException e) {
-            throw new SQLException(e.getLocalizedMessage(), e);
-        }
-
+        this.currentValue = JcrType.translateValueToJDBC(value);
+        return this.currentValue;
     }
 
     /**

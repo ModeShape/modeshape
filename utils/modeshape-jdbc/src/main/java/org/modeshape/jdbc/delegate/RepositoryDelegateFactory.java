@@ -41,6 +41,7 @@ public class RepositoryDelegateFactory {
     
     private static final int JNDI_URL_OPTION = 1;
     private static final int HTTP_URL_OPTION = 2; 
+    private static final int FILE_URL_OPTION = 3;
 
     public static RepositoryDelegate createRepositoryDelegate(String url, Properties info, JcrContextFactory contextFactory) throws SQLException {
 	if (! acceptUrl(url)) {
@@ -68,6 +69,11 @@ public class RepositoryDelegateFactory {
             // This fits the pattern so far ...
             return HTTP_URL_OPTION;
         }
+        if (trimmedUrl.startsWith(JcrDriver.FILE_URL_PREFIX) && trimmedUrl.length() > JcrDriver.FILE_URL_PREFIX.length()) {
+            // This fits the pattern so far ...
+            return FILE_URL_OPTION;
+        }
+
         return -1;
     }
     
@@ -82,6 +88,9 @@ public class RepositoryDelegateFactory {
 	    throw new SQLFeatureNotSupportedException();
 //	    return new HttpRepositoryDelegate(url, info, contextFactory );
 
+	case FILE_URL_OPTION:
+			return new FileRepositoryDelegate(url, info);
+		
 	default:
 	    return null;
 	}

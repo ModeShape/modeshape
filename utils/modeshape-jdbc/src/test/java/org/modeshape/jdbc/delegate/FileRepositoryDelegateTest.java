@@ -39,20 +39,20 @@ import org.modeshape.jdbc.JcrDriver;
 /**
  * 
  */
-public class LocalRepositoryDelegateTest {
+public class FileRepositoryDelegateTest {
 
     private static final String REPOSITORY_NAME = "repositoryName";
     
     private static final String USER_NAME="jsmith";
     private static final String PASSWORD="secret";
     private static final String WORKSPACE="MyWorkspace";
-    private static final String JNDINAME="jcr/local";
+    private static final String FILENAME="//configRepository.xml";
     private static final String INVALID_URL =  JcrDriver.JNDI_URL_PREFIX + "notExist" ;
     
 
-    private static final String VALID_JNDI_URL =  JcrDriver.JNDI_URL_PREFIX + JNDINAME;
+    private static final String VALID_FILE_URL =  JcrDriver.FILE_URL_PREFIX + FILENAME;
     
-    private static final String VALID_JNDI_URL_WITH_PARMS =  VALID_JNDI_URL + 
+    private static final String VALID_FILE_URL_WITH_PARMS =  VALID_FILE_URL + 
     			"?workspace=" + WORKSPACE + 
     			"&username=" + USER_NAME + 
     			"&password=" + PASSWORD  + 
@@ -62,8 +62,7 @@ public class LocalRepositoryDelegateTest {
         
     @Before
     public void beforeEach() throws SQLException {
-	delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_JNDI_URL_WITH_PARMS, new Properties(), null);
-	    //new LocalRepositoryDelegate(VALID_JNDI_URL_WITH_PARMS, new Properties(), null);
+	delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_FILE_URL_WITH_PARMS, new Properties(), null);
 	
     }
 
@@ -75,12 +74,12 @@ public class LocalRepositoryDelegateTest {
     
     @Test
     public void testNoContextOverride() throws SQLException  {
-	delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_JNDI_URL_WITH_PARMS, new Properties(), null);
+	delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_FILE_URL_WITH_PARMS, new Properties(), null);
     }
 
     @Test
     public void connectionInfoShouldBeValid() throws SQLException  {
-	delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_JNDI_URL_WITH_PARMS, new Properties(), null);
+	delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_FILE_URL_WITH_PARMS, new Properties(), null);
 	
 	assertNotNull(delegate.getConnectionInfo());
 	assertThat(delegate.getConnectionInfo().getUsername(), is(USER_NAME) );
@@ -88,12 +87,12 @@ public class LocalRepositoryDelegateTest {
 	assertThat(delegate.getConnectionInfo().getWorkspaceName(), is(WORKSPACE) );
 	assertThat(delegate.getConnectionInfo().getRepositoryName(), is(REPOSITORY_NAME) );
 	
-	assertThat(delegate.getConnectionInfo().getEffectiveUrl(), is( JcrDriver.JNDI_URL_PREFIX + "jcr/local?workspace=MyWorkspace&password=******&repositoryName=repositoryName&username=jsmith" ) );
+	assertThat(delegate.getConnectionInfo().getEffectiveUrl(), is( JcrDriver.FILE_URL_PREFIX + FILENAME + "?workspace=MyWorkspace&password=******&repositoryName=repositoryName&username=jsmith" ) );
 	
         DriverPropertyInfo[] infos = delegate.getConnectionInfo().getPropertyInfos();
         assertThat(infos.length, is(0));
         
-	assertThat( ( ( LocalRepositoryDelegate.JNDIConnectionInfo)  delegate.getConnectionInfo()).getJndiName(), is(JNDINAME) );
+	assertThat( ( ( FileRepositoryDelegate.FileConnectionInfo)  delegate.getConnectionInfo()).getFileName(), is(FILENAME) );
 	
     }
     
@@ -117,7 +116,7 @@ public class LocalRepositoryDelegateTest {
         validProperties.put(JcrDriver.PASSWORD_PROPERTY_NAME, PASSWORD);
         validProperties.put(JcrDriver.REPOSITORY_PROPERTY_NAME, REPOSITORY_NAME);
         
-	delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_JNDI_URL, validProperties, null);
+	delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_FILE_URL, validProperties, null);
         DriverPropertyInfo[] infos = delegate.getConnectionInfo().getPropertyInfos();
         assertThat(infos.length, is(0));
     }

@@ -24,13 +24,26 @@
 package org.modeshape.jdbc;
 
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
 import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
+import javax.jcr.ValueFormatException;
+
+import org.modeshape.jdbc.types.BlobTransform;
+import org.modeshape.jdbc.types.BooleanTransform;
+import org.modeshape.jdbc.types.DateTransform;
+import org.modeshape.jdbc.types.FloatTransform;
+import org.modeshape.jdbc.types.LongTransform;
+import org.modeshape.jdbc.types.StringTransform;
+import org.modeshape.jdbc.types.UUIDTransform;
 
 /**
  * Provides functionality to convert from JCR {@link PropertyType}s and JDBC types.
@@ -38,19 +51,35 @@ import javax.jcr.PropertyType;
 public final class JcrType {
 
     private static final Map<String, JcrType> TYPE_INFO;
+    
+	public static final class DefaultDataTypes {
+		public static final String STRING = PropertyType.TYPENAME_STRING; //$NON-NLS-1$
+		public static final String BOOLEAN = PropertyType.TYPENAME_BOOLEAN; //$NON-NLS-1$
+		public static final String LONG = PropertyType.TYPENAME_LONG; //$NON-NLS-1$
+		public static final String DOUBLE = PropertyType.TYPENAME_DOUBLE; //$NON-NLS-1$
+		public static final String DECIMAL = PropertyType.TYPENAME_DECIMAL; //$NON-NLS-1$
+		public static final String DATE = PropertyType.TYPENAME_DATE; //$NON-NLS-1$
+		public static final String URI = PropertyType.TYPENAME_URI; //$NON-NLS-1$
+		public static final String WEAK_REF = PropertyType.TYPENAME_WEAKREFERENCE; //$NON-NLS-1$
+		public static final String UNDEFINED = PropertyType.TYPENAME_UNDEFINED; //$NON-NLS-1$
+		public static final String BINARY = PropertyType.TYPENAME_BINARY; //$NON-NLS-1$
+		public static final String REFERENCE = PropertyType.TYPENAME_REFERENCE; //$NON-NLS-1$
+		public static final String PATH = PropertyType.TYPENAME_PATH; //$NON-NLS-1$
+		public static final String NAME = PropertyType.TYPENAME_NAME; //$NON-NLS-1$
+	}
 
     static {
         Map<String, JcrType> types = new HashMap<String, JcrType>();
-        register(types, PropertyType.BINARY, Types.BLOB, JcrBlob.class, 30); // assumed
-        register(types, PropertyType.BOOLEAN, Types.BOOLEAN, Boolean.class, 5); // 'true' or 'false'
-        register(types, PropertyType.DATE, Types.TIMESTAMP, Timestamp.class, 30); // yyyy-MM-dd'T'HH:mm:ss.SSS+HH:mm
-        register(types, PropertyType.DOUBLE, Types.FLOAT, Float.class, 20); // assumed
-        register(types, PropertyType.LONG, Types.BIGINT, Long.class, 20); // assumed
-        register(types, PropertyType.NAME, Types.VARCHAR, String.class, 20); // assumed
-        register(types, PropertyType.PATH, Types.VARCHAR, String.class, 50); // assumed
-        register(types, PropertyType.REFERENCE, Types.BLOB, UUID.class, UUID.randomUUID().toString().length());
-        register(types, PropertyType.STRING, Types.VARCHAR, String.class, 50); // assumed
-        register(types, PropertyType.UNDEFINED, Types.VARCHAR, String.class, 50); // same as string
+        register(types, PropertyType.BINARY, Types.BLOB, JcrBlob.class, 30, Integer.MAX_VALUE, new BlobTransform()); // assumed
+        register(types, PropertyType.BOOLEAN, Types.BOOLEAN, Boolean.class, 5, 1, new BooleanTransform()); // 'true' or 'false'
+        register(types, PropertyType.DATE, Types.TIMESTAMP, Timestamp.class, 30, 10,  new DateTransform()); // yyyy-MM-dd'T'HH:mm:ss.SSS+HH:mm
+        register(types, PropertyType.DOUBLE, Types.FLOAT, Float.class, 20, 20, new FloatTransform()); // assumed
+        register(types, PropertyType.LONG, Types.BIGINT, Long.class, 20, 19, new LongTransform()); // assumed
+        register(types, PropertyType.NAME, Types.VARCHAR, String.class, 20, Integer.MAX_VALUE,new StringTransform()); // assumed
+        register(types, PropertyType.PATH, Types.VARCHAR, String.class, 50, Integer.MAX_VALUE,new StringTransform()); // assumed
+        register(types, PropertyType.REFERENCE, Types.BLOB, UUID.class, UUID.randomUUID().toString().length(), UUID.randomUUID().toString().length(),  new UUIDTransform());
+        register(types, PropertyType.STRING, Types.VARCHAR, String.class, 50, Integer.MAX_VALUE, new StringTransform()); // assumed
+        register(types, PropertyType.UNDEFINED, Types.VARCHAR, String.class, 50, Integer.MAX_VALUE, new StringTransform()); // same as string
         TYPE_INFO = Collections.unmodifiableMap(types);
     }
 
@@ -58,8 +87,10 @@ public final class JcrType {
                                   int jcrType,
                                   int jdbcType,
                                   Class<?> clazz,
-                                  int displaySize ) {
-        JcrType type = new JcrType(jcrType, jdbcType, clazz, displaySize);
+                                  int displaySize,
+                                  int precision,
+                                  Transform transform) {
+        JcrType type = new JcrType(jcrType, jdbcType, clazz, displaySize, precision, transform);
         types.put(type.getJcrName(), type);
     }
 
@@ -68,19 +99,26 @@ public final class JcrType {
     private final Class<?> clazz;
     private final int jdbcType;
     private final int displaySize;
+    private final int precision;
+    private final Transform transform;
 
     protected JcrType( int jcrType,
                        int jdbcType,
                        Class<?> clazz,
-                       int displaySize ) {
+                       int displaySize,
+                       int precision,
+                       Transform transform) {
         this.jcrType = jcrType;
         this.jcrName = PropertyType.nameFromValue(jcrType);
         this.clazz = clazz;
         this.displaySize = displaySize;
         this.jdbcType = jdbcType;
+        this.precision = precision;
+        this.transform = transform;
         assert this.jcrName != null;
         assert this.clazz != null;
         assert this.displaySize > 0;
+        assert this.transform != null;
     }
 
     /**
@@ -109,6 +147,54 @@ public final class JcrType {
     public int getJdbcType() {
         return jdbcType;
     }
+    
+    /**
+     * Get the default precision used for this JcrType
+     * @return the Integer form of the precision
+     */
+    public Integer getDefaultPrecision() {
+    	return new Integer(precision);
+    }
+    
+    /**
+     * Return the {@link Transform} object to use to transform
+     * the {@link Value} to the correct data type.
+     * @return Transform
+     */
+    protected Transform getTransform() {
+    	return this.transform;
+    }
+    
+    /**
+     * Get the indicator if the value is case sensitive
+     * @return boolean indicating if the value is case sensitive
+     */
+    public boolean isCaseSensitive( ) {
+         switch (getJcrType()) {
+            case PropertyType.DOUBLE:
+            case PropertyType.LONG:
+            case PropertyType.REFERENCE: // conversion is case-insensitive
+            case PropertyType.BOOLEAN: // conversion is case-insensitive
+                return false;
+        }
+        return true;
+    }
+
+    
+    /**
+     * Get the indicator if the value is considered a signed value.
+     * 
+     * @return boolean indicating if value is signed.
+     */
+    public boolean isSigned() {
+	        switch (getJcrType()) {
+	        case PropertyType.DOUBLE:
+	        case PropertyType.LONG:
+	        case PropertyType.DATE:
+	            return true;
+	    }
+	    return false;
+    }
 
     /**
      * Get the Java class used to represent values for this type.
@@ -128,6 +214,27 @@ public final class JcrType {
     public int getNominalDisplaySize() {
         return displaySize;
     }
+    
+    public Object translateValue(Value value ) throws SQLException {
+        if (value == null) return null;      
+         try {
+        	 return this.getTransform().transform(value);
+
+        } catch (ValueFormatException ve) {
+            throw new SQLException(ve.getLocalizedMessage(), ve);
+        } catch (IllegalStateException ie) {
+            throw new SQLException(ie.getLocalizedMessage(), ie);
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage(), e);
+        }
+
+    }
+    
+    public static Object translateValueToJDBC(Value value) throws SQLException {
+    	String jcrName = PropertyType.nameFromValue(value.getType());
+    	JcrType jcrtype = typeInfo(jcrName);
+    	return jcrtype.translateValue(value);
+    }
 
     /**
      * Get the immutable built-in map from the type names to the Java representation class.
@@ -137,5 +244,13 @@ public final class JcrType {
     public static Map<String, JcrType> builtInTypeMap() {
         return TYPE_INFO;
     }
-
+    
+    public static JcrType typeInfo( String typeName ) {
+    	return TYPE_INFO.get(typeName);
+    }
+    
+    public static JcrType typeInfo(int jcrType) {
+    	return typeInfo(PropertyType.nameFromValue(jcrType) );
+     }
+    
 }

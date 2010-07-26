@@ -57,6 +57,8 @@ import org.modeshape.jdbc.JcrType;
  * 
  */
 public class ResultSetReader extends StringLineReader {
+	private static final String DEFAULT_DELIM =  "    "; //$NON-NLS-1$
+	
     JcrResultSet source = null;
     ResultSetMetaData metadata = null;
     
@@ -64,20 +66,24 @@ public class ResultSetReader extends StringLineReader {
     int columnCount = 0;
 
     // delimiter between the fields while reading each row 
-    String delimiter = "    "; //$NON-NLS-1$
+    String delimiter = null;
  
     boolean firstTime = true;
     int[] columnTypes = null;
     
     private int rowCount=0;
     
-    public ResultSetReader(JcrResultSet in) {
-        this.source = in;        
+    private boolean compareColumns = true;
+    
+    
+    public ResultSetReader(JcrResultSet in, boolean compareCols) {
+    	this(in, DEFAULT_DELIM, compareCols);       
     }
     
-    public ResultSetReader(ResultSet in, String delimiter) {
+    public ResultSetReader(ResultSet in, String delimiter, boolean compareCols) {
         this.source = (JcrResultSet)in;        
         this.delimiter = delimiter;
+        this.compareColumns = compareCols;
     }
     
     /** 
@@ -97,8 +103,8 @@ public class ResultSetReader extends StringLineReader {
      * @throws IOException 
      */
     @Override
-    protected String nextLine() throws IOException{        
-        try {
+    protected String nextLine() throws IOException, SQLException{        
+ //       try {
             if (firstTime) {
                 firstTime = false;
                 this.metadata = source.getMetaData();
@@ -117,8 +123,9 @@ public class ResultSetReader extends StringLineReader {
                 final StringBuffer sb = new StringBuffer();
                 // Walk through column values in this row
                 for (int col = 1; col <= columnCount; col++) {
-                    compareColumn(col);
-                    
+                	// this does not work when database metadata is being queried
+                	if (compareColumns) compareColumn(col);
+                     
                     final Object anObj = source.getObject(col);
                     if (columnTypes[col-1] == Types.CLOB) {
                         sb.append(anObj != null ? anObj : "null"); //$NON-NLS-1$
@@ -140,9 +147,7 @@ public class ResultSetReader extends StringLineReader {
                 sb.append("\n"); //$NON-NLS-1$
                 return sb.toString();
             }
-        } catch (final SQLException e) {
-            throw new IOException(e.getMessage());
-        }        
+       
         return null;
     }
     

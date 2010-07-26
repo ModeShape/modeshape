@@ -61,7 +61,7 @@ class JcrStatement implements Statement {
     }
     
     public void setJcrSqlLanguage(String jcrSQL) {
-	this.sqlLanguage = (jcrSQL != null ? jcrSQL : JcrConnection.JCR_SQL2);
+    	this.sqlLanguage = (jcrSQL != null ? jcrSQL : JcrConnection.JCR_SQL2);
     }
 
     /**
@@ -427,7 +427,7 @@ class JcrStatement implements Statement {
             String jcrSql2 = connection.nativeSQL(sql);
             // Create the query ...
             jcrResults = getJcrCommRepositoryInterface().execute(jcrSql2, this.sqlLanguage);
-            results = new JcrResultSet(this, jcrResults);
+            results = new JcrResultSet(this, jcrResults, null);
             moreResults = 1;
         } catch (RepositoryException e) {
             throw new SQLException(e.getLocalizedMessage(), e);
