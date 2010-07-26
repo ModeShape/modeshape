@@ -127,6 +127,7 @@
 	</contributors>
 	<modules>
 		<module>modeshape-common</module>
+		<module>deploy/jbossas/modeshape-jbossas-console</module>
 		<module>modeshape-graph</module>
 		<module>modeshape-repository</module>
 		<module>modeshape-cnd</module>
