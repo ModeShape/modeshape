@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.Node;
 import net.jcip.annotations.Immutable;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.basic.BasicName;
@@ -47,4 +48,19 @@ public class ModeShapeLexicon extends org.modeshape.repository.ModeShapeLexicon 
     public static final Name SYSTEM = new BasicName(Namespace.URI, "system");
     public static final Name VERSION_STORAGE = new BasicName(Namespace.URI, "versionStorage");
     public static final Name WORKSPACE = new BasicName(Namespace.URI, "workspace");
+    /**
+     * The name of the "mode:share" node type, used as the primary type on nodes that are proxies for the original node. The
+     * "mode:share" node type defines a single "{@link #SHARED_UUID mode:shared}" REFERENCE property pointing to the original
+     * node.
+     * <p>
+     * With the way that ModeShape's JCR layer is implemented, JCR clients should never see {@link Node}s of this type. Instead,
+     * the JCR layer transparently creates a JcrSharedNode that will mirror the original.
+     * </p>
+     */
+    public static final Name SHARE = new BasicName(Namespace.URI, "share");
+    /**
+     * The REFERENCE property on the "mode:share" node type. This property references the original node for which this node is a
+     * proxy.
+     */
+    public static final Name SHARED_UUID = new BasicName(Namespace.URI, "sharedUuid");
 }

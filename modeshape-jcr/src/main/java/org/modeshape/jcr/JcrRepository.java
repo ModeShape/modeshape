@@ -1408,7 +1408,7 @@ public class JcrRepository implements Repository {
         repoDescriptors.put(Repository.OPTION_NODE_AND_PROPERTY_WITH_SAME_NAME_SUPPORTED, valueFor(factories, true));
         repoDescriptors.put(Repository.OPTION_UPDATE_PRIMARY_NODE_TYPE_SUPPORTED, valueFor(factories, false));
         repoDescriptors.put(Repository.OPTION_UPDATE_MIXIN_NODE_TYPES_SUPPORTED, valueFor(factories, true));
-        repoDescriptors.put(Repository.OPTION_SHAREABLE_NODES_SUPPORTED, valueFor(factories, false));
+        repoDescriptors.put(Repository.OPTION_SHAREABLE_NODES_SUPPORTED, valueFor(factories, true));
         repoDescriptors.put(Repository.OPTION_NODE_TYPE_MANAGEMENT_SUPPORTED, valueFor(factories, true));
         repoDescriptors.put(Repository.NODE_TYPE_MANAGEMENT_INHERITANCE,
                             valueFor(factories, Repository.NODE_TYPE_MANAGEMENT_INHERITANCE_MULTIPLE));

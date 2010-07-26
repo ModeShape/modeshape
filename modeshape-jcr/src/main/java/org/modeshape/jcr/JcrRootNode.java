@@ -34,6 +34,9 @@ import org.modeshape.graph.session.GraphSession.NodeId;
 
 /**
  * A concrete implementation of a root {@link Node JCR Node}.
+ * 
+ * @see JcrNode
+ * @see JcrSharedNode
  */
 @Immutable
 final class JcrRootNode extends AbstractJcrNode {
@@ -123,9 +126,43 @@ final class JcrRootNode extends AbstractJcrNode {
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.jcr.AbstractJcrNode#doRemove()
+     */
+    @Override
+    protected void doRemove() throws ConstraintViolationException, RepositoryException {
+        String msg = JcrI18n.unableToRemoveRootNode.text(cache.workspaceName());
+        throw new ConstraintViolationException(msg);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see javax.jcr.Item#remove()
      */
+    @Override
     public void remove() throws ConstraintViolationException {
+        String msg = JcrI18n.unableToRemoveRootNode.text(cache.workspaceName());
+        throw new ConstraintViolationException(msg);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.AbstractJcrNode#removeShare()
+     */
+    @Override
+    public void removeShare() throws ConstraintViolationException, RepositoryException {
+        String msg = JcrI18n.unableToRemoveRootNode.text(cache.workspaceName());
+        throw new ConstraintViolationException(msg);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.AbstractJcrNode#removeSharedSet()
+     */
+    @Override
+    public void removeSharedSet() throws ConstraintViolationException, RepositoryException {
         String msg = JcrI18n.unableToRemoveRootNode.text(cache.workspaceName());
         throw new ConstraintViolationException(msg);
     }

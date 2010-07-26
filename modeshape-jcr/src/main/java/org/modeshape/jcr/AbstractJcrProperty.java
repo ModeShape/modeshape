@@ -87,7 +87,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
         if (this.getParent().isLocked() && !getParent().getLock().isLockOwningSession()) {
             Lock parentLock = this.getParent().getLock();
             if (parentLock != null && parentLock.getLockToken() == null) {
-                throw new LockException(JcrI18n.lockTokenNotHeld.text(this.getParent().location));
+                throw new LockException(JcrI18n.lockTokenNotHeld.text(this.getParent().location()));
             }
         }
     }

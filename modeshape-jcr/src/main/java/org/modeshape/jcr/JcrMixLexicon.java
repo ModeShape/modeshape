@@ -33,6 +33,13 @@ import org.modeshape.graph.property.basic.BasicName;
 @Immutable
 public class JcrMixLexicon extends org.modeshape.graph.JcrMixLexicon {
 
+    /**
+     * The name for the "mix:etag" mixin.
+     */
     public static final Name ETAG = new BasicName(Namespace.URI, "etag");
+    /**
+     * The name for the "mix:shareable" mixin.
+     */
+    public static final Name SHAREABLE = new BasicName(Namespace.URI, "shareable");
 
 }

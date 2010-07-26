@@ -70,6 +70,7 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
+import org.modeshape.graph.property.UuidFactory;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
@@ -216,6 +217,10 @@ class SessionCache {
 
     NameFactory nameFactory() {
         return nameFactory;
+    }
+
+    UuidFactory uuidFactory() {
+        return factories.getUuidFactory();
     }
 
     ValueFactory<String> stringFactory() {
@@ -1363,6 +1368,9 @@ class SessionCache {
             throws ItemNotFoundException, InvalidItemStateException, ConstraintViolationException, RepositoryException {
 
             // Look up the child and verify that the child can move into this node ...
+            if (child instanceof JcrSharedNode) {
+                child = ((JcrSharedNode)child).proxyNode();
+            }
             Node<JcrNodePayload, JcrPropertyPayload> existingChild = findNode(child.nodeId, child.location.getPath());
             if (existingChild.equals(node) || node.isAtOrBelow(existingChild)) {
                 String pathOfChild = readable(existingChild.getPath());
@@ -1400,7 +1408,7 @@ class SessionCache {
 
                 // Update the location of the JcrNode object...
                 Path newPath = existingChild.getPath();
-                existingChild.getPayload().getJcrNode().location = existingChild.getLocation().with(newPath);
+                existingChild.getPayload().getJcrNode().setLocation(existingChild.getLocation().with(newPath));
 
                 return existingChild;
             } catch (ValidationException e) {
@@ -2538,14 +2546,39 @@ class SessionCache {
             }
 
             // Create the JCR Node payload object ...
-            JcrNodePayload nodePayload = new JcrNodePayload(SessionCache.this, node, primaryTypeName, mixinTypeNames,
-                                                            definition.getId());
-
+            UUID sharedUuid = null;
+            if (ModeShapeLexicon.SHARE.equals(primaryTypeName)) {
+                Property sharedUuidProperty = graphProperties.get(ModeShapeLexicon.SHARED_UUID);
+                if (sharedUuidProperty != null) {
+                    sharedUuid = uuidFactory().create(sharedUuidProperty.getFirstValue());
+                }
+            }
+            JcrNodePayload nodePayload = createJcrNodePayload(node,
+                                                              primaryTypeName,
+                                                              mixinTypeNames,
+                                                              definition.getId(),
+                                                              sharedUuid);
             Map<Name, PropertyInfo<JcrPropertyPayload>> props = buildProperties(persistentNode, node, nodePayload, referenceable);
 
             // Set the information on the node ...
             node.loadedWith(persistentNode.getChildren(), props, persistentNode.getExpirationTime());
             node.setPayload(nodePayload);
+        }
+
+        protected JcrNodePayload createJcrNodePayload( Node<JcrNodePayload, JcrPropertyPayload> node,
+                                                       Name primaryTypeName,
+                                                       List<Name> mixinTypeNames,
+                                                       NodeDefinitionId defnId,
+                                                       UUID sharedUuid ) {
+            if (sharedUuid != null) {
+                try {
+                    AbstractJcrNode shared = findJcrNode(Location.create(sharedUuid));
+                    return new JcrSharedNodePayload(SessionCache.this, node, primaryTypeName, mixinTypeNames, defnId, shared);
+                } catch (RepositoryException e) {
+                    // do nothing (will be treated as a non-shared node) ...
+                }
+            }
+            return new JcrNodePayload(SessionCache.this, node, primaryTypeName, mixinTypeNames, defnId);
         }
 
         /**
@@ -2828,7 +2861,10 @@ class SessionCache {
             NodeDefinitionId nodeDefnId = NodeDefinitionId.fromString(nodeDefnIdStr, nameFactory);
 
             // Now create the payload ...
-            JcrNodePayload nodePayload = new JcrNodePayload(SessionCache.this, child, primaryTypeName, null, nodeDefnId);
+            PropertyInfo<JcrPropertyPayload> sharedUuidInfo = properties.get(ModeShapeLexicon.SHARED_UUID);
+            UUID sharedUuid = sharedUuidInfo != null && ModeShapeLexicon.SHARE.equals(primaryTypeName) ? uuidFactory().create(sharedUuidInfo.getProperty()
+                                                                                                                                            .getFirstValue()) : null;
+            JcrNodePayload nodePayload = createJcrNodePayload(child, primaryTypeName, null, nodeDefnId, sharedUuid);
             child.setPayload(nodePayload);
 
             // Now update the property infos for the two mandatory properties ...
@@ -2960,13 +2996,13 @@ class SessionCache {
     }
 
     @Immutable
-    final static class JcrNodePayload {
-        private final SessionCache cache;
-        private final Node<JcrNodePayload, JcrPropertyPayload> owner;
-        private final Name primaryTypeName;
-        private final List<Name> mixinTypeNames;
-        private final NodeDefinitionId nodeDefinitionId;
-        private SoftReference<AbstractJcrNode> jcrNode;
+    static class JcrNodePayload {
+        protected final SessionCache cache;
+        protected final Node<JcrNodePayload, JcrPropertyPayload> owner;
+        protected final Name primaryTypeName;
+        protected final List<Name> mixinTypeNames;
+        protected final NodeDefinitionId nodeDefinitionId;
+        protected SoftReference<AbstractJcrNode> jcrNode;
 
         JcrNodePayload( SessionCache cache,
                         Node<JcrNodePayload, JcrPropertyPayload> owner,
@@ -3067,4 +3103,75 @@ class SessionCache {
         }
     }
 
+    @Immutable
+    static class JcrSharedNodePayload extends JcrNodePayload {
+        protected SoftReference<AbstractJcrNode> sharedNode;
+        protected Location sharedLocation;
+
+        JcrSharedNodePayload( SessionCache cache,
+                              Node<JcrNodePayload, JcrPropertyPayload> owner,
+                              Name primaryTypeName,
+                              List<Name> mixinTypeNames,
+                              NodeDefinitionId nodeDefinitionId,
+                              AbstractJcrNode sharedNode ) {
+            super(cache, owner, primaryTypeName, mixinTypeNames, nodeDefinitionId);
+            assert sharedNode != null;
+            this.sharedNode = new SoftReference<AbstractJcrNode>(sharedNode);
+            this.sharedLocation = sharedNode.location();
+        }
+
+        JcrSharedNodePayload( SessionCache cache,
+                              Node<JcrNodePayload, JcrPropertyPayload> owner,
+                              Name primaryTypeName,
+                              List<Name> mixinTypeNames,
+                              NodeDefinitionId nodeDefinitionId,
+                              SoftReference<AbstractJcrNode> jcrNode,
+                              SoftReference<AbstractJcrNode> sharedNode ) {
+            super(cache, owner, primaryTypeName, mixinTypeNames, nodeDefinitionId, jcrNode);
+            assert this.sharedNode != null;
+            this.sharedNode = sharedNode;
+        }
+
+        /**
+         * Get the JCR node instance.
+         * 
+         * @return jcrNode
+         */
+        @Override
+        public AbstractJcrNode getJcrNode() {
+            AbstractJcrNode proxy = super.getJcrNode();
+            AbstractJcrNode shared = sharedNode.get();
+            if (shared == null) {
+                UUID uuid = cache.uuidFactory().create(owner.getProperty(ModeShapeLexicon.SHARED_UUID));
+                try {
+                    AbstractJcrNode node = cache.findJcrNode(Location.create(uuid));
+                    sharedNode = new SoftReference<AbstractJcrNode>(node);
+                } catch (RepositoryException e) {
+                    // We can't find the shared node, so don't wrap this node (just continue)
+                }
+            }
+            return new JcrSharedNode(proxy, sharedNode.get());
+        }
+
+        @Override
+        public JcrNodePayload with( Name primaryTypeName ) {
+            return new JcrSharedNodePayload(cache, owner, primaryTypeName, mixinTypeNames, nodeDefinitionId, jcrNode, sharedNode);
+        }
+
+        @Override
+        public JcrNodePayload with( List<Name> mixinTypeNames ) {
+            return new JcrSharedNodePayload(cache, owner, primaryTypeName, mixinTypeNames, nodeDefinitionId, jcrNode, sharedNode);
+        }
+
+        @Override
+        public JcrNodePayload with( NodeDefinitionId nodeDefinitionId ) {
+            return new JcrSharedNodePayload(cache, owner, primaryTypeName, mixinTypeNames, nodeDefinitionId, jcrNode, sharedNode);
+        }
+
+        @Override
+        public JcrNodePayload with( AbstractJcrNode jcrNode ) {
+            return new JcrSharedNodePayload(cache, owner, primaryTypeName, mixinTypeNames, nodeDefinitionId,
+                                            new SoftReference<AbstractJcrNode>(jcrNode), null);
+        }
+    }
 }

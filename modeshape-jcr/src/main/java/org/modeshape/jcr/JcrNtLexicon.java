@@ -39,5 +39,11 @@ public class JcrNtLexicon extends org.modeshape.graph.JcrNtLexicon {
     public static final Name VERSIONED_CHILD = new BasicName(Namespace.URI, "versionedChild");
     public static final Name VERSION_HISTORY = new BasicName(Namespace.URI, "versionHistory");
     public static final Name VERSION_LABELS = new BasicName(Namespace.URI, "versionLabels");
+    /**
+     * The "nt:share" node type name only appears in a serialized XML document exported from a repository, and <i>never</i>
+     * appears in the actual repository content. Therefore, there is no actual "nt:share" node type. For details, see Sections
+     * 14.7 and 14.8 of the JCR 2.0 specification.
+     */
+    public static final Name SHARE = new BasicName(Namespace.URI, "share");
 
 }

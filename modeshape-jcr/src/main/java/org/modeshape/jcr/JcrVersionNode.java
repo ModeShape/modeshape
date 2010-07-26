@@ -40,7 +40,7 @@ class JcrVersionNode extends JcrNode implements Version {
 
     private static final Version[] EMPTY_VERSION_ARRAY = new Version[0];
 
-    public JcrVersionNode( AbstractJcrNode node ) {
+    JcrVersionNode( AbstractJcrNode node ) {
         super(node.cache, node.nodeId, node.location);
 
         assert !node.isRoot() : "Versions should always be located in the /jcr:system/jcr:versionStorage subgraph";
@@ -91,26 +91,26 @@ class JcrVersionNode extends JcrNode implements Version {
         return getNodesForProperty(JcrLexicon.SUCCESSORS);
     }
 
-    private final Version[] getNodesForProperty(Name propertyName) throws RepositoryException {
+    private final Version[] getNodesForProperty( Name propertyName ) throws RepositoryException {
         assert JcrLexicon.SUCCESSORS.equals(propertyName) || JcrLexicon.PREDECESSORS.equals(propertyName);
-        
+
         Property references = getProperty(propertyName);
-        
+
         if (references == null) return EMPTY_VERSION_ARRAY;
-        
+
         Value[] values = references.getValues();
-        
+
         List<JcrVersionNode> versions = new ArrayList<JcrVersionNode>(values.length);
-        
+
         for (int i = 0; i < values.length; i++) {
             String uuid = values[i].getString();
-            
+
             AbstractJcrNode node = session().getNodeByUUID(uuid);
             versions.add((JcrVersionNode)node);
         }
-        
+
         return versions.toArray(EMPTY_VERSION_ARRAY);
-        
+
     }
 
     private final JcrVersionNode getFirstNodeForProperty( Name propertyName ) throws RepositoryException {

@@ -26,6 +26,8 @@ package org.modeshape.jcr;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessControlException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -64,10 +66,12 @@ import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.UuidAlreadyExistsException;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
+import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.graph.property.basic.LocalNamespaceRegistry;
 import org.modeshape.graph.request.InvalidWorkspaceException;
@@ -320,9 +324,16 @@ class JcrWorkspace implements Workspace {
         CheckArg.isNotNull(srcWorkspace, "source workspace name");
         CheckArg.isNotNull(srcAbsPath, "source path");
         CheckArg.isNotNull(destAbsPath, "destination path");
-        session.checkLive();
 
-        if (!graph.getWorkspaces().contains(srcWorkspace)) {
+        final boolean sameWorkspace = getName().equals(srcWorkspace);
+        if (sameWorkspace && removeExisting) {
+            // This is a special case of cloning within the same workspace but removing the original, which equates to a move ...
+            move(srcAbsPath, destAbsPath);
+            return;
+        }
+
+        session.checkLive();
+        if (!sameWorkspace && !graph.getWorkspaces().contains(srcWorkspace)) {
             throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(graph.getSourceName(), this.name));
         }
 
@@ -342,7 +353,7 @@ class JcrWorkspace implements Workspace {
         }
 
         // Doing a literal test here because the path factory will canonicalize "/node[1]" to "/node"
-        if (!destPath.isIdentifier() && destAbsPath.endsWith("]")) {
+        if (!sameWorkspace && !destPath.isIdentifier() && destAbsPath.endsWith("]")) {
             throw new RepositoryException(JcrI18n.pathCannotHaveSameNameSiblingIndex.text(destAbsPath));
         }
 
@@ -355,7 +366,7 @@ class JcrWorkspace implements Workspace {
             if (destPath.isIdentifier()) {
                 AbstractJcrNode existingDestNode = cache.findJcrNode(Location.create(destPath));
                 parentNode = existingDestNode.getParent();
-                newNodeName = existingDestNode.name();
+                newNodeName = existingDestNode.segment().getName();
                 destPath = factory.create(parentNode.path(), newNodeName);
             } else {
                 parentNode = cache.findJcrNode(null, destPath.getParent());
@@ -388,9 +399,49 @@ class JcrWorkspace implements Workspace {
                 throw new VersionException(JcrI18n.nodeIsCheckedIn.text(parentNode.getPath()));
             }
 
+            // Verify that this node accepts a child of the supplied name (given any existing SNS nodes) ...
             Node<JcrNodePayload, JcrPropertyPayload> parent = cache.findNode(parentNode.nodeId, parentNode.path());
             cache.findBestNodeDefinition(parent, newNodeName, parent.getPayload().getPrimaryTypeName());
 
+            if (sameWorkspace) {
+                assert !removeExisting;
+
+                // This method is also used to create a shared node, so first check that the source is shareable ...
+                Property primaryType = sourceNode.getProperty(JcrLexicon.PRIMARY_TYPE);
+                NameFactory nameFactory = context.getValueFactories().getNameFactory();
+                boolean shareable = false;
+                if (primaryType != null) {
+                    Name primaryTypeName = nameFactory.create(primaryType.getFirstValue());
+                    JcrNodeType nodeType = nodeTypeManager().getNodeType(primaryTypeName);
+                    if (nodeType != null && nodeType.isNodeType(JcrMixLexicon.SHAREABLE)) shareable = true;
+                }
+                if (!shareable) {
+                    Property mixinTypes = sourceNode.getProperty(JcrLexicon.MIXIN_TYPES);
+                    if (mixinTypes != null) {
+                        for (Object value : mixinTypes) {
+                            Name mixinTypeName = nameFactory.create(value);
+                            JcrNodeType nodeType = nodeTypeManager().getNodeType(mixinTypeName);
+                            if (nodeType != null && nodeType.isNodeType(JcrMixLexicon.SHAREABLE)) {
+                                shareable = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (shareable) {
+
+                    // All is okay so far, so all we need to do here is create a "mode:share" node with a primary type ...
+                    // and "mode:sharedUuid" property ...
+                    PropertyFactory propertyFactory = context.getPropertyFactory();
+                    Collection<Property> properties = new ArrayList<Property>(2);
+                    properties.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.SHARE));
+                    properties.add(propertyFactory.create(ModeShapeLexicon.SHARED_UUID, uuidProp));
+                    cache.graphSession().immediateCreateOrReplace(destPath, properties);
+                    return;
+                }
+                // Otherwise, just fall through and attempt to create a clone without removing the existing nodes;
+                // this may fail or it may succeed, but it is the prescribed behavior...
+            }
             if (removeExisting) {
                 // This will remove any existing nodes in this (the "target") workspace that have the same UUIDs
                 // as nodes that will be put into this workspace with the clone operation. Thus, any such
@@ -524,7 +575,7 @@ class JcrWorkspace implements Workspace {
             if (destPath.isIdentifier()) {
                 AbstractJcrNode existingDestNode = cache.findJcrNode(Location.create(destPath));
                 parentNode = existingDestNode.getParent();
-                newNodeName = existingDestNode.name();
+                newNodeName = existingDestNode.segment().getName();
                 destPath = factory.create(parentNode.path(), newNodeName);
             } else {
                 parentNode = cache.findJcrNode(null, destPath.getParent());

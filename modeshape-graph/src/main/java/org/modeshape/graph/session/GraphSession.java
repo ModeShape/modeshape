@@ -64,6 +64,7 @@ import org.modeshape.graph.request.BatchRequestBuilder;
 import org.modeshape.graph.request.ChangeRequest;
 import org.modeshape.graph.request.CloneBranchRequest;
 import org.modeshape.graph.request.CopyBranchRequest;
+import org.modeshape.graph.request.CreateNodeRequest;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.MoveBranchRequest;
 import org.modeshape.graph.request.Request;
@@ -630,6 +631,43 @@ public class GraphSession<Payload, PropertyPayload> {
             // Update the children to make them match the latest snapshot from the store ...
             parent.synchronizeWithNewlyPersistedNode(locationOfCopy);
         }
+    }
+
+    /**
+     * Create a new node at the supplied location, appending to any existing node at that path.
+     * 
+     * @param path the path where the new node should be created
+     * @param properties the properties to be added to the node; may be null or empty
+     * @return the location of the new node
+     * @throws AccessControlException if the caller does not have the permission to perform the operation
+     * @throws RepositorySourceException if any error resulting while performing the operation
+     */
+    public Location immediateCreateOrReplace( Path path,
+                                              Collection<Property> properties )
+        throws AccessControlException, RepositorySourceException {
+        CheckArg.isNotNull(path, "path");
+
+        // Check authorization ...
+        Path newParentPath = path.getParent();
+        authorizer.checkPermissions(newParentPath, Action.ADD_NODE);
+
+        // Perform the create operation, but use a batch so that we can read the latest list of children ...
+        Results results = null;
+        if (properties == null || properties.isEmpty()) {
+            results = store.batch().create(path).byAppending().and().execute();
+        } else {
+            results = store.batch().create(path).byAppending().with(properties).and().execute();
+        }
+        CreateNodeRequest createRequest = (CreateNodeRequest)results.getRequests().get(0);
+        Location locationAfter = createRequest.getActualLocationOfNode();
+
+        // Find the parent node in the session ...
+        Node<Payload, PropertyPayload> parent = this.findNodeWith(locationAfter.getPath().getParent(), false);
+        if (parent != null && parent.isLoaded()) {
+            // Update the children to make them match the latest snapshot from the store ...
+            parent.synchronizeWithNewlyPersistedNode(locationAfter);
+        }
+        return locationAfter;
     }
 
     /**

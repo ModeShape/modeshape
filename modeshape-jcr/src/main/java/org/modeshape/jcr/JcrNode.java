@@ -38,6 +38,7 @@ import org.modeshape.graph.session.GraphSession.NodeId;
  * A concrete {@link Node JCR Node} implementation.
  * 
  * @see JcrRootNode
+ * @see JcrSharedNode
  */
 @NotThreadSafe
 class JcrNode extends AbstractJcrNode {
@@ -73,7 +74,7 @@ class JcrNode extends AbstractJcrNode {
      * @see javax.jcr.Item#getName()
      */
     public String getName() throws RepositoryException {
-        return name().getString(namespaces());
+        return segment().getName().getString(namespaces());
     }
 
     /**
@@ -84,7 +85,7 @@ class JcrNode extends AbstractJcrNode {
     @Override
     public AbstractJcrNode getParent() throws ItemNotFoundException, RepositoryException {
         checkSession();
-        return nodeInfo().getParent().getPayload().getJcrNode();
+        return parentNodeInfo().getPayload().getJcrNode();
     }
 
     /**
@@ -94,15 +95,16 @@ class JcrNode extends AbstractJcrNode {
      */
     public String getPath() throws RepositoryException {
         // checkSession(); ideally we don't have to do this, because getting the path is a useful thing and is used in 'toString'
-        return nodeInfo().getPath().getString(namespaces());
+        return path().getString(namespaces());
     }
 
     /**
      * {@inheritDoc}
      * 
-     * @see javax.jcr.Item#remove()
+     * @see org.modeshape.jcr.AbstractJcrNode#doRemove()
      */
-    public void remove() throws RepositoryException, LockException {
+    @Override
+    protected void doRemove() throws RepositoryException, LockException {
         Node parentNode = getParent();
         if (parentNode.isLocked()) {
             Lock parentLock = lockManager().getLock(this);

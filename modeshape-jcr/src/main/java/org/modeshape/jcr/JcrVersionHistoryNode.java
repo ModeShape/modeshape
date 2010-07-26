@@ -405,7 +405,7 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
 
                 Name nodeName;
                 try {
-                    nodeName = node.name();
+                    nodeName = node.segment().getName();
                 } catch (RepositoryException re) {
                     throw new IllegalStateException(re);
                 }

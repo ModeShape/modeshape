@@ -85,7 +85,7 @@ public class JcrLockManager implements LockManager {
     Lock getLock( AbstractJcrNode node ) throws PathNotFoundException, LockException, AccessDeniedException, RepositoryException {
         WorkspaceLockManager.ModeShapeLock lock = lockFor(node);
         if (lock != null) return lock.lockFor(node.cache);
-        throw new LockException(JcrI18n.notLocked.text(node.location));
+        throw new LockException(JcrI18n.notLocked.text(node.location()));
     }
 
     @Override
@@ -112,7 +112,7 @@ public class JcrLockManager implements LockManager {
     }
 
     boolean holdsLock( AbstractJcrNode node ) {
-        WorkspaceLockManager.ModeShapeLock lock = lockManager.lockFor(session, node.location);
+        WorkspaceLockManager.ModeShapeLock lock = lockManager.lockFor(session, node.location());
 
         return lock != null;
 
@@ -150,7 +150,7 @@ public class JcrLockManager implements LockManager {
         }
 
         if (node.isLocked()) {
-            throw new LockException(JcrI18n.alreadyLocked.text(node.location));
+            throw new LockException(JcrI18n.alreadyLocked.text(node.location()));
         }
 
         if (node.isModified()) {
@@ -173,7 +173,7 @@ public class JcrLockManager implements LockManager {
             }
         }
 
-        WorkspaceLockManager.ModeShapeLock lock = lockManager.lock(session, node.location, isDeep, isSessionScoped);
+        WorkspaceLockManager.ModeShapeLock lock = lockManager.lock(session, node.location(), isDeep, isSessionScoped);
 
         addLockToken(lock.getLockToken());
         return lock.lockFor(session.cache());
@@ -219,10 +219,10 @@ public class JcrLockManager implements LockManager {
     @SuppressWarnings( "unused" )
     void unlock( AbstractJcrNode node )
         throws PathNotFoundException, LockException, AccessDeniedException, InvalidItemStateException, RepositoryException {
-        WorkspaceLockManager.ModeShapeLock lock = lockManager.lockFor(session, node.location);
+        WorkspaceLockManager.ModeShapeLock lock = lockManager.lockFor(session, node.location());
 
         if (lock == null) {
-            throw new LockException(JcrI18n.notLocked.text(node.location));
+            throw new LockException(JcrI18n.notLocked.text(node.location()));
         }
 
         if (lockTokens.contains(lock.getLockToken())) {
@@ -236,7 +236,7 @@ public class JcrLockManager implements LockManager {
                 // This user doesn't have the lock token, so don't try to remove it
                 lockManager.unlock(session.getExecutionContext(), lock);
             } catch (AccessControlException iae) {
-                throw new LockException(JcrI18n.lockTokenNotHeld.text(node.location));
+                throw new LockException(JcrI18n.lockTokenNotHeld.text(node.location()));
             }
         }
 
@@ -253,14 +253,14 @@ public class JcrLockManager implements LockManager {
         // This can only happen in mocked testing.
         if (session == null || session.workspace() == null) return null;
 
-        WorkspaceLockManager.ModeShapeLock lock = lockManager.lockFor(session, node.location);
+        WorkspaceLockManager.ModeShapeLock lock = lockManager.lockFor(session, node.location());
         if (lock != null) return lock;
 
         AbstractJcrNode parent = node;
         while (!parent.isRoot()) {
             parent = parent.getParent();
 
-            WorkspaceLockManager.ModeShapeLock parentLock = lockManager.lockFor(session, parent.location);
+            WorkspaceLockManager.ModeShapeLock parentLock = lockManager.lockFor(session, parent.location());
             if (parentLock != null && parentLock.isLive()) {
                 return parentLock.isDeep() ? parentLock : null;
             }
