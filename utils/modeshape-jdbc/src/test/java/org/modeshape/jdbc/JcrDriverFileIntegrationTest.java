@@ -89,6 +89,7 @@ public class JcrDriverFileIntegrationTest extends ConnectionResultsComparator {
     			"Cars    NULL    mode:nodeTypes    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
     			"Cars    NULL    mode:resource    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:data    DERIVED",
     			"Cars    NULL    mode:root    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+    			"Cars    NULL    mode:share    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
     			"Cars    NULL    mode:system    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
     			"Cars    NULL    mode:versionStorage    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
     			"Cars    NULL    ns001:Car    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
