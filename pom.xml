@@ -884,7 +884,7 @@
 							<value>${jgroups.preferIpv6}</value>
 						</property>
 					</systemProperties>
-					<argLine>-Xmx128M</argLine>
+					<argLine>-Xmx256M</argLine>
 				</configuration>
 			</plugin>
 
