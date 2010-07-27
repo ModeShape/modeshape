@@ -17,7 +17,6 @@
 		<org.rhq.version>1.3.0.GA</org.rhq.version>
 		<org.jboss.jopr.version>1.2.0.GA</org.jboss.jopr.version>
 		<apache.ant.version>1.7.0</apache.ant.version>
-		<modeshape-service-version>2.1-SNAPSHOT</modeshape-service-version>
 
 	</properties>
 
@@ -99,9 +98,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.modeshape.deploy</groupId>
+			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-jbossas-service</artifactId>
-			<version>${modeshape-service-version}</version>
+			<version>${project.version}</version>
 		</dependency>
 		
 		<dependency>

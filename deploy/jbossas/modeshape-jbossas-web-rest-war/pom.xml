@@ -15,13 +15,13 @@
 
 
         <dependency>
-            <groupId>org.modeshape.deploy</groupId>
+            <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jbossas-service</artifactId>
             <version>${project.version}</version>
         </dependency>
         
         <dependency>
-            <groupId>org.modeshape.deploy</groupId>
+            <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jbossas-console</artifactId>
             <version>${project.version}</version>
         </dependency>
