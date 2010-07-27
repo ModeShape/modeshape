@@ -115,7 +115,7 @@ public class JcrQueryObjectModelFactory
         PlanHints hints = new PlanHints();
         hints.showPlan = true;
         // We want to allow use of residual properties (not in the schemata) for criteria ...
-        hints.validateColumnExistance = false;
+        hints.validateColumnExistance = true;
         return new JcrQueryObjectModel(context, statement, LANGUAGE, query, hints, null);
     }
 

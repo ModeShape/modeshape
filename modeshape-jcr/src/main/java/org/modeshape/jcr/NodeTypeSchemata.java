@@ -258,8 +258,12 @@ class NodeTypeSchemata implements Schemata {
         // Create the SQL statement ...
         StringBuilder viewDefinition = new StringBuilder("SELECT ");
         boolean first = true;
+        boolean hasResidualProperties = false;
         for (JcrPropertyDefinition defn : defns) {
-            if (defn.isResidual()) continue;
+            if (defn.isResidual()) {
+                hasResidualProperties = true;
+                continue;
+            }
             if (defn.isMultiple()) continue;
             if (defn.isPrivate()) continue;
             Name name = defn.getInternalName();
@@ -321,6 +325,11 @@ class NodeTypeSchemata implements Schemata {
 
         // Define the view ...
         builder.addView(tableName, viewDefinition.toString());
+
+        if (hasResidualProperties) {
+            // Record that there are residual properties ...
+            builder.markExtraColumns(tableName);
+        }
     }
 
     /**

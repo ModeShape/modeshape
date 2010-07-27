@@ -44,25 +44,28 @@ class ImmutableView extends ImmutableTable implements View {
 
     protected ImmutableView( SelectorName name,
                              Iterable<Column> columns,
+                             boolean extraColumns,
                              QueryCommand definition ) {
-        super(name, columns);
+        super(name, columns, extraColumns);
         this.definition = definition;
     }
 
     protected ImmutableView( SelectorName name,
                              Iterable<Column> columns,
+                             boolean extraColumns,
                              QueryCommand definition,
                              Iterable<Column>... keyColumns ) {
-        super(name, columns, keyColumns);
+        super(name, columns, extraColumns, keyColumns);
         this.definition = definition;
     }
 
     protected ImmutableView( SelectorName name,
                              Map<String, Column> columnsByName,
                              List<Column> columns,
+                             boolean extraColumns,
                              QueryCommand definition,
                              Set<Key> keys ) {
-        super(name, columnsByName, columns, keys);
+        super(name, columnsByName, columns, keys, extraColumns);
         this.definition = definition;
     }
 

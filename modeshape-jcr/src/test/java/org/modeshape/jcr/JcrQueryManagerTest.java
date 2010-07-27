@@ -401,11 +401,10 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        print = true;
         assertResults(query, result, 4L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
-            "car:mpgHighway", "car:valueRating", "jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model", "car:msrp",
-            "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
+            "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
+            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
         assertResultsHaveColumns(result, expectedColumnNames);
     }
 
@@ -418,8 +417,8 @@ public class JcrQueryManagerTest {
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 12L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
-            "car:mpgHighway", "car:valueRating", "jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model", "car:msrp",
-            "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
+            "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
+            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
         assertResultsHaveColumns(result, expectedColumnNames);
     }
 
@@ -442,12 +441,59 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        print = true;
         assertResults(query, result, 4L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
-            "car:mpgHighway", "car:valueRating", "jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model", "car:msrp",
-            "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
+            "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
+            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
         assertResultsHaveColumns(result, expectedColumnNames);
+    }
+
+    @FixFor( "MODE-829" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithDescendantNodeJoinUsingNtBase() throws RepositoryException {
+        String sql = "SELECT * FROM [nt:base] AS category JOIN [nt:base] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars')";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 12L);
+        assertResultsHaveColumns(result, "category.jcr:primaryType", "cars.jcr:primaryType");
+    }
+
+    @FixFor( "MODE-829" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithDescendantNodeJoinUsingNtBaseAndNameConstraint()
+        throws RepositoryException {
+        String sql = "SELECT * FROM [nt:base] AS category JOIN [nt:base] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars') AND NAME(cars) LIKE 'Toyota%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 2L);
+        assertResultsHaveColumns(result, "category.jcr:primaryType", "cars.jcr:primaryType");
+    }
+
+    @FixFor( "MODE-829" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithDescendantNodeJoinUsingNonExistantNameColumnOnTypeWithResidualProperties()
+        throws RepositoryException {
+        String sql = "SELECT * FROM [nt:unstructured] AS category JOIN [nt:unstructured] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars') AND cars.name = 'd2'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 0L); // no nodes have a 'name' property (strictly speaking)
+        assertResultsHaveColumns(result, "category.jcr:primaryType", "cars.jcr:primaryType");
+    }
+
+    @FixFor( "MODE-829" )
+    @Test( expected = RepositoryException.class )
+    public void shouldFailToExecuteSqlQueryWithDescendantNodeJoinUsingNonExistantNameColumnOnTypeWithNoResidualProperties()
+        throws RepositoryException {
+        String sql = "SELECT * FROM [nt:base] AS category JOIN [nt:base] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars') AND cars.name = 'd2'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        query.execute();
     }
 
     // ----------------------------------------------------------------------------------------------------------------

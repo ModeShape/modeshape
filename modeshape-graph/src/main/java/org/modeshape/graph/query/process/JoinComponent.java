@@ -369,7 +369,8 @@ public abstract class JoinComponent extends ProcessingComponent {
                                              Object parentLocation ) {
                         Path childPath = ((Location)childLocation).getPath();
                         Path parentPath = ((Location)parentLocation).getPath();
-                        return childPath.getParent().isSameAs(parentPath);
+                        if (childPath.isRoot()) return false;
+                        return parentPath.isSameAs(childPath.getParent());
                     }
                 };
             }
@@ -379,7 +380,8 @@ public abstract class JoinComponent extends ProcessingComponent {
                                          Object childLocation ) {
                     Path childPath = ((Location)childLocation).getPath();
                     Path parentPath = ((Location)parentLocation).getPath();
-                    return childPath.getParent().isSameAs(parentPath);
+                    if (childPath.isRoot()) return false;
+                    return parentPath.isSameAs(childPath.getParent());
                 }
             };
         } else if (condition instanceof DescendantNodeJoinCondition) {

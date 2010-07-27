@@ -42,7 +42,7 @@ import org.modeshape.graph.property.Path;
  * Typically, the class will be used like this:
  * 
  * <pre>
- * CndNodeTypeReader reader = new CndNodeTypeReader();
+ * CndNodeTypeReader reader = new CndNodeTypeReader(session);
  * reader.read(file); // or stream or resource file
  * 
  * if (!reader.getProblems().isEmpty()) {

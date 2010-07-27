@@ -128,6 +128,15 @@ public interface Schemata {
          * @return the key that uses exactly the supplied columns, or null if there is no such key
          */
         Key getKey( Iterable<Column> columns );
+
+        /**
+         * Determine whether this table allows has extra columns not included in the {@link #getColumns() column list}. This value
+         * is used to determine whether columns in a SELECT clause should be validated against the list of known columns.
+         * 
+         * @return true if there are extra columns, or false if the {@link #getColumns() list of columns} is complete for this
+         *         table.
+         */
+        boolean hasExtraColumns();
     }
 
     /**

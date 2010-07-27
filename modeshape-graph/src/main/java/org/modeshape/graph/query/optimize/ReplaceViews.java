@@ -24,7 +24,6 @@
 package org.modeshape.graph.query.optimize;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
@@ -85,8 +84,6 @@ public class ReplaceViews implements OptimizerRule {
     public PlanNode execute( QueryContext context,
                              PlanNode plan,
                              LinkedList<OptimizerRule> ruleStack ) {
-        // Prepare a cache of the view plans ...
-        Map<SelectorName, PlanNode> viewPlanCache = new HashMap<SelectorName, PlanNode>();
         CanonicalPlanner planner = new CanonicalPlanner();
 
         // Prepare the maps that will record the old-to-new mappings from the old view SOURCE nodes to the table SOURCEs ...
@@ -107,13 +104,8 @@ public class ReplaceViews implements OptimizerRule {
                 Table table = schemata.getTable(tableName);
                 if (table instanceof View) {
                     View view = (View)table;
-                    PlanNode viewPlan = viewPlanCache.get(tableName);
-                    if (viewPlan == null) {
-                        viewPlan = planner.createPlan(context, view.getDefinition());
-                        if (viewPlan != null) viewPlanCache.put(tableName, viewPlan);
-                    }
+                    PlanNode viewPlan = planner.createPlan(context, view.getDefinition());
                     if (viewPlan == null) continue; // there were likely errors when creating the plan
-                    viewPlan = viewPlan.clone();
 
                     // If the view doesn't have an alias, or if the view's alias doesn't match the table's name/alias ...
                     PlanNode viewProjectNode = viewPlan.findAtOrBelow(Type.PROJECT);

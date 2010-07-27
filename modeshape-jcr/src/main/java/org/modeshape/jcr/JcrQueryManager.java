@@ -144,11 +144,12 @@ class JcrQueryManager implements QueryManager {
             }
             PlanHints hints = new PlanHints();
             hints.showPlan = true;
-            // We want to allow use of residual properties (not in the schemata) for criteria ...
-            hints.validateColumnExistance = false;
-            // If using XPath or JCR-SQL, we need to include the 'jcr:score' column ...
-            if (Query.XPATH.equals(language) || Query.SQL.equals(language)) {
+            if (Query.SQL.equals(language)) {
                 hints.hasFullTextSearch = true; // requires 'jcr:score' to exist
+            }
+            if (Query.XPATH.equals(language)) {
+                hints.hasFullTextSearch = true; // requires 'jcr:score' to exist
+                hints.validateColumnExistance = false;
             }
             return resultWith(expression, parser.getLanguage(), command, hints, storedAtPath);
         } catch (ParsingException e) {
@@ -184,8 +185,6 @@ class JcrQueryManager implements QueryManager {
             // Parsing must be done now ...
             PlanHints hints = new PlanHints();
             hints.showPlan = true;
-            // We want to allow use of residual properties (not in the schemata) for criteria ...
-            hints.validateColumnExistance = false;
             return resultWith(expression, QueryLanguage.JCR_SQL2, command, hints, null);
         } catch (org.modeshape.graph.query.parse.InvalidQueryException e) {
             // The query was parsed, but there is an error in the query

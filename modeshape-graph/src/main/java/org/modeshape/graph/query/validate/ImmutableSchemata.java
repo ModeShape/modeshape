@@ -75,6 +75,7 @@ public class ImmutableSchemata implements Schemata {
         private final TypeSystem typeSystem;
         private final Map<SelectorName, ImmutableTable> tables = new HashMap<SelectorName, ImmutableTable>();
         private final Map<SelectorName, QueryCommand> viewDefinitions = new HashMap<SelectorName, QueryCommand>();
+        private final Set<SelectorName> tablesOrViewsWithExtraColumns = new HashSet<SelectorName>();
 
         protected Builder( TypeSystem typeSystem ) {
             this.typeSystem = typeSystem;
@@ -100,7 +101,7 @@ public class ImmutableSchemata implements Schemata {
                 CheckArg.isNotEmpty(columnName, "columnName[" + (i++) + "]");
                 columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType()));
             }
-            ImmutableTable table = new ImmutableTable(new SelectorName(name), columns);
+            ImmutableTable table = new ImmutableTable(new SelectorName(name), columns, false);
             tables.put(table.getName(), table);
             return this;
         }
@@ -130,7 +131,7 @@ public class ImmutableSchemata implements Schemata {
                 CheckArg.isNotEmpty(columnName, "columnName[" + i + "]");
                 columns.add(new ImmutableColumn(columnName, types[i]));
             }
-            ImmutableTable table = new ImmutableTable(new SelectorName(name), columns);
+            ImmutableTable table = new ImmutableTable(new SelectorName(name), columns, false);
             tables.put(table.getName(), table);
             return this;
         }
@@ -217,7 +218,7 @@ public class ImmutableSchemata implements Schemata {
             if (existing == null) {
                 List<Column> columns = new ArrayList<Column>();
                 columns.add(new ImmutableColumn(columnName, type, fullTextSearchable));
-                table = new ImmutableTable(selector, columns);
+                table = new ImmutableTable(selector, columns, false);
             } else {
                 table = existing.withColumn(columnName, type, fullTextSearchable);
             }
@@ -243,7 +244,7 @@ public class ImmutableSchemata implements Schemata {
             if (existing == null) {
                 List<Column> columns = new ArrayList<Column>();
                 columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType(), true));
-                table = new ImmutableTable(selector, columns);
+                table = new ImmutableTable(selector, columns, false);
             } else {
                 Column column = existing.getColumn(columnName);
                 String type = typeSystem.getDefaultType();
@@ -253,6 +254,20 @@ public class ImmutableSchemata implements Schemata {
                 table = existing.withColumn(columnName, type, true);
             }
             tables.put(table.getName(), table);
+            return this;
+        }
+
+        /**
+         * Make sure the column on the named table has extra columns that can be used without validation error.
+         * 
+         * @param tableName the name of the table
+         * @return this builder, for convenience in method chaining; never null
+         * @throws IllegalArgumentException if the table name does is null or empty
+         */
+        public Builder markExtraColumns( String tableName ) {
+            CheckArg.isNotEmpty(tableName, "tableName");
+            SelectorName selector = new SelectorName(tableName);
+            tablesOrViewsWithExtraColumns.add(selector);
             return this;
         }
 
@@ -295,6 +310,14 @@ public class ImmutableSchemata implements Schemata {
          * @throws InvalidQueryException if any of the view definitions is invalid and cannot be resolved
          */
         public Schemata build() {
+            // Go through the tables and mark those that have extra columns ...
+            for (SelectorName tableName : tablesOrViewsWithExtraColumns) {
+                ImmutableTable table = tables.get(tableName);
+                if (table != null) {
+                    tables.put(table.getName(), table.withExtraColumns());
+                }
+            }
+
             ImmutableSchemata schemata = new ImmutableSchemata(new HashMap<SelectorName, Table>(tables));
 
             // Make a copy of the view definitions, and create the views ...
@@ -357,7 +380,8 @@ public class ImmutableSchemata implements Schemata {
                     }
 
                     // If we could resolve the definition ...
-                    ImmutableView view = new ImmutableView(name, viewColumns, command);
+                    boolean hasExtraColumns = tablesOrViewsWithExtraColumns.contains(name);
+                    ImmutableView view = new ImmutableView(name, viewColumns, hasExtraColumns, command);
                     definitions.remove(name);
                     schemata = schemata.with(view);
                     added = true;

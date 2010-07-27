@@ -45,14 +45,17 @@ class ImmutableTable implements Table {
     private final Map<String, Column> columnsByName;
     private final List<Column> columns;
     private final Set<Key> keys;
+    private final boolean extraColumns;
 
     protected ImmutableTable( SelectorName name,
-                              Iterable<Column> columns ) {
-        this(name, columns, (Iterable<Column>[])null);
+                              Iterable<Column> columns,
+                              boolean extraColumns ) {
+        this(name, columns, extraColumns, (Iterable<Column>[])null);
     }
 
     protected ImmutableTable( SelectorName name,
                               Iterable<Column> columns,
+                              boolean extraColumns,
                               Iterable<Column>... keyColumns ) {
         this.name = name;
         // Define the columns ...
@@ -81,16 +84,19 @@ class ImmutableTable implements Table {
         } else {
             this.keys = Collections.emptySet();
         }
+        this.extraColumns = extraColumns;
     }
 
     protected ImmutableTable( SelectorName name,
                               Map<String, Column> columnsByName,
                               List<Column> columns,
-                              Set<Key> keys ) {
+                              Set<Key> keys,
+                              boolean extraColumns ) {
         this.name = name;
         this.columns = columns;
         this.columnsByName = columnsByName;
         this.keys = keys;
+        this.extraColumns = extraColumns;
     }
 
     /**
@@ -180,11 +186,20 @@ class ImmutableTable implements Table {
         return getKey(columns) != null;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.validate.Schemata.Table#hasExtraColumns()
+     */
+    public boolean hasExtraColumns() {
+        return extraColumns;
+    }
+
     public ImmutableTable withColumn( String name,
                                       String type ) {
         List<Column> newColumns = new LinkedList<Column>(columns);
         newColumns.add(new ImmutableColumn(name, type));
-        return new ImmutableTable(getName(), newColumns);
+        return new ImmutableTable(getName(), newColumns, extraColumns);
     }
 
     public ImmutableTable withColumn( String name,
@@ -192,7 +207,7 @@ class ImmutableTable implements Table {
                                       boolean fullTextSearchable ) {
         List<Column> newColumns = new LinkedList<Column>(columns);
         newColumns.add(new ImmutableColumn(name, type, fullTextSearchable));
-        return new ImmutableTable(getName(), newColumns);
+        return new ImmutableTable(getName(), newColumns, extraColumns);
     }
 
     public ImmutableTable withColumns( Iterable<Column> columns ) {
@@ -200,11 +215,11 @@ class ImmutableTable implements Table {
         for (Column column : columns) {
             newColumns.add(new ImmutableColumn(column.getName(), column.getPropertyType(), column.isFullTextSearchable()));
         }
-        return new ImmutableTable(getName(), newColumns);
+        return new ImmutableTable(getName(), newColumns, extraColumns);
     }
 
     public ImmutableTable with( SelectorName name ) {
-        return new ImmutableTable(name, columnsByName, columns, keys);
+        return new ImmutableTable(name, columnsByName, columns, keys, extraColumns);
     }
 
     public ImmutableTable withKey( Iterable<Column> keyColumns ) {
@@ -213,11 +228,19 @@ class ImmutableTable implements Table {
             assert columns.contains(keyColumn);
         }
         if (!keys.add(new ImmutableKey(keyColumns))) return this;
-        return new ImmutableTable(name, columnsByName, columns, keys);
+        return new ImmutableTable(name, columnsByName, columns, keys, extraColumns);
     }
 
     public ImmutableTable withKey( Column... keyColumns ) {
         return withKey(Arrays.asList(keyColumns));
+    }
+
+    public ImmutableTable withExtraColumns() {
+        return extraColumns ? this : new ImmutableTable(name, columnsByName, columns, keys, true);
+    }
+
+    public ImmutableTable withoutExtraColumns() {
+        return !extraColumns ? this : new ImmutableTable(name, columnsByName, columns, keys, false);
     }
 
     /**

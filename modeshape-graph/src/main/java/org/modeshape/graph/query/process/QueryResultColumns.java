@@ -25,6 +25,7 @@ package org.modeshape.graph.query.process;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,6 +44,8 @@ import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.model.Constraint;
 import org.modeshape.graph.query.model.FullTextSearch;
 import org.modeshape.graph.query.model.Visitors;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * Defines the columns associated with the results of a query. This definition allows the values to be accessed
@@ -118,6 +121,7 @@ public class QueryResultColumns implements Columns {
         this.columnIndexByPropertyNameBySelectorName = new HashMap<String, Map<String, Integer>>();
         List<String> selectorNames = new ArrayList<String>(columnCount);
         List<String> names = new ArrayList<String>(columnCount);
+        Set<Column> sameNameColumns = findColumnsWithSameNames(this.columns);
         for (int i = 0, max = this.columns.size(); i != max; ++i) {
             Column column = this.columns.get(i);
             assert column != null;
@@ -127,7 +131,7 @@ public class QueryResultColumns implements Columns {
                 selectorIndex = new Integer(selectorIndex.intValue() + 1);
                 locationIndexBySelectorName.put(selectorName, selectorIndex);
             }
-            String columnName = columnNameFor(column, names);
+            String columnName = columnNameFor(column, names, sameNameColumns);
             assert columnName != null;
             columnIndexByColumnName.put(columnName, new Integer(i));
             locationIndexByColumnIndex.put(new Integer(i), selectorIndex);
@@ -172,17 +176,26 @@ public class QueryResultColumns implements Columns {
         this.selectorNames = new ArrayList<String>(columns.size());
         List<String> types = new ArrayList<String>(columns.size());
         List<String> names = new ArrayList<String>(columns.size());
+        Set<Column> sameNameColumns = findColumnsWithSameNames(this.columns);
         for (int i = 0, max = this.columns.size(); i != max; ++i) {
             Column column = this.columns.get(i);
             assert column != null;
             String selectorName = column.selectorName().name();
             if (!selectorNames.contains(selectorName)) selectorNames.add(selectorName);
-            String columnName = columnNameFor(column, names);
+            String columnName = columnNameFor(column, names, sameNameColumns);
             assert columnName != null;
-            int columnIndexInt = wrappedAround.getColumnIndexForName(columnName);
-            Integer columnIndex = new Integer(columnIndexInt);
+            Integer columnIndex = wrappedAround.columnIndexForName(columnName);
+            if (columnIndex == null) {
+                String columnNameWithoutSelector = column.columnName() != null ? column.columnName() : column.propertyName();
+                columnIndex = wrappedAround.columnIndexForName(columnNameWithoutSelector);
+                if (columnIndex == null) {
+                    String columnNameWithSelector = column.selectorName() + "." + columnNameWithoutSelector;
+                    columnIndex = wrappedAround.columnIndexForName(columnNameWithSelector);
+                }
+            }
+            assert columnIndex != null;
             columnIndexByColumnName.put(columnName, columnIndex);
-            types.add(wrappedAround.getColumnTypes().get(columnIndexInt));
+            types.add(wrappedAround.getColumnTypes().get(columnIndex.intValue()));
             Integer selectorIndex = new Integer(wrappedAround.getLocationIndex(selectorName));
             locationIndexBySelectorName.put(selectorName, selectorIndex);
             locationIndexByColumnIndex.put(columnIndex, selectorIndex);
@@ -443,6 +456,10 @@ public class QueryResultColumns implements Columns {
         return result.intValue();
     }
 
+    protected Integer columnIndexForName( String columnName ) {
+        return columnIndexByColumnName.get(columnName);
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -524,13 +541,29 @@ public class QueryResultColumns implements Columns {
     }
 
     protected static String columnNameFor( Column column,
-                                           List<String> columnNames ) {
+                                           List<String> columnNames,
+                                           Set<Column> columnsWithDuplicateNames ) {
         String columnName = column.columnName() != null ? column.columnName() : column.propertyName();
-        if (columnNames.contains(columnName)) {
+        if (columnNames.contains(columnName) || columnsWithDuplicateNames.contains(column)) {
             columnName = column.selectorName() + "." + columnName;
         }
         columnNames.add(columnName);
         return columnName;
+    }
+
+    protected static Set<Column> findColumnsWithSameNames( List<Column> columns ) {
+        Multimap<String, Column> columnNames = ArrayListMultimap.create();
+        for (Column column : columns) {
+            String columnName = column.columnName() != null ? column.columnName() : column.propertyName();
+            columnNames.put(columnName, column);
+        }
+        Set<Column> results = new HashSet<Column>();
+        for (Map.Entry<String, Collection<Column>> entry : columnNames.asMap().entrySet()) {
+            if (entry.getValue().size() > 1) {
+                results.addAll(entry.getValue());
+            }
+        }
+        return results;
     }
 
     /**

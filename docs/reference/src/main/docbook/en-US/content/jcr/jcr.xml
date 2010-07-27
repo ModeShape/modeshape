@@ -944,7 +944,8 @@ nodeTypeManager.unregisterNodeTypes(unusedNodeTypeNames);
 			This definition could then be registered as part of the repository configuration
 			(see the <link linkend="programmatically_configuring_repositories">previous chapter</link>).  Or, you can also
 			use a Session to programmatically register the node types in a CND file, but this requires ModeShape-specific class to read this file:
-<programlisting>&CndNodeTypeReader; reader = new &CndNodeTypeReader;();
+<programlisting>&Session; session = ...
+&CndNodeTypeReader; reader = new &CndNodeTypeReader;(session);
 reader.read(cndFile); // from file, file system path, classpath resource, URL, etc.
 
 if (!reader.getProblems().isEmpty()) {
@@ -953,13 +954,13 @@ if (!reader.getProblems().isEmpty()) {
   }
 } else {
   boolean allowUpdate = ...
-  &Session; session = ...
   &NodeTypeManager; nodeTypeManager = session.getWorkspace().getNodeTypeManager();
   nodeTypeManager.registerNodeTypes(reader.getNodeTypes(), allowUpdate);
 }</programlisting>
 
       The &CndNodeTypeReader; class provides a number of <code>read(...)</code> methods that accept &File;s, paths to files on the file system,
-      the names of resources on the classpath, &URLs;, and &InputStream;s. For details, see the JavaDoc for &CndNodeTypeReader;.
+      the names of resources on the classpath, &URLs;, and &InputStream;s. And &CndNodeTypeReader; will also register any namespace mappings
+      defined in the CND file but not yet registered in the session or workspace. For details, see the JavaDoc for &CndNodeTypeReader;.
 			If you have multiple CND files, you can either call <code>read(...)</code> multiple times before
       registering (as long as the CND files don't contain duplicate node type definitions), or you can simply create and use a new reader
       for each CND file. The choice is yours.
