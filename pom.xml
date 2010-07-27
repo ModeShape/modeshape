@@ -158,6 +158,8 @@
 		<module>extensions/modeshape-mimetype-detector-aperture</module>
 		<module>web</module>
 		<module>utils/modeshape-jpa-ddl-gen</module>
+		<module>utils/modeshape-jdbc</module>
+        <module>deploy/jbossas</module>
 	</modules>
 	<properties>
 		<rootDir>${project.basedir}</rootDir>
