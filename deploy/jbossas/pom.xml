@@ -5,16 +5,63 @@
     <version>2.1-SNAPSHOT</version>
     <relativePath>../..</relativePath>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.modeshape.deploy</groupId>
-  <artifactId>jbossas</artifactId>
   <packaging>pom</packaging>
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>jbossas</artifactId>
   <name>ModeShape Jboss Deployment Components</name>
   <url>http://www.modeshape.org</url>
   <description>ModeShape JBoss Deployment Components</description>
   <modules>
-    <module>modeshape-jbossas-service</module>
-    <module>modeshape-jbossas-console</module>
-    <module>modeshape-jbossas-web-rest-war</module>
+     <module>modeshape-jbossas-service</module>
+     <module>modeshape-jbossas-console</module>
+     <module>modeshape-jbossas-web-rest-war</module>
+   <!-- module>modeshape-jbossas-web-webdav-war</module-->
   </modules>
+  
+  <dependencies>
+         <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jdbc</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.jcr</groupId>
+            <artifactId>jcr</artifactId>
+        </dependency>
+        
+  </dependencies>
+  
+    <build>
+       <finalName>resources</finalName>
+        <plugins>
+            
+           <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2-beta-2</version>
+                
+                <configuration>
+                    <descriptors>
+                        <descriptor>assembly/kit.xml</descriptor>
+                    </descriptors>
+                    <outputDirectory>target/distribution</outputDirectory>
+                    <workDirectory>target/assembly/work</workDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attached</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
 </project>
