@@ -2295,14 +2295,14 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     QueryResult sharedSetFor( String identifierOfSharedNode ) throws RepositoryException {
         // Execute a query that will report all nodes referencing this node ...
         QueryBuilder builder = new QueryBuilder(context().getValueFactories().getTypeSystem());
-        QueryCommand query = builder.select("jcr:primaryType")
+        QueryCommand query = builder.select("jcr:uuid")
                                     .from("mix:shareable")
                                     .where()
                                     .propertyValue("mix:shareable", "jcr:uuid")
                                     .isEqualTo(identifierOfSharedNode)
                                     .end()
                                     .union()
-                                    .select("jcr:primaryType")
+                                    .select("jcr:uuid")
                                     .from("mode:share")
                                     .where()
                                     .referenceValue("mode:share", "mode:sharedUuid")

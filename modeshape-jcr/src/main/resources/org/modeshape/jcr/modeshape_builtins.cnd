@@ -77,5 +77,5 @@
 - jcr:lastModified (date) mandatory ignore
 - jcr:mimeType (string) copy mandatory
 
-[mode:share]    // Used for non-original shared nodes, but never really exposed to JCR clients
+[mode:share] > mix:referenceable    // Used for non-original shared nodes, but never really exposed to JCR clients
 - mode:sharedUuid (reference) mandatory protected initialize 
