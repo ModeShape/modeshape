@@ -862,23 +862,28 @@ final &LoginContext; loginContext = ...;
 			<title>Custom Node Type Registration</title>
 			<para>
 				Although the <ulink url="&JSR283;">JSR-283</ulink> specification does not require support for registration and unregistration of custom types, ModeShape supports this extremely
-				useful feature.  Custom node types can be added at startup, as noted above, at runtime through a ModeShape-specific interface that accepts CND files, or through the JSR-283
-				node type template methods. 
-				All three of these node type registration mechanisms are supported equally within ModeShape, although the CND approach for defining node types is recommended.
+				useful feature.  Custom node types can be added at startup, as noted above, at runtime using the standard JCR API for managing node types,
+				or at runtime by reading CND files or Jackrabbit XML files.
+				These node type registration mechanisms are supported equally within ModeShape, although defining node types in standard CND files
+				is recommended for portability.
 				<note>
 					<para>ModeShape also supports defining custom node types to load at startup.  This is discussed in more detail
 					in the <link linkend="programmatically_configuring_repositories">previous chapter</link>.
 					</para>
 				</note>
 			</para>
+			<sect3>
+				<title>Managing Node Types Using the JCR API</title>
 			<para>
-				Node types can be defined like so:
+				The JCR 2.0 API provides a mechanism for registering and unregistering node types. Registration is done by creating &NodeTypeTemplate; objects,
+				&NodeDefinitionTemplate; objects (for child node definitions), and &PropertyDefinitionTemplate; objects (for property definitions).
+				Use the setter methods to set the various attributes, and then register the node type definition with the &NodeTypeManager;:
 	    <programlisting>
 &Session; session = ... ;
 &Workspace; workspace = session.getWorkspace();
 
 // Obtain the ModeShape-specific node type manager ...
-&JcrNodeTypeManager; nodeTypeManager = (JcrNodeTypeManager) workspace.getNodeTypeManager();
+&NodeTypeManager; nodeTypeManager = workspace.getNodeTypeManager();
 
 // Declare a mixin node type named "searchable" (with no namespace)
 &NodeTypeTemplate; nodeType = nodeTypeManager.createNodeTypeTemplate();
@@ -906,6 +911,28 @@ nodeTypeManager.registerNodeType(nodeType,false);
 			Residual properties and child node definitions can also be defined simply by not calling <code>setName</code> on 
 			the template.
 			</para>
+			<para> 
+				ModeShape also supports a simple means of unregistering types, although it is not possible to unregister types that are
+				currently being used by nodes or as required primary types or supertypes of other types.  Unused node types can be unregistered 
+				with the following code, using the standard JCR 2.0 API:
+<programlisting>
+String[] unusedNodeTypeNames = ...;
+
+&Session; session = ... ;
+&NodeTypeManager; nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+nodeTypeManager.unregisterNodeTypes(unusedNodeTypeNames);
+</programlisting>
+
+			</para>
+			<para>
+				This approach is often used to register custom node types within an application, when the application knows the node type
+				definitions or retrieves these definitions from some persisted format (e.g., file, database, etc.). However, ModeShape
+				provides some utilities if you want to programmatically register node types defined in certain file formats. We'll see
+				in the next section how to use these.
+			</para>
+		</sect3>
+		<sect3>
+				<title>Reading JCR CND files</title>
 			<para>
 			Custom node types can be defined more succinctly through the CND file format defined by the JCR 2.0 specification.  In fact, this is how JBoss
 			ModeShape defines its built-in node types. An example CND file that declares the same node type as above would be:
@@ -914,46 +941,52 @@ nodeTypeManager.registerNodeType(nodeType,false);
 - keywords (string) multiple
 + source (nt:file) = nt:file mandatory
 </programlisting>	
-			This definition could then be registered as part of the repository configuration, using the &JcrConfiguration; class
+			This definition could then be registered as part of the repository configuration
 			(see the <link linkend="programmatically_configuring_repositories">previous chapter</link>).  Or, you can also
-			use a Session to declare the node types in a CND file, but this also requires ModeShape-specific interfaces and classes:
-<programlisting>
-String pathToCndFileInClassLoader = ...;
-&CndNodeTypeSource; nodeTypeSource = new &CndNodeTypeSource;(pathToCndFileInClassLoader);
+			use a Session to programmatically register the node types in a CND file, but this requires ModeShape-specific class to read this file:
+<programlisting>&CndNodeTypeReader; reader = new &CndNodeTypeReader;();
+reader.read(cndFile); // from file, file system path, classpath resource, URL, etc.
 
-for (&Problem; problem : nodeTypeSource.getProblems()) {
-    System.err.println(problem);
-}
-if (!nodeTypeSource.isValid()) {
-    throw new IllegalStateException("Problems loading node types");
-}
+if (!reader.getProblems().isEmpty()) {
+  for (&Problem; problem : nodeTypeSource.getProblems()) {
+    // report or record problem
+  }
+} else {
+  boolean allowUpdate = ...
+  &Session; session = ...
+  &NodeTypeManager; nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+  nodeTypeManager.registerNodeTypes(reader.getNodeTypes(), allowUpdate);
+}</programlisting>
 
-&Session; session = ... ;
-// Obtain the ModeShape-specific node type manager ...
-&Workspace; workspace = session.getWorkspace();
-&JcrNodeTypeManager; nodeTypeManager = (JcrNodeTypeManager) workspace.getNodeTypeManager();
-nodeTypeManager.registerNodeTypes(nodeTypeSource);
-</programlisting>
+      The &CndNodeTypeReader; class provides a number of <code>read(...)</code> methods that accept &File;s, paths to files on the file system,
+      the names of resources on the classpath, &URLs;, and &InputStream;s. For details, see the JavaDoc for &CndNodeTypeReader;.
+			If you have multiple CND files, you can either call <code>read(...)</code> multiple times before
+      registering (as long as the CND files don't contain duplicate node type definitions), or you can simply create and use a new reader
+      for each CND file. The choice is yours.
+	  </para>
+	</sect3>
+	<sect3>
+			<title>Reading Jackrabbit XML Node Type Files</title>
+  	<para>
+			ModeShape also provides a class that reads the node types defined in a Jackrabbit XML format. This is useful if you've been using Jackrabbit,
+			have defined your custom node types in the Jackrabbit-specific format, but want to switch to ModeShape and don't want to have to manually
+			convert your node types in the standard CND format. This class is used almost identically to the &CndNodeTypeReader; class described above:
+<programlisting>&JackrabbitXmlNodeTypeReader; reader = new &JackrabbitXmlNodeTypeReader;();
+reader.read(cndFile); // from file, file system path, classpath resource, URL, etc.
 
-    The &CndNodeTypeSource; class actually implements the &JcrNodeTypeSource; interface, so other implementations can actually be defined.
-    For more information, see the JavaDoc for &JcrNodeTypeSource;.
+if (!reader.getProblems().isEmpty()) {
+  for (&Problem; problem : nodeTypeSource.getProblems()) {
+    // report or record problem
+  }
+} else {
+  boolean allowUpdate = ...
+  &Session; session = ...
+  &NodeTypeManager; nodeTypeManager = session.getWorkspace().getNodeTypeManager();
+  nodeTypeManager.registerNodeTypes(reader.getNodeTypes(), allowUpdate);
+}</programlisting>
 			</para>
-			<para> 
-				ModeShape also supports a simple means of unregistering types, although it is not possible to unregister types that are
-				currently being used by nodes or as required primary types or supertypes of other types.  Unused node types can be unregistered 
-				with the following code:
-<programlisting>
-String unusedNodeTypeName = ...;
-
-&Session; session = ... ;
-// Obtain the ModeShape-specific node type manager ...
-&Workspace; workspace = session.getWorkspace();
-&JcrNodeTypeManager; nodeTypeManager = (JcrNodeTypeManager) workspace.getNodeTypeManager();
-nodeTypeManager.unregisterNodeType(Collections.singleton(unusedNodeTypeName));
-</programlisting>
-				
-			</para>
-		</sect2>
+		</sect3>
+	</sect2>
 	</sect1>
 	<sect1>
 		<title>Summary</title>

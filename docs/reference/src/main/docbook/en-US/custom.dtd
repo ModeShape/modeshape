@@ -105,6 +105,11 @@
 <!ENTITY QueryResult									"<ulink url='&JcrApi;javax/jcr/query/QueryResult.html'><interface>QueryResult</interface></ulink>">
 <!ENTITY QueryObjectModel        			"<ulink url='&JcrApi;javax/jcr/query/qom/QueryObjectModel.html'><interface>QueryObjectModel</interface></ulink>">
 <!ENTITY QueryObjectModelFactory			"<ulink url='&JcrApi;javax/jcr/query/qom/QueryObjectModelFactory.html'><interface>QueryObjectModelFactory</interface></ulink>">
+<!ENTITY NodeTypeManager							"<ulink url='&JcrApi;javax/jcr/nodetype/NodeTypeManager.html'><interface>NodeTypeManager</interface></ulink>">
+<!ENTITY NodeTypeTemplate          		"<ulink url='&JcrApi;javax/jcr/nodetype/NodeTypeTemplate.html'><interface>NodeTypeTemplate</interface></ulink>">
+<!ENTITY PropertyDefinitionTemplate		"<ulink url='&JcrApi;javax/jcr/nodetype/PropertyDefinitionTemplate.html'><interface>PropertyDefinitionTemplate</interface></ulink>">
+<!ENTITY NodeDefinitionTemplate    		"<ulink url='&JcrApi;javax/jcr/nodetype/NodeDefinitionTemplate.html'><interface>NodeDefinitionTemplate</interface></ulink>">
+<!ENTITY NodeTypeDefinition        		"<ulink url='&JcrApi;javax/jcr/nodetype/NodeTypeDefinition.html'><interface>NodeTypeDefinition</interface></ulink>">
 
 <!-- Types in modeshape-common -->
 
@@ -237,12 +242,8 @@
 <!ENTITY JndiRepositoryFactory			  "<ulink url='&API;jcr/JcrRepository.html'><classname>JndiRepositoryFactory</classname></ulink>">
 <!ENTITY SecurityContextCredentials   "<ulink url='&API;jcr/SecurityContextCredentials.html'><classname>SecurityContextCredentials</classname></ulink>">
 <!ENTITY JcrNodeTypeManager       		"<ulink url='&API;jcr/JcrNodeTypeManager.html'><classname>JcrNodeTypeManager</classname></ulink>">
-<!ENTITY NodeTypeTemplate          		"<ulink url='&API;jcr/nodetype/NodeTypeTemplate.html'><interface>NodeTypeTemplate</interface></ulink>">
-<!ENTITY PropertyDefinitionTemplate		"<ulink url='&API;jcr/nodetype/PropertyDefinitionTemplate.html'><interface>PropertyDefinitionTemplate</interface></ulink>">
-<!ENTITY NodeDefinitionTemplate    		"<ulink url='&API;jcr/nodetype/NodeDefinitionTemplate.html'><interface>NodeDefinitionTemplate</interface></ulink>">
-<!ENTITY NodeTypeDefinition        		"<ulink url='&API;jcr/nodetype/NodeTypeDefinition.html'><interface>NodeTypeDefinition</interface></ulink>">
-<!ENTITY JcrNodeTypeSource        		"<ulink url='&API;jcr/JcrNodeTypeSource.html'><interface>JcrNodeTypeSource</interface></ulink>">
-<!ENTITY CndNodeTypeSource        		"<ulink url='&API;jcr/CndNodeTypeSource.html'><classname>CndNodeTypeSource</classname></ulink>">
+<!ENTITY CndNodeTypeReader        		"<ulink url='&API;jcr/CndNodeTypeReader.html'><classname>CndNodeTypeReader</classname></ulink>">
+<!ENTITY JackrabbitXmlNodeTypeReader  "<ulink url='&API;jcr/JackrabbitXmlNodeTypeReader.html'><classname>JackrabbitXmlNodeTypeReader</classname></ulink>">
 
 <!-- Types in extensions/ -->
 

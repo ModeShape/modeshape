@@ -51,7 +51,6 @@ public class CndNodeTypeRegistrationTest {
 
     private ExecutionContext context;
     private RepositoryNodeTypeManager repoTypeManager;
-    private JcrNodeTypeSource nodeTypes;
     @Mock
     protected JcrRepository repository;
 
@@ -65,8 +64,9 @@ public class CndNodeTypeRegistrationTest {
 
         repoTypeManager = new RepositoryNodeTypeManager(repository, true);
         try {
-            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/modeshape/jcr/jsr_283_builtins.cnd",
-                "/org/modeshape/jcr/modeshape_builtins.cnd"}));
+            CndNodeTypeReader cndReader = new CndNodeTypeReader(context);
+            cndReader.readBuiltInTypes();
+            repoTypeManager.registerNodeTypes(cndReader);
         } catch (RepositoryException re) {
             re.printStackTrace();
             throw new IllegalStateException("Could not load node type definition files", re);
@@ -80,24 +80,25 @@ public class CndNodeTypeRegistrationTest {
     @Ignore
     @Test( expected = RepositoryException.class )
     public void shouldNotAllowRedefinitionOfExistingType() throws Exception {
-        nodeTypes = new CndNodeTypeSource(CND_LOCATION + "existingType.cnd");
-
-        repoTypeManager.registerNodeTypes(nodeTypes);
+        CndNodeTypeReader cndFactory = new CndNodeTypeReader(context);
+        cndFactory.read(CND_LOCATION + "existingType.cnd");
+        repoTypeManager.registerNodeTypes(cndFactory);
     }
 
     @Test
     public void shouldLoadMagnoliaTypes() throws Exception {
-        nodeTypes = new CndNodeTypeSource("/magnolia.cnd");
-
-        repoTypeManager.registerNodeTypes(nodeTypes);
+        CndNodeTypeReader cndFactory = new CndNodeTypeReader(context);
+        cndFactory.read("/magnolia.cnd");
+        repoTypeManager.registerNodeTypes(cndFactory);
     }
 
     @Ignore
     @Test
     public void shouldRegisterValidTypes() throws Exception {
-        nodeTypes = new CndNodeTypeSource(CND_LOCATION + "validType.cnd");
+        CndNodeTypeReader cndFactory = new CndNodeTypeReader(context);
+        cndFactory.read(CND_LOCATION + "validType.cnd");
+        repoTypeManager.registerNodeTypes(cndFactory);
 
-        repoTypeManager.registerNodeTypes(nodeTypes);
         Name testNodeName = context.getValueFactories().getNameFactory().create(TestLexicon.Namespace.URI, "testType");
 
         NodeType nodeType = repoTypeManager.getNodeType(testNodeName);

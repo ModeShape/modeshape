@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.version.OnParentVersionAction;
 import org.modeshape.graph.ExecutionContext;
@@ -65,7 +66,7 @@ public class Vehicles {
     }
 
     @SuppressWarnings( "unchecked" )
-    public static List<NodeTypeTemplate> getNodeTypes( ExecutionContext context ) throws ConstraintViolationException {
+    public static List<NodeTypeDefinition> getNodeTypes( ExecutionContext context ) throws ConstraintViolationException {
         JcrPropertyDefinitionTemplate property;
 
         NodeTypeTemplate car = new JcrNodeTypeTemplate(context);
@@ -175,6 +176,6 @@ public class Vehicles {
         property.setRequiredType(PropertyType.LONG);
         aircraft.getPropertyDefinitionTemplates().add(property);
 
-        return Arrays.asList(new NodeTypeTemplate[] {car, aircraft,});
+        return Arrays.asList(new NodeTypeDefinition[] {car, aircraft,});
     }
 }

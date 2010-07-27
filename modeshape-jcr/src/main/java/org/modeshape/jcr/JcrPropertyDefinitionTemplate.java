@@ -27,6 +27,8 @@ import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
 
@@ -45,6 +47,41 @@ class JcrPropertyDefinitionTemplate extends JcrItemDefinitionTemplate implements
 
     JcrPropertyDefinitionTemplate( ExecutionContext context ) {
         super(context);
+    }
+
+    JcrPropertyDefinitionTemplate( JcrPropertyDefinitionTemplate original,
+                                   ExecutionContext context ) {
+        super(original, context);
+        this.multiple = original.multiple;
+        this.requiredType = original.requiredType;
+        this.valueConstraints = original.valueConstraints;
+        this.fullTextSearchable = original.fullTextSearchable;
+        this.queryOrderable = original.queryOrderable;
+        this.availableQueryOperators = original.availableQueryOperators;
+        this.defaultValues = original.defaultValues != null ? new Value[original.defaultValues.length] : null;
+        if (original.defaultValues != null) {
+            for (int i = 0; i != original.defaultValues.length; ++i) {
+                Value originalValue = original.defaultValues[i];
+                assert originalValue instanceof JcrValue;
+                JcrValue jcrValue = ((JcrValue)originalValue);
+                SessionCache cache = jcrValue.sessionCache();
+                this.defaultValues[i] = new JcrValue(context.getValueFactories(), cache, jcrValue.getType(), jcrValue.value());
+                switch (jcrValue.getType()) {
+                    case PropertyType.NAME:
+                        Name nameValue = original.getContext().getValueFactories().getNameFactory().create(jcrValue.value());
+                        JcrItemDefinitionTemplate.registerMissingNamespaces(original.getContext(), context, nameValue);
+                        break;
+                    case PropertyType.PATH:
+                        Path pathValue = original.getContext().getValueFactories().getPathFactory().create(jcrValue.value());
+                        JcrItemDefinitionTemplate.registerMissingNamespaces(original.getContext(), context, pathValue);
+                        break;
+                }
+            }
+        }
+    }
+
+    JcrPropertyDefinitionTemplate with( ExecutionContext context ) {
+        return context == super.getContext() ? this : new JcrPropertyDefinitionTemplate(this, context);
     }
 
     /**

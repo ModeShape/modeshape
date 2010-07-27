@@ -33,6 +33,7 @@ import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
+import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.version.OnParentVersionAction;
 import org.junit.After;
 import org.junit.Before;
@@ -383,7 +384,7 @@ public class MixinTest extends AbstractSessionTest {
 
     @SuppressWarnings( {"unchecked", "deprecation"} )
     @Override
-    protected List<javax.jcr.nodetype.NodeTypeTemplate> getTestTypes() throws ConstraintViolationException {
+    protected List<NodeTypeDefinition> getTestTypes() throws ConstraintViolationException {
         NodeTypeTemplate mixinTypeA = new JcrNodeTypeTemplate(this.context);
         mixinTypeA.setName("mixinTypeA");
         mixinTypeA.setMixin(true);
@@ -470,8 +471,8 @@ public class MixinTest extends AbstractSessionTest {
         propertyA.setRequiredType(PropertyType.STRING);
         primaryTypeA.getPropertyDefinitionTemplates().add(propertyA);
 
-        return Arrays.asList(new javax.jcr.nodetype.NodeTypeTemplate[] {mixinTypeA, mixinTypeB, mixinTypeC,
-            mixinTypeWithAutoChild, mixinTypeWithAutoProperty, primaryTypeA,});
+        return Arrays.asList(new NodeTypeDefinition[] {mixinTypeA, mixinTypeB, mixinTypeC, mixinTypeWithAutoChild,
+            mixinTypeWithAutoProperty, primaryTypeA,});
     }
 
 }

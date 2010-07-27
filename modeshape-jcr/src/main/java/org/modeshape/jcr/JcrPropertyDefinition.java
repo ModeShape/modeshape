@@ -87,7 +87,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         this.fullTextSearchable = fullTextSearchable;
         this.queryOrderable = queryOrderable;
         this.queryOperators = queryOperators;
-        this.isPrivate = name.getNamespaceUri().equals(ModeShapeIntLexicon.Namespace.URI);
+        this.isPrivate = name != null && ModeShapeIntLexicon.Namespace.URI.equals(name.getNamespaceUri());
     }
 
     /**

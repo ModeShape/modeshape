@@ -85,9 +85,10 @@ public abstract class AbstractJcrTest {
 
         rntm = new RepositoryNodeTypeManager(repository, true);
         try {
-            rntm.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/modeshape/jcr/jsr_283_builtins.cnd",
-                "/org/modeshape/jcr/modeshape_builtins.cnd"}));
-            rntm.registerNodeTypes(new NodeTemplateNodeTypeSource(Vehicles.getNodeTypes(context)));
+            CndNodeTypeReader cndReader = new CndNodeTypeReader(context);
+            cndReader.readBuiltInTypes();
+            rntm.registerNodeTypes(cndReader);
+            rntm.registerNodeTypes(Vehicles.getNodeTypes(context));
         } catch (RepositoryException re) {
             re.printStackTrace();
             throw new IllegalStateException("Could not load node type definition files", re);

@@ -34,6 +34,7 @@ import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import org.junit.After;
 import org.junit.Before;
@@ -194,7 +195,7 @@ public class ItemDefinitionTest extends AbstractSessionTest {
 
     @SuppressWarnings( "unchecked" )
     @Override
-    protected List<NodeTypeTemplate> getTestTypes() throws ConstraintViolationException {
+    protected List<NodeTypeDefinition> getTestTypes() throws ConstraintViolationException {
         NodeTypeTemplate nodeA = new JcrNodeTypeTemplate(context);
         nodeA.setName("modetest:nodeA");
 
@@ -235,6 +236,6 @@ public class ItemDefinitionTest extends AbstractSessionTest {
         nodeCSingleProp2Long.setRequiredType(PropertyType.LONG);
         nodeC.getPropertyDefinitionTemplates().add(nodeCSingleProp2Long);
 
-        return Arrays.asList(new NodeTypeTemplate[] {nodeA, nodeB, nodeC});
+        return Arrays.asList(new NodeTypeDefinition[] {nodeA, nodeB, nodeC});
     }
 }

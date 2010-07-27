@@ -52,6 +52,7 @@
 /utils/modeshape-jpa-ddl-gen/target/
 
 /deploy/jbossas/target/
+/deploy/jbossas/modeshape-jbossas-console/target/
 /deploy/jbossas/modeshape-jbossas-service/target/
 /deploy/jbossas/modeshape-jbossas-web-rest-war/target/
 

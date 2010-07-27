@@ -29,8 +29,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import javax.jcr.Binary;
 import javax.jcr.Node;
@@ -38,7 +36,6 @@ import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -129,9 +126,7 @@ public class JcrSingleValuePropertyTest extends AbstractJcrTest {
         propDefns.add(undefinedDefn);
 
         // Add the node type ...
-        Collection<NodeTypeDefinition> defns = new ArrayList<NodeTypeDefinition>();
-        defns.add(nodeType);
-        rntm.registerNodeTypes(defns, false);
+        rntm.registerNodeType(nodeType);
     }
 
     @Override

@@ -68,6 +68,32 @@ public class JcrNodeTypeTemplate implements NodeTypeDefinition, NodeTypeTemplate
         this.createdFromExistingDefinition = createdFromExistingDefinition;
     }
 
+    JcrNodeTypeTemplate( JcrNodeTypeTemplate original,
+                         ExecutionContext context ) {
+        this.context = context;
+        this.isAbstract = original.isAbstract;
+        this.queryable = original.queryable;
+        this.mixin = original.mixin;
+        this.name = original.name;
+        this.orderableChildNodes = original.orderableChildNodes;
+        this.declaredSupertypeNames = original.declaredSupertypeNames;
+        this.primaryItemName = original.primaryItemName;
+        JcrItemDefinitionTemplate.registerMissingNamespaces(original.context, context, this.name);
+        JcrItemDefinitionTemplate.registerMissingNamespaces(original.context, context, this.declaredSupertypeNames);
+        JcrItemDefinitionTemplate.registerMissingNamespaces(original.context, context, this.primaryItemName);
+        for (NodeDefinitionTemplate childDefn : original.nodeDefinitionTemplates) {
+            this.nodeDefinitionTemplates.add(((JcrNodeDefinitionTemplate)childDefn).with(context));
+        }
+        for (PropertyDefinitionTemplate propDefn : original.propertyDefinitionTemplates) {
+            this.propertyDefinitionTemplates.add(((JcrPropertyDefinitionTemplate)propDefn).with(context));
+        }
+        this.createdFromExistingDefinition = original.createdFromExistingDefinition;
+    }
+
+    JcrNodeTypeTemplate with( ExecutionContext context ) {
+        return context == this.context ? this : new JcrNodeTypeTemplate(this, context);
+    }
+
     ExecutionContext getExecutionContext() {
         return context;
     }

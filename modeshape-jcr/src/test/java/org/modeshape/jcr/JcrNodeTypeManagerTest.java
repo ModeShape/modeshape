@@ -125,8 +125,10 @@ public final class JcrNodeTypeManagerTest extends TestSuite {
         final String SOURCE = "store";
 
         JcrConfiguration config = new JcrConfiguration();
-        config.repositorySource("store").usingClass(InMemoryRepositorySource.class).setRetryLimit(100).setProperty("defaultWorkspaceName",
-                                                                                                                   WORKSPACE);
+        config.repositorySource("store")
+              .usingClass(InMemoryRepositorySource.class)
+              .setRetryLimit(100)
+              .setProperty("defaultWorkspaceName", WORKSPACE);
         config.repository(REPOSITORY).setSource(SOURCE).setOption(Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
         config.save();
 
@@ -186,7 +188,9 @@ public final class JcrNodeTypeManagerTest extends TestSuite {
     @Test
     public void shouldAllowDisjunctiveResidualChildNodeDefinitions() throws Exception {
         // This is an extended test of the MODE-698 fix
-        nodeTypeMgr.registerNodeTypes(new CndNodeTypeSource("/magnolia.cnd"));
+        CndNodeTypeReader factory = new CndNodeTypeReader(engine.getExecutionContext());
+        factory.read("/magnolia.cnd");
+        nodeTypeMgr.registerNodeTypes(factory.getNodeTypeDefinitions(), false);
         session.getWorkspace().getNamespaceRegistry().registerNamespace("mgnl", "http://www.magnolia.info/jcr/mgnl");
 
         assertThat(nodeTypeMgr.getNodeType("mgnl:content"), is(notNullValue()));

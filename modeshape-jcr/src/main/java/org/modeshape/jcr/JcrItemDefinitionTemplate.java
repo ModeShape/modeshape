@@ -30,13 +30,41 @@ import javax.jcr.version.OnParentVersionAction;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NamespaceRegistry;
+import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.ValueFormatException;
+import org.modeshape.graph.property.Path.Segment;
 
 /**
  * ModeShape convenience implementation to support the JCR 2 NodeDefinitionTemplate and PropertyDefinitionTemplate classes.
  */
 @NotThreadSafe
 abstract class JcrItemDefinitionTemplate implements ItemDefinition {
+
+    protected static void registerMissingNamespaces( ExecutionContext originalContext,
+                                                     ExecutionContext newContext,
+                                                     Path path ) {
+        for (Segment segment : path) {
+            registerMissingNamespaces(originalContext, newContext, segment.getName());
+        }
+    }
+
+    protected static void registerMissingNamespaces( ExecutionContext originalContext,
+                                                     ExecutionContext newContext,
+                                                     Name... names ) {
+        if (names == null) return;
+        NamespaceRegistry newRegistry = newContext.getNamespaceRegistry();
+        NamespaceRegistry originalRegistry = originalContext.getNamespaceRegistry();
+        for (Name name : names) {
+            if (name != null) {
+                String uri = name.getNamespaceUri();
+                if (!newRegistry.isRegisteredNamespaceUri(uri)) {
+                    String prefix = originalRegistry.getPrefixForNamespaceUri(uri, false);
+                    newRegistry.register(prefix, uri);
+                }
+            }
+        }
+    }
 
     private final ExecutionContext context;
     private boolean autoCreated = false;
@@ -49,6 +77,17 @@ abstract class JcrItemDefinitionTemplate implements ItemDefinition {
         assert context != null;
 
         this.context = context;
+    }
+
+    JcrItemDefinitionTemplate( JcrItemDefinitionTemplate original,
+                               ExecutionContext context ) {
+        this.context = context;
+        this.autoCreated = original.autoCreated;
+        this.mandatory = original.mandatory;
+        this.isProtected = original.isProtected;
+        this.name = original.name;
+        this.onParentVersion = original.onParentVersion;
+        JcrItemDefinitionTemplate.registerMissingNamespaces(original.context, context, this.name);
     }
 
     ExecutionContext getExecutionContext() {

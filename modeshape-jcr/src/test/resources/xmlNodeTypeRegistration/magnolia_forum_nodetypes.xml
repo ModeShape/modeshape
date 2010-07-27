@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    /*
+    * Copyright 2004-2005 The Apache Software Foundation or its licensors,
+    *                     as applicable.
+    *
+    * Licensed under the Apache License, Version 2.0 (the "License");
+    * you may not use this file except in compliance with the License.
+    * You may obtain a copy of the License at
+    *
+    *      http://www.apache.org/licenses/LICENSE-2.0
+    *
+    * Unless required by applicable law or agreed to in writing, software
+    * distributed under the License is distributed on an "AS IS" BASIS,
+    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    * See the License for the specific language governing permissions and
+    * limitations under the License.
+    */
+-->
+<!DOCTYPE nodeTypes [
+    <!ELEMENT nodeTypes (nodeType)*>
+        <!ELEMENT nodeType (supertypes?|propertyDefinition*|childNodeDefinition*)>
+
+        <!ATTLIST nodeType
+            name CDATA #REQUIRED
+            isMixin (true|false) #REQUIRED
+             hasOrderableChildNodes (true|false) #REQUIRED
+            primaryItemName CDATA #REQUIRED
+        >
+        <!ELEMENT supertypes (supertype+)>
+        <!ELEMENT supertype (CDATA)>
+
+        <!ELEMENT propertyDefinition (valueConstraints?|defaultValues?)>
+        <!ATTLIST propertyDefinition
+            name CDATA #REQUIRED
+            requiredType (String|Date|Path|Name|Reference|Binary|Double|Long|Boolean|undefined) #REQUIRED
+            autoCreated (true|false) #REQUIRED
+            mandatory (true|false) #REQUIRED
+            onParentVersion (COPY|VERSION|INITIALIZE|COMPUTE|IGNORE|ABORT) #REQUIRED
+            protected (true|false) #REQUIRED
+            multiple  (true|false) #REQUIRED
+        >
+        <!ELEMENT valueConstraints (valueConstraint+)>
+        <!ELEMENT valueConstraint (CDATA)>
+        <!ELEMENT defaultValues (defaultValue+)>
+        <!ELEMENT defaultValue (CDATA)>
+
+        <!ELEMENT childNodeDefinition (requiredPrimaryTypes)>
+        <!ATTLIST childNodeDefinition
+            name CDATA #REQUIRED
+            defaultPrimaryType  CDATA #REQUIRED
+            autoCreated (true|false) #REQUIRED
+            mandatory (true|false) #REQUIRED
+            onParentVersion (COPY|VERSION|INITIALIZE|COMPUTE|IGNORE|ABORT) #REQUIRED
+            protected (true|false) #REQUIRED
+            sameNameSiblings (true|false) #REQUIRED
+        >
+        <!ELEMENT requiredPrimaryTypes (requiredPrimaryType+)>
+        <!ELEMENT requiredPrimaryType (CDATA)>
+]>
+
+<nodeTypes
+    xmlns:rep="internal"
+    xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+    xmlns:mix="http://www.jcp.org/jcr/mix/1.0"
+    xmlns:mgnl="http://www.magnolia.info/jcr/mgnl"
+    xmlns:jcr="http://www.jcp.org/jcr/1.0">
+
+  <nodeType name="mgnl:messageProperties" hasOrderableChildNodes="false" isMixin="false" primaryItemName="">
+    <supertypes>
+      <supertype>nt:hierarchyNode</supertype>
+    </supertypes>
+    <propertyDefinition autoCreated="false" mandatory="false" multiple="false" name="*" onParentVersion="COPY" protected="false" requiredType="undefined"/>
+  </nodeType>
+
+  <nodeType name="mgnl:message" isMixin="false" hasOrderableChildNodes="false" primaryItemName="mgnl:message">
+    <supertypes>
+      <supertype>nt:base</supertype>
+      <supertype>mix:versionable</supertype>
+    </supertypes>
+    <childNodeDefinition autoCreated="true" defaultPrimaryType="mgnl:messageProperties" mandatory="true" name="properties" onParentVersion="COPY" protected="false" sameNameSiblings="false">
+      <requiredPrimaryTypes>
+        <requiredPrimaryType>mgnl:messageProperties</requiredPrimaryType>
+      </requiredPrimaryTypes>
+    </childNodeDefinition>
+    <childNodeDefinition name="*" defaultPrimaryType="mgnl:message" onParentVersion="COPY"
+                         autoCreated="false" mandatory="false"
+                         protected="false" sameNameSiblings="true">
+      <requiredPrimaryTypes>
+        <requiredPrimaryType>mgnl:message</requiredPrimaryType>
+      </requiredPrimaryTypes>
+    </childNodeDefinition>
+    <propertyDefinition name="creationDate" requiredType="Date" onParentVersion="COPY"
+                        autoCreated="false" mandatory="true"
+                        protected="false" multiple="false"/>
+    <propertyDefinition name="modificationDate" requiredType="Date" onParentVersion="COPY"
+                        autoCreated="false" mandatory="false"
+                        protected="false" multiple="false"/>
+    <propertyDefinition name="authorId" requiredType="String" onParentVersion="COPY"
+                        autoCreated="false" mandatory="true"
+                        protected="false" multiple="false"/>
+    <propertyDefinition name="anonymousUsername" requiredType="String" onParentVersion="COPY"
+                        autoCreated="false" mandatory="false"
+                        protected="false" multiple="false"/>
+    <propertyDefinition name="title" requiredType="String" onParentVersion="COPY"
+                        autoCreated="false" mandatory="false"
+                        protected="false" multiple="false"/>
+    <propertyDefinition name="content" requiredType="String" onParentVersion="COPY"
+                        autoCreated="false" mandatory="true"
+                        protected="false" multiple="false"/>
+    <propertyDefinition name="renderedContent" requiredType="String" onParentVersion="COPY"
+                        autoCreated="false" mandatory="false"
+                        protected="false" multiple="false"/>
+    <propertyDefinition name="inReplyTo" requiredType="Reference" onParentVersion="COPY"
+                        autoCreated="false" mandatory="false"
+                        protected="false" multiple="false"/>
+    <propertyDefinition name="validated" requiredType="Boolean" onParentVersion="COPY"
+                        autoCreated="false" mandatory="false"
+                        protected="false" multiple="false"/>
+
+    <!-- other properties: icon, ... -->
+    <!-- possible other nodes, like pre-fetched user info per message ? -->
+
+  </nodeType>
+
+  <nodeType name="mgnl:thread" isMixin="false" hasOrderableChildNodes="false" primaryItemName="mgnl:message">
+    <supertypes>
+      <supertype>nt:base</supertype>
+      <supertype>mix:versionable</supertype>
+    </supertypes>
+    <childNodeDefinition name="*" defaultPrimaryType="mgnl:message" onParentVersion="COPY"
+                         autoCreated="false" mandatory="false"
+                         protected="false" sameNameSiblings="true">
+      <requiredPrimaryTypes>
+        <requiredPrimaryType>mgnl:message</requiredPrimaryType>
+      </requiredPrimaryTypes>
+    </childNodeDefinition>
+    <propertyDefinition name="title" requiredType="String" onParentVersion="COPY"
+                        autoCreated="false" mandatory="true"
+                        protected="false" multiple="false"/>
+    <propertyDefinition name="reference" requiredType="String" onParentVersion="COPY"
+                        autoCreated="false" mandatory="false"
+                        protected="false" multiple="false"/>
+    <!-- shortitle is maybe redundant with the actual node name ? -->
+    <!-- <propertyDefinition name="thread-short-title" requiredType="String" onParentVersion="COPY"
+                        autoCreated="false" mandatory="true"
+                        protected="false" multiple="false"/> -->
+    <propertyDefinition name="firstMessage" requiredType="Reference" onParentVersion="COPY"
+                        autoCreated="false" mandatory="true"
+                        protected="false" multiple="false"/>
+    <propertyDefinition name="lastMessage" requiredType="Reference" onParentVersion="COPY"
+                        autoCreated="false" mandatory="true"
+                        protected="false" multiple="false"/>
+    <propertyDefinition name="locked" requiredType="Boolean" onParentVersion="COPY"
+                        autoCreated="true" mandatory="true"
+                        protected="false" multiple="false">
+      <defaultValues>
+        <defaultValue>false</defaultValue>
+      </defaultValues>
+    </propertyDefinition>
+    <!-- TODO : other properties: icon, categories, links-to-other-threads, ... -->
+
+  </nodeType>
+
+  <nodeType name="mgnl:forum" isMixin="false" hasOrderableChildNodes="true" primaryItemName="mgnl:thread">
+    <supertypes>
+      <supertype>nt:base</supertype>
+      <supertype>mix:versionable</supertype>
+    </supertypes>
+    <childNodeDefinition name="*" defaultPrimaryType="mgnl:thread" onParentVersion="COPY"
+                         autoCreated="false" mandatory="false"
+                         protected="false" sameNameSiblings="true">
+      <requiredPrimaryTypes>
+        <requiredPrimaryType>mgnl:thread</requiredPrimaryType>
+      </requiredPrimaryTypes>
+    </childNodeDefinition>
+    <propertyDefinition name="title" requiredType="String" onParentVersion="COPY"
+                        autoCreated="false" mandatory="true"
+                        protected="false" multiple="false"/>
+    <!-- shortname is maybe redundant with the actual node name ? -->
+    <!-- <propertyDefinition name="shortname" requiredType="String" onParentVersion="COPY"
+                        autoCreated="false" mandatory="true">
+                        protected="false" multiple="false"/> -->
+    <propertyDefinition name="lastMessage" requiredType="Reference" onParentVersion="COPY"
+                        autoCreated="false" mandatory="false"
+                        protected="false" multiple="false"/>
+    <propertyDefinition name="locked" requiredType="Boolean" onParentVersion="COPY"
+                        autoCreated="true" mandatory="true"
+                        protected="false" multiple="false">
+      <defaultValues>
+        <defaultValue>false</defaultValue>
+      </defaultValues>
+    </propertyDefinition>
+    <!-- TODO : other properties: lastMessage, lastThread (References) ? -->
+  </nodeType>
+
+</nodeTypes>

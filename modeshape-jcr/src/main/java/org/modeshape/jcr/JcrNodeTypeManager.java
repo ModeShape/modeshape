@@ -430,7 +430,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * </p>
      * 
      * @param template the new node type to register
-     * @param allowUpdate must be {@code false}; ModeShape does not allow updating node types at this time
+     * @param allowUpdate this flag is not used
      * @return the {@code newly created node type}
      * @throws InvalidNodeTypeDefinitionException if the {@code NodeTypeDefinition} is invalid
      * @throws NodeTypeExistsException if {@code allowUpdate} is false and the {@code NodeTypeDefinition} specifies a node type
@@ -453,7 +453,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             throw new AccessDeniedException(ace);
         }
         try {
-            return this.repositoryTypeManager.registerNodeType(template, allowUpdate);
+            return this.repositoryTypeManager.registerNodeType(template);
         } finally {
             schemata = null;
         }
@@ -467,7 +467,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * </p>
      * 
      * @param templates the new node types to register
-     * @param allowUpdates must be {@code false}; ModeShape does not allow updating node types at this time
+     * @param allowUpdates this flag is not used
      * @return the {@code newly created node types}
      * @throws InvalidNodeTypeDefinitionException if a {@code NodeTypeDefinition} within the collection is invalid
      * @throws NodeTypeExistsException if {@code allowUpdate} is false and a {@code NodeTypeDefinition} within the collection
@@ -490,7 +490,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
             throw new AccessDeniedException(ace);
         }
         try {
-            return new JcrNodeTypeIterator(repositoryTypeManager.registerNodeTypes(templates, allowUpdates));
+            return new JcrNodeTypeIterator(repositoryTypeManager.registerNodeTypes(templates));
         } finally {
             schemata = null;
         }
@@ -503,7 +503,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      * The effect of the method is "all or nothing"; if an error occurs, no node types are registered or updated.
      * </p>
      * 
-     * @param source the new node types to register
+     * @param nodeTypes the iterable object containing the new node types to register
      * @return the {@code newly created node types}
      * @throws InvalidNodeTypeDefinitionException if a {@code NodeTypeDefinition} within the collection is invalid
      * @throws NodeTypeExistsException if {@code allowUpdate} is false and a {@code NodeTypeDefinition} within the collection
@@ -514,7 +514,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
      *         type permission}.
      * @throws RepositoryException if another error occurs
      */
-    public NodeTypeIterator registerNodeTypes( JcrNodeTypeSource source )
+    public NodeTypeIterator registerNodeTypes( Iterable<NodeTypeDefinition> nodeTypes )
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
         AccessDeniedException, RepositoryException {
 
@@ -525,7 +525,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         }
 
         try {
-            return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(source));
+            return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(nodeTypes));
         } finally {
             schemata = null;
         }
@@ -562,7 +562,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         }
 
         try {
-            return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(Arrays.asList(ntds), allowUpdate));
+            return new JcrNodeTypeIterator(this.repositoryTypeManager.registerNodeTypes(ntds));
         } finally {
             schemata = null;
         }

@@ -85,6 +85,17 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
         this.value = value instanceof JcrBinary ? ((JcrBinary)value).binary() : value;
     }
 
+    JcrValue( ValueFactories valueFactories,
+              SessionCache sessionCache,
+              Value value ) throws RepositoryException {
+        assert value != null;
+
+        this.valueFactories = valueFactories;
+        this.sessionCache = sessionCache;
+        this.type = value.getType();
+        this.value = valueToType(this.type, value);
+    }
+
     private ValueFormatException createValueFormatException( Class<?> type ) {
         return new ValueFormatException(JcrI18n.cannotConvertValue.text(value.getClass().getSimpleName(), type.getSimpleName()));
     }
@@ -476,6 +487,42 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
                 }
             case PropertyType.UNDEFINED:
                 return this.withTypeAndValue(this.type, this.value);
+
+            default:
+                assert false : "Unexpected JCR property type " + type;
+                // This should still throw an exception even if assertions are turned off
+                throw new IllegalStateException("Invalid property type " + type);
+        }
+    }
+
+    protected Object valueToType( int type,
+                                  Value value ) throws RepositoryException {
+        switch (type) {
+            case PropertyType.BOOLEAN:
+                return valueFactories.getBooleanFactory().create(value.getBoolean());
+            case PropertyType.DATE:
+                return valueFactories.getDateFactory().create(value.getDate());
+            case PropertyType.NAME:
+                return valueFactories.getNameFactory().create(value.getString());
+            case PropertyType.PATH:
+                return valueFactories.getPathFactory().create(value.getString());
+            case PropertyType.REFERENCE:
+            case PropertyType.WEAKREFERENCE:
+                return valueFactories.getReferenceFactory().create(value.getString());
+            case PropertyType.DOUBLE:
+                return valueFactories.getDoubleFactory().create(value.getDouble());
+            case PropertyType.LONG:
+                return valueFactories.getLongFactory().create(value.getLong());
+            case PropertyType.DECIMAL:
+                return valueFactories.getDecimalFactory().create(value.getDecimal());
+            case PropertyType.URI:
+                return valueFactories.getUriFactory().create(value.getString());
+            case PropertyType.BINARY:
+                return valueFactories.getBinaryFactory().create(value.getBinary());
+            case PropertyType.STRING:
+                return valueFactories.getStringFactory().create(value.getString());
+            case PropertyType.UNDEFINED:
+                return value.getString();
 
             default:
                 assert false : "Unexpected JCR property type " + type;

@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  /*
+  * Copyright 2004-2005 The Apache Software Foundation or its licensors,
+  *                     as applicable.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *      http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+-->
+<!--
+  <!DOCTYPE nodeTypes [
+  <!ELEMENT nodeTypes (nodeType)*>
+  <!ELEMENT nodeType (supertypes?|propertyDefinition*|childNodeDefinition*)>
+  
+  <!ATTLIST nodeType
+  name CDATA #REQUIRED
+  isMixin (true|false) #REQUIRED
+  hasOrderableChildNodes (true|false) #REQUIRED
+  primaryItemName CDATA #REQUIRED
+  >
+  <!ELEMENT supertypes (supertype+)>
+  <!ELEMENT supertype (CDATA)>
+  
+  <!ELEMENT propertyDefinition (valueConstraints?|defaultValues?)>
+  <!ATTLIST propertyDefinition
+  name CDATA #REQUIRED
+  requiredType (String|Date|Path|Name|Reference|Binary|Double|Long|Boolean|undefined) #REQUIRED
+  autoCreated (true|false) #REQUIRED
+  mandatory (true|false) #REQUIRED
+  onParentVersion (COPY|VERSION|INITIALIZE|COMPUTE|IGNORE|ABORT) #REQUIRED
+  protected (true|false) #REQUIRED
+  multiple  (true|false) #REQUIRED
+  >
+  <!ELEMENT valueConstraints (valueConstraint+)>
+  <!ELEMENT valueConstraint (CDATA)>
+  <!ELEMENT defaultValues (defaultValue+)>
+  <!ELEMENT defaultValue (CDATA)>
+  
+  <!ELEMENT childNodeDefinition (requiredPrimaryTypes)>
+  <!ATTLIST childNodeDefinition
+  name CDATA #REQUIRED
+  defaultPrimaryType  CDATA #REQUIRED
+  autoCreated (true|false) #REQUIRED
+  mandatory (true|false) #REQUIRED
+  onParentVersion (COPY|VERSION|INITIALIZE|COMPUTE|IGNORE|ABORT) #REQUIRED
+  protected (true|false) #REQUIRED
+  sameNameSiblings (true|false) #REQUIRED
+  >
+  <!ELEMENT requiredPrimaryTypes (requiredPrimaryType+)>
+  <!ELEMENT requiredPrimaryType (CDATA)>
+  ]>
+-->
+<nodeTypes xmlns:rep="internal" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:mix="http://www.jcp.org/jcr/mix/1.0" xmlns:mgnl="http://www.magnolia.info/jcr/mgnl" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+  <!--
+    Workflow node types
+  -->
+  <nodeType name="workItem" hasOrderableChildNodes="true" isMixin="false" primaryItemName="">
+    <supertypes>
+      <supertype>nt:hierarchyNode</supertype>
+    </supertypes>
+    <propertyDefinition name="*" autoCreated="false" requiredType="undefined" mandatory="false" multiple="false" onParentVersion="COPY"
+                        protected="false"/>
+    <childNodeDefinition name="*" autoCreated="false" defaultPrimaryType="" mandatory="false" onParentVersion="VERSION"
+                         protected="false" sameNameSiblings="true">
+      <requiredPrimaryTypes>
+        <requiredPrimaryType>nt:hierarchyNode</requiredPrimaryType>
+      </requiredPrimaryTypes>
+    </childNodeDefinition>
+  </nodeType>
+  <nodeType name="expression" hasOrderableChildNodes="true" isMixin="false" primaryItemName="">
+    <supertypes>
+      <supertype>nt:hierarchyNode</supertype>
+    </supertypes>
+    <propertyDefinition name="*" autoCreated="false" requiredType="undefined" mandatory="false" multiple="false" onParentVersion="COPY"
+                        protected="false"/>
+    <childNodeDefinition name="*" autoCreated="false" defaultPrimaryType="" mandatory="false" onParentVersion="VERSION"
+                         protected="false" sameNameSiblings="true">
+      <requiredPrimaryTypes>
+        <requiredPrimaryType>nt:hierarchyNode</requiredPrimaryType>
+      </requiredPrimaryTypes>
+    </childNodeDefinition>
+  </nodeType>
+</nodeTypes>

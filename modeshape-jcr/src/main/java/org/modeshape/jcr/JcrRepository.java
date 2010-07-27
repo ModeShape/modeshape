@@ -561,8 +561,9 @@ public class JcrRepository implements Repository {
             boolean includeInheritedProperties = Boolean.valueOf(this.options.get(Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES));
             // this.repositoryTypeManager = new RepositoryNodeTypeManager(this, includeInheritedProperties);
             this.repositoryTypeManager = new RepositoryNodeTypeManager(this, includeInheritedProperties);
-            this.repositoryTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {
-                "/org/modeshape/jcr/jsr_283_builtins.cnd", "/org/modeshape/jcr/modeshape_builtins.cnd"}));
+            CndNodeTypeReader nodeTypeReader = new CndNodeTypeReader(this.executionContext);
+            nodeTypeReader.readBuiltInTypes();
+            this.repositoryTypeManager.registerNodeTypes(nodeTypeReader);
         } catch (RepositoryException re) {
             re.printStackTrace();
             throw new IllegalStateException("Could not load node type definition files", re);

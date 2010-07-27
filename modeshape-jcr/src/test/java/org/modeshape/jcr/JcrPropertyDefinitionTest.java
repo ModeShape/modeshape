@@ -33,6 +33,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinition;
@@ -571,7 +572,7 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
 
     @SuppressWarnings( "unchecked" )
     @Override
-    protected List<NodeTypeTemplate> getTestTypes() throws ConstraintViolationException {
+    protected List<NodeTypeDefinition> getTestTypes() throws ConstraintViolationException {
         NodeTypeTemplate constrainedType = new JcrNodeTypeTemplate(this.context);
         constrainedType.setName("modetest:constrainedType");
 
@@ -623,7 +624,7 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
         propString.setValueConstraints(EXPECTED_STRING_CONSTRAINTS);
         constrainedType.getPropertyDefinitionTemplates().add(propString);
 
-        return Collections.singletonList(constrainedType);
+        return Collections.singletonList((NodeTypeDefinition)constrainedType);
     }
 
 }

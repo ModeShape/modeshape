@@ -120,7 +120,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.setName(TEST_TYPE_NAME);
         ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base"});
 
-        JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate, false);
+        JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate);
 
         assertThat(testNodeType.getName(), is(TEST_TYPE_NAME));
         JcrNodeType nodeTypeFromRepo = repoTypeManager.getNodeType(testTypeName);
@@ -131,7 +131,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
     @Test( expected = NodeTypeExistsException.class )
     public void shouldNotAllowModificationIfAllowUpdatesIsFalse() throws Exception {
         ntTemplate.setName("nt:base");
-        repoTypeManager.registerNodeType(ntTemplate, false);
+        repoTypeManager.registerNodeType(ntTemplate);
     }
 
     @Test( expected = NodeTypeExistsException.class )
@@ -140,14 +140,14 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.setName(TEST_TYPE_NAME);
         ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base"});
 
-        JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate, false);
+        JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate);
 
         assertThat(testNodeType.getName(), is(TEST_TYPE_NAME));
         JcrNodeType nodeTypeFromRepo = repoTypeManager.getNodeType(testTypeName);
         assertThat(nodeTypeFromRepo, is(notNullValue()));
         assertThat(nodeTypeFromRepo.getName(), is(TEST_TYPE_NAME));
 
-        testNodeType = repoTypeManager.registerNodeType(ntTemplate, false);
+        testNodeType = repoTypeManager.registerNodeType(ntTemplate);
     }
 
     @Test
@@ -156,7 +156,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.setName(TEST_TYPE_NAME);
         ntTemplate.setDeclaredSuperTypeNames(new String[] {"nt:base", "mix:referenceable"});
 
-        JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate, false);
+        JcrNodeType testNodeType = repoTypeManager.registerNodeType(ntTemplate);
 
         assertThat(testNodeType.getName(), is(TEST_TYPE_NAME));
         JcrNodeType nodeTypeFromRepo = repoTypeManager.getNodeType(testTypeName);
@@ -175,7 +175,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate2.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, ntTemplate2});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -188,7 +188,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate2.setName(TEST_TYPE_NAME2);
         ntTemplate2.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME});
 
-        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate2, ntTemplate}), false);
+        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate2, ntTemplate}));
     }
 
     @Test
@@ -202,7 +202,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test
@@ -225,7 +225,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getPropertyDefinitionTemplates().add(prop3);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -240,7 +240,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -255,7 +255,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test
@@ -271,7 +271,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -287,7 +287,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -302,7 +302,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test
@@ -318,7 +318,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test
@@ -345,7 +345,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -360,7 +360,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -375,7 +375,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -389,7 +389,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getPropertyDefinitionTemplates().add(prop);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -403,7 +403,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -417,7 +417,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getNodeDefinitionTemplates().add(child);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test
@@ -455,7 +455,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate, nodeCTemplate,
             nodeDTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -493,7 +493,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate, nodeCTemplate,
             nodeDTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test
@@ -531,7 +531,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate, nodeCTemplate,
             nodeDTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -569,7 +569,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate, nodeCTemplate,
             nodeDTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test
@@ -603,7 +603,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         nodeCTemplate.setDeclaredSuperTypeNames(new String[] {TEST_TYPE_NAME, nodeBTemplate.getName()});
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate, nodeCTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test
@@ -632,7 +632,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         nodeBTemplate.getPropertyDefinitionTemplates().add(prop);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -661,7 +661,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         nodeBTemplate.getPropertyDefinitionTemplates().add(prop);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test
@@ -690,7 +690,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         nodeBTemplate.getNodeDefinitionTemplates().add(child);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     @Test( expected = InvalidNodeTypeDefinitionException.class )
@@ -719,7 +719,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         nodeBTemplate.getNodeDefinitionTemplates().add(child);
 
         List<NodeTypeDefinition> templates = Arrays.asList(new NodeTypeDefinition[] {ntTemplate, nodeBTemplate});
-        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates, false));
+        compareTemplatesToNodeTypes(templates, repoTypeManager.registerNodeTypes(templates));
     }
 
     /*
@@ -756,7 +756,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getNodeDefinitionTemplates().add(childNode);
 
         try {
-            repoTypeManager.registerNodeType(ntTemplate, false);
+            repoTypeManager.registerNodeType(ntTemplate);
         } catch (Exception ex) {
             fail(ex.getMessage());
         }
@@ -773,7 +773,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getNodeDefinitionTemplates().add(childNode);
 
         try {
-            repoTypeManager.registerNodeType(ntTemplate, false);
+            repoTypeManager.registerNodeType(ntTemplate);
         } catch (Exception ex) {
             fail(ex.getMessage());
         }
@@ -802,7 +802,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate2.getNodeDefinitionTemplates().add(childNode2);
 
         try {
-            repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate, ntTemplate2}), false);
+            repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate, ntTemplate2}));
         } catch (Exception ex) {
             fail(ex.getMessage());
         }
@@ -829,7 +829,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getNodeDefinitionTemplates().add(childNode);
 
         // And register it ...
-        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}), false);
+        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}));
     }
 
     @FixFor( "MODE-826" )
@@ -846,7 +846,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getPropertyDefinitionTemplates().add(propertyDefn);
 
         // And register it ...
-        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}), false);
+        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}));
     }
 
     @FixFor( "MODE-826" )
@@ -864,7 +864,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getPropertyDefinitionTemplates().add(propertyDefn);
 
         // And register it ...
-        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}), false);
+        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}));
     }
 
     @FixFor( "MODE-826" )
@@ -881,7 +881,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getNodeDefinitionTemplates().add(childNode);
 
         // And register it ...
-        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}), false);
+        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}));
     }
 
     @FixFor( "MODE-826" )
@@ -899,7 +899,7 @@ public class TypeRegistrationTest extends AbstractSessionTest {
         ntTemplate.getNodeDefinitionTemplates().add(childNode);
 
         // And register it ...
-        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}), false);
+        repoTypeManager.registerNodeTypes(Arrays.asList(new NodeTypeDefinition[] {ntTemplate}));
     }
 
     private void compareTemplatesToNodeTypes( List<NodeTypeDefinition> templates,

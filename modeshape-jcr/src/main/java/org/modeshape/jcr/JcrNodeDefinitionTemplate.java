@@ -47,6 +47,20 @@ class JcrNodeDefinitionTemplate extends JcrItemDefinitionTemplate implements Nod
         super(context);
     }
 
+    JcrNodeDefinitionTemplate( JcrNodeDefinitionTemplate original,
+                               ExecutionContext context ) {
+        super(original, context);
+        this.defaultPrimaryType = original.defaultPrimaryType;
+        this.requiredPrimaryTypes = original.requiredPrimaryTypes;
+        this.allowSameNameSiblings = original.allowSameNameSiblings;
+        JcrItemDefinitionTemplate.registerMissingNamespaces(original.getContext(), context, this.defaultPrimaryType);
+        JcrItemDefinitionTemplate.registerMissingNamespaces(original.getContext(), context, this.requiredPrimaryTypes);
+    }
+
+    JcrNodeDefinitionTemplate with( ExecutionContext context ) {
+        return context == super.getContext() ? this : new JcrNodeDefinitionTemplate(this, context);
+    }
+
     /**
      * {@inheritDoc}
      * <p>

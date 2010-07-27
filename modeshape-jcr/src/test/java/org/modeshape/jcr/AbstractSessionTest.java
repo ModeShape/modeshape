@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NodeTypeTemplate;
+import javax.jcr.nodetype.NodeTypeDefinition;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
@@ -149,9 +149,10 @@ public abstract class AbstractSessionTest {
         when(repository.getRepositoryTypeManager()).thenReturn(repoTypeManager);
 
         try {
-            this.repoTypeManager.registerNodeTypes(new CndNodeTypeSource(new String[] {"/org/modeshape/jcr/jsr_283_builtins.cnd",
-                "/org/modeshape/jcr/modeshape_builtins.cnd"}));
-            this.repoTypeManager.registerNodeTypes(new NodeTemplateNodeTypeSource(getTestTypes()));
+            CndNodeTypeReader cndReader = new CndNodeTypeReader(context);
+            cndReader.readBuiltInTypes();
+            repoTypeManager.registerNodeTypes(cndReader);
+            repoTypeManager.registerNodeTypes(getTestTypes());
 
         } catch (RepositoryException re) {
             re.printStackTrace();
@@ -194,7 +195,7 @@ public abstract class AbstractSessionTest {
     }
 
     @SuppressWarnings( "unused" )
-    protected List<NodeTypeTemplate> getTestTypes() throws ConstraintViolationException {
+    protected List<NodeTypeDefinition> getTestTypes() throws ConstraintViolationException {
         return Collections.emptyList();
     }
 

@@ -43,7 +43,6 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeDefinition;
-import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.query.InvalidQueryException;
 import javax.jcr.version.OnParentVersionAction;
@@ -56,18 +55,14 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
-import org.modeshape.graph.Node;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
-import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
-import org.modeshape.graph.property.ValueFactories;
-import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.TypeSystem;
@@ -92,28 +87,6 @@ import org.modeshape.jcr.nodetype.NodeTypeExistsException;
 @ThreadSafe
 class RepositoryNodeTypeManager {
 
-    private static final Map<String, Integer> PROPERTY_TYPE_VALUES_FROM_NAME;
-
-    static {
-        Map<String, Integer> temp = new HashMap<String, Integer>();
-
-        temp.put(PropertyType.TYPENAME_BINARY.toUpperCase(), PropertyType.BINARY);
-        temp.put(PropertyType.TYPENAME_BOOLEAN.toUpperCase(), PropertyType.BOOLEAN);
-        temp.put(PropertyType.TYPENAME_DATE.toUpperCase(), PropertyType.DATE);
-        temp.put(PropertyType.TYPENAME_DECIMAL.toUpperCase(), PropertyType.DECIMAL);
-        temp.put(PropertyType.TYPENAME_DOUBLE.toUpperCase(), PropertyType.DOUBLE);
-        temp.put(PropertyType.TYPENAME_LONG.toUpperCase(), PropertyType.LONG);
-        temp.put(PropertyType.TYPENAME_NAME.toUpperCase(), PropertyType.NAME);
-        temp.put(PropertyType.TYPENAME_PATH.toUpperCase(), PropertyType.PATH);
-        temp.put(PropertyType.TYPENAME_STRING.toUpperCase(), PropertyType.STRING);
-        temp.put(PropertyType.TYPENAME_REFERENCE.toUpperCase(), PropertyType.REFERENCE);
-        temp.put(PropertyType.TYPENAME_WEAKREFERENCE.toUpperCase(), PropertyType.WEAKREFERENCE);
-        temp.put(PropertyType.TYPENAME_UNDEFINED.toUpperCase(), PropertyType.UNDEFINED);
-        temp.put(PropertyType.TYPENAME_URI.toUpperCase(), PropertyType.URI);
-
-        PROPERTY_TYPE_VALUES_FROM_NAME = Collections.unmodifiableMap(temp);
-    }
-
     private static final TextEncoder NAME_ENCODER = new XmlNameEncoder();
 
     private final JcrRepository repository;
@@ -130,6 +103,7 @@ class RepositoryNodeTypeManager {
     private NodeTypeSchemata schemata;
     private final PropertyFactory propertyFactory;
     private final PathFactory pathFactory;
+    private final NameFactory nameFactory;
     private final ReadWriteLock nodeTypeManagerLock = new ReentrantReadWriteLock();
     private final boolean includeColumnsForInheritedProperties;
 
@@ -162,6 +136,7 @@ class RepositoryNodeTypeManager {
         this.includeColumnsForInheritedProperties = includeColumnsForInheritedProperties;
         this.propertyFactory = context.getPropertyFactory();
         this.pathFactory = context.getValueFactories().getPathFactory();
+        this.nameFactory = context.getValueFactories().getNameFactory();
 
         propertyDefinitions = new HashMap<PropertyDefinitionId, JcrPropertyDefinition>();
         childNodeDefinitions = new HashMap<NodeDefinitionId, JcrNodeDefinition>();
@@ -1413,27 +1388,39 @@ class RepositoryNodeTypeManager {
      * Registers a new node type or updates an existing node type using the specified definition and returns the resulting {@code
      * NodeType} object.
      * <p>
-     * The node type definition is wrapped in a collection and passed to the {@link #registerNodeTypes(Collection, boolean) batch
-     * type definition method}.
+     * For details, see {@link #registerNodeTypes(Iterable)}.
      * </p>
      * 
      * @param ntd the {@code NodeTypeDefinition} to register
-     * @param allowUpdates indicates whether existing node types should be updated by the given definition
      * @return the newly registered (or updated) {@code NodeType}
      * @throws InvalidNodeTypeDefinitionException if the {@code NodeTypeDefinition} is invalid
      * @throws NodeTypeExistsException if <code>allowUpdate</code> is false and the {@code NodeTypeDefinition} specifies a node
      *         type name that is already registered
      * @throws RepositoryException if another error occurs
      */
-    JcrNodeType registerNodeType( NodeTypeDefinition ntd,
-                                  boolean allowUpdates )
+    JcrNodeType registerNodeType( NodeTypeDefinition ntd )
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, RepositoryException {
         assert ntd != null;
-        assert ntd instanceof JcrNodeTypeTemplate;
+        List<JcrNodeType> result = registerNodeTypes(Collections.singletonList(ntd));
+        return result.isEmpty() ? null : result.get(0);
+    }
 
-        JcrNodeTypeTemplate jntt = (JcrNodeTypeTemplate)ntd;
-
-        return registerNodeTypes(new NodeTemplateNodeTypeSource(jntt)).get(0);
+    /**
+     * Registers or updates the specified {@link NodeTypeDefinition} objects.
+     * <p>
+     * For details, see {@link #registerNodeTypes(Iterable)}.
+     * </p>
+     * 
+     * @param ntds the node type definitions
+     * @return the newly registered (or updated) {@link NodeType NodeTypes}
+     * @throws InvalidNodeTypeDefinitionException
+     * @throws NodeTypeExistsException
+     * @throws RepositoryException
+     */
+    List<JcrNodeType> registerNodeTypes( NodeTypeDefinition[] ntds )
+        throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, RepositoryException {
+        assert ntds != null;
+        return registerNodeTypes(Arrays.asList(ntds));
     }
 
     /**
@@ -1500,9 +1487,7 @@ class RepositoryNodeTypeManager {
      * Note that an empty set of child nodes would meet the above criteria.</li>
      * </p>
      * 
-     * @param nodeTypeBatch the batch of {@link NodeTypeDefinition node type definitions} to register
-     * @param allowUpdates indicates whether existing node types should be updated by the given definition; must be set to {@code
-     *        false} in the current implementation
+     * @param nodeTypeDefns the {@link NodeTypeDefinition node type definitions} to register
      * @return the newly registered (or updated) {@link NodeType NodeTypes}
      * @throws UnsupportedRepositoryOperationException if {@code allowUpdates == true}. ModeShape does not support this capability
      *         at this time but the parameter has been retained for API compatibility.
@@ -1511,103 +1496,86 @@ class RepositoryNodeTypeManager {
      *         type name that is already registered
      * @throws RepositoryException if another error occurs
      */
-    List<JcrNodeType> registerNodeTypes( Collection<NodeTypeDefinition> nodeTypeBatch,
-                                         boolean allowUpdates )
+    List<JcrNodeType> registerNodeTypes( Iterable<NodeTypeDefinition> nodeTypeDefns )
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, RepositoryException {
 
-        if (nodeTypeBatch.isEmpty()) {
+        if (nodeTypeDefns == null) {
             return Collections.emptyList();
         }
 
-        List<NodeTypeTemplate> ntts = new ArrayList<NodeTypeTemplate>(nodeTypeBatch.size());
+        List<JcrNodeType> typesPendingRegistration = new ArrayList<JcrNodeType>();
 
-        for (NodeTypeDefinition ntd : nodeTypeBatch) {
-            assert ntd instanceof JcrNodeTypeTemplate;
-            ntts.add((JcrNodeTypeTemplate)ntd);
+        try {
+            nodeTypeManagerLock.writeLock().lock();
+            for (NodeTypeDefinition nodeTypeDefn : nodeTypeDefns) {
+                if (nodeTypeDefn instanceof JcrNodeTypeTemplate) {
+                    // Switch to use this context, so names are properly prefixed ...
+                    nodeTypeDefn = ((JcrNodeTypeTemplate)nodeTypeDefn).with(context);
+                }
+                Name internalName = nameFactory.create(nodeTypeDefn.getName());
+                if (internalName == null || internalName.getLocalName().length() == 0) {
+                    throw new InvalidNodeTypeDefinitionException(JcrI18n.invalidNodeTypeName.text());
+                }
+
+                if (nodeTypes.containsKey(internalName)) {
+                    String name = nodeTypeDefn.getName();
+                    throw new NodeTypeExistsException(internalName, JcrI18n.nodeTypeAlreadyExists.text(name));
+                }
+
+                List<JcrNodeType> supertypes = supertypesFor(nodeTypeDefn, typesPendingRegistration);
+                JcrNodeType nodeType = nodeTypeFrom(nodeTypeDefn, supertypes);
+                validate(nodeType, supertypes, typesPendingRegistration);
+
+                typesPendingRegistration.add(nodeType);
+            }
+
+            // Make sure the nodes have primary types that are either already registered, or pending registration ...
+            for (JcrNodeType nodeType : typesPendingRegistration) {
+                for (JcrNodeDefinition nodeDef : nodeType.getDeclaredChildNodeDefinitions()) {
+                    JcrNodeType[] requiredPrimaryTypes = new JcrNodeType[nodeDef.requiredPrimaryTypeNames().length];
+                    int i = 0;
+                    for (Name primaryTypeName : nodeDef.requiredPrimaryTypeNames()) {
+                        requiredPrimaryTypes[i] = findTypeInMapOrList(primaryTypeName, typesPendingRegistration);
+
+                        if (requiredPrimaryTypes[i] == null) {
+                            throw new RepositoryException(
+                                                          JcrI18n.invalidPrimaryTypeName.text(primaryTypeName, nodeType.getName()));
+                        }
+                        i++;
+                    }
+                }
+            }
+
+            for (JcrNodeType nodeType : typesPendingRegistration) {
+                /*
+                 * See comment in constructor.  Using a ConcurrentHashMap seems to be to weak of a
+                 * solution (even it were also used for childNodeDefinitions and propertyDefinitions).
+                 * Probably need to block all read access to these maps during this phase of registration.
+                 */
+                Name name = nodeType.getInternalName();
+                nodeTypes.put(name, nodeType);
+                for (JcrNodeDefinition childDefinition : nodeType.childNodeDefinitions()) {
+                    childNodeDefinitions.put(childDefinition.getId(), childDefinition);
+                }
+                for (JcrPropertyDefinition propertyDefinition : nodeType.propertyDefinitions()) {
+                    propertyDefinitions.put(propertyDefinition.getId(), propertyDefinition);
+                }
+
+                // projectNodeTypeOnto(nodeType, parentOfTypeNodes, batch);
+            }
+
+            // Throw away the schemata, since the node types have changed ...
+            this.schemata = null;
+        } finally {
+            nodeTypeManagerLock.writeLock().unlock();
         }
+        // batch.execute();
 
-        return registerNodeTypes(new NodeTemplateNodeTypeSource(ntts));
-
+        return typesPendingRegistration;
     }
 
     /**
-     * Registers the node types from the given {@link JcrNodeTypeSource}.
-     * <p>
-     * The effect of this method is &quot;all or nothing&quot;; if an error occurs, no node types are registered or updated.
-     * </p>
-     * <p>
-     * <b>ModeShape Implementation Notes</b>
-     * </p>
-     * <p>
-     * ModeShape currently supports registration of batches of types with some constraints. ModeShape will allow types to be
-     * registered if they meet the following criteria:
-     * <ol>
-     * <li>Existing types cannot be modified in-place - They must be unregistered and re-registered</li>
-     * <li>Types must have a non-null, non-empty name</li>
-     * <li>If a primary item name is specified for the node type, it must match the name of a property OR a child node, not both</li>
-     * <li>Each type must have a valid set of supertypes - that is, the type's supertypes must meet the following criteria:
-     * <ol>
-     * <li>The type must have at least one supertype (unless the type is {@code nt:base}.</li>
-     * <li>No two supertypes {@code t1} and {@code t2} can declare each declare a property ({@code p1} and {@code p2}) with the
-     * same name and cardinality ({@code p1.isMultiple() == p2.isMultiple()}). Note that this does prohibit each {@code t1} and
-     * {@code t2} from having a common supertype (or super-supertype, etc.) that declares a property).</li>
-     * <li>No two supertypes {@code t1} and {@code t2} can declare each declare a child node ({@code n1} and {@code n2}) with the
-     * same name and SNS status ({@code p1.allowsSameNameSiblings() == p2.allowsSameNameSiblings()}). Note that this does prohibit
-     * each {@code t1} and {@code t2} from having a common supertype (or super-supertype, etc.) that declares a child node).</li>
-     * </ol>
-     * </li>
-     * <li>Each type must have a valid set of properties - that is, the type's properties must meet the following criteria:
-     * <ol>
-     * <li>Residual property definitions cannot be mandatory</li>
-     * <li>If the property is auto-created, it must specify a default value</li>
-     * <li>If the property is single-valued, it can only specify a single default value</li>
-     * <li>If the property overrides an existing property definition from a supertype, the new definition must be mandatory if the
-     * old definition was mandatory</li>
-     * <li>The property cannot override an existing property definition from a supertype if the ancestor definition is protected</li>
-     * <li>If the property overrides an existing property definition from a supertype that specifies value constraints, the new
-     * definition must have the same value constraints as the old definition. <i>This requirement may be relaxed in a future
-     * version of ModeShape.</i></li>
-     * <li>If the property overrides an existing property definition from a supertype, the new definition must have the same
-     * required type as the old definition or a required type that can ALWAYS be cast to the required type of the ancestor (see
-     * section 3.6.4 of the JCR 2.0 specification)</li>
-     * </ol>
-     * Note that an empty set of properties would meet the above criteria.</li>
-     * <li>The type must have a valid set of child nodes - that is, the types's child nodes must meet the following criteria:
-     * <ol>
-     * <li>Residual child node definitions cannot be mandatory</li>
-     * <li>If the child node is auto-created, it must specify a default primary type name</li>
-     * <li>If the child node overrides an existing child node definition from a supertype, the new definition must be mandatory if
-     * the old definition was mandatory</li>
-     * <li>The child node cannot override an existing child node definition from a supertype if the ancestor definition is
-     * protected</li>
-     * <li>If the child node overrides an existing child node definition from a supertype, the required primary types of the new
-     * definition must be more restrictive than the required primary types of the old definition - that is, the new primary types
-     * must defined such that any type that satisfies all of the required primary types for the new definition must also satisfy
-     * all of the required primary types for the old definition. This requirement is analogous to the requirement that overriding
-     * property definitions have a required type that is always convertible to the required type of the overridden definition.</li>
-     * </ol>
-     * Note that an empty set of child nodes would meet the above criteria.</li>
-     * </p>
-     * 
-     * @param nodeTypeSource the batch of {@link NodeType node types} to register
-     * @return the newly registered (or updated) {@link NodeType NodeTypes}
-     * @throws UnsupportedRepositoryOperationException if {@code allowUpdates == true}. ModeShape does not support this capability
-     *         at this time but the parameter has been retained for API compatibility.
-     * @throws InvalidNodeTypeDefinitionException if the {@link NodeTypeDefinition} is invalid
-     * @throws NodeTypeExistsException if <code>allowUpdate</code> is false and the {@link NodeTypeDefinition} specifies a node
-     *         type name that is already registered
-     * @throws RepositoryException if another error occurs
-     */
-    List<JcrNodeType> registerNodeTypes( JcrNodeTypeSource nodeTypeSource )
-        throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, RepositoryException {
-        assert nodeTypeSource != null;
-        Graph nodeTypesGraph = nodeTypeSource.getNodeTypes();
-        Subgraph nodeTypesSubgraph = nodeTypesGraph.getSubgraphOfDepth(3).at("/");
-        return registerNodeTypes(nodeTypesSubgraph, nodeTypesSubgraph.getLocation());
-    }
-
-    /**
-     * Registers the node types from the given {@link JcrNodeTypeSource}.
+     * Registers the node types from the given subgraph containing the node type definitions in the standard ModeShape format.
      * <p>
      * The effect of this method is &quot;all or nothing&quot;; if an error occurs, no node types are registered or updated.
      * </p>
@@ -1680,227 +1648,87 @@ class RepositoryNodeTypeManager {
         throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, RepositoryException {
         assert nodeTypeSubgraph != null;
         assert locationOfParentOfNodeTypes != null;
-
-        NamespaceRegistry namespaces = this.context.getNamespaceRegistry();
-
-        List<Location> nodeTypeLocations = nodeTypeSubgraph.getNode(locationOfParentOfNodeTypes).getChildren();
-        List<JcrNodeType> typesPendingRegistration = new ArrayList<JcrNodeType>(nodeTypeLocations.size());
-
-        try {
-            nodeTypeManagerLock.writeLock().lock();
-            for (Location location : nodeTypeLocations) {
-                Node nodeTypeNode = nodeTypeSubgraph.getNode(location);
-                assert location.getPath() != null;
-
-                Name internalName = location.getPath().getLastSegment().getName();
-                if (internalName == null || internalName.getLocalName().length() == 0) {
-                    throw new InvalidNodeTypeDefinitionException(JcrI18n.invalidNodeTypeName.text());
-                }
-
-                if (nodeTypes.containsKey(internalName)) {
-                    throw new NodeTypeExistsException(internalName,
-                                                      JcrI18n.nodeTypeAlreadyExists.text(internalName.getString(namespaces)));
-                }
-
-                List<JcrNodeType> supertypes = supertypesFor(nodeTypeNode, typesPendingRegistration);
-                // No need to re-parse the supertypes
-                JcrNodeType nodeType = nodeTypeFrom(nodeTypeSubgraph, location, supertypes);
-
-                validate(nodeType, supertypes, typesPendingRegistration);
-
-                List<JcrPropertyDefinition> propertyDefs = new ArrayList<JcrPropertyDefinition>(
-                                                                                                nodeType.getDeclaredPropertyDefinitions().length);
-
-                for (JcrPropertyDefinition propertyDef : nodeType.getDeclaredPropertyDefinitions()) {
-                    propertyDefs.add(propertyDef.with(this.context));
-                }
-
-                List<JcrNodeDefinition> nodeDefs = new ArrayList<JcrNodeDefinition>(
-                                                                                    nodeType.getDeclaredChildNodeDefinitions().length);
-                for (JcrNodeDefinition nodeDef : nodeType.getDeclaredChildNodeDefinitions()) {
-                    nodeDefs.add(nodeDef.with(this.context).with(this));
-                }
-
-                // Create a new node type that also has the correct property and child node definitions associated
-                JcrNodeType newNodeType = new JcrNodeType(this.context, this, nodeType.getInternalName(), supertypes,
-                                                          nodeType.getInternalPrimaryItemName(), nodeDefs, propertyDefs,
-                                                          nodeType.isMixin(), nodeType.isAbstract(), nodeType.isQueryable(),
-                                                          nodeType.hasOrderableChildNodes());
-                typesPendingRegistration.add(newNodeType);
-            }
-
-            // Make sure the nodes have primary types that are either already registered, or pending registration ...
-            for (JcrNodeType nodeType : typesPendingRegistration) {
-                for (JcrNodeDefinition nodeDef : nodeType.getDeclaredChildNodeDefinitions()) {
-                    JcrNodeType[] requiredPrimaryTypes = new JcrNodeType[nodeDef.requiredPrimaryTypeNames().length];
-                    int i = 0;
-                    for (Name primaryTypeName : nodeDef.requiredPrimaryTypeNames()) {
-                        requiredPrimaryTypes[i] = findTypeInMapOrList(primaryTypeName, typesPendingRegistration);
-
-                        if (requiredPrimaryTypes[i] == null) {
-                            throw new RepositoryException(
-                                                          JcrI18n.invalidPrimaryTypeName.text(primaryTypeName, nodeType.getName()));
-                        }
-                        i++;
-                    }
-                }
-            }
-
-            // Graph.Batch batch = graph.batch();
-            for (JcrNodeType nodeType : typesPendingRegistration) {
-                /*
-                 * See comment in constructor.  Using a ConcurrentHashMap seems to be to weak of a
-                 * solution (even it were also used for childNodeDefinitions and propertyDefinitions).
-                 * Probably need to block all read access to these maps during this phase of registration.
-                 */
-                nodeTypes.put(nodeType.getInternalName(), nodeType);
-                for (JcrNodeDefinition childDefinition : nodeType.childNodeDefinitions()) {
-                    childNodeDefinitions.put(childDefinition.getId(), childDefinition);
-                }
-                for (JcrPropertyDefinition propertyDefinition : nodeType.propertyDefinitions()) {
-                    propertyDefinitions.put(propertyDefinition.getId(), propertyDefinition);
-                }
-
-                // projectNodeTypeOnto(nodeType, parentOfTypeNodes, batch);
-            }
-
-            // Throw away the schemata, since the node types have changed ...
-            this.schemata = null;
-        } finally {
-            nodeTypeManagerLock.writeLock().unlock();
-        }
-        // batch.execute();
-
-        return typesPendingRegistration;
+        CndNodeTypeReader factory = new CndNodeTypeReader(this.context);
+        factory.read(nodeTypeSubgraph, locationOfParentOfNodeTypes, nodeTypeSubgraph.getGraph().getSourceName());
+        return registerNodeTypes(factory);
     }
 
-    private JcrNodeType nodeTypeFrom( Subgraph nodeTypeGraph,
-                                      Location nodeTypeLocation,
-                                      List<JcrNodeType> supertypes ) {
-        Node nodeTypeNode = nodeTypeGraph.getNode(nodeTypeLocation);
-        List<Location> children = nodeTypeNode.getChildren();
+    private JcrNodeType nodeTypeFrom( NodeTypeDefinition nodeType,
+                                      List<JcrNodeType> supertypes ) throws RepositoryException {
+        PropertyDefinition[] propDefns = nodeType.getDeclaredPropertyDefinitions();
+        NodeDefinition[] childDefns = nodeType.getDeclaredChildNodeDefinitions();
+        List<JcrPropertyDefinition> properties = new ArrayList<JcrPropertyDefinition>();
+        List<JcrNodeDefinition> childNodes = new ArrayList<JcrNodeDefinition>();
 
-        List<JcrPropertyDefinition> properties = new ArrayList<JcrPropertyDefinition>(children.size());
-        List<JcrNodeDefinition> childNodes = new ArrayList<JcrNodeDefinition>(children.size());
-
-        for (Location childLocation : children) {
-            if (JcrLexicon.PROPERTY_DEFINITION.equals(childLocation.getPath().getLastSegment().getName())) {
-                properties.add(this.propertyDefinitionFrom(nodeTypeGraph, childLocation));
-            } else if (JcrLexicon.CHILD_NODE_DEFINITION.equals(childLocation.getPath().getLastSegment().getName())) {
-                childNodes.add(this.childNodeDefinitionFrom(nodeTypeGraph, childLocation));
-            } else {
-                throw new IllegalStateException("Unexpected child of node type at: " + childLocation);
+        if (propDefns != null) {
+            for (PropertyDefinition propDefn : propDefns) {
+                properties.add(propertyDefinitionFrom(propDefn));
+            }
+        }
+        if (childDefns != null) {
+            for (NodeDefinition childNodeDefn : childDefns) {
+                childNodes.add(childNodeDefinitionFrom(childNodeDefn));
             }
         }
 
-        Map<Name, Property> nodeProperties = nodeTypeNode.getPropertiesByName();
-
-        ValueFactories valueFactories = context.getValueFactories();
-        NameFactory nameFactory = valueFactories.getNameFactory();
-        ValueFactory<Boolean> booleanFactory = valueFactories.getBooleanFactory();
-
-        Name name = nameFactory.create(getFirstPropertyValue(nodeProperties.get(JcrLexicon.NODE_TYPE_NAME)));
-        Name primaryItemName = nameFactory.create(getFirstPropertyValue(nodeProperties.get(JcrLexicon.PRIMARY_ITEM_NAME)));
-        boolean mixin = booleanFactory.create(getFirstPropertyValue(nodeProperties.get(JcrLexicon.IS_MIXIN)));
-        boolean isAbstract = booleanFactory.create(getFirstPropertyValue(nodeProperties.get(JcrLexicon.IS_ABSTRACT)));
-        boolean queryable = booleanFactory.create(getFirstPropertyValue(nodeProperties.get(JcrLexicon.IS_QUERYABLE)));
-        boolean orderableChildNodes = booleanFactory.create(getFirstPropertyValue(nodeProperties.get(JcrLexicon.HAS_ORDERABLE_CHILD_NODES)));
+        Name name = nameFactory.create(nodeType.getName());
+        Name primaryItemName = nameFactory.create(nodeType.getPrimaryItemName());
+        boolean mixin = nodeType.isMixin();
+        boolean isAbstract = nodeType.isAbstract();
+        boolean queryable = nodeType.isQueryable();
+        boolean orderableChildNodes = nodeType.hasOrderableChildNodes();
 
         return new JcrNodeType(this.context, this, name, supertypes, primaryItemName, childNodes, properties, mixin, isAbstract,
                                queryable, orderableChildNodes);
     }
 
-    private JcrPropertyDefinition propertyDefinitionFrom( Subgraph nodeTypeGraph,
-                                                          Location propertyLocation ) {
-        Node propertyDefinitionNode = nodeTypeGraph.getNode(propertyLocation);
-        Map<Name, Property> properties = propertyDefinitionNode.getPropertiesByName();
+    private JcrPropertyDefinition propertyDefinitionFrom( PropertyDefinition propDefn ) throws RepositoryException {
+        Name propertyName = nameFactory.create(propDefn.getName());
+        int onParentVersionBehavior = propDefn.getOnParentVersion();
+        int requiredType = propDefn.getRequiredType();
+        boolean mandatory = propDefn.isMandatory();
+        boolean multiple = propDefn.isMultiple();
+        boolean autoCreated = propDefn.isAutoCreated();
+        boolean isProtected = propDefn.isProtected();
+        boolean fullTextSearchable = propDefn.isFullTextSearchable();
+        boolean queryOrderable = propDefn.isQueryOrderable();
 
-        ValueFactories valueFactories = context.getValueFactories();
-        NameFactory nameFactory = valueFactories.getNameFactory();
-        ValueFactory<Boolean> booleanFactory = valueFactories.getBooleanFactory();
-
-        Name propertyName = nameFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.NAME)));
-        int onParentVersionBehavior = OnParentVersionAction.valueFromName((String)getFirstPropertyValue(properties.get(JcrLexicon.ON_PARENT_VERSION)));
-        int requiredType = PROPERTY_TYPE_VALUES_FROM_NAME.get(getFirstPropertyValue(properties.get(JcrLexicon.REQUIRED_TYPE)));
-
-        boolean mandatory = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.MANDATORY)));
-        boolean multiple = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.MULTIPLE)));
-        boolean autoCreated = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.AUTO_CREATED)));
-        boolean isProtected = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.PROTECTED)));
-        Boolean ftsObj = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.IS_FULL_TEXT_SEARCHABLE)));
-        boolean fullTextSearchable = ftsObj != null ? ftsObj.booleanValue() : false;
-        Boolean qoObj = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.IS_QUERY_ORDERABLE)));
-        boolean queryOrderable = qoObj != null ? qoObj.booleanValue() : false;
-
-        Value[] defaultValues;
-        Property defaultValuesProperty = properties.get(JcrLexicon.DEFAULT_VALUES);
-        if (defaultValuesProperty != null) {
-            List<Value> values = new ArrayList<Value>();
-
-            for (Object value : defaultValuesProperty) {
-                values.add(new JcrValue(this.context.getValueFactories(), (SessionCache)null, requiredType, value));
+        Value[] defaultValues = propDefn.getDefaultValues();
+        if (defaultValues != null) {
+            for (int i = 0; i != defaultValues.length; ++i) {
+                Value value = defaultValues[i];
+                defaultValues[i] = new JcrValue(this.context.getValueFactories(), null, value);
             }
-            defaultValues = values.toArray(new Value[values.size()]);
         } else {
             defaultValues = new Value[0];
         }
 
-        String[] valueConstraints;
-        Property constraintsProperty = properties.get(JcrLexicon.VALUE_CONSTRAINTS);
-        if (constraintsProperty != null) {
-            List<String> constraints = new ArrayList<String>();
-
-            for (Object value : constraintsProperty) {
-                constraints.add((String)value);
-            }
-            valueConstraints = constraints.toArray(new String[constraints.size()]);
-        } else {
-            valueConstraints = new String[0];
-        }
-
-        String[] queryOperators;
-        Property operatorsProperty = properties.get(JcrLexicon.QUERY_OPERATORS);
-        if (operatorsProperty != null) {
-            List<String> operators = new ArrayList<String>();
-
-            for (Object value : operatorsProperty) {
-                operators.add((String)value);
-            }
-            queryOperators = operators.toArray(new String[operators.size()]);
-        } else {
-            queryOperators = new String[0];
-        }
+        String[] valueConstraints = propDefn.getValueConstraints();
+        String[] queryOperators = propDefn.getAvailableQueryOperators();
+        if (valueConstraints == null) valueConstraints = new String[0];
+        if (queryOperators == null) queryOperators = new String[0];
         return new JcrPropertyDefinition(this.context, null, propertyName, onParentVersionBehavior, autoCreated, mandatory,
                                          isProtected, defaultValues, requiredType, valueConstraints, multiple,
                                          fullTextSearchable, queryOrderable, queryOperators);
     }
 
-    private JcrNodeDefinition childNodeDefinitionFrom( Subgraph nodeTypeGraph,
-                                                       Location childNodeLocation ) {
-        Node childNodeDefinitionNode = nodeTypeGraph.getNode(childNodeLocation);
-        Map<Name, Property> properties = childNodeDefinitionNode.getPropertiesByName();
+    private JcrNodeDefinition childNodeDefinitionFrom( NodeDefinition childNodeDefn ) {
+        Name childNodeName = nameFactory.create(childNodeDefn.getName());
+        Name defaultPrimaryTypeName = nameFactory.create(childNodeDefn.getDefaultPrimaryTypeName());
+        int onParentVersion = childNodeDefn.getOnParentVersion();
 
-        ValueFactories valueFactories = context.getValueFactories();
-        NameFactory nameFactory = valueFactories.getNameFactory();
-        ValueFactory<Boolean> booleanFactory = valueFactories.getBooleanFactory();
-
-        Name childNodeName = nameFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.NAME)));
-        Name defaultPrimaryTypeName = nameFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.DEFAULT_PRIMARY_TYPE)));
-        int onParentVersion = OnParentVersionAction.valueFromName((String)getFirstPropertyValue(properties.get(JcrLexicon.ON_PARENT_VERSION)));
-
-        boolean mandatory = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.MANDATORY)));
-        boolean allowsSns = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.SAME_NAME_SIBLINGS)));
-        boolean autoCreated = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.AUTO_CREATED)));
-        boolean isProtected = booleanFactory.create(getFirstPropertyValue(properties.get(JcrLexicon.PROTECTED)));
+        boolean mandatory = childNodeDefn.isMandatory();
+        boolean allowsSns = childNodeDefn.allowsSameNameSiblings();
+        boolean autoCreated = childNodeDefn.isAutoCreated();
+        boolean isProtected = childNodeDefn.isProtected();
 
         Name[] requiredTypes;
-        Property requiredTypeNamesProperty = properties.get(JcrLexicon.REQUIRED_PRIMARY_TYPES);
-        if (requiredTypeNamesProperty != null) {
-            List<Name> names = new ArrayList<Name>(requiredTypeNamesProperty.size());
-            for (Object value : requiredTypeNamesProperty) {
-                names.add(nameFactory.create(value));
+        String[] requiredTypeNames = childNodeDefn.getRequiredPrimaryTypeNames();
+        if (requiredTypeNames != null) {
+            List<Name> names = new ArrayList<Name>(requiredTypeNames.length);
+            for (String typeName : requiredTypeNames) {
+                names.add(nameFactory.create(typeName));
             }
-
             requiredTypes = names.toArray(new Name[names.size()]);
         } else {
             requiredTypes = new Name[0];
@@ -1908,10 +1736,6 @@ class RepositoryNodeTypeManager {
 
         return new JcrNodeDefinition(this.context, null, childNodeName, onParentVersion, autoCreated, mandatory, isProtected,
                                      allowsSns, defaultPrimaryTypeName, requiredTypes);
-    }
-
-    private Object getFirstPropertyValue( Property property ) {
-        return property != null ? property.getFirstValue() : null;
     }
 
     /**
@@ -1945,48 +1769,35 @@ class RepositoryNodeTypeManager {
      * @throws RepositoryException if any of the names in the array of supertype names does not correspond to an
      *         already-registered node type or a node type that is pending registration
      */
-    private List<JcrNodeType> supertypesFor( Node nodeType,
+    private List<JcrNodeType> supertypesFor( NodeTypeDefinition nodeType,
                                              List<JcrNodeType> pendingTypes ) throws RepositoryException {
         assert nodeType != null;
 
-        Property supertypesProperty = nodeType.getProperty(JcrLexicon.SUPERTYPES);
-        Object[] supertypesArray;
-
-        // If no supertypes are provided, assume nt:base as a supertype
-        if (supertypesProperty == null || supertypesProperty.size() == 0) {
-            supertypesArray = new Object[0];
-        } else {
-            supertypesArray = supertypesProperty.getValuesAsArray();
-        }
         List<JcrNodeType> supertypes = new LinkedList<JcrNodeType>();
 
-        Property isMixinProperty = nodeType.getProperty(JcrLexicon.IS_MIXIN);
-        boolean isMixin = isMixinProperty != null && Boolean.valueOf(isMixinProperty.getFirstValue().toString());
+        boolean isMixin = nodeType.isMixin();
         boolean needsPrimaryAncestor = !isMixin;
+        String nodeTypeName = nodeType.getName();
 
-        for (int i = 0; i < supertypesArray.length; i++) {
-            JcrNodeType supertype = findTypeInMapOrList((Name)supertypesArray[i], pendingTypes);
+        for (String supertypeNameStr : nodeType.getDeclaredSupertypeNames()) {
+            Name supertypeName = nameFactory.create(supertypeNameStr);
+            JcrNodeType supertype = findTypeInMapOrList(supertypeName, pendingTypes);
             if (supertype == null) {
-                Name nodeTypeName = nodeType.getLocation().getPath().getLastSegment().getName();
-                throw new InvalidNodeTypeDefinitionException(JcrI18n.invalidSupertypeName.text(supertypesArray[i], nodeTypeName));
+                throw new InvalidNodeTypeDefinitionException(JcrI18n.invalidSupertypeName.text(supertypeNameStr, nodeTypeName));
             }
-
             needsPrimaryAncestor &= supertype.isMixin();
             supertypes.add(supertype);
         }
 
         // primary types (other than nt:base) always have at least one ancestor that's a primary type - nt:base
         if (needsPrimaryAncestor) {
-            Property nameProperty = nodeType.getProperty(JcrLexicon.NODE_TYPE_NAME);
-            Name nodeName = context.getValueFactories().getNameFactory().create(nameProperty.getFirstValue());
-
+            Name nodeName = nameFactory.create(nodeTypeName);
             if (!JcrNtLexicon.BASE.equals(nodeName)) {
                 JcrNodeType ntBase = findTypeInMapOrList(JcrNtLexicon.BASE, pendingTypes);
                 assert ntBase != null;
                 supertypes.add(0, ntBase);
             }
         }
-
         return supertypes;
     }
 
@@ -2112,8 +1923,7 @@ class RepositoryNodeTypeManager {
     /**
      * Validates that the given node type definition is valid under the ModeShape and JCR type rules within the given context.
      * <p>
-     * See {@link #registerNodeTypes(JcrNodeTypeSource)} for the list of criteria that determine whether a node type definition is
-     * valid.
+     * See {@link #registerNodeTypes(Iterable)} for the list of criteria that determine whether a node type definition is valid.
      * </p>
      * 
      * @param nodeType the node type to attempt to validate
@@ -2128,8 +1938,9 @@ class RepositoryNodeTypeManager {
         validate(supertypes, nodeTypeName.getString(this.context.getNamespaceRegistry()));
 
         List<Name> supertypeNames = new ArrayList<Name>(supertypes.size());
-        for (JcrNodeType supertype : supertypes)
+        for (JcrNodeType supertype : supertypes) {
             supertypeNames.add(supertype.getInternalName());
+        }
 
         boolean foundExact = false;
         boolean foundResidual = false;
