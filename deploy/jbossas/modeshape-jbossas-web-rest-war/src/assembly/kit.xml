@@ -4,7 +4,7 @@
   xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
 
   
-  <id>modeshape</id>
+  <id>modeshape-rest</id>
   
   <formats>
 	<format>zip</format>
@@ -16,7 +16,7 @@
 
     <dependencySets>
         <dependencySet>
-          <outputDirectory>deploy/resources-modeshape.war/WEB-INF/lib</outputDirectory>
+          <outputDirectory>deploy/resources-modeshape-rest.war/WEB-INF/lib</outputDirectory>
         <useTransitiveDependencies>true</useTransitiveDependencies>
 
 
@@ -29,7 +29,7 @@
             <include>org.modeshape:modeshape-jcr</include>
             <include>org.modeshape:modeshape-web-jcr-rest</include>
             <include>org.modeshape:modeshape-search-lucene</include>
-            <include>org.modeshape.deploy:modeshape-jbossas-service</include>
+            <include>org.modeshape:modeshape-jbossas-service</include>
 
             <include>joda-time:joda-time</include>
             <include>org.scannotation:scannotation</include>
@@ -49,7 +49,7 @@
         </dependencySet>
 
         <dependencySet>
-          <outputDirectory>deploy/resources-modeshape.war/WEB-INF/lib</outputDirectory>
+          <outputDirectory>deploy/resources-modeshape-rest.war/WEB-INF/lib</outputDirectory>
             <useTransitiveDependencies>true</useTransitiveDependencies>
 
            <includes>
@@ -80,12 +80,12 @@
 
         <fileSet>
             <directory>src/main/webapp</directory>
-            <outputDirectory>deploy/resources-modeshape.war/</outputDirectory>
+            <outputDirectory>deploy/resources-modeshape-rest.war/</outputDirectory>
 
         </fileSet>
         <fileSet>
           <directory>${project.build.directory}/classes</directory>
-            <outputDirectory>deploy/resources-modeshape.war/WEB-INF/classes</outputDirectory>
+            <outputDirectory>deploy/resources-modeshape-rest.war/WEB-INF/classes</outputDirectory>
         </fileSet>
 
         <fileSet>
@@ -100,7 +100,7 @@
 	        <includeSubModules>true</includeSubModules>
 	               
 	        <includes>
-	            <include>org.modeshape.deploy:modeshape-jbossas-console</include>
+	            <include>org.modeshape:modeshape-jbossas-console</include>
 	        </includes>
 	
 	        <binaries>        
