@@ -3,45 +3,51 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
 
+
 <!-- 
   This packages the files into a directory that is then grabbed by the jbossas pom kitting process 
   in order to build a complete set of artifacts to be deployed to a JBoss AS server
  -->
   
-  <id>modeshape-rest</id>
-  
+  <id>modeshape-services</id>
+   
   <formats>
 	<format>dir</format>
   </formats>
-
+  
   <includeBaseDirectory>false</includeBaseDirectory>
 
   <baseDirectory>/</baseDirectory>
 
     <dependencySets>
+       
         <dependencySet>
-          <outputDirectory>WEB-INF/lib</outputDirectory>
+          <outputDirectory></outputDirectory>
         <useTransitiveDependencies>true</useTransitiveDependencies>
 
-
            <includes>
-            <include>org.modeshape:modeshape-web-jcr</include>
+            <include>org.modeshape:modeshape-common</include>
+            <include>org.modeshape:modeshape-graph</include>
+            <include>org.modeshape:modeshape-cnd</include>
+            <include>org.modeshape:modeshape-repository</include>
             <include>org.modeshape:modeshape-jcr</include>
-            <include>org.modeshape:modeshape-web-jcr-rest</include>
+            <include>org.modeshape:modeshape-search-lucene</include>
+            <include>org.modeshape:modeshape-jbossas-service</include>
 
+            <include>joda-time:joda-time</include>
             <include>org.scannotation:scannotation</include>
-            <include>org.codehaus.jettison:jettison</include>
+            <include>com.google.collections:google-collections</include>
+            <include>org.apache.lucene:lucene-core</include>
+            <include>org.apache.lucene:lucene-analyzers</include>
+            <include>org.apache.lucene:lucene-snowball</include>
+            <include>org.apache.lucene:lucene-regex</include>
 
           </includes>
-          <excludes>
-             <exclude>org.modeshape:modeshape-jcr-api</exclude>
-            <exclude>javax.jcr:jcr</exclude>
-           </excludes>
     
         </dependencySet>
 
         <dependencySet>
-          <outputDirectory>WEB-INF/lib</outputDirectory>
+          <outputDirectory>/</outputDirectory>
             <useTransitiveDependencies>true</useTransitiveDependencies>
 
            <includes>
@@ -59,17 +65,16 @@
     <fileSets>
 
         <fileSet>
-            <directory>src/main/webapp</directory>
-            <outputDirectory>/</outputDirectory>
+            <directory>src/kit/META-INF</directory>
+            <outputDirectory>META-INF/</outputDirectory>
 
         </fileSet>
+
         <fileSet>
-          <directory>${project.build.directory}/classes</directory>
-            <outputDirectory>WEB-INF/classes</outputDirectory>
+          <directory>src/kit/deploy</directory>
+            <outputDirectory>/</outputDirectory>
         </fileSet>
 
     </fileSets>
-
-
 
 </assembly>
