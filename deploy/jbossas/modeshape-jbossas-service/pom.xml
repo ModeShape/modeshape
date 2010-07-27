@@ -8,7 +8,7 @@
 	<!-- The groupId and version values are inherited from parent  -->
     <modelVersion>4.0.0</modelVersion>
 	<artifactId>modeshape-jbossas-service</artifactId>
-	<name>ModeShape Service Deployment for JBoss Application Server</name>
+	<name>ModeShape Service Deployment for JBoss AS</name>
 	<description>ModeShape deployment as a service within the JBoss Application Server</description>
 	<url>http://www.modeshape.org</url>
 

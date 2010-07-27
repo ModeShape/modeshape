@@ -8,8 +8,8 @@
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>modeshape-jbossas-console</artifactId>
-	<name>ModeShape JOPR Console for JBoss Application Server</name>
-	<description>The Jopr console plugin to manage and monitor ModeShape</description>
+	<name>ModeShape JOPR Console for JBoss AS</name>
+	<description>The JOPR console plugin to manage and monitor ModeShape when deployed in JBoss Application Server</description>
 	<url>http://www.modeshape.org</url>
 
 	<properties>
