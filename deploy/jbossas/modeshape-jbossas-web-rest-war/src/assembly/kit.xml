@@ -8,7 +8,7 @@
   in order to build a complete set of artifacts to be deployed to a JBoss AS server
  -->
   
-  <id>modeshape-rest</id>
+  <id>modeshape-rest.war</id>
   
   <formats>
 	<format>dir</format>
