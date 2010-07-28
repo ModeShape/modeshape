@@ -16,7 +16,6 @@
 
 
     <fileSets>
-
         <fileSet>
             <directory>modeshape-jbossas-service/target/distribution/resources-modeshape-services.dir</directory>
             <outputDirectory>deploy/resources-modeshape-services.jar</outputDirectory>
@@ -27,7 +26,10 @@
             <outputDirectory>deploy/resources-modeshape-rest.war</outputDirectory>
         </fileSet>
 
-
+        <fileSet>
+            <directory>modeshape-jbossas-web-webdav-war/target/distribution/resources-modeshape-webdav.dir</directory>
+            <outputDirectory>deploy/resources-modeshape-webdav.war</outputDirectory>
+        </fileSet>
     </fileSets>
 
      

@@ -15,7 +15,7 @@
      <module>modeshape-jbossas-service</module>
      <module>modeshape-jbossas-console</module>
      <module>modeshape-jbossas-web-rest-war</module>
-   <!-- module>modeshape-jbossas-web-webdav-war</module-->
+     <module>modeshape-jbossas-web-webdav-war</module>
   </modules>
   
   <dependencies>
