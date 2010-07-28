@@ -40,6 +40,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.Base64;
 import org.modeshape.common.xml.XmlCharacters;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.ValueFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -126,24 +127,36 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
 
         startElement(contentHandler, JcrSvLexicon.NODE, atts);
 
-        // Output any special properties first (see Javadoc for SPECIAL_PROPERTY_NAMES for more context)
-        for (Name specialPropertyName : SPECIAL_PROPERTY_NAMES) {
-            Property specialProperty = ((AbstractJcrNode)node).getProperty(specialPropertyName);
+        if (node instanceof JcrSharedNode) {
+            // This is a shared node, and per Section 14.7 of the JCR 2.0 specification, they have to be written out
+            // in a special way ...
 
-            if (specialProperty != null) {
-                emitProperty(specialProperty, contentHandler, skipBinary);
+            // jcr:primaryType = nt:share ...
+            emitProperty(JcrLexicon.PRIMARY_TYPE, PropertyType.NAME, JcrNtLexicon.SHARE, contentHandler, skipBinary);
+
+            // jcr:uuid = UUID of shared node ...
+            emitProperty(JcrLexicon.UUID, PropertyType.STRING, node.getIdentifier(), contentHandler, skipBinary);
+        } else {
+
+            // Output any special properties first (see Javadoc for SPECIAL_PROPERTY_NAMES for more context)
+            for (Name specialPropertyName : SPECIAL_PROPERTY_NAMES) {
+                Property specialProperty = ((AbstractJcrNode)node).getProperty(specialPropertyName);
+
+                if (specialProperty != null) {
+                    emitProperty(specialProperty, contentHandler, skipBinary);
+                }
             }
-        }
 
-        PropertyIterator properties = node.getProperties();
-        while (properties.hasNext()) {
-            exportProperty(properties.nextProperty(), contentHandler, skipBinary);
-        }
+            PropertyIterator properties = node.getProperties();
+            while (properties.hasNext()) {
+                exportProperty(properties.nextProperty(), contentHandler, skipBinary);
+            }
 
-        if (!noRecurse) {
-            NodeIterator nodes = node.getNodes();
-            while (nodes.hasNext()) {
-                exportNode(nodes.nextNode(), contentHandler, skipBinary, noRecurse, false);
+            if (!noRecurse) {
+                NodeIterator nodes = node.getNodes();
+                while (nodes.hasNext()) {
+                    exportNode(nodes.nextNode(), contentHandler, skipBinary, noRecurse, false);
+                }
             }
         }
 
@@ -261,40 +274,85 @@ class JcrSystemViewExporter extends AbstractJcrExporter {
             }
             endElement(contentHandler, JcrSvLexicon.VALUE);
         } else {
-            String s = value.getString();
+            emitValue(value.getString(), contentHandler);
+        }
+    }
 
-            // Per Section 7.2 Rule 11a of the JCR 2.0 spec, need to check invalid XML characters
+    private void emitValue( String value,
+                            ContentHandler contentHandler ) throws RepositoryException, SAXException {
 
-            char[] chars = s.toCharArray();
+        // Per Section 7.2 Rule 11a of the JCR 2.0 spec, need to check invalid XML characters
 
-            boolean allCharsAreValidXml = true;
-            for (int i = 0; i < chars.length; i++) {
-                if (!XmlCharacters.isValid(chars[i])) {
-                    allCharsAreValidXml = false;
-                    break;
-                }
-            }
+        char[] chars = value.toCharArray();
 
-            if (allCharsAreValidXml) {
-
-                startElement(contentHandler, JcrSvLexicon.VALUE, null);
-                contentHandler.characters(chars, 0, chars.length);
-                endElement(contentHandler, JcrSvLexicon.VALUE);
-            } else {
-                AttributesImpl valueAtts = new AttributesImpl();
-                valueAtts.addAttribute("xsi", "type", "xsi:type", "STRING", "xsd:base64Binary");
-
-                startElement(contentHandler, JcrSvLexicon.VALUE, valueAtts);
-                try {
-                    chars = Base64.encodeBytes(s.getBytes(), Base64.URL_SAFE).toCharArray();
-                } catch (IOException ioe) {
-                    throw new RepositoryException(ioe);
-                }
-                contentHandler.characters(chars, 0, chars.length);
-                endElement(contentHandler, JcrSvLexicon.VALUE);
+        boolean allCharsAreValidXml = true;
+        for (int i = 0; i < chars.length; i++) {
+            if (!XmlCharacters.isValid(chars[i])) {
+                allCharsAreValidXml = false;
+                break;
             }
         }
 
+        if (allCharsAreValidXml) {
+
+            startElement(contentHandler, JcrSvLexicon.VALUE, null);
+            contentHandler.characters(chars, 0, chars.length);
+            endElement(contentHandler, JcrSvLexicon.VALUE);
+        } else {
+            AttributesImpl valueAtts = new AttributesImpl();
+            valueAtts.addAttribute("xsi", "type", "xsi:type", "STRING", "xsd:base64Binary");
+
+            startElement(contentHandler, JcrSvLexicon.VALUE, valueAtts);
+            try {
+                chars = Base64.encodeBytes(value.getBytes(), Base64.URL_SAFE).toCharArray();
+            } catch (IOException ioe) {
+                throw new RepositoryException(ioe);
+            }
+            contentHandler.characters(chars, 0, chars.length);
+            endElement(contentHandler, JcrSvLexicon.VALUE);
+        }
     }
 
+    /**
+     * Fires the appropriate SAX events on the content handler to build the XML elements for the property.
+     * 
+     * @param propertyName the name of the property to be exported
+     * @param propertyType the type of the property to be exported
+     * @param value the value of the single-valued property to be exported
+     * @param contentHandler the SAX content handler for which SAX events will be invoked as the XML document is created.
+     * @param skipBinary if <code>true</code>, indicates that binary properties should not be exported
+     * @throws SAXException if an exception occurs during generation of the XML document
+     * @throws RepositoryException if an exception occurs accessing the content repository
+     */
+    private void emitProperty( Name propertyName,
+                               int propertyType,
+                               Object value,
+                               ContentHandler contentHandler,
+                               boolean skipBinary ) throws RepositoryException, SAXException {
+        ValueFactory<String> strings = session.getExecutionContext().getValueFactories().getStringFactory();
+
+        // first set the property sv:name attribute
+        AttributesImpl propAtts = new AttributesImpl();
+        propAtts.addAttribute(JcrSvLexicon.NAME.getNamespaceUri(),
+                              JcrSvLexicon.NAME.getLocalName(),
+                              getPrefixedName(JcrSvLexicon.NAME),
+                              PropertyType.nameFromValue(PropertyType.STRING),
+                              strings.create(propertyName));
+
+        // and it's sv:type attribute
+        propAtts.addAttribute(JcrSvLexicon.TYPE.getNamespaceUri(),
+                              JcrSvLexicon.TYPE.getLocalName(),
+                              getPrefixedName(JcrSvLexicon.TYPE),
+                              PropertyType.nameFromValue(PropertyType.STRING),
+                              PropertyType.nameFromValue(propertyType));
+
+        // output the sv:property element
+        startElement(contentHandler, JcrSvLexicon.PROPERTY, propAtts);
+
+        // then output a sv:value element for each of its values
+        emitValue(strings.create(value), contentHandler);
+
+        // end the sv:property element
+        endElement(contentHandler, JcrSvLexicon.PROPERTY);
+    }
 }

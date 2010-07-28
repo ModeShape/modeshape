@@ -25,6 +25,9 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -78,6 +81,9 @@ public class ShareableNodesTest {
     private JcrRepository repository;
     private Session session;
     private Workspace workspace;
+    private JcrRepository repository2;
+    private Session session2;
+    private Workspace workspace2;
 
     @Before
     public void beforeEach() throws Exception {
@@ -85,11 +91,17 @@ public class ShareableNodesTest {
         configuration.repositorySource("car-source")
                      .usingClass(InMemoryRepositorySource.class)
                      .setDescription("The automobile content");
+        configuration.repositorySource("import-source")
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The source used to import content");
         configuration.repository("cars")
                      .setSource("car-source")
                      .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
                      .addNodeTypes(resourceUrl("cars.cnd"))
                      // Added ADMIN privilege to allow permanent namespace registration in one of the tests
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        configuration.repository("import-repo").setSource("import-source").addNodeTypes(resourceUrl("cars.cnd"))
+        // Added ADMIN privilege to allow permanent namespace registration in one of the tests
                      .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
 
         engine = configuration.build();
@@ -120,6 +132,11 @@ public class ShareableNodesTest {
         // Obtain a session using the anonymous login capability, which we granted READ privilege
         session = repository.login();
         workspace = session.getWorkspace();
+
+        // Start the import repository ...
+        repository2 = engine.getRepository("import-repo");
+        session2 = repository2.login();
+        workspace2 = session2.getWorkspace();
     }
 
     @After
@@ -129,12 +146,21 @@ public class ShareableNodesTest {
                 session.logout();
             } finally {
                 session = null;
+                workspace = null;
+                repository = null;
                 try {
-                    engine.shutdown();
-                    engine.awaitTermination(3, TimeUnit.SECONDS);
+                    session2.logout();
                 } finally {
-                    configuration = null;
-                    engine = null;
+                    session2 = null;
+                    workspace2 = null;
+                    repository2 = null;
+                    try {
+                        engine.shutdown();
+                        engine.awaitTermination(3, TimeUnit.SECONDS);
+                    } finally {
+                        configuration = null;
+                        engine = null;
+                    }
                 }
             }
         }
@@ -248,6 +274,72 @@ public class ShareableNodesTest {
         assertSharedSetIncludes(sharedNode, originalPath, sharedPath, copiedSharedPath);
         assertSharedSetIncludes(node, originalPath, sharedPath, copiedSharedPath);
         verifyShare(original, node);
+    }
+
+    @Test
+    public void shouldExportSharedNodesAsSystemViewXml() throws RepositoryException, IOException {
+        createExportableContent();
+        // Export the content ...
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        session.exportSystemView("/", baos, false, false);
+        // System.out.println(baos);
+        // Now import the content ...
+        session2.importXML("/", new ByteArrayInputStream(baos.toByteArray()), ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+        session2.save();
+        checkImportedContent(session2);
+    }
+
+    @Test
+    public void shouldExportSharedNodesAsDocumentViewXml() throws RepositoryException, IOException {
+        createExportableContent();
+        // Export the content ...
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        session.exportDocumentView("/", baos, false, false);
+        // System.out.println(baos);
+        // Now import the content ...
+        session2.importXML("/", new ByteArrayInputStream(baos.toByteArray()), ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+        session2.save();
+        checkImportedContent(session2);
+    }
+
+    protected void createExportableContent() throws RepositoryException {
+        String originalPath = "/Cars/Utility";
+        String sharedPath = "/NewArea/SharedUtility";
+        // Make the original a shareable node ...
+        Node original = makeShareable(originalPath);
+        session.save();
+        // Now a share ...
+        Node sharedNode1 = makeShare(originalPath, sharedPath);
+        assertSharedSetIs(original, originalPath, sharedPath);
+        assertSharedSetIs(sharedNode1, originalPath, sharedPath);
+        // Create another share ...
+        String sharedPath2 = "/NewArea/SharedUtility[2]";
+        Node sharedNode2 = makeShare(originalPath, sharedPath2);
+        assertSharedSetIs(original, originalPath, sharedPath, sharedPath2);
+        assertSharedSetIs(sharedNode1, originalPath, sharedPath, sharedPath2);
+        assertSharedSetIs(sharedNode2, originalPath, sharedPath, sharedPath2);
+        // Create another share ...
+        String sharedPath3 = "/NewSecondArea/SharedUtility";
+        Node sharedNode3 = makeShare(originalPath, sharedPath3);
+        assertSharedSetIs(original, originalPath, sharedPath, sharedPath2, sharedPath3);
+        assertSharedSetIs(sharedNode1, originalPath, sharedPath, sharedPath2, sharedPath3);
+        assertSharedSetIs(sharedNode2, originalPath, sharedPath, sharedPath2, sharedPath3);
+        assertSharedSetIs(sharedNode3, originalPath, sharedPath, sharedPath2, sharedPath3);
+    }
+
+    protected void checkImportedContent( Session session ) throws RepositoryException {
+        String originalPath = "/Cars/Utility";
+        String sharedPath = "/NewArea/SharedUtility";
+        String sharedPath2 = "/NewArea/SharedUtility[2]";
+        String sharedPath3 = "/NewSecondArea/SharedUtility";
+        Node original = session.getNode(originalPath);
+        Node sharedNode1 = session.getNode(sharedPath);
+        Node sharedNode2 = session.getNode(sharedPath2);
+        Node sharedNode3 = session.getNode(sharedPath3);
+        assertSharedSetIs(original, originalPath, sharedPath, sharedPath2, sharedPath3);
+        assertSharedSetIs(sharedNode1, originalPath, sharedPath, sharedPath2, sharedPath3);
+        assertSharedSetIs(sharedNode2, originalPath, sharedPath, sharedPath2, sharedPath3);
+        assertSharedSetIs(sharedNode3, originalPath, sharedPath, sharedPath2, sharedPath3);
     }
 
     protected Path path( String path ) {

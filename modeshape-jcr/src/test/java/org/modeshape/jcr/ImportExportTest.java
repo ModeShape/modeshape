@@ -144,7 +144,6 @@ public class ImportExportTest {
     public void shouldImportExportEscapedXmlCharactersInSystemViewUsingWorkspace() throws Exception {
         String testName = "importExportEscapedXmlCharacters";
         Node rootNode = session.getRootNode();
-        System.out.println(session);
         Node sourceNode = rootNode.addNode(testName + "Source", "nt:unstructured");
         Node targetNode = rootNode.addNode(testName + "Target", "nt:unstructured");
 

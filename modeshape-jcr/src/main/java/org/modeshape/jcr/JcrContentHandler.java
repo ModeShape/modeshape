@@ -526,7 +526,18 @@ class JcrContentHandler extends DefaultHandler {
                 if (!nodeAlreadyExists) {
                     List<Value> primaryTypeValueList = properties.get(JcrLexicon.PRIMARY_TYPE);
                     String typeName = primaryTypeValueList != null ? primaryTypeValueList.get(0).getString() : null;
-                    child = parent.editor().createChild(nodeName, uuid, nameFor(typeName));
+                    Name primaryTypeName = nameFor(typeName);
+                    if (JcrNtLexicon.SHARE.equals(primaryTypeName) && uuid != null) {
+                        // Per Section 14.7 and 14.8 of the JCR 2.0 specification, shared nodes are imported in a special way ...
+                        child = parent.editor().createChild(nodeName, UUID.randomUUID(), ModeShapeLexicon.SHARE);
+                        SessionCache.NodeEditor newNodeEditor = child.editor();
+                        JcrValue uuidValue = (JcrValue)valueFor(uuid.toString(), PropertyType.STRING);
+                        newNodeEditor.setProperty(ModeShapeLexicon.SHARED_UUID, uuidValue, false);
+                        node = child;
+                        return;
+                    }
+                    // Otherwise, it's just a regular node...
+                    child = parent.editor().createChild(nodeName, uuid, primaryTypeName);
                 } else {
                     child = existingNode;
                 }

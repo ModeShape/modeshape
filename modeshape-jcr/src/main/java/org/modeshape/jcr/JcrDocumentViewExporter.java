@@ -44,6 +44,7 @@ import org.modeshape.common.util.Base64;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.ValueFactories;
+import org.modeshape.graph.property.ValueFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -61,9 +62,11 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
     private static final int ENCODE_BUFFER_SIZE = 2 << 15;
 
     private static final TextEncoder VALUE_ENCODER = new JcrDocumentViewExporter.JcrDocumentViewPropertyEncoder();
+    private final ValueFactory<String> stringFactory;
 
     JcrDocumentViewExporter( JcrSession session ) {
         super(session, Collections.<String>emptyList());
+        stringFactory = session.getExecutionContext().getValueFactories().getStringFactory();
     }
 
     /**
@@ -85,6 +88,25 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                             boolean skipBinary,
                             boolean noRecurse ) throws RepositoryException, SAXException {
         ExecutionContext executionContext = session.getExecutionContext();
+
+        if (node instanceof JcrSharedNode) {
+            // This is a shared node, and per Section 14.7 of the JCR 2.0 specification, they have to be written out
+            // in a special way ...
+            AbstractJcrNode sharedNode = ((JcrSharedNode)node).proxyNode();
+            AttributesImpl atts = new AttributesImpl();
+
+            // jcr:primaryType = nt:share ...
+            addAttribute(atts, JcrLexicon.PRIMARY_TYPE, PropertyType.NAME, JcrNtLexicon.SHARE);
+
+            // jcr:uuid = UUID of shared node ...
+            addAttribute(atts, JcrLexicon.UUID, PropertyType.STRING, node.getIdentifier());
+
+            // Write out the element ...
+            Name name = sharedNode.segment().getName();
+            startElement(contentHandler, name, atts);
+            endElement(contentHandler, name);
+            return;
+        }
 
         // If this node is a special xmltext node, output it as raw content (see JCR 1.0 spec - section 6.4.2.3)
         if (node.getDepth() > 0 && isXmlTextNode(node)) {
@@ -125,6 +147,20 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
             }
         }
         endElement(contentHandler, name);
+    }
+
+    protected void addAttribute( AttributesImpl atts,
+                                 Name propertyName,
+                                 int propertyType,
+                                 Object value ) {
+        String valueAsString = VALUE_ENCODER.encode(stringFactory.create(value));
+        String localPropName = getPrefixedName(propertyName);
+        atts.addAttribute(propertyName.getNamespaceUri(),
+                          propertyName.getLocalName(),
+                          localPropName,
+                          PropertyType.nameFromValue(propertyType),
+                          valueAsString);
+
     }
 
     protected void addAttribute( AttributesImpl atts,
