@@ -83,7 +83,6 @@ public class ShareableNodesTest {
     private Workspace workspace;
     private JcrRepository repository2;
     private Session session2;
-    private Workspace workspace2;
 
     @Before
     public void beforeEach() throws Exception {
@@ -136,7 +135,6 @@ public class ShareableNodesTest {
         // Start the import repository ...
         repository2 = engine.getRepository("import-repo");
         session2 = repository2.login();
-        workspace2 = session2.getWorkspace();
     }
 
     @After
@@ -152,7 +150,6 @@ public class ShareableNodesTest {
                     session2.logout();
                 } finally {
                     session2 = null;
-                    workspace2 = null;
                     repository2 = null;
                     try {
                         engine.shutdown();
