@@ -1,0 +1,189 @@
+<?xml version="1.0"?>
+<!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+                         "http://java.sun.com/dtd/web-app_2_3.dtd">
+	<!--
+		ModeShape (http://www.modeshape.org) See the COPYRIGHT.txt file
+		distributed with this work for information regarding copyright
+		ownership. Some portions may be licensed to Red Hat, Inc. under one or
+		more contributor license agreements. See the AUTHORS.txt file in the
+		distribution for a full listing of individual contributors. ModeShape
+		is free software. Unless otherwise indicated, all code in ModeShape is
+		licensed to you under the terms of the GNU Lesser General Public
+		License as published by the Free Software Foundation; either version
+		2.1 of the License, or (at your option) any later version. ModeShape
+		is distributed in the hope that it will be useful, but WITHOUT ANY
+		WARRANTY; without even the implied warranty of MERCHANTABILITY or
+		FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+		License for more details. You should have received a copy of the GNU
+		Lesser General Public License along with this software; if not, write
+		to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+		Boston, MA 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+	-->
+<web-app>
+	<display-name>ModeShape JCR WebDAV Interface</display-name>
+
+	<!--
+		This parameter provides the fully-qualified name of a class that implements
+		the o.m.w.jcr.spi.RepositoryProvider interface.  It is required
+		by the ModeShapeJcrDeployer that controls the lifecycle for the ModeShape REST server.
+	-->
+	<context-param>
+		<param-name>org.modeshape.web.jcr.REPOSITORY_PROVIDER</param-name>
+		<param-value>org.modeshape.web.jcr.spi.FactoryRepositoryProvider</param-value>
+	</context-param>
+
+	<!--
+		This parameter, specific to the FactoryRepositoryProvider implementation, specifies
+		an URL that references a configuration file to initialize the repository or 
+		repositories.  ModeShape will first check for a file at this path in the filesystem.
+		If not file exists at this path, ModeShape will attempt to load this as a resource
+		from the classpath.
+	-->
+	<context-param>
+		<param-name>org.modeshape.web.jcr.JCR_URL</param-name>
+		<param-value>file:/configRepository.xml</param-value>
+	</context-param>
+
+	<!--
+		Nodes with any of the primary node types in this comma-delimited list will be treated by the 
+		WebDAV implementation as content nodes.  The value below is the default value for this 
+		parameter.  That is, if this init parameter is omitted, the value below will be used by default.
+	-->
+	<context-param>
+		<param-name>org.modeshape.web.jcr.webdav.CONTENT_PRIMARY_TYPE_NAMES</param-name>
+		<param-value>nt:resource, mode:resource</param-value>
+	</context-param>
+
+	<!--
+		Nodes with any of the primary node types in this comma-delimited list will be treated by the 
+		WebDAV implementation as resource (file) nodes.  The value below is the default value for this 
+		parameter.  That is, if this init parameter is omitted, the value below will be used by default.
+	-->
+	<context-param>
+		<param-name>org.modeshape.web.jcr.webdav.RESOURCE_PRIMARY_TYPE_NAMES</param-name>
+		<param-value>nt:file</param-value>
+	</context-param>
+
+	<!--
+		Each folder created through the WebDAV servlet will be created as a node with the primary node 
+		type below.  The value below is the default value for this parameter.  That is, if this init 
+		parameter is omitted, the value below will be used by default.
+	-->
+	<context-param>
+		<param-name>org.modeshape.web.jcr.webdav.NEW_FOLDER_PRIMARY_TYPE_NAME</param-name>
+		<param-value>nt:folder</param-value>
+	</context-param>
+
+	<!--
+		Each resource (file created through the WebDAV servlet will be created as a node with the primary 
+		node type below.  The value below is the default value for this parameter.  That is, if this init 
+		parameter is omitted, the value below will be used by default.
+	-->
+	<context-param>
+		<param-name>org.modeshape.web.jcr.webdav.NEW_RESOURCE_PRIMARY_TYPE_NAME</param-name>
+		<param-value>nt:file</param-value>
+	</context-param>
+
+	<!--
+		Content created through the WebDAV servlet will be created as a node with the primary node 
+		type below.  The value below is the default value for this parameter.  That is, if this init 
+		parameter is omitted, the value below will be used by default.
+	-->
+	<context-param>
+		<param-name>org.modeshape.web.jcr.webdav.NEW_CONTENT_PRIMARY_TYPE_NAME</param-name>
+		<param-value>mode:resource</param-value>
+	</context-param>
+
+		<!--
+			This optional parameter provides the name of the o.m.w.j.webdav.RequestResolver
+			implementation class.  The provided value must be the name of a class that 
+			implements the RequestResolver interface and has a public, no-arg constructor.
+			If no value is provided, o.m.w.j.webdav.DefaultRequestResolver will be used.
+		-->
+		<context-param>
+			<param-name>org.modeshape.web.jcr.webdav.REQUEST_RESOLVER_CLASS_NAME</param-name>
+			<param-value>org.modeshape.web.jcr.webdav.DefaultRequestResolver</param-value>
+		</context-param>
+
+		<!--
+			This parameter is required if (and only if) the DefaultRequestResolver is used.
+			It provides the name of the JCR repository that will be accessed.  An exception
+			will be thrown if no value is provided for this parameter.
+		-->
+		<context-param>
+			<param-name>org.modeshape.web.jcr.webdav.DEFAULT_RESOLVER_REPOSITORY_NAME</param-name>
+			<param-value>mode:repository</param-value>
+		</context-param>
+		
+		<!--
+			This parameter is required if (and only if) the DefaultRequestResolver is used.
+			It provides the name of the JCR workspace that will be accessed.  An exception
+			will be thrown if no value is provided for this parameter.
+		-->
+		<context-param>
+			<param-name>org.modeshape.web.jcr.webdav.DEFAULT_RESOLVER_WORKSPACE_NAME</param-name>
+			<param-value>default</param-value>
+		</context-param>
+	<!-- Required parameter for ModeShape WebDAV - should not be modified -->
+	<listener>
+		<listener-class>org.modeshape.web.jcr.ModeShapeJcrDeployer</listener-class>
+	</listener>
+
+	<!-- Required WebDAV servlet - should not be modified -->
+	<servlet>
+		<servlet-name>WebDAV</servlet-name>
+		<servlet-class>org.modeshape.web.jcr.webdav.ModeShapeWebdavServlet</servlet-class>
+		
+		<!--
+			The webdav library requires this parameter to be present, but does not use it.
+		-->
+		<init-param>
+			<param-name>rootpath</param-name>
+			<param-value>.</param-value>
+		</init-param>
+	</servlet>
+
+	<!-- Required parameter for ModeShape WebDAV - should not be modified -->
+	<servlet-mapping>
+		<servlet-name>WebDAV</servlet-name>
+		<url-pattern>/*</url-pattern>
+	</servlet-mapping>
+
+	<!-- 
+		The ModeShape WebDAV implementation leverages the HTTP credentials to for authentication 
+		and authorization within the JCR repository.  Unless the repository provides for anonymous 
+		access, it makes no sense to try to log into the JCR repository without credentials, so 
+		this constraint helps lock down the repository.
+		
+		This should generally not be modified. 
+	-->
+	<security-constraint>
+		<display-name>ModeShape WebDAV</display-name>
+		<web-resource-collection>
+			<web-resource-name>WebDAV</web-resource-name>
+			<url-pattern>/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+			<!--  
+				A user must be assigned this role to connect to any JCR repository, in addition to 
+				needing the READONLY or READWRITE roles to actually read or modify the data.  This 
+				is not used internally, so another role could be substituted here.
+			-->
+			<role-name>connect</role-name>
+		</auth-constraint>
+	</security-constraint>
+
+	<!--  
+		Any auth-method will work for ModeShape.  BASIC is used this example for simplicity.
+	 -->
+	<login-config>
+		<auth-method>BASIC</auth-method>
+	</login-config>
+
+	<!-- 
+		This must match the role-name in the auth-constraint above. 
+	 -->
+	<security-role>
+		<role-name>connect</role-name>
+	</security-role>
+</web-app>

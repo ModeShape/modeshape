@@ -1,0 +1,150 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<artifactId>modeshape</artifactId>
+		<groupId>org.modeshape</groupId>
+		<version>2.1-SNAPSHOT</version>
+		<relativePath>../..</relativePath>
+	</parent>
+	<artifactId>modeshape-jbossas-web-webdav-war</artifactId>
+	<packaging>war</packaging>
+	<name>ModeShape JCR WebDAV Servlet Deployment for JBoss AS</name>
+	<description>ModeShape servlet that provides WebDAV access to JCR items in a JBoss AS</description>
+	<url>http://www.modeshape.org</url>
+	<dependencies>
+		<dependency>
+			<groupId>org.modeshape</groupId>
+			<artifactId>modeshape-web-jcr-webdav</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>1.5.8</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!--  TESTING DEPENDENCIES -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit-dep</artifactId>
+			<version>4.4</version>
+			<scope>integration-test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.modeshape</groupId>
+			<artifactId>modeshape-jcr</artifactId>
+			<scope>integration-test</scope>
+		</dependency>
+	</dependencies>
+	<build>
+		<finalName>resources</finalName>
+		<plugins>
+		
+<!--   
+        there are 2 wars being built, a test war and a deployment war
+        the deployment war is built with the limited jars that are needed for Jboss deployment kit
+        This war cant be used in testing because, at the moment, been unsuccessful
+        in passing to cargo an overriding classpath 
+    -->
+	       <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <webResources>
+                    <resource>
+                        <!--  add in the configRepository.xml for running locally  -->
+                            <directory>${project.basedir}/src/test/resources/</directory>
+                        </resource>
+                        <resource>
+                        <!--  override the main web.xml with a web.xml that enables running locally  -->
+                            <directory>${project.basedir}/src/test/webapp/</directory>
+                        </resource>
+                    </webResources>
+                
+                    <excludes>
+                        <exclude>**/*slf4j*.jar</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+			<plugin>
+				<groupId>org.codehaus.cargo</groupId>
+				<artifactId>cargo-maven2-plugin</artifactId>
+				<version>1.0.1-alpha-2</version>
+				<executions>
+					<execution>
+						<id>start-container</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>start</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>stop-container</id>
+						<phase>post-integration-test</phase>
+						<goals>
+							<goal>stop</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<configuration>
+						<properties>
+                            <cargo.jvmargs>-XX:PermSize=128m -XX:MaxPermSize=512 -XX:+UseConcMarkSweepGC -XX:+CMSPermGenSweepingEnabled -XX:+CMSClassUnloadingEnabled</cargo.jvmargs>
+							<cargo.logging>low</cargo.logging>
+							<cargo.servlet.users>dnauser:password:connect,readwrite|unauthorized:password:bogus</cargo.servlet.users>
+                                                        <cargo.servlet.port>8090</cargo.servlet.port>
+						</properties>
+					</configuration>
+					<wait>false</wait>
+				</configuration>
+			</plugin>
+			<!--
+				Override the default Surefire behavior to run during
+				integration-test phase
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+				<executions>
+					<execution>
+						<id>surefire-it</id>
+						<phase>integration-test</phase>
+						<goals>
+							<goal>test</goal>
+						</goals>
+						<configuration>
+							<skip>false</skip>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+	       <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2-beta-2</version>
+                
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/assembly/kit.xml</descriptor>
+                    </descriptors>
+                    <outputDirectory>target/distribution</outputDirectory>
+                    <workDirectory>target/assembly/work</workDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attached</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+		</plugins>
+	</build>
+
+</project>
