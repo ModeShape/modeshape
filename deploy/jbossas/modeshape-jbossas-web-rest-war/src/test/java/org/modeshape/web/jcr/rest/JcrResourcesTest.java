@@ -144,7 +144,7 @@ public class JcrResourcesTest {
 
         JSONObject objFromResponse = new JSONObject(body);
         JSONObject expected = new JSONObject(
-                                             "{\"mode%3arepository\":{\"repository\":{\"name\":\"mode%3arepository\",\"resources\":{\"workspaces\":\"/mode:resources/mode%3arepository\"}}}}");
+                                             "{\"mode%3arepository\":{\"repository\":{\"name\":\"mode%3arepository\",\"resources\":{\"workspaces\":\"/modeshape/mode%3arepository\"}}}}");
 
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         assertThat(objFromResponse.toString(), is(expected.toString()));
@@ -163,7 +163,7 @@ public class JcrResourcesTest {
 
         JSONObject objFromResponse = new JSONObject(body);
         JSONObject expected = new JSONObject(
-                                             "{\"default\":{\"workspace\":{\"name\":\"default\",\"resources\":{\"items\":\"/mode:resources/mode%3arepository/default/items\"}}}}");
+                                             "{\"default\":{\"workspace\":{\"name\":\"default\",\"resources\":{\"items\":\"/modeshape/mode%3arepository/default/items\"}}}}");
 
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         assertThat(objFromResponse.toString(), is(expected.toString()));

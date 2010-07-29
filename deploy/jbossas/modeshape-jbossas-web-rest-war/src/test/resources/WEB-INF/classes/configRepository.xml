@@ -26,22 +26,22 @@
   -->
 <configuration xmlns="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- Define the sources from which content is made available -->
-    <mode:sources jcr:primaryType="nt:unstructured">
-        <mode:source jcr:name="repository" mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" mode:retryLimit="3" mode:defaultWorkspaceName="default"/>    
-    </mode:sources>
+    <sources jcr:primaryType="nt:unstructured">
+        <source jcr:name="repositorySource" classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" retryLimit="3" defaultWorkspaceName="default"/>
+    </sources>
     <!-- Define the JCR repositories -->
-    <mode:repositories>
+    <repositories>
         <!-- Specify the source that should be used for the repository -->
-       <mode:repository jcr:name="repository">
-            <!-- Specify the source that should be used for the repository -->
-            <mode:source>repository</mode:source>
-            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
-            <mode:nodeTypes jcr:primaryType="nodeTypes"/>
-            <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here. -->
-            <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape -->
-            <namespaces jcr:primaryType="mode:namespaces" />
-           
-        </mode:repository>
-
-    </mode:repositories>
+        <repository jcr:name="repository" sourceName="repositorySource">
+            <source>repositorySource</source>
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names-->
+            <options jcr:primaryType="options">
+                <projectNodeTypes jcr:primaryType="option" value="false"/>
+            </options>
+            <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here.-->
+            <nodeTypes jcr:primaryType="nodeTypes"/>
+            <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape-->
+            <namespaces jcr:primaryType="namespaces" />
+        </repository>
+    </repositories>
 </configuration>
