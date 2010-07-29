@@ -15,17 +15,6 @@
         <property name="managedEngine"><inject bean="ModeShapeEngine"/></property>
         <property name="modeshapeUrl">jndi:jcr/local</property>
         <depends>ModeShapeEngine</depends>
-    </bean>
-
-    <!-- modeshapes default security domain, replace this with your own if needs to be any other JAAS domain  -->
-    <application-policy xmlns="urn:jboss:security-beans:1.0" name="modeshape">
-        <authentication>
-            <login-module code="org.jboss.security.auth.spi.UsersRolesLoginModule" flag="required">
-                <!-- property files can found under conf/props directory -->
-                <module-option name="usersProperties">modeshape-users.properties</module-option>
-                <module-option name="rolesProperties">modeshape-roles.properties</module-option>
-            </login-module>
-        </authentication>
-    </application-policy>    
+    </bean>  
 
 </deployment>

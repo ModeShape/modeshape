@@ -84,14 +84,9 @@
     <fileSets>
 
         <fileSet>
-            <directory>src/kit/META-INF</directory>
-            <outputDirectory>META-INF/</outputDirectory>
-
-        </fileSet>
-
-        <fileSet>
-          <directory>src/kit/deploy</directory>
+            <directory>src/kit/</directory>
             <outputDirectory>/</outputDirectory>
+
         </fileSet>
 
     </fileSets>

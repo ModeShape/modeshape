@@ -42,11 +42,6 @@
             <outputDirectory>/</outputDirectory>
 
         </fileSet>
-        
-        <fileSet>
-            <directory>src/main/resources</directory>
-            <outputDirectory>WEB-INF/classes</outputDirectory>
-        </fileSet>
 
     </fileSets>
 

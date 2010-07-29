@@ -63,10 +63,6 @@
             <outputDirectory>/</outputDirectory>
 
         </fileSet>
-        <fileSet>
-          <directory>${project.build.directory}/classes</directory>
-            <outputDirectory>WEB-INF/classes</outputDirectory>
-        </fileSet>
 
     </fileSets>
 
