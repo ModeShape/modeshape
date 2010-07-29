@@ -170,9 +170,26 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     private JcrEngine getEngineFromConfigFile( URL configUrl ) {
         assert configUrl != null;
 
-        synchronized (ENGINES) {
-            String configKey = configUrl.toString();
+        /*
+         * Strip any query parameters from the incoming file URLs by creating a new URL with the same protocol, host, and port,
+         * but using the URL path as returned by URL#getPath() instead of the URL path and query parameters as returned by 
+         * URL#getFile().
+         * 
+         * We need to strip for the file protocol only because an URL with a file protocol and query parameters has the 
+         * query parameters appended to the file name (e.g., "file:/tmp/foo/bar?repositoryName=foo" turns into an attempt
+         * to access the "/tmp/foo/bar?repositoryName=foo" file).  Other protocol handlers like http handle this better.
+         */
+        if ("file".equals(configUrl.getProtocol())) {
+            try {
+                configUrl = new URL(configUrl.getProtocol(), configUrl.getHost(), configUrl.getPort(), configUrl.getPath());
+            } catch (MalformedURLException mfe) {
+                // This shouldn't be possible, since we're creating a new URL from an existing, valid URL
+                throw new IllegalStateException(mfe);
+            }
+        }
+        String configKey = configUrl.toString();
 
+        synchronized (ENGINES) {
             JcrEngine engine = ENGINES.get(configKey);
             if (engine != null) return engine;
 
