@@ -60,7 +60,7 @@ class JcrSharedNode extends JcrNode {
     private AbstractJcrNode proxy;
 
     JcrSharedNode( AbstractJcrNode proxy,
-                      AbstractJcrNode original ) {
+                   AbstractJcrNode original ) {
         // Set the super's nodeId and location to be that of the original, not the proxy. We'll override
         // all the methods that need the proxy information ....
         super(proxy.cache, original.nodeId, original.location);
@@ -73,12 +73,21 @@ class JcrSharedNode extends JcrNode {
 
     /**
      * Get the node that represents the proxy, and is a true representation of the underlying node with a primary type of
-     * {@link ModeShapeLexicon#SHARE mode:share} and lone {@link ModeShapeLexicon#SHARED_UUID} property.
+     * {@link ModeShapeLexicon#SHARE mode:share} and lone {@link ModeShapeLexicon#SHARED_UUID mode:sharedUuid} property.
      * 
      * @return the proxy node
      */
     AbstractJcrNode proxyNode() {
         return proxy;
+    }
+
+    /**
+     * Get the node that represents the original node that is being shared by this proxy.
+     * 
+     * @return the original node
+     */
+    AbstractJcrNode originalNode() {
+        return original;
     }
 
     /**
@@ -94,11 +103,31 @@ class JcrSharedNode extends JcrNode {
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.jcr.AbstractJcrNode#isShared()
+     */
+    @Override
+    boolean isShared() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.modeshape.jcr.AbstractJcrNode#setLocation(org.modeshape.graph.Location)
      */
     @Override
     void setLocation( Location location ) {
         proxyNode().setLocation(location);
+    }
+
+    @Override
+    protected Location locationToDestroy() {
+        return proxyNode().location();
+    }
+
+    @Override
+    protected void doDestroy() throws AccessDeniedException, RepositoryException {
+        proxyNode().editor().destroy();
     }
 
     @Override

@@ -96,6 +96,7 @@ import org.modeshape.jcr.SessionCache.NodeEditor;
 abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node {
 
     private static final NodeType[] EMPTY_NODE_TYPES = new NodeType[] {};
+    private static final Set<Name> INTERNAL_NODE_TYPE_NAMES = Collections.singleton(ModeShapeLexicon.SHARE);
 
     protected final NodeId nodeId;
     protected Location location;
@@ -256,6 +257,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
     boolean isShareable() throws RepositoryException {
         return isNodeType(JcrMixLexicon.SHAREABLE);
+    }
+
+    boolean isShared() {
+        return false;
     }
 
     /**
@@ -1447,6 +1452,15 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                 throw new RepositoryException(JcrI18n.invalidNodeTypeNameParameter.text(primaryNodeTypeName,
                                                                                         "primaryNodeTypeName"));
             }
+            if (INTERNAL_NODE_TYPE_NAMES.contains(childPrimaryTypeName)) {
+                String workspaceName = getSession().getWorkspace().getName();
+                String childPath = cache.readable(path);
+                throw new ConstraintViolationException(
+                                                       JcrI18n.unableToCreateNodeWithInternalPrimaryType.text(primaryNodeTypeName,
+                                                                                                              childPath,
+                                                                                                              workspaceName));
+
+            }
         }
 
         // Create the child ...
@@ -1511,6 +1525,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             JcrNodeType nodeType = session().nodeTypeManager().getNodeType(primaryNodeTypeName);
             if (nodeType.isAbstract()) return false;
             if (nodeType.isMixin()) return false;
+            if (INTERNAL_NODE_TYPE_NAMES.contains(nodeType.getInternalName())) return false;
         }
 
         return true;
@@ -2276,33 +2291,29 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public NodeIterator getSharedSet() throws RepositoryException {
         if (isShareable()) {
             // Find the nodes that make up this shared set ...
-            return sharedSetFor(getIdentifier()).getNodes();
+            return sharedSet();
         }
         // Otherwise, the shared set is just this node ...
-        return new JcrNodeIterator(this);
+        return new JcrSingleNodeIterator(this);
     }
 
     /**
-     * Find all of the {@link javax.jcr.Node}s that make up the shared set with the supplied {@link #getIdentifier() identifier}
-     * of the main shared node.
+     * Find all of the {@link javax.jcr.Node}s that make up the shared set.
      * 
-     * @param identifierOfSharedNode the identifier of the shareable node
      * @return the query result over the nodes in the node set; never null, but possibly empty if the node given by the identifier
      *         does not exist or is not a shareable node, or possibly of size 1 if the node given by the identifier does exist and
      *         is shareable but has no other nodes in the shared set
      * @throws RepositoryException if there is a problem executing the query or finding the shared set
      */
-    QueryResult sharedSetFor( String identifierOfSharedNode ) throws RepositoryException {
-        // Execute a query that will report all nodes referencing this node ...
+    NodeIterator sharedSet() throws RepositoryException {
+        AbstractJcrNode original = this;
+        String identifierOfSharedNode = getIdentifier();
+        if (this instanceof JcrSharedNode) {
+            original = ((JcrSharedNode)this).originalNode();
+        }
+        // Execute a query that will report all proxy nodes ...
         QueryBuilder builder = new QueryBuilder(context().getValueFactories().getTypeSystem());
-        QueryCommand query = builder.select("jcr:uuid")
-                                    .from("mix:shareable")
-                                    .where()
-                                    .propertyValue("mix:shareable", "jcr:uuid")
-                                    .isEqualTo(identifierOfSharedNode)
-                                    .end()
-                                    .union()
-                                    .select("jcr:uuid")
+        QueryCommand query = builder.select("jcr:primaryType")
                                     .from("mode:share")
                                     .where()
                                     .referenceValue("mode:share", "mode:sharedUuid")
@@ -2311,7 +2322,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
                                     .query();
         Query jcrQuery = session().workspace().queryManager().createQuery(query);
         QueryResult result = jcrQuery.execute();
-        return result;
+        // And combine the results ...
+        return new JcrNodeIterator(original, result.getNodes());
     }
 
     /**
@@ -2323,38 +2335,38 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public void removeShare() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (isShareable()) {
             // Get the nodes in the shared set ...
-            QueryResult sharedSet = sharedSetFor(getIdentifier());
-            NodeIterator sharedSetNodes = sharedSet.getNodes();
+            NodeIterator sharedSetNodes = sharedSet();
             long sharedSetSize = sharedSetNodes.getSize(); // computed w/o respect for privileges
             if (sharedSetSize <= 1) {
                 // There aren't any other nodes in the shared set, so simply remove this node ...
                 doRemove();
                 return;
             }
-            // Find the first node in the shared set that is not this object ...
-            while (sharedSetNodes.hasNext()) {
-                javax.jcr.Node nodeInSharedSet = sharedSetNodes.nextNode();
-                if (this.equals(nodeInSharedSet)) continue;
-                // We found a node where we can move this node into ...
-                assert nodeInSharedSet instanceof JcrSharedNode;
-                JcrSharedNode otherShareableNode = (JcrSharedNode)nodeInSharedSet;
-                assert !otherShareableNode.isRoot();
+            // Find the second node in the shared set that is not this object ...
+            AbstractJcrNode originalNode = (AbstractJcrNode)sharedSetNodes.nextNode();
+            if (originalNode == this) {
+                // We need to move this node into the first proxy ...
+                JcrSharedNode firstProxy = (JcrSharedNode)sharedSetNodes.nextNode();
                 assert !this.isRoot();
-                boolean sameParent = otherShareableNode.getParent().equals(this.getParent());
-                NodeEditor parentEditor = otherShareableNode.editorForParent();
+                assert !firstProxy.isRoot();
+                boolean sameParent = firstProxy.getParent().equals(this.getParent());
+                NodeEditor parentEditor = firstProxy.editorForParent();
                 if (sameParent) {
                     // Move this node to just before the other shareable node ...
-                    parentEditor.orderChildBefore(this.segment(), otherShareableNode.segment());
+                    parentEditor.orderChildBefore(this.segment(), firstProxy.segment());
                 } else {
-                    // Move this node to the new parent (at the end) ...
-                    Name newName = otherShareableNode.segment().getName();
+                    // Move this node to the new parent and just before the first proxy ...
+                    Name newName = firstProxy.segment().getName();
                     Node<JcrNodePayload, JcrPropertyPayload> newNode = parentEditor.moveToBeChild(this, newName);
-                    parentEditor.orderChildBefore(newNode.getSegment(), otherShareableNode.segment());
+                    parentEditor.orderChildBefore(newNode.getSegment(), firstProxy.segment());
                 }
-                // And finally remove the other shareable node ...
-                otherShareableNode.doRemove();
-                return;
+                // And finally remove the first proxy ...
+                firstProxy.doRemove();
+            } else {
+                // We can just remove this proxy ...
+                doRemove();
             }
+            return;
         }
         // If we get to here, either there are no other nodes in the shared set or this node is a non-shareable node,
         // so simply remove this node (per section 14.2 of the JCR 2.0 specification) ...
@@ -2370,8 +2382,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     public void removeSharedSet() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (isShareable()) {
             // Remove all of the node is the shared set ...
-            QueryResult sharedSet = sharedSetFor(getIdentifier());
-            NodeIterator sharedSetNodes = sharedSet.getNodes();
+            NodeIterator sharedSetNodes = sharedSet();
             while (sharedSetNodes.hasNext()) {
                 AbstractJcrNode nodeInSharedSet = (AbstractJcrNode)sharedSetNodes.nextNode();
                 nodeInSharedSet.doRemove();

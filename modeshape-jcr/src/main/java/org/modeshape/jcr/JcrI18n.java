@@ -96,6 +96,7 @@ public final class JcrI18n {
     public static I18n nodeDefinitionCouldNotBeDeterminedForNode;
     public static I18n noSnsDefinitionForNode;
     public static I18n missingNodeTypeForExistingNode;
+    public static I18n unableToCreateNodeWithInternalPrimaryType;
     public static I18n unableToCreateNodeWithPrimaryTypeThatDoesNotExist;
     public static I18n unableToCreateNodeWithNoDefaultPrimaryTypeOnChildNodeDefinition;
     public static I18n unableToSaveNodeThatWasCreatedSincePreviousSave;

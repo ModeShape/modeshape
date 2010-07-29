@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr;
 
+import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
@@ -122,8 +123,16 @@ class JcrNode extends AbstractJcrNode {
         if (nodeDefn.isProtected()) {
             throw new ConstraintViolationException(JcrI18n.cannotRemoveItemWithProtectedDefinition.text(getPath()));
         }
+        session().recordRemoval(locationToDestroy()); // do this first before we destroy the node!
+        doDestroy();
+    }
 
-        session().recordRemoval(location); // do this first before we destroy the node!
+    protected Location locationToDestroy() {
+        return location;
+    }
+
+    protected void doDestroy() throws AccessDeniedException, RepositoryException {
         editor().destroy();
     }
+
 }

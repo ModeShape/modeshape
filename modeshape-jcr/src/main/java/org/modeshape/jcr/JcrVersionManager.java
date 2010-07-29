@@ -239,9 +239,6 @@ final class JcrVersionManager implements VersionManager {
 
         session.checkLive();
 
-        // If this is a shared node, we want to version the "mode:share" proxy, not the original ...
-        if (node instanceof JcrSharedNode) node = ((JcrSharedNode)node).proxyNode();
-
         checkVersionable(node);
 
         if (node.isNew() || node.isModified()) {
@@ -357,9 +354,6 @@ final class JcrVersionManager implements VersionManager {
                                 Path verisonedParentPath,
                                 Graph.Batch batch,
                                 int onParentVersionAction ) throws RepositoryException {
-        // If this is a shared node, we want to version the "mode:share" proxy, not the original ...
-        if (node instanceof JcrSharedNode) node = ((JcrSharedNode)node).proxyNode();
-
         Path childPath = path(verisonedParentPath, node.path().getLastSegment());
 
         Name primaryTypeName = node.getPrimaryTypeName();

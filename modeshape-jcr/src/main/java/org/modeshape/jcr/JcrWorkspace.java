@@ -378,9 +378,10 @@ class JcrWorkspace implements Workspace {
              */
             org.modeshape.graph.Node sourceNode = repository.createWorkspaceGraph(srcWorkspace, context).getNodeAt(srcPath);
             Property uuidProp = sourceNode.getProperty(ModeShapeLexicon.UUID);
+            UUID sourceUuid = null;
 
             if (uuidProp != null) {
-                UUID sourceUuid = this.context.getValueFactories().getUuidFactory().create(uuidProp.getFirstValue());
+                sourceUuid = this.context.getValueFactories().getUuidFactory().create(uuidProp.getFirstValue());
 
                 ModeShapeLock sourceLock = lockManager().lockFor(sourceUuid);
                 if (sourceLock != null && sourceLock.getLockToken() == null) {
@@ -401,7 +402,20 @@ class JcrWorkspace implements Workspace {
 
             // Verify that this node accepts a child of the supplied name (given any existing SNS nodes) ...
             Node<JcrNodePayload, JcrPropertyPayload> parent = cache.findNode(parentNode.nodeId, parentNode.path());
-            cache.findBestNodeDefinition(parent, newNodeName, parent.getPayload().getPrimaryTypeName());
+            JcrNodeDefinition childDefn = null;
+            try {
+                childDefn = cache.findBestNodeDefinition(parent, newNodeName, parent.getPayload().getPrimaryTypeName());
+            } catch (RepositoryException e) {
+                if (sameWorkspace) {
+                    // We're creating a shared node, so get the child node defn for the original's primary type
+                    // under the parent of the new shared (proxy) node ...
+                    AbstractJcrNode originalShareable = cache.findJcrNode(Location.create(sourceUuid));
+                    Name originalShareablePrimaryType = originalShareable.getPrimaryTypeName();
+                    childDefn = cache.findBestNodeDefinition(parent, newNodeName, originalShareablePrimaryType);
+                } else {
+                    throw e;
+                }
+            }
 
             if (sameWorkspace) {
                 assert !removeExisting;
@@ -432,10 +446,13 @@ class JcrWorkspace implements Workspace {
 
                     // All is okay so far, so all we need to do here is create a "mode:share" node with a primary type ...
                     // and "mode:sharedUuid" property ...
+                    assert sourceUuid != null;
+                    assert childDefn != null;
                     PropertyFactory propertyFactory = context.getPropertyFactory();
                     Collection<Property> properties = new ArrayList<Property>(2);
                     properties.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.SHARE));
-                    properties.add(propertyFactory.create(ModeShapeLexicon.SHARED_UUID, uuidProp));
+                    properties.add(propertyFactory.create(ModeShapeLexicon.SHARED_UUID, sourceUuid));
+                    properties.add(propertyFactory.create(ModeShapeIntLexicon.NODE_DEFINITON, childDefn.getId().getString()));
                     cache.graphSession().immediateCreateOrReplace(destPath, properties);
                     return;
                 }
@@ -464,7 +481,7 @@ class JcrWorkspace implements Workspace {
                         // Get the node type that owns the child node definition ...
                         NodeDefinitionId childDefnId = node.getPayload().getDefinitionId();
                         JcrNodeType nodeType = nodeTypeManager().getNodeType(childDefnId.getNodeTypeName());
-                        JcrNodeDefinition childDefn = nodeType.childNodeDefinition(childDefnId);
+                        childDefn = nodeType.childNodeDefinition(childDefnId);
                         if (childDefn.isMandatory()) {
                             // We can't just remove a mandatory node... unless its parent will be removed too!
                             String path = node.getPath().getString(context.getNamespaceRegistry());

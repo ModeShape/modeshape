@@ -23,27 +23,25 @@
  */
 package org.modeshape.jcr;
 
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import org.modeshape.common.util.CheckArg;
 
 /**
- * A concrete {@link NodeIterator} that returns the first node and then delegates to the supplied node iterator.
+ * A concrete {@link NodeIterator} that delegates to the supplied iterator.
  */
-class JcrNodeIterator implements NodeIterator {
+class JcrSingleNodeIterator implements NodeIterator {
 
     private final long size;
-    private final AbstractJcrNode firstNode;
-    private final NodeIterator nextNodes;
-    private boolean visitedFirst = false;
+    private final Iterator<AbstractJcrNode> iterator;
 
-    protected JcrNodeIterator( AbstractJcrNode firstNode,
-                               NodeIterator nextNodes ) {
-        assert firstNode != null;
-        assert nextNodes != null;
-        this.firstNode = firstNode;
-        this.nextNodes = nextNodes;
-        this.size = 1 + nextNodes.getSize();
+    protected JcrSingleNodeIterator( AbstractJcrNode singleNode ) {
+        assert singleNode != null;
+        this.iterator = Collections.singleton(singleNode).iterator();
+        this.size = 1;
     }
 
     /**
@@ -52,11 +50,7 @@ class JcrNodeIterator implements NodeIterator {
      * @see javax.jcr.NodeIterator#nextNode()
      */
     public Node nextNode() {
-        if (!visitedFirst) {
-            visitedFirst = true;
-            return firstNode;
-        }
-        return nextNodes.nextNode();
+        return this.iterator.next();
     }
 
     /**
@@ -65,7 +59,7 @@ class JcrNodeIterator implements NodeIterator {
      * @see javax.jcr.RangeIterator#getPosition()
      */
     public long getPosition() {
-        return visitedFirst ? nextNodes.getPosition() + 1 : 0;
+        return 0;
     }
 
     /**
@@ -85,11 +79,7 @@ class JcrNodeIterator implements NodeIterator {
     public void skip( long skipNum ) {
         CheckArg.isNonNegative(skipNum, "skipNum");
         if (skipNum == 0L) return;
-        if (visitedFirst) {
-            nextNodes.skip(skipNum);
-        }
-        visitedFirst = true;
-        nextNodes.skip(skipNum - 1);
+        throw new NoSuchElementException();
     }
 
     /**
@@ -98,7 +88,7 @@ class JcrNodeIterator implements NodeIterator {
      * @see java.util.Iterator#hasNext()
      */
     public boolean hasNext() {
-        return visitedFirst ? nextNodes.hasNext() : true;
+        return iterator.hasNext();
     }
 
     /**
@@ -107,7 +97,7 @@ class JcrNodeIterator implements NodeIterator {
      * @see java.util.Iterator#next()
      */
     public Object next() {
-        return nextNode();
+        return iterator.next();
     }
 
     /**

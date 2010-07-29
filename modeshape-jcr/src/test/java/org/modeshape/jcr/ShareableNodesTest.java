@@ -44,6 +44,11 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.Workspace;
+import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
+import javax.jcr.nodetype.NodeDefinitionTemplate;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.NodeTypeTemplate;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,6 +61,8 @@ import org.modeshape.jcr.JcrRepository.Option;
  */
 public class ShareableNodesTest {
 
+    protected static final String CAR_CARRIER_TYPENAME = "car:Carrier";
+    protected static final String CAR_TYPENAME = "car:Car";
     protected static final String MIX_SHAREABLE = "mix:shareable";
 
     protected static URI resourceUri( String name ) throws URISyntaxException {
@@ -273,6 +280,68 @@ public class ShareableNodesTest {
         verifyShare(original, node);
     }
 
+    /**
+     * This test attempts to create a share underneath a node, A, that has a node type without a child definition for the
+     * "mode:share" node type. This means that normally, a child of type "mode:share" cannot be placed under the node A. However,
+     * because that node is only there as a proxy, ModeShape should transparently allow this.
+     * 
+     * @throws RepositoryException
+     */
+    @Test
+    public void shouldAllowCreatingShareUnderNodeWithTypeThatDoesNotAllowProxyNodeButAllowsPrimaryTypeOfOriginal()
+        throws RepositoryException {
+        // Register the "car:Carrier" node type ...
+        registerCarCarrierNodeType(session);
+        // And create a new node of this type ...
+        Node myCarrier = session.getNode("/NewArea").addNode("MyCarrier", CAR_CARRIER_TYPENAME);
+        // Make one of the cars shareable ...
+        Node prius = session.getNode("/Cars/Hybrid/Toyota Prius");
+        prius.addMixin(MIX_SHAREABLE);
+        session.save();
+
+        // Now create a share under the carrier ...
+        String sharedPath = myCarrier.getPath() + "/The Prius";
+        String originalPath = prius.getPath();
+        Node sharedNode = makeShare(originalPath, sharedPath);
+        assertSharedSetIncludes(prius, originalPath, sharedPath);
+        assertSharedSetIncludes(sharedNode, originalPath, sharedPath);
+
+        // Now, try refreshing the session so we have to re-materialize the node ...
+        session.refresh(false);
+        prius = session.getNode(prius.getPath());
+        sharedNode = session.getNode(sharedNode.getPath());
+        assertSharedSetIncludes(prius, originalPath, sharedPath);
+        assertSharedSetIncludes(sharedNode, originalPath, sharedPath);
+    }
+
+    /**
+     * This test attempts to verify that a user cannot explicitly use the "mode:share" node type as the primary type for a new
+     * manually-created node.
+     * 
+     * @throws RepositoryException
+     */
+    @Test( expected = ConstraintViolationException.class )
+    public void shouldNotBeAbleToCreateNodeWithProxyNodeTypeAsPrimaryType() throws RepositoryException {
+        session.getRootNode().addNode("ShouldNotBePossible", string(ModeShapeLexicon.SHARE));
+    }
+
+    /**
+     * This test attempts to verify that 'canAddNode()' returns false if using the "mode:share" node type as the primary type for
+     * a new manually-created node.
+     * 
+     * @throws RepositoryException
+     */
+    @Test
+    public void shouldReturnFalseFromCanAddNodeIfUsingProxyNodeTypeAsPrimaryType() throws RepositoryException {
+        boolean can = ((AbstractJcrNode)session.getRootNode()).canAddNode("ShouldNotBePossible", string(ModeShapeLexicon.SHARE));
+        assertThat(can, is(false));
+    }
+
+    @Test
+    public void shouldBeAbleToRegisterCarCarrierNodeType() throws RepositoryException {
+        registerCarCarrierNodeType(session);
+    }
+
     @Test
     public void shouldExportSharedNodesAsSystemViewXml() throws RepositoryException, IOException {
         createExportableContent();
@@ -465,6 +534,24 @@ public class ShareableNodesTest {
             assertThat(child.isSame(originalChild), is(true)); // Should be the exact same child nodes
         }
         assertThat("Extra children in original: " + originalChildNames, originalChildNames.isEmpty(), is(true));
+    }
+
+    @SuppressWarnings( "unchecked" )
+    protected void registerCarCarrierNodeType( Session session ) throws RepositoryException {
+        NodeTypeManager ntManager = session.getWorkspace().getNodeTypeManager();
+        try {
+            ntManager.getNodeType(CAR_CARRIER_TYPENAME);
+        } catch (NoSuchNodeTypeException e) {
+            NodeTypeTemplate nt = ntManager.createNodeTypeTemplate();
+            nt.setName(CAR_CARRIER_TYPENAME);
+            // Children ...
+            NodeDefinitionTemplate carChildType = ntManager.createNodeDefinitionTemplate();
+            carChildType.setRequiredPrimaryTypeNames(new String[] {CAR_TYPENAME});
+            nt.getNodeDefinitionTemplates().add(carChildType);
+            ntManager.registerNodeType(nt, true);
+        }
+        // Verify it was registered ...
+        ntManager.getNodeType(CAR_CARRIER_TYPENAME);
     }
 
 }

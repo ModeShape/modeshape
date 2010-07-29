@@ -69,7 +69,7 @@
 - * (undefined) multiple version
 - * (undefined) version
 + jcr:system (mode:system) = mode:system autocreated mandatory protected ignore
-+ * (nt:base) = nt:unstructured multiple version
++ * (nt:base) = nt:unstructured sns version
 
 [mode:resource] > nt:base
 - jcr:data (binary) primary mandatory

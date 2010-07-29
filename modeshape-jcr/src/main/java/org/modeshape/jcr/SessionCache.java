@@ -2473,6 +2473,15 @@ class SessionCache {
             assert primaryTypeProperty != null;
             assert primaryTypeProperty.isEmpty() == false;
 
+            final boolean isSharedNode = ModeShapeLexicon.SHARE.equals(primaryTypeName);
+            UUID sharedUuid = null;
+            if (isSharedNode) {
+                Property sharedUuidProperty = graphProperties.get(ModeShapeLexicon.SHARED_UUID);
+                if (sharedUuidProperty != null) {
+                    sharedUuid = uuidFactory().create(sharedUuidProperty.getFirstValue());
+                }
+            }
+
             // Look for a node definition stored on the node ...
             JcrNodeDefinition definition = null;
             org.modeshape.graph.property.Property nodeDefnProperty = graphProperties.get(ModeShapeIntLexicon.NODE_DEFINITON);
@@ -2491,6 +2500,17 @@ class SessionCache {
                         throw new ValidationException(e.getMessage(), e);
                     }
                 } else {
+                    Name primaryTypeForDefn = primaryTypeName;
+                    if (isSharedNode) {
+                        // We're creating a shared node, so get the child node defn for the original's primary type
+                        // under the parent of the new shared (proxy) node ...
+                        try {
+                            AbstractJcrNode originalShareable = findJcrNode(Location.create(sharedUuid));
+                            primaryTypeForDefn = originalShareable.getPrimaryTypeName();
+                        } catch (RepositoryException e) {
+                            // do nothing (will be treated as a non-shared node) ...
+                        }
+                    }
                     Name childName = node.getName();
                     Node<JcrNodePayload, JcrPropertyPayload> parent = node.getParent();
                     JcrNodePayload parentInfo = parent.getPayload();
@@ -2502,7 +2522,7 @@ class SessionCache {
                     definition = nodeTypes().findChildNodeDefinition(parentInfo.getPrimaryTypeName(),
                                                                      parentInfo.getMixinTypeNames(),
                                                                      childName,
-                                                                     primaryTypeName,
+                                                                     primaryTypeForDefn,
                                                                      numExistingChildrenWithSameName,
                                                                      false);
                 }
@@ -2546,13 +2566,6 @@ class SessionCache {
             }
 
             // Create the JCR Node payload object ...
-            UUID sharedUuid = null;
-            if (ModeShapeLexicon.SHARE.equals(primaryTypeName)) {
-                Property sharedUuidProperty = graphProperties.get(ModeShapeLexicon.SHARED_UUID);
-                if (sharedUuidProperty != null) {
-                    sharedUuid = uuidFactory().create(sharedUuidProperty.getFirstValue());
-                }
-            }
             JcrNodePayload nodePayload = createJcrNodePayload(node,
                                                               primaryTypeName,
                                                               mixinTypeNames,
@@ -2629,6 +2642,15 @@ class SessionCache {
         public void preSave( org.modeshape.graph.session.GraphSession.Node<JcrNodePayload, JcrPropertyPayload> node,
                              DateTime saveTime ) throws ValidationException {
             JcrNodePayload payload = node.getPayload();
+            AbstractJcrNode jcrNode = payload.getJcrNode();
+            if (jcrNode.isShared()) {
+                jcrNode = ((JcrSharedNode)jcrNode).proxyNode();
+                try {
+                    payload = jcrNode.nodeInfo().getPayload();
+                } catch (RepositoryException e) {
+                    throw new ValidationException(e.getMessage(), e);
+                }
+            }
 
             Name primaryTypeName = payload.getPrimaryTypeName();
             List<Name> mixinTypeNames = payload.getMixinTypeNames();
@@ -2664,10 +2686,20 @@ class SessionCache {
 
             for (org.modeshape.graph.session.GraphSession.Node<JcrNodePayload, JcrPropertyPayload> child : node.getChildren()) {
                 int snsCount = node.getChildrenCount(child.getName());
+                JcrNodePayload childPayload = child.getPayload();
+                AbstractJcrNode childJcrNode = childPayload.getJcrNode();
+                if (childJcrNode.isShared()) {
+                    childJcrNode = ((JcrSharedNode)childJcrNode).proxyNode();
+                    try {
+                        childPayload = childJcrNode.nodeInfo().getPayload();
+                    } catch (RepositoryException e) {
+                        throw new ValidationException(e.getMessage(), e);
+                    }
+                }
                 JcrNodeDefinition definition = nodeTypes().findChildNodeDefinition(primaryTypeName,
                                                                                    mixinTypeNames,
                                                                                    child.getName(),
-                                                                                   child.getPayload().getPrimaryTypeName(),
+                                                                                   childPayload.getPrimaryTypeName(),
                                                                                    snsCount,
                                                                                    false);
                 if (definition == null) {

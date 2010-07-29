@@ -21,7 +21,7 @@
   orderable 
   - * (undefined) multiple 
   - * (undefined) 
-  + * (nt:base) = nt:unstructured multiple version 
+  + * (nt:base) = nt:unstructured sns version 
 
 [mix:created] mixin 
   - jcr:created (date) protected  
@@ -60,8 +60,8 @@
   - jcr:isQueryable (boolean) mandatory protected copy
   - jcr:hasOrderableChildNodes (boolean) mandatory protected copy 
   - jcr:primaryItemName (name) protected copy
-  + jcr:propertyDefinition (nt:propertyDefinition)  = nt:propertyDefinition multiple protected copy 
-  + jcr:childNodeDefinition (nt:childNodeDefinition) = nt:childNodeDefinition multiple protected copy
+  + jcr:propertyDefinition (nt:propertyDefinition)  = nt:propertyDefinition sns protected copy 
+  + jcr:childNodeDefinition (nt:childNodeDefinition) = nt:childNodeDefinition sns protected copy
 
 [nt:propertyDefinition] 
   - jcr:name (name) protected
@@ -118,7 +118,7 @@
   - jcr:frozenUuid (string) mandatory autocreated protected abort 
   - * (undefined) protected abort 
   - * (undefined) protected multiple abort 
-  + * (nt:base) protected multiple abort
+  + * (nt:base) protected sns abort
 
 [nt:versionedChild] 
   - jcr:childVersionHistory (reference) mandatory autocreated protected abort < 'nt:versionHistory'
