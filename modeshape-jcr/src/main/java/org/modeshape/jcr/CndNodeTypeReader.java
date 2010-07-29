@@ -27,8 +27,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Iterator;
 import javax.jcr.Session;
+import javax.jcr.nodetype.NodeTypeDefinition;
 import org.modeshape.cnd.CndImporter;
+import org.modeshape.common.collection.Problems;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
@@ -42,6 +45,7 @@ import org.modeshape.graph.property.Path;
  * Typically, the class will be used like this:
  * 
  * <pre>
+ * Session session = ...
  * CndNodeTypeReader reader = new CndNodeTypeReader(session);
  * reader.read(file); // or stream or resource file
  * 
@@ -49,7 +53,7 @@ import org.modeshape.graph.property.Path;
  *     // Report problems
  * } else {
  *     boolean allowUpdate = false;
- *     session.getWorkspace().getNodeTypeManager().registerNodeTypes(reader.getNodeTypes(), allowUpdate);
+ *     session.getWorkspace().getNodeTypeManager().registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
  * }
  * </pre>
  * 
@@ -163,6 +167,36 @@ public class CndNodeTypeReader extends GraphNodeTypeReader {
                       Location locationOfParent,
                       String resourceName ) {
         super.read(subgraph, locationOfParent, resourceName);
+    }
+
+    /**
+     * Get the problems where warnings and error messages were recorded by this factory.
+     * 
+     * @return the problems; never null
+     */
+    @Override
+    public Problems getProblems() {
+        return super.getProblems();
+    }
+
+    /**
+     * Returns the node type definitions created by this factory.
+     * 
+     * @return the {@link NodeTypeDefinition}s
+     */
+    @Override
+    public NodeTypeDefinition[] getNodeTypeDefinitions() {
+        return super.getNodeTypeDefinitions();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Iterable#iterator()
+     */
+    @Override
+    public Iterator<NodeTypeDefinition> iterator() {
+        return super.iterator();
     }
 
     protected void readBuiltInTypes() throws IOException {

@@ -31,8 +31,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import javax.jcr.Session;
+import javax.jcr.nodetype.NodeTypeDefinition;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
@@ -60,8 +62,9 @@ import org.xml.sax.SAXException;
  * Typically, the class will be used like this:
  * 
  * <pre>
+ * Session session = ...
  * // Instantiate the reader and load one or more files ... 
- * JackrabbitXmlNodeTypeReader reader = new JackrabbitXmlNodeTypeReader();
+ * JackrabbitXmlNodeTypeReader reader = new JackrabbitXmlNodeTypeReader(session);
  * reader.read(file); // or stream or resource file
  * 
  * if (!reader.getProblems().isEmpty()) {
@@ -69,7 +72,7 @@ import org.xml.sax.SAXException;
  * } else {
  *     // Use the standard JCR API to register the loaded node types ... 
  *     boolean allowUpdate = false;
- *     session.getWorkspace().getNodeTypeManager().registerNodeTypes(reader.getNodeTypes(), allowUpdate);
+ *     session.getWorkspace().getNodeTypeManager().registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
  * }
  * </pre>
  * 
@@ -228,6 +231,36 @@ public class JackrabbitXmlNodeTypeReader extends GraphNodeTypeReader {
                       Location locationOfParent,
                       String resourceName ) {
         super.read(subgraph, locationOfParent, resourceName);
+    }
+
+    /**
+     * Get the problems where warnings and error messages were recorded by this factory.
+     * 
+     * @return the problems; never null
+     */
+    @Override
+    public Problems getProblems() {
+        return super.getProblems();
+    }
+
+    /**
+     * Returns the node type definitions created by this factory.
+     * 
+     * @return the {@link NodeTypeDefinition}s
+     */
+    @Override
+    public NodeTypeDefinition[] getNodeTypeDefinitions() {
+        return super.getNodeTypeDefinitions();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Iterable#iterator()
+     */
+    @Override
+    public Iterator<NodeTypeDefinition> iterator() {
+        return super.iterator();
     }
 
     /**

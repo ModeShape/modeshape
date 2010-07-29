@@ -955,7 +955,7 @@ if (!reader.getProblems().isEmpty()) {
 } else {
   boolean allowUpdate = ...
   &NodeTypeManager; nodeTypeManager = session.getWorkspace().getNodeTypeManager();
-  nodeTypeManager.registerNodeTypes(reader.getNodeTypes(), allowUpdate);
+  nodeTypeManager.registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
 }</programlisting>
 
       The &CndNodeTypeReader; class provides a number of <code>read(...)</code> methods that accept &File;s, paths to files on the file system,
@@ -972,7 +972,8 @@ if (!reader.getProblems().isEmpty()) {
 			ModeShape also provides a class that reads the node types defined in a Jackrabbit XML format. This is useful if you've been using Jackrabbit,
 			have defined your custom node types in the Jackrabbit-specific format, but want to switch to ModeShape and don't want to have to manually
 			convert your node types in the standard CND format. This class is used almost identically to the &CndNodeTypeReader; class described above:
-<programlisting>&JackrabbitXmlNodeTypeReader; reader = new &JackrabbitXmlNodeTypeReader;();
+<programlisting>&Session; session = ...
+&JackrabbitXmlNodeTypeReader; reader = new &JackrabbitXmlNodeTypeReader;(session);
 reader.read(cndFile); // from file, file system path, classpath resource, URL, etc.
 
 if (!reader.getProblems().isEmpty()) {
@@ -981,9 +982,8 @@ if (!reader.getProblems().isEmpty()) {
   }
 } else {
   boolean allowUpdate = ...
-  &Session; session = ...
   &NodeTypeManager; nodeTypeManager = session.getWorkspace().getNodeTypeManager();
-  nodeTypeManager.registerNodeTypes(reader.getNodeTypes(), allowUpdate);
+  nodeTypeManager.registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
 }</programlisting>
 			</para>
 		</sect3>
