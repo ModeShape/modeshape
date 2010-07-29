@@ -17,8 +17,8 @@
 
     <fileSets>
         <fileSet>
-            <directory>kit/deploy/</directory>
-            <outputDirectory>deploy</outputDirectory>
+            <directory>kit/</directory>
+            <outputDirectory>/</outputDirectory>
         </fileSet>
     
         <fileSet>
