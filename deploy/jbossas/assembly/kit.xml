@@ -17,6 +17,11 @@
 
     <fileSets>
         <fileSet>
+            <directory>kit/deploy/</directory>
+            <outputDirectory>deploy</outputDirectory>
+        </fileSet>
+    
+        <fileSet>
             <directory>modeshape-jbossas-service/target/distribution/resources-modeshape-services.jar.dir</directory>
             <outputDirectory>deploy/resources-modeshape-services.jar</outputDirectory>
         </fileSet>
