@@ -53,6 +53,7 @@ public final class JcrI18n {
     public static I18n fileDoesNotExist;
     public static I18n failedToReadPropertiesFromManifest;
     public static I18n failedToReadPropertyFromManifest;
+    public static I18n errorLoadingNodeTypeDefintions;
 
     public static I18n rootNodeHasNoParent;
     public static I18n rootNodeIsNotProperty;

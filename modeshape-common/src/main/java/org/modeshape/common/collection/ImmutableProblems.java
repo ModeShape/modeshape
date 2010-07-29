@@ -350,6 +350,15 @@ public class ImmutableProblems implements Problems {
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.common.collection.Problems#addAll(java.lang.Iterable)
+     */
+    public void addAll( Iterable<Problem> problems ) {
+        if (problems != null && problems != this && problems != delegate) this.delegate.addAll(problems);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.modeshape.common.collection.Problems#hasErrors()
      */
     public boolean hasErrors() {
@@ -410,4 +419,13 @@ public class ImmutableProblems implements Problems {
         return delegate.size();
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return delegate.toString();
+    }
 }

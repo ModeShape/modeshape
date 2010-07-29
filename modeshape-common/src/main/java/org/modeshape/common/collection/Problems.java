@@ -358,6 +358,13 @@ public interface Problems extends Iterable<Problem>, Serializable {
                   Object... params );
 
     /**
+     * Add all of the problems in the supplied list.
+     * 
+     * @param problems the problems to add to this list; this method does nothing if null or empty
+     */
+    void addAll( Iterable<Problem> problems );
+
+    /**
      * Get the number of problems that are in this collection
      * 
      * @return the number of problems; never negative

@@ -250,4 +250,23 @@ public abstract class AbstractProblems implements Problems {
     protected abstract void addProblem( Problem problem );
 
     protected abstract List<Problem> getProblems();
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        Iterator<Problem> iter = getProblems().iterator();
+        if (iter.hasNext()) {
+            sb.append(iter.next());
+            while (iter.hasNext()) {
+                sb.append("\n");
+                sb.append(iter.next());
+            }
+        }
+        return sb.toString();
+    }
 }

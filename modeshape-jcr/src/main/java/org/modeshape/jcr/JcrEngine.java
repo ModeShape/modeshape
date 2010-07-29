@@ -41,6 +41,10 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.cnd.CndImporter;
+import org.modeshape.common.collection.Problem;
+import org.modeshape.common.collection.Problems;
+import org.modeshape.common.collection.SimpleProblems;
+import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
@@ -172,6 +176,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
     public final JcrRepository getRepository( String repositoryName ) throws RepositoryException {
         CheckArg.isNotEmpty(repositoryName, "repositoryName");
         checkRunning();
+
         try {
             repositoriesLock.lock();
             JcrRepository repository = repositories.get(repositoryName);
@@ -292,17 +297,34 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                     Path nodeTypesPath = pathFactory.create(repositoryPath, JcrLexicon.NODE_TYPES);
                     CndImporter importer = new CndImporter(destination, nodeTypesPath, false);
                     InputStream is = getClass().getResourceAsStream(resource);
+                    Problems cndProblems = new SimpleProblems();
                     try {
                         if (is != null) {
-                            importer.importFrom(is, this.getProblems(), resource);
+                            importer.importFrom(is, cndProblems, resource);
                             batch.execute();
                             needToRefreshSubgraph = true;
                         }
                     } catch (IOException ioe) {
-                        ioe.printStackTrace();
+                        String msg = JcrI18n.errorLoadingNodeTypeDefintions.text(resource, ioe.getMessage());
+                        throw new RepositoryException(msg, ioe);
+                    }
+                    if (!cndProblems.isEmpty()) {
+                        // Add any warnings or information to this engine's list ...
+                        getProblems().addAll(cndProblems);
+                        if (cndProblems.hasErrors()) {
+                            String msg = null;
+                            Throwable cause = null;
+                            for (Problem problem : cndProblems) {
+                                if (problem.getStatus() == Status.ERROR) {
+                                    msg = problem.getMessageString();
+                                    cause = problem.getThrowable();
+                                    break;
+                                }
+                            }
+                            throw new RepositoryException(JcrI18n.errorLoadingNodeTypeDefintions.text(resource, msg), cause);
+                        }
                     }
                 }
-
             }
 
             // Re-read the subgraph, in case any new nodes were added

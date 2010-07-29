@@ -150,6 +150,25 @@ public class ThreadSafeProblems extends AbstractProblems {
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.common.collection.Problems#addAll(java.lang.Iterable)
+     */
+    public void addAll( Iterable<Problem> problems ) {
+        if (problems == this) return;
+        try {
+            lock.writeLock().lock();
+            if (problems != null) {
+                for (Problem problem : problems) {
+                    this.problems.add(problem);
+                }
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.modeshape.common.collection.AbstractProblems#getProblems()
      */
     @Override

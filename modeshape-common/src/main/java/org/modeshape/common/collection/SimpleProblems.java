@@ -23,7 +23,6 @@
  */
 package org.modeshape.common.collection;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
@@ -63,19 +62,14 @@ public class SimpleProblems extends AbstractProblems {
     /**
      * {@inheritDoc}
      * 
-     * @see java.lang.Object#toString()
+     * @see org.modeshape.common.collection.Problems#addAll(java.lang.Iterable)
      */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        Iterator<Problem> iter = getProblems().iterator();
-        if (iter.hasNext()) {
-            sb.append(iter.next());
-            while (iter.hasNext()) {
-                sb.append("\n");
-                sb.append(iter.next());
+    public void addAll( Iterable<Problem> problems ) {
+        if (problems != null) {
+            if (problems == this) return;
+            for (Problem problem : problems) {
+                this.problems.add(problem);
             }
         }
-        return sb.toString();
     }
 }
