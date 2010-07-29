@@ -39,7 +39,7 @@
 		</dependency>
 	</dependencies>
 	<build>
-		<finalName>resources</finalName>
+		<finalName>modeshape</finalName>
 		<plugins>
 		
 <!--   

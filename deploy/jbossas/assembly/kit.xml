@@ -4,7 +4,7 @@
   xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
 
   
-  <id>modeshape-dist</id>
+  <id>jbossas-dist</id>
   
   <formats>
 	<format>zip</format>
@@ -22,18 +22,18 @@
         </fileSet>
     
         <fileSet>
-            <directory>modeshape-jbossas-service/target/distribution/resources-modeshape-services.jar.dir</directory>
-            <outputDirectory>deploy/resources-modeshape-services.jar</outputDirectory>
+            <directory>modeshape-jbossas-service/target/distribution/modeshape-services.jar.dir</directory>
+            <outputDirectory>deploy/modeshape-services.jar</outputDirectory>
         </fileSet>
         
         <fileSet>
-            <directory>modeshape-jbossas-web-rest-war/target/distribution/resources-modeshape-rest.war.dir</directory>
-            <outputDirectory>deploy/resources-modeshape-rest.war</outputDirectory>
+            <directory>modeshape-jbossas-web-rest-war/target/distribution/modeshape-rest.war.dir</directory>
+            <outputDirectory>deploy/modeshape-rest.war</outputDirectory>
         </fileSet>
 
         <fileSet>
-            <directory>modeshape-jbossas-web-webdav-war/target/distribution/resources-modeshape-webdav.war.dir</directory>
-            <outputDirectory>deploy/resources-modeshape-webdav.war</outputDirectory>
+            <directory>modeshape-jbossas-web-webdav-war/target/distribution/modeshape-webdav.war.dir</directory>
+            <outputDirectory>deploy/modeshape-webdav.war</outputDirectory>
         </fileSet>
     </fileSets>
 

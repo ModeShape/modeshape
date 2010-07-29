@@ -41,7 +41,7 @@
 	-->
     <context-param>
         <param-name>org.modeshape.web.jcr.JCR_URL</param-name>
-        <param-value>jndi:jcr/local?repositoryName=mode:repository</param-value>
+        <param-value>jndi:jcr/local</param-value>
     </context-param>
 
 	<!--
