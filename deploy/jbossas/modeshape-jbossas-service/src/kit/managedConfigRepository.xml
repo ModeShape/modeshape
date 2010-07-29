@@ -29,6 +29,14 @@
     <sources jcr:primaryType="nt:unstructured">
         <source jcr:name="repository" classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" retryLimit="3" defaultWorkspaceName="default"/>
     </sources>
+    
+   <sequencers>
+        <sequencer jcr:name="Fixed Length Text File Sequencer" classname="org.modeshape.sequencer.text.FixedWidthTextSequencer">
+            <description>Text File sequencer</description>        
+            <pathExpression>/files/text/(*.(txt)[*]) => /nt:unstructured/$1 </pathExpression>
+        </sequencer>
+    </sequencers>
+    
     <!-- Define the JCR repositories -->
     <repositories>
         <!-- Specify the source that should be used for the repository -->
