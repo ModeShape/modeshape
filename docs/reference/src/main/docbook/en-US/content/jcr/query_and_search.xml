@@ -156,6 +156,11 @@ session.logout();
 			The query also defines how the nodes are to be returned in the result sets using column specifiers
 			and ordering specifiers.
 		</para>
+		<para>
+			ModeShape offers a bit more functionality in the "<code>jcr:contains(...)</code>" clauses than required by the specification.
+			In particular, the second parameter specifies the search expression, and for these ModeShape accepts
+			<link linkend='fulltext-search-expressions'>full-text search language</link> expressions, including wildcard support.
+		</para>
 		<note>
 			<para>
 				As an aside, ModeShape actually implements XPath queries by transforming them into the equivalent JCR-SQL2 representation.
@@ -1159,9 +1164,6 @@ offset ::= /* Non-negative integer value */
 			We just pulled it out and made it available as a first-class query language, such that a full-text
 			search query supplied by the user, <emphasis>full-text-query</emphasis>, is equivalent to executing this JCR-SQL2:
 		</para>
-		<para>
-			<code> SELECT * FROM [nt:base] WHERE CONTAINS([nt:base],'<emphasis>full-text-query</emphasis>') </code>
-		</para>
 <programlisting><![CDATA[ SELECT * FROM [nt:base] WHERE CONTAINS([nt:base],'full-text-query') ]]></programlisting>
 		<para>
 			This language allows a JCR client to construct a query to find nodes with property values that match
@@ -1182,9 +1184,43 @@ offset ::= /* Non-negative integer value */
 			where either of those terms may occur.
 		</para>
 		<para>
-			It is also possible to specify that terms should <emphasis>not</emphasis> appear in the results. This is called
+			By default, all terms are assumed to be positive terms, in the sense that the occurrence of the term will increase
+			the rank of any nodes containing the value.
+			However, it is possible to specify that terms should <emphasis>not</emphasis> appear in the results. This is called
 			a <emphasis>negative term</emphasis>, and it reduces the rank of any node whose property values contain the
 			the value. To specify a negative term, simply prefix the term with a hyphen ('-').
+		</para>
+		<para>
+			Each term may also contain wildcards to specify the pattern to be matched (or negated). ModeShape supports
+			two different sets of wildcards:
+      <itemizedlist>
+        <listitem>
+	        <para>
+					 	'*' matches zero or more characters, and '?' matches any single character; and
+					</para>
+				</listitem>
+        <listitem>
+	        <para>
+					 	'%' matches zero or more characters, and '_' matches any single character.
+					</para>
+				</listitem>
+			</itemizedlist>
+			The former are wildcards that are more commonly used in various systems (including older JCR repository implementations), 
+			while the latter are the wildcards used in LIKE expressions in both JCR-SQL and JCR-SQL2. Both families are supported
+			for convenience, and you can also mix and match	and combine the various wildcards, such as 
+			'<code>ta**bl_</code>' and '<code>ta__ble%*</code>'. (Of course, placing multiple '*' or '%' characters next to each other 
+			offers no real benefit, as it is equivalent to a single '*' or '%'.)
+		</para>
+		<para>
+			If you want to use these characters literally in a term and do not want them to be treated as wildcards, they
+			must be escaped by prefixing them with a '\' character. 
+			For example, this full text search expression:
+		</para>
+<programlisting><![CDATA[ table\* 'customer invoice\?' ]]></programlisting>
+		<para>
+			will would rank higher those nodes with properties containing 'table*' (including the asterisk)
+			and those containing the phrase "customer invoice?" (including the question mark).
+			To use a literal backslash character, simply escape it as well.
 		</para>
 		<para>
 			The grammar for this full-text search language is specified in Section 6.7.19 of the 

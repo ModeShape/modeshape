@@ -30,6 +30,8 @@ import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.graph.query.model.FullTextSearch.CompoundTerm;
 import org.modeshape.graph.query.model.FullTextSearch.Conjunction;
@@ -37,8 +39,6 @@ import org.modeshape.graph.query.model.FullTextSearch.Disjunction;
 import org.modeshape.graph.query.model.FullTextSearch.NegationTerm;
 import org.modeshape.graph.query.model.FullTextSearch.SimpleTerm;
 import org.modeshape.graph.query.model.FullTextSearch.Term;
-import org.junit.Before;
-import org.junit.Test;
 
 public class FullTextSearchParserTest {
 
@@ -167,6 +167,60 @@ public class FullTextSearchParserTest {
         assertSimpleTerm(term3, "term3", true, false);
         assertSimpleTerm(term4, "term4", true, false);
         assertSimpleTerm(term5, "term5", false, false);
+    }
+
+    @Test
+    public void shouldParseStringWithWildcardCharactersAtEndOfSingleTerm() {
+        Term result = parser.parse("term*");
+        assertSimpleTerm(result, "term*", false, false);
+    }
+
+    @Test
+    public void shouldParseStringWithWildcardCharactersAtBeginningOfSingleTerm() {
+        Term result = parser.parse("*term");
+        assertSimpleTerm(result, "*term", false, false);
+    }
+
+    @Test
+    public void shouldParseStringWithWildcardCharactersInsideSingleTerm() {
+        Term result = parser.parse("te*rm");
+        assertSimpleTerm(result, "te*rm", false, false);
+    }
+
+    @Test
+    public void shouldParseStringWithWildcardCharactersInMultipleTerms() {
+        Term result = parser.parse("term* term? *term*");
+        assertThat(result, is(notNullValue()));
+        assertThat(result, is(instanceOf(Conjunction.class)));
+        Conjunction conjunction = (Conjunction)result;
+        assertHasSimpleTerms(conjunction, "term*", "term?", "*term*");
+    }
+
+    @Test
+    public void shouldParseStringWithWildcardCharactersInSingleQuotedTerm() {
+        Term result = parser.parse("'term* term? *term*'");
+        assertSimpleTerm(result, "term* term? *term*", false, true);
+    }
+
+    @Test
+    public void shouldParseStringWithSqlStyleWildcardCharactersInMultipleTerms() {
+        Term result = parser.parse("term% term_ %term_");
+        assertThat(result, is(notNullValue()));
+        assertThat(result, is(instanceOf(Conjunction.class)));
+        Conjunction conjunction = (Conjunction)result;
+        assertHasSimpleTerms(conjunction, "term%", "term_", "%term_");
+    }
+
+    @Test
+    public void shouldParseStringWithSqlStyleWildcardCharactersInSingleQuotedTerm() {
+        Term result = parser.parse("'term% term_ %term_'");
+        assertSimpleTerm(result, "term% term_ %term_", false, true);
+    }
+
+    @Test
+    public void shouldParseStringWithEscapedWildcardCharacterInSingleTerm() {
+        Term result = parser.parse("term\\*");
+        assertSimpleTerm(result, "term\\*", false, false);
     }
 
     public static void assertHasSimpleTerms( CompoundTerm compoundTerm,

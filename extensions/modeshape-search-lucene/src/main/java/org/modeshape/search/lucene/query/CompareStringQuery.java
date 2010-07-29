@@ -24,6 +24,8 @@
 package org.modeshape.search.lucene.query;
 
 import java.io.IOException;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.regex.Pattern;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
@@ -213,9 +215,24 @@ public class CompareStringQuery extends CompareQuery<String> {
                                       IS_LESS_THAN_OR_EQUAL_TO, caseSensitive);
     }
 
+    protected static boolean hasWildcardCharacters( String expression ) {
+        CharacterIterator iter = new StringCharacterIterator(expression);
+        boolean skipNext = false;
+        for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
+            if (skipNext) {
+                skipNext = false;
+                continue;
+            }
+            if (c == '*' || c == '?' || c == '%' || c == '_') return true;
+            if (c == '\\') skipNext = true;
+        }
+        return false;
+    }
+
     /**
      * Construct a {@link Query} implementation that scores documents with a string field value that is LIKE the supplied
-     * constraint value.
+     * constraint value, where the LIKE expression contains the SQL wildcard characters '%' and '_' or the regular expression
+     * wildcard characters '*' and '?'.
      * 
      * @param likeExpression the LIKE expression; may not be null
      * @param fieldName the name of the document field containing the value; may not be null
@@ -230,7 +247,8 @@ public class CompareStringQuery extends CompareQuery<String> {
                                                           boolean caseSensitive ) {
         assert likeExpression != null;
         assert likeExpression.length() > 0;
-        if (likeExpression.indexOf('%') == -1 && likeExpression.indexOf('_') == -1) {
+
+        if (!hasWildcardCharacters(likeExpression)) {
             // This is not a like expression, so just do an equals ...
             return createQueryForNodesWithFieldEqualTo(likeExpression, fieldName, factories, caseSensitive);
         }
@@ -243,9 +261,9 @@ public class CompareStringQuery extends CompareQuery<String> {
             // all other characters match themselves
 
             // Wildcard queries are a better match, but they can be slow and should not be used
-            // if the first character of the expression is a '%' or '_' ...
+            // if the first character of the expression is a '%' or '_' or '*' or '?' ...
             char firstChar = likeExpression.charAt(0);
-            if (firstChar != '%' && firstChar != '_') {
+            if (firstChar != '%' && firstChar != '_' && firstChar != '*' && firstChar != '?') {
                 // Create a wildcard query ...
                 String expression = toWildcardExpression(likeExpression);
                 return new WildcardQuery(new Term(fieldName, expression));
@@ -283,9 +301,12 @@ public class CompareStringQuery extends CompareQuery<String> {
         // Replace all '\x' with 'x' ...
         String result = likeExpression.replaceAll("\\\\(.)", "$1");
         // Escape characters used as metacharacters in regular expressions, including
-        // '[', '^', '\', '$', '.', '|', '?', '*', '+', '(', and ')'
-        result = result.replaceAll("([$.|?*+()\\[\\\\^\\\\\\\\])", "\\\\$1");
+        // '[', '^', '\', '$', '.', '|', '+', '(', and ')'
+        // But leave '?' and '*'
+        result = result.replaceAll("([$.|+()\\[\\\\^\\\\\\\\])", "\\\\$1");
         // Replace '%'->'[.]*' and '_'->'[.]
+        // (order of these calls is important!)
+        result = result.replace("*", ".*").replace("?", ".");
         result = result.replace("%", ".*").replace("_", ".");
         return result;
     }

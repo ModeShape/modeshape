@@ -785,6 +785,9 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 }
                 if (term instanceof FullTextSearch.SimpleTerm) {
                     FullTextSearch.SimpleTerm simple = (FullTextSearch.SimpleTerm)term;
+                    if (simple.containsWildcards()) {
+                        return session.findNodesLike(fieldName, simple.getValue(), false);
+                    }
                     PhraseQuery query = new PhraseQuery();
                     query.setSlop(0); // terms must be adjacent
                     String expression = simple.getValue();

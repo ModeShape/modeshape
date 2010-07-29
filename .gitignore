@@ -55,6 +55,7 @@
 /deploy/jbossas/modeshape-jbossas-console/target/
 /deploy/jbossas/modeshape-jbossas-service/target/
 /deploy/jbossas/modeshape-jbossas-web-rest-war/target/
+/deploy/jbossas/modeshape-jbossas-web-webdav-war/target/
 
 /extensions/modeshape-clustering/target
 /extensions/modeshape-search-lucene/target

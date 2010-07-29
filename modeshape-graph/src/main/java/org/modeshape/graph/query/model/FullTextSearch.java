@@ -23,6 +23,8 @@
  */
 package org.modeshape.graph.query.model;
 
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.Iterator;
 import java.util.List;
 import net.jcip.annotations.Immutable;
@@ -299,6 +301,26 @@ public class FullTextSearch implements Constraint {
          */
         public boolean isQuotingRequired() {
             return quoted;
+        }
+
+        /**
+         * Return whether this term contains any unescaped wildcard characters (e.g., one of '*', '?', '%', or '_').
+         * 
+         * @return true if this term contains unescaped wildcard characters, or false otherwise
+         */
+        public boolean containsWildcards() {
+            if (this.value.length() == 0) return false;
+            CharacterIterator iter = new StringCharacterIterator(this.value);
+            boolean skipNext = false;
+            for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
+                if (skipNext) {
+                    skipNext = false;
+                    continue;
+                }
+                if (c == '*' || c == '?' || c == '%' || c == '_') return true;
+                if (c == '\\') skipNext = true;
+            }
+            return false;
         }
 
         /**

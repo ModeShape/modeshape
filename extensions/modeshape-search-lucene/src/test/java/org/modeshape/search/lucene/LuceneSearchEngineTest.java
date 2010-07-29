@@ -459,6 +459,86 @@ public class LuceneSearchEngineTest {
     }
 
     @Test
+    public void shouldFindNodesBySimpleQueryWithFullTextSearchCriteriaWithSqlSingleWildcardCharacter() {
+        indexWorkspace(workspaceName1);
+        String query = "SELECT model, maker FROM __ALLNODES__ WHERE CONTAINS(maker,'mar_in')";
+        QueryResults results = query(workspaceName1, query);
+        assertRowCount(results, 1);
+    }
+
+    @Test
+    public void shouldFindNodesBySimpleQueryWithFullTextSearchCriteriaWithMultipleSqlSingleWildcardCharacter() {
+        indexWorkspace(workspaceName1);
+        String query = "SELECT model, maker FROM __ALLNODES__ WHERE CONTAINS(maker,'ma__in')";
+        QueryResults results = query(workspaceName1, query);
+        assertRowCount(results, 1);
+    }
+
+    @Test
+    public void shouldFindNodesBySimpleQueryWithFullTextSearchCriteriaWithSqlAnyWildcardCharacter() {
+        indexWorkspace(workspaceName1);
+        String query = "SELECT model, maker FROM __ALLNODES__ WHERE CONTAINS(maker,'mar%in')";
+        QueryResults results = query(workspaceName1, query);
+        assertRowCount(results, 1);
+    }
+
+    @Test
+    public void shouldFindNodesBySimpleQueryWithFullTextSearchCriteriaWithMultipleSqlAnyWildcardCharacter() {
+        indexWorkspace(workspaceName1);
+        String query = "SELECT model, maker FROM __ALLNODES__ WHERE CONTAINS(maker,'ma%%in')";
+        QueryResults results = query(workspaceName1, query);
+        assertRowCount(results, 1);
+    }
+
+    @Test
+    public void shouldFindNodesBySimpleQueryWithFullTextSearchCriteriaWithSurroundingSqlAnyWildcardCharacter() {
+        indexWorkspace(workspaceName1);
+        String query = "SELECT model, maker FROM __ALLNODES__ WHERE CONTAINS(maker,'%arti%')";
+        QueryResults results = query(workspaceName1, query);
+        assertRowCount(results, 1);
+    }
+
+    @Test
+    public void shouldFindNodesBySimpleQueryWithFullTextSearchCriteriaWithQuestionMarkWildcardCharacter() {
+        indexWorkspace(workspaceName1);
+        String query = "SELECT model, maker FROM __ALLNODES__ WHERE CONTAINS(maker,'mar?in')";
+        QueryResults results = query(workspaceName1, query);
+        assertRowCount(results, 1);
+    }
+
+    @Test
+    public void shouldFindNodesBySimpleQueryWithFullTextSearchCriteriaWithMultipleQuestionMarkWildcardCharacter() {
+        indexWorkspace(workspaceName1);
+        String query = "SELECT model, maker FROM __ALLNODES__ WHERE CONTAINS(maker,'ma??in')";
+        QueryResults results = query(workspaceName1, query);
+        assertRowCount(results, 1);
+    }
+
+    @Test
+    public void shouldFindNodesBySimpleQueryWithFullTextSearchCriteriaWithAsteriskWildcardCharacter() {
+        indexWorkspace(workspaceName1);
+        String query = "SELECT model, maker FROM __ALLNODES__ WHERE CONTAINS(maker,'mar*in')";
+        QueryResults results = query(workspaceName1, query);
+        assertRowCount(results, 1);
+    }
+
+    @Test
+    public void shouldFindNodesBySimpleQueryWithFullTextSearchCriteriaWithMultipleAsteriskWildcardCharacter() {
+        indexWorkspace(workspaceName1);
+        String query = "SELECT model, maker FROM __ALLNODES__ WHERE CONTAINS(maker,'mar**in')";
+        QueryResults results = query(workspaceName1, query);
+        assertRowCount(results, 1);
+    }
+
+    @Test
+    public void shouldFindNodesBySimpleQueryWithFullTextSearchCriteriaWithSurroundingAsteriskWildcardCharacter() {
+        indexWorkspace(workspaceName1);
+        String query = "SELECT model, maker FROM __ALLNODES__ WHERE CONTAINS(maker,'*arti*')";
+        QueryResults results = query(workspaceName1, query);
+        assertRowCount(results, 1);
+    }
+
+    @Test
     public void shouldFindNodesBySimpleQueryWithDepthCriteria() {
         indexWorkspace(workspaceName1);
         String query = "SELECT model, maker FROM __ALLNODES__ WHERE DEPTH() > 2";
