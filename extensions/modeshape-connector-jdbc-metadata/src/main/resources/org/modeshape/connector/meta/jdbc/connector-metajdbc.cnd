@@ -71,4 +71,4 @@
 
 [mj:procedure] mixin
 - mj:description (string)
-- mj:returnType (int)  
+- mj:returnType (long)  
