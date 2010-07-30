@@ -57,6 +57,10 @@ public final class RestClientI18n {
     public static I18n unpublishFailedMsg;
 
     public static I18n unpublishNeverPublishedMsg;
+    
+    public static I18n publishSucceededMsg;
+    
+    public static I18n unpublishSucceededMsg;
 
     static {
         try {
