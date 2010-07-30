@@ -380,33 +380,38 @@ WHERE nodeSet2.id IS NOT NULLL</programlisting></entry>
 					</thead>
 					<tbody>
 						<row>
+							<entry><code>/jcr:root/a[1]/b[2]</code></entry>
+							<entry><programlisting>SELECT * FROM [nt:base]
+WHERE PATH([nt:base]) = '/a[1]/b[2]'</programlisting></entry>
+						</row>
+						<row>
 							<entry><code>/jcr:root/a/b[*]</code></entry>
 							<entry><programlisting>SELECT * FROM [nt:base]
-WHERE PATH([nt:base]) = '/a/b'</programlisting></entry>
+WHERE PATH([nt:base]) = '/a[%]/b[%]'</programlisting></entry>
 						</row>
 						<row>
 							<entry><code>/jcr:root/a[1]/b[*]</code></entry>
 							<entry><programlisting>SELECT * FROM [nt:base]
-WHERE PATH([nt:base]) = '/a/b'</programlisting></entry>
+WHERE PATH([nt:base]) = '/a[%]/b[%]'</programlisting></entry>
 						</row>
 						<row>
 							<entry><code>/jcr:root/a[2]/b</code></entry>
 							<entry><programlisting>SELECT * FROM [nt:base]
-WHERE PATH([nt:base]) = '/a[2]/b'</programlisting></entry>
+WHERE PATH([nt:base]) = '/a[2]/b[%]'</programlisting></entry>
 						</row>
 						<row>
 							<entry><code>/jcr:root/a/b[2]//c[4]</code></entry>
 							<entry><programlisting>SELECT * FROM [my:type]
-WHERE PATH([nt:base]) = '/a/b[2]/c[4]'
-   OR PATH(nodeSet1) LIKE '/a/b[2]/%/c[4]'</programlisting></entry>
+WHERE PATH([nt:base]) = '/a[%]/b[2]/c[4]'
+   OR PATH(nodeSet1) LIKE '/a[%]/b[2]/%/c[4]'</programlisting></entry>
 						</row>
 						<row>
 							<entry><code>/jcr:root/a/b//c//d</code></entry>
 							<entry><programlisting>SELECT * FROM [my:type]
-WHERE PATH([nt:base]) = '/a/b/c/d'
-   OR PATH([nt:base]) LIKE '/a/b/%/c/d' 
-   OR PATH([nt:base]) LIKE '/a/b/c/%/d'
-   OR PATH([nt:base]) LIKE '/a/b/%/c/%/d'</programlisting></entry>
+WHERE PATH([nt:base]) = '/a[%]/b[%]/c[%]/d[%]'
+   OR PATH([nt:base]) LIKE '/a[%]/b[%]/%/c[%]/d[%]' 
+   OR PATH([nt:base]) LIKE '/a[%]/b[%]/c[%]/%/d[%]'
+   OR PATH([nt:base]) LIKE '/a[%]/b[%]/%/c[%]/%/d[%]'</programlisting></entry>
 						</row>
 						<row>
 							<entry><code>//element(*,my:type)[@id&lt;1 and @name='john']</code></entry>
@@ -416,14 +421,36 @@ WHERE id &lt; 1 AND name = 'john'</programlisting></entry>
 						<row>
 							<entry><code>/jcr:root/a/b//element(*,my:type)</code></entry>
 							<entry><programlisting>SELECT * FROM [my:type]
-WHERE PATH([my:type]) = '/a/b/%'</programlisting></entry>
+WHERE PATH([my:type]) = '/a[%]/b[%]/%'</programlisting></entry>
 						</row>
 					</tbody>
 				</tgroup>
 			</table>
 			<para>
 				Note that the JCR-SQL2 language supported by ModeShape is capable of representing a wider
-				combination of path constraints.
+				combination of path constraints, although the XPath expressions are easier to understand 
+				and significantly shorter.
+			</para>
+			<para>
+				Also, path constraints in XPath do not need to specify wildcards for the same-name-sibling (SNS) indexes,
+				as XPath should naturally find all nodes regardless of the SNS index, unless
+				the SNS index is explicitly specified.
+				In other words, any path segment that does not have
+				an explicit SNS index (or an SNS index of '[%]' or '[_]') will match <emphasis>all</emphasis> SNS index values. 
+				However, any segments in the path expression that have an explicit numeric SNS index will require an exact match.
+				Thus this path constraint:
+			</para>
+			<para><programlisting>/a/b/c[2]/d[%]/%/e[_]</programlisting></para>
+			<para>
+				will effectively be converted into
+			</para>
+			<para><programlisting>/a[%]/b[%]/c[2]/d[%]/%/e[_]</programlisting></para>
+			<para>
+				This behavior is very different than how JCR-SQL and JCR-SQL2 path constraints are handled,
+				since these languages interpret a lack of a SNS index as equating to '<code>[1]</code>'.
+				To achieve the XPath-like matching, a query written in JCR-SQL or JCR-SQL2 would need
+				to explicitly include '<code>[%]</code>' in each path segment where an SNS index literal
+				is not already specified.
 			</para>
 		</sect2>
 	  <sect2 id="jcr-xpath-ordering-specifiers">	
@@ -435,7 +462,7 @@ WHERE PATH([my:type]) = '/a/b/%'</programlisting></entry>
 			<para>
 				ModeShape does support zero or more ordering specifiers, including whether each specifier
 				is ascending or descending. If no ordering specifiers are defined, the ordering of the results
-				is not predefined and may vary (though ordering by score is often the approach).
+				is not predefined and may vary (though ordering by score may be used by default).
 				For example, the following table shows several XPath queries and how they map to JCR-SQL2 queries.
 			</para>
 			<table frame='all'>
@@ -457,11 +484,29 @@ FROM [nt:base] AS nodeSet1
 ORDER BY nodeSet1.title</programlisting></entry>
 						</row>
 						<row>
+							<entry><code>//element(*,*) order by jcr:score()</code></entry>
+							<entry><programlisting>SELECT *
+FROM [nt:base] AS nodeSet1 
+ORDER BY SCORE(nodeSet1)</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,my:type) order by jcr:score(my:type)</code></entry>
+							<entry><programlisting>SELECT *
+FROM [my:type] AS nodeSet1 
+ORDER BY SCORE(nodeSet1)</programlisting></entry>
+						</row>
+						<row>
+							<entry><code>//element(*,*) order by @jcr:path</code></entry>
+							<entry><programlisting>SELECT jcr:path
+FROM [nt:base] AS nodeSet1 
+ORDER BY PATH(nodeSet1)</programlisting></entry>
+						</row>
+						<row>
 							<entry><code>//element(*,*) order by @title, @jcr:score</code></entry>
 							<entry><programlisting>SELECT nodeSet1.title
 FROM [nt:base] AS nodeSet1 
 ORDER BY nodeSet1.title,
-         SCORE([nt:base])</programlisting></entry>
+         SCORE(nodeSet1)</programlisting></entry>
 						</row>
 					</tbody>
 				</tgroup>

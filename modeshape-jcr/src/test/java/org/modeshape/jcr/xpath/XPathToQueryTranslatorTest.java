@@ -83,21 +83,21 @@ public class XPathToQueryTranslatorTest {
     @Test
     public void shouldTranslateFromXPathContainingExplicitPath() {
         assertThat(xpath("/jcr:root/a"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/a[%]'"));
         assertThat(xpath("/jcr:root/a/b"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/a[%]/b[%]' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
         assertThat(xpath("/jcr:root/a/b/c"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/a[%]/b[%]/c[%]' AND DEPTH(nodeSet1) = CAST(3 AS LONG)"));
         assertThat(xpath("/jcr:root/a/b/c/d"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c/d'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/a[%]/b[%]/c[%]/d[%]' AND DEPTH(nodeSet1) = CAST(4 AS LONG)"));
     }
 
     @Test
     public void shouldTranslateFromXPathContainingExplicitPathWithChildNumbers() {
         assertThat(xpath("/jcr:root/a[2]/b"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a[2]/b'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/a[2]/b[%]' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
         assertThat(xpath("/jcr:root/a/b[3]"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b[3]'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/a[%]/b[3]' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
         assertThat(xpath("/jcr:root/a[2]/b[3]"),
                    isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a[2]/b[3]'"));
     }
@@ -105,41 +105,41 @@ public class XPathToQueryTranslatorTest {
     @Test
     public void shouldTranslateFromXPathContainingExplicitPathWithWildcardChildNumbers() {
         assertThat(xpath("/jcr:root/a[*]/b"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/a[%]/b[%]' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
         assertThat(xpath("/jcr:root/a/b[*]"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/a[%]/b[%]' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
         assertThat(xpath("/jcr:root/a[*]/b[*]"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/a[%]/b[%]' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
     }
 
     @Test
     public void shouldTranslateFromXPathUsingNameTestsAndWildcardWithNoPredicates() {
         assertThat(xpath("/jcr:root/testroot/*"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) LIKE '/testroot/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) LIKE '/testroot[%]/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
     }
 
     @Test
     public void shouldTranslateFromXPathUsingNameTestsAndWildcardWithPredicates() {
         assertThat(xpath("/jcr:root/testroot/*[@prop1]"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE (PATH(nodeSet1) LIKE '/testroot/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)) AND nodeSet1.prop1 IS NOT NULL"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE (PATH(nodeSet1) LIKE '/testroot[%]/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)) AND nodeSet1.prop1 IS NOT NULL"));
     }
 
     @Test
     public void shouldTranslateFromXPathContainingPathWithDescendantOrSelf() {
         assertThat(xpath("/jcr:root/a/b//c"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c' OR PATH(nodeSet1) LIKE '/a/b/%/c'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/a[%]/b[%]/c[%]' OR PATH(nodeSet1) LIKE '/a[%]/b[%]/%/c[%]'"));
         assertThat(xpath("/jcr:root/a/b[2]//c"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b[2]/c' OR PATH(nodeSet1) LIKE '/a/b[2]/%/c'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/a[%]/b[2]/c[%]' OR PATH(nodeSet1) LIKE '/a[%]/b[2]/%/c[%]'"));
         assertThat(xpath("/jcr:root/a/b//c[4]"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b/c[4]' OR PATH(nodeSet1) LIKE '/a/b/%/c[4]'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/a[%]/b[%]/c[4]' OR PATH(nodeSet1) LIKE '/a[%]/b[%]/%/c[4]'"));
         assertThat(xpath("/jcr:root/a/b[2]//c[4]"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/a/b[2]/c[4]' OR PATH(nodeSet1) LIKE '/a/b[2]/%/c[4]'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/a[%]/b[2]/c[4]' OR PATH(nodeSet1) LIKE '/a[%]/b[2]/%/c[4]'"));
     }
 
     @Test
     public void shouldTranslateFromXPathContainingPathWithMultipleDescendantOrSelf() {
         assertThat(xpath("/jcr:root/a/b//c//d"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE (((PATH(nodeSet1) = '/a/b/c/d' OR PATH(nodeSet1) LIKE '/a/b/%/c/d') OR PATH(nodeSet1) LIKE '/a/b/c/%/d') OR PATH(nodeSet1) LIKE '/a/b/%/c/%/d')"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE (((PATH(nodeSet1) LIKE '/a[%]/b[%]/c[%]/d[%]' OR PATH(nodeSet1) LIKE '/a[%]/b[%]/%/c[%]/d[%]') OR PATH(nodeSet1) LIKE '/a[%]/b[%]/c[%]/%/d[%]') OR PATH(nodeSet1) LIKE '/a[%]/b[%]/%/c[%]/%/d[%]')"));
     }
 
     @Test
@@ -167,7 +167,7 @@ public class XPathToQueryTranslatorTest {
     @Test
     public void shouldTranslateFromXPathContainingPredicatesIdentifyingPropertiesThatMustHaveValues() {
         assertThat(xpath("/jcr:root/testroot/serializationNode[@jcr:primaryType]"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/testroot/serializationNode' AND nodeSet1.[jcr:primaryType] IS NOT NULL"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE (PATH(nodeSet1) LIKE '/testroot[%]/serializationNode[%]' AND DEPTH(nodeSet1) = CAST(2 AS LONG)) AND nodeSet1.[jcr:primaryType] IS NOT NULL"));
         assertThat(xpath("//element(*,my:type)[@id]"), isSql("SELECT * FROM [my:type] WHERE id IS NOT NULL"));
         assertThat(xpath("//element(*,my:type)[@id][@name]"),
                    isSql("SELECT * FROM [my:type] WHERE id IS NOT NULL AND name IS NOT NULL"));
@@ -254,10 +254,10 @@ public class XPathToQueryTranslatorTest {
                    isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND DEPTH(nodeSet1) = CAST(1 AS LONG)"));
 
         assertThat(xpath("/jcr:root/nodeName"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/nodeName'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/nodeName[%]'"));
 
         assertThat(xpath("nodeName"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) = '/nodeName'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ AS nodeSet1 WHERE PATH(nodeSet1) LIKE '/nodeName[%]'"));
     }
 
     @Test
@@ -293,7 +293,7 @@ public class XPathToQueryTranslatorTest {
     @Test
     public void shouldTranslateFromXPathUsingNameTestsAndWildcardOrderBy() {
         assertThat(xpath("/jcr:root/testroot/*[@prop1] order by @prop1 ascending"),
-                   isSql("SELECT nodeSet1.prop1 FROM __ALLNODES__ as nodeSet1 WHERE (PATH(nodeSet1) LIKE '/testroot/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)) AND nodeSet1.prop1 IS NOT NULL ORDER BY nodeSet1.prop1"));
+                   isSql("SELECT nodeSet1.prop1 FROM __ALLNODES__ as nodeSet1 WHERE (PATH(nodeSet1) LIKE '/testroot[%]/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)) AND nodeSet1.prop1 IS NOT NULL ORDER BY nodeSet1.prop1"));
     }
 
     @Test
@@ -305,13 +305,13 @@ public class XPathToQueryTranslatorTest {
     @Test
     public void shouldTranslateFromXPathUsingElementTestAndParentPath() {
         assertThat(xpath("/jcr:root/testroot/element()"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) LIKE '/testroot/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) LIKE '/testroot[%]/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
     }
 
     @Test
     public void shouldTranslateFromXPathUsingElementTestAndAncestorPath() {
         assertThat(xpath("/jcr:root/testroot//element()"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) LIKE '/testroot/%'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) LIKE '/testroot[%]/%'"));
     }
 
     @Test
@@ -323,59 +323,59 @@ public class XPathToQueryTranslatorTest {
     @Test
     public void shouldTranslateFromXPathUsingElementTestWithTypeNameAndParentPath() {
         assertThat(xpath("/jcr:root/testroot/element(nodeName)"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND PATH(nodeSet1) LIKE '/testroot/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND PATH(nodeSet1) LIKE '/testroot[%]/%' AND DEPTH(nodeSet1) = CAST(2 AS LONG)"));
     }
 
     @Test
     public void shouldTranslateFromXPathUsingElementTestWithTypeNameAndAncestorPath() {
         assertThat(xpath("/jcr:root/testroot//element(nodeName)"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND PATH(nodeSet1) LIKE '/testroot/%'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE NAME(nodeSet1) = 'nodeName' AND PATH(nodeSet1) LIKE '/testroot[%]/%'"));
     }
 
     @Test
     public void shouldTranslateFromXPathContainingSpacesInPath() {
         assertThat(xpath("/jcr:root/Cars/Sports/Infiniti_x0020_G37[@foo:year='2008']"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) = '/Cars/Sports/Infiniti G37' AND nodeSet1.[foo:year] = '2008'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE (PATH(nodeSet1) LIKE '/Cars[%]/Sports[%]/Infiniti G37[%]' AND DEPTH(nodeSet1) = CAST(3 AS LONG)) AND nodeSet1.[foo:year] = '2008'"));
     }
 
     @Test
     public void shouldTranslateFromXPathContainingPathAndAttributeMatch() {
         assertThat(xpath("/jcr:root/Cars/Sports/InfinitiG37[@foo:year='2008']"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) = '/Cars/Sports/InfinitiG37' AND nodeSet1.[foo:year] = '2008'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE (PATH(nodeSet1) LIKE '/Cars[%]/Sports[%]/InfinitiG37[%]' AND DEPTH(nodeSet1) = CAST(3 AS LONG)) AND nodeSet1.[foo:year] = '2008'"));
     }
 
     @Test
     public void shouldTranslateFromXPathContainingAttributeMatch() {
         assertThat(xpath("//InfinitiG37[@foo:year='2008']"),
-                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) LIKE '%/InfinitiG37' AND nodeSet1.[foo:year] = '2008'"));
+                   isSql("SELECT nodeSet1.[jcr:primaryType] FROM __ALLNODES__ as nodeSet1 WHERE PATH(nodeSet1) LIKE '%/InfinitiG37[%]' AND nodeSet1.[foo:year] = '2008'"));
     }
 
     @FixFor( "MODE-790" )
     @Test
     public void shouldTranslateFromXPathContainingCompoundCriteria() {
         assertThat(xpath("/jcr:root/Cars//element(*,car:Car)[@car:year='2008' and jcr:contains(., '\"liter V 12\"')]"),
-                   isSql("SELECT * FROM [car:Car] WHERE (PATH([car:Car]) LIKE '/Cars/%' AND ([car:Car].[car:year] = '2008' AND CONTAINS([car:Car].*,'\"liter V 12\"')))"));
+                   isSql("SELECT * FROM [car:Car] WHERE (PATH([car:Car]) LIKE '/Cars[%]/%' AND ([car:Car].[car:year] = '2008' AND CONTAINS([car:Car].*,'\"liter V 12\"')))"));
     }
 
     @FixFor( "MODE-790" )
     @Test
     public void shouldTranslateFromXPathContainingCompoundCriteria2() {
         assertThat(xpath("/jcr:root/drools:repository/drools:package_area//element(*, drools:assetNodeType)[jcr:contains(., 'testQueryText*')]"),
-                   isSql("SELECT * FROM [drools:assetNodeType] WHERE (PATH([drools:assetNodeType]) LIKE '/drools:repository/drools:package_area/%' AND CONTAINS([drools:assetNodeType].*,'testQueryText*'))"));
+                   isSql("SELECT * FROM [drools:assetNodeType] WHERE (PATH([drools:assetNodeType]) LIKE '/drools:repository[%]/drools:package_area[%]/%' AND CONTAINS([drools:assetNodeType].*,'testQueryText*'))"));
     }
 
     @FixFor( "MODE-790" )
     @Test
     public void shouldTranslateFromXPathContainingCompoundCriteria3() {
         assertThat(xpath("/jcr:root/drools:repository/drools:package_area//element(*, drools:assetNodeType)[jcr:contains(., 'testQueryText*') and drools:archive = 'false']"),
-                   isSql("SELECT * FROM [drools:assetNodeType] WHERE (PATH([drools:assetNodeType]) LIKE '/drools:repository/drools:package_area/%' AND CONTAINS([drools:assetNodeType].*,'testQueryText*') AND [drools:archive] = 'false')"));
+                   isSql("SELECT * FROM [drools:assetNodeType] WHERE (PATH([drools:assetNodeType]) LIKE '/drools:repository[%]/drools:package_area[%]/%' AND CONTAINS([drools:assetNodeType].*,'testQueryText*') AND [drools:archive] = 'false')"));
     }
 
     @FixFor( "MODE-790" )
     @Test
     public void shouldTranslateFromXPathContainingCompoundCriteria4() {
         assertThat(xpath("/jcr:root/drools:repository/drools:package_area//element(*, drools:assetNodeType)[jcr:contains(., 'testQueryText*') and @drools:archive = 'false']"),
-                   isSql("SELECT * FROM [drools:assetNodeType] WHERE (PATH([drools:assetNodeType]) LIKE '/drools:repository/drools:package_area/%' AND CONTAINS([drools:assetNodeType].*,'testQueryText*') AND [drools:archive] = 'false')"));
+                   isSql("SELECT * FROM [drools:assetNodeType] WHERE (PATH([drools:assetNodeType]) LIKE '/drools:repository[%]/drools:package_area[%]/%' AND CONTAINS([drools:assetNodeType].*,'testQueryText*') AND [drools:archive] = 'false')"));
     }
 
     @Test

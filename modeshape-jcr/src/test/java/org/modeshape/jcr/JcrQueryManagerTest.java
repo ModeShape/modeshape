@@ -516,6 +516,20 @@ public class JcrQueryManagerTest {
 
     @SuppressWarnings( "deprecation" )
     @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithOrderByPathClause() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT car:model FROM car:Car WHERE car:model IS NOT NULL ORDER BY PATH() ASC",
+                                          Query.SQL);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 12);
+        assertResultsHaveColumns(result, "jcr:path", "jcr:score", "car:model");
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
     public void shouldBeAbleToCreateAndExecuteSqlQueryWithPathCriteriaAndOrderByClause() throws RepositoryException {
         Query query = session.getWorkspace()
                              .getQueryManager()
@@ -616,6 +630,30 @@ public class JcrQueryManagerTest {
 
     @SuppressWarnings( "deprecation" )
     @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindAllNodesOrderingByPath() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("//element(*,nt:base) order by @jcr:path", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertResults(query, result, 23);
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindAllNodesOrderingByAttribute() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,car:Car) order by @car:maker",
+                                                                           Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        // print = true;
+        assertResults(query, result, 12);
+        assertResultsHaveColumns(result, "car:maker", "jcr:path", "jcr:score");
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
     public void shouldBeAbleToExecuteXPathQueryToFindAllUnstructuredNodes() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
         assertThat(query, is(notNullValue()));
@@ -693,6 +731,18 @@ public class JcrQueryManagerTest {
 
     @SuppressWarnings( "deprecation" )
     @Test
+    public void shouldBeAbleToExecuteXPathQueryToFindNodesWithAllSnsIndexesUnderPath() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root//NodeA", Query.XPATH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        // print = true;
+        assertResults(query, result, 3);
+        assertThat(result, is(notNullValue()));
+        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+    }
+
+    @SuppressWarnings( "deprecation" )
+    @Test
     public void shouldBeAbleToExecuteXPathQueryToFindNodesUnderPathAndWithProperty() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root/Cars//*[@car:year]", Query.XPATH);
         assertThat(query, is(notNullValue()));
@@ -733,9 +783,9 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Other/NodeA", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 1);
+        assertResults(query, result, 3);
         assertThat(result, is(notNullValue()));
-        assertThat(result.getNodes().nextNode().getIndex(), is(1));
+        // assertThat(result.getNodes().nextNode().getIndex(), is(1));
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
 
         query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Other/NodeA[2]", Query.XPATH);

@@ -253,8 +253,14 @@ public class XPathToQueryTranslator {
                     // This order by is defined by an attribute ...
                     NameTest attribute = spec.getAttributeName();
                     assert !attribute.isWildcard();
-                    operandBuilder.propertyValue(tableName, attribute.toString());
-                    builder.select(tableName + "." + attribute.toString());
+                    if (attribute.matches("jcr", "path")) {
+                        String pathOf = tableName;
+                        if (pathOf == null) pathOf = aliases.iterator().next();
+                        operandBuilder.path(pathOf);
+                    } else {
+                        operandBuilder.propertyValue(tableName, attribute.toString());
+                        builder.select(tableName + "." + attribute.toString());
+                    }
                 } else {
                     // This order-by is defined by a "jcr:score" function ...
                     FunctionCall scoreFunction = spec.getScoreFunction();
@@ -378,7 +384,7 @@ public class XPathToQueryTranslator {
         if (path.size() == 1 && path.get(0).collapse() instanceof NameTest) {
             // Node immediately below root ...
             NameTest nodeName = (NameTest)path.get(0).collapse();
-            where.path(alias).isEqualTo("/" + nameFrom(nodeName));
+            where.path(alias).isLike("/" + nameFrom(nodeName) + "[%]");
         } else if (path.size() == 2 && path.get(0) instanceof DescendantOrSelf && path.get(1).collapse() instanceof NameTest) {
             // Node anywhere ...
             NameTest nodeName = (NameTest)path.get(1).collapse();
@@ -715,7 +721,7 @@ public class XPathToQueryTranslator {
             if (path == null || path.length() == 0 || path.equals("%/") || path.equals("%/%") || path.equals("%//%")) continue;
             if (first) first = false;
             else where.or();
-            if (path.indexOf('%') != -1) {
+            if (path.indexOf('%') != -1 || path.indexOf('_') != -1) {
                 where.path(tableName).isLike(path);
                 switch (expressions.depthMode) {
                     case AT_LEAST:
@@ -801,6 +807,7 @@ public class XPathToQueryTranslator {
                 if (nodeTest instanceof NameTest) {
                     NameTest nameTest = (NameTest)nodeTest;
                     builder.append('/');
+                    boolean addSns = true;
                     if (nameTest.getPrefixTest() != null) {
                         builder.append(nameTest.getPrefixTest()).append(':');
                     }
@@ -808,14 +815,20 @@ public class XPathToQueryTranslator {
                         builder.append(nameTest.getLocalTest());
                     } else {
                         builder.append('%');
+                        addSns = false;
                     }
                     List<Component> predicates = axis.getPredicates();
+                    boolean addedSns = false;
                     if (!predicates.isEmpty()) {
                         assert predicates.size() == 1;
                         Component predicate = predicates.get(0);
                         if (predicate instanceof Literal && ((Literal)predicate).isInteger()) {
                             builder.append('[').append(((Literal)predicate).getValue()).append(']');
+                            addedSns = true;
                         }
+                    }
+                    if (addSns && !addedSns) {
+                        builder.append("[%]");
                     }
                 }
             } else if (step instanceof FilterStep) {

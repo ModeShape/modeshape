@@ -34,6 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -62,6 +63,8 @@ import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.regex.JavaUtilRegexCapabilities;
+import org.apache.lucene.search.regex.RegexQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
 import org.modeshape.common.util.Logger;
@@ -1075,6 +1078,7 @@ public class LuceneSearchSession implements WorkspaceSession {
     protected String likeExpresionForWildcardPath( String path ) {
         if (path.equals("/") || path.equals("%")) return path;
         StringBuilder sb = new StringBuilder();
+        path = path.replaceAll("%+", "%");
         if (path.startsWith("%/")) {
             sb.append("%");
             if (path.length() == 2) return sb.toString();
@@ -1085,7 +1089,7 @@ public class LuceneSearchSession implements WorkspaceSession {
             sb.append("/");
             sb.append(segment);
             if (segment.equals("%") || segment.equals("_")) continue;
-            if (!segment.endsWith("]") && !segment.endsWith("]%")) {
+            if (!segment.endsWith("]") && !segment.endsWith("]%") && !segment.endsWith("]_")) {
                 sb.append("[1]");
             }
         }
@@ -1108,7 +1112,22 @@ public class LuceneSearchSession implements WorkspaceSession {
             case LIKE:
                 String likeExpression = processor.stringFactory.create(value);
                 likeExpression = likeExpresionForWildcardPath(likeExpression);
-                query = findNodesLike(ContentIndex.PATH, likeExpression, caseSensitive);
+                if (likeExpression.indexOf("[%]") != -1) {
+                    // We can't use '[%]' because we only want to match digits,
+                    // so handle this using a regex ...
+                    String regex = likeExpression;
+                    regex = regex.replace("[%]", "[\\d+]");
+                    regex = regex.replace("[", "\\[");
+                    regex = regex.replace("*", ".*").replace("?", ".");
+                    regex = regex.replace("%", ".*").replace("_", ".");
+                    // Now create a regex query ...
+                    RegexQuery regexQuery = new RegexQuery(new Term(ContentIndex.PATH, regex));
+                    int flags = caseSensitive ? 0 : Pattern.CASE_INSENSITIVE;
+                    regexQuery.setRegexImplementation(new JavaUtilRegexCapabilities(flags));
+                    query = regexQuery;
+                } else {
+                    query = findNodesLike(ContentIndex.PATH, likeExpression, caseSensitive);
+                }
                 break;
             case GREATER_THAN:
                 query = ComparePathQuery.createQueryForNodesWithPathGreaterThan(pathValue,
