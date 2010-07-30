@@ -60,8 +60,9 @@ abstract class AbstractJcrItem implements Item {
      * 
      * @see javax.jcr.Item#getSession()
      */
-    public Session getSession() throws RepositoryException {
-        checkSession();
+    public Session getSession() {
+        // Do not check whether the session is valid, because we need to be able to get the session to check isLive()
+        // checkSession();
         return cache.session();
     }
 
