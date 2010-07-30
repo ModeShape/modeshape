@@ -67,6 +67,7 @@ public class SimpleProblems extends AbstractProblems {
     public void addAll( Iterable<Problem> problems ) {
         if (problems != null) {
             if (problems == this) return;
+            if (this.problems == null) this.problems = new LinkedList<Problem>();
             for (Problem problem : problems) {
                 this.problems.add(problem);
             }
