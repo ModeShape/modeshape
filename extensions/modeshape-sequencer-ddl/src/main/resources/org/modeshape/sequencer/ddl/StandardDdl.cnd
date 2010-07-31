@@ -49,7 +49,7 @@
   - ddl:startColumnNumber (long) mandatory                  // The starting column number for the statement
   - ddl:startCharIndex (long) mandatory                     // The starting content character index for the statement
   - ddl:length (long) mandatory                             // The string length
-  + ddl:problem (ddl:ddlProblem) = ddl:ddlProblem multiple  // Problems encountered during parsing.
+  + ddl:problem (ddl:ddlProblem) = ddl:ddlProblem sns  // Problems encountered during parsing.
 
 // =============================================================================
 // CREATE, ALTER, DROP, INSERT, SET, GRANT, REVOKE
@@ -58,7 +58,7 @@
 [ddl:alterable] > ddl:operation abstract
 [ddl:droppable] > ddl:operation abstract
   - ddl:dropBehavior (STRING)
-  + ddl:dropOption (ddl:statementOption) = ddl:statementOption multiple
+  + ddl:dropOption (ddl:statementOption) = ddl:statementOption sns
 [ddl:insertable] > ddl:operation abstract
 [ddl:settable]  > ddl:operation abstract
 [ddl:grantable] > ddl:operation abstract
@@ -96,7 +96,7 @@
   - ddl:defaultPrecision (LONG)
   - ddl:collationName (STRING)
   + ddl:dropBehavior (ddl:simpleProperty) = ddl:simpleProperty
-  + ddl:columnAttribute (ddl:simpleProperty) = ddl:simpleProperty multiple
+  + ddl:columnAttribute (ddl:simpleProperty) = ddl:simpleProperty sns
 
 // =============================================================================
 // TABLE CONSTRAINT
@@ -108,10 +108,10 @@
       < 'DEFERRABLE', 'NOT DEFERRABLE'
   - ddl:checkSearchCondition (STRING)
       < 'INITIALLY DEFERRED', 'INITIALLY IMMEDIATE'
-  + * (ddl:columnReference) = ddl:columnReference multiple mandatory  // the column(s) referenced by the constraint
+  + * (ddl:columnReference) = ddl:columnReference sns            // the column(s) referenced by the constraint
   + * (ddl:tableReference) = ddl:tableReference                       // the table(s) referenced by the foreign key
-  + * (ddl:fkColumnReference) = ddl:fkColumnReference multiple        // the columns in the table referenced by the foreign key
-  + ddl:constraintAttribute (ddl:simpleProperty) = ddl:simpleProperty multiple
+  + * (ddl:fkColumnReference) = ddl:fkColumnReference sns        // the columns in the table referenced by the foreign key
+  + ddl:constraintAttribute (ddl:simpleProperty) = ddl:simpleProperty sns
   
 // =============================================================================
 // REFERENCE
@@ -145,7 +145,7 @@
 // =============================================================================
 [ddl:schemaDefinition] > ddl:statement, ddl:creatable, ddl:schemaOperand  mixin
   - ddl:defaultCharacterSetName (STRING)
-  + * (ddl:statement) = ddl:statement multiple
+  + * (ddl:statement) = ddl:statement sns
 
 // =============================================================================
 // CREATE TABLE
@@ -155,9 +155,9 @@
     < 'GLOBAL', 'LOCAL'
   - ddl:onCommitValue (STRING)
     < 'DELETE ROWS', 'PRESERVE ROWS'
-  + * (ddl:columnDefinition) = ddl:columnDefinition multiple
-  + * (ddl:tableConstraintDefinition) = ddl:tableConstraintDefinition multiple
-  + * (ddl:statementOption) = ddl:statementOption multiple 
+  + * (ddl:columnDefinition) = ddl:columnDefinition sns
+  + * (ddl:tableConstraintDefinition) = ddl:tableConstraintDefinition sns
+  + * (ddl:statementOption) = ddl:statementOption sns 
 
 // =============================================================================
 // CREATE VIEW
@@ -165,7 +165,7 @@
 [ddl:createViewStatement] > ddl:statement, ddl:creatable, ddl:viewOperand mixin 
   - ddl:sqlExpression (STRING) mandatory
   - ddl:checkOption (STRING)
-  + * (ddl:columnReference) = ddl:columnReference multiple
+  + * (ddl:columnReference) = ddl:columnReference sns
   
 // =============================================================================
 // CREATE DOMAIN
@@ -181,7 +181,7 @@
   - ddl:defaultValue (STRING)
   - ddl:defaultPrecision (LONG)
   - ddl:collationName (STRING)
-  + ddl:domainConstraintDefinition (ddl:tableConstraintDefinition) = ddl:tableConstraintDefinition multiple
+  + ddl:domainConstraintDefinition (ddl:tableConstraintDefinition) = ddl:tableConstraintDefinition sns
 
 // =============================================================================
 // CREATE ASSERTION
@@ -189,7 +189,7 @@
 [ddl:createAssertionStatement] > ddl:statement, ddl:creatable, ddl:assertionOperand mixin
   - ddl:constraintName (STRING) mandatory
   - ddl:searchCondition (STRING) mandatory
-  + ddl:constraintAttribute (ddl:simpleProperty) = ddl:simpleProperty multiple
+  + ddl:constraintAttribute (ddl:simpleProperty) = ddl:simpleProperty sns
 
 // =============================================================================
 // CREATE CHARACTER SET
@@ -220,12 +220,12 @@
 // ALTER TABLE
 // =============================================================================
 [ddl:alterTableStatement] > ddl:statement, ddl:alterable, ddl:tableOperand mixin
-  + * (ddl:addColumnDefinition)             = ddl:addColumnDefinition multiple
-  + * (ddl:dropColumnDefinition)            = ddl:dropColumnDefinition multiple
-  + * (ddl:alterColumnDefinition)           = ddl:alterColumnDefinition multiple
-  + * (ddl:addTableConstraintDefinition)    = ddl:addTableConstraintDefinition multiple
-  + * (ddl:dropTableConstraintDefinition)   = ddl:dropTableConstraintDefinition multiple
-  + * (ddl:statementOption) = ddl:statementOption multiple
+  + * (ddl:addColumnDefinition)             = ddl:addColumnDefinition sns
+  + * (ddl:dropColumnDefinition)            = ddl:dropColumnDefinition sns
+  + * (ddl:alterColumnDefinition)           = ddl:alterColumnDefinition sns
+  + * (ddl:addTableConstraintDefinition)    = ddl:addTableConstraintDefinition sns
+  + * (ddl:dropTableConstraintDefinition)   = ddl:dropTableConstraintDefinition sns
+  + * (ddl:statementOption) = ddl:statementOption sns
 
 // =============================================================================
 // ALTER DOMAIN
@@ -266,12 +266,12 @@
 
 [ddl:grantPrivilege] mixin
   - ddl:type (STRING) mandatory
-  + * (ddl:columnReference) = ddl:columnReference multiple
+  + * (ddl:columnReference) = ddl:columnReference sns
 
 [ddl:grantStatement] > ddl:statement, ddl:grantable mixin
   - ddl:allPrivileges (boolean)
-  + * (ddl:grantPrivilege) = ddl:grantPrivilege multiple
-  + * (ddl:grantee) = ddl:grantee multiple
+  + * (ddl:grantPrivilege) = ddl:grantPrivilege sns
+  + * (ddl:grantee) = ddl:grantee sns
 
 [ddl:grantOnTableStatement]         > ddl:grantStatement, ddl:tableOperand mixin
 [ddl:grantOnDomainStatement]        > ddl:grantStatement, ddl:domainOperand mixin

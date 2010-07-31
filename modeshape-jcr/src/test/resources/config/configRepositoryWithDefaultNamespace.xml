@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<configuration xmlns="http://www.modeshape.org/1.0"
+               xmlns:jcr="http://www.jcp.org/jcr/1.0"
+               xmlns:nt="http://www.jcp.org/jcr/nt/1.0">
+    <!-- Define the sources from which content is made available.  -->
+    <sources jcr:primaryType="nt:unstructured">
+        <source jcr:name="Cars" classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" retryLimit="3" defaultWorkspaceName="default"/>
+        <source jcr:name="Aircraft" classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource">
+            <defaultWorkspaceName>default</defaultWorkspaceName>
+        </source>
+        <source jcr:name="Cache" classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource">
+            <defaultWorkspaceName>default</defaultWorkspaceName>
+        </source>
+    </sources>
+    <!-- Define the sequencers. This is an optional section. -->
+    <sequencers>
+        <!--sequencer jcr:name="Image Sequencer" classname="org.modeshape.sequencer.image.ImageMetadataSequencer">
+            <description>Image metadata sequencer</description>        
+            <pathExpression>/foo/source => /foo/target</pathExpression>
+            <pathExpression>/bar/source => /bar/target</pathExpression>
+        </sequencer-->
+    </sequencers>
+    <!-- Define the mime type detectors. This is an optional section. -->
+    <mimeTypeDetectors>
+        <mimeTypeDetector jcr:name="Detector">
+            <description>Standard extension-based MIME type detector</description>        
+            <!-- 
+            Specify the implementation class (required), as a child element or attribute on parent element.
+            -->
+            <classname>org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector</classname>
+            <!-- 
+            Specify the classpath (optional) as an ordered list of 'names', where each name is significant to 
+            the classpath factory.  For example, a name could be an OSGI identifier or a Maven coordinate,
+            depending upon the classpath factory being used.  If there is only one 'name' in the classpath,
+            it may be specified as an attribute on the 'mimeTypeDetector' element.  If there is more than one
+            'name', then they must be specified as child 'classpath' elements. Blank or empty values are ignored. 
+             -->
+            <classpath></classpath>
+            <classpath></classpath>
+        </mimeTypeDetector>
+    </mimeTypeDetectors>
+    <!-- JCR Repositories.  This is required, with a separate repository for each JCR repository instance. -->
+    <repositories>
+        <repository jcr:name="Car Repository" source="Cars">
+            <options>
+                <option jcr:name="projectNodeTypes" value="true"/>
+                <option jcr:name="jaasLoginConfigName" value="modeshape-jcr"/>
+            </options>
+            <descriptors>
+                <descriptor jcr:name="query.xpath.doc.order" value="false"/>
+                <descriptor jcr:name="myDescriptor" value="foo"/>
+            </descriptors>
+            <jcr:nodeTypes resource="/cars.cnd,/magnolia.cnd" />
+        </repository>
+    </repositories>
+</configuration>

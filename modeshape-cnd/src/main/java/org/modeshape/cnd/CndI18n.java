@@ -34,6 +34,8 @@ public final class CndI18n {
     public static I18n expectedValidNameLiteral;
     public static I18n expectedValidQueryOperator;
     public static I18n expectedNamespaceOrNodeDefinition;
+    public static I18n primaryKeywordNotValidInJcr2CndFormat;
+    public static I18n multipleKeywordNotValidInJcr2CndFormat;
     public static I18n vendorBlockWasNotClosed;
 
     static {

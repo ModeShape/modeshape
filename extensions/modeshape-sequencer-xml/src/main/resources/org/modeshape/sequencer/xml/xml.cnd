@@ -31,37 +31,28 @@
 <dnaxml='http://www.modeshape.org/xml/1.0'>
 <dnadtd='http://www.modeshape.org/dtd/1.0'>
 
-// ----------------------------------------------------------
-// JCR Pre-defined Mixin Types that are not loaded by default
-// ----------------------------------------------------------
-
-[mix:mimeType] mixin 
-  - jcr:mimeType (string)  
-  - jcr:encoding (string)
-
-
 //------------------------------------------------------------------------------
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
 
-[dnaxml:document] > nt:unstructured, mix:mimeTyped
+[dnaxml:document] > nt:unstructured, mix:mimeType
   - dnaxml:cDataContent (string)
 
-[dnaxml:comment] > nt:unstructured, mix:mimeTyped
+[dnaxml:comment] > nt:unstructured, mix:mimeType
   - dnaxml:commentContent (string)
  
-[dnaxml:element] > nt:unstructured, mix:mimeTyped
+[dnaxml:element] > nt:unstructured, mix:mimeType
   - dnaxml:elementContent (string)
  
-[dnaxml:cData] > nt:unstructured, mix:mimeTyped
+[dnaxml:cData] > nt:unstructured, mix:mimeType
   - dnaxml:cDataContent (string)
  
-[dnaxml:processingInstruction] > nt:unstructured, mix:mimeTyped
+[dnaxml:processingInstruction] > nt:unstructured, mix:mimeType
   - dnaxml:processingInstruction (string)
   - dnaxml:target (string)
 
  
-[dnadtd:entity] > nt:unstructured, mix:mimeTyped
+[dnadtd:entity] > nt:unstructured, mix:mimeType
   - dnaxml:name (string)
   - dnaxml:value (string)
   - dnaxml:publicId (string)

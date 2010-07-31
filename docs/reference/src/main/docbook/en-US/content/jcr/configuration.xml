@@ -120,10 +120,14 @@ configuration.loadFrom(file);
           <!-- 
                 Import the custom node types defined in the named resource (a file at a 
                 classpath-relative path).  If there was more than one file with custom node 
-                types, we could either add successive <jcr:nodeTypes ... /> elements or just 
-                add all of the files as a comma-delimited string in the mode:resource property.
+                types, we could either list the files as a single comma-delimited string
+                in the mode:resource property, or list them individually using multiple 
+                mode:resource child elements.
             -->
-          <jcr:nodeTypes mode:resource="/tck/tck_test_types.cnd" />
+          <jcr:nodeTypes>
+	           <mode:resource>/org/example/my-node-types.cnd</mode:resource>
+	           <mode:resource>/org/example/additional-node-types.cnd</mode:resource>
+	        </jcr:nodeTypes>
       </mode:repository>
   </mode:repositories>
    <!-- 

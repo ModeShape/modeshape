@@ -63,12 +63,12 @@
   - ddl:datatypePrecision (LONG)
   - ddl:datatypeScale (LONG)
   - ddl:isTableType (boolean)
-  + * (derbyddl:functionParameter) = derbyddl:functionParameter multiple
-  + * (ddl:statementOption) = ddl:statementOption multiple
+  + * (derbyddl:functionParameter) = derbyddl:functionParameter sns
+  + * (ddl:statementOption) = ddl:statementOption sns
 [derbyddl:createIndexStatement]        > ddl:statement, ddl:creatable, derbyddl:indexOperand mixin
   - derbyddl:tableName (string) mandatory
   - derbyddl:unique (boolean)
-  + * (derbyddl:indexColumnReference) = derbyddl:indexColumnReference multiple
+  + * (derbyddl:indexColumnReference) = derbyddl:indexColumnReference sns
 [derbyddl:createProcedureStatement]    > ddl:creatable, ddl:statement, derbyddl:procedureOperand mixin
 [derbyddl:createRoleStatement]         > ddl:creatable, ddl:statement, derbyddl:roleOperand mixin
 [derbyddl:createSynonymStatement]      > ddl:creatable, ddl:statement, derbyddl:synonymOperand mixin
@@ -76,7 +76,7 @@
 [derbyddl:createTriggerStatement]      > ddl:creatable, ddl:statement, derbyddl:triggerOperand mixin
   - derbyddl:tableName (string) mandatory
   - ddl:sql (string) mandatory
-  + * (ddl:columnReference) = ddl:columnreference multiple
+  + * (ddl:columnReference) = ddl:columnreference sns
 [derbyddl:declareGlobalTemporaryTableStatement] > ddl:createTableStatement mixin
 
 // =============================================================================
@@ -99,4 +99,4 @@
 [derbyddl:grantOnProcedureStatement]    > ddl:grantStatement, derbyddl:procedureOperand mixin
 
 [derbyddl:grantRolesStatement]          > ddl:grantStatement mixin
-  + ddl:name (derbyddl:roleName) = derbyddl:roleName multiple
+  + ddl:name (derbyddl:roleName) = derbyddl:roleName sns

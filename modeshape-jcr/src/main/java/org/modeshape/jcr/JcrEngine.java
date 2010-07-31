@@ -57,6 +57,7 @@ import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.io.GraphBatchDestination;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PathNotFoundException;
@@ -288,42 +289,52 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
             // Expand any references to a CND file
             Property resourceProperty = nodeTypesNode.getProperty(ModeShapeLexicon.RESOURCE);
             if (resourceProperty != null) {
-                String resources = this.context.getValueFactories().getStringFactory().create(resourceProperty.getFirstValue());
+                for (Object resourceValue : resourceProperty) {
+                    String resources = this.context.getValueFactories().getStringFactory().create(resourceValue);
 
-                for (String resource : resources.split("\\s*,\\s*")) {
-                    Graph.Batch batch = configuration.batch();
-                    GraphBatchDestination destination = new GraphBatchDestination(batch);
+                    for (String resource : resources.split("\\s*,\\s*")) {
+                        Graph.Batch batch = configuration.batch();
+                        GraphBatchDestination destination = new GraphBatchDestination(batch);
 
-                    Path nodeTypesPath = pathFactory.create(repositoryPath, JcrLexicon.NODE_TYPES);
-                    CndImporter importer = new CndImporter(destination, nodeTypesPath, false);
-                    InputStream is = getClass().getResourceAsStream(resource);
-                    Problems cndProblems = new SimpleProblems();
-                    try {
-                        if (is != null) {
-                            importer.importFrom(is, cndProblems, resource);
-                            batch.execute();
-                            needToRefreshSubgraph = true;
-                        }
-                    } catch (IOException ioe) {
-                        String msg = JcrI18n.errorLoadingNodeTypeDefintions.text(resource, ioe.getMessage());
-                        throw new RepositoryException(msg, ioe);
-                    }
-                    if (!cndProblems.isEmpty()) {
-                        // Add any warnings or information to this engine's list ...
-                        getProblems().addAll(cndProblems);
-                        if (cndProblems.hasErrors()) {
-                            String msg = null;
-                            Throwable cause = null;
-                            for (Problem problem : cndProblems) {
-                                if (problem.getStatus() == Status.ERROR) {
-                                    msg = problem.getMessageString();
-                                    cause = problem.getThrowable();
-                                    break;
-                                }
+                        Path nodeTypesPath = pathFactory.create(repositoryPath, JcrLexicon.NODE_TYPES);
+                        CndImporter importer = new CndImporter(destination, nodeTypesPath, true);
+                        InputStream is = getClass().getResourceAsStream(resource);
+                        Problems cndProblems = new SimpleProblems();
+                        try {
+                            if (is != null) {
+                                importer.importFrom(is, cndProblems, resource);
+                                batch.execute();
+                                needToRefreshSubgraph = true;
                             }
-                            throw new RepositoryException(JcrI18n.errorLoadingNodeTypeDefintions.text(resource, msg), cause);
+                        } catch (IOException ioe) {
+                            String msg = JcrI18n.errorLoadingNodeTypeDefintions.text(resource, ioe.getMessage());
+                            throw new RepositoryException(msg, ioe);
+                        }
+                        if (!cndProblems.isEmpty()) {
+                            // Add any warnings or information to this engine's list ...
+                            getProblems().addAll(cndProblems);
+                            if (cndProblems.hasErrors()) {
+                                String msg = null;
+                                Throwable cause = null;
+                                for (Problem problem : cndProblems) {
+                                    if (problem.getStatus() == Status.ERROR) {
+                                        msg = problem.getMessageString();
+                                        cause = problem.getThrowable();
+                                        break;
+                                    }
+                                }
+                                throw new RepositoryException(JcrI18n.errorLoadingNodeTypeDefintions.text(resource, msg), cause);
+                            }
                         }
                     }
+                }
+            }
+
+            // Load any namespaces from the configuration into the repository's context ...
+            NamespaceRegistry repoRegistry = repository.getExecutionContext().getNamespaceRegistry();
+            for (NamespaceRegistry.Namespace namespace : configuration.getContext().getNamespaceRegistry().getNamespaces()) {
+                if (!repoRegistry.isRegisteredNamespaceUri(namespace.getNamespaceUri())) {
+                    repoRegistry.register(namespace.getPrefix(), namespace.getNamespaceUri());
                 }
             }
 

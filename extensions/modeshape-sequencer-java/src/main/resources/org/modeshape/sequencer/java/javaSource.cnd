@@ -69,7 +69,7 @@
  * Array initializer element-value type
  */
 [java:elementValueArrayInitializer] > nt:unstructured
- + java:elementValue (java:elementValue) = java:elementValue multiple
+ + java:elementValue (java:elementValue) = java:elementValue sns
 
 /**
  * Identifier
@@ -169,7 +169,7 @@
  * Field type 
  */
 [java:fieldType] > nt:unstructured
- + java:type (java:primitiveType, java:arrayType, java:simpleType, java:qualifiedType, java:wildcardType, java:parameterizedType) mandatory multiple 
+ + java:type (java:primitiveType, java:arrayType, java:simpleType, java:qualifiedType, java:wildcardType, java:parameterizedType) mandatory sns 
  
  /** 
   * Method declaration 
@@ -179,7 +179,7 @@
  + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
  + java:resultType (java:primitiveType, java:arrayType, java:simpleType, java:qualifiedType, java:wildcardType, java:parameterizedType) mandatory
  - java:methodName (string) mandatory
- + java:parameter (java:formalParameter) multiple
+ + java:parameter (java:formalParameter) sns
 
 /** 
  * Constructor declarations 
@@ -228,9 +228,9 @@
  - java:description (string)
  + java:modifier (java:modifierDeclaration) = java:modifierDeclaration
  - java:normalClassName (string) mandatory
- + java:field (java:fieldType)  = java:fieldType multiple
- + java:method (java:methodDeclaration) = java:methodDeclaration multiple
- + java:constructor (java:constructorDeclaration) = java:constructorDeclaration multiple
+ + java:field (java:fieldType)  = java:fieldType sns
+ + java:method (java:methodDeclaration) = java:methodDeclaration sns
+ + java:constructor (java:constructorDeclaration) = java:constructorDeclaration sns
  
 [java:enumDeclaration] > nt:unstructured // TODO
  

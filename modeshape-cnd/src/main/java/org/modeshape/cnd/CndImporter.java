@@ -525,7 +525,14 @@ public class CndImporter {
                 isQueryOrderable = false;
             } else if (tokens.canConsumeAnyOf("QUERYOPS", "QOP")) {
                 parseQueryOperators(tokens, properties);
-            } else if (jcr170 && tokens.canConsumeAnyOf("PRIMARY", "PRI", "!")) {
+            } else if (tokens.canConsumeAnyOf("PRIMARY", "PRI", "!")) {
+                if (!jcr170) {
+                    Position pos = tokens.previousPosition();
+                    int line = pos.getLine();
+                    int column = pos.getColumn();
+                    throw new ParsingException(tokens.previousPosition(),
+                                               CndI18n.primaryKeywordNotValidInJcr2CndFormat.text(line, column));
+                }
                 // Then this child node is considered the primary item ...
                 Property primaryItem = propertyFactory.create(JcrLexicon.PRIMARY_ITEM_NAME, propDefnName);
                 destination.setProperties(propDefnPath.getParent(), primaryItem);
@@ -662,7 +669,14 @@ public class CndImporter {
             } else if (tokens.canConsumeAnyOf("SNS", "*")) { // standard JCR 2.0 keywords for SNS ...
                 tokens.canConsume('?');
                 sns = true;
-            } else if (jcr170 && tokens.canConsumeAnyOf("MULTIPLE", "MUL", "*")) { // from pre-JCR 2.0 ref impl
+            } else if (tokens.canConsumeAnyOf("MULTIPLE", "MUL", "*")) { // from pre-JCR 2.0 ref impl
+                if (!jcr170) {
+                    Position pos = tokens.previousPosition();
+                    int line = pos.getLine();
+                    int column = pos.getColumn();
+                    throw new ParsingException(tokens.previousPosition(),
+                                               CndI18n.multipleKeywordNotValidInJcr2CndFormat.text(line, column));
+                }
                 tokens.canConsume('?');
                 sns = true;
             } else if (tokens.matchesAnyOf(VALID_ON_PARENT_VERSION)) {
@@ -672,7 +686,7 @@ public class CndImporter {
                 // variant on-parent-version
                 onParentVersion = tokens.consume();
                 tokens.canConsume('?');
-            } else if (jcr170 && tokens.canConsumeAnyOf("PRIMARY", "PRI", "!")) {
+            } else if (tokens.canConsumeAnyOf("PRIMARYITEM", "PRIMARY", "PRI", "!")) {
                 // Then this child node is considered the primary item ...
                 Property primaryItem = propertyFactory.create(JcrLexicon.PRIMARY_ITEM_NAME, childNodeDefnName);
                 destination.setProperties(childNodeDefnPath.getParent(), primaryItem);

@@ -99,7 +99,7 @@
 [postgresddl:alterTableStatement] > ddl:alterTableStatement mixin
   - postgresddl:newTableName (STRING)
   - postgresddl:schemaName (STRING)
-  + postgresddl:renameColumn (postgresddl:renamedColumn) = postgresddl:renamedColumn multiple
+  + postgresddl:renameColumn (postgresddl:renamedColumn) = postgresddl:renamedColumn sns
 
   
 // =============================================================================
@@ -197,9 +197,9 @@
 [postgresddl:grantOnForeignDataWrapperStatement] > ddl:grantStatement, postgresddl:foreignDataOperand mixin
 [postgresddl:grantOnForeignServerStatement]    > ddl:grantStatement, postgresddl:serverOperand mixin
 [postgresddl:grantOnFunctionStatement]         > ddl:grantStatement, postgresddl:functionOperand mixin
-  + postgresddl:parameter (postgresddl:functionParameter) = postgresddl:functionParameter multiple
+  + postgresddl:parameter (postgresddl:functionParameter) = postgresddl:functionParameter sns
 [postgresddl:grantOnLanguageStatement]         > ddl:grantStatement, postgresddl:languageOperand mixin
 [postgresddl:grantOnSchemaStatement]           > ddl:grantStatement, ddl:schemaOperand mixin
 [postgresddl:grantOnTablespaceStatement]       > ddl:grantStatement, postgresddl:tablespaceOperand mixin
 [postgresddl:grantRolesStatement]              > ddl:grantStatement mixin
-  + postgresddl:grantRole (postgresddl:role) = postgresddl:role multiple
+  + postgresddl:grantRole (postgresddl:role) = postgresddl:role sns

@@ -30,20 +30,11 @@
 <mix='http://www.jcp.org/jcr/mix/1.0'>
 <msoffice='http://www.modeshape.org/msoffice/1.0'>
 
-// ----------------------------------------------------------
-// JCR Pre-defined Mixin Types that are not loaded by default
-// ----------------------------------------------------------
-
-[mix:mimeType] mixin
-  - jcr:mimeType (string)
-  - jcr:encoding (string)
-
-
 //------------------------------------------------------------------------------
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
 
-[msoffice:metadata] > nt:unstructured, mix:mimeTyped
+[msoffice:metadata] > nt:unstructured, mix:mimeType
   - msoffice:title (string)
   - msoffice:subject (string)
   - msoffice:author (string)
@@ -63,7 +54,7 @@
   - msoffice:thumbnail (binary)
 
 // PowerPoint specific data
-  + msoffice:slide (msoffice:pptslide) multiple
+  + msoffice:slide (msoffice:pptslide) sns
 
 // Excel specific data
   - msoffice:full_content (string)

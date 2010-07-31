@@ -116,8 +116,8 @@
 
 [oracleddl:alterTableStatement] > ddl:alterTableStatement mixin
   - oracleddl:newTableName (STRING)
-  + oracleddl:renameColumn (ddl:renamable) = ddl:renamable multiple
-  + oracleddl:renameConstraint (ddl:renamable) = ddl:renamable multiple
+  + oracleddl:renameColumn (ddl:renamable) = ddl:renamable sns
+  + oracleddl:renameConstraint (ddl:renamable) = ddl:renamable sns
 
 // =============================================================================
 // CREATE STATEMENTS
@@ -135,12 +135,12 @@
   - ddl:datatypeLength (LONG)
   - ddl:datatypePrecision (LONG)
   - ddl:datatypeScale (LONG)
-  + oracleddl:parameter (oracleddl:functionParameter) = oracleddl:functionParameter multiple
+  + oracleddl:parameter (oracleddl:functionParameter) = oracleddl:functionParameter sns
 [oracleddl:createIndexStatement]        > ddl:creatable, ddl:statement, oracleddl:indexOperand mixin
   - oracleddl:tableName (string) mandatory
   - oracleddl:unique (boolean)
   - oracleddl:bitmap (boolean)
-  + * (ddl:columnReference) = ddl:columnReference multiple
+  + * (ddl:columnReference) = ddl:columnReference sns
 [oracleddl:createIndexTypeStatement]    > ddl:creatable, ddl:statement, oracleddl:indextypeOperand mixin
 [oracleddl:createJavaStatement]         > ddl:creatable, ddl:statement, oracleddl:javaOperand mixin
 [oracleddl:createLibraryStatement]      > ddl:creatable, ddl:statement, oracleddl:libraryOperand mixin
@@ -150,7 +150,7 @@
 [oracleddl:createPackageStatement]      > ddl:creatable, ddl:statement, oracleddl:packageOperand mixin
 [oracleddl:createPfileStatement]        > ddl:creatable, ddl:statement, oracleddl:pfileOperand mixin
 [oracleddl:createProcedureStatement]    > ddl:creatable, ddl:statement, oracleddl:procedureOperand mixin
-  + oracleddl:parameter (oracleddl:functionParameter) = oracleddl:functionParameter multiple
+  + oracleddl:parameter (oracleddl:functionParameter) = oracleddl:functionParameter sns
 [oracleddl:createRoleStatement]         > ddl:creatable, ddl:statement, oracleddl:roleOperand mixin
 [oracleddl:createRollbackStatement]     > ddl:creatable, ddl:statement, oracleddl:rollbackOperand mixin
 [oracleddl:createSequenceStatement]     > ddl:creatable, ddl:statement, oracleddl:sequenceOperand mixin
