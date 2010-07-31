@@ -47,8 +47,12 @@ public class XPathQueryResult extends JcrQueryResult {
 
     public static final String JCR_SCORE_COLUMN_NAME = "jcr:score";
     public static final String JCR_PATH_COLUMN_NAME = "jcr:path";
+    /* The TypeFactory.getTypeName() always returns an uppercased type */
+    public static final String JCR_SCORE_COLUMN_TYPE = PropertyType.nameFromValue(PropertyType.DOUBLE).toUpperCase();
+    public static final String JCR_PATH_COLUMN_TYPE = PropertyType.nameFromValue(PropertyType.STRING).toUpperCase();
 
     private final List<String> columnNames;
+    private final List<String> columnTypes;
 
     public XPathQueryResult( JcrQueryContext context,
                              String query,
@@ -56,11 +60,15 @@ public class XPathQueryResult extends JcrQueryResult {
                              Schemata schemata ) {
         super(context, query, graphResults, schemata);
         List<String> columnNames = new LinkedList<String>(graphResults.getColumns().getColumnNames());
+        List<String> columnTypes = new LinkedList<String>(graphResults.getColumns().getColumnTypes());
         if (graphResults.getColumns().hasFullTextSearchScores() && !columnNames.contains(JCR_SCORE_COLUMN_NAME)) {
             columnNames.add(0, JCR_SCORE_COLUMN_NAME);
+            columnTypes.add(0, JCR_SCORE_COLUMN_TYPE);
         }
         columnNames.add(0, JCR_PATH_COLUMN_NAME);
+        columnTypes.add(0, JCR_PATH_COLUMN_TYPE);
         this.columnNames = Collections.unmodifiableList(columnNames);
+        this.columnTypes = Collections.unmodifiableList(columnTypes);
     }
 
     /**
@@ -71,6 +79,16 @@ public class XPathQueryResult extends JcrQueryResult {
     @Override
     public List<String> getColumnNameList() {
         return columnNames;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.query.JcrQueryResult#getColumnTypeList()
+     */
+    @Override
+    public java.util.List<String> getColumnTypeList() {
+        return columnTypes;
     }
 
     /**
