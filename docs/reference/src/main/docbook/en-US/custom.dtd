@@ -83,6 +83,7 @@
 <!ENTITY Calendar								    	"<ulink url='&Java;java/util/Calendar.html'><classname>Calendar</classname></ulink>">
 <!ENTITY Date											    "<ulink url='&Java;java/util/Date.html'><classname>Date</classname></ulink>">
 <!ENTITY EntityManagerFactory					"<ulink url='&Java;javax/persistence/EntityManagerFactory.html'><classname>EntityManagerFactory</classname></ulink>">
+<!ENTITY InitialContext								"<ulink url='&Java;javax/naming/InitialContext.html'><classname>InitialContext</classname></ulink>">
 
 
 <!-- Types in JCR API -->

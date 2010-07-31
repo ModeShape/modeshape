@@ -70,13 +70,27 @@ for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
     <para>
 	    that references a file on the local file system, or
 	  </para>
-    <programlisting><![CDATA[ classpath:path/to/configFile.xml?repositoryName=MyRepository ]]></programlisting>
-    <para>
-	    that references a file on the local classpath, or
-	  </para>
     <programlisting><![CDATA[ jndi:name/in/jndi?repositoryName=MyRepository ]]></programlisting>
 		<para>
-			to point to an existing &Repositories; or &JcrEngine; instance registered in JNDI.
+			to point to an existing &Repositories; or &JcrEngine; instance registered in JNDI, or
+		</para>
+    <programlisting><![CDATA[ http://www.example.com/path/to/configFile.xml?repositoryName=MyRepository ]]></programlisting>
+    <para>
+	    that references a configuration file on a web-enabled service (e.g., web server, WebDAV, or version control system), or
+	  </para>
+    <programlisting><![CDATA[ classpath:path/to/configFile.xml?repositoryName=MyRepository ]]></programlisting>
+    <para>
+	    that references a file on the local classpath.
+	  </para>
+	  <note>
+		  <para>
+			  Note that the Java SE does not come with a URL handler for the "<code>classpath:</code>" scheme, though
+			  it is <ulink url="http://stackoverflow.com/questions/861500/url-to-load-resources-from-the-classpath-in-java">easy to add</ulink>
+			  this kind of support. Some web and application servers <emphasis>can</emphasis> handle such URLs (including 
+			 <ulink url="http://jboss.org/jbossas">JBoss AS</ulink> and <ulink url="http://www.jboss.com/products/platforms/application/">EAP</ulink>).
+			 </para>
+		</note>
+	  <para>
 			Pointing directly to a configuration file often works well in stand-alone applications, while using JNDI works great
 			for applications deployed to server platforms (e.g., an application server or servlet container) where multiple applications
 			might want to use the same JCR repository while hiding all of the configuration details from the JCR clients. 
