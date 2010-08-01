@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
+import org.modeshape.common.util.Base64;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.web.jcr.rest.client.IJcrConstants;
@@ -49,11 +50,10 @@ import org.modeshape.web.jcr.rest.client.domain.Server;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;
 import org.modeshape.web.jcr.rest.client.http.HttpClientConnection;
 import org.modeshape.web.jcr.rest.client.json.IJsonConstants.RequestMethod;
-import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 /**
- * The <code>JsonRestClient</code> class is an implementation of <code>IRestClient</code> that works with the ModeShape REST server that
- * uses JSON as its interface protocol.
+ * The <code>JsonRestClient</code> class is an implementation of <code>IRestClient</code> that works with the ModeShape REST
+ * server that uses JSON as its interface protocol.
  */
 public final class JsonRestClient implements IRestClient {
 
@@ -131,12 +131,12 @@ public final class JsonRestClient implements IRestClient {
                                    String path ) throws Exception {
         LOGGER.trace("createFolderNode: workspace={0}, path={1}", workspace.getName(), path);
         FolderNode folderNode = new FolderNode(workspace, path);
-        
+
         HttpClientConnection connection = connect(workspace.getServer(), folderNode.getUrl(), RequestMethod.POST);
 
         try {
             LOGGER.trace("createFolderNode: create node={0}", folderNode);
-            connection.write(folderNode.getContent());                                                                                                 
+            connection.write(folderNode.getContent());
 
             // make sure node was created
             int responseCode = connection.getResponseCode();
@@ -428,7 +428,7 @@ public final class JsonRestClient implements IRestClient {
                                  String statement ) throws Exception {
         return query(workspace, language, statement, 0, -1);
     }
-    
+
     @SuppressWarnings( "unchecked" )
     @Override
     public List<QueryRow> query( Workspace workspace,
@@ -481,9 +481,9 @@ public final class JsonRestClient implements IRestClient {
             if (result.has("types")) {
                 JSONObject types = (JSONObject)result.get("types");
 
-                for (Iterator<String> iter = (Iterator<String>)types.keys(); iter.hasNext();) {
+                for (Iterator<String> iter = types.keys(); iter.hasNext();) {
                     String columnName = iter.next();
-                    columnTypes.put(columnName, (String)types.getString(columnName));
+                    columnTypes.put(columnName, types.getString(columnName));
                 }
             }
 
@@ -497,7 +497,7 @@ public final class JsonRestClient implements IRestClient {
                 JSONObject row = (JSONObject)rows.get(i);
                 Map<String, Object> values = new HashMap<String, Object>();
 
-                for (Iterator<String> valueIter = (Iterator<String>)row.keys(); valueIter.hasNext();) {
+                for (Iterator<String> valueIter = row.keys(); valueIter.hasNext();) {
                     String valueName = valueIter.next();
                     if (valueName.endsWith(IJsonConstants.BASE64_SUFFIX)) {
                         byte[] data = Base64.decode(row.getString(valueName));
@@ -519,7 +519,7 @@ public final class JsonRestClient implements IRestClient {
             }
         }
     }
-    
+
     private String contentTypeFor( String language ) throws Exception {
         if (IJcrConstants.XPATH.equalsIgnoreCase(language)) {
             return "application/jcr+xpath";
@@ -537,7 +537,7 @@ public final class JsonRestClient implements IRestClient {
         throw new IllegalStateException(
                                         RestClientI18n.invalidQueryLanguageMsg.text(language, IJcrConstants.VALID_QUERY_LANGUAGES));
     }
-    
+
     private static final String SERVER_PARM = "--server";
     private static final String REPO_PARM = "--repo";
     private static final String WORKSPACENAME_PARM = "--workspacename";
@@ -548,168 +548,164 @@ public final class JsonRestClient implements IRestClient {
     private static final String PWD_PARM = "--pwd";
     private static final String UNPUBLISH = "--unpublish";
     private static final String HELP_PARM = "--help";
-    
+
     /*
      *  The main method enables the scripting of publishing artifacts.
      */
-    @SuppressWarnings("null")
-	public static void main(String [ ] args)
-    {
-    	
-		if (args == null || args.length == 0 || args[0].equals(HELP_PARM)) {
-			System.out.println("Running the ModeShape Rest Client");
-			System.out.println("	required arguments are:");
-			System.out.println("  	 	" + SERVER_PARM);
-			System.out.println("  	 	" + FILE_PARM + " or " + DIR_PARM);
-			System.out.println("  		" + WORKSPACEPATH_PARM);
-			System.out.println("	optional arguments are:");
-			System.out.println(" 		" + USERNAME_PARM + "(default=admin");
-			System.out.println("  	 	" + PWD_PARM + " (default=admin");
-			System.out.println("  	 	" + REPO_PARM + " (default=mode:repository)");
-			System.out.println("  	 	" + UNPUBLISH + " with no parameter, will activate");
-	
-			System.exit(0);
-		}
+    @SuppressWarnings( "null" )
+    public static void main( String[] args ) {
 
+        if (args == null || args.length == 0 || args[0].equals(HELP_PARM)) {
+            System.out.println("Running the ModeShape Rest Client");
+            System.out.println("	required arguments are:");
+            System.out.println("  	 	" + SERVER_PARM);
+            System.out.println("  	 	" + FILE_PARM + " or " + DIR_PARM);
+            System.out.println("  		" + WORKSPACEPATH_PARM);
+            System.out.println("	optional arguments are:");
+            System.out.println(" 		" + USERNAME_PARM + "(default=admin");
+            System.out.println("  	 	" + PWD_PARM + " (default=admin");
+            System.out.println("  	 	" + REPO_PARM + " (default=mode:repository)");
+            System.out.println("  	 	" + UNPUBLISH + " with no parameter, will activate");
 
-		String server_name = null;
-		String repo_name = "mode:repository";
-		String workspace_name = "default";
-		String workspace_path = null;
-		String file_name = null;
-		String dir_loc = null;
-		String user = "admin";
-		String pwd = "admin";
-		
-		boolean publish = true;
-	
-		int pos = 0;
-		for (String arg : args) {
-		    arg = arg.trim();
-		    if (arg.equals(SERVER_PARM)) {
-		    	server_name = args[pos + 1];
-		    } else if (arg.equals(REPO_PARM)) {
-		    	repo_name = args[pos + 1];
-		    } else  if (arg.equals(WORKSPACENAME_PARM)) {
-		    	workspace_name = args[pos + 1];
-		    } else if (arg.equals(WORKSPACEPATH_PARM)) {
-		    	workspace_path = args[pos + 1];
-		    } else if (arg.equals(FILE_PARM)) {
-		    	file_name = args[pos + 1];
-		    } else if (arg.equals(DIR_PARM)) {
-		    	dir_loc = args[pos + 1];
-		    } else if (arg.equals(USERNAME_PARM)) {
-		    	user = args[pos + 1];
-		    } else if (arg.equals(PWD_PARM)) {
-		    	pwd = args[pos + 1];
-		    } else if (arg.equals(UNPUBLISH)) {
-		    	publish = false;
-		    }
-	
-		    ++pos;
-		}
+            System.exit(0);
+        }
 
-		String errparm = null;
-		if (server_name == null) {
-		    errparm = SERVER_PARM;
-		} else if ( repo_name == null ) {
-		    errparm = REPO_PARM;	    
-		} else if ( file_name == null && dir_loc == null) {
-		    errparm = "[" + FILE_PARM + " | " + DIR_PARM + "]";	    
-		} else if ( user == null ) {
-		    errparm = USERNAME_PARM;	    
-		} else if ( pwd == null ) {
-		    errparm = PWD_PARM;	    
-		} else if (workspace_path == null) {
-			errparm = WORKSPACEPATH_PARM;
-		}
-		
-		if (errparm != null) {
-	            LOGGER.error(RestClientI18n.nullArgumentMsg, errparm);
-		    System.exit(-1);
-		}
-	
-	
-		Server server = new Server(server_name, user, pwd);
-		Repository repository = new Repository(repo_name, server);
-		Workspace workspace = new Workspace(workspace_name, repository);
-	
-		JsonRestClient client = new JsonRestClient();
+        String server_name = null;
+        String repo_name = "mode:repository";
+        String workspace_name = "default";
+        String workspace_path = null;
+        String file_name = null;
+        String dir_loc = null;
+        String user = "admin";
+        String pwd = "admin";
 
-		try {
-		    client.getRepositories(server);
-		} catch (Exception e) {
-		    e.printStackTrace();
-		    System.exit(-1);
-		}
-	
-		try {
-		    client.getWorkspaces(repository);
-		} catch (Exception e) {
-		    e.printStackTrace();
-		    System.exit(-1);
-		}
-	
-		if (publish) {
+        boolean publish = true;
 
-			if (file_name != null) {
-			    Status status = client.publish(workspace, workspace_path, new File(file_name));
-			    if (checkStatus(status) ) {
-			    	LOGGER.info(RestClientI18n.publishSucceededMsg, file_name, workspace_path, workspace_name);
-			    }
-			    
-			} else {
-			    File[] files = findAllFilesInDirectory(dir_loc);
-				for (File f : files) {
-				    Status status = client.publish(workspace, workspace_path, f);
-				    if (checkStatus(status) ) {
-				    	LOGGER.info(RestClientI18n.publishSucceededMsg, f.getName(), workspace_path, workspace_name);
-				    }		    
-				}
-			}
-		} else {
-			if (file_name != null) {
-			    Status status = client.unpublish(workspace, workspace_path, new File(file_name));
-			    if (checkStatus(status) ) {
-			    	LOGGER.info(RestClientI18n.unpublishSucceededMsg, file_name, workspace_path, workspace_name);
-			    }
-			    
-			} else {
-			    File[] files = findAllFilesInDirectory(dir_loc);
-				for (File f : files) {
-				    Status status = client.unpublish(workspace, workspace_path, f);
-				    if (checkStatus(status) ) {
-				    	LOGGER.info(RestClientI18n.unpublishSucceededMsg, f.getName(), workspace_path, workspace_name);
-				    }		    
-				}
-			}
-		}
-	
+        int pos = 0;
+        for (String arg : args) {
+            arg = arg.trim();
+            if (arg.equals(SERVER_PARM)) {
+                server_name = args[pos + 1];
+            } else if (arg.equals(REPO_PARM)) {
+                repo_name = args[pos + 1];
+            } else if (arg.equals(WORKSPACENAME_PARM)) {
+                workspace_name = args[pos + 1];
+            } else if (arg.equals(WORKSPACEPATH_PARM)) {
+                workspace_path = args[pos + 1];
+            } else if (arg.equals(FILE_PARM)) {
+                file_name = args[pos + 1];
+            } else if (arg.equals(DIR_PARM)) {
+                dir_loc = args[pos + 1];
+            } else if (arg.equals(USERNAME_PARM)) {
+                user = args[pos + 1];
+            } else if (arg.equals(PWD_PARM)) {
+                pwd = args[pos + 1];
+            } else if (arg.equals(UNPUBLISH)) {
+                publish = false;
+            }
+
+            ++pos;
+        }
+
+        String errparm = null;
+        if (server_name == null) {
+            errparm = SERVER_PARM;
+        } else if (repo_name == null) {
+            errparm = REPO_PARM;
+        } else if (file_name == null && dir_loc == null) {
+            errparm = "[" + FILE_PARM + " | " + DIR_PARM + "]";
+        } else if (user == null) {
+            errparm = USERNAME_PARM;
+        } else if (pwd == null) {
+            errparm = PWD_PARM;
+        } else if (workspace_path == null) {
+            errparm = WORKSPACEPATH_PARM;
+        }
+
+        if (errparm != null) {
+            LOGGER.error(RestClientI18n.nullArgumentMsg, errparm);
+            System.exit(-1);
+        }
+
+        Server server = new Server(server_name, user, pwd);
+        Repository repository = new Repository(repo_name, server);
+        Workspace workspace = new Workspace(workspace_name, repository);
+
+        JsonRestClient client = new JsonRestClient();
+
+        try {
+            client.getRepositories(server);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
+        try {
+            client.getWorkspaces(repository);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
+        if (publish) {
+
+            if (file_name != null) {
+                Status status = client.publish(workspace, workspace_path, new File(file_name));
+                if (checkStatus(status)) {
+                    LOGGER.info(RestClientI18n.publishSucceededMsg, file_name, workspace_path, workspace_name);
+                }
+
+            } else {
+                File[] files = findAllFilesInDirectory(dir_loc);
+                for (File f : files) {
+                    Status status = client.publish(workspace, workspace_path, f);
+                    if (checkStatus(status)) {
+                        LOGGER.info(RestClientI18n.publishSucceededMsg, f.getName(), workspace_path, workspace_name);
+                    }
+                }
+            }
+        } else {
+            if (file_name != null) {
+                Status status = client.unpublish(workspace, workspace_path, new File(file_name));
+                if (checkStatus(status)) {
+                    LOGGER.info(RestClientI18n.unpublishSucceededMsg, file_name, workspace_path, workspace_name);
+                }
+
+            } else {
+                File[] files = findAllFilesInDirectory(dir_loc);
+                for (File f : files) {
+                    Status status = client.unpublish(workspace, workspace_path, f);
+                    if (checkStatus(status)) {
+                        LOGGER.info(RestClientI18n.unpublishSucceededMsg, f.getName(), workspace_path, workspace_name);
+                    }
+                }
+            }
+        }
+
     }
-    
 
-    private static boolean checkStatus(Status status) {
-		if (status.isError()) {
-		    System.err.println(status.getMessage());
-		    status.getException().printStackTrace(System.err);
-		    return false;
-		} 
-		return true;
+    private static boolean checkStatus( Status status ) {
+        if (status.isError()) {
+            System.err.println(status.getMessage());
+            status.getException().printStackTrace(System.err);
+            return false;
+        }
+        return true;
     }
-    
+
     /**
      * Returns a <code>File</code> array that will contain all the files that exist in the directory
-     * @param dir the path that contains the files to be published
      * 
+     * @param dir the path that contains the files to be published
      * @return File[] of files in the directory
      */
-    private static File[] findAllFilesInDirectory(String dir) {
+    private static File[] findAllFilesInDirectory( String dir ) {
 
         // Find all files in the specified directory
         File modelsDirFile = new File(dir);
         FileFilter fileFilter = new FileFilter() {
 
-            public boolean accept(File file) {
+            public boolean accept( File file ) {
                 if (file.isDirectory()) {
                     return false;
                 }
