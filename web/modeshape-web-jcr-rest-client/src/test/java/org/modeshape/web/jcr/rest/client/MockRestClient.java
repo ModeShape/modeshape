@@ -26,6 +26,8 @@ package org.modeshape.web.jcr.rest.client;
 import java.io.File;
 import java.net.URL;
 import java.util.Collection;
+import java.util.List;
+import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;
@@ -90,6 +92,32 @@ public final class MockRestClient implements IRestClient {
     public Status unpublish( Workspace workspace,
                              String path,
                              File file ) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.web.jcr.rest.client.IRestClient#query(Workspace, String, String)
+     */
+    @Override
+    public List<QueryRow> query( Workspace workspace,
+                                 String language,
+                                 String statement,
+                                 int offset,
+                                 int limit ) throws Exception {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.web.jcr.rest.client.IRestClient#query(Workspace, String, String, int, int)
+     */
+    @Override
+    public List<QueryRow> query( Workspace workspace,
+                                 String language,
+                                 String statement ) throws Exception {
         return null;
     }
 

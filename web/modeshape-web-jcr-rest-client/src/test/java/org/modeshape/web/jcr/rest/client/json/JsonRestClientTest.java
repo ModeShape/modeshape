@@ -30,10 +30,13 @@ import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.net.URL;
 import java.util.Collection;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.web.jcr.rest.client.IJcrConstants;
 import org.modeshape.web.jcr.rest.client.IRestClient;
 import org.modeshape.web.jcr.rest.client.Status;
+import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;
@@ -204,4 +207,26 @@ public final class JsonRestClientTest {
         assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, file), is(false));
     }
 
+    @Test
+    public void shouldQuery() throws Exception {
+        // first publish
+        shouldPublishTextResource();
+
+        List<QueryRow> results = this.restClient.query(WORKSPACE1, IJcrConstants.XPATH, "/" + FILE_PATH);
+
+        assertThat(results.size(), is(1));
+        QueryRow row = results.get(0);
+
+        assertThat(row.getColumnNames().size(), is(3));
+        assertThat(row.getColumnNames().contains("jcr:score"), is(true));
+        assertThat(row.getColumnNames().contains("jcr:path"), is(true));
+        assertThat(row.getColumnNames().contains("jcr:primaryType"), is(true));
+
+        assertThat(row.getColumnType("jcr:score"), is("DOUBLE"));
+        assertThat(row.getColumnType("jcr:path"), is("STRING"));
+        assertThat(row.getColumnType("jcr:primaryType"), is("STRING"));
+        
+        assertThat((String)row.getValue("jcr:path"), is("/myproject/myfolder/document.txt"));
+        assertThat((String)row.getValue("jcr:primaryType"), is("nt:file"));
+    }
 }

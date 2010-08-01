@@ -23,23 +23,33 @@
  */
 package org.modeshape.web.jcr.rest.client.json;
 
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.Logger;
-import org.modeshape.web.jcr.rest.client.IRestClient;
-import org.modeshape.web.jcr.rest.client.RestClientI18n;
-import org.modeshape.web.jcr.rest.client.Status;
-import org.modeshape.web.jcr.rest.client.Status.Severity;
-import org.modeshape.web.jcr.rest.client.domain.Repository;
-import org.modeshape.web.jcr.rest.client.domain.Server;
-import org.modeshape.web.jcr.rest.client.domain.Workspace;
-import org.modeshape.web.jcr.rest.client.http.HttpClientConnection;
-import org.modeshape.web.jcr.rest.client.json.IJsonConstants.RequestMethod;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONObject;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.Logger;
+import org.modeshape.web.jcr.rest.client.IJcrConstants;
+import org.modeshape.web.jcr.rest.client.IRestClient;
+import org.modeshape.web.jcr.rest.client.RestClientI18n;
+import org.modeshape.web.jcr.rest.client.Status;
+import org.modeshape.web.jcr.rest.client.Status.Severity;
+import org.modeshape.web.jcr.rest.client.domain.QueryRow;
+import org.modeshape.web.jcr.rest.client.domain.Repository;
+import org.modeshape.web.jcr.rest.client.domain.Server;
+import org.modeshape.web.jcr.rest.client.domain.Workspace;
+import org.modeshape.web.jcr.rest.client.http.HttpClientConnection;
+import org.modeshape.web.jcr.rest.client.json.IJsonConstants.RequestMethod;
+import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 /**
  * The <code>JsonRestClient</code> class is an implementation of <code>IRestClient</code> that works with the ModeShape REST server that
@@ -55,7 +65,7 @@ public final class JsonRestClient implements IRestClient {
      * The LOGGER.
      */
     private static final Logger LOGGER = Logger.getLogger(JsonRestClient.class);
-    
+
     // ===========================================================================================================================
     // Methods
     // ===========================================================================================================================
@@ -410,6 +420,122 @@ public final class JsonRestClient implements IRestClient {
                 connection.disconnect();
             }
         }
+    }
+
+    @Override
+    public List<QueryRow> query( Workspace workspace,
+                                 String language,
+                                 String statement ) throws Exception {
+        return query(workspace, language, statement, 0, -1);
+    }
+    
+    @SuppressWarnings( "unchecked" )
+    @Override
+    public List<QueryRow> query( Workspace workspace,
+                                 String language,
+                                 String statement,
+                                 int offset,
+                                 int limit ) throws Exception {
+        CheckArg.isNotNull(workspace, "workspace");
+        CheckArg.isNotNull(language, "language");
+        CheckArg.isNotNull(statement, "statement");
+        LOGGER.trace("query: workspace={0}, language={1}, file={2}, offset={3}, limit={4}",
+                     workspace.getName(),
+                     language,
+                     statement,
+                     offset,
+                     limit);
+
+        HttpClientConnection connection = null;
+
+        try {
+            WorkspaceNode workspaceNode = new WorkspaceNode(workspace);
+            StringBuilder url = new StringBuilder(workspaceNode.getQueryUrl().toString());
+            // url.append("/query");
+
+            boolean hasOffset = offset > 0;
+            if (hasOffset) {
+                url.append("?offset=").append(offset);
+            }
+
+            if (limit >= 0) {
+                if (hasOffset) {
+                    url.append("&");
+                } else {
+                    url.append("?");
+                }
+
+                url.append("limit=").append(limit);
+            }
+
+            connection = connect(workspace.getServer(), new URL(url.toString()), RequestMethod.POST);
+            connection.setContentType(contentTypeFor(language));
+            connection.write(statement.getBytes());
+
+            int responseCode = connection.getResponseCode();
+            LOGGER.trace("responseCode={0}", responseCode);
+
+            String response = connection.read();
+            JSONObject result = new JSONObject(response);
+            Map<String, String> columnTypes = new HashMap<String, String>();
+            if (result.has("types")) {
+                JSONObject types = (JSONObject)result.get("types");
+
+                for (Iterator<String> iter = (Iterator<String>)types.keys(); iter.hasNext();) {
+                    String columnName = iter.next();
+                    columnTypes.put(columnName, (String)types.getString(columnName));
+                }
+            }
+
+            Map<String, String> types = Collections.unmodifiableMap(columnTypes);
+
+            System.out.println(result);
+
+            JSONArray rows = (JSONArray)result.get("rows");
+            List<QueryRow> queryRows = new LinkedList<QueryRow>();
+            for (int i = 0; i < rows.length(); i++) {
+                JSONObject row = (JSONObject)rows.get(i);
+                Map<String, Object> values = new HashMap<String, Object>();
+
+                for (Iterator<String> valueIter = (Iterator<String>)row.keys(); valueIter.hasNext();) {
+                    String valueName = valueIter.next();
+                    if (valueName.endsWith(IJsonConstants.BASE64_SUFFIX)) {
+                        byte[] data = Base64.decode(row.getString(valueName));
+                        valueName = valueName.substring(0, valueName.length() - IJsonConstants.BASE64_SUFFIX.length());
+                        values.put(valueName, data);
+                    } else {
+                        values.put(valueName, row.getString(valueName));
+                    }
+                }
+
+                queryRows.add(new QueryRow(types, values));
+            }
+
+            return queryRows;
+        } finally {
+            if (connection != null) {
+                LOGGER.trace("query: leaving");
+                connection.disconnect();
+            }
+        }
+    }
+    
+    private String contentTypeFor( String language ) throws Exception {
+        if (IJcrConstants.XPATH.equalsIgnoreCase(language)) {
+            return "application/jcr+xpath";
+        }
+        if (IJcrConstants.JCR_SQL.equalsIgnoreCase(language)) {
+            return "application/jcr+sql";
+        }
+        if (IJcrConstants.JCR_SQL2.equalsIgnoreCase(language)) {
+            return "application/jcr+sql2";
+        }
+        if (IJcrConstants.JCR_SEARCH.equalsIgnoreCase(language)) {
+            return "application/jcr+search";
+        }
+
+        throw new IllegalStateException(
+                                        RestClientI18n.invalidQueryLanguageMsg.text(language, IJcrConstants.VALID_QUERY_LANGUAGES));
     }
     
     private static final String SERVER_PARM = "--server";

@@ -67,6 +67,11 @@ public final class HttpClientConnection {
      */
     private HttpResponse response;
 
+    /**
+     * The content type
+     */
+    private String contentType;
+
     // ===========================================================================================================================
     // Constructors
     // ===========================================================================================================================
@@ -152,11 +157,22 @@ public final class HttpClientConnection {
         CheckArg.isNotNull(bytes, "bytes");
 
         ByteArrayEntity entity = new ByteArrayEntity(bytes);
-        entity.setContentType(MediaType.APPLICATION_JSON);
+        if (contentType == null) {
+            entity.setContentType(MediaType.APPLICATION_JSON);
+        }
 
         if (this.request instanceof HttpEntityEnclosingRequestBase) {
             ((HttpEntityEnclosingRequestBase)this.request).setEntity(entity);
         }
     }
 
+    /**
+     * Sets the content type for the request
+     * 
+     * @param contentType the content type to use
+     */
+    public void setContentType( String contentType ) {
+        this.contentType = contentType;
+        this.request.setHeader("Content-Type", contentType);
+    }
 }

@@ -163,7 +163,7 @@ public class JcrResourcesTest {
 
         JSONObject objFromResponse = new JSONObject(body);
         JSONObject expected = new JSONObject(
-                                             "{\"default\":{\"workspace\":{\"name\":\"default\",\"resources\":{\"items\":\"/resources/mode%3arepository/default/items\"}}}}");
+                                             "{\"default\":{\"workspace\":{\"name\":\"default\",\"resources\":{\"query\":\"/resources/mode%3arepository/default/query\",\"items\":\"/resources/mode%3arepository/default/items\"}}}}");
 
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         assertThat(objFromResponse.toString(), is(expected.toString()));
@@ -972,4 +972,90 @@ public class JcrResourcesTest {
 
     }
 
+    @Test
+    public void shouldRetrieveDataFromXPathQuery() throws Exception {
+        final String NODE_PATH = "/nodeForQuery";
+        URL postUrl = new URL(SERVER_URL + "/mode%3arepository/default/items" + NODE_PATH);
+        HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
+
+        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\" }}";
+        connection.getOutputStream().write(payload.getBytes());
+
+        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
+        connection.disconnect();
+
+        URL queryUrl = new URL(SERVER_URL + "/mode%3arepository/default/query");
+        connection = (HttpURLConnection)queryUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/jcr+xpath");
+
+        payload = "//nodeForQuery";
+        connection.getOutputStream().write(payload.getBytes());
+        JSONObject queryResult = new JSONObject(getResponseFor(connection));
+        JSONArray results = (JSONArray)queryResult.get("rows");
+
+        assertThat(results.length(), is(1));
+
+        JSONObject result = (JSONObject)results.get(0);
+        assertThat(result, is(notNullValue()));
+        assertThat((String)result.get("jcr:path"), is(NODE_PATH));
+        assertThat((String)result.get("jcr:primaryType"), is("nt:unstructured"));
+
+    }
+
+    private void createNode( String path,
+                             int index ) throws Exception {
+        URL postUrl = new URL(SERVER_URL + "/mode%3arepository/default/items" + path);
+        HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
+
+        String payload = "{ \"properties\": {\"jcr:primaryType\": \"nt:unstructured\", \"foo\": \"" + index + "\" }}";
+        connection.getOutputStream().write(payload.getBytes());
+
+        assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_CREATED));
+
+        connection.disconnect();
+    }
+
+    @Test
+    public void shouldRespectQueryOffsetAndLimit() throws Exception {
+        final String NODE_PATH = "nodeForOffsetAndLimitTest";
+
+        createNode("/" + NODE_PATH, 1);
+        createNode("/" + NODE_PATH, 2);
+        createNode("/" + NODE_PATH, 3);
+        createNode("/" + NODE_PATH, 4);
+
+        URL queryUrl = new URL(SERVER_URL + "/mode%3arepository/default/query?offset=1&limit=2");
+        HttpURLConnection connection = (HttpURLConnection)queryUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/jcr+xpath");
+
+        String payload = "//element(" + NODE_PATH + ") order by @foo";
+        
+        connection.getOutputStream().write(payload.getBytes());
+        JSONObject queryResult = new JSONObject(getResponseFor(connection));
+        JSONArray results = (JSONArray)queryResult.get("rows");
+
+        assertThat(results.length(), is(2));
+
+        JSONObject result = (JSONObject)results.get(0);
+        assertThat(result, is(notNullValue()));
+        assertThat((String)result.get("jcr:path"), is("/" + NODE_PATH + "[2]"));
+
+        result = (JSONObject)results.get(1);
+        assertThat(result, is(notNullValue()));
+        assertThat((String)result.get("jcr:path"), is("/" + NODE_PATH + "[3]"));
+    }
 }

@@ -45,5 +45,11 @@ public class WorkspaceResources {
     public void setWorkspaces(String workspaces) {
         this.baseUri = workspaces;
     }
+
+    @XmlElement( name = "query" )
+    public String getQuery() {
+        return baseUri + "/query";
+    }
+
 }
 

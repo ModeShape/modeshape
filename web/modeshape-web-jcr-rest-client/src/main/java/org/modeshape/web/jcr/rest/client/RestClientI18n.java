@@ -62,6 +62,8 @@ public final class RestClientI18n {
     
     public static I18n unpublishSucceededMsg;
 
+    public static I18n invalidQueryLanguageMsg;
+
     static {
         try {
             I18n.initialize(RestClientI18n.class);

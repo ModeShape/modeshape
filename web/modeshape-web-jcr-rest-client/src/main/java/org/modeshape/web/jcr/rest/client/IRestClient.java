@@ -26,7 +26,9 @@ package org.modeshape.web.jcr.rest.client;
 import java.io.File;
 import java.net.URL;
 import java.util.Collection;
+import java.util.List;
 import org.modeshape.web.jcr.rest.client.Status.Severity;
+import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;
@@ -90,4 +92,33 @@ public interface IRestClient {
                       String path,
                       File file );
 
+    /**
+     * Executes the given query in the workspace.
+     * 
+     * @param workspace the workspace where the resource will be unpublished (never <code>null</code>)
+     * @param language the JCR query language to use (never <code>null</code>)
+     * @param statement the query itself (never <code>null</code>)
+     * @return the list of rows returned by the query (never <code>null</code>)
+     * @throws Exception if there is a problem obtaining the workspaces
+     */
+    List<QueryRow> query( Workspace workspace,
+                          String language,
+                          String statement ) throws Exception;
+
+    /**
+     * Executes the given query in the workspace.
+     * 
+     * @param workspace the workspace where the resource will be unpublished (never <code>null</code>)
+     * @param language the JCR query language to use (never <code>null</code>)
+     * @param statement the query itself (never <code>null</code>)
+     * @param offset the first row to be returned; if this value is negative, rows are returned starting with the first row
+     * @param limit the maximum number of rows to be returned; if this value is negative, all rows are returned
+     * @return the list of rows returned by the query (never <code>null</code>)
+     * @throws Exception if there is a problem obtaining the workspaces
+     */
+    List<QueryRow> query( Workspace workspace,
+                          String language,
+                          String statement,
+                          int offset,
+                          int limit ) throws Exception;
 }

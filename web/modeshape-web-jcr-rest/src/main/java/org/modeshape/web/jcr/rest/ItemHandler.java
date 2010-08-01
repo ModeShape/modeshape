@@ -39,8 +39,6 @@ import org.modeshape.common.util.Base64;
 @Immutable
 class ItemHandler extends AbstractHandler {
 
-    private static final String BASE64_ENCODING_SUFFIX = "/base64/";
-
     private static final String PROPERTIES_HOLDER = "properties";
     private static final String CHILD_NODE_HOLDER = "children";
 
@@ -145,32 +143,6 @@ class ItemHandler extends AbstractHandler {
         JSONObject jsonProperty = new JSONObject();
         jsonProperty.put(propertyName, valueObject);
         return jsonProperty;
-    }
-
-    /**
-     * Return the JSON-compatible string representation of the given property value. If the value is a {@link PropertyType#BINARY
-     * binary} value, then this method returns the Base-64 encoding of that value. Otherwise, it just returns the string
-     * representation of the value.
-     * 
-     * @param value the property value; may not be null
-     * @return the string representation of the value
-     * @throws RepositoryException if there is a problem accessing the value
-     */
-    private String jsonEncodedStringFor( Value value ) throws RepositoryException {
-        // Encode the binary value in Base64 ...
-        InputStream stream = value.getBinary().getStream();
-        try {
-            return Base64.encode(stream);
-        } finally {
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (IOException e) {
-                    // Error accessing the value, so throw this ...
-                    throw new RepositoryException(e);
-                }
-            }
-        }
     }
 
     /**

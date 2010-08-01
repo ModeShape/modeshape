@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.Map;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.query.Query;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -77,9 +78,15 @@ import org.modeshape.web.jcr.spi.NoSuchRepositoryException;
  * <td>GET</td>
  * </tr>
  * <tr>
- * <td>/resources/{repositoryName}/{workspaceName}/item/{path}</td>
+ * <td>/resources/{repositoryName}/{workspaceName}/items/{path}</td>
  * <td>accesses the item (node or property) at the path</td>
  * <td>GET, POST, PUT, DELETE</td>
+ * </tr>
+ * <tr>
+ * <td>/resources/{repositoryName}/{workspaceName}/query</td>
+ * <td>executes the query in the body of the request with a language specified by the content type (application/jcr+xpath,
+ * application/jcr+sql, application/jcr+sql2, or application/search)</td>
+ * <td>POST</td>
  * </tr>
  * </table>
  * <h3>Binary data</h3>
@@ -136,9 +143,16 @@ import org.modeshape.web.jcr.spi.NoSuchRepositoryException;
 @Path( "/" )
 public class JcrResources extends AbstractHandler {
 
+    /**
+     * This is a duplicate of the FullTextSearchParser.LANGUAGE field, but it is split out here to avoid adding a dependency on
+     * the modeshape-jcr package.
+     */
+    private final static String SEARCH_LANGUAGE = "Search";
+
     private ServerHandler serverHandler = new ServerHandler();
     private RepositoryHandler repositoryHandler = new RepositoryHandler();
     private ItemHandler itemHandler = new ItemHandler();
+    private QueryHandler queryHandler = new QueryHandler();
 
     /**
      * Returns the list of JCR repositories available on this server
@@ -179,6 +193,8 @@ public class JcrResources extends AbstractHandler {
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param path the path to the item
+     * @param deprecatedDepth the old depth parameter ("mode:depth"). This version is deprecated and should use the "depth" query
+     *        parameter instead.
      * @param depth the depth of the node graph that should be returned if {@code path} refers to a node. @{code 0} means return
      *        the requested node only. A negative value indicates that the full subgraph under the node should be returned. This
      *        parameter defaults to {@code 0} and is ignored if {@code path} refers to a property.
@@ -200,11 +216,13 @@ public class JcrResources extends AbstractHandler {
                            @PathParam( "repositoryName" ) String rawRepositoryName,
                            @PathParam( "workspaceName" ) String rawWorkspaceName,
                            @PathParam( "path" ) String path,
-                           @QueryParam( "mode:depth" ) @DefaultValue( "0" ) int depth )
+                           @QueryParam( "mode:depth" ) @DefaultValue( "0" ) int deprecatedDepth,
+                           @QueryParam( "depth" ) @DefaultValue( "0" ) int depth )
         throws JSONException, UnauthorizedException, RepositoryException {
+        if (depth == 0 && deprecatedDepth != 0) depth = deprecatedDepth;
         return itemHandler.getItem(request, rawRepositoryName, rawWorkspaceName, path, depth);
     }
-    
+
     /**
      * Adds the content of the request as a node (or subtree of nodes) at the location specified by {@code path}.
      * <p>
@@ -234,8 +252,8 @@ public class JcrResources extends AbstractHandler {
                               String requestContent )
         throws NotFoundException, UnauthorizedException, RepositoryException, JSONException {
         return itemHandler.postItem(request, rawRepositoryName, rawWorkspaceName, path, requestContent);
-    }    
-    
+    }
+
     /**
      * Deletes the item at {@code path}.
      * 
@@ -257,7 +275,7 @@ public class JcrResources extends AbstractHandler {
         throws NotFoundException, UnauthorizedException, RepositoryException {
         itemHandler.deleteItem(request, rawRepositoryName, rawWorkspaceName, path);
     }
-    
+
     /**
      * Updates the properties at the path.
      * <p>
@@ -288,6 +306,140 @@ public class JcrResources extends AbstractHandler {
                            @PathParam( "path" ) String path,
                            String requestContent ) throws UnauthorizedException, JSONException, RepositoryException, IOException {
         return itemHandler.putItem(request, rawRepositoryName, rawWorkspaceName, path, requestContent);
+    }
+
+    /**
+     * Executes the XPath query contained in the body of the request against the give repository and workspace.
+     * <p>
+     * The query results will be JSON-encoded in the response body.
+     * </p>
+     * 
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param requestContent the JSON-encoded representation of the node or nodes to be added
+     * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
+     *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     *        the result set.
+     * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
+     *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     *        results are counted from the record specified in the offset parameter.
+     * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestContent}
+     *         in that auto-created and protected properties (e.g., jcr:uuid) will be populated.
+     * @throws JSONException if there is an error encoding the node
+     * @throws RepositoryException if any other error occurs
+     */
+    @SuppressWarnings( "deprecation" )
+    @POST
+    @Path( "/{repositoryName}/{workspaceName}/query" )
+    @Consumes( "application/jcr+xpath" )
+    public String postXPathQuery( @Context HttpServletRequest request,
+                                  @PathParam( "repositoryName" ) String rawRepositoryName,
+                                  @PathParam( "workspaceName" ) String rawWorkspaceName,
+                                  @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
+                                  @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                  String requestContent ) throws RepositoryException, JSONException {
+        return queryHandler.postItem(request, rawRepositoryName, rawWorkspaceName, Query.XPATH, requestContent, offset, limit);
+    }
+
+    /**
+     * Executes the JCR-SQL query contained in the body of the request against the give repository and workspace.
+     * <p>
+     * The query results will be JSON-encoded in the response body.
+     * </p>
+     * 
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param requestContent the JSON-encoded representation of the node or nodes to be added
+     * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
+     *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     *        the result set.
+     * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
+     *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     *        results are counted from the record specified in the offset parameter.
+     * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestContent}
+     *         in that auto-created and protected properties (e.g., jcr:uuid) will be populated.
+     * @throws JSONException if there is an error encoding the node
+     * @throws RepositoryException if any other error occurs
+     */
+    @SuppressWarnings( "deprecation" )
+    @POST
+    @Path( "/{repositoryName}/{workspaceName}/query" )
+    @Consumes( "application/jcr+sql" )
+    public String postJcrSqlQuery( @Context HttpServletRequest request,
+                                   @PathParam( "repositoryName" ) String rawRepositoryName,
+                                   @PathParam( "workspaceName" ) String rawWorkspaceName,
+                                   @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
+                                   @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                   String requestContent ) throws RepositoryException, JSONException {
+        return queryHandler.postItem(request, rawRepositoryName, rawWorkspaceName, Query.SQL, requestContent, offset, limit);
+    }
+
+    /**
+     * Executes the JCR-SQL2 query contained in the body of the request against the give repository and workspace.
+     * <p>
+     * The query results will be JSON-encoded in the response body.
+     * </p>
+     * 
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param requestContent the JSON-encoded representation of the node or nodes to be added
+     * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
+     *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     *        the result set.
+     * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
+     *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     *        results are counted from the record specified in the offset parameter.
+     * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestContent}
+     *         in that auto-created and protected properties (e.g., jcr:uuid) will be populated.
+     * @throws JSONException if there is an error encoding the node
+     * @throws RepositoryException if any other error occurs
+     */
+    @POST
+    @Path( "/{repositoryName}/{workspaceName}/query" )
+    @Consumes( "application/jcr+sql" )
+    public String postJcrSql2Query( @Context HttpServletRequest request,
+                                    @PathParam( "repositoryName" ) String rawRepositoryName,
+                                    @PathParam( "workspaceName" ) String rawWorkspaceName,
+                                    @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
+                                    @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                    String requestContent ) throws RepositoryException, JSONException {
+        return queryHandler.postItem(request, rawRepositoryName, rawWorkspaceName, Query.JCR_SQL2, requestContent, offset, limit);
+    }
+
+    /**
+     * Executes the JCR-SQL query contained in the body of the request against the give repository and workspace.
+     * <p>
+     * The query results will be JSON-encoded in the response body.
+     * </p>
+     * 
+     * @param request the servlet request; may not be null or unauthenticated
+     * @param rawRepositoryName the URL-encoded repository name
+     * @param rawWorkspaceName the URL-encoded workspace name
+     * @param requestContent the JSON-encoded representation of the node or nodes to be added
+     * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
+     *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
+     *        the result set.
+     * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
+     *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
+     *        results are counted from the record specified in the offset parameter.
+     * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestContent}
+     *         in that auto-created and protected properties (e.g., jcr:uuid) will be populated.
+     * @throws JSONException if there is an error encoding the node
+     * @throws RepositoryException if any other error occurs
+     */
+    @POST
+    @Path( "/{repositoryName}/{workspaceName}/query" )
+    @Consumes( "application/jcr+search" )
+    public String postJcrSearchQuery( @Context HttpServletRequest request,
+                                      @PathParam( "repositoryName" ) String rawRepositoryName,
+                                      @PathParam( "workspaceName" ) String rawWorkspaceName,
+                                      @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
+                                      @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                      String requestContent ) throws RepositoryException, JSONException {
+        return queryHandler.postItem(request, rawRepositoryName, rawWorkspaceName, SEARCH_LANGUAGE, requestContent, offset, limit);
     }
 
     @Provider

@@ -451,7 +451,12 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 					<row>
 						<entry>/resources/{repositoryName}/{workspaceName}/item/{path}</entry>
 						<entry>Accesses the item (node or property) at the path</entry>
-						<entry>ALL</entry>
+						<entry>GET, POST, PUT, DELETE</entry>
+					</row>
+					<row>
+						<entry>/resources/{repositoryName}/{workspaceName}/query</entry>
+						<entry>Executes the query in the request body</entry>
+						<entry>POST</entry>
 					</row>
 				</tbody>
 			</tgroup>
@@ -495,7 +500,10 @@ GET http://www.example.com/resources/modeshape%3arepository
 	"default" : {
 		"workspace" : {
 			"name" : "default",
-			"resources" : { "items":"/resources/modeshape%3arepository/default/items" }
+			"resources" : { 
+				"items":"/resources/modeshape%3arepository/default/items", 
+				"query":"/resources/modeshape%3arepository/default/query"
+			},
 		}
 	}
 }
@@ -503,7 +511,8 @@ GET http://www.example.com/resources/modeshape%3arepository
 		Like the first response, this response consists of a list of workspace names mapped to metadata about the
 		workspaces.  The example above only lists one workspace for simplicity, but there could be many different
 		workspaces returned in a real deployment.  Note that the "items" resource builds the full URI to the root
-		of the items hierarchy, including the encoding of the repository name and the workspace name.
+		of the items hierarchy, including the encoding of the repository name and the workspace name and the "query"
+		resource builds the full URI needed to execute queries.
 		</para>
 		<para>
 		Now a request can be built to retrieve the root item of the repository.
@@ -607,6 +616,87 @@ PUT http://www.example.com/resources/modeshape%3arepository/default/items/newNod
 			</para>
 		</note>
 		</para>
+
+
+		<para>
+		Queries can be executed through the REST interface by POSTing to the query URI with the query statement in the 
+		body of the request.  The query language <emphasis>must</emphasis> be specified by setting the appropriate MIME 
+		type.
+				<table frame='all'>
+			<title>Query Content Types for the ModeShape REST Server</title>
+			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+	      <colspec colname='language' colwidth="3*"/>
+	      <colspec colname='content type' colwidth="1*"/>
+				<thead>
+					<row>
+			  		<entry>Query Language</entry>
+			  		<entry>Content Type</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>XPath</entry>
+						<entry>application/jcr+xpath</entry>
+					</row>
+					<row>
+						<entry>JCR-SQL</entry>
+						<entry>application/jcr+sql</entry>
+					</row>
+					<row>
+						<entry>JCR-SQL2</entry>
+						<entry>application/jcr+sql2</entry>
+					</row>
+					<row>
+						<entry>Full Text Search</entry>
+						<entry>application/jcr+search</entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+		If no content type is specified or the content type for the request is not one of the content types listed
+		above, the request will generate a response code of 400 (BAD REQUEST).
+		</para><para>
+		All queries for a given workspace are posted to the same URI and the request body is not JSON-encoded.
+<programlisting><![CDATA[
+POST http://www.example.com/resources/modeshape%3arepository/default/query
+
+/a/b/c/d[@foo='bar']
+]]></programlisting>		 
+		Assuming that the request above was POSTed with a content type of <code>application/jcr+xpath</code>, a
+		response would be generated that consisted of a JSON object that contained a property named "rows".  The "rows"
+		property would contain an array of rows with each element being a JSON object that represented one row
+		in the query result set.
+		</para>
+<programlisting><![CDATA[
+{
+	"types": {
+		"someProperty": "STRING",
+		"someOtherProperty": "BOOLEAN",
+		"jcr:path": "STRING",
+		"jcr:score": "DECIMAL"
+	},
+	"rows": {
+		{
+			"someProperty": "foobar",
+			"someOtherProperty": "true",
+			"jcr:path" : "/a/b/c/d",
+			"jcr:score" : 0.9327
+		},
+		{
+			"someProperty": "localValue",
+			"someOtherProperty": "false",
+			"jcr:path" : "/a/b/c/d[2]",
+			"jcr:score" : 0.8143
+		}
+	}
+}
+]]></programlisting>		 
+		<para>
+		If ModeShape is used as the underlying JCR implementation, the JSON object in the response will
+		also contain a "types" property.  The value of the "types" property is a JSON object that maps
+		column names to their JCR type.		
+		</para>
+
 		<sect3 id="binary_properties_in_rest_representations">
 			<title>Binary properties</title>
 			<para>
