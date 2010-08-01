@@ -47,13 +47,15 @@
 			<listitem>
 				<para><emphasis role="strong"><code>Load from a file</code></emphasis> is conceptually the most straightforward and requires the least amount
 				of Java code, but it does requires having a configuration file. This is easy, allows one to manage configurations in version control,
-				and will likely be the approach most applications use.</para>
+				enables your application to use only the standard JCR API, and will likely be the best approach for most applications.
+				If you're not sure, use this approach.</para>
 			</listitem>
 			<listitem>
 				<para><emphasis role="strong"><code>Programmatic configuration</code></emphasis> allows an application to define and edit
 				a configuration using Java code. This is useful when you cannot pre-define your configuration, or when you want to start
 				with a baseline configuration, make programmatic changes based upon some inputs or preferences, and then save
-				the configuration to a file.</para>
+				the configuration to a file. However, this requires that you write your application directly against ModeShape-specific
+				interfaces and class.</para>
 			</listitem>
 			<listitem>
 				<para><emphasis role="strong"><code>Load from a configuration repository</code></emphasis> is an advanced technique
@@ -66,31 +68,15 @@
 		Each of these approaches has their obvious advantages, so the choice of which one to use is entirely up to you.
 	</para>
 	<sect2 id="loading_from_file">
-		<title>Loading from a Configuration File</title>
+		<title>Configuration Files</title>
 		<para>
-			Loading the ModeShape configuration from a file is actually very simple:
-		</para>
-   	<programlisting role="JAVA"><![CDATA[JcrConfiguration config = new JcrConfiguration();
-configuration.loadFrom(file);
-]]></programlisting>
-		<para>
-			where the <code>file</code> parameter can actually be a &File; instance, a &URL; to the file, an &InputStream; 
-			containing the contents of the file, or even a &String; containing the contents of the file.  
-		</para>
-		<note>
-			<para>The <code>loadFrom(...)</code> method can be called any number of times, but each time it is called it completely wipes
-			  out any current notion of the configuration and replaces it with the configuration found in the file.
-			</para>
-		</note>
-		<para>
-			There is an optional second parameter that defines the &Path; within the configuration file identifying the parent node of the various
-			configuration nodes.  If not specified, it assumes "/".  This makes it possible for the configuration content to be
-			located at a different location in the hierarchical structure.  (This is not often required, but when it is required
-			this second parameter is very useful.)
+			By far the easiest approach to defining your ModeShape configuration is to use a configuration file.
+			As mentioned above, you'll want to do this if your application uses the standard and implementation-independent
+			&RepositoryFactory; mechanism to obtain the JCR &Repository; reference.
 		</para>
 		<para>
-			Here is the configuration file that is used in the repository example, though it has been simplified a bit and most comments 
-			have been removed for clarity):
+			Here is an example configuration file used in the repository example covered in the &GettingStarted; document, 
+			though it has been slightly simplified for clarity):
 		</para>
    	<programlisting role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
@@ -165,13 +151,27 @@ configuration.loadFrom(file);
 	<sect2 id="programmatic_configuration">
 		<title>Programmatic Configuration</title>
 		<para>
-			Defining the configuration programmatically is not terribly complicated, and it for obvious reasons results in more verbose Java code.
-			But this approach is very useful and often the easiest approach when the configuration must change or is a reflection of other
-			dynamic information.
+			Most likely you'll define your configuration <link linkend="loading_from_file">in a file</link>.
+			But there are some situations where it's far easier - even necessary - to programmatically configure ModeShape.
+			For example, you may not be able to predefine a configuration, because it needs parameters and information
+			known only at runtime.
 		</para>
 		<para>
-			The &JcrConfiguration; class was designed to have an easy-to-use API that makes it easy to configure each of the different kinds of
-			components, especially when using an IDE with code completion.  Here are several examples:
+			One obvious approach is to write code that takes this new information and generates a ModeShape configuration
+			file. The challenge here is that a sizable amount of code may be required just to write out the XML file
+			in the correct format.
+		</para>
+		<para>
+			Perhaps an easier approach is to use the ModeShape &JcrConfiguration; class to programmatically construct
+			the configuration, and then have it write the configuration out to a file. You can even load a starting
+			configuration, programmatically modify it, and write it out to a file. From there, your application
+			can use the standard and implementation-independent JCR API to find and use the &Repository; instances.
+		</para>
+		<para>
+			The &JcrConfiguration; class is used by ModeShape to read in the configuration files, but it was also
+			designed to have an easy-to-use API that makes it easy to configure each of the different kinds of
+			components, especially when using an IDE with code completion. The next few sections describe
+			how to configure the various parts of a ModeShape configuration.
 		</para>
 		<sect3 id="programmatically_configuring_sources">
 			<title>Repository Sources</title>
@@ -204,7 +204,7 @@ config.repositorySource("source A")
 				are optional.</para> 
    		<programlisting role="JAVA"><![CDATA[JcrConfiguration config = ...
 config.repository("repository A")
-     .addNodeTypes("myCustomNodeTypes.cnd")
+     .addNodeTypes("myCustomNodeTypes.cnd")		// can be called multiple times
      .setSource("source 1")
      .registerNamespace("acme","http://www.example.com/acme")
      .setOption(JcrRepository.Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
@@ -299,36 +299,65 @@ configuration.storeTo(pathToFile);
 		<para>
 			This will create a file at <code>pathToFile</code> that contains the current configuration in XML format. Any changes made after 
 			the most recent call to the <code>save()</code> method on the &JcrConfiguration; object will not be saved in the configuration
-			repository, and thus will not be in the generated file. The generated XML will not be formatted to maximize human readability.   
+			repository, and thus will not be in the generated file. The generated XML will not be formatted, so it may be a bit
+			hard to read. (Any good XML editor will be able to format it for readability.)
 		</para>
 	</sect3>
 	</sect2>
 	<sect2 id="loading_from_repository">
 		<title>Loading from a Configuration Repository</title>
 		<para>
-			Loading the ModeShape configuration from an existing repository is also pretty straightforward.  Simply create and configure the
-			&RepositorySource; instance to point to the desired repository, and then call the <code>loadFrom(&RepositorySource; source)</code>
-			method:
+			So far, we've seen how to load a configuration from a file, how to programmatically define a configuration 
+			and write it out to a file. In this section, we'll see how ModeShape can load its configuration from
+			another repository.
+		</para>
+		<note>
+			<para>
+			This really is a very advanced way to define your configuration, so this is recommended only for those
+			that are already very comfortable with ModeShape and its lower-level <link linkend="graph-model">graph API</link> and 
+			<link linkend="connector-framework">connector API</link>.
+			</para>
+		</note>
+		<para>
+			The first step is to create and configure the &RepositorySource; instance that we'll use to access the
+			repository where the configuration is stored.  Then, create a &JcrConfiguration; instance and 
+			load from this source:
 		</para>
    	<programlisting role="JAVA"><![CDATA[RepositorySource configSource = ...
 JcrConfiguration config = new JcrConfiguration();
 configuration.loadFrom(configSource);
 ]]></programlisting>
-		<para>
-			This really is a more advanced way to define your configuration, so we won't go into how you configure a &RepositorySource;.
+		<para>The <code>loadFrom(...)</code> method can be called any number of times, but each time it is called it completely wipes
+		  out any current notion of the configuration and replaces it with the configuration found in the file.
 		</para>
-		<note>
-			<para>The <code>loadFrom(...)</code> method can be called any number of times, but each time it is called it completely wipes
-			  out any current notion of the configuration and replaces it with the configuration found in the file.
-			</para>
-		</note>
 		<para>
 			There is an optional second parameter that defines the name of the workspace in the supplied source where the configuration content
 			can be found.  It is not needed if the workspace is the source's default workspace. 
 			There is an optional third parameter that defines the &Path; within the configuration repository identifying the parent node of the various
 			configuration nodes.  If not specified, it assumes "/".  This makes it possible for the configuration content to be
-			located at a different location in the hierarchical structure.  (This is not often required, but when it is required
-			this second parameter is very useful.)
+			located at a different location in the hierarchical structure.  (This is not often required, but it is very useful
+			if you ModeShape configuration file is embedded within another XML file.)
+		</para>
+		<para>
+			Once the &JcrConfiguration; has been loaded from a &RepositorySource;, the &JcrConfiguration; instance can be used
+			to modify the configuration and then save those changes back to the repository. This technique can be used to
+			place a configuration into a repository (such as a database) for the first time:
+		</para>
+   	<programlisting role="JAVA"><![CDATA[RepositorySource configSource = ...	// a RepositorySource to an empty source
+JcrConfiguration config = new JcrConfiguration();
+
+// Bind the configuration to the repository source (which is initially empty)...
+configuration.loadFrom(configSource);
+
+// Now load a configuration from a file (or construct one programmatically) ...
+String pathToFile = ... 
+configuration.loadFrom(pathToFile);
+
+// Now save the configuration into the source ...
+configuration.save();
+]]></programlisting>
+		<para>
+			Now you can load this configuration in multiple processes, using the approach mentioned above.
 		</para>
 	</sect2>
  </sect1>
@@ -715,54 +744,211 @@ configuration.loadFrom(configSource);
 			</note>
 		</sect2>
  </sect1>
- <sect1 id="modeshape_and_jndi">
-		<title>Deploying ModeShape via JNDI</title>
+	<sect1 id="modeshape_in_web_applications">
+		<title>Using ModeShape in Web Applications</title>
 		<para>
-			Sometimes your applications can simply define a &JcrConfiguration; and instantiate the &JcrEngine; instance directly.
-			This is very straightforward, and this is what the examples in the &GettingStarted; guide do.
+			Sometimes your applications can simply define a configuration file and use the &RepositoryFactory; to access its
+			repositories. This is very straightforward, and this is useful for many simple applications because the application
+			will then own the ModeShape instance(s).
 		</para>
 		<para>
-			Web applications are a different story. Often, you may not want your web application to contain the code that initializes
-			a ModeShape engine.  Or, you may want the same &JcrEngine; instance to be reused in multiple web applications deployed 
-			to the same web/application server. In these cases, it is possible to configure the web/app server's JNDI instance to
-			instantiate the &JcrEngine;, meaning the web applications need only use the standard JNDI and JCR APIs.
+			Web applications are a different story. Often, you would rather your web application not contain the code that initializes
+			the JCR repository, but instead configure ModeShape as a central, shared service that all of your web applications
+			can simply reference and use.
 		</para>
-		<sect2 id="modeshape_and_jndi_application">
-			<title>Example application using JCR and JNDI</title>
+		<para>
+			Unfortunately, there's not single way to deploy ModeShape into any web or application server, since they all have
+			slightly different deployment and configuration techniques. The remainder of this section will talk about
+			how to deploy ModeShape to two popular open source servers.
+		</para>
+		<sect2 id="deloying_modeshape_to_jbossas">
+			<title>Deploying ModeShape to JBoss AS</title>
 			<para>
-				Here's an example of how such a web application would obtain a JCR &Repository; instance, use it to create a &JcrSession;,
-				and then close the session when completed.  
+				The <ulink url="http://jboss.org/jbossas">JBoss Application Server</ulink> (or JBoss AS) is a very popular
+				open source Java application server, with an extremely healthy and active community. 
+				ModeShape 2.1 introduces a new way to deploy ModeShape into JBoss AS as as a central, shared service
+				that can be monitored and administered using the embedded console.
 			</para>
-    	<programlisting role="JAVA"><![CDATA[Session session = null;
-try {
-  // Look up the JCR Repository object ...
-	InitialContext initCtx = new InitialContext();
-	Context envCtx = (Context) initCtx.lookup("java:comp/env");
-	// name in JNDI is defined by configuration
-	Repository repo = (Repository) envCtx.lookup("jcr/local");	
-
-	// Obtain a JCR Session using simple authentication
-	// (or use anonymous authentication if desired)
-	session = repo.login(new SimpleCredentials("username", "password".toCharArray()));
-
-	// Use the JCR Session to do something interesting
-
-} catch (Exception ex) {
-	ex.printStackTrace();
-} finally {
-	if (session != null) session.logout();
-}]]></programlisting>
+			<note>
+				<para>
+					This deployment mechanism is considered a "technology preview", meaning that it may undergo fairly significant
+					changes in the next few releases. We're pretty proud of the level of integration with JBoss AS, however,
+					so we do encourage you to try it and give us your feedback.
+				</para>
+			</note>
 			<para>
-				Note that the location of the &Repository; instance in JNDI depends upon the configuration. In this example, we used
-				"<code>jcr/local</code>", but the only requirement is that it match the location where it was placed in JNDI.
+				ModeShape provides a downloadable ZIP file that can be unzipped into any JBoss AS profile. When you do this,
+				that profile will contain all the files necessary for ModeShape to run when the server is started.
+				The default configuration is for a single, in-memory repository with two users. However,
+				other than basic playing, you will want to edit the configuration files to define a more robust,
+				persistent and secure configuration.
 			</para>
 			<para>
-				We showed how web applications can use an existing &Repository; instance. In the next section, we describe how to configure
-				the web server so that the &Repository; instance is available in JNDI.
+				This JBoss AS distribution ZIP file contains several components:
+				<itemizedlist>
+					<listitem>
+						<para>
+							JAR files for the JCR 2.0 API and ModeShape's small extensions to the JCR API on the global classpath
+							(that is, in the "<code>lib/</code>" directory).
+							These APIs are available to all deployed applications, services and components. The JCR API contains
+							the "<code>javax.jcr</code>" packages and has no other dependencies. ModeShape's extensions
+							define interfaces in the "<code>org.modeshape.jcr.api</code>" packages; these extend a few of the standard
+							JCR API interfaces and add several methods to make them more useful.
+						</para>
+					</listitem>
+					<listitem>
+						<para>The ModeShape Service, represented as an exploded JAR file in the "<code>deploy</code>" directory.
+							This is where the &JcrEngine; is running, though any application (or other JBoss service)
+							can access its JCR Repository instances using the standard &RepositoryFactory; approach (covered in the
+							<link linkend="obtaining_jcr_repository">next chapter</link>) with JNDI URLs:
+						</para>
+				    <programlisting> jndi:jcr/local?repositoryName=&defaultJBossASRepository;</programlisting>
+						<para>
+							By default, there is a single in-memory repository named "&defaultJBossASRepository;", but this 
+							can be changed by simply editing the "<code>deploy/modeshape-services.jar/managedConfigRepository.xml</code>" 
+							configuration file. All of ModeShape's standard sequencers and connectors (and JARs for their dependencies)
+							are included, meaning they can be configured for use without worrying about adding JARs to the classpath.
+							Feel free to remove any of the JARs are not needed for your custom configuration.
+						</para>
+					</listitem>
+					<listitem>
+						<para>A pair of JAAS properties files, located in the "<code>conf/props/</code>" directory, that come
+							out of the box with an "admin" user (with password "admin") that has full read, write, and
+							administration privileges, and a "guest" user (with password "guest") that has only
+							read and write privileges. Simply edit these files to change users, passwords, and roles,
+							or to configure JAAS differently.
+						</para>
+					</listitem>
+					<listitem>
+						<para>The ModeShape RESTful API, represented as an exploded WAR file in the "<code>deploy</code>" directory.
+							This allows remote applications to interact with ModeShape to access and manipulate repository content
+							using a RESTful API that uses JSON in the requests and responses. All ModeShape repositories
+							can be accessed, and authentication is done using the ModeShape JAAS configuration.
+						</para>
+					</listitem>
+					<listitem>
+						<para>The ModeShape WebDAV API, represented as an exploded WAR file in the "<code>deploy</code>" directory.
+							This web application allows external clients to access and manipulate the content in the 
+							ModeShape repositories using the standard WebDAV protocol. For example, you can mount
+							a repository (or parts of it) as a network drive on most operating systems, and then upload
+							or download files and folders using standard OS operations and graphical tools. All ModeShape repositories
+							can be accessed, and authentication is done using the ModeShape JAAS configuration.
+						</para>
+					</listitem>
+					<listitem>
+						<para>A plugin for the embedded JBoss AS console, represented as a WAR file in the "deploy" directory.
+							This plugin also works with <ulink url="http://support.rhq-project.org/display/RHQ/Home">RHQ</ulink>/
+							<ulink url="http://jboss.org/jopr">JOPR</ulink> administration, monitoring, alerting, operational
+							control and configuration system. <emphasis role="strong">This feature is currently incomplete,
+							but is undergoing active development.</emphasis>
+						</para>
+					</listitem>
+					<listitem>
+						<para>
+							A JDBC driver for querying the repositories through JDBC. This driver is on the global
+							classpath so it can be used in any deployed component. A single JDBC DataSource is
+							also configured in the "<code>deploy/modeshape-services.jar/modeshape-jdbc-ds.xml</code>" 
+							file to use the single default in-memory repository available out of the box. Simply edit
+							this file to add or change the DataSource definitions.
+						</para>
+					</listitem>
+				</itemizedlist>
+				Here are the contents of this file:
 			</para>
-		</sect2>
-		<sect2 id="modeshape_and_jndi_configuring">
-			<title>Configuring JCR and JNDI</title>
+<programlisting>
+conf/
+conf/props/
+conf/props/modeshape-roles.properties  
+conf/props/modeshape-users.properties  
+lib/
+lib/jcr-2.0.jar         
+lib/modeshape-jcr-api-&versionNumber;.jar  
+lib/modeshape-jdbc-&versionNumber;.jar  
+deploy/
+deploy/modeshape-jboss-beans.xml  
+deploy/modeshape-services.jar/
+deploy/modeshape-services.jar/META-INF/
+deploy/modeshape-services.jar/google-collections-1.0.jar  
+deploy/modeshape-services.jar/joda-time-1.6.jar  
+deploy/modeshape-services.jar/lucene-analyzers-3.0.0.jar  
+deploy/modeshape-services.jar/lucene-core-3.0.0.jar  
+deploy/modeshape-services.jar/lucene-regex-3.0.0.jar  
+deploy/modeshape-services.jar/lucene-snowball-3.0.0.jar  
+deploy/modeshape-services.jar/managedConfigRepository.xml  
+deploy/modeshape-services.jar/META-INF/jboss-beans.xml  
+deploy/modeshape-services.jar/modeshape-cnd-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-common-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-connector-filesystem-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-connector-infinispan-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-connector-jbosscache-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-connector-jcr-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-connector-jdbc-metadata-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-connector-store-jpa-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-connector-svn-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-graph-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-jbossas-service-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-jcr-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-jdbc-ds.xml  
+deploy/modeshape-services.jar/modeshape-repository-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-search-lucene-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-sequencer-classfile-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-sequencer-cnd-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-sequencer-ddl-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-sequencer-java-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-sequencer-jbpm-jpdl-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-sequencer-text-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-sequencer-xml-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-sequencer-zip-&versionNumber;.jar  
+deploy/modeshape-rest.war/
+deploy/modeshape-rest.war/META-INF/
+deploy/modeshape-rest.war/WEB-INF/
+deploy/modeshape-rest.war/WEB-INF/lib/
+deploy/modeshape-rest.war/META-INF/MANIFEST.MF  
+deploy/modeshape-rest.war/WEB-INF/jboss-web.xml  
+deploy/modeshape-rest.war/WEB-INF/lib/jaxrs-api-1.2.1.GA.jar  
+deploy/modeshape-rest.war/WEB-INF/lib/jettison-1.1.jar  
+deploy/modeshape-rest.war/WEB-INF/lib/modeshape-jcr-&versionNumber;.jar  
+deploy/modeshape-rest.war/WEB-INF/lib/modeshape-web-jcr-&versionNumber;.jar  
+deploy/modeshape-rest.war/WEB-INF/lib/modeshape-web-jcr-rest-&versionNumber;.jar  
+deploy/modeshape-rest.war/WEB-INF/lib/resteasy-jaxb-provider-1.2.1.GA.jar  
+deploy/modeshape-rest.war/WEB-INF/lib/resteasy-jaxrs-1.2.1.GA.jar  
+deploy/modeshape-rest.war/WEB-INF/lib/resteasy-jettison-provider-1.2.1.GA.jar  
+deploy/modeshape-rest.war/WEB-INF/lib/scannotation-1.0.2.jar  
+deploy/modeshape-rest.war/WEB-INF/web.xml  
+deploy/modeshape-webdav.war/
+deploy/modeshape-webdav.war/WEB-INF/
+deploy/modeshape-webdav.war/WEB-INF/lib/
+deploy/modeshape-webdav.war/WEB-INF/jboss-web.xml  
+deploy/modeshape-webdav.war/WEB-INF/lib/aperture-1.1.0.Beta1.jar  
+deploy/modeshape-webdav.war/WEB-INF/lib/modeshape-jcr-&versionNumber;.jar  
+deploy/modeshape-webdav.war/WEB-INF/lib/modeshape-mimetype-detector-aperture-&versionNumber;.jar  
+deploy/modeshape-webdav.war/WEB-INF/lib/modeshape-web-jcr-&versionNumber;.jar  
+deploy/modeshape-webdav.war/WEB-INF/lib/modeshape-web-jcr-webdav-&versionNumber;.jar  
+deploy/modeshape-webdav.war/WEB-INF/lib/webdav-servlet-2.0.jar  
+deploy/modeshape-webdav.war/WEB-INF/web.xml  
+deploy/admin-console.war/
+deploy/admin-console.war/plugins/
+deploy/admin-console.war/plugins/modeshape-jbossas-console-&versionNumber;.jar  
+</programlisting>
+    <para>
+	    Your web application or JBoss service can use one of the JCR &Repository; instances running inside the ModeShape service
+	    by simply using the &RepositoryFactory; technique described <link linkend="repository_factory">earlier</link>, with a
+	    URL such as:
+		</para>
+    <programlisting> jndi:jcr/local?repositoryName=&defaultJBossASRepository;</programlisting>
+    <para>
+	    Be sure to use the correct repository name.
+	  </para>
+	  <para>
+		  Since the JCR API JAR is on the global classpath, your web application can use the JCR API without
+		  having to include the JAR file in your application's WAR file. In fact, your application will likely
+		  get ClassCastExceptions if it does include the JCR API in its WAR file.
+		  Plus, if needed, your application can use ModeShape's "<code>org.modeshape.jcr.api</code>" extensions to the JCR API
+		  (again, on the global classpath), and should not need or use any of the classes or interfaces in the ModeShape implementation.
+	  </para>
+    </sect2>
+		<sect2 id="deloying_modeshape_to_tomcat">
+			<title>Deploying ModeShape to Tomcat</title>
 			<para>
 				Each kind of web server or application server is different, but all servlet containers do provide a way of configuring
 				objects and placing them into JNDI.  ModeShape provides a &JndiRepositoryFactory; class that implements &ObjectFactory;
@@ -771,15 +957,13 @@ try {
 					<listitem>
 						<para>
 							<emphasis role="strong"><code>configFile</code></emphasis> is the path to the 
-							<link linkend="loading_from_file">configuration file</link>.  ModeShape will first treat the value of this
-							property as a resource name and attempt to load it from the classpath.  If no resource can be found with that name, 
-							ModeShape will assume that it is supposed to be a filename (with or without a path) and load it from the filesystem.
+							<link linkend="loading_from_file">configuration file</link> resource, which must be available on the classpath
 						</para>
 					</listitem>
 					<listitem>
 						<para>
 							<emphasis role="strong"><code>repositoryName</code></emphasis> is the name of a JCR repository that exists
-							in the &JcrConfiguration; and that will be made available by this JNDI entry
+							in the JCR configuration and that will be made available by this JNDI entry
 						</para>
 					</listitem>
 				</itemizedlist>
@@ -800,7 +984,7 @@ try {
 			<para>
 				Before the server can start, however, all of the ModeShape jars need to be placed on the classpath for the server.
 				JAAS also needs to be configured, and this can be done using the application server's configuration or in your
-				web application if you're using a simple servlet container.
+				web application if you're using a simple servlet container. For more details, see the &ReferenceGuide;.
 			</para>
 			<note>
 				<para>
@@ -823,22 +1007,19 @@ try {
 				<code>&lt;Resource></code> tag in the <code>context.xml</code> described above.  This is a must.
 			</para>
 			<para>
-				At this point, your web application can perform the lookup of the &Repository; object, create and use a &Session;,
-				and then close the &Session;.  Here's an example of a JSP page that does this:
+				At this point, your web application can perform the lookup of the &Repository; object by using JNDI directly
+				(or the more standard &RepositoryFactory; technique shown in the <link linkend="obtaining_jcr_repository">next chapter</link>), 
+				create and use a &Session;, and then close the &Session;.  Here's an example of a JSP page that does this:
 			</para>
-<programlisting role="JAVA"><![CDATA[<%@ page import="
-	javax.naming.*,
-	javax.jcr.*,
-	org.jboss.security.config.IDTrustConfiguration
-	" %>
+<programlisting role="JAVA"><![CDATA[
+<%@ page import="javax.naming.*, javax.jcr.*, org.jboss.security.config.IDTrustConfiguration" %>
 <%!
 
 static {
 	// Initialize IDTrust
-	String configFile = "security/jaas.conf.xml";
 	IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
 	try {
-	    idtrustConfig.config(configFile);
+	    idtrustConfig.config("security/jaas.conf.xml");
 	} catch (Exception ex) {
 	    throw new IllegalStateException(ex);
 	}
@@ -865,14 +1046,13 @@ try {
 				Since this uses a servlet container, there is no JAAS implementation configured, so note the 
 				loading of IDTrust to create the JAAS realm.  (To make this work in Tomcat, the security
 				folder that contains the <code>jaas.conf.xml</code>, <code>users.properties</code>, and
-				<code>roles.properties</code> needs to be moved into the <code>%CATALINA_HOME%</code> directory.
-				Moving the security folder into the <code>conf</code> directory does not allow those files
-				to be visible to the JSP page.)
+				<code>roles.properties</code> needs to be moved into the <code>%CATALINA_HOME%</code> directory.)
 			</para>
 			<note>
 				<para>
-				If you use an application server such as <ulink url="http://www.jboss.com/products/platforms/application/">JBoss EAP</ulink>,
-				you could just configure the JAAS realm as part of the server configuration and be done with it.
+				If you deploy your application to JBoss AS or EAP and deploy 
+				<link linkend="deploying-modeshape-to-jbossas">ModeShape as a service</link>, your application
+				doesn't have to do anything with JAAS, since that's provided by the platform.
 			  </para>
 			</note>
 		</sect2>

@@ -578,6 +578,21 @@ ORDER BY nodeSet1.title,
 		  (and more SQL-like) <link linkend="jcr-sql2-query-language">JCR-SQL2</link> language, which is covered in the next section.
 		</para>
 		<para>
+			The JCR 2.0 specification defines how nodes in a repository are mapped onto relational tables queryable through a
+			SQL-like language, including JCR-SQL and <link linkend="jcr-sql-query-language">JCR-SQL2</link>. 
+			Basically, each node type is mapped as a relational view with a single column for each
+			of the node type's (non-residual) property definitions. Conceptually, each node in the repository then appears as a record inside
+			the view corresponding to the node type for which "<code>Node.isNodeType(nodeTypeName)</code>" would return true.
+		</para>
+		<para>
+			Since each node likely returns true from this method for multiple node type (e.g., the primary node type, the mixin types,
+			and all supertypes of the primary and mixin node types), all nodes will likely appear as records in multiple views.
+			And since each view only exposes those properties defined by (or inherited by) the corresponding node type,
+			a full picture of a node will likely require joining the views for multiple node types. This special kind of join,
+			where the nodes have the same identity on each side of the join, is referred to as an identity join, and is
+			handled very efficiently by ModeShape.
+		</para>
+		<para>
 		  ModeShape includes support for the JCR-SQL language, and adds several extensions to make it even more powerful and useful:
       <itemizedlist>
         <listitem>

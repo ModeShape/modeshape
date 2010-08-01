@@ -249,7 +249,7 @@
             interfaces that extend the JCR 2.0 API's Query Object Model with additional behavior, including more criteria options
             (such as &Between;, &NodeDepth;, &NodePath;, &ReferenceValue;), a formal &Limit; clause, and a &SetQuery; for unions, intersects,
             and difference queries.
-            This module is very small and is only dependent upon the JCR API, and ModeShape is designed so that client applications can depend
+            This module is very small, only depends upon the JCR API, and was designed so that client applications can depend
             only upon this module without having to depend on the <code>modeshape-jcr</code> interfaces or its dependencies.
             For example, this module defines a &Repositories; interface that defines a way to look up <code>javax.jcr.Repository</code> 
             instances by name, and that is implemented by the ModeShape <code>JcrEngine</code>, allowing client applications to
@@ -530,6 +530,49 @@
           </para>
         </listitem>
       </itemizedlist>
+      New in ModeShape 2.1 is the modules defining the components used to 
+			<link linkend="deloying_modeshape_to_jbossas">deploy ModeShape in JBoss AS or EAP</link> as a
+  		full-fledged, central, shared service that can be monitored and administered using the embedded console
+			and used directly by web applications deployed to the application server.
+		</para>
+		<note>
+			<para>
+				This JBoss AS deployment mechanism is considered a "technology preview", meaning that it may undergo fairly significant
+				changes in the next few releases. We're pretty proud of the level of integration with JBoss AS, however,
+				so we do encourage you to try it and give us your feedback.
+			</para>
+		</note>
+		<para>
+			The modules that make up the JBoss AS deployment kit are located in the source under the "<code>deploy/jbossas</code> directory":
+      <itemizedlist>
+        <listitem>
+          <para>
+            <emphasis role="strong">modeshape-jbossas-service</emphasis>
+						provides several components that are deployed through the microcontainer in JBoss AS, registered
+						in JNDI, and exposed through the Profile Service for monitoring and management.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">modeshape-jbossas-console</emphasis>
+						defines the plugin for <ulink url="http://support.rhq-project.org/display/RHQ/Home">RHQ</ulink>/
+						<ulink url="http://jboss.org/jopr">JOPR</ulink> that enables administration, monitoring, alerting, operational
+						control and configuration.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">modeshape-jbossas-web-rest-war</emphasis>
+						defines a variant of the more general <code>modeshape-web-rest-war</code> that is tailored for deployment on JBoss AS.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">modeshape-jbossas-web-webdav-war</emphasis>
+						defines a variant of the more general <code>modeshape-web-webdav-war</code> that is tailored for deployment on JBoss AS.
+          </para>
+        </listitem>
+      </itemizedlist>
       There are also modules for ModeShape's documentation (located in the source under the
       <code>docs/</code>
       directory):
@@ -557,14 +600,22 @@
           </para>
         </listitem>
       </itemizedlist>
-      Another module provides a utility to generate DDL for a variety of database management systems. This module is likely
-      not used in client applications, but rather used during development to generate the desired DDL.
+      There are several utility modules:
       <itemizedlist>
         <listitem>
           <para>
             <emphasis role="strong">modeshape-jpa-ddl-gen</emphasis> provides a standalone utility that can generate the DDL
 						for the database schema used by the JPA connector. Because it uses Hibernate, it can generate DDL for any
-						of the databases that the connector can use.
+						of the databases that the connector can use. This is likely used during development and not during runtime
+						in client applications.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <emphasis role="strong">modeshape-jdbc</emphasis> provides a JDBC driver implementation that allows JDBC clients 
+						to query the contents of a JCR repository using <link linkend="jcr-sql2-query-language">JCR-SQL2</link>. 
+						The driver even supports JDBC metadata, so client applications can dynamically discover the tables and columns available for querying
+						(which are determined from the node types).
           </para>
         </listitem>
       </itemizedlist>

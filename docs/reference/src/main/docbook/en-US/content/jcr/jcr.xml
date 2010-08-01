@@ -434,21 +434,22 @@ Session session = repository.login(credentials,workspaceName);
 			<title>Using JNDI URLs</title>
 			<para>
 				The previous section showed how to use a URL to a configuration file to start a new ModeShape instance. However, 
-				ModeShape can be deployed and managed as a central, shared service in a variety of environments, including 
-				<ulink url="http://jboss.org/jbossas">JBoss AS</ulink> and <ulink url="http://www.jboss.com/products/platforms/application/">EAP</ulink>.
+				ModeShape can be deployed and managed as a <link linkend="modeshape_in_web_applications">central, shared service</link>
+				in a variety of environments, including <ulink url="http://jboss.org/jbossas">JBoss AS</ulink> and 
+				<ulink url="http://www.jboss.com/products/platforms/application/">EAP</ulink>.
 				Since a single ModeShape instance can manage multiple repositories, using a single shared instance will have a smaller
 				footprint than multiple ModeShape instances each running a single repository. Plus, the central ModeShape instance
 				can be configured, monitored, administered, and managed without requiring each application to perform these functions.
 			</para>
 			<para>
 				The easiest and most common way for applications to find and reuse this central, shared ModeShape service is to
-				use JNDI. ModeShape's &RepositoryFactory; implementation accept "<code>jndi:</code>" URLs instead of the file-based
+				use JNDI. ModeShape's &RepositoryFactory; implementation accepts "<code>jndi:</code>" URLs instead of the file-based
 				URL described in the previous chapter. The format of these JNDI URLs is:
 			</para>
 			<programlisting><![CDATA[ jndi:name/in/jndi?repositoryName=MyRepository ]]></programlisting>
 		  <para>
-			  The RepositoryFactory will look for a ModeShape engine registered "<code>name/in/jndi</code>" in JNDI, and
-			  will ask the engine for the &Repository; instance with the name "<code>MyRepository</code>". Note that
+			  The RepositoryFactory will look for a ModeShape engine registered in JNDI at "<code>name/in/jndi</code>", and
+			  will ask that engine for the &Repository; instance with the name "<code>MyRepository</code>". Note that
 			  when a JNDI URL is used, RepositoryFactory is will never create its own ModeShape engine instance: if none
 			  can be found in JNDI, the RepositoryFactory will simply return null.
 			</para>
@@ -462,11 +463,19 @@ Session session = repository.login(credentials,workspaceName);
 		<sect2>
 			<title>Cleaning Up after JcrRepositoryFactory</title>
 			<para>
-				As a <link linkend="jcr_repository_factory_from_file">preceding section</link> notes, it is possible for the &JcrRepositoryFactory; 
-				to create one or more &JcrEngine; instances.  Although the <ulink url="&JSR283;">JSR-283</ulink> specification does not specify a 
-				way to shutdown engines or repositories created as a side effect of &RepositoryFactory; use, ModeShape has an extension to the
-				<ulink url="&JSR283;">JSR-283</ulink> API that provides this capability. Simply obtain your Repository instance as usual,
-				but keep a reference to the &RepositoryFactory; that successfully returns the &Repository;:
+				If your application uses &RepositoryFactory; with a ModeShape URL pointing to a configuration file,
+				the &RepositoryFactory; creates an embedded ModeShape engine (or several, if multiple configuration files are used)
+				that maintains a serious of connections, thread pools, and other resources. In these cases, your application should shutdown ModeShape
+				so that it can properly release all accumulated resources.
+			</para>
+			<para>
+				The <ulink url="&JSR283;">JSR-283</ulink> specification does not specify a standard way to shutdown engines or repositories 
+				created as a side effect of &RepositoryFactory;, so ModeShape has an extension to the <ulink url="&JSR283;">JSR-283</ulink> API 
+				that provides this capability.
+			</para>
+			<para>
+	      When you obtain your Repository instance using the ServiceLoader mechanism described earlier, keep a reference to the
+				&RepositoryFactory; that returns a non-null &Repository;:
 			</para>
     <programlisting role="JAVA"><![CDATA[Map<String,String> parameters = ...
 Repository repository = null;
@@ -479,16 +488,16 @@ for (RepositoryFactory aFactory : ServiceLoader.load(RepositoryFactory.class)) {
     }
 }]]></programlisting>
       <para>
-				When your application is finished and ready for ModeShape to shutdown and release all accumulated resources, 
-				simply check whether the factory implements ModeShape's API extension:
+	      Save this reference where your application's shutdown code can access it, then when your application is terminating,
+				check the type of the factory, cast to the ModeShape extension, and call the "<code>shutdown()</code>" method:
       </para>
     <programlisting role="JAVA"><![CDATA[if ( factory instanceof org.modeshape.jcr.api.RepositoryFactory ) {
     ((org.modeshape.jcr.api.RepositoryFactory)factory).shutdown();
 }]]></programlisting>
       <para>
-				This call to <code>shutdown(...)</code> instructs each of the &JcrEngine; instances to shutdown gracefully,
-				and then returns immediately (without waiting for any of them to complete the shutdown process).
-				If you'd rather block while the engines do shutdown, simply supply the timeout:
+				This call to <code>shutdown(...)</code> instructs each of the &JcrEngine; instances created by the factory
+				to shutdown gracefully and return immediately (without waiting for any of them to complete the shutdown process).
+				If you'd rather block while the engines perform their shutdown, simply supply a timeout:
       </para>
     <programlisting role="JAVA"><![CDATA[if ( factory instanceof org.modeshape.jcr.api.RepositoryFactory ) {
     ((org.modeshape.jcr.api.RepositoryFactory)factory).shutdown(30,TimeUnit.SECONDS);
@@ -507,10 +516,50 @@ for (RepositoryFactory aFactory : ServiceLoader.load(RepositoryFactory.class)) {
 			to run one or more JCR repositories and managing the underlying repository sources, the pools of connections to the sources, the sequencers,
 			the MIME type detector(s), and the &Repository; implementations.
 		</para>
+		<note>
+			<para>
+				If your application uses the &RepositoryFactory;, then you can proceed to the <link linkend="jcr-sessions">next section</link>.
+			</para>
+		</note>
 		<para>
-			Creating a new &JcrEngine; instance is very easy if you already have a valid &JcrConfiguration; instance as
-			described in the <link linkend="jcr_configuration">previous chapter</link>.  Once you have a valid &JcrConfiguration;
-			instance, all you have to do is build and start the engine:
+			The first step to programmatically instantiating a ModeShape &JcrEngine; is to define a configuration file as described
+			in the <link linkend="jcr_configuration">previous chapter</link>. Then, load that configuration file and check
+			for problems:
+		</para>
+   	<programlisting role="JAVA"><![CDATA[JcrConfiguration config = new JcrConfiguration();
+configuration.loadFrom(file);
+if ( !configuration.getProblems().isEmpty() ) {
+    for ( Problem problem : configuration.getProblems() ) {
+        // Report these problems!
+    }
+}]]></programlisting>
+		<para>
+			where the <code>file</code> parameter can actually be a &File; instance, a &URL; to the file, an &InputStream; 
+			containing the contents of the file, or a &String; containing the path to the configuration file.
+		</para>
+		<note>
+			<para>The <code>loadFrom(...)</code> method can be called any number of times, but each time it is called it completely wipes
+			  out any current notion of the configuration and replaces it with the configuration found in the file.
+			</para>
+		</note>
+		<para>
+			There is an optional second parameter that defines the &Path; within the configuration file identifying the parent node of the various
+			configuration nodes.  If not specified, it assumes "/".  This makes it possible for the configuration content to be
+			located at a different location in the hierarchical structure.  (This is not often required, but it is very useful
+			if you ModeShape configuration file is embedded within another XML file.)
+		</para>
+		<note>
+			<para>
+				If your application is coding against the ModeShape classes, you may also consider 
+				<link linkend="programmatic_configuration">programmatically creating the configuration</link>. 
+				This is useful when you cannot predefine a configuration, but instead have to build one based upon
+				some parameters known only at runtime. Of course, you can always create the configuration programmatically,
+				write that configuration out to a file, and then load the configuration using the standard &RepositoryFactory;
+				mechanism.
+			</para>
+		</note>
+		<para>
+			Once you have a valid &JcrConfiguration; instance with no errors, you can build and start the &JcrEngine;:
 		</para>
     <programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...

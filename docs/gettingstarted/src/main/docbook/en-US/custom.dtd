@@ -41,6 +41,8 @@
 <!ENTITY Java									"http://java.sun.com/javase/6/docs/api/">
 <!ENTITY JcrApi               "http://www.day.com/maven/javax.jcr/javadocs/jcr-2.0/">
 
+<!ENTITY defaultJBossASRepository  		"mode:repository">
+
 <!ENTITY GettingStarted           		"<ulink url='&DocHome;/&versionNumber;/manuals/gettingstarted/html/index.html'>Getting Started</ulink>">
 <!ENTITY ReferenceGuide           		"<ulink url='&DocHome;/&versionNumber;/manuals/reference/html/index.html'>Reference Guide</ulink>">
 
