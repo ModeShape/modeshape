@@ -86,6 +86,11 @@
         
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-classfile</artifactId>
+                <version>${project.version}</version>
+            </dependency>          
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-cnd</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -96,9 +101,9 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-text</artifactId>
+                <artifactId>modeshape-sequencer-images</artifactId>
                 <version>${project.version}</version>
-            </dependency>    
+            </dependency>                
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-java</artifactId>
@@ -111,6 +116,21 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-mp3</artifactId>
+                <version>${project.version}</version>
+            </dependency>  
+             <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-msoffice</artifactId>
+                <version>${project.version}</version>
+            </dependency>    
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-text</artifactId>
+                <version>${project.version}</version>
+            </dependency>            
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-xml</artifactId>
                 <version>${project.version}</version>
             </dependency>   
@@ -118,9 +138,7 @@
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-zip</artifactId>
                 <version>${project.version}</version>
-            </dependency>    
-            
-            
+            </dependency>                  
              <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-connector-filesystem</artifactId>
