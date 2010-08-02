@@ -578,6 +578,7 @@ public final class JsonRestClient implements IRestClient {
         String dir_loc = null;
         String user = "admin";
         String pwd = "admin";
+        String repo_name = null;
 
         boolean publish = true;
 
@@ -587,7 +588,7 @@ public final class JsonRestClient implements IRestClient {
             if (arg.equals(SERVER_PARM)) {
                 server_name = args[pos + 1];
             } else if (arg.equals(REPO_PARM)) {
-                repo_name = args[pos + 1];
+            	repo_name = args[pos + 1];
             } else if (arg.equals(WORKSPACENAME_PARM)) {
                 workspace_name = args[pos + 1];
             } else if (arg.equals(WORKSPACEPATH_PARM)) {
