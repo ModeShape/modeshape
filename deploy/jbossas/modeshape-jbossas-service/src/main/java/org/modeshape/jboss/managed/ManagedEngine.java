@@ -23,7 +23,6 @@
  */
 package org.modeshape.jboss.managed;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -50,20 +49,18 @@ import org.modeshape.jcr.JcrRepository;
  */
 @Immutable
 @ManagementObject(isRuntime=true, name = "ModeShapeEngine", description = "A ModeShape engine", componentType = @ManagementComponent( type = "ModeShape", subtype = "Engine" ), properties = ManagementProperties.EXPLICIT )
-public final class ManagedEngine implements ModeShapeManagedObject, Serializable {
+public final class ManagedEngine implements ModeShapeManagedObject {
 
 	
- 	private static final long serialVersionUID = 1051810242700979633L;
-
-    /**
+ 	/**
      * The ModeShape object being managed and delegated to (never <code>null</code>).
      */
-    private transient JcrEngine engine;
+    private JcrEngine engine;
 
     /**
      * The managed object of the sequencing service of the engine.
      */
-    private transient ManagedSequencingService sequencingService;
+    private ManagedSequencingService sequencingService;
     
     public ManagedEngine() {
         this.engine = null;
