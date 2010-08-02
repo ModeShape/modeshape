@@ -105,7 +105,7 @@ import org.modeshape.graph.property.basic.LocalNamespaceRegistry;
  * </p>
  */
 @NotThreadSafe
-abstract class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
+class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
 
     private static final Map<String, Integer> PROPERTY_TYPE_VALUES_FROM_NAME;
 
@@ -321,6 +321,7 @@ abstract class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
                 NodeTypeDefinition nodeType = nodeTypeFrom(nodeTypeNode, nodeTypeSubgraph);
                 results.add(nodeType);
             } catch (ConstraintViolationException e) {
+                e.printStackTrace();
                 String resource = stringFactory.create(locationOfParentOfNodeTypes.getPath());
                 problems.addError(e, JcrI18n.errorImportingNodeTypeContent, resource, e.getMessage());
             }
@@ -373,6 +374,8 @@ abstract class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
                                                 JcrLexicon.ON_PARENT_VERSION,
                                                 OnParentVersionAction.nameFromValue(OnParentVersionAction.COPY));
         int onParentVersion = OnParentVersionAction.valueFromName(onParentVersionName);
+
+        String requiredTypeName = readString(propertyDefinitionNode, JcrLexicon.REQUIRED_TYPE, null);
         int requiredType = PROPERTY_TYPE_VALUES_FROM_NAME.get(readString(propertyDefinitionNode, JcrLexicon.REQUIRED_TYPE, null));
 
         boolean mandatory = readBoolean(propertyDefinitionNode, JcrLexicon.MANDATORY, false);
@@ -386,7 +389,9 @@ abstract class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
         List<String> queryOps = readStrings(propertyDefinitionNode, JcrLexicon.QUERY_OPERATORS);
 
         PropertyDefinitionTemplate template = new JcrPropertyDefinitionTemplate(context);
-        template.setName(name);
+        if (name != null) {
+            template.setName(name);
+        }
         template.setAutoCreated(autoCreated);
         template.setMandatory(mandatory);
         template.setMultiple(multiple);
@@ -420,7 +425,9 @@ abstract class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
         List<String> requiredTypes = readStrings(childNodeDefinitionNode, JcrLexicon.REQUIRED_PRIMARY_TYPES);
 
         NodeDefinitionTemplate template = new JcrNodeDefinitionTemplate(context);
-        template.setName(childNodeName);
+        if (childNodeName != null) {
+            template.setName(childNodeName);
+        }
         template.setAutoCreated(autoCreated);
         template.setMandatory(mandatory);
         template.setSameNameSiblings(allowsSns);
@@ -541,15 +548,17 @@ abstract class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
     /**
      * Method that loads into the graph destination the content containing the node type definitions.
      * 
-     * @param graphDestination
-     * @param path
-     * @param content
-     * @param resourceName
+     * @param graphDestination the destination to which the node type content should be written; never null
+     * @param path the path within the destination at which the node type content should be rooted; never null
+     * @param content the content containing some string representation of the node types to be imported; never null
+     * @param resourceName a descriptive name for this import (used only for error messages); may be null
      * @throws Exception if there is a problem importing from the content; this will be automatically recorded in the problems
      */
-    protected abstract void importFrom( Destination graphDestination,
-                                        Path path,
-                                        String content,
-                                        String resourceName ) throws Exception;
+    protected void importFrom( Destination graphDestination,
+                               Path path,
+                               String content,
+                               String resourceName ) throws Exception {
+        throw new UnsupportedOperationException();
+    }
 
 }

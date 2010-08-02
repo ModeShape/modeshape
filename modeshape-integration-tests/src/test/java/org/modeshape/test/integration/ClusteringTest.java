@@ -25,7 +25,9 @@ package org.modeshape.test.integration;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
@@ -34,10 +36,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
+import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.nodetype.NodeDefinitionTemplate;
+import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.NodeTypeTemplate;
+import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
@@ -51,6 +59,7 @@ import org.modeshape.connector.store.jpa.JpaSource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.ModeShapeRoles;
+import org.modeshape.jcr.NodeTypeAssertion;
 import org.modeshape.jcr.JcrRepository.Option;
 
 public class ClusteringTest {
@@ -62,7 +71,7 @@ public class ClusteringTest {
     private static List<Session> sessions = new ArrayList<Session>();
 
     @BeforeClass
-    public static void beforeEach() throws Exception {
+    public static void beforeAll() throws Exception {
         // Delete the database files, if there are any ...
         FileUtil.delete("target/db");
 
@@ -293,6 +302,88 @@ public class ClusteringTest {
         assertThat(session1.getNode(path).getProperty(propName).getString(), is(propValue));
         assertThat(session2.getNode(path).getProperty(propName).getString(), is(propValue));
         assertThat(session3.getNode(path).getProperty(propName).getString(), is(propValue));
+    }
+
+    @Test
+    public void shouldPropagateTypeUnregistrationAcrossCluster() throws Exception {
+        Session session1 = sessionFrom(engine1);
+        Session session2 = sessionFrom(engine2);
+        Session session3 = sessionFrom(engine3);
+
+        NodeTypeManager typeManager1 = session1.getWorkspace().getNodeTypeManager();
+        NodeTypeManager typeManager2 = session2.getWorkspace().getNodeTypeManager();
+        NodeTypeManager typeManager3 = session3.getWorkspace().getNodeTypeManager();
+
+        final String NODE_TYPE_NAME = "nt:file";
+
+        typeManager1.unregisterNodeType(NODE_TYPE_NAME);
+        assertFalse(typeManager1.hasNodeType(NODE_TYPE_NAME));
+
+        for (int i = 0; i < 50; i++) {
+            try {
+                if (!typeManager2.hasNodeType(NODE_TYPE_NAME) && !typeManager3.hasNodeType(NODE_TYPE_NAME)) break;
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                return;
+            }
+        }
+
+        assertFalse(typeManager2.hasNodeType(NODE_TYPE_NAME));
+        assertFalse(typeManager3.hasNodeType(NODE_TYPE_NAME));
+    }
+
+    @SuppressWarnings( "unchecked" )
+    @Test
+    public void shouldPropagateTypeRegistrationAcrossCluster() throws Exception {
+        Session session1 = sessionFrom(engine1);
+        Session session2 = sessionFrom(engine2);
+        Session session3 = sessionFrom(engine3);
+
+        NodeTypeManager typeManager1 = session1.getWorkspace().getNodeTypeManager();
+        NodeTypeManager typeManager2 = session2.getWorkspace().getNodeTypeManager();
+        NodeTypeManager typeManager3 = session3.getWorkspace().getNodeTypeManager();
+
+        final String NODE_TYPE_NAME = "mode:newType";
+        NodeTypeTemplate nodeType = typeManager1.createNodeTypeTemplate();
+        nodeType.setName(NODE_TYPE_NAME);
+        nodeType.setMixin(true);
+        nodeType.setDeclaredSuperTypeNames(new String[] {"mix:referenceable"});
+        nodeType.setOrderableChildNodes(true);
+        nodeType.setQueryable(true);
+
+        PropertyDefinitionTemplate prop = typeManager1.createPropertyDefinitionTemplate();
+        prop.setName("prop");
+        prop.setAvailableQueryOperators(new String[] {"="});
+        prop.setMultiple(true);
+        prop.setRequiredType(PropertyType.STRING);
+        nodeType.getPropertyDefinitionTemplates().add(prop);
+
+        NodeDefinitionTemplate child = typeManager1.createNodeDefinitionTemplate();
+        child.setName("child");
+        child.setSameNameSiblings(true);
+        nodeType.getNodeDefinitionTemplates().add(child);
+
+        typeManager1.registerNodeType(nodeType, false);
+        assertTrue(typeManager1.hasNodeType(NODE_TYPE_NAME));
+        NodeType nodeType1 = typeManager1.getNodeType(NODE_TYPE_NAME);
+
+        for (int i = 0; i < 50; i++) {
+            try {
+                if (typeManager2.hasNodeType(NODE_TYPE_NAME) && typeManager3.hasNodeType(NODE_TYPE_NAME)) break;
+                Thread.sleep(100);
+            } catch (InterruptedException ie) {
+                return;
+            }
+        }
+
+        assertTrue(typeManager2.hasNodeType(NODE_TYPE_NAME));
+        assertTrue(typeManager3.hasNodeType(NODE_TYPE_NAME));
+
+        NodeTypeTemplate template2 = typeManager2.createNodeTypeTemplate(typeManager2.getNodeType(NODE_TYPE_NAME));
+        NodeTypeTemplate template3 = typeManager3.createNodeTypeTemplate(typeManager3.getNodeType(NODE_TYPE_NAME));
+
+        NodeTypeAssertion.compareTemplateToNodeType(template2, nodeType1);
+        NodeTypeAssertion.compareTemplateToNodeType(template3, nodeType1);
     }
 
     // ----------------------------------------------------------------------------------------------------------------

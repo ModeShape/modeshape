@@ -299,7 +299,7 @@ public class JcrRepository implements Repository {
         /**
          * The default value for the {@link Option#PROJECT_NODE_TYPES} option is {@value} .
          */
-        public static final String PROJECT_NODE_TYPES = Boolean.FALSE.toString();
+        public static final String PROJECT_NODE_TYPES = Boolean.TRUE.toString();
 
         /**
          * The default value for the {@link Option#JAAS_LOGIN_CONFIG_NAME} option is {@value} .
@@ -416,10 +416,6 @@ public class JcrRepository implements Repository {
     private final RepositoryObservationManager repositoryObservationManager;
     private final SecurityContext anonymousUserContext;
     private final QueryParsers queryParsers;
-    /**
-     * Immutable collection of objects observing changes to the system graph
-     */
-    private final Collection<JcrSystemObserver> jcrSystemObservers;
 
     // Until the federated connector supports queries, we have to use a search engine ...
     private final RepositoryQueryManager queryManager;
@@ -557,10 +553,17 @@ public class JcrRepository implements Repository {
         }
 
         // Set up the repository type manager ...
+        Path parentOfTypeNodes = null;
+
+        if (Boolean.valueOf(this.options.get(Option.PROJECT_NODE_TYPES))) {
+            parentOfTypeNodes = pathFactory.create(systemPath, JcrLexicon.NODE_TYPES);
+        }
+
         try {
             boolean includeInheritedProperties = Boolean.valueOf(this.options.get(Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES));
+
             // this.repositoryTypeManager = new RepositoryNodeTypeManager(this, includeInheritedProperties);
-            this.repositoryTypeManager = new RepositoryNodeTypeManager(this, includeInheritedProperties);
+            this.repositoryTypeManager = new RepositoryNodeTypeManager(this, parentOfTypeNodes, includeInheritedProperties);
             CndNodeTypeReader nodeTypeReader = new CndNodeTypeReader(this.executionContext);
             nodeTypeReader.readBuiltInTypes();
             this.repositoryTypeManager.registerNodeTypes(nodeTypeReader);
@@ -572,11 +575,6 @@ public class JcrRepository implements Repository {
             throw new IllegalStateException("Could not access node type definition files", ioe);
         }
         if (WORKSPACES_SHARE_SYSTEM_BRANCH) {
-            if (Boolean.valueOf(this.options.get(Option.PROJECT_NODE_TYPES))) {
-                // Note that the node types are written directly to the system workspace.
-                Path parentOfTypeNodes = pathFactory.create(systemPath, JcrLexicon.NODE_TYPES);
-                this.repositoryTypeManager.projectOnto(systemGraph, parentOfTypeNodes);
-            }
 
             // Create the projection for the system repository ...
             ProjectionParser projectionParser = ProjectionParser.getInstance();
@@ -729,11 +727,9 @@ public class JcrRepository implements Repository {
         };
 
         // Define the set of "/jcr:system" observers ...
-        this.jcrSystemObservers = Collections.unmodifiableList(Arrays.asList(new JcrSystemObserver[] {repositoryLockManager,
-            namespaceObserver}));
-
         // This observer picks up notification of changes to the system graph in a cluster. It's a NOP if there is no cluster.
-        this.repositoryObservationManager.register(new SystemChangeObserver());
+        repositoryObservationManager.register(new SystemChangeObserver(Arrays.asList(new JcrSystemObserver[] {
+            repositoryLockManager, namespaceObserver, repositoryTypeManager})));
     }
 
     protected void addWorkspace( String workspaceName,
@@ -934,13 +930,6 @@ public class JcrRepository implements Repository {
 
     String getSystemWorkspaceName() {
         return systemWorkspaceName;
-    }
-
-    /**
-     * @return jcrSystemObservers
-     */
-    Collection<JcrSystemObserver> getSystemObservers() {
-        return jcrSystemObservers;
     }
 
     /**
@@ -1726,11 +1715,16 @@ public class JcrRepository implements Repository {
      */
     class SystemChangeObserver implements Observer {
 
+        /**
+         * Immutable collection of objects observing changes to the system graph
+         */
+        private final Collection<JcrSystemObserver> jcrSystemObservers;
         private final String processId;
         private final String systemSourceName;
         private final String systemWorkspaceName;
 
-        SystemChangeObserver() {
+        SystemChangeObserver( Collection<JcrSystemObserver> jcrSystemObservers ) {
+            this.jcrSystemObservers = Collections.unmodifiableCollection(jcrSystemObservers);
             processId = getExecutionContext().getProcessId();
             systemSourceName = getSystemSourceName();
             systemWorkspaceName = getSystemWorkspaceName();
@@ -1742,9 +1736,21 @@ public class JcrRepository implements Repository {
 
         @Override
         public void notify( Changes changes ) {
-
             // Don't process changes from outside the system graph
-            if (!changes.getSourceName().equals(systemSourceName)) return;
+            if (!changes.getSourceName().equals(systemSourceName)) {
+                /*
+                 * It's permissable for the system source to be the same as the source for the workspaces.
+                 * In that case, the RepositoryObservationManager would have already translated the system
+                 * source name into the observeable source name (from getObservableSourceName()), obscuring
+                 * the actual source.
+                 * 
+                 * So if the change source name doesn't equal the system source name BUT the system source name
+                 * is the same as the repository (read: workspace) source name, don't give up yet.  The difference
+                 * may be due to RepositoryObservationManager.  Rely on the systemWorkspaceName check below to
+                 * be sure.
+                 */
+                if (!systemSourceName.equals(getRepositorySourceName())) return;
+            }
 
             // Don't process changes from this repository
             if (changes.getProcessId().equals(processId)) return;
@@ -1758,7 +1764,7 @@ public class JcrRepository implements Repository {
                 Path changedPath = change.changedLocation().getPath();
                 if (changedPath == null) continue;
 
-                for (JcrSystemObserver jcrSystemObserver : getSystemObservers()) {
+                for (JcrSystemObserver jcrSystemObserver : jcrSystemObservers) {
                     if (changedPath.isAtOrBelow(jcrSystemObserver.getObservedPath())) {
                         systemChanges.put(jcrSystemObserver, change);
                     }

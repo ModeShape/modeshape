@@ -118,8 +118,7 @@ class RepositoryLockManager implements JcrSystemObserver {
         for (Location lockLocation : locksGraph.getRoot().getChildren()) {
             Node lockNode = locksGraph.getNode(lockLocation);
 
-            Boolean isSessionScoped = booleanFactory.create(lockNode.getProperty(ModeShapeLexicon.IS_SESSION_SCOPED)
-                                                                    .getFirstValue());
+            Boolean isSessionScoped = booleanFactory.create(lockNode.getProperty(ModeShapeLexicon.IS_SESSION_SCOPED).getFirstValue());
 
             if (!isSessionScoped) continue;
             String lockingSession = stringFactory.create(lockNode.getProperty(ModeShapeLexicon.LOCKING_SESSION).getFirstValue());
@@ -128,8 +127,7 @@ class RepositoryLockManager implements JcrSystemObserver {
             if (activeSessionIds.contains(lockingSession)) {
                 systemGraph.set(ModeShapeLexicon.EXPIRATION_DATE).on(lockLocation).to(newExpirationDate);
             } else {
-                DateTime expirationDate = dateFactory.create(lockNode.getProperty(ModeShapeLexicon.EXPIRATION_DATE)
-                                                                     .getFirstValue());
+                DateTime expirationDate = dateFactory.create(lockNode.getProperty(ModeShapeLexicon.EXPIRATION_DATE).getFirstValue());
                 // Destroy expired locks (if it was still held by an active session, it would have been extended by now)
                 if (expirationDate.isBefore(now)) {
                     String workspaceName = stringFactory.create(lockNode.getProperty(ModeShapeLexicon.WORKSPACE).getFirstValue());
@@ -170,14 +168,11 @@ class RepositoryLockManager implements JcrSystemObserver {
             UUID lockedNodeUuid = UUID.fromString(string(rawUuid));
             assert lockedNodeUuid != null;
 
-            String workspaceName = change.changedWorkspace();
-            WorkspaceLockManager workspaceManager = getLockManager(workspaceName);
-            assert workspaceManager != null;
-
             switch (change.getType()) {
                 case CREATE_NODE:
                     CreateNodeRequest create = (CreateNodeRequest)change;
 
+                    Property workspaceNameProp = null;
                     Property lockOwnerProp = null;
                     Property lockUuidProp = null;
                     Property isDeepProp = null;
@@ -192,19 +187,33 @@ class RepositoryLockManager implements JcrSystemObserver {
                             isSessionScopedProp = prop;
                         } else if (JcrLexicon.UUID.equals(prop.getName())) {
                             isSessionScopedProp = prop;
+                        } else if (ModeShapeLexicon.WORKSPACE_NAME.equals(prop.getName())) {
+                            workspaceNameProp = prop;
                         }
                     }
 
                     String lockOwner = firstString(lockOwnerProp);
+                    String workspaceName = firstString(workspaceNameProp);
                     UUID lockUuid = firstUuid(lockUuidProp);
                     boolean isDeep = firstBoolean(isDeepProp);
                     boolean isSessionScoped = firstBoolean(isSessionScopedProp);
+
+                    WorkspaceLockManager workspaceManager = getLockManager(workspaceName);
+                    assert workspaceManager != null;
 
                     workspaceManager.lockNodeInternally(lockOwner, lockUuid, lockedNodeUuid, isDeep, isSessionScoped);
 
                     break;
                 case DELETE_BRANCH:
-                    boolean success = workspaceManager.unlockNodeInternally(lockedNodeUuid);
+
+                    
+                    boolean success = false;
+                    for (WorkspaceLockManager workspaceLockManager : lockManagers.values()) {
+                        if (workspaceLockManager.lockFor(lockedNodeUuid) != null) {
+                            success |= workspaceLockManager.unlockNodeInternally(lockedNodeUuid);
+                            break;
+                        }
+                    }
 
                     assert success : "No internal lock existed for node " + lockedNodeUuid.toString();
 

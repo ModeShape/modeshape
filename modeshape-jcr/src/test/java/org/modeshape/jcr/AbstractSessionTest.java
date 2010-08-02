@@ -145,7 +145,7 @@ public abstract class AbstractSessionTest {
         when(repository.getRepositoryLockManager()).thenReturn(repoLockManager);
 
         // Stub out the repository, since we only need a few methods ...
-        repoTypeManager = new RepositoryNodeTypeManager(repository, true);
+        repoTypeManager = new RepositoryNodeTypeManager(repository, null, true);
         when(repository.getRepositoryTypeManager()).thenReturn(repoTypeManager);
 
         try {
@@ -194,7 +194,6 @@ public abstract class AbstractSessionTest {
         registry = session.getExecutionContext().getNamespaceRegistry();
     }
 
-    @SuppressWarnings( "unused" )
     protected List<NodeTypeDefinition> getTestTypes() throws ConstraintViolationException {
         return Collections.emptyList();
     }

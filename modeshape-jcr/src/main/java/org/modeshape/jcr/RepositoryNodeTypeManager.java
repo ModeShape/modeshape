@@ -48,14 +48,17 @@ import javax.jcr.query.InvalidQueryException;
 import javax.jcr.version.OnParentVersionAction;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.collection.Problems;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Subgraph;
+import org.modeshape.graph.observe.Changes;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
@@ -69,6 +72,7 @@ import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.parse.QueryParser;
 import org.modeshape.graph.query.parse.SqlQueryParser;
 import org.modeshape.graph.query.validate.Schemata;
+import org.modeshape.graph.request.ChangeRequest;
 import org.modeshape.jcr.nodetype.InvalidNodeTypeDefinitionException;
 import org.modeshape.jcr.nodetype.NodeTypeExistsException;
 
@@ -85,13 +89,15 @@ import org.modeshape.jcr.nodetype.NodeTypeExistsException;
  * </p>
  */
 @ThreadSafe
-class RepositoryNodeTypeManager {
+class RepositoryNodeTypeManager implements JcrSystemObserver {
+    private static final Logger LOGGER = Logger.getLogger(RepositoryNodeTypeManager.class);
 
     private static final TextEncoder NAME_ENCODER = new XmlNameEncoder();
 
     private final JcrRepository repository;
     private final QueryParser queryParser;
     private final ExecutionContext context;
+    private final Path nodeTypesPath;
 
     @GuardedBy( "nodeTypeManagerLock" )
     private final Map<Name, JcrNodeType> nodeTypes;
@@ -130,8 +136,10 @@ class RepositoryNodeTypeManager {
     }
 
     RepositoryNodeTypeManager( JcrRepository repository,
+                               Path nodeTypesPath,
                                boolean includeColumnsForInheritedProperties ) {
         this.repository = repository;
+        this.nodeTypesPath = nodeTypesPath;
         this.context = repository.getExecutionContext();
         this.includeColumnsForInheritedProperties = includeColumnsForInheritedProperties;
         this.propertyFactory = context.getPropertyFactory();
@@ -143,6 +151,14 @@ class RepositoryNodeTypeManager {
         nodeTypes = new HashMap<Name, JcrNodeType>(50);
         queryParser = new SqlQueryParser();
 
+        if (nodeTypesPath != null) {
+            Graph systemGraph = repository.createSystemGraph(context);
+            try {
+                systemGraph.getNodeAt(nodeTypesPath);
+            } catch (PathNotFoundException pnfe) {
+                systemGraph.create(nodeTypesPath).with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.NODE_TYPES).and();
+            }
+        }
     }
 
     /**
@@ -1139,7 +1155,7 @@ class RepositoryNodeTypeManager {
         propsList.add(propertyFactory.create(JcrLexicon.HAS_ORDERABLE_CHILD_NODES, nodeType.hasOrderableChildNodes()));
         propsList.add(propertyFactory.create(JcrLexicon.SUPERTYPES, supertypeNames));
 
-        batch.create(nodeTypePath).with(propsList).and();
+        batch.create(nodeTypePath).with(propsList).orReplace().and();
 
         PropertyDefinition[] propertyDefs = nodeType.getDeclaredPropertyDefinitions();
         for (int i = 0; i < propertyDefs.length; i++) {
@@ -1192,7 +1208,8 @@ class RepositoryNodeTypeManager {
         propsList.add(propertyFactory.create(JcrLexicon.PROTECTED, jcrPropDef.isProtected()));
         propsList.add(propertyFactory.create(JcrLexicon.ON_PARENT_VERSION,
                                              OnParentVersionAction.nameFromValue(jcrPropDef.getOnParentVersion())));
-        propsList.add(propertyFactory.create(JcrLexicon.REQUIRED_TYPE, PropertyType.nameFromValue(jcrPropDef.getRequiredType())));
+        propsList.add(propertyFactory.create(JcrLexicon.REQUIRED_TYPE,
+                                             PropertyType.nameFromValue(jcrPropDef.getRequiredType()).toUpperCase()));
 
         Value[] defaultValues = jcrPropDef.getDefaultValues();
         if (defaultValues.length > 0) {
@@ -1211,7 +1228,7 @@ class RepositoryNodeTypeManager {
 
         String[] valueConstraints = jcrPropDef.getValueConstraints();
         if (valueConstraints.length > 0) {
-            propsList.add(propertyFactory.create(JcrLexicon.DEFAULT_VALUES, (Object[])valueConstraints));
+            propsList.add(propertyFactory.create(JcrLexicon.VALUE_CONSTRAINTS, (Object[])valueConstraints));
         }
         batch.create(propDefPath).with(propsList).and();
     }
@@ -1254,7 +1271,7 @@ class RepositoryNodeTypeManager {
             propsList.add(propertyFactory.create(JcrLexicon.DEFAULT_PRIMARY_TYPE, jcrNodeDef.getDefaultPrimaryType().getName()));
         }
 
-        propsList.add(propertyFactory.create(JcrLexicon.REQUIRED_PRIMARY_TYPES, jcrNodeDef.requiredPrimaryTypeNameSet()));
+        propsList.add(propertyFactory.create(JcrLexicon.REQUIRED_PRIMARY_TYPES, (Object[])jcrNodeDef.requiredPrimaryTypeNames()));
         propsList.add(propertyFactory.create(JcrLexicon.SAME_NAME_SIBLINGS, jcrNodeDef.allowsSameNameSiblings()));
         propsList.add(propertyFactory.create(JcrLexicon.ON_PARENT_VERSION,
                                              OnParentVersionAction.nameFromValue(jcrNodeDef.getOnParentVersion())));
@@ -1347,6 +1364,17 @@ class RepositoryNodeTypeManager {
             }
 
             this.nodeTypes.keySet().removeAll(nodeTypeNames);
+
+            if (nodeTypesPath != null) {
+                Graph.Batch batch = repository.createSystemGraph(context).batch();
+
+                for (Name nodeTypeName : nodeTypeNames) {
+                    Path nodeTypePath = pathFactory.create(nodeTypesPath, nodeTypeName);
+                    batch.delete(nodeTypePath).and();
+                }
+
+                batch.execute();
+            }
             this.schemata = null;
 
         } finally {
@@ -1546,6 +1574,9 @@ class RepositoryNodeTypeManager {
                 }
             }
 
+            Graph.Batch batch = null;
+            if (nodeTypesPath != null) batch = repository.createSystemGraph(context).batch();
+
             for (JcrNodeType nodeType : typesPendingRegistration) {
                 /*
                  * See comment in constructor.  Using a ConcurrentHashMap seems to be to weak of a
@@ -1561,15 +1592,18 @@ class RepositoryNodeTypeManager {
                     propertyDefinitions.put(propertyDefinition.getId(), propertyDefinition);
                 }
 
-                // projectNodeTypeOnto(nodeType, parentOfTypeNodes, batch);
+                if (nodeTypesPath != null) projectNodeTypeOnto(nodeType, nodeTypesPath, batch);
             }
 
             // Throw away the schemata, since the node types have changed ...
             this.schemata = null;
+            if (nodeTypesPath != null) {
+                assert batch != null;
+                batch.execute();
+            }
         } finally {
             nodeTypeManagerLock.writeLock().unlock();
         }
-        // batch.execute();
 
         return typesPendingRegistration;
     }
@@ -1739,16 +1773,16 @@ class RepositoryNodeTypeManager {
     }
 
     /**
-     * Finds the named type in the given list of types pending registration if it exists, else returns the type definition from
-     * the repository
+     * Finds the named type in the given collection of types pending registration if it exists, else returns the type definition
+     * from the repository
      * 
      * @param typeName the name of the type to retrieve
-     * @param pendingList a list of types that have passed validation but have not yet been committed to the repository
-     * @return the node type with the given name from {@code pendingList} if it exists in the list or from the {@link #nodeTypes
-     *         registered types} if it exists there; may be null
+     * @param pendingList a collection of types that have passed validation but have not yet been committed to the repository
+     * @return the node type with the given name from {@code pendingList} if it exists in the collection or from the
+     *         {@link #nodeTypes registered types} if it exists there; may be null
      */
     private JcrNodeType findTypeInMapOrList( Name typeName,
-                                             List<JcrNodeType> pendingList ) {
+                                             Collection<JcrNodeType> pendingList ) {
         for (JcrNodeType pendingNodeType : pendingList) {
             if (pendingNodeType.getInternalName().equals(typeName)) {
                 return pendingNodeType;
@@ -1770,7 +1804,7 @@ class RepositoryNodeTypeManager {
      *         already-registered node type or a node type that is pending registration
      */
     private List<JcrNodeType> supertypesFor( NodeTypeDefinition nodeType,
-                                             List<JcrNodeType> pendingTypes ) throws RepositoryException {
+                                             Collection<JcrNodeType> pendingTypes ) throws RepositoryException {
         assert nodeType != null;
 
         List<JcrNodeType> supertypes = new LinkedList<JcrNodeType>();
@@ -2204,4 +2238,86 @@ class RepositoryNodeTypeManager {
         }
     }
 
+    @Override
+    public Path getObservedPath() {
+        return this.nodeTypesPath;
+    }
+
+    @Override
+    public void notify( Changes changes ) {
+        boolean needsReload = false;
+
+        for (ChangeRequest change : changes.getChangeRequests()) {
+            assert change.changedLocation().hasPath();
+
+            Path changedPath = change.changedLocation().getPath();
+            if (changedPath.equals(nodeTypesPath)) {
+                // nothing to do with the "/jcr:system/jcr:nodeTypes" node ...
+                continue;
+            }
+            assert nodeTypesPath.isAncestorOf(changedPath);
+
+            switch (change.getType()) {
+                case CREATE_NODE:
+                case DELETE_BRANCH:
+                    needsReload = true;
+
+                    break;
+                default:
+                    assert false : "Unexpected change request: " + change;
+            }
+        }
+
+        if (!needsReload) return;
+
+        this.nodeTypeManagerLock.writeLock().lock();
+        try {
+            GraphNodeTypeReader reader = new GraphNodeTypeReader(this.context);
+            Graph systemGraph = repository.createSystemGraph(this.context);
+
+            reader.read(systemGraph, nodeTypesPath, null);
+
+            Problems readerProblems = reader.getProblems();
+            if (readerProblems.hasProblems()) {
+                if (readerProblems.hasErrors()) {
+                    LOGGER.error(JcrI18n.errorReadingNodeTypesFromRemote, reader.getProblems());
+                    return;
+                }
+
+                LOGGER.warn(JcrI18n.problemReadingNodeTypesFromRemote, reader.getProblems());
+            }
+            
+            Map<Name, JcrNodeType> newNodeTypeMap = new HashMap<Name, JcrNodeType>();
+            try {
+                for (NodeTypeDefinition nodeTypeDefn : reader.getNodeTypeDefinitions()) {
+                    List<JcrNodeType> supertypes = supertypesFor(nodeTypeDefn, newNodeTypeMap.values());
+                    JcrNodeType nodeType = nodeTypeFrom(nodeTypeDefn, supertypes);
+
+                    newNodeTypeMap.put(nodeType.getInternalName(), nodeType);
+                }
+            } catch (Throwable re) {
+                LOGGER.error(JcrI18n.errorSynchronizingNodeTypes, re);
+            }
+
+            this.nodeTypes.clear();
+            this.nodeTypes.putAll(newNodeTypeMap);
+
+            assert this.nodeTypes.get(ModeShapeLexicon.ROOT) != null;
+
+            for (JcrSession activeSession : repository.activeSessions()) {
+                JcrWorkspace workspace = activeSession.workspace();
+                if (workspace == null) continue;
+
+                JcrNodeTypeManager nodeTypeManager = workspace.nodeTypeManager();
+                if (nodeTypeManager == null) continue;
+
+                nodeTypeManager.signalExternalNodeTypeChanges();
+            }
+
+        } finally {
+            this.schemata = null;
+            this.nodeTypeManagerLock.writeLock().unlock();
+        }
+
+    }
 }

@@ -72,7 +72,7 @@
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names
 -->
             <mode:options jcr:primaryType="mode:options">
-                <projectNodeTypes jcr:primaryType="mode:option" mode:value="false"/>
+                <projectNodeTypes jcr:primaryType="mode:option" mode:value="true"/>
             </mode:options>
             <!-- 
             	Import the custom node types defined in the named resource (a file at a classpath-relative

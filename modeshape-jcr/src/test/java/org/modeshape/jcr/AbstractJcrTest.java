@@ -83,7 +83,7 @@ public abstract class AbstractJcrTest {
         repoLockManager = mock(RepositoryLockManager.class);
         when(repository.getRepositoryLockManager()).thenReturn(repoLockManager);
 
-        rntm = new RepositoryNodeTypeManager(repository, true);
+        rntm = new RepositoryNodeTypeManager(repository, null, true);
         try {
             CndNodeTypeReader cndReader = new CndNodeTypeReader(context);
             cndReader.readBuiltInTypes();

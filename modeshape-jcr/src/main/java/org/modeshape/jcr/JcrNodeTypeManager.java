@@ -91,6 +91,10 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         this.schemata = null;
     }
 
+    void signalExternalNodeTypeChanges() {
+        this.schemata = null;
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -207,6 +211,7 @@ public class JcrNodeTypeManager implements NodeTypeManager {
         for (NodeDefinition definition : repositoryTypeManager.getNodeType(ModeShapeLexicon.ROOT).getChildNodeDefinitions()) {
             if (definition.getName().equals(JcrNodeType.RESIDUAL_ITEM_NAME)) return (JcrNodeDefinition)definition;
         }
+
         assert false; // should not get here
         return null;
     }
@@ -672,13 +677,15 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                 JcrNodeDefinitionTemplate ndt = new JcrNodeDefinitionTemplate(context());
 
                 ndt.setAutoCreated(nodeDefinition.isAutoCreated());
-                ndt.setDefaultPrimaryType(ndt.getDefaultPrimaryTypeName());
-                ndt.setMandatory(ndt.isMandatory());
-                ndt.setName(ndt.getName());
-                ndt.setOnParentVersion(ndt.getOnParentVersion());
-                ndt.setProtected(ndt.isProtected());
-                ndt.setRequiredPrimaryTypeNames(ndt.getRequiredPrimaryTypeNames());
-                ndt.setSameNameSiblings(ndt.allowsSameNameSiblings());
+                ndt.setDefaultPrimaryType(nodeDefinition.getDefaultPrimaryTypeName());
+                ndt.setMandatory(nodeDefinition.isMandatory());
+                if (nodeDefinition.getName() != null) {
+                    ndt.setName(nodeDefinition.getName());
+                }
+                ndt.setOnParentVersion(nodeDefinition.getOnParentVersion());
+                ndt.setProtected(nodeDefinition.isProtected());
+                ndt.setRequiredPrimaryTypeNames(nodeDefinition.getRequiredPrimaryTypeNames());
+                ndt.setSameNameSiblings(nodeDefinition.allowsSameNameSiblings());
 
                 ntt.getNodeDefinitionTemplates().add(ndt);
             }
@@ -692,7 +699,9 @@ public class JcrNodeTypeManager implements NodeTypeManager {
                 pdt.setFullTextSearchable(propertyDefinition.isFullTextSearchable());
                 pdt.setMandatory(propertyDefinition.isMandatory());
                 pdt.setMultiple(propertyDefinition.isMultiple());
-                pdt.setName(propertyDefinition.getName());
+                if (propertyDefinition.getName() != null) {
+                    pdt.setName(propertyDefinition.getName());
+                }
                 pdt.setOnParentVersion(propertyDefinition.getOnParentVersion());
                 pdt.setProtected(propertyDefinition.isProtected());
                 pdt.setQueryOrderable(propertyDefinition.isQueryOrderable());

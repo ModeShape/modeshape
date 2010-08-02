@@ -32,9 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 import javax.jcr.PropertyType;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
-import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeTypeDefinition;
-import javax.jcr.nodetype.PropertyDefinition;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -43,10 +41,8 @@ import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.jcr.nodetype.InvalidNodeTypeDefinitionException;
-import org.modeshape.jcr.nodetype.NodeDefinitionTemplate;
 import org.modeshape.jcr.nodetype.NodeTypeExistsException;
 import org.modeshape.jcr.nodetype.NodeTypeTemplate;
-import org.modeshape.jcr.nodetype.PropertyDefinitionTemplate;
 
 public class TypeRegistrationTest extends AbstractSessionTest {
 
@@ -921,113 +917,6 @@ public class TypeRegistrationTest extends AbstractSessionTest {
             assertThat(nodeType.nodeTypeManager(), is(notNullValue()));
         }
 
-        assertThat(nodeType, is(notNullValue()));
-        assertThat(nodeType.getName(), is(template.getName()));
-        assertThat(nodeType.getDeclaredSupertypes().length, is(template.getDeclaredSupertypeNames().length));
-        for (int i = 0; i < template.getDeclaredSupertypeNames().length; i++) {
-            assertThat(template.getDeclaredSupertypeNames()[i], is(nodeType.getDeclaredSupertypes()[i].getName()));
-        }
-        assertThat(template.isMixin(), is(nodeType.isMixin()));
-        assertThat(template.hasOrderableChildNodes(), is(nodeType.hasOrderableChildNodes()));
-
-        PropertyDefinition[] propertyDefs = nodeType.getDeclaredPropertyDefinitions();
-        List<PropertyDefinitionTemplate> propertyTemplates = template.getPropertyDefinitionTemplates();
-
-        assertThat(propertyDefs.length, is(propertyTemplates.size()));
-        for (PropertyDefinitionTemplate pt : propertyTemplates) {
-            JcrPropertyDefinitionTemplate propertyTemplate = (JcrPropertyDefinitionTemplate)pt;
-
-            PropertyDefinition matchingDefinition = null;
-            for (int i = 0; i < propertyDefs.length; i++) {
-                PropertyDefinition pd = propertyDefs[i];
-
-                String ptName = propertyTemplate.getName() == null ? JcrNodeType.RESIDUAL_ITEM_NAME : propertyTemplate.getName();
-                if (pd.getName().equals(ptName) && pd.getRequiredType() == propertyTemplate.getRequiredType()
-                    && pd.isMultiple() == propertyTemplate.isMultiple()) {
-                    matchingDefinition = pd;
-                    break;
-                }
-            }
-
-            comparePropertyTemplateToPropertyDefinition(propertyTemplate, (JcrPropertyDefinition)matchingDefinition);
-        }
-
-        NodeDefinition[] childNodeDefs = nodeType.getDeclaredChildNodeDefinitions();
-        List<NodeDefinitionTemplate> childNodeTemplates = template.getNodeDefinitionTemplates();
-
-        assertThat(childNodeDefs.length, is(childNodeTemplates.size()));
-        for (NodeDefinitionTemplate nt : childNodeTemplates) {
-            JcrNodeDefinitionTemplate childNodeTemplate = (JcrNodeDefinitionTemplate)nt;
-
-            NodeDefinition matchingDefinition = null;
-            for (int i = 0; i < childNodeDefs.length; i++) {
-                NodeDefinition nd = childNodeDefs[i];
-
-                String ntName = childNodeTemplate.getName() == null ? JcrNodeType.RESIDUAL_ITEM_NAME : childNodeTemplate.getName();
-                if (nd.getName().equals(ntName) && nd.allowsSameNameSiblings() == childNodeTemplate.allowsSameNameSiblings()) {
-
-                    if (nd.getRequiredPrimaryTypes().length != childNodeTemplate.getRequiredPrimaryTypeNames().length) continue;
-
-                    boolean matchesOnRequiredTypes = true;
-                    for (int j = 0; j < nd.getRequiredPrimaryTypes().length; j++) {
-                        String ndName = nd.getRequiredPrimaryTypes()[j].getName();
-                        String tempName = childNodeTemplate.getRequiredPrimaryTypeNames()[j];
-                        if (!ndName.equals(tempName)) {
-                            matchesOnRequiredTypes = false;
-                            break;
-                        }
-                    }
-
-                    if (matchesOnRequiredTypes) {
-                        matchingDefinition = nd;
-                        break;
-                    }
-                }
-            }
-
-            compareNodeTemplateToNodeDefinition(childNodeTemplate, (JcrNodeDefinition)matchingDefinition);
-        }
-
-    }
-
-    private void comparePropertyTemplateToPropertyDefinition( JcrPropertyDefinitionTemplate template,
-                                                              JcrPropertyDefinition definition ) {
-
-        assertThat(definition, is(notNullValue()));
-        assertThat(definition.getDeclaringNodeType(), is(notNullValue()));
-        // Had to match on name to even get to the definition
-        // assertThat(template.getName(), is(definition.getName()));
-
-        assertThat(emptyIfNull(template.getValueConstraints()), is(definition.getValueConstraints()));
-        assertThat(template.getOnParentVersion(), is(definition.getOnParentVersion()));
-        assertThat(template.getRequiredType(), is(definition.getRequiredType()));
-        assertThat(template.isAutoCreated(), is(definition.isAutoCreated()));
-        assertThat(template.isMandatory(), is(definition.isMandatory()));
-        assertThat(template.isMultiple(), is(definition.isMultiple()));
-        assertThat(template.isProtected(), is(definition.isProtected()));
-    }
-
-    private void compareNodeTemplateToNodeDefinition( JcrNodeDefinitionTemplate template,
-                                                      JcrNodeDefinition definition ) {
-        assertThat(definition, is(notNullValue()));
-        assertThat(definition.getDeclaringNodeType(), is(notNullValue()));
-        // Had to match on name to even get to the definition
-        // assertThat(template.getName(), is(definition.getName()));
-
-        assertThat(template.getOnParentVersion(), is(definition.getOnParentVersion()));
-        assertThat(template.isAutoCreated(), is(definition.isAutoCreated()));
-        assertThat(template.isMandatory(), is(definition.isMandatory()));
-        assertThat(template.isProtected(), is(definition.isProtected()));
-
-        assertThat(template.getDefaultPrimaryType(), is(definition.getDefaultPrimaryType()));
-        assertThat(template.allowsSameNameSiblings(), is(definition.allowsSameNameSiblings()));
-
-        // assertThat(template.getRequiredPrimaryTypeNames(), is(definition.getRequiredPrimaryTypeNames()));
-
-    }
-
-    private String[] emptyIfNull( String[] incoming ) {
-        if (incoming != null) return incoming;
-        return new String[0];
+        NodeTypeAssertion.compareTemplateToNodeType(template, nodeType);
     }
 }

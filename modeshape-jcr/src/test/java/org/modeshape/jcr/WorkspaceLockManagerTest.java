@@ -101,7 +101,9 @@ public class WorkspaceLockManagerTest {
         });
 
         // Stub out the repository, since we only need a few methods ...
-        repoTypeManager = new RepositoryNodeTypeManager(repository, true);
+        Path nodeTypesPath = context.getValueFactories().getPathFactory().createAbsolutePath(JcrLexicon.SYSTEM,
+                                                                                             JcrLexicon.NODE_TYPES);
+        repoTypeManager = new RepositoryNodeTypeManager(repository, nodeTypesPath, true);
 
         when(repository.getRepositoryTypeManager()).thenReturn(repoTypeManager);
 
@@ -153,8 +155,6 @@ public class WorkspaceLockManagerTest {
         when(session.getExecutionContext()).thenReturn(context);
         workspaceLockManager.lockNodeInRepository(session, validUuid, lockOwner, isDeep);
 
-        // At the moment, a VerifyWorkspaceRequest is being executed when the graph is created.
-        executedRequests.poll();
         assertNextRequestIsLock(validLocation, LockScope.SELF_ONLY, 0);
     }
 
@@ -163,8 +163,6 @@ public class WorkspaceLockManagerTest {
         ModeShapeLock lock = workspaceLockManager.createLock("testOwner", UUID.randomUUID(), validUuid, false, false);
         workspaceLockManager.unlockNodeInRepository(context, lock);
 
-        // At the moment, a VerifyWorkspaceRequest is being executed when the graph is created.
-        executedRequests.poll();
         assertNextRequestIsUnlock(validLocation);
     }
 

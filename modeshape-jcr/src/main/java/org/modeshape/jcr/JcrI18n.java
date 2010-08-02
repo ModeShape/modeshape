@@ -200,6 +200,10 @@ public final class JcrI18n {
     public static I18n primaryTypeCannotBeAbstract;
     public static I18n setPrimaryTypeNotSupported;
 
+    public static I18n errorReadingNodeTypesFromRemote;
+    public static I18n problemReadingNodeTypesFromRemote;
+    public static I18n errorSynchronizingNodeTypes;
+
     // Lock messages
     public static I18n nodeNotLockable;
     public static I18n cannotRemoveLockToken;
