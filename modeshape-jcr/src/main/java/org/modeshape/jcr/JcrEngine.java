@@ -37,6 +37,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import net.jcip.annotations.ThreadSafe;
@@ -62,6 +63,7 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
+import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.api.Repositories;
@@ -81,6 +83,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
 
     private final Map<String, JcrRepository> repositories;
     private final Lock repositoriesLock;
+    private final Map<String, Object> descriptors = new HashMap<String, Object>();
 
     /**
      * Provides the ability to schedule lock clean-up
@@ -92,6 +95,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         super(context, configuration);
         this.repositories = new HashMap<String, JcrRepository>();
         this.repositoriesLock = new ReentrantLock();
+        initDescriptors();
     }
 
     /**
@@ -164,6 +168,16 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                                       LOCK_SWEEP_INTERVAL_IN_MILLIS,
                                       TimeUnit.MILLISECONDS);
     }
+    
+	/**
+	 * Get the version of this engine.
+	 * 
+	 * @return version
+	 */
+	public String getEngineVersion() {
+		return JcrRepository.getBundleProperty(
+				Repository.REP_VERSION_DESC, true);
+	}
 
     /**
      * Get the {@link Repository} implementation for the named repository.
@@ -257,6 +271,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         // Read the namespaces ...
         ExecutionContext context = getExecutionContext();
         Node namespacesNode = subgraph.getNode(ModeShapeLexicon.NAMESPACES);
+        descriptors.put(org.modeshape.jcr.api.Repository.REPOSITORY_NAME,repositoryName);
         if (namespacesNode != null) {
             GraphNamespaceRegistry registry = new GraphNamespaceRegistry(configuration, namespacesNode.getLocation().getPath(),
                                                                          ModeShapeLexicon.URI);
@@ -362,4 +377,46 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
     protected final String readable( Location location ) {
         return location.getString(context.getNamespaceRegistry());
     }
+    
+    /**
+	 * @return descriptors
+	 */
+	public Map<String, Object> initDescriptors() {
+		ValueFactories factories = this.getExecutionContext()
+				.getValueFactories();
+		descriptors.put(Repository.SPEC_NAME_DESC, valueFor(factories,
+				JcrI18n.SPEC_NAME_DESC.text()));
+		descriptors.put(Repository.SPEC_VERSION_DESC,
+				valueFor(factories, "2.0"));
+
+		if (!descriptors.containsKey(Repository.REP_NAME_DESC)) {
+			descriptors.put(Repository.REP_NAME_DESC, valueFor(factories,
+					JcrRepository.getBundleProperty(Repository.REP_NAME_DESC,
+							true)));
+		}
+		if (!descriptors.containsKey(Repository.REP_VENDOR_DESC)) {
+			descriptors.put(Repository.REP_VENDOR_DESC, valueFor(factories,
+					JcrRepository.getBundleProperty(Repository.REP_VENDOR_DESC,
+							true)));
+		}
+		if (!descriptors.containsKey(Repository.REP_VENDOR_URL_DESC)) {
+			descriptors.put(Repository.REP_VENDOR_URL_DESC, valueFor(factories,
+					JcrRepository.getBundleProperty(
+							Repository.REP_VENDOR_URL_DESC, true)));
+		}
+		if (!descriptors.containsKey(Repository.REP_VERSION_DESC)) {
+			descriptors.put(Repository.REP_VERSION_DESC, valueFor(factories,
+					getEngineVersion()));
+		}
+		return descriptors;
+	}
+
+	private static JcrValue valueFor(ValueFactories valueFactories, int type,
+			Object value) {
+		return new JcrValue(valueFactories, null, type, value);
+	}
+
+	private static JcrValue valueFor(ValueFactories valueFactories, String value) {
+		return valueFor(valueFactories, PropertyType.STRING, value);
+	}
 }
