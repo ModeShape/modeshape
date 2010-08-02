@@ -558,6 +558,9 @@
 						defines the plugin for <ulink url="http://support.rhq-project.org/display/RHQ/Home">RHQ</ulink>/
 						<ulink url="http://jboss.org/jopr">JOPR</ulink> that enables administration, monitoring, alerting, operational
 						control and configuration.
+						<emphasis>Note that this is currently a technology preview, because the plugin does not yet offer
+						very detailed information, and some of the information is still mocked up.
+						Addressing these limitations one of the major goals of the next release.</emphasis>
           </para>
         </listitem>
         <listitem>
@@ -615,8 +618,10 @@
             <emphasis role="strong">modeshape-jdbc</emphasis> provides a JDBC driver implementation that allows JDBC clients 
 						to query the contents of a JCR repository using <link linkend="jcr-sql2-query-language">JCR-SQL2</link>. 
 						The driver even supports JDBC metadata, so client applications can dynamically discover the tables and columns available for querying
-						(which are determined from the node types).
-          </para>
+						(which are determined from the node types).  <emphasis>Note that this JDBC driver is currently a technology preview, because not 
+						all JCR-SQL2 queries can be submitted, and because the driver only works in the same process as ModeShape.
+						Addressing these limitations one of the major goals of the next release.</emphasis>
+					</para>
         </listitem>
       </itemizedlist>
       There is another module that runs the full suite of JCR TCK tests, and which at the moment still contains a few failures.
