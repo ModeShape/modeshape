@@ -194,6 +194,7 @@ public abstract class AbstractSessionTest {
         registry = session.getExecutionContext().getNamespaceRegistry();
     }
 
+    @SuppressWarnings( "unused" )
     protected List<NodeTypeDefinition> getTestTypes() throws ConstraintViolationException {
         return Collections.emptyList();
     }

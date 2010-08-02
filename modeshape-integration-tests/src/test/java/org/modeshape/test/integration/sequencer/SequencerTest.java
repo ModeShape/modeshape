@@ -89,7 +89,6 @@ public class SequencerTest {
         configuration.repository("repo")
                      .setSource("source")
                      .addNodeTypes(resourceUrl("org/modeshape/connector/meta/jdbc/connector-metajdbc.cnd"))
-                     .addNodeTypes(resourceUrl("org/modeshape/connector/meta/jdbc/connector-metajdbc.cnd"))
                      .addNodeTypes(resourceUrl("org/modeshape/sequencer/classfile/sequencer-classfile.cnd"))
                      .addNodeTypes(resourceUrl("org/modeshape/sequencer/image/images.cnd"))
                      .addNodeTypes(resourceUrl("org/modeshape/sequencer/java/javaSource.cnd"))

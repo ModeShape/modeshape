@@ -375,7 +375,6 @@ class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
                                                 OnParentVersionAction.nameFromValue(OnParentVersionAction.COPY));
         int onParentVersion = OnParentVersionAction.valueFromName(onParentVersionName);
 
-        String requiredTypeName = readString(propertyDefinitionNode, JcrLexicon.REQUIRED_TYPE, null);
         int requiredType = PROPERTY_TYPE_VALUES_FROM_NAME.get(readString(propertyDefinitionNode, JcrLexicon.REQUIRED_TYPE, null));
 
         boolean mandatory = readBoolean(propertyDefinitionNode, JcrLexicon.MANDATORY, false);

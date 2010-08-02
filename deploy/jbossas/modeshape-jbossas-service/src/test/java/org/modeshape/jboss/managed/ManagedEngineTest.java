@@ -26,16 +26,13 @@ package org.modeshape.jboss.managed;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
@@ -45,43 +42,43 @@ import org.modeshape.jcr.JcrRepository.Option;
  *
  */
 public class ManagedEngineTest {
-    
+
     private static Set<String> REPO_NAMES = null;
-        
+
     private ManagedEngine me;
-    
+
     private JcrConfiguration configuration;
     private JcrEngine engine;
 
-
     @BeforeClass
     public static void beforeAll() throws Exception {
-	REPO_NAMES = new HashSet<String>();
-	REPO_NAMES.add("JCR Repository");
+        REPO_NAMES = new HashSet<String>();
+        REPO_NAMES.add("JCR Repository");
 
     }
+
     @Before
     public void beforeEach() throws Exception {
-	configuration = new JcrConfiguration();
-	
-	       configuration.repositorySource("Source2")
-               .usingClass(InMemoryRepositorySource.class.getName())
-               .loadedFromClasspath()
-               .setDescription("description")
-               .and()
-               .repository("JCR Repository")
-               .setSource("Source2")
-               .setOption(Option.JAAS_LOGIN_CONFIG_NAME, "test")
-               .and()
-               .save();
+        configuration = new JcrConfiguration();
 
-  // Start the engine ...
-  engine = configuration.build();
+        configuration.repositorySource("Source2")
+                     .usingClass(InMemoryRepositorySource.class.getName())
+                     .loadedFromClasspath()
+                     .setDescription("description")
+                     .and()
+                     .repository("JCR Repository")
+                     .setSource("Source2")
+                     .setOption(Option.JAAS_LOGIN_CONFIG_NAME, "test")
+                     .and()
+                     .save();
 
-	me = new ManagedEngine(engine);
-	me.start();
+        // Start the engine ...
+        engine = configuration.build();
+
+        me = new ManagedEngine(engine);
+        me.start();
     }
-    
+
     @After
     public void afterEach() throws Exception {
         if (engine != null) {
@@ -95,23 +92,23 @@ public class ManagedEngineTest {
     }
 
     @Test
-    public void shouldBeRunning() throws Exception {	
-	assertThat(me.isRunning(), is(true));
+    public void shouldBeRunning() throws Exception {
+        assertThat(me.isRunning(), is(true));
     }
-    
+
     @Test
     public void shouldGetRepository() throws Exception {
-	assertThat(me.getRepository(REPO_NAMES.iterator().next()), is(notNullValue()));
+        assertThat(me.getRepository(REPO_NAMES.iterator().next()), is(notNullValue()));
     }
-    
+
     @Test
     public void shouldGetSequencingService() throws Exception {
-	assertThat(me.getSequencingService(), is(notNullValue()));
+        assertThat(me.getSequencingService(), is(notNullValue()));
     }
-    
+
     @Test
     public void shouldGetRepositories() throws Exception {
-	assertThat(me.getRepositories().size(), is(REPO_NAMES.size()));
-	
+        assertThat(me.getRepositories().size(), is(REPO_NAMES.size()));
+
     }
 }
