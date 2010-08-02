@@ -112,7 +112,7 @@
 		-->
 		<context-param>
 			<param-name>org.modeshape.web.jcr.webdav.DEFAULT_RESOLVER_REPOSITORY_NAME</param-name>
-			<param-value>mode:repository</param-value>
+			<param-value>repository</param-value>
 		</context-param>
 		
 		<!--

@@ -15,7 +15,7 @@
 <datasources>
   <local-tx-datasource>
     <jndi-name>ModeShapeDS</jndi-name>
-    <connection-url>jdbc:jcr:jndi:jcr/local?repositoryName=mode:repository</connection-url>
+    <connection-url>jdbc:jcr:jndi:jcr/local?repositoryName=repository</connection-url>
 
     <driver-class>org.modeshape.jdbc.JcrDriver</driver-class>
     <user-name>admin</user-name>

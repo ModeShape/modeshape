@@ -3,7 +3,7 @@
 
   <bean name="URL" class="java.net.URL">
     <constructor>
-        <parameter>file://${jboss.server.home.url}${/}deploy${/}modeshape-services.jar${/}managedConfigRepository.xml</parameter>
+        <parameter>file://${jboss.server.home.url}${/}deploy${/}modeshape-services.jar${/}modeshape-config.xml</parameter>
     </constructor>
   </bean>
 

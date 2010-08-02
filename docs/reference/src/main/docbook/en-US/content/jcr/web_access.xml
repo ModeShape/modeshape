@@ -201,7 +201,7 @@
 	<param-name>
 		org.modeshape.web.jcr.webdav.DEFAULT_RESOLVER_REPOSITORY_NAME
 	</param-name>
-	<param-value>mode:repository</param-value>
+	<param-value>repository</param-value>
 </context-param>
 
 <!--
@@ -480,8 +480,8 @@ GET http://www.example.com/resources
 }
 ]]></programlisting>		 
 		The actual response wouldn't be pretty-printed like the example, but the format would be the same.  The name
-		of the repository ("mode:repository" URL-encoded) is mapped to a repository object that contains a name
-		(the redundant "mode:repository") and a list of available resources within the repository and their respective
+		of the repository ("repository" URL-encoded) is mapped to a repository object that contains a name
+		(the redundant "repository") and a list of available resources within the repository and their respective
 		URIs.  Note that ModeShape supports deploying multiple JCR repositories side-by-side on the same server,
 		so this response could easily contain multiple repositories in a real deployment.  
 	</para>
