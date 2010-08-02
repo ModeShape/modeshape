@@ -271,6 +271,17 @@ try {
 				should work as before. ModeShape does support importing and exporting.
 			</para>
 		</sect2>
+		<sect2 id="jcr2_shareable_nodes">
+			<title>Shareable Nodes</title>
+			<para>
+				JCR 2.0 introduced the notion of <emphasis>shareable nodes</emphasis>, which allows a node that exists under one parent to be shared
+				under multiple other nodes. These are similar to symbolic links in a *nix file system. For more details about how to create and use
+				shareable nodes, please see the <ulink url="&JSR283;">JCR 2.0 specification</ulink>.
+			</para>
+			<para>
+				<emphasis>How this affects your application:</emphasis> Your application can now use specification-compliant JCR 2.0 shareable nodes with ModeShape.
+			</para>
+		</sect2>
 		<sect2 id="jcr2_orderable_child_nodes">
 			<title>Orderable Child Nodes</title>
 			<para>

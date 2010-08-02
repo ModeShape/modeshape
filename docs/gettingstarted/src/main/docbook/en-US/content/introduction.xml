@@ -49,7 +49,7 @@
     , which is capable of persisting the state of an object graph so that it can be read back in at a later time. However, Java
     serialization can quickly become tricky if the classes are changed, and so it's beneficial usually when the information is
     persisted for a very short period of time. For example, serialization is sometimes used to send an object graph from one
-    process to another.  Using serialization for longer-term storage of information is more risky.
+    process to another.  Using serialization for longer-term storage of information is far less useful.
   </para>
   <para>
     One of the more popular and widely-used persistence technologies is the <emphasis>relational database</emphasis>. 
@@ -63,7 +63,7 @@
   <para>
     <emphasis>Object-relational mapping</emphasis>
     libraries automate the creation of this mapping layer and result in far less code that is much more maintainable with
-    performance that is often as good as (if not better than) handwritten JDBC code. The new
+    performance that is often as good as (if not better than) handwritten JDBC code. The
     <ulink url="http://java.sun.com/developer/technicalArticles/J2EE/jpa/">Java Persistence API (JPA)</ulink>
     provide a standard mechanism for defining the mappings (through annotations) and working with these entity objects. Several
     commercial and open-source libraries implement JPA, and some even offer additional capabilities and features that go beyond
@@ -76,10 +76,10 @@
     While relational databases and JPA are solutions that work well for many applications, they are more limited in cases when the
     information structure is highly flexible, the structure is not known <emphasis>a priori</emphasis>, or that structure is
  		subject to frequent change and customization. In these situations, <emphasis>content repositories</emphasis>
-    may offer a better choice for persistence. Content repositories are almost a hybrid with the storage capabilities of
- 		relational databases and the flexibility offered by other systems, such as using files.  Content repositories also
-    typically provide other capabilities as well, including versioning, indexing, search, access control,
-    transactions, and observation. Because of this, content repositories are used by content management systems (CMS), document
+    may offer a better choice for persistence. Content repositories offer the storage capabilities of
+ 		relational databases with the flexibility offered by other systems, such as using files.  Content repositories also
+    typically provide other capabilities as well, including hierarchical organization, versioning, indexing, search, access control,
+    transactions, and observation. Content repositories are often used by content management systems (CMS), document
     management systems (DMS), and other applications that manage electronic files (e.g., documents, images, multi-media, web
     content, etc.) and metadata associated with them (e.g., author, date, status, security information, etc.). The
     <ulink url="http://www.jcp.org/en/jsr/detail?id=170">Content Repository for Java technology API</ulink>
@@ -101,12 +101,13 @@
 	<sect1 id="what_is_jboss_modeshape">
 		<title>ModeShape</title>
 		<para>
-			What makes JCR interesting, however, is that a JCR implementation provides all these features and capabilities regardless
-			of where or how that information is persisted or stored.  <emphasis>This is in fact the main purpose of ModeShape:
-			provide a JCR implementation that provides access to content stored in many different kinds of systems.</emphasis>
-			A ModeShape repository isn't yet another silo of information, but rather it's a JCR view of the information you already have
-			in your environment: files systems, databases, other repositories, services, applications, etc. <emphasis role="strong">ModeShape can 
-			help you understand the systems and information you already have, through a standard Java API.</emphasis>
+			What makes JCR interesting, however, is that a JCR implementation provides all these features and capabilities without exposing
+			where or how that information is stored.  While other JCR implementations embed their own persistence technology, JCR becomes
+			really interesting when it is used on top of existing information. <emphasis>This is in fact the main purpose of ModeShape:
+			provide a JCR implementation that provides access to content stored in many different kinds of systems, including the federation
+			of multiple systems.</emphasis>  A ModeShape repository isn't yet another silo of information, but rather it's a JCR view of the 
+			information you already have in your environment: files systems, databases, other repositories, services, applications, etc. 
+			<emphasis role="strong">ModeShape can help you understand the systems and information you already have, through a standard Java API.</emphasis>
 		</para>
 		<para>
 			Of course when you start providing a unified view of all this information, you start recognizing the need to store more
@@ -120,10 +121,10 @@
 			access, and use the information.
 		</para>
 		<para>
-			So, ModeShape <emphasis>is</emphasis> a JCR 2.0 implementation that can automatically sequence files loaded into the repository,
-			and it can be used as a traditional JCR silo repository.
-			But it <emphasis>can also</emphasis> let your applications use the JCR API to access the content in other systems, and
-			can unify the content from multiple external systems and multiple storage systems to provide a single, federated repository.
+			So, ModeShape <emphasis>is</emphasis> a JCR 2.0 implementation that can be used as a traditional self-contained repository.
+			But ModeShape can do so much more. It can automatically sequence files loaded into the repository, making it easier to reuse
+			that information. It also lets your applications use the JCR API to access the content in other systems, and can unify the 
+			content from multiple external systems and multiple storage systems to provide a single, federated repository.
 		</para>
 	</sect1>
 	<sect1 id="introduction_whats_next">

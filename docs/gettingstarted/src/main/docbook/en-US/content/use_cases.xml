@@ -141,7 +141,7 @@
 		<para>
 			As we'll see in the <link linkend="using_modeshape">next chapter</link>, this is actually the way in which ModeShape manages
 			its own configuration.  In the embedded case, the configuration repository is simply a local (in-memory) repository that
-			is populated by the configuration file (or programmatic API).  In a clustered mode, the repository is centralized.  But either
+			is populated by the configuration file (or programmatic API).  In a clustered mode, the repository can be centralized.  But either
 			way, to ModeShape the configuration is always defined in a repository.
 		</para>
 	</sect1>

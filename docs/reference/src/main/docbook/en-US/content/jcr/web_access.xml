@@ -41,6 +41,14 @@
   		deployed simultaneously on the same server or even within the same web archive.
   	</para>
   </note>
+  <note>
+  	<para>
+  		The WebDAV and REST servers described here exist for easy use, though they may need to be customized
+      and WAR files reassembled to fit your particular application server and configuration.
+      ModeShape's <link linkend="deploying_modeshape_to_jbossas">JBoss AS kit</link> is one such customization,
+			with a number of additional components built specifically for the JBoss Application Server environment.
+  	</para>
+  </note>
   <sect1 id="webdav_server">
 		<title>The ModeShape WebDAV Server</title>
 		<para>
