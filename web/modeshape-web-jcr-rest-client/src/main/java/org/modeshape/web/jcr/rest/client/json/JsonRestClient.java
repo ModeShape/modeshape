@@ -561,17 +561,17 @@ public final class JsonRestClient implements IRestClient {
             System.out.println("  	 	" + SERVER_PARM);
             System.out.println("  	 	" + FILE_PARM + " or " + DIR_PARM);
             System.out.println("  		" + WORKSPACEPATH_PARM);
+            System.out.println("  		" + REPO_PARM);
             System.out.println("	optional arguments are:");
+            System.out.println("  	 	" + WORKSPACENAME_PARM + " (default=default)");
             System.out.println(" 		" + USERNAME_PARM + "(default=admin");
             System.out.println("  	 	" + PWD_PARM + " (default=admin");
-            System.out.println("  	 	" + REPO_PARM + " (default=mode:repository)");
             System.out.println("  	 	" + UNPUBLISH + " with no parameter, will activate");
 
             System.exit(0);
         }
 
         String server_name = null;
-        String repo_name = "mode:repository";
         String workspace_name = "default";
         String workspace_path = null;
         String file_name = null;
