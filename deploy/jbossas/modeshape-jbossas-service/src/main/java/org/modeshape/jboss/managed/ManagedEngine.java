@@ -23,6 +23,7 @@
  */
 package org.modeshape.jboss.managed;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,22 +49,25 @@ import org.modeshape.jcr.JcrRepository;
  * A <code>ManagedEngine</code> instance is a JBoss managed object for a {@link JcrEngine}.
  */
 @Immutable
-@ManagementObject( name = "ModeShapeEngine", description = "A ModeShape engine", componentType = @ManagementComponent( type = "ModeShape", subtype = "Engine" ), properties = ManagementProperties.EXPLICIT )
-public final class ManagedEngine implements ModeShapeManagedObject {
-    
-    public ManagedEngine() {
-        this.engine = null;
-    }
+@ManagementObject(isRuntime=true, name = "ModeShapeEngine", description = "A ModeShape engine", componentType = @ManagementComponent( type = "ModeShape", subtype = "Engine" ), properties = ManagementProperties.EXPLICIT )
+public final class ManagedEngine implements ModeShapeManagedObject, Serializable {
+
+	
+ 	private static final long serialVersionUID = 1051810242700979633L;
 
     /**
      * The ModeShape object being managed and delegated to (never <code>null</code>).
      */
-    private JcrEngine engine;
+    private transient JcrEngine engine;
 
     /**
      * The managed object of the sequencing service of the engine.
      */
-    private ManagedSequencingService sequencingService;
+    private transient ManagedSequencingService sequencingService;
+    
+    public ManagedEngine() {
+        this.engine = null;
+    }
     
     /**
      * Creates a JBoss managed object from the specified engine.
@@ -120,7 +124,7 @@ public final class ManagedEngine implements ModeShapeManagedObject {
             }
         }
 
-        return Collections.unmodifiableCollection(repositories);
+        return repositories;
     }
     
     /**
@@ -167,6 +171,17 @@ public final class ManagedEngine implements ModeShapeManagedObject {
         return this.sequencingService;
     }
 
+    /**
+     * Obtains the version (build number) of this ModeShape instance. This is a JBoss managed operation.
+     * 
+     * @return the ModeShape version 
+     */
+    @ManagementOperation( description = "Obtains the version of this ModeShape instance", impact = Impact.ReadOnly )
+    public String getVersion() {
+        
+    	return this.engine.getEngineVersion();
+    }
+    
     /**
      * Indicates if the managed engine is running. This is a JBoss managed operation.
      * 
