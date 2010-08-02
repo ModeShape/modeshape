@@ -152,8 +152,11 @@ public final class JcrI18n {
     public static I18n queryCannotBeParsedUsingLanguage;
     public static I18n queryInLanguageIsNotValid;
     public static I18n queryIsDisabledInRepository;
+    public static I18n queryResultsDoNotIncludeScore;
+    public static I18n queryResultsDoNotIncludeColumn;
     public static I18n selectorNotUsedInQuery;
     public static I18n selectorUsedInEquiJoinCriteriaDoesNotExistInQuery;
+    public static I18n multipleSelectorsAppearInQueryRequireSpecifyingSelectorName;
 
     // Type registration messages
     public static I18n invalidNodeTypeName;

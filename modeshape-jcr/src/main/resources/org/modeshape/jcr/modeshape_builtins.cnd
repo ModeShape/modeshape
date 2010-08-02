@@ -71,11 +71,9 @@
 + jcr:system (mode:system) = mode:system autocreated mandatory protected ignore
 + * (nt:base) = nt:unstructured sns version
 
-[mode:resource] > nt:base
+// This is the same as 'nt:resource' but is not 'mix:referenceable'...
+[mode:resource] > nt:base, mix:mimeType, mix:lastModified
 - jcr:data (binary) primary mandatory
-- jcr:encoding (string) copy
-- jcr:lastModified (date) mandatory ignore
-- jcr:mimeType (string) copy mandatory
 
 [mode:share] > mix:referenceable    // Used for non-original shared nodes, but never really exposed to JCR clients
 - mode:sharedUuid (reference) mandatory protected initialize 

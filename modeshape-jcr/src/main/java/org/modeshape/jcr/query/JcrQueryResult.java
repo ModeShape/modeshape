@@ -34,7 +34,6 @@ import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
-import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
@@ -489,7 +488,7 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
          */
         @Override
         public Node getNode( String selectorName ) throws RepositoryException {
-            if (iterator.hasSelector(selectorName)) {
+            if (!iterator.hasSelector(selectorName)) {
                 throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));
             }
             return node;
@@ -521,28 +520,39 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
         }
 
         @Override
-        public Node getNode() throws RepositoryException {
-            throw new UnsupportedRepositoryOperationException();
+        public Node getNode() {
+            return node;
         }
 
         @Override
         public String getPath() throws RepositoryException {
-            throw new UnsupportedRepositoryOperationException();
+            return node.getPath();
         }
 
         @Override
         public String getPath( String selectorName ) throws RepositoryException {
-            throw new UnsupportedRepositoryOperationException();
+            if (!iterator.hasSelector(selectorName)) {
+                throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));
+            }
+            return node.getPath();
         }
 
         @Override
         public double getScore() throws RepositoryException {
-            throw new UnsupportedRepositoryOperationException();
+            int index = iterator.scoreIndex;
+            if (index == -1) {
+                throw new RepositoryException(JcrI18n.queryResultsDoNotIncludeScore.text(iterator.query));
+            }
+            Object score = tuple[index];
+            return score instanceof Float ? ((Float)score).doubleValue() : (Double)score;
         }
 
         @Override
         public double getScore( String selectorName ) throws RepositoryException {
-            throw new UnsupportedRepositoryOperationException();
+            if (!iterator.hasSelector(selectorName)) {
+                throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));
+            }
+            return getScore();
         }
     }
 
@@ -551,7 +561,6 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
         protected final Object[] tuple;
         private Value[] values = null;
         private Node[] nodes;
-        private int[] locationIndexes;
 
         protected MultiSelectorQueryResultRow( QueryResultRowIterator iterator,
                                                Node[] nodes,
@@ -560,7 +569,6 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
             this.iterator = iterator;
             this.tuple = tuple;
             this.nodes = nodes;
-            this.locationIndexes = locationIndexes;
             assert this.iterator != null;
             assert this.tuple != null;
         }
@@ -572,18 +580,11 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
          */
         @Override
         public Node getNode( String selectorName ) throws RepositoryException {
-            try {
-                int locationIndex = iterator.columns.getLocationIndex(selectorName);
-                for (int i = 0; i != this.locationIndexes.length; ++i) {
-                    if (this.locationIndexes[i] == locationIndex) {
-                        return nodes[i];
-                    }
-                }
-            } catch (NoSuchElementException e) {
-                throw new RepositoryException(e.getLocalizedMessage(), e);
+            int locationIndex = iterator.columns.getLocationIndex(selectorName);
+            if (locationIndex == -1) {
+                throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));
             }
-            assert false;
-            return null;
+            return nodes[locationIndex];
         }
 
         /**
@@ -592,19 +593,12 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
          * @see javax.jcr.query.Row#getValue(java.lang.String)
          */
         public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
-            try {
-                int locationIndex = iterator.columns.getLocationIndexForColumn(columnName);
-                for (int i = 0; i != this.locationIndexes.length; ++i) {
-                    if (this.locationIndexes[i] == locationIndex) {
-                        Node node = nodes[i];
-                        return node != null ? node.getProperty(columnName).getValue() : null;
-                    }
-                }
-            } catch (NoSuchElementException e) {
-                throw new RepositoryException(e.getLocalizedMessage(), e);
+            int locationIndex = iterator.columns.getLocationIndexForColumn(columnName);
+            if (locationIndex == -1) {
+                throw new RepositoryException(JcrI18n.queryResultsDoNotIncludeColumn.text(columnName, iterator.query));
             }
-            assert false;
-            return null;
+            Node node = nodes[locationIndex];
+            return node != null ? node.getProperty(columnName).getValue() : null;
         }
 
         /**
@@ -625,27 +619,39 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
 
         @Override
         public Node getNode() throws RepositoryException {
-            throw new UnsupportedRepositoryOperationException();
+            throw new RepositoryException(
+                                          JcrI18n.multipleSelectorsAppearInQueryRequireSpecifyingSelectorName.text(iterator.query));
         }
 
         @Override
         public String getPath() throws RepositoryException {
-            throw new UnsupportedRepositoryOperationException();
-        }
-
-        @Override
-        public String getPath( String selectorName ) throws RepositoryException {
-            throw new UnsupportedRepositoryOperationException();
+            throw new RepositoryException(
+                                          JcrI18n.multipleSelectorsAppearInQueryRequireSpecifyingSelectorName.text(iterator.query));
         }
 
         @Override
         public double getScore() throws RepositoryException {
-            throw new UnsupportedRepositoryOperationException();
+            throw new RepositoryException(
+                                          JcrI18n.multipleSelectorsAppearInQueryRequireSpecifyingSelectorName.text(iterator.query));
+        }
+
+        @Override
+        public String getPath( String selectorName ) throws RepositoryException {
+            return getNode(selectorName).getPath();
         }
 
         @Override
         public double getScore( String selectorName ) throws RepositoryException {
-            throw new UnsupportedRepositoryOperationException();
+            if (!iterator.hasSelector(selectorName)) {
+                throw new RepositoryException(JcrI18n.selectorNotUsedInQuery.text(selectorName, iterator.query));
+            }
+            int scoreIndex = iterator.columns.getFullTextSearchScoreIndexFor(selectorName);
+            if (scoreIndex == -1) {
+                throw new RepositoryException(JcrI18n.queryResultsDoNotIncludeScore.text(iterator.query));
+            }
+            Object score = tuple[scoreIndex];
+            return score instanceof Float ? ((Float)score).doubleValue() : (Double)score;
         }
+
     }
 }

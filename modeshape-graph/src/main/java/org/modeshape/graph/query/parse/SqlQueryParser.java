@@ -706,7 +706,7 @@ public class SqlQueryParser implements QueryParser {
                     throw new ParsingException(pos, msg);
                 }
                 selectorName = ((Selector)source).name();
-                propertyName = first;
+                propertyName = removeBracketsAndQuotes(first);
             }
             tokens.consume(',');
 

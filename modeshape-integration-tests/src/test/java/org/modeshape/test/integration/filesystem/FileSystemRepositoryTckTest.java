@@ -21,8 +21,9 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.test.integration;
+package org.modeshape.test.integration.filesystem;
 
+import org.modeshape.test.integration.AbstractRepositoryTckTest;
 import junit.framework.Test;
 
 public class FileSystemRepositoryTckTest {

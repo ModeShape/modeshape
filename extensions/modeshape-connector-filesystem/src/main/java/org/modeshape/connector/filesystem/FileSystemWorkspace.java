@@ -356,12 +356,14 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
             properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE));
             properties.put(JcrLexicon.LAST_MODIFIED, factory.create(JcrLexicon.LAST_MODIFIED,
                                                                     dateFactory.create(file.lastModified())));
-            // Don't really know the encoding, either ...
-            // request.addProperty(factory.create(JcrLexicon.ENCODED, stringFactory.create("UTF-8")));
-
             // Now put the file's content into the "jcr:data" property ...
             BinaryFactory binaryFactory = context.getValueFactories().getBinaryFactory();
-            properties.put(JcrLexicon.DATA, factory.create(JcrLexicon.DATA, binaryFactory.create(file)));
+            Binary binary = binaryFactory.create(file);
+            properties.put(JcrLexicon.DATA, factory.create(JcrLexicon.DATA, binary));
+
+            // Don't really know the encoding, either ...
+            // properties.put(JcrLexicon.ENCODED, factory.create(JcrLexicon.ENCODED, "UTF-8"));
+
             // return new PathNode(path, null, properties, Collections.<Segment>emptyList());
             return new PathNode(null, path.getParent(), path.getLastSegment(), properties, Collections.<Segment>emptyList());
         }
@@ -407,6 +409,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
         return new PathNode(null, path.getParent(), path.getLastSegment(), properties,
                             Collections.singletonList(pathFactory.createSegment(JcrLexicon.CONTENT)));
     }
+
     /**
      * This utility files the existing {@link File} at the supplied path, and in the process will verify that the path is actually
      * valid.
