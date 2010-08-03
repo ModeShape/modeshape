@@ -533,15 +533,10 @@
       New in ModeShape 2.1 is the modules defining the components used to 
 			<link linkend="deloying_modeshape_to_jbossas">deploy ModeShape in JBoss AS or EAP</link> as a
   		full-fledged, central, shared service that can be monitored and administered using the embedded console
-			and used directly by web applications deployed to the application server.
+			and used directly by web applications deployed to the application server. Our Maven build will produce
+			a "kit" ZIP file that can be unzipped into a JBoss AS profile. When your server restarts, ModeShape will be
+			running with a very simple configuration (although that can be easily changed).
 		</para>
-		<note>
-			<para>
-				This JBoss AS deployment mechanism is considered a "technology preview", meaning that it may undergo fairly significant
-				changes in the next few releases. We're pretty proud of the level of integration with JBoss AS, however,
-				so we do encourage you to try it and give us your feedback.
-			</para>
-		</note>
 		<para>
 			The modules that make up the JBoss AS deployment kit are located in the source under the "<code>deploy/jbossas</code> directory":
       <itemizedlist>
@@ -559,8 +554,8 @@
 						<ulink url="http://jboss.org/jopr">JOPR</ulink> that enables administration, monitoring, alerting, operational
 						control and configuration.
 						<emphasis>Note that this is currently a technology preview, because the plugin does not yet offer
-						very detailed information, and some of the information is still mocked up.
-						Addressing these limitations one of the major goals of the next release.</emphasis>
+						full functionality. We included it so that you can try it out and see what we're planning, but we'll
+						be adding the rest of the functionality in the next release (which is due out in mid-August 2010).</emphasis>
           </para>
         </listitem>
         <listitem>
@@ -576,9 +571,7 @@
           </para>
         </listitem>
       </itemizedlist>
-      There are also modules for ModeShape's documentation (located in the source under the
-      <code>docs/</code>
-      directory):
+      There are also modules for ModeShape's documentation (located in the source under the <code>docs/</code> directory):
       <itemizedlist>
         <listitem>
           <para>
@@ -636,7 +629,7 @@
           </para>
         </listitem>
       </itemizedlist>
-		  Another module provides system- and integration-level tests is never needed in client applications:
+		  Another module provides system- and integration-level tests and is never needed in client applications:
       <itemizedlist>
         <listitem>
           <para>
@@ -677,7 +670,7 @@
 		</para>
 	  <note>
 		  <para>
-			  ModeShape &versionNumber; currently passes 1371 of the 1391 JCR TCK tests, where 17 of these 19 failures appear
+			  ModeShape &versionNumber; currently passes 1372 of the 1391 JCR TCK tests, where 17 of these 19 failures appear
 			  to be bugs in the TCK tests (see 
 			  <ulink url="https://issues.apache.org/jira/browse/JCR-2648">JCR-2648</ulink>, 
 			  <ulink url="https://issues.apache.org/jira/browse/JCR-2661">JCR-2661</ulink>, 

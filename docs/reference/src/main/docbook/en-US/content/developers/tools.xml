@@ -56,29 +56,31 @@
 						<emphasis role="strong"><ulink url="&Wikipedia;Agile_software_development">Agile software development</ulink></emphasis>
 					  includes those software methodologies (e.g., Scrum) that promote development iterations and open collaboration.  While the
 						ModeShape project doesn't follow these closely, we do emphasize the importance of always having running software
-						and using running software as a measure of progress.  The ModeShape project also wants to move to more frequent
-						releases (on the order of 4-6 weeks)
+						and using running software as a measure of progress.  The ModeShape project tries to release early and release often,
+						with a goal of 4-6 weeks between releases.
 					</para>
 				</listitem>
 				<listitem>
 					<para>
 						<emphasis role="strong"><ulink url="&Wikipedia;Test-driven_development">Test-driven development (TDD)</ulink></emphasis>
 						techniques encourage first writing test cases for new features and functionality, then changing the code to add the
-						new features and functionality, and finally the code is refactored to clean-up and address any duplication or inconsistencies.
+						new features and functionality until the test cases pass, and refactoring the code as needed (when the tests all pass)
+						to adapt to the newly adding functionality and to clean-up and address any duplication and inconsistencies.
 					</para>
 				</listitem>
 				<listitem>
 					<para>
 						<emphasis role="strong"><ulink url="http://behaviour-driven.org/">Behavior-driven development (BDD)</ulink></emphasis>
-						is an evolution of TDD, where developers specify the desired behaviors first (rather than writing "tests").
-						In reality, this BDD adopts the language of the user so that tests are written using words that are meaningful
-						to users.  With recent test frameworks (like JUnit 4.4), we're able to write our unit tests to express
-						the desired behavior.  For example, a test class for sequencer implementation might have a test method
-						<code>shouldNotThrowAnErrorWhenStreamIsNull()</code>, which is very easy to understand the intent.
-						The result appears to be a larger number of finer-grained test methods, but which are more easily understood
-						and easier to write.  In fact, many advocates of BDD argue that one of the biggest challenges of TDD is knowing what
-						tests to write in the beginning, whereas with BDD the shift in focus and terminology make it easier for more
-						developers to enumerate the tests they need.
+						encourages developers to first list out the desired behaviors of the system first using words and phrases that are meaningful
+						to users and observers of the system, then write tests that verify those behaviors, and finally change the code
+						so that the system exhibits these behaviors and the tests pass. BDD helps get past one of the most difficult aspects
+						of TDD: how do developers know what tests to write before they write the code? BDD focuses the developers on
+						describing what the system should do and not do, and these can turn directly into tests.
+						There are BDD frameworks available, but we've found that using JUnit 4.4 works very well for us. We first
+						create our unit test method stubs using simple method names that describe what the component should (or should not) do,
+						and treat these almost as requirements. For example, some test methods might be called <code>shouldNotThrowAnErrorWhenStreamIsNull()</code> 
+						or <code>shouldReturnValueWithValidInputParameters()</code>. Then it's easy to write the test method implementation, 
+						and follow that up with writing the actual component.
 					</para>
 				</listitem>
 				<listitem>
