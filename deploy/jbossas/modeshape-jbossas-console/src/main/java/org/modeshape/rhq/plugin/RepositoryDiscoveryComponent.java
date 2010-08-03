@@ -23,6 +23,7 @@
  */
 package org.modeshape.rhq.plugin;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,6 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.jboss.managed.api.ComponentType;
 import org.jboss.managed.api.ManagedComponent;
 import org.jboss.metatype.api.values.MetaValue;
+import org.modeshape.jboss.managed.ManagedRepository;
 import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
 import org.modeshape.rhq.plugin.util.PluginConstants;
 import org.modeshape.rhq.plugin.util.ProfileServiceUtil;
@@ -42,7 +44,7 @@ import org.rhq.core.pluginapi.inventory.ResourceDiscoveryContext;
 /**
  * 
  */
-public class EngineDiscoveryComponent implements
+public class RepositoryDiscoveryComponent implements
 		ResourceDiscoveryComponent<EngineComponent> {
 
 	private final Log log = LogFactory
@@ -54,7 +56,7 @@ public class EngineDiscoveryComponent implements
 	 * @see org.rhq.core.pluginapi.inventory.ResourceDiscoveryComponent#discoverResources(org.rhq.core.pluginapi.inventory.ResourceDiscoveryContext)
 	 */
 	public Set<DiscoveredResourceDetails> discoverResources(
-			ResourceDiscoveryContext<EngineComponent> discoveryContext)
+			ResourceDiscoveryContext discoveryContext)
 			throws InvalidPluginConfigurationException, Exception {
 
 		Set<DiscoveredResourceDetails> discoveredResources = new HashSet<DiscoveredResourceDetails>();
@@ -65,28 +67,42 @@ public class EngineDiscoveryComponent implements
 								PluginConstants.ComponentType.Engine.MODESHAPE_TYPE,
 								PluginConstants.ComponentType.Engine.MODESHAPE_SUB_TYPE),
 						PluginConstants.ComponentType.Engine.MODESHAPE_ENGINE);
+
 		
-		String version = ProfileServiceUtil.stringValue(ModeShapeManagementView.executeManagedOperation(mc, "getVersion", new MetaValue[]{null}));
+		ModeShapeManagementView mmv = new ModeShapeManagementView();
+		
+		String operation = "getRepositories"; 
+		
+		MetaValue repositories = mmv.executeManagedOperation(mc, operation, null);
+		
+		if (repositories==null){
+			return discoveredResources;
+		}
+		
+		Collection<ManagedRepository> repositoryCollection = ModeShapeManagementView.getRepositoryCollectionValue(repositories);
+		
+		for (ManagedRepository managedRepository:repositoryCollection){
 
-		/**
-		 * 
-		 * A discovered resource must have a unique key, that must stay the same
-		 * when the resource is discovered the next time
-		 */
-		DiscoveredResourceDetails detail = new DiscoveredResourceDetails(
-				discoveryContext.getResourceType(), // ResourceType
-				mc.getName(), // Resource Key
-				PluginConstants.ComponentType.Engine.MODESHAPE_DISPLAYNAME, // Resource
-				// name
-				version,
-				PluginConstants.ComponentType.Engine.MODESHAPE_ENGINE, // Description
-				discoveryContext.getDefaultPluginConfiguration(), // Plugin Config
-				null // Process info from a process scan
-		);
+			/**
+			 * 
+			 * A discovered resource must have a unique key, that must stay the same
+			 * when the resource is discovered the next time
+			 */
+			DiscoveredResourceDetails detail = new DiscoveredResourceDetails(
+					discoveryContext.getResourceType(), // ResourceType
+					mc.getName(), // Resource Key
+					managedRepository.getName(), // Resource name
+					managedRepository.getVersion(),
+					PluginConstants.ComponentType.Repository.MODESHAPE_REPOSITORY_DESC, // Description
+					discoveryContext.getDefaultPluginConfiguration(), // Plugin Config
+					null // Process info from a process scan
+			);
 
-		// Add to return values
-		discoveredResources.add(detail);
-		log.info("Discovered ModeShape Engine");
+			// Add to return values
+			discoveredResources.add(detail);
+			log.info("Discovered ModeShape repositories: " + mc.getName());
+		}
+		
 		return discoveredResources;
 
 	}

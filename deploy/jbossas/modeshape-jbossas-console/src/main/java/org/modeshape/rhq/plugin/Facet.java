@@ -32,6 +32,7 @@ import org.jboss.deployers.spi.management.ManagementView;
 import org.jboss.managed.api.ComponentType;
 import org.jboss.managed.api.ManagedComponent;
 import org.jboss.managed.api.ManagedProperty;
+import org.mc4j.ems.connection.EmsConnection;
 import org.modeshape.rhq.plugin.util.PluginConstants;
 import org.modeshape.rhq.plugin.util.ProfileServiceUtil;
 import org.rhq.core.domain.configuration.Configuration;
@@ -60,13 +61,16 @@ import org.rhq.core.pluginapi.inventory.ResourceContext;
 import org.rhq.core.pluginapi.measurement.MeasurementFacet;
 import org.rhq.core.pluginapi.operation.OperationFacet;
 import org.rhq.core.pluginapi.operation.OperationResult;
+import org.rhq.plugins.jbossas5.ApplicationServerComponent;
+import org.rhq.plugins.jbossas5.ProfileServiceComponent;
+import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
 
 /**
  * This class implements required RHQ interfaces and provides common logic used
  * by all MetaMatrix components.
  */
 @SuppressWarnings({ "unchecked" })
-public abstract class Facet implements MeasurementFacet,
+public abstract class Facet implements ProfileServiceComponent<ResourceComponent>, MeasurementFacet,
 		OperationFacet, ConfigurationFacet, ContentFacet, DeleteResourceFacet,
 		CreateChildResourceFacet {
 
@@ -485,6 +489,16 @@ public abstract class Facet implements MeasurementFacet,
 		}
 
 		return this.versions;
+	}
+	
+	public ProfileServiceConnection getConnection() {
+		return ((ApplicationServerComponent) this.resourceContext
+				.getParentResourceComponent()).getConnection();
+	}
+
+	public EmsConnection getEmsConnection() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

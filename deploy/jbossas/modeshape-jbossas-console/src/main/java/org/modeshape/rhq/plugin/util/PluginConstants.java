@@ -63,6 +63,25 @@ public interface PluginConstants {
 			public final static String MODESHAPE_TYPE = "ModeShape"; //$NON-NLS-1$
 			public final static String MODESHAPE_SUB_TYPE = "Engine"; //$NON-NLS-1$
 			public final static String MODESHAPE_ENGINE = "ModeShapeEngine"; //$NON-NLS-1$
+			public final static String MODESHAPE_DISPLAYNAME = "ModeShape"; //$NON-NLS-1$
+			public final static String MODESHAPE_ENGINE_DESC = "A ModeShape Engine instance"; //$NON-NLS-1$
+			public final static String MODESHAPE_SEQUENCING_SERVICE = "Sequencing Service"; //$NON-NLS-1$
+
+			public static interface Operations {
+
+			}
+
+			public static interface Metrics {
+
+			}
+		}
+		
+		public interface Repository {
+
+			public final static String NAME = "Repository"; //$NON-NLS-1$
+			public final static String MODESHAPE_TYPE = "Modeshape"; //$NON-NLS-1$
+			public final static String MODESHAPE_SUB_TYPE = "Engine"; //$NON-NLS-1$
+			public final static String MODESHAPE_REPOSITORY_DESC = "An information store with hierarchical organization, versioning, events, search, query, and automated content extraction"; //$NON-NLS-1$
 
 			public static interface Operations {
 

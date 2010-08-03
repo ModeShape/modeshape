@@ -29,7 +29,7 @@ import org.rhq.core.domain.measurement.MeasurementReport;
 import org.rhq.core.domain.measurement.MeasurementScheduleRequest;
 import org.rhq.core.pluginapi.inventory.CreateResourceReport;
 
-public class EngineComponent extends Facet {
+public class RepositoryComponent extends Facet {
 
 	/**
 	 * {@inheritDoc}

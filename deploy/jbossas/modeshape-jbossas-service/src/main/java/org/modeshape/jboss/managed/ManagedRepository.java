@@ -30,14 +30,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import javax.jcr.Repository;
+
 import org.jboss.managed.api.ManagedOperation.Impact;
-import org.jboss.managed.api.annotation.ManagementComponent;
-import org.jboss.managed.api.annotation.ManagementObject;
 import org.jboss.managed.api.annotation.ManagementOperation;
 import org.jboss.managed.api.annotation.ManagementParameter;
-import org.jboss.managed.api.annotation.ManagementProperties;
 import org.jboss.managed.api.annotation.ManagementProperty;
 import org.jboss.managed.api.annotation.ViewUse;
+import org.jboss.metatype.api.annotations.MetaMapping;
 import org.joda.time.DateTime;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrRepository;
@@ -46,11 +47,11 @@ import org.modeshape.jcr.JcrRepository.Option;
 /**
  * The <code>ManagedRepository</code> is a JBoss managed object for a {@link JcrRepository repository}.
  */
-@ManagementObject( name = "ModeShapeRepository", description = "A ModeShape repository", componentType = @ManagementComponent( type = "ModeShape", subtype = "Repository" ), properties = ManagementProperties.EXPLICIT )
+@MetaMapping(ManagedRepositoryMapper.class)
 public class ManagedRepository implements ModeShapeManagedObject {
 
     // TODO get rid of this constructor
-    protected ManagedRepository() {
+    public ManagedRepository() {
         this.repository = null;
         this.options = null;
         this.descriptors = null;
@@ -67,12 +68,23 @@ public class ManagedRepository implements ModeShapeManagedObject {
     /**
      * A JBoss managed property for configured options of this repository. This map is unmodifiable and never <code>null</code>.
      */
-    private final Map<String, String> options;
+    @SuppressWarnings("unused")
+	private final Map<String, String> options;
 
     /**
      * The ModeShape object being managed and delegated to (never <code>null</code>).
      */
     private final JcrRepository repository;
+    
+    /**
+     * The name of this repository. 
+     */
+    private String name;
+    
+    /**
+     * The JCR version support for this repository. 
+     */
+    private String version;
 
     /**
      * Creates a JBoss managed object for the specified repository.
@@ -103,25 +115,48 @@ public class ManagedRepository implements ModeShapeManagedObject {
     }
 
     /**
-     * Obtains the descriptors configured for this repository. This is a JBoss managed readonly property.
+     * Obtains the options configured for this repository. This is a JBoss managed readonly property.
      * 
-     * @return the unmodifiable descriptors (never <code>null</code>)
+     * @return String name (can be <code>null</code>)
      */
-    @ManagementProperty( name = "Descriptors", description = "The descriptors defining repository behavior", readOnly = true, use = ViewUse.CONFIGURATION )
-    public Map<String, String> getDescriptors() {
-        return this.descriptors;
+    @ManagementProperty( name = "Name", description = "The name of this repository", readOnly = true, use = ViewUse.CONFIGURATION )
+    public String getName() {
+    	if (descriptors!=null){
+    		return this.descriptors.get(org.modeshape.jcr.api.Repository.REPOSITORY_NAME);
+    	}
+        return name;
+    }
+    
+    /**
+     * The name for this repository. 
+     * @param name 
+     */
+    public void setName(String name) {
+		this.name = name;
     }
 
     /**
-     * Obtains the options configured for this repository. This is a JBoss managed readonly property.
+     * Obtains the JCR version supported by this repository. This is a JBoss managed readonly property.
      * 
-     * @return the unmodifiable options (never <code>null</code>)
+     * @return String version (never <code>null</code>)
      */
-    @ManagementProperty( name = "Options", description = "The options defining repository behavior", readOnly = true, use = ViewUse.CONFIGURATION )
-    public Map<String, String> getOptions() {
-        return this.options;
+    @ManagementProperty( name = "Version", description = "The JCR version supported by this repository", readOnly = true, use = ViewUse.CONFIGURATION )
+    public String getVersion() {
+    	if (descriptors!=null){
+    		return this.descriptors.get(Repository.SPEC_VERSION_DESC) + " " + this.descriptors.get(Repository.SPEC_NAME_DESC);
+    	}
+        return version;
+    }
+    
+    /**
+     * The version support for this repository. 
+     * @param version
+     */
+    public void setVersion(String version) {
+		this.version = version;
     }
 
+    
     @ManagementProperty( name = "Query Activity", description = "The number of queries executed", use = ViewUse.STATISTIC )
     public int getQueryActivity() {
         // TODO implement getQueryActivity() and define in doc what the return value actually represents

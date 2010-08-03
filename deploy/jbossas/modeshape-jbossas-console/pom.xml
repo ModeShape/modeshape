@@ -15,6 +15,7 @@
 	<properties>
 		<org.jboss.jopr.as5.version>1.2.0.GA</org.jboss.jopr.as5.version>
 		<org.rhq.version>1.3.0.GA</org.rhq.version>
+		<jopr.jboss.as5.plugin.version>1.4.0.B01</jopr.jboss.as5.plugin.version>
 		<org.jboss.jopr.version>1.2.0.GA</org.jboss.jopr.version>
 		<apache.ant.version>1.7.0</apache.ant.version>
 
@@ -35,29 +36,29 @@
 			-->
 		</dependency>
 
-<!--
-            TODO: This is a fix for the Javac bug requiring annotations to be
-            available when compiling dependent classes. It is fixed in JDK 6.
-        -->
-        <dependency>
-            <groupId>javax.persistence</groupId>
-            <artifactId>persistence-api</artifactId>
-            <version>1.0</version>
-            <scope>provided</scope> <!-- provided by the agent/plugin-container -->
-        </dependency>
+		<!--
+			TODO: This is a fix for the Javac bug requiring annotations to be
+			available when compiling dependent classes. It is fixed in JDK 6.
+		-->
+		<dependency>
+			<groupId>javax.persistence</groupId>
+			<artifactId>persistence-api</artifactId>
+			<version>1.0</version>
+			<scope>provided</scope> <!-- provided by the agent/plugin-container -->
+		</dependency>
 
 
-        <!--
-            TODO: This is a fix for the Javac bug requiring annotations to be
-            available when compiling dependent classes; it is fixed in JDK 6.
-        -->
-        <dependency>
-            <groupId>jboss.jboss-embeddable-ejb3</groupId>
-            <artifactId>hibernate-all</artifactId>
-            <version>1.0.0.Alpha9</version>
-            <scope>provided</scope> <!-- provided by the agent/plugin-container -->
-        </dependency>
-        
+		<!--
+			TODO: This is a fix for the Javac bug requiring annotations to be
+			available when compiling dependent classes; it is fixed in JDK 6.
+		-->
+		<dependency>
+			<groupId>jboss.jboss-embeddable-ejb3</groupId>
+			<artifactId>hibernate-all</artifactId>
+			<version>1.0.0.Alpha9</version>
+			<scope>provided</scope> <!-- provided by the agent/plugin-container -->
+		</dependency>
+
 		<dependency>
 			<groupId>org.rhq</groupId>
 			<artifactId>rhq-core-plugin-api</artifactId>
@@ -122,11 +123,11 @@
 			<version>1.3.2</version>
 		</dependency>
 
-		<!--
-			<dependency> <groupId>org.jboss.on</groupId>
+		<dependency>
+			<groupId>org.jboss.on</groupId>
 			<artifactId>jopr-jboss-as-5-plugin</artifactId>
-			<version>2.3.0.EmbJopr.1.2.0-1</version> </dependency>
-		-->
+			<version>${jopr.jboss.as5.plugin.version}</version>
+		</dependency>
 
 	</dependencies>
 

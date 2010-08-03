@@ -35,7 +35,12 @@
 			<parent-resource-type name="JBossAS Server"
 				plugin="JBossAS5" />
 		</runs-inside>
-		
+
+        <service name="Repositories" description="ModeShape Repositories"
+            class="RepositoryComponent" discovery="RepositoryDiscoveryComponent">
+        </service>       
+        
+   	
 	</server>
 
 </plugin>

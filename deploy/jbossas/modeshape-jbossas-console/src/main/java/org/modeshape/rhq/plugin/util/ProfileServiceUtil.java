@@ -219,7 +219,7 @@ public class ProfileServiceUtil {
 		return deployDir;
 	}
 
-	public static ManagedComponent getDQPManagementView()
+	public static ManagedComponent getModeShapeManagementView()
 			throws NamingException, Exception {
 
 		return getManagedComponent(DQPTYPE, DQPNAME);
