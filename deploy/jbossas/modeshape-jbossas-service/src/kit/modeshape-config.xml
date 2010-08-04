@@ -59,11 +59,12 @@
             <mode:pathExpression>/files/jbpm-jpdlfile/(*.jpbm[*])/jcr:content[@jcr:data] => /sequenced/jbpm/$1 </mode:pathExpression>
         </mode:sequencer>    
         -->
-
+        <!-- 
         <mode:sequencer jcr:name="MS Office File Sequencer" mode:classname="org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer">
             <mode:description>Microsoft Office File sequencer</mode:description>        
             <mode:pathExpression>/files/msoffice/(*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /sequenced/msoffice/$1 </mode:pathExpression>
         </mode:sequencer>
+        -->
 
         <mode:sequencer jcr:name="XML File Sequencer" mode:classname="org.modeshape.sequencer.xml.XmlSequencer">
             <mode:description>XML File sequencer</mode:description>        
