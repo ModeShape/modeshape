@@ -30,7 +30,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.modeshape.common.text.Inflector;
 
 /**
@@ -503,6 +505,30 @@ public class ObjectProperty implements Comparable<ObjectProperty>, Serializable 
         for (String propertyName : propertyNames) {
             ObjectProperty prop = get(target, propertyName);
             results.add(prop);
+        }
+        return results;
+    }
+
+    /**
+     * Get representations for all of the Java properties on the supplied object.
+     * 
+     * @param target the target on which the setter is to be called; may not be null
+     * @return the map of all properties keyed by their name; never null
+     * @throws NoSuchMethodException if a matching method is not found.
+     * @throws SecurityException if access to the information is denied.
+     * @throws IllegalAccessException if the setter method could not be accessed
+     * @throws InvocationTargetException if there was an error invoking the setter method on the target
+     * @throws IllegalArgumentException if 'target' is null, or if 'propertyName' is null or empty
+     */
+    public static Map<String, ObjectProperty> getAllByName( Object target )
+        throws SecurityException, IllegalArgumentException, NoSuchMethodException, IllegalAccessException,
+        InvocationTargetException {
+        Reflection reflection = new Reflection(target.getClass());
+        String[] propertyNames = reflection.findGetterPropertyNames();
+        Map<String, ObjectProperty> results = new HashMap<String, ObjectProperty>();
+        for (String propertyName : propertyNames) {
+            ObjectProperty prop = get(target, propertyName);
+            results.put(propertyName, prop);
         }
         return results;
     }
