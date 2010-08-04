@@ -147,7 +147,7 @@ public class ObjectProperty implements Comparable<ObjectProperty>, Serializable 
      */
     public void setLabel( String label ) {
         if (label == null && name != null) {
-            label = INFLECTOR.humanize(INFLECTOR.underscore(label));
+            label = INFLECTOR.humanize(INFLECTOR.underscore(name));
         }
         this.label = label;
     }
@@ -328,6 +328,7 @@ public class ObjectProperty implements Comparable<ObjectProperty>, Serializable 
             if (!ObjectUtil.isEqualWithNulls(this.name, that.name)) return false;
             if (!ObjectUtil.isEqualWithNulls(this.value, that.value)) return false;
             if (!ObjectUtil.isEqualWithNulls(this.readOnly, that.readOnly)) return false;
+            return true;
         }
         return false;
     }
@@ -398,7 +399,7 @@ public class ObjectProperty implements Comparable<ObjectProperty>, Serializable 
         CheckArg.isNotNull(reflection, "reflection");
         Object value = reflection.invokeGetterMethodOnTarget(propertyName, target);
         Method[] methods = reflection.findMethods("set" + propertyName, false);
-        boolean readOnly = methods.length > 0;
+        boolean readOnly = methods.length < 1;
         Class<?> type = Object.class;
         Method[] getters = reflection.findMethods("get" + propertyName, false);
         if (getters.length == 0) {
