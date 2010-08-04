@@ -35,10 +35,22 @@
             <directory>modeshape-jbossas-web-webdav-war/target/distribution/modeshape-webdav.war.dir</directory>
             <outputDirectory>deploy/modeshape-webdav.war</outputDirectory>
         </fileSet>
+				
+				<fileSet>
+				    <directory>modeshape-jbossas-console/target</directory>
+				    <outputDirectory>deploy/admin-console.war/plugins</outputDirectory>
+						<includes>
+				   		<include>*.jar</include>
+				 		</includes>
+				    <excludes>
+				      <exclude>*-tests.jar</exclude>
+				      <exclude>*-sources.jar</exclude>
+				    </excludes>
+				</fileSet>
     </fileSets>
 
      
-    <moduleSets>   
+    <!--moduleSets>   
         <moduleSet>
             <includeSubModules>true</includeSubModules>
                    
@@ -54,7 +66,7 @@
             </binaries>
       
         </moduleSet>        
-    </moduleSets> 
+    </moduleSets--> 
   
     <dependencySets>
         <dependencySet>

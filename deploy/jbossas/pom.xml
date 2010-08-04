@@ -8,7 +8,7 @@
   <packaging>pom</packaging>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>jbossas</artifactId>
-  <name>ModeShape Jboss Deployment Components</name>
+  <name>ModeShape JBoss Deployment Components</name>
   <url>http://www.modeshape.org</url>
   <description>ModeShape JBoss Deployment Components</description>
   <modules>
