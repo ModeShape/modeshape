@@ -1,9 +1,8 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.modeshape</groupId>
 	<artifactId>modeshape</artifactId>
-	<version>2.1-SNAPSHOT</version>
+	<version>2.1.0.Final</version>
 	<packaging>pom</packaging>
 	<name>ModeShape</name>
 	<url>http://www.modeshape.org</url>
@@ -12,8 +11,8 @@
 		ModeShape is a JCR repository implementation with support for federation and sequencing.
 	</description>
 	<scm>
-		<connection>scm:svn:https://anonsvn.jboss.org/repos/modeshape/trunk</connection>
-		<developerConnection>scm:svn:https://svn.jboss.org/repos/modeshape/trunk</developerConnection>
+		<connection>scm:svn:https://anonsvn.jboss.org/repos/modeshape/tags/modeshape-2.1.0.Final</connection>
+		<developerConnection>scm:svn:https://svn.jboss.org/repos/modeshape/tags/modeshape-2.1.0.Final</developerConnection>
 	</scm>
 	<issueManagement>
 		<system>jira</system>
@@ -283,8 +282,7 @@
 			</activation>
 			<!--
 				properties> <maven.test.skip.exec>true</maven.test.skip.exec>
-				</properties
-			-->
+				</properties -->
 			<modules>
 				<module>modeshape-integration-tests</module>
 				<module>docs</module>
@@ -593,8 +591,7 @@
 			<jpaSource.driver>org.postgresql.Driver</jpaSource.driver>
 			<jpaSource.url>jdbc:postgresql://localhost/unit_test</jpaSource.url>
 			<jpaSource.username>postgres</jpaSource.username>
-			<jpaSource.password>data</jpaSource.password> </properties> </profile
-		-->
+			<jpaSource.password>data</jpaSource.password> </properties> </profile -->
 
 		<!--
 			###################################################################
@@ -870,8 +867,7 @@
 					</includes>
 					<!--
 						excludes> <exclude>**/Abstract*TestCase.java</exclude>
-						<exclude>**/Abstract*Test.java</exclude> </excludes
-					-->
+						<exclude>**/Abstract*Test.java</exclude> </excludes -->
 					<systemProperties>
 						<property>
 							<name>java.io.tmpdir</name>
