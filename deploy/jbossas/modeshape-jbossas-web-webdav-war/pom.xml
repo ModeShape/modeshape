@@ -39,7 +39,7 @@
 		</dependency>
 	</dependencies>
 	<build>
-		<finalName>modeshape</finalName>
+		<finalName>modeshape-test</finalName>
 		<plugins>
 		
 <!--   
@@ -52,6 +52,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <configuration>
+                    <warName>modeshape-test</warName>
                     <webResources>
                     <resource>
                         <!--  add in the configRepository.xml for running locally  -->
@@ -128,6 +129,7 @@
                 <version>2.2-beta-2</version>
                 
                 <configuration>
+                    <finalName>modeshape</finalName>
                     <descriptors>
                         <descriptor>src/assembly/kit.xml</descriptor>
                     </descriptors>
@@ -143,6 +145,13 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
 		</plugins>
 	</build>

@@ -50,16 +50,24 @@
             <include>org.modeshape:modeshape-sequencer-jbpm-jpdl</include>
             <include>org.modeshape:modeshape-sequencer-classfile</include>
             <include>org.modeshape:modeshape-sequencer-java</include>
-          
-          
+            <!-- 
+            <include>org.modeshape:modeshape-sequencer-msoffice</include>
+            -->
+            <include>org.modeshape:modeshape-sequencer-images</include>
+            <include>org.modeshape:modeshape-sequencer-mp3</include>
+            
+            <include>org.modeshape:modeshape-sequencer-msoffice:*with-dependencies.jar</include>
+           
             <include>org.modeshape:modeshape-connector-filesystem</include>
             <include>org.modeshape:modeshape-connector-infinispan</include>
             <include>org.modeshape:modeshape-connector-jbosscache</include>
             <include>org.modeshape:modeshape-connector-jcr</include>
             <include>org.modeshape:modeshape-connector-jdbc-metadata</include>
             <include>org.modeshape:modeshape-connector-store-jpa</include>
-            <include>org.modeshape:modeshape-connector-svn</include>       
-            
+            <include>org.modeshape:modeshape-connector-svn</include>    
+   
+            <include>org.apache.poi:poi</include>
+            <include>org.apache.poi:poi-scratchpad</include>       
 
           </includes>
     

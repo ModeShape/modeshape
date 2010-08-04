@@ -13,25 +13,12 @@
 	<url>http://www.modeshape.org</url>
 	<dependencies>
 
-
         <dependency>
             <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jbossas-service</artifactId>
+            <artifactId>modeshape-jcr</artifactId>
             <version>${project.version}</version>
         </dependency>
         
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jbossas-console</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jdbc</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
 		<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-web-jcr-rest</artifactId>
@@ -60,7 +47,7 @@
 		</dependency>
 	</dependencies>
 	<build>
-		<finalName>modeshape</finalName>
+		<finalName>modeshape-test</finalName>
 
 <!--   
         there are 2 wars being built, a test war and a deployment war
@@ -74,6 +61,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <configuration>
+                    <warName>modeshape-test</warName>
                     <webResources>
                     <resource>
                         <!--  add in the configRepository.xml for running locally  -->
@@ -150,6 +138,7 @@
                 <version>2.2-beta-2</version>
                 
                 <configuration>
+                     <finalName>modeshape</finalName>
                     <descriptors>
                         <descriptor>src/assembly/kit.xml</descriptor>
                     </descriptors>
@@ -166,6 +155,15 @@
                     </execution>
                 </executions>
             </plugin>
+            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+               <configuration>
+                 <skip>true</skip>
+              </configuration>
+            </plugin>
+            
 		</plugins>
 	</build>
 
