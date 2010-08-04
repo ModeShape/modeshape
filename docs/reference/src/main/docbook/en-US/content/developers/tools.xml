@@ -555,35 +555,27 @@
 		<sect2 id="release">
 			<title>Perform the release</title>
 			<para>
-				At this point, the release's artifacts need to be published to the JBoss Maven repository.  This next command check outs the
-				files from the release tag created earlier (into a <code>trunk/target/checkout</code> directory), runs a build, and then
-				deploys the generated artifacts.  Note that this ensures that the artifacts are built from the tagged code.
-			</para>
-			<programlisting>$ mvn release:perform -DuseReleaseProfile=false</programlisting>
-			<note>
-				<para>
-					If during this process you get an error finding the released artifacts in your local Maven repository, you may 
-					need to go into the <code>trunk/target/checkout</code> folder and run <code>$ mvn install</code>.  This is a simple
-					workaround to make the artifacts available locally.  Another option to try is adding <code>-Dgoals=install,assembly</code> 
-					to the <code>$ mvn release:perform... </code> command above.
-				</para>
-			</note>
-			<para>
-				The release has been performed, but we still need to build and deploy the <emphasis>real</emphasis> artifacts
-				to the JBoss Maven repository.  
+				The release has been performed with a new tag created in SVN for the release, but we still need to build and deploy 
+				the <emphasis>real</emphasis> artifacts to the JBoss Maven repository.  
 				To do this, go to a working area and check out the recently-produced SVN tag (using the correct <code>{release-number}</code>):
 			</para>
 			<programlisting>$ svn checkout https://anonsvn.jboss.org/repos/modeshape/tags/modeshape-{release-number}/</programlisting>
 			<para>
 				Then, go into the new directory, and perform a Maven deploy:
 			</para>
-			<programlisting>$ mvn clean deploy</programlisting>
+			<programlisting>$ mvn clean deploy -DskipTests=true -Darguments=-DskipTests=true</programlisting>
 			<para>
 				This will rebuild all the artifacts (from your local copy of the <emphasis>tagged</emphasis> source) and deploy them
 				to the JBoss.org Maven repository in staging area. Then, using the JBoss.org web interface, close the staging area
 				and (after validating the artifacts uploaded to the staging area) promote them into the releases repository
 				(see the <ulink url="http://community.jboss.org/wiki/MavenDeployingaRelease">repository documentation</ulink> for details).
 			</para>
+			<note>
+				<para>
+					The "<code>-DskipTests=true</code>" tells Maven to compile the tests but to skip running them. 
+					The "<code>-Darguments=-DskipTests=true</code>" does the same thing for forked processes.
+				</para>
+			</note> 
 			<para>
 				At this point, the software has been tagged, released, and deployed to the JBoss.org Maven repository. The last
 				tasks are to update the <ulink url="&Home;">ModeShape.org</ulink> website (using Magnolia) and publish the release onto

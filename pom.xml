@@ -13,6 +13,7 @@
 	<scm>
 		<connection>scm:svn:https://anonsvn.jboss.org/repos/modeshape/trunk</connection>
 		<developerConnection>scm:svn:https://svn.jboss.org/repos/modeshape/trunk</developerConnection>
+		<url>http://anonsvn.jboss.org/repos/modeshape</url>
 	</scm>
 	<issueManagement>
 		<system>jira</system>
@@ -280,9 +281,12 @@
 			<activation>
 				<activeByDefault>false</activeByDefault>
 			</activation>
-			<!--
-				properties> <maven.test.skip.exec>true</maven.test.skip.exec>
-				</properties -->
+			<properties>
+				<!-- Skip running the tests during assembly -->
+				<skipTests>true</skipTests>
+				<!-- Skip running the tests in any processes forked during assembly -->
+				<arguments>-DskipTests=true</arguments>
+			</properties>
 			<modules>
 				<module>modeshape-integration-tests</module>
 				<module>docs</module>
