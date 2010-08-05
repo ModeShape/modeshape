@@ -28,8 +28,17 @@ import static org.junit.Assert.assertThat;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.CommonI18n;
+import org.modeshape.common.annotation.Category;
+import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Label;
+import org.modeshape.common.collection.Problem;
+import org.modeshape.common.collection.Problem.Status;
+import org.modeshape.common.i18n.I18n;
+import org.modeshape.common.util.Reflection.Property;
 
 /**
  * @author Randall Hauch
@@ -166,4 +175,164 @@ public class ReflectionTest {
         assertThat(stringListReflection.findMethods("argleBargle", true).length, is(0));
     }
 
+    @Test
+    public void shouldGetAllPropertiesOnJavaBean() throws Exception {
+        Status status = Status.INFO;
+        int code = 121;
+        I18n msg = CommonI18n.argumentMayNotBeEmpty;
+        Object[] params = new Object[] {"argName"};
+        String resource = "The source";
+        String location = "The place to be";
+        Throwable throwable = null;
+        Problem problem = new Problem(status, code, msg, params, resource, location, throwable);
+        Reflection reflection = new Reflection(Problem.class);
+        List<Property> props = reflection.getAllPropertiesOn(problem);
+        Map<String, Property> propsByName = reflection.getAllPropertiesByNameOn(problem);
+
+        assertThat(props.size(), is(8));
+        assertThat(propsByName.size(), is(8));
+        assertThat(props.containsAll(propsByName.values()), is(true));
+
+        Property property = propsByName.remove("Status");
+        assertThat(property.getName(), is("Status"));
+        assertThat(property.getLabel(), is("Status"));
+        assertThat(property.getType().equals(Status.class), is(true));
+        assertThat(property.getValue(), is((Object)status));
+        assertThat(property.isReadOnly(), is(true));
+        assertThat(property, is(findProperty(property.getName(), props)));
+
+        property = propsByName.remove("Code");
+        assertThat(property.getName(), is("Code"));
+        assertThat(property.getLabel(), is("Code"));
+        assertThat(property.getType().equals(Integer.TYPE), is(true));
+        assertThat(property.getValue(), is((Object)code));
+        assertThat(property.isReadOnly(), is(true));
+
+        property = propsByName.remove("Message");
+        assertThat(property.getName(), is("Message"));
+        assertThat(property.getLabel(), is("Message"));
+        assertThat(property.getType().equals(I18n.class), is(true));
+        assertThat(property.getValue(), is((Object)msg));
+        assertThat(property.isReadOnly(), is(true));
+
+        property = propsByName.remove("MessageString");
+        assertThat(property.getName(), is("MessageString"));
+        assertThat(property.getLabel(), is("Message string"));
+        assertThat(property.getType().equals(String.class), is(true));
+        assertThat(property.getValue(), is((Object)msg.text(params)));
+        assertThat(property.isReadOnly(), is(true));
+
+        property = propsByName.remove("Parameters");
+        assertThat(property.getName(), is("Parameters"));
+        assertThat(property.getLabel(), is("Parameters"));
+        assertThat(property.getType().equals(Object[].class), is(true));
+        assertThat(property.getValue(), is((Object)params));
+        assertThat(property.isReadOnly(), is(true));
+
+        property = propsByName.remove("Resource");
+        assertThat(property.getName(), is("Resource"));
+        assertThat(property.getLabel(), is("Resource"));
+        assertThat(property.getType().equals(String.class), is(true));
+        assertThat(property.getValue(), is((Object)resource));
+        assertThat(property.isReadOnly(), is(true));
+
+        property = propsByName.remove("Location");
+        assertThat(property.getName(), is("Location"));
+        assertThat(property.getLabel(), is("Location"));
+        assertThat(property.getType().equals(String.class), is(true));
+        assertThat(property.getValue(), is((Object)location));
+        assertThat(property.isReadOnly(), is(true));
+
+        property = propsByName.remove("Throwable");
+        assertThat(property.getName(), is("Throwable"));
+        assertThat(property.getLabel(), is("Throwable"));
+        assertThat(property.getType().equals(Throwable.class), is(true));
+        assertThat(property.getValue(), is((Object)throwable));
+        assertThat(property.isReadOnly(), is(true));
+
+        assertThat(propsByName.isEmpty(), is(true));
+    }
+
+    @Test
+    public void shouldUseAnnotationsOnClassFieldsForProperties() throws Exception {
+        SomeStructure structure = new SomeStructure();
+        structure.setCount(33);
+        structure.setIdentifier("This is the identifier value");
+        Reflection reflection = new Reflection(SomeStructure.class);
+        List<Property> props = reflection.getAllPropertiesOn(structure);
+        Map<String, Property> propsByName = reflection.getAllPropertiesByNameOn(structure);
+
+        assertThat(props.size(), is(3));
+        assertThat(propsByName.size(), is(3));
+
+        Property property = propsByName.remove("Identifier");
+        assertThat(property.getName(), is("Identifier"));
+        assertThat(property.getLabel(), is(CommonI18n.noMoreContent.text()));
+        assertThat(property.getDescription(), is(CommonI18n.nullActivityMonitorTaskName.text()));
+        assertThat(property.getCategory(), is(CommonI18n.noMoreContent.text()));
+        assertThat(property.getType().equals(String.class), is(true));
+        assertThat(property.getValue(), is((Object)structure.getIdentifier()));
+        assertThat(property.isReadOnly(), is(false));
+        assertThat(property, is(findProperty(property.getName(), props)));
+
+        property = propsByName.remove("Count");
+        assertThat(property.getName(), is("Count"));
+        assertThat(property.getLabel(), is("Count"));
+        assertThat(property.getDescription(), is("This is the count"));
+        assertThat(property.getCategory(), is(""));
+        assertThat(property.getType().equals(Integer.TYPE), is(true));
+        assertThat(property.getValue(), is((Object)structure.getCount()));
+        assertThat(property.isReadOnly(), is(false));
+
+        property = propsByName.remove("OnFire");
+        assertThat(property.getName(), is("OnFire"));
+        assertThat(property.getLabel(), is("On fire"));
+        assertThat(property.getDescription(), is(""));
+        assertThat(property.getCategory(), is(""));
+        assertThat(property.getType().equals(Boolean.TYPE), is(true));
+        assertThat(property.getValue(), is((Object)structure.isOnFire()));
+        assertThat(property.isReadOnly(), is(true));
+    }
+
+    protected Property findProperty( String propertyName,
+                                     List<Property> properties ) {
+        for (Property prop : properties) {
+            if (prop.getName().equals(propertyName)) return prop;
+        }
+        return null;
+    }
+
+    protected static class SomeStructure {
+        @Category( i18n = CommonI18n.class, value = "noMoreContent" )
+        @Label( i18n = CommonI18n.class, value = "noMoreContent" )
+        @Description( i18n = CommonI18n.class, value = "nullActivityMonitorTaskName" )
+        private String identifier;
+        @Description( value = "This is the count" )
+        private int count;
+        private boolean onFire;
+
+        public int getCount() {
+            return count;
+        }
+
+        public String getIdentifier() {
+            return identifier;
+        }
+
+        public boolean isOnFire() {
+            return onFire;
+        }
+
+        public void setCount( int count ) {
+            this.count = count;
+        }
+
+        public void setIdentifier( String identifier ) {
+            this.identifier = identifier;
+        }
+
+        // public void setOnFire( boolean onFire ) {
+        // this.onFire = onFire;
+        // }
+    }
 }

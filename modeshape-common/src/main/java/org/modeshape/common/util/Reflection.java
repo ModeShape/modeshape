@@ -23,10 +23,14 @@
  */
 package org.modeshape.common.util;
 
+import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,6 +41,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import net.jcip.annotations.Immutable;
+import org.modeshape.common.annotation.Category;
+import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Label;
+import org.modeshape.common.i18n.I18n;
+import org.modeshape.common.text.Inflector;
 
 /**
  * Utility class for working reflectively with objects.
@@ -436,6 +445,10 @@ public class Reflection {
         throws NoSuchMethodException, SecurityException, IllegalArgumentException, IllegalAccessException,
         InvocationTargetException {
         String[] methodNamesArray = findMethodNames("get" + javaPropertyName);
+        if (methodNamesArray.length <= 0) {
+            // Try 'is' getter ...
+            methodNamesArray = findMethodNames("is" + javaPropertyName);
+        }
         return invokeBestMethodOnTarget(methodNamesArray, target);
     }
 
@@ -587,4 +600,524 @@ public class Reflection {
         throw new NoSuchMethodException(methodName);
     }
 
+    /**
+     * Get the representation of the named property (with the supplied labe, category, description, and allowed values) on the
+     * target object.
+     * <p>
+     * If the label is not provided, this method looks for the {@link Label} annotation on the property's field and sets the label
+     * to the annotation's literal value, or if the {@link Label#i18n()} class is referenced, the localized value of the
+     * referenced {@link I18n}.
+     * </p>
+     * If the description is not provided, this method looks for the {@link Description} annotation on the property's field and
+     * sets the label to the annotation's literal value, or if the {@link Description#i18n()} class is referenced, the localized
+     * value of the referenced {@link I18n}. </p>
+     * <p>
+     * And if the category is not provided, this method looks for the {@link Category} annotation on the property's field and sets
+     * the label to the annotation's literal value, or if the {@link Category#i18n()} class is referenced, the localized value of
+     * the referenced {@link I18n}.
+     * </p>
+     * 
+     * @param target the target on which the setter is to be called; may not be null
+     * @param propertyName the name of the Java object property; may not be null
+     * @param label the new label for the property; may be null
+     * @param category the category for this property; may be null
+     * @param description the description for the property; may be null if this is not known
+     * @param allowedValues the of allowed values, or null or empty if the values are not constrained
+     * @return the representation of the Java property; never null
+     * @throws NoSuchMethodException if a matching method is not found.
+     * @throws SecurityException if access to the information is denied.
+     * @throws IllegalAccessException if the setter method could not be accessed
+     * @throws InvocationTargetException if there was an error invoking the setter method on the target
+     * @throws IllegalArgumentException if 'target' is null, or if 'propertyName' is null or empty
+     */
+    public Property getProperty( Object target,
+                                 String propertyName,
+                                 String label,
+                                 String category,
+                                 String description,
+                                 Object... allowedValues )
+        throws SecurityException, IllegalArgumentException, NoSuchMethodException, IllegalAccessException,
+        InvocationTargetException {
+        CheckArg.isNotNull(target, "target");
+        CheckArg.isNotEmpty(propertyName, "propertyName");
+        Object value = invokeGetterMethodOnTarget(propertyName, target);
+        Method[] methods = findMethods("set" + propertyName, false);
+        boolean readOnly = methods.length < 1;
+        Class<?> type = Object.class;
+        Method[] getters = findMethods("get" + propertyName, false);
+        if (getters.length == 0) {
+            getters = findMethods("is" + propertyName, false);
+        }
+        if (getters.length > 0) {
+            type = getters[0].getReturnType();
+        }
+        try {
+            // Find the corresponding field ...
+            Field field = targetClass.getDeclaredField(Inflector.getInstance().lowerCamelCase(propertyName));
+            if (description == null) {
+                Description desc = field.getAnnotation(Description.class);
+                if (desc != null) {
+                    description = localizedString(desc.i18n(), desc.value());
+                }
+            }
+            if (label == null) {
+                Label labelAnnotation = field.getAnnotation(Label.class);
+                if (labelAnnotation != null) {
+                    label = localizedString(labelAnnotation.i18n(), labelAnnotation.value());
+                }
+            }
+            if (category == null) {
+                Category cat = field.getAnnotation(Category.class);
+                if (cat != null) {
+                    category = localizedString(cat.i18n(), cat.value());
+                }
+            }
+        } catch (NoSuchFieldException e) {
+            // Do nothing, since we can't find the class' field matching the 'propertyName' ...
+        }
+        return new Property(propertyName, value, label, description, category, readOnly, type, allowedValues);
+    }
+
+    protected static String localizedString( Class<?> i18nClass,
+                                             String id )
+        throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+        if (i18nClass != null && !Object.class.equals(i18nClass) && id != null) {
+            // Look up the I18n field ...
+            Field i18nMsg = i18nClass.getDeclaredField(id);
+            I18n msg = (I18n)i18nMsg.get(null);
+            if (msg != null) {
+                return msg.text();
+            }
+        }
+        return id;
+    }
+
+    /**
+     * Get the representation of the named property (with the supplied description) on the target object.
+     * 
+     * @param target the target on which the setter is to be called; may not be null
+     * @param propertyName the name of the Java object property; may not be null
+     * @param description the description for the property; may be null if this is not known
+     * @return the representation of the Java property; never null
+     * @throws NoSuchMethodException if a matching method is not found.
+     * @throws SecurityException if access to the information is denied.
+     * @throws IllegalAccessException if the setter method could not be accessed
+     * @throws InvocationTargetException if there was an error invoking the setter method on the target
+     * @throws IllegalArgumentException if 'target' is null, or if 'propertyName' is null or empty
+     */
+    public Property getProperty( Object target,
+                                 String propertyName,
+                                 String description )
+        throws SecurityException, IllegalArgumentException, NoSuchMethodException, IllegalAccessException,
+        InvocationTargetException {
+        CheckArg.isNotNull(target, "target");
+        CheckArg.isNotEmpty(propertyName, "propertyName");
+        return getProperty(target, propertyName, null, null, description);
+    }
+
+    /**
+     * Get the representation of the named property on the target object.
+     * 
+     * @param target the target on which the setter is to be called; may not be null
+     * @param propertyName the name of the Java object property; may not be null
+     * @return the representation of the Java property; never null
+     * @throws NoSuchMethodException if a matching method is not found.
+     * @throws SecurityException if access to the information is denied.
+     * @throws IllegalAccessException if the setter method could not be accessed
+     * @throws InvocationTargetException if there was an error invoking the setter method on the target
+     * @throws IllegalArgumentException if 'target' is null, or if 'propertyName' is null or empty
+     */
+    public Property getProperty( Object target,
+                                 String propertyName )
+        throws SecurityException, IllegalArgumentException, NoSuchMethodException, IllegalAccessException,
+        InvocationTargetException {
+        CheckArg.isNotNull(target, "target");
+        CheckArg.isNotEmpty(propertyName, "propertyName");
+        return getProperty(target, propertyName, null, null, null);
+    }
+
+    /**
+     * Get representations for all of the Java properties on the supplied object.
+     * 
+     * @param target the target on which the setter is to be called; may not be null
+     * @return the list of all properties; never null
+     * @throws NoSuchMethodException if a matching method is not found.
+     * @throws SecurityException if access to the information is denied.
+     * @throws IllegalAccessException if the setter method could not be accessed
+     * @throws InvocationTargetException if there was an error invoking the setter method on the target
+     * @throws IllegalArgumentException if 'target' is null, or if 'propertyName' is null or empty
+     */
+    public List<Property> getAllPropertiesOn( Object target )
+        throws SecurityException, IllegalArgumentException, NoSuchMethodException, IllegalAccessException,
+        InvocationTargetException {
+        String[] propertyNames = findGetterPropertyNames();
+        List<Property> results = new ArrayList<Property>(propertyNames.length);
+        for (String propertyName : propertyNames) {
+            Property prop = getProperty(target, propertyName);
+            results.add(prop);
+        }
+        return results;
+    }
+
+    /**
+     * Get representations for all of the Java properties on the supplied object.
+     * 
+     * @param target the target on which the setter is to be called; may not be null
+     * @return the map of all properties keyed by their name; never null
+     * @throws NoSuchMethodException if a matching method is not found.
+     * @throws SecurityException if access to the information is denied.
+     * @throws IllegalAccessException if the setter method could not be accessed
+     * @throws InvocationTargetException if there was an error invoking the setter method on the target
+     * @throws IllegalArgumentException if 'target' is null, or if 'propertyName' is null or empty
+     */
+    public Map<String, Property> getAllPropertiesByNameOn( Object target )
+        throws SecurityException, IllegalArgumentException, NoSuchMethodException, IllegalAccessException,
+        InvocationTargetException {
+        String[] propertyNames = findGetterPropertyNames();
+        Map<String, Property> results = new HashMap<String, Property>();
+        for (String propertyName : propertyNames) {
+            Property prop = getProperty(target, propertyName);
+            results.put(propertyName, prop);
+        }
+        return results;
+    }
+
+    /**
+     * Set on the supplied target object the property described by this instance to the {@link Property#getValue() value}.
+     * 
+     * @param target the target on which the setter is to be called; may not be null
+     * @param property the property that is to be set on the target
+     * @throws NoSuchMethodException if a matching method is not found.
+     * @throws SecurityException if access to the information is denied.
+     * @throws IllegalAccessException if the setter method could not be accessed
+     * @throws InvocationTargetException if there was an error invoking the setter method on the target
+     * @throws IllegalArgumentException if 'target' is null or if the {@link Property#getValue() value} is not legal
+     */
+    public void setProperty( Object target,
+                             Property property )
+        throws SecurityException, IllegalArgumentException, NoSuchMethodException, IllegalAccessException,
+        InvocationTargetException {
+        CheckArg.isNotNull(target, "target");
+        CheckArg.isNotNull(property, "property");
+        CheckArg.isNotNull(property.getName(), "property.getName()");
+        invokeSetterMethodOnTarget(property.getName(), target, property.getValue());
+    }
+
+    /**
+     * A representation of a property on a Java object.
+     */
+    public static class Property implements Comparable<Property>, Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        private static final Inflector INFLECTOR = Inflector.getInstance();
+
+        private String name;
+        private String label;
+        private String description;
+        private Object value;
+        private Collection<?> allowedValues;
+        private Class<?> type;
+        private boolean readOnly;
+        private String category;
+
+        /**
+         * Create a new object property that has no fields initialized.
+         */
+        public Property() {
+        }
+
+        /**
+         * Create a new object property with the supplied parameters set.
+         * 
+         * @param name the property name; may be null
+         * @param value the value; may be null
+         * @param label the human-readable property label; may be null
+         * @param description the description for this property; may be null
+         * @param readOnly true if the property is read-only, or false otherwise
+         */
+        public Property( String name,
+                         Object value,
+                         String label,
+                         String description,
+                         boolean readOnly ) {
+            this(name, value, label, description, null, readOnly, null);
+        }
+
+        /**
+         * Create a new object property with the supplied parameters set.
+         * 
+         * @param name the property name; may be null
+         * @param value the value; may be null
+         * @param label the human-readable property label; may be null
+         * @param description the description for this property; may be null
+         * @param category the category for this property; may be null
+         * @param readOnly true if the property is read-only, or false otherwise
+         * @param type the value class; may be null
+         * @param allowedValues the array of allowed values, or null or empty if the values are not constrained
+         */
+        public Property( String name,
+                         Object value,
+                         String label,
+                         String description,
+                         String category,
+                         boolean readOnly,
+                         Class<?> type,
+                         Object... allowedValues ) {
+            setName(name);
+            setValue(value);
+            if (label != null) setLabel(label);
+            if (description != null) setDescription(description);
+            setCategory(category);
+            setReadOnly(readOnly);
+            setType(type);
+            setAllowedValues(allowedValues);
+        }
+
+        /**
+         * Get the property name in camel case. The getter method is simply "get" followed by the name of the property (with the
+         * first character of the property converted to uppercase). The setter method is "set" (or "is" for boolean properties)
+         * followed by the name of the property (with the first character of the property converted to uppercase).
+         * 
+         * @return the property name; never null, but possibly empty
+         */
+        public String getName() {
+            return name != null ? name : "";
+        }
+
+        /**
+         * Set the property name in camel case. The getter method is simply "get" followed by the name of the property (with the
+         * first character of the property converted to uppercase). The setter method is "set" (or "is" for boolean properties)
+         * followed by the name of the property (with the first character of the property converted to uppercase).
+         * 
+         * @param name the nwe property name; may be null
+         */
+        public void setName( String name ) {
+            this.name = name;
+            if (this.label == null) setLabel(null);
+        }
+
+        /**
+         * Get the human-readable label for the property. This is often just a {@link Inflector#humanize(String, String...)
+         * humanized} form of the {@link #getName() property name}.
+         * 
+         * @return label the human-readable property label; never null, but possibly empty
+         */
+        public String getLabel() {
+            return label != null ? label : "";
+        }
+
+        /**
+         * Set the human-readable label for the property. If null, this will be set to the
+         * {@link Inflector#humanize(String, String...) humanized} form of the {@link #getName() property name}.
+         * 
+         * @param label the new label for the property; may be null
+         */
+        public void setLabel( String label ) {
+            if (label == null && name != null) {
+                label = INFLECTOR.humanize(INFLECTOR.underscore(name));
+            }
+            this.label = label;
+        }
+
+        /**
+         * Get the description for this property.
+         * 
+         * @return the description; never null, but possibly empty
+         */
+        public String getDescription() {
+            return description != null ? description : "";
+        }
+
+        /**
+         * Set the description for this property.
+         * 
+         * @param description the new description for this property; may be null
+         */
+        public void setDescription( String description ) {
+            this.description = description;
+        }
+
+        /**
+         * Get the current value for this property.
+         * 
+         * @return the current value; may be null
+         */
+        public Object getValue() {
+            return value;
+        }
+
+        /**
+         * Set the new value for this property.
+         * 
+         * @param value the new value; may be null
+         */
+        public void setValue( Object value ) {
+            this.value = value;
+            if (type == null && value != null) type = value.getClass();
+        }
+
+        /**
+         * Return whether this property is read-only.
+         * 
+         * @return true if the property is read-only, or false otherwise
+         */
+        public boolean isReadOnly() {
+            return readOnly;
+        }
+
+        /**
+         * Set whether this property is read-only.
+         * 
+         * @param readOnly true if the property is read-only, or false otherwise
+         */
+        public void setReadOnly( boolean readOnly ) {
+            this.readOnly = readOnly;
+        }
+
+        /**
+         * Get the name of the category in which this property belongs.
+         * 
+         * @return the category name; never null, but possibly empty
+         */
+        public String getCategory() {
+            return category != null ? category : "";
+        }
+
+        /**
+         * Set the name of the category in which this property belongs.
+         * 
+         * @param category the category name; may be null
+         */
+        public void setCategory( String category ) {
+            this.category = category;
+        }
+
+        /**
+         * Get the class to which the value must belong (excluding null values).
+         * 
+         * @return the value class; never null, but may be {@link Object Object.class}
+         */
+        public Class<?> getType() {
+            return type;
+        }
+
+        /**
+         * Set the class to which the value must belong (excluding null values).
+         * 
+         * @param type the value class; may be null
+         */
+        public void setType( Class<?> type ) {
+            this.type = type != null ? type : Object.class;
+        }
+
+        /**
+         * Determine if this is a boolean property (the {@link #getType() type} is a {@link Boolean} or boolean).
+         * 
+         * @return true if this is a boolean property, or false otherwise
+         */
+        public boolean isBooleanType() {
+            return Boolean.class.equals(type) || Boolean.TYPE.equals(type);
+        }
+
+        /**
+         * Get the allowed values for this property. If this is non-null and non-empty, the {@link #getValue() value} must be one
+         * of these values.
+         * 
+         * @return collection of allowed values, or the empty set if the values are not constrained
+         */
+        public Collection<?> getAllowedValues() {
+            return allowedValues != null ? allowedValues : Collections.emptySet();
+        }
+
+        /**
+         * Set the allowed values for this property. If this is non-null and non-empty, the {@link #setValue(Object) value} is
+         * expected to be one of these values.
+         * 
+         * @param allowedValues the collection of allowed values, or null or empty if the values are not constrained
+         */
+        public void setAllowedValues( Collection<?> allowedValues ) {
+            this.allowedValues = allowedValues;
+        }
+
+        /**
+         * Set the allowed values for this property. If this is non-null and non-empty, the {@link #setValue(Object) value} is
+         * expected to be one of these values.
+         * 
+         * @param allowedValues the array of allowed values, or null or empty if the values are not constrained
+         */
+        public void setAllowedValues( Object... allowedValues ) {
+            if (allowedValues != null && allowedValues.length != 0) {
+                this.allowedValues = new ArrayList<Object>(Arrays.asList(allowedValues));
+            } else {
+                this.allowedValues = null;
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Comparable#compareTo(java.lang.Object)
+         */
+        public int compareTo( Property that ) {
+            if (this == that) return 0;
+            if (that == null) return 1;
+            int diff = ObjectUtil.compareWithNulls(this.category, that.category);
+            if (diff != 0) return diff;
+            diff = ObjectUtil.compareWithNulls(this.label, that.label);
+            if (diff != 0) return diff;
+            diff = ObjectUtil.compareWithNulls(this.name, that.name);
+            if (diff != 0) return diff;
+            return 0;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            return HashCode.compute(this.category, this.name, this.label);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof Property) {
+                Property that = (Property)obj;
+                if (!ObjectUtil.isEqualWithNulls(this.category, that.category)) return false;
+                if (!ObjectUtil.isEqualWithNulls(this.label, that.label)) return false;
+                if (!ObjectUtil.isEqualWithNulls(this.name, that.name)) return false;
+                if (!ObjectUtil.isEqualWithNulls(this.value, that.value)) return false;
+                if (!ObjectUtil.isEqualWithNulls(this.readOnly, that.readOnly)) return false;
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            if (name != null) sb.append(name).append(" = ");
+            sb.append(value);
+            sb.append(" ( ");
+            sb.append(readOnly ? "readonly " : "writable ");
+            if (category != null) sb.append("category=\"").append(category).append("\" ");
+            if (label != null) sb.append("label=\"").append(label).append("\" ");
+            if (description != null) sb.append("description=\"").append(description).append("\" ");
+            sb.append(")");
+            return sb.toString();
+        }
+    }
 }
