@@ -62,18 +62,16 @@ public class RepositoryDiscoveryComponent implements
 		Set<DiscoveredResourceDetails> discoveredResources = new HashSet<DiscoveredResourceDetails>();
 
 		ManagedComponent mc = ProfileServiceUtil
-				.getManagedComponent(
+				.getManagedComponent( ((EngineComponent) discoveryContext
+						.getParentResourceComponent()).getConnection(), 
 						new ComponentType(
 								PluginConstants.ComponentType.Engine.MODESHAPE_TYPE,
 								PluginConstants.ComponentType.Engine.MODESHAPE_SUB_TYPE),
 						PluginConstants.ComponentType.Engine.MODESHAPE_ENGINE);
 
-		
-		ModeShapeManagementView mmv = new ModeShapeManagementView();
-		
 		String operation = "getRepositories"; 
 		
-		MetaValue repositories = mmv.executeManagedOperation(mc, operation, null);
+		MetaValue repositories = ModeShapeManagementView.executeManagedOperation(mc, operation, new MetaValue[]{null});
 		
 		if (repositories==null){
 			return discoveredResources;

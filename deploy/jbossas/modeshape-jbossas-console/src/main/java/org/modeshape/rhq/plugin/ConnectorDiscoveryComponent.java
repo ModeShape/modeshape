@@ -58,23 +58,22 @@ public class ConnectorDiscoveryComponent implements
 	 * @see org.rhq.core.pluginapi.inventory.ResourceDiscoveryComponent#discoverResources(org.rhq.core.pluginapi.inventory.ResourceDiscoveryContext)
 	 */
 	public Set<DiscoveredResourceDetails> discoverResources(
-			ResourceDiscoveryContext<ConnectorComponent> discoveryContext)
+			ResourceDiscoveryContext discoveryContext)
 			throws InvalidPluginConfigurationException, Exception {
 
 		Set<DiscoveredResourceDetails> discoveredResources = new HashSet<DiscoveredResourceDetails>();
 
 		ManagedComponent mc = ProfileServiceUtil
-				.getManagedComponent(
+				.getManagedComponent(((EngineComponent) discoveryContext
+						.getParentResourceComponent()).getConnection(),
 						new ComponentType(
 								PluginConstants.ComponentType.Engine.MODESHAPE_TYPE,
 								PluginConstants.ComponentType.Engine.MODESHAPE_SUB_TYPE),
 						PluginConstants.ComponentType.Engine.MODESHAPE_ENGINE);
 
-		ModeShapeManagementView mmv = new ModeShapeManagementView();
-
 		String operation = "getConnectors";
 
-		MetaValue connectors = mmv.executeManagedOperation(mc, operation, null);
+		MetaValue connectors = ModeShapeManagementView.executeManagedOperation(mc, operation, new MetaValue[]{null});
 
 		if (connectors == null) {
 			return discoveredResources;

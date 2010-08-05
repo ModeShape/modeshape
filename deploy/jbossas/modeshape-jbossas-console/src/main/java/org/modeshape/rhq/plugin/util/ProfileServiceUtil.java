@@ -32,7 +32,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import org.apache.commons.logging.Log;
@@ -51,7 +50,6 @@ import org.jboss.metatype.api.types.SimpleMetaType;
 import org.jboss.metatype.api.values.EnumValue;
 import org.jboss.metatype.api.values.MetaValue;
 import org.jboss.metatype.api.values.SimpleValue;
-import org.jboss.profileservice.spi.ProfileService;
 import org.rhq.core.domain.configuration.Configuration;
 import org.rhq.core.domain.configuration.Property;
 import org.rhq.core.domain.configuration.PropertyMap;
@@ -63,43 +61,17 @@ import org.rhq.core.domain.configuration.definition.PropertyDefinitionMap;
 import org.rhq.core.domain.configuration.definition.PropertyDefinitionSimple;
 import org.rhq.core.domain.configuration.definition.PropertySimpleType;
 import org.rhq.core.domain.resource.ResourceType;
+import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
 
 public class ProfileServiceUtil {
 
 	protected final static Log LOG = LogFactory
 			.getLog(PluginConstants.DEFAULT_LOGGER_CATEGORY);
-	private static ComponentType DQPTYPE = new ComponentType("teiid", "dqp");
-	private static String DQPNAME = "org.teiid.jboss.deployers.RuntimeEngineDeployer";
 
-	protected static final String PLUGIN = "ProfileService";
-
-	/**
-	 * @param managementView
-	 * @param name
-	 * @param componentType
-	 * @return boolean
-	 */
-	public static boolean isManagedComponent(ManagementView managementView,
-			String name, ComponentType componentType) {
-		boolean isDeployed = false;
-		if (name != null) {
-			try {
-				ManagedComponent component = getManagedComponent(componentType,
-						name);
-				if (component != null)
-					isDeployed = true;
-			} catch (Exception e) {
-				// Setting it to true to be safe than sorry, since there might
-				// be a component
-				// already deployed in the AS.
-				isDeployed = true;
-			}
-		}
-		return isDeployed;
-	}
 
 	/**
 	 * Get the passed in {@link ManagedComponent}
+	 * @param connection 
 	 * 
 	 * @param componentType
 	 * @param componentName
@@ -108,13 +80,11 @@ public class ProfileServiceUtil {
 	 * @throws NamingException
 	 * @throws Exception
 	 */
-	public static ManagedComponent getManagedComponent(
+	public static ManagedComponent getManagedComponent( ProfileServiceConnection connection,
 			ComponentType componentType, String componentName)
 			throws NamingException, Exception {
-		ProfileService ps = getProfileService();
-		ManagementView mv = getManagementView(ps, true);
 
-		ManagedComponent mc = mv.getComponent(componentName, componentType);
+		ManagedComponent mc = connection.getManagementView().getComponent(componentName, componentType);
 
 		return mc;
 	}
@@ -122,7 +92,7 @@ public class ProfileServiceUtil {
 	/**
 	 * Get the {@link ManagedComponent} for the {@link ComponentType} and sub
 	 * type.
-	 * 
+	 * @param connection 
 	 * @param componentType
 	 * 
 	 * @return Set of {@link ManagedComponent}s
@@ -130,65 +100,45 @@ public class ProfileServiceUtil {
 	 *             , Exception
 	 * @throws Exception
 	 */
-	public static Set<ManagedComponent> getManagedComponents(
+	public static Set<ManagedComponent> getManagedComponents( ProfileServiceConnection connection,
 			ComponentType componentType) throws NamingException, Exception {
-		ProfileService ps = getProfileService();
-		ManagementView mv = getManagementView(ps, true);
-
+		ManagementView mv = connection.getManagementView();
 		Set<ManagedComponent> mcSet = mv.getComponentsForType(componentType);
 
 		return mcSet;
 	}
 
 	/**
-	 * @param ps
-	 * @param load
+	 * @param connection 
 	 * @return {@link ManagementView}
 	 */
-	public static ManagementView getManagementView(ProfileService ps,
-			boolean load) {
-		ManagementView mv = ps.getViewManager();
-		if (load) {
-			mv.load();
-		}
+	public static ManagementView getManagementView(ProfileServiceConnection connection) {
+		ManagementView mv = connection.getManagementView();
 		return mv;
 	}
 
 	/**
 	 * Get the {@link DeploymentManager} from the ProfileService
-	 * 
+	 * @param connection 
 	 * @return DeploymentManager
 	 * @throws NamingException
 	 * @throws Exception
 	 */
-	public static DeploymentManager getDeploymentManager()
+	public static DeploymentManager getDeploymentManager(ProfileServiceConnection connection)
 			throws NamingException, Exception {
-		ProfileService ps = getProfileService();
-		DeploymentManager deploymentManager = ps.getDeploymentManager();
+		DeploymentManager deploymentManager = connection.getDeploymentManager();
 
 		return deploymentManager;
 	}
 
 	/**
-	 * @return {@link ProfileService}
-	 * @throws NamingException
-	 *             , Exception
-	 */
-	public static ProfileService getProfileService() throws NamingException {
-		InitialContext ic = new InitialContext();
-		ProfileService ps = (ProfileService) ic
-				.lookup(PluginConstants.PROFILE_SERVICE);
-		return ps;
-	}
-
-	/**
+	 * @param connection 
 	 * @return {@link File}
 	 * @throws NamingException
 	 * @throws Exception
 	 */
-	public static File getDeployDirectory() throws NamingException, Exception {
-		ProfileService ps = getProfileService();
-		ManagementView mv = getManagementView(ps, false);
+	public static File getDeployDirectory(ProfileServiceConnection connection) throws NamingException, Exception {
+		ManagementView mv = connection.getManagementView();
 		Set<ManagedDeployment> warDeployments;
 		try {
 			warDeployments = mv
@@ -217,12 +167,6 @@ public class ProfileServiceUtil {
 		File warFile = new File(warUrl.getPath());
 		File deployDir = warFile.getParentFile();
 		return deployDir;
-	}
-
-	public static ManagedComponent getModeShapeManagementView()
-			throws NamingException, Exception {
-
-		return getManagedComponent(DQPTYPE, DQPNAME);
 	}
 
 	public static String stringValue(MetaValue v1) throws Exception {

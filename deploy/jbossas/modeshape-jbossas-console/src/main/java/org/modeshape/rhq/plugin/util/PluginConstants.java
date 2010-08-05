@@ -24,25 +24,11 @@
 package org.modeshape.rhq.plugin.util;
 
 /**
- * These are the Constants that used in conjunction with using the
- * 
- * @since 5.5.3
+ * These are properties required for connecting to the profile service and
+ * getting a handle to a specific component related to ModeShape.
+ * @since 2.1
  */
 public interface PluginConstants {
-
-	/**
-	 * These are properties required for connecting to the profile service and
-	 * getting a handle to a specific component related to ModeShape.
-	 */
-
-	// The system key is the value used to obtain a connection.
-	// In embedded, its a predefined value
-	// In enterprise, its the installation directory
-	//        public final static String INSTALL_DIR = "install.dir"; //$NON-NLS-1$
-	/**
-	 * These are global properties used by all components
-	 */
-	public final static String PROFILE_SERVICE = "ProfileService"; //$NON-NLS-1$
 
 	/**
 	 * Log4j log category to use
@@ -65,7 +51,7 @@ public interface PluginConstants {
 			public final static String MODESHAPE_ENGINE = "ModeShapeEngine"; //$NON-NLS-1$
 			public final static String MODESHAPE_DISPLAYNAME = "ModeShape"; //$NON-NLS-1$
 			public final static String MODESHAPE_ENGINE_DESC = "A ModeShape Engine instance"; //$NON-NLS-1$
-			public final static String MODESHAPE_SEQUENCING_SERVICE = "Sequencing Service"; //$NON-NLS-1$
+			
 
 			public static interface Operations {
 
@@ -79,8 +65,6 @@ public interface PluginConstants {
 		public interface Repository {
 
 			public final static String NAME = "Repository"; //$NON-NLS-1$
-			public final static String MODESHAPE_TYPE = "Modeshape"; //$NON-NLS-1$
-			public final static String MODESHAPE_SUB_TYPE = "Engine"; //$NON-NLS-1$
 			public final static String MODESHAPE_REPOSITORY_DESC = "An information store with hierarchical organization, versioning, events, search, query, and automated content extraction"; //$NON-NLS-1$
 
 			public static interface Operations {
@@ -92,5 +76,21 @@ public interface PluginConstants {
 			}
 		}
 
+		public interface SequencingService {
+
+			public final static String NAME = "ModeShapeSequencingService"; //$NON-NLS-1$
+			public final static String MODESHAPE_TYPE = "ModeShape"; //$NON-NLS-1$
+			public final static String MODESHAPE_SUB_TYPE = "SequencingService"; //$NON-NLS-1$
+			public final static String DISPLAY_NAME = "Sequencing Service"; //$NON-NLS-1$
+			public final static String DESC = "A ModeShape sequencing service"; //$NON-NLS-1$
+			
+			public static interface Operations {
+
+			}
+
+			public static interface Metrics {
+
+			}
+		}
 	}
 }

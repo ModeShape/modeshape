@@ -304,21 +304,12 @@ public abstract class Facet implements ProfileServiceComponent<ResourceComponent
 		
 		ManagementView managementView = null; 
 		ComponentType componentType = null;
-//		if (this.getComponentType().equals(PluginConstants.ComponentType.VDB.NAME)) {
-//			componentType = new ComponentType(
-//					PluginConstants.ComponentType.VDB.TYPE,
-//					PluginConstants.ComponentType.VDB.SUBTYPE);
-//		} else {
-//			report.setStatus(ConfigurationUpdateStatus.FAILURE);
-//			report.setErrorMessage("Update not implemented for the component type.");
-//		}
 
 		ManagedComponent managedComponent = null;
 		report.setStatus(ConfigurationUpdateStatus.SUCCESS);
 		try {
 			
-			managementView = ProfileServiceUtil.getManagementView(
-				ProfileServiceUtil.getProfileService(), true);
+			managementView = getConnection().getManagementView();
 			managedComponent = managementView.getComponent(this.name, componentType);
 			Map<String, ManagedProperty> managedProperties = managedComponent
 					.getProperties();
@@ -360,8 +351,7 @@ public abstract class Facet implements ProfileServiceComponent<ResourceComponent
 			throws Exception {
 		log.trace("Updating " + this.name + " with component "
 				+ managedComponent.toString() + "...");
-		ManagementView managementView = ProfileServiceUtil.getManagementView(
-				ProfileServiceUtil.getProfileService(), false);
+		ManagementView managementView = getConnection().getManagementView();
 		managementView.updateComponent(managedComponent);
 		
 	}
