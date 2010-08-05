@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -2245,7 +2246,8 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
 
     @Override
     public void notify( Changes changes ) {
-        boolean needsReload = false;
+        Collection<Name> createdNodeTypeNames = new HashSet<Name>();
+        Collection<Name> deletedNodeTypeNames = new HashSet<Name>();
 
         for (ChangeRequest change : changes.getChangeRequests()) {
             assert change.changedLocation().hasPath();
@@ -2257,10 +2259,29 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
             }
             assert nodeTypesPath.isAncestorOf(changedPath);
 
+            /*
+             * The first segment under the node types root (as stored in nodeTypesPath) must be
+             * the node type name.  
+             */
+            Path relativePath = changedPath.relativeTo(nodeTypesPath);
+            Name changedNodeTypeName = relativePath.getSegment(0).getName();
+
             switch (change.getType()) {
                 case CREATE_NODE:
+                    /*
+                     * Registering one node type can result in many CreateNodeRequests 
+                     * being created (1 for the type, 1 for each property, 1 for each child node), but
+                     * if anything is changed on the node type, the whole node type needs to be reloaded
+                     * anyway.
+                     *                     
+                     */
+                    if (!createdNodeTypeNames.contains(changedNodeTypeName)) {
+                        createdNodeTypeNames.add(changedNodeTypeName);
+                    }
+                    break;
+                    
                 case DELETE_BRANCH:
-                    needsReload = true;
+                    deletedNodeTypeNames.add(changedNodeTypeName);
 
                     break;
                 default:
@@ -2268,14 +2289,14 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
             }
         }
 
-        if (!needsReload) return;
+        if (createdNodeTypeNames.isEmpty() && deletedNodeTypeNames.isEmpty()) return;
 
         this.nodeTypeManagerLock.writeLock().lock();
         try {
             GraphNodeTypeReader reader = new GraphNodeTypeReader(this.context);
             Graph systemGraph = repository.createSystemGraph(this.context);
 
-            reader.read(systemGraph, nodeTypesPath, null);
+            reader.read(systemGraph, nodeTypesPath, createdNodeTypeNames, null);
 
             Problems readerProblems = reader.getProblems();
             if (readerProblems.hasProblems()) {
@@ -2299,7 +2320,10 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                 LOGGER.error(JcrI18n.errorSynchronizingNodeTypes, re);
             }
 
-            this.nodeTypes.clear();
+            assert this.nodeTypes.get(ModeShapeLexicon.ROOT) != null;
+            assert !deletedNodeTypeNames.contains(ModeShapeLexicon.ROOT);
+
+            nodeTypes.keySet().removeAll(deletedNodeTypeNames);
             this.nodeTypes.putAll(newNodeTypeMap);
 
             assert this.nodeTypes.get(ModeShapeLexicon.ROOT) != null;

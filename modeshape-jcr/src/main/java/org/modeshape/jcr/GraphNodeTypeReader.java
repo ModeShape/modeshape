@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -240,7 +241,7 @@ class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
         Destination destination = new GraphBatchDestination(batch);
         try {
             importFrom(destination, root, content, resourceName);
-            List<NodeTypeDefinition> types = readTypesFrom(graph, root);
+            List<NodeTypeDefinition> types = readTypesFrom(graph, root, null);
             this.types.addAll(types);
         } catch (Throwable t) {
             problems.addError(t, JcrI18n.errorImportingNodeTypeContent, (Object)resourceName, t.getMessage());
@@ -258,7 +259,23 @@ class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
     public void read( Graph graph,
                       Path parentOfTypes,
                       String resourceName ) {
-        this.types.addAll(readTypesFrom(graph, parentOfTypes));
+        this.types.addAll(readTypesFrom(graph, parentOfTypes, null));
+    }
+
+    /**
+     * Import the node types from the supplied location in the specified graph.
+     * 
+     * @param graph the graph containing the standard ModeShape CND content
+     * @param parentOfTypes the path to the parent of the node type definition nodes
+     * @param nodeTypesToRead the names of the node types that should be read; null means that all node types should be read
+     * @param resourceName a logical name for the resource name to be used when reporting problems; may be null if there is no
+     *        useful name
+     */
+    public void read( Graph graph,
+                      Path parentOfTypes,
+                      Collection<Name> nodeTypesToRead,
+                      String resourceName ) {
+        this.types.addAll(readTypesFrom(graph, parentOfTypes, nodeTypesToRead));
     }
 
     /**
@@ -272,7 +289,7 @@ class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
     public void read( Subgraph subgraph,
                       Location locationOfParent,
                       String resourceName ) {
-        this.types.addAll(readTypesFrom(subgraph, locationOfParent));
+        this.types.addAll(readTypesFrom(subgraph, locationOfParent, null));
     }
 
     /**
@@ -304,19 +321,28 @@ class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
     }
 
     protected List<NodeTypeDefinition> readTypesFrom( Graph graph,
-                                                      Path parentOfTypes ) {
+                                                      Path parentOfTypes,
+                                                      Collection<Name> nodeTypesToRead ) {
         Subgraph subgraph = graph.getSubgraphOfDepth(5).at(parentOfTypes);
-        return readTypesFrom(subgraph, subgraph.getLocation());
+        return readTypesFrom(subgraph, subgraph.getLocation(), nodeTypesToRead);
     }
 
     protected List<NodeTypeDefinition> readTypesFrom( Subgraph nodeTypeSubgraph,
-                                                      Location locationOfParentOfNodeTypes ) {
+                                                      Location locationOfParentOfNodeTypes,
+                                                      Collection<Name> nodeTypesToRead ) {
         List<Location> nodeTypeLocations = nodeTypeSubgraph.getNode(locationOfParentOfNodeTypes).getChildren();
         List<NodeTypeDefinition> results = new ArrayList<NodeTypeDefinition>(nodeTypeLocations.size());
+        boolean shouldFilterNodes = locationOfParentOfNodeTypes.hasPath() && nodeTypesToRead != null;
 
         for (Location location : nodeTypeLocations) {
             SubgraphNode nodeTypeNode = nodeTypeSubgraph.getNode(location);
             assert location.getPath() != null;
+
+            Path relativeNodeTypePath = shouldFilterNodes ? location.getPath().relativeTo(locationOfParentOfNodeTypes.getPath()) : null;
+            if (shouldFilterNodes && !nodeTypesToRead.contains(relativeNodeTypePath.getSegment(0).getName())) {
+                continue;
+            }
+
             try {
                 NodeTypeDefinition nodeType = nodeTypeFrom(nodeTypeNode, nodeTypeSubgraph);
                 results.add(nodeType);
