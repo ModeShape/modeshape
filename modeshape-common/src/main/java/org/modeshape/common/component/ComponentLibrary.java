@@ -106,6 +106,16 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
     }
 
     /**
+     * Get the configurations for all Sequencers
+     * 
+     * @return the class loader factory; never null
+     * @see #setClassLoaderFactory(ClassLoaderFactory)
+     */
+    public List<ConfigType> getSequenceConfigs() {
+        return this.getSequenceConfigs();
+    }
+    
+    /**
      * Set the Maven Repository that should be used to load the component classes. Unless changed, the library uses the
      * {@link #DEFAULT default} class loader factory, which uses the {@link Thread#getContextClassLoader() current thread's
      * context class loader} if not null or the class loader that loaded the library class.

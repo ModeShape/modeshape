@@ -40,6 +40,10 @@
 		<service name="Repositories" description="ModeShape Repositories"
 			class="RepositoryComponent" discovery="RepositoryDiscoveryComponent">
 		</service>
+		
+		<service name="Sequencing Service" description="ModeShape Sequencing Service" singleton="true"
+            class="SequencingServiceComponent" discovery="SequencingServiceDiscoveryComponent">
+        </service>
 
 		<service name="Connectors" description="Connectors for repository"
 			class="ConnectorComponent" discovery="ConnectorDiscoveryComponent">

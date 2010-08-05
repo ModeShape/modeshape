@@ -23,7 +23,10 @@
  */
 package org.modeshape.jboss.managed;
 
+import java.util.List;
+
 import net.jcip.annotations.Immutable;
+
 import org.jboss.managed.api.ManagedOperation.Impact;
 import org.jboss.managed.api.annotation.ManagementComponent;
 import org.jboss.managed.api.annotation.ManagementObject;
@@ -32,17 +35,23 @@ import org.jboss.managed.api.annotation.ManagementProperties;
 import org.jboss.managed.api.annotation.ManagementProperty;
 import org.jboss.managed.api.annotation.ViewUse;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.repository.sequencer.Sequencer;
+import org.modeshape.repository.sequencer.SequencerConfig;
 import org.modeshape.repository.sequencer.SequencingService;
 
 /**
  * A <code>ManagedSequencingService</code> instance is a JBoss managed object for a {@link SequencingService sequencing service}.
  */
 @Immutable
-@ManagementObject( name = "ModeShapeSequencingService", description = "A ModeShape sequencing service", componentType = @ManagementComponent( type = "ModeShape", subtype = "SequencingService" ), properties = ManagementProperties.EXPLICIT )
+@ManagementObject( isRuntime=true, name = "ModeShapeSequencingService", description = "A ModeShape sequencing service", componentType = @ManagementComponent( type = "ModeShape", subtype = "SequencingService" ), properties = ManagementProperties.EXPLICIT )
 public class ManagedSequencingService implements ModeShapeManagedObject {
 
-    // TODO add final back into class signature and delete this constructor
-    protected ManagedSequencingService() {
+ 	/**
+     * The ModeShape ManagedEngine (never <code>null</code>).
+     */
+    private ManagedEngine engine;
+    
+    public ManagedSequencingService() {
         this.sequencingService = null;
     }
 
@@ -55,12 +64,11 @@ public class ManagedSequencingService implements ModeShapeManagedObject {
 
     /**
      * Creates a JBoss managed object for the specified sequencing service.
-     * 
-     * @param sequencingService the sequencing service being managed (never <code>null</code>)
+     * @param managedEngine 
      */
-    public ManagedSequencingService( SequencingService sequencingService ) {
-        CheckArg.isNotNull(sequencingService, "sequencingService");
-        this.sequencingService = sequencingService;
+    public ManagedSequencingService( ManagedEngine managedEngine ) {
+        CheckArg.isNotNull(managedEngine, "managedEngine");
+        this.sequencingService = managedEngine.getSequencingService();
     }
 
     @ManagementProperty( name = "Job Activity", description = "The number of sequencing jobs executed", readOnly = true, use = ViewUse.STATISTIC )
@@ -89,9 +97,18 @@ public class ManagedSequencingService implements ModeShapeManagedObject {
         return this.sequencingService.getStatistics().getNumberOfNodesSkipped();
     }
 
+    /**
+     * he sequencers currently deployed. This is a JBoss managed readonly property.
+     * @return List of <code>Sequencers</code>
+     * 
+     */
+    @ManagementOperation( name = "Sequencers", description = "The sequencers currently deployed", impact=Impact.ReadOnly )
+    public List<SequencerConfig> getSequencers() {
+        return this.sequencingService.getSequencers();
+    }
+    
     @ManagementProperty( name = "Queued Jobs", description = "The number of queued jobs", readOnly = true, use = ViewUse.STATISTIC )
     public int getQueuedJobCount() {
-        // TODO implement getQueuedJobCount()
         return 0;
     }
 
@@ -116,5 +133,23 @@ public class ManagedSequencingService implements ModeShapeManagedObject {
         // TODO implement listQueuedJobs()
         return null;
     }
+    
+    public void setManagedEngine(ManagedEngine managedEngine) throws Exception {   	
+    	this.setEngine(managedEngine);
+    }
+
+	/**
+	 * @param engine Sets engine to the specified value.
+	 */
+	public void setEngine(ManagedEngine engine) {
+		this.engine = engine;
+	}
+
+	/**
+	 * @return engine
+	 */
+	public ManagedEngine getEngine() {
+		return engine;
+	}
 
 }

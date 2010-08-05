@@ -23,6 +23,7 @@
  */
 package org.modeshape.repository.sequencer;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -167,6 +168,7 @@ public class SequencingService implements AdministeredService {
 
     private ExecutionContext executionContext;
     private SequencerLibrary sequencerLibrary = new SequencerLibrary();
+    private List<Sequencer> sequencersList = new ArrayList<Sequencer>();
     private Selector sequencerSelector = DEFAULT_SEQUENCER_SELECTOR;
     private ExecutorService executorService;
     private RepositoryLibrary repositoryLibrary;
@@ -223,6 +225,18 @@ public class SequencingService implements AdministeredService {
         return this.sequencerLibrary.add(config);
     }
 
+    /**
+     * Get configurations for all known sequencers
+     * @return List of {@link SequencerConfig}s
+     * 
+     * @throws IllegalArgumentException if <code>config</code> is null
+     * @see #updateSequencer(SequencerConfig)
+     * @see #removeSequencer(SequencerConfig)
+     */
+    public List<SequencerConfig> getSequencers() {
+        return this.sequencerLibrary.getSequenceConfigs();
+    }
+    
     /**
      * Update the configuration for a sequencer, or add it if there is no {@link SequencerConfig#equals(Object) matching
      * configuration}.
@@ -492,6 +506,20 @@ public class SequencingService implements AdministeredService {
     }
 
     /**
+	 * @param sequencersList Sets sequencersList to the specified value.
+	 */
+	public void setSequencersList(List<Sequencer> sequencersList) {
+		this.sequencersList = sequencersList;
+	}
+
+	/**
+	 * @return sequencersList
+	 */
+	public List<Sequencer> getSequencersList() {
+		return sequencersList;
+	}
+
+	/**
      * The statistics for the system. Each sequencing system has an instance of this class that is updated.
      * 
      * @author Randall Hauch

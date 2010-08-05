@@ -43,202 +43,209 @@ import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
+import org.modeshape.repository.sequencer.SequencingService;
 
 /**
- * A <code>ManagedEngine</code> instance is a JBoss managed object for a {@link JcrEngine}.
+ * A <code>ManagedEngine</code> instance is a JBoss managed object for a
+ * {@link JcrEngine}.
  */
 @Immutable
-@ManagementObject(isRuntime=true, name = "ModeShapeEngine", description = "A ModeShape engine", componentType = @ManagementComponent( type = "ModeShape", subtype = "Engine" ), properties = ManagementProperties.EXPLICIT )
+@ManagementObject(isRuntime = true, name = "ModeShapeEngine", description = "A ModeShape engine", componentType = @ManagementComponent(type = "ModeShape", subtype = "Engine"), properties = ManagementProperties.EXPLICIT)
 public final class ManagedEngine implements ModeShapeManagedObject {
 
-	
- 	/**
-     * The ModeShape object being managed and delegated to (never <code>null</code>).
-     */
-    private JcrEngine engine;
+	/**
+	 * The ModeShape object being managed and delegated to (never
+	 * <code>null</code>).
+	 */
+	private JcrEngine engine;
 
-    /**
-     * The managed object of the sequencing service of the engine.
-     */
-    private ManagedSequencingService sequencingService;
-    
-    public ManagedEngine() {
-        this.engine = null;
-    }
-    
-    /**
-     * Creates a JBoss managed object from the specified engine.
-     * 
-     * @param engine the engine being managed (never <code>null</code>)
-     */
-    public ManagedEngine( JcrEngine engine ) {
-        CheckArg.isNotNull(engine, "engine");
-        this.engine = engine;
-    }
+	public ManagedEngine() {
+		this.engine = null;
+	}
 
-    /**
-     * Obtains the managed connectors of this engine. This is a JBoss managed operation.
-     * 
-     * @return an unmodifiable collection of managed connectors (never <code>null</code>)
-     */
-    @ManagementOperation( description = "Obtains the managed connectors of this engine", impact = Impact.ReadOnly )
-    public Collection<ManagedConnector> getConnectors() {
+	/**
+	 * Creates a JBoss managed object from the specified engine.
+	 * 
+	 * @param engine
+	 *            the engine being managed (never <code>null</code>)
+	 */
+	public ManagedEngine(JcrEngine engine) {
+		CheckArg.isNotNull(engine, "engine");
+		this.engine = engine;
+	}
 
-        Collection<ManagedConnector> connectors = new ArrayList<ManagedConnector>();
+	/**
+	 * Obtains the managed connectors of this engine. This is a JBoss managed
+	 * operation.
+	 * 
+	 * @return an unmodifiable collection of managed connectors (never
+	 *         <code>null</code>)
+	 */
+	@ManagementOperation(description = "Obtains the managed connectors of this engine", impact = Impact.ReadOnly)
+	public Collection<ManagedConnector> getConnectors() {
 
-        if (isRunning()) {
-            for (String repositoryName : this.engine.getRepositoryNames()) {
-                RepositorySource repositorySource = this.engine.getRepositorySource(repositoryName);
-                assert (repositorySource != null) : "Repository '" + repositoryName + "' does not exist";
-                connectors.add(new ManagedConnector(repositorySource));
-            }
-        }
+		Collection<ManagedConnector> connectors = new ArrayList<ManagedConnector>();
 
-        return Collections.unmodifiableCollection(connectors);
-    }
+		if (isRunning()) {
+			for (String repositoryName : this.engine.getRepositoryNames()) {
+				RepositorySource repositorySource = this.engine
+						.getRepositorySource(repositoryName);
+				assert (repositorySource != null) : "Repository '"
+						+ repositoryName + "' does not exist";
+				connectors.add(new ManagedConnector(repositorySource));
+			}
+		}
 
-    /**
-     * Obtains the managed repositories of this engine. This is a JBoss managed operation.
-     * 
-     * @return an unmodifiable collection of repositories (never <code>null</code>)
-     */
-    @ManagementOperation( description = "Obtains the managed repositories of this engine", impact = Impact.ReadOnly )
-    public Collection<ManagedRepository> getRepositories() {
+		return Collections.unmodifiableCollection(connectors);
+	}
 
-        Collection<ManagedRepository> repositories = new ArrayList<ManagedRepository>();
+	/**
+	 * Obtains the managed repositories of this engine. This is a JBoss managed
+	 * operation.
+	 * 
+	 * @return an unmodifiable collection of repositories (never
+	 *         <code>null</code>)
+	 */
+	@ManagementOperation(description = "Obtains the managed repositories of this engine", impact = Impact.ReadOnly)
+	public Collection<ManagedRepository> getRepositories() {
 
-        if (isRunning()) {
-            for (String repositoryName : this.engine.getRepositoryNames()) {
-                try {
-                    JcrRepository repository = this.engine.getRepository(repositoryName);
-                    repositories.add(new ManagedRepository(repository));
-                } catch (RepositoryException e) {
-                    Logger.getLogger(getClass()).log(Level.ERROR,
-                                                     e,
-                                                     JBossManagedI18n.errorGettingRepositoryFromEngine,
-                                                     repositoryName);
-                }
-            }
-        }
+		Collection<ManagedRepository> repositories = new ArrayList<ManagedRepository>();
 
-        return repositories;
-    }
-    
-    /**
-     * Obtains the specified managed repository of this engine. This is called by the JNDIManagedRepositories when a
-     * JNDI lookup is performed to find a repository.
-     * @param repositoryName for the repository to be returned
-     * 
-     * @return a repository or <code>null</code> if repository doesn't exist
-     */
-     public ManagedRepository getRepository(String repositoryName) {
-        if (isRunning()) {
-                try {
-                   JcrRepository repository = this.engine.getRepository(repositoryName);
-                   if (repository != null) {
-                       return (new ManagedRepository(repository));
-                   }
-                   
-                } catch (RepositoryException e) {
-                    Logger.getLogger(getClass()).log(Level.ERROR,
-                                                     e,
-                                                     JBossManagedI18n.errorGettingRepositoryFromEngine,
-                                                     repositoryName);
-                }
-        }
+		if (isRunning()) {
+			for (String repositoryName : this.engine.getRepositoryNames()) {
+				try {
+					JcrRepository repository = this.engine
+							.getRepository(repositoryName);
+					repositories.add(new ManagedRepository(repository));
+				} catch (RepositoryException e) {
+					Logger.getLogger(getClass()).log(Level.ERROR, e,
+							JBossManagedI18n.errorGettingRepositoryFromEngine,
+							repositoryName);
+				}
+			}
+		}
 
-        return null;
-    }
+		return repositories;
+	}
 
-    /**
-     * Obtains the managed sequencing service. This is a JBoss managed operation.
-     * 
-     * @return the sequencing service or <code>null</code> if never started
-     */
-    @ManagementOperation( description = "Obtains the managed sequencing service of this engine", impact = Impact.ReadOnly )
-    public ManagedSequencingService getSequencingService() {
-        if (isRunning()) {
-            if (this.sequencingService == null) {
-                this.sequencingService = new ManagedSequencingService(this.engine.getSequencingService());
-            }
-        } else {
-            this.sequencingService = null;
-        }
+	/**
+	 * Obtains the specified managed repository of this engine. This is called
+	 * by the JNDIManagedRepositories when a JNDI lookup is performed to find a
+	 * repository.
+	 * 
+	 * @param repositoryName
+	 *            for the repository to be returned
+	 * 
+	 * @return a repository or <code>null</code> if repository doesn't exist
+	 */
+	public ManagedRepository getRepository(String repositoryName) {
+		if (isRunning()) {
+			try {
+				JcrRepository repository = this.engine
+						.getRepository(repositoryName);
+				if (repository != null) {
+					return (new ManagedRepository(repository));
+				}
 
-        return this.sequencingService;
-    }
+			} catch (RepositoryException e) {
+				Logger.getLogger(getClass()).log(Level.ERROR, e,
+						JBossManagedI18n.errorGettingRepositoryFromEngine,
+						repositoryName);
+			}
+		}
 
-    /**
-     * Obtains the version (build number) of this ModeShape instance. This is a JBoss managed operation.
-     * 
-     * @return the ModeShape version 
-     */
-    @ManagementOperation( description = "Obtains the version of this ModeShape instance", impact = Impact.ReadOnly )
-    public String getVersion() {
-        
-    	return this.engine.getEngineVersion();
-    }
-    
-    /**
-     * Indicates if the managed engine is running. This is a JBoss managed operation.
-     * 
-     * @return <code>true</code> if the engine is running
-     */
-    @ManagementOperation( description = "Indicates if this engine is running", impact = Impact.ReadOnly )
-    public boolean isRunning() {
-        try {
-            this.engine.getRepositoryService();
-            return true;
-        } catch (IllegalStateException e) {
-            return false;
-        }
-    }
+		return null;
+	}
 
-    /**
-     * First {@link #shutdown() shutdowns} the engine and then {@link #start() starts} it back up again. This is a JBoss managed
-     * operation.
-     * 
-     * @see #shutdown()
-     * @see #start()
-     */
-    @ManagementOperation( description = "Restarts this engine", impact = Impact.Lifecycle )
-    public void restart() {
-        shutdown();
-        start();
-    }
+	/**
+	 * Obtains the managed sequencing service. This is a JBoss managed
+	 * operation.
+	 * 
+	 * @return the sequencing service or <code>null</code> if never started
+	 */
+	@ManagementOperation(description = "Obtains the managed sequencing service of this engine", impact = Impact.ReadOnly)
+	public SequencingService getSequencingService() {
+		if (isRunning()) {
+			return this.engine.getSequencingService();
+		}
+		
+		return null;
+	}
 
-    /**
-     * Performs an engine shutdown. This is a JBoss managed operation.
-     * 
-     * @see JcrEngine#shutdown()
-     */
-    @ManagementOperation( description = "Shutdowns this engine", impact = Impact.Lifecycle )
-    public void shutdown() {
-        this.engine.shutdown();
-    }
+	/**
+	 * Obtains the version (build number) of this ModeShape instance. This is a
+	 * JBoss managed operation.
+	 * 
+	 * @return the ModeShape version
+	 */
+	@ManagementOperation(description = "Obtains the version of this ModeShape instance", impact = Impact.ReadOnly)
+	public String getVersion() {
 
-    /**
-     * Starts the engine. This is a JBoss managed operation.
-     * 
-     * @see JcrEngine#start()
-     */
-    @ManagementOperation( description = "Starts this engine", impact = Impact.Lifecycle )
-    public void start() {
-        this.engine.start();
-        // force initialization and loading
-        this.getRepositories();
-    }
+		return this.engine.getEngineVersion();
+	}
 
-    protected JcrEngine getEngine() {
-    	return this.engine;
-    }
-    
-    public void setEngine(JcrEngine jcrEngine) {
-    	this.engine = jcrEngine;
-    }
-    
-    public void setConfigURL(java.net.URL configurationUrl) throws Exception {   	
-    	JcrConfiguration jcrConfig = new JcrConfiguration().loadFrom(configurationUrl);
-    	this.engine = jcrConfig.build();
-    }
+	/**
+	 * Indicates if the managed engine is running. This is a JBoss managed
+	 * operation.
+	 * 
+	 * @return <code>true</code> if the engine is running
+	 */
+	@ManagementOperation(description = "Indicates if this engine is running", impact = Impact.ReadOnly)
+	public boolean isRunning() {
+		try {
+			this.engine.getRepositoryService();
+			return true;
+		} catch (IllegalStateException e) {
+			return false;
+		}
+	}
+
+	/**
+	 * First {@link #shutdown() shutdowns} the engine and then {@link #start()
+	 * starts} it back up again. This is a JBoss managed operation.
+	 * 
+	 * @see #shutdown()
+	 * @see #start()
+	 */
+	@ManagementOperation(description = "Restarts this engine", impact = Impact.Lifecycle)
+	public void restart() {
+		shutdown();
+		start();
+	}
+
+	/**
+	 * Performs an engine shutdown. This is a JBoss managed operation.
+	 * 
+	 * @see JcrEngine#shutdown()
+	 */
+	@ManagementOperation(description = "Shutdowns this engine", impact = Impact.Lifecycle)
+	public void shutdown() {
+		this.engine.shutdown();
+	}
+
+	/**
+	 * Starts the engine. This is a JBoss managed operation.
+	 * 
+	 * @see JcrEngine#start()
+	 */
+	@ManagementOperation(description = "Starts this engine", impact = Impact.Lifecycle)
+	public void start() {
+		this.engine.start();
+		// force initialization and loading
+		this.getRepositories();
+	}
+
+	protected JcrEngine getEngine() {
+		return this.engine;
+	}
+
+	public void setEngine(JcrEngine jcrEngine) {
+		this.engine = jcrEngine;
+	}
+
+	public void setConfigURL(java.net.URL configurationUrl) throws Exception {
+		JcrConfiguration jcrConfig = new JcrConfiguration()
+				.loadFrom(configurationUrl);
+		this.engine = jcrConfig.build();
+	}
 }
