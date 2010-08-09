@@ -23,10 +23,14 @@
  */
 package org.modeshape.jboss.managed;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
+import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 
 import net.jcip.annotations.Immutable;
@@ -35,10 +39,16 @@ import org.jboss.managed.api.ManagedOperation.Impact;
 import org.jboss.managed.api.annotation.ManagementComponent;
 import org.jboss.managed.api.annotation.ManagementObject;
 import org.jboss.managed.api.annotation.ManagementOperation;
+import org.jboss.managed.api.annotation.ManagementParameter;
 import org.jboss.managed.api.annotation.ManagementProperties;
+import org.jboss.managed.api.annotation.ManagementProperty;
+import org.jboss.managed.api.annotation.ViewUse;
+import org.joda.time.DateTime;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
+import org.modeshape.common.util.Reflection;
 import org.modeshape.common.util.Logger.Level;
+import org.modeshape.common.util.Reflection.Property;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
@@ -100,6 +110,58 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	}
 
 	/**
+	 * Get properties for a given object. This is a JBoss managed operation.
+	 * 
+	 * @param clazz
+	 * @param instance
+	 * 
+	 * @return an unmodifiable collection of {@link Property}s (never
+	 *         <code>null</code>)
+	 */
+	@ManagementOperation(description = "Get properties for a given object", impact = Impact.ReadOnly)
+	public List<Property> getProperties(Class<Object> clazz, Object instance) {
+		Reflection reflection = new Reflection(clazz);
+		List<Property> props = null;
+		try {
+			props = reflection.getAllPropertiesOn(instance);
+		} catch (SecurityException e) {
+			Logger.getLogger(getClass()).log(Level.ERROR, e,
+					JBossManagedI18n.errorGettingPropertiesFromManagedObject,
+					instance.toString());
+		} catch (IllegalArgumentException e) {
+			{
+				Logger.getLogger(getClass()).log(Level.ERROR, e,
+						JBossManagedI18n.errorGettingPropertiesFromManagedObject,
+						instance.toString());
+			}
+		} catch (NoSuchMethodException e) {
+			{
+				Logger.getLogger(getClass()).log(Level.ERROR, e,
+						JBossManagedI18n.errorGettingPropertiesFromManagedObject,
+						instance.toString());
+			}
+		} catch (IllegalAccessException e) {
+			{
+				Logger.getLogger(getClass()).log(Level.ERROR, e,
+						JBossManagedI18n.errorGettingPropertiesFromManagedObject,
+						instance.toString());
+			}
+		} catch (InvocationTargetException e) {
+			{
+				Logger.getLogger(getClass()).log(Level.ERROR, e,
+						JBossManagedI18n.errorGettingPropertiesFromManagedObject,
+						instance.toString());
+			}
+		}
+		return props;
+
+	}
+
+	/*
+	 * ManagedRepository operations
+	 */
+
+	/**
 	 * Obtains the managed repositories of this engine. This is a JBoss managed
 	 * operation.
 	 * 
@@ -113,15 +175,7 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 
 		if (isRunning()) {
 			for (String repositoryName : this.engine.getRepositoryNames()) {
-				try {
-					JcrRepository repository = this.engine
-							.getRepository(repositoryName);
-					repositories.add(new ManagedRepository(repository));
-				} catch (RepositoryException e) {
-					Logger.getLogger(getClass()).log(Level.ERROR, e,
-							JBossManagedI18n.errorGettingRepositoryFromEngine,
-							repositoryName);
-				}
+				repositories.add(new ManagedRepository(repositoryName));
 			}
 		}
 
@@ -138,15 +192,12 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	 * 
 	 * @return a repository or <code>null</code> if repository doesn't exist
 	 */
-	public ManagedRepository getRepository(String repositoryName) {
+	public JcrRepository getRepository(String repositoryName) {
+		JcrRepository repository = null;
+
 		if (isRunning()) {
 			try {
-				JcrRepository repository = this.engine
-						.getRepository(repositoryName);
-				if (repository != null) {
-					return (new ManagedRepository(repository));
-				}
-
+				repository = this.engine.getRepository(repositoryName);
 			} catch (RepositoryException e) {
 				Logger.getLogger(getClass()).log(Level.ERROR, e,
 						JBossManagedI18n.errorGettingRepositoryFromEngine,
@@ -154,8 +205,156 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 			}
 		}
 
-		return null;
+		return repository;
 	}
+
+	/**
+	 * Obtains the JCR version supported by this repository. This is a JBoss
+	 * managed readonly property.
+	 * 
+	 * @param repositoryName
+	 *            (never <code>null</code>)
+	 * 
+	 * @return String version (never <code>null</code>)
+	 */
+	@ManagementOperation(description = "The JCR version supported by this repository", impact = Impact.ReadOnly)
+	public String getRepositoryVersion(String repositoryName) {
+		String version = null;
+		JcrRepository repository = getRepository(repositoryName);
+		if (repository != null) {
+			version = repository.getDescriptor(Repository.SPEC_VERSION_DESC) + " "
+					+ repository.getDescriptor(Repository.SPEC_NAME_DESC);
+		}
+		return version;
+	}
+
+	@ManagementProperty(name = "Query Activity", description = "The number of queries executed", use = ViewUse.STATISTIC)
+	public int getQueryActivity() {
+		// TODO implement getQueryActivity() and define in doc what the return
+		// value actually represents
+		return 0;
+	}
+
+	@ManagementProperty(name = "Save Activity", description = "The number of nodes saved", use = ViewUse.STATISTIC)
+	public int getSaveActivity() {
+		// TODO implement getSaveActivity() and define in doc what the return
+		// value actually represents
+		return 0;
+	}
+
+	@ManagementProperty(name = "Session Activity", description = "The number of sessions created", use = ViewUse.STATISTIC)
+	public Object getSessionActivity() {
+		// TODO implement getSaveActivity() and define in doc what the return
+		// value actually represents
+		return 0;
+	}
+
+	/**
+	 * Obtains all the repository locks sorted by owner. This is a JBoss managed
+	 * operation.
+	 * 
+	 * @return a list of sessions sorted by owner (never <code>null</code>)
+	 */
+	@ManagementOperation(description = "Obtains all the managed locks sorted by the owner", impact = Impact.ReadOnly)
+	public List<ManagedLock> listLocks() {
+		return listLocks(ManagedLock.SORT_BY_OWNER);
+	}
+
+	/**
+	 * Obtains all the repository locks sorted by the specified sorter.
+	 * 
+	 * @param lockSorter
+	 *            the lock sorter (never <code>null</code>)
+	 * @return a list of locks sorted by the specified lock sorter (never
+	 *         <code>null</code>)
+	 */
+	public List<ManagedLock> listLocks(Comparator<ManagedLock> lockSorter) {
+		CheckArg.isNotNull(lockSorter, "lockSorter");
+
+		// TODO implement listLocks(Comparator)
+		List<ManagedLock> locks = new ArrayList<ManagedLock>();
+
+		// create temporary date
+		for (int i = 0; i < 5; ++i) {
+			locks.add(new ManagedLock("workspace-" + i, true, "sessionId-1",
+					new DateTime(), "id-" + i, "owner-" + i, true));
+		}
+
+		// sort
+		Collections.sort(locks, lockSorter);
+
+		return locks;
+	}
+
+	/**
+	 * Obtains all the repository sessions sorted by user name. This is a JBoss
+	 * managed operation.
+	 * 
+	 * @return a list of sessions sorted by user name (never <code>null</code>)
+	 */
+	@ManagementOperation(description = "Obtains the managed sessions sorted by user name", impact = Impact.ReadOnly)
+	public List<ManagedSession> listSessions() {
+		return listSessions(ManagedSession.SORT_BY_USER);
+	}
+
+	/**
+	 * Obtains all the repository sessions sorted by the specified sorter.
+	 * 
+	 * @param sessionSorter
+	 *            the session sorter (never <code>null</code>)
+	 * @return a list of locks sorted by the specified session sorter (never
+	 *         <code>null</code>)
+	 */
+	public List<ManagedSession> listSessions(
+			Comparator<ManagedSession> sessionSorter) {
+		CheckArg.isNotNull(sessionSorter, "sessionSorter");
+
+		// TODO implement listSessions(Comparator)
+		List<ManagedSession> sessions = new ArrayList<ManagedSession>();
+
+		// create temporary date
+		for (int i = 0; i < 5; ++i) {
+			sessions.add(new ManagedSession("workspace-" + i, "userName-" + i,
+					"sessionId-1", new DateTime()));
+		}
+
+		// sort
+		Collections.sort(sessions, sessionSorter);
+
+		return sessions;
+	}
+
+	/**
+	 * Removes the lock with the specified identifier. This is a JBoss managed
+	 * operation.
+	 * 
+	 * @param lockId
+	 *            the lock's identifier
+	 * @return <code>true</code> if the lock was removed
+	 */
+	@ManagementOperation(description = "Removes the lock with the specified ID", impact = Impact.WriteOnly, params = { @ManagementParameter(name = "lockId", description = "The lock identifier") })
+	public boolean removeLock(String lockId) {
+		// TODO implement removeLockWithLockToken()
+		return false;
+	}
+
+	/**
+	 * Terminates the session with the specified identifier. This is a JBoss
+	 * managed operation.
+	 * 
+	 * @param sessionId
+	 *            the session's identifier
+	 * @return <code>true</code> if the session was terminated
+	 */
+	@ManagementOperation(description = "Terminates the session with the specified ID", impact = Impact.WriteOnly, params = { @ManagementParameter(name = "sessionId", description = "The session identifier") })
+	public boolean terminateSession(String sessionId) {
+		// TODO implement terminateSessionBySessionId()
+		return false;
+	}
+
+	/*
+	 * SequencingService operations
+	 */
 
 	/**
 	 * Obtains the managed sequencing service. This is a JBoss managed
@@ -168,7 +367,7 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 		if (isRunning()) {
 			return this.engine.getSequencingService();
 		}
-		
+
 		return null;
 	}
 

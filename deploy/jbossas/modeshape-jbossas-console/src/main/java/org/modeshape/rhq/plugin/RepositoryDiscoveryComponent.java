@@ -102,14 +102,13 @@ public class RepositoryDiscoveryComponent implements
 					name, // Resource name
 					ProfileServiceUtil.stringValue(version), // Version
 					PluginConstants.ComponentType.Repository.MODESHAPE_REPOSITORY_DESC, // Description
-					discoveryContext.getDefaultPluginConfiguration(), // Plugin
-																		// Config
+					discoveryContext.getDefaultPluginConfiguration(), // Plugin config
 					null // Process info from a process scan
 			);
 
 			// Add to return values
 			discoveredResources.add(detail);
-			log.info("Discovered ModeShape repositories: " + mc.getName());
+			log.info("Discovered ModeShape Repository: " + name);
 		}
 
 		return discoveredResources;
