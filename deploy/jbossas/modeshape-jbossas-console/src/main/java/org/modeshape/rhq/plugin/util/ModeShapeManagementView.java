@@ -3,42 +3,29 @@ package org.modeshape.rhq.plugin.util;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.naming.NamingException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jboss.managed.api.ManagedComponent;
 import org.jboss.managed.api.ManagedOperation;
-import org.jboss.managed.api.ManagedProperty;
-import org.jboss.managed.plugins.ManagedObjectImpl;
-import org.jboss.metatype.api.values.CompositeValue;
 import org.jboss.metatype.api.types.MetaType;
 import org.jboss.metatype.api.values.CollectionValueSupport;
-import org.jboss.metatype.api.values.CompositeValueSupport;
-import org.jboss.metatype.api.values.GenericValueSupport;
 import org.jboss.metatype.api.values.MetaValue;
 import org.jboss.metatype.api.values.MetaValueFactory;
 import org.modeshape.jboss.managed.ManagedRepository;
-import org.modeshape.jboss.managed.ManagedRepositoryMapper;
-import org.modeshape.jboss.managed.ManagedSequencingService;
 import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
 
 import com.sun.istack.Nullable;
 
 public class ModeShapeManagementView implements PluginConstants {
 
-	private static ManagedComponent mc = null;
 	private static final Log LOG = LogFactory
 			.getLog(PluginConstants.DEFAULT_LOGGER_CATEGORY);
-	private static final MetaValueFactory metaValueFactory = MetaValueFactory
-			.getInstance();
-
+	
 	public ModeShapeManagementView() {
 
 	}
@@ -558,8 +545,7 @@ public class ModeShapeManagementView implements PluginConstants {
 			for (MetaValue value : ((CollectionValueSupport) pValue)
 					.getElements()) {
 				if (value.getMetaType().isComposite()) {
-					ManagedRepositoryMapper mrm = new ManagedRepositoryMapper();
-					ManagedRepository repository = mrm.unwrapMetaValue(value);
+					ManagedRepository repository = (ManagedRepository)MetaValueFactory.getInstance().unwrap(value);
 					list.add(repository);
 				} else {
 					throw new IllegalStateException(pValue
