@@ -32,6 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.jboss.managed.api.ComponentType;
 import org.jboss.managed.api.ManagedComponent;
 import org.jboss.metatype.api.values.MetaValue;
+import org.jboss.metatype.api.values.MetaValueFactory;
 import org.modeshape.jboss.managed.ManagedRepository;
 import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
 import org.modeshape.rhq.plugin.util.PluginConstants;
@@ -62,37 +63,47 @@ public class RepositoryDiscoveryComponent implements
 		Set<DiscoveredResourceDetails> discoveredResources = new HashSet<DiscoveredResourceDetails>();
 
 		ManagedComponent mc = ProfileServiceUtil
-				.getManagedComponent( ((EngineComponent) discoveryContext
-						.getParentResourceComponent()).getConnection(), 
+				.getManagedComponent(
+						((EngineComponent) discoveryContext
+								.getParentResourceComponent()).getConnection(),
 						new ComponentType(
 								PluginConstants.ComponentType.Engine.MODESHAPE_TYPE,
 								PluginConstants.ComponentType.Engine.MODESHAPE_SUB_TYPE),
 						PluginConstants.ComponentType.Engine.MODESHAPE_ENGINE);
 
-		String operation = "getRepositories"; 
-		
-		MetaValue repositories = ModeShapeManagementView.executeManagedOperation(mc, operation, new MetaValue[]{null});
-		
-		if (repositories==null){
+		String operation = "getRepositories";
+
+		MetaValue repositories = ModeShapeManagementView
+				.executeManagedOperation(mc, operation,
+						new MetaValue[] { null });
+
+		if (repositories == null) {
 			return discoveredResources;
 		}
-		
-		Collection<ManagedRepository> repositoryCollection = ModeShapeManagementView.getRepositoryCollectionValue(repositories);
-		
-		for (ManagedRepository managedRepository:repositoryCollection){
+
+		Collection<ManagedRepository> repositoryCollection = ModeShapeManagementView
+				.getRepositoryCollectionValue(repositories);
+
+		for (ManagedRepository managedRepository : repositoryCollection) {
+
+			String name = managedRepository.getName();
+			MetaValue version = ModeShapeManagementView
+					.executeManagedOperation(mc, "getRepositoryVersion",
+							MetaValueFactory.getInstance().create(name));
 
 			/**
 			 * 
-			 * A discovered resource must have a unique key, that must stay the same
-			 * when the resource is discovered the next time
+			 * A discovered resource must have a unique key, that must stay the
+			 * same when the resource is discovered the next time
 			 */
 			DiscoveredResourceDetails detail = new DiscoveredResourceDetails(
 					discoveryContext.getResourceType(), // ResourceType
-					mc.getName(), // Resource Key
-					managedRepository.getName(), // Resource name
-					managedRepository.getVersion(),
+					name, // Resource Key
+					name, // Resource name
+					ProfileServiceUtil.stringValue(version), // Version
 					PluginConstants.ComponentType.Repository.MODESHAPE_REPOSITORY_DESC, // Description
-					discoveryContext.getDefaultPluginConfiguration(), // Plugin Config
+					discoveryContext.getDefaultPluginConfiguration(), // Plugin
+																		// Config
 					null // Process info from a process scan
 			);
 
@@ -100,7 +111,7 @@ public class RepositoryDiscoveryComponent implements
 			discoveredResources.add(detail);
 			log.info("Discovered ModeShape repositories: " + mc.getName());
 		}
-		
+
 		return discoveredResources;
 
 	}
