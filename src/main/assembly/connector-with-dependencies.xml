@@ -8,6 +8,7 @@
     <dependencySet>
       <unpack>false</unpack>
       <scope>runtime</scope>
+			<outputFileNameMapping>${artifact.artifactId}-${artifact.version}.${artifact.extension}</outputFileNameMapping>
 			<excludes>
 				<!-- No need to include the JCIP annotations -->
 				<exclude>net.jcip:jcip-annotations</exclude>
@@ -21,12 +22,6 @@
     </dependencySet>
   </dependencySets>
   <fileSets>
-    <fileSet>
-      <directory>${project.build.outputDirectory}</directory>
-      <includes>
-				<include>${project.artifactId}-${project.version}.jar</include>
-      </includes>
-    </fileSet>
     <fileSet>
       <directory>../../src/main/resources</directory>
 			<useStrictFiltering>true</useStrictFiltering>
