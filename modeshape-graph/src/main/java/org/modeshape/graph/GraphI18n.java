@@ -115,6 +115,27 @@ public final class GraphI18n {
     public static I18n currentWorkspaceCannotBeDeleted;
     public static I18n sourceIsReadOnly;
     public static I18n workspaceIsReadOnly;
+    public static I18n namePropertyDescription;
+    public static I18n namePropertyLabel;
+    public static I18n namePropertyCategory;
+    public static I18n jndiNamePropertyDescription;
+    public static I18n jndiNamePropertyLabel;
+    public static I18n jndiNamePropertyCategory;
+    public static I18n defaultWorkspaceNamePropertyDescription;
+    public static I18n defaultWorkspaceNamePropertyLabel;
+    public static I18n defaultWorkspaceNamePropertyCategory;
+    public static I18n rootNodeUuidPropertyDescription;
+    public static I18n rootNodeUuidPropertyLabel;
+    public static I18n rootNodeUuidPropertyCategory;
+    public static I18n predefinedWorkspaceNamesPropertyDescription;
+    public static I18n predefinedWorkspaceNamesPropertyLabel;
+    public static I18n predefinedWorkspaceNamesPropertyCategory;
+    public static I18n retryLimitPropertyDescription;
+    public static I18n retryLimitPropertyLabel;
+    public static I18n retryLimitPropertyCategory;
+    public static I18n updatesAllowedPropertyDescription;
+    public static I18n updatesAllowedPropertyLabel;
+    public static I18n updatesAllowedPropertyCategory;
 
     /* Federation Connection */
     public static I18n namePropertyIsRequiredForFederatedRepositorySource;

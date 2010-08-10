@@ -24,6 +24,7 @@
 package org.modeshape.common.util;
 
 import java.io.Serializable;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -44,6 +45,7 @@ import net.jcip.annotations.Immutable;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
 import org.modeshape.common.annotation.Label;
+import org.modeshape.common.annotation.ReadOnly;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.text.Inflector;
 
@@ -277,7 +279,7 @@ public class Reflection {
             String name = m.getName();
             if (name.equals("getClass")) continue;
             if (m.getReturnType() == Void.TYPE) continue;
-            if (name.startsWith("get") || name.startsWith("is")) {
+            if (name.startsWith("get") || name.startsWith("is") || name.startsWith("are")) {
                 result.add(m);
             }
         }
@@ -296,10 +298,17 @@ public class Reflection {
         for (int i = 0; i < getters.length; i++) {
             final Method m = getters[i];
             String name = m.getName();
+            String propertyName = null;
             if (name.startsWith("get") && name.length() > 3) {
-                result.add(name.substring(3));
+                propertyName = name.substring(3);
             } else if (name.startsWith("is") && name.length() > 2) {
-                result.add(name.substring(2));
+                propertyName = name.substring(2);
+            } else if (name.startsWith("are") && name.length() > 3) {
+                propertyName = name.substring(3);
+            }
+            if (propertyName != null) {
+                propertyName = INFLECTOR.camelCase(INFLECTOR.underscore(propertyName), false);
+                result.add(propertyName);
             }
         }
         return result.toArray(new String[result.size()]);
@@ -641,52 +650,101 @@ public class Reflection {
         CheckArg.isNotNull(target, "target");
         CheckArg.isNotEmpty(propertyName, "propertyName");
         Object value = invokeGetterMethodOnTarget(propertyName, target);
-        Method[] methods = findMethods("set" + propertyName, false);
-        boolean readOnly = methods.length < 1;
+        Method[] setters = findMethods("set" + propertyName, false);
+        boolean readOnly = setters.length < 1;
         Class<?> type = Object.class;
         Method[] getters = findMethods("get" + propertyName, false);
         if (getters.length == 0) {
             getters = findMethods("is" + propertyName, false);
         }
+        if (getters.length == 0) {
+            getters = findMethods("are" + propertyName, false);
+        }
         if (getters.length > 0) {
             type = getters[0].getReturnType();
         }
+        boolean inferred = true;
+        Field field = null;
         try {
             // Find the corresponding field ...
-            Field field = targetClass.getDeclaredField(Inflector.getInstance().lowerCamelCase(propertyName));
-            if (description == null) {
-                Description desc = field.getAnnotation(Description.class);
-                if (desc != null) {
-                    description = localizedString(desc.i18n(), desc.value());
-                }
-            }
-            if (label == null) {
-                Label labelAnnotation = field.getAnnotation(Label.class);
-                if (labelAnnotation != null) {
-                    label = localizedString(labelAnnotation.i18n(), labelAnnotation.value());
-                }
-            }
-            if (category == null) {
-                Category cat = field.getAnnotation(Category.class);
-                if (cat != null) {
-                    category = localizedString(cat.i18n(), cat.value());
-                }
-            }
+            field = targetClass.getDeclaredField(Inflector.getInstance().lowerCamelCase(propertyName));
         } catch (NoSuchFieldException e) {
             // Do nothing, since we can't find the class' field matching the 'propertyName' ...
         }
-        return new Property(propertyName, value, label, description, category, readOnly, type, allowedValues);
+        if (description == null) {
+            Description desc = getAnnotation(Description.class, field, getters, setters);
+            if (desc != null) {
+                description = localizedString(desc.i18n(), desc.value());
+                inferred = false;
+            }
+        }
+        if (label == null) {
+            Label labelAnnotation = getAnnotation(Label.class, field, getters, setters);
+            if (labelAnnotation != null) {
+                label = localizedString(labelAnnotation.i18n(), labelAnnotation.value());
+                inferred = false;
+            }
+        }
+        if (category == null) {
+            Category cat = getAnnotation(Category.class, field, getters, setters);
+            if (cat != null) {
+                category = localizedString(cat.i18n(), cat.value());
+                inferred = false;
+            }
+        }
+        if (!readOnly) {
+            ReadOnly readOnlyAnnotation = getAnnotation(ReadOnly.class, field, getters, setters);
+            if (readOnlyAnnotation != null) {
+                readOnly = true;
+                inferred = false;
+            }
+        }
+        Property property = new Property(propertyName, value, label, description, category, readOnly, type, allowedValues);
+        property.setInferred(inferred);
+        return property;
+    }
+
+    protected static <AnnotationType extends Annotation> AnnotationType getAnnotation( Class<AnnotationType> annotationType,
+                                                                                       Field field,
+                                                                                       Method[] getters,
+                                                                                       Method[] setters ) {
+        AnnotationType annotation = null;
+        if (field != null) {
+            annotation = field.getAnnotation(annotationType);
+        }
+        if (annotation == null && getters != null) {
+            for (Method getter : getters) {
+                annotation = getter.getAnnotation(annotationType);
+                if (annotation != null) break;
+            }
+        }
+        if (annotation == null && setters != null) {
+            for (Method setter : setters) {
+                annotation = setter.getAnnotation(annotationType);
+                if (annotation != null) break;
+            }
+        }
+        return annotation;
     }
 
     protected static String localizedString( Class<?> i18nClass,
-                                             String id )
-        throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+                                             String id ) {
         if (i18nClass != null && !Object.class.equals(i18nClass) && id != null) {
-            // Look up the I18n field ...
-            Field i18nMsg = i18nClass.getDeclaredField(id);
-            I18n msg = (I18n)i18nMsg.get(null);
-            if (msg != null) {
-                return msg.text();
+            try {
+                // Look up the I18n field ...
+                Field i18nMsg = i18nClass.getDeclaredField(id);
+                I18n msg = (I18n)i18nMsg.get(null);
+                if (msg != null) {
+                    return msg.text();
+                }
+            } catch (SecurityException err) {
+                // ignore
+            } catch (NoSuchFieldException err) {
+                // ignore
+            } catch (IllegalArgumentException err) {
+                // ignore
+            } catch (IllegalAccessException err) {
+                // ignore
             }
         }
         return id;
@@ -756,6 +814,7 @@ public class Reflection {
             Property prop = getProperty(target, propertyName);
             results.add(prop);
         }
+        Collections.sort(results);
         return results;
     }
 
@@ -777,7 +836,7 @@ public class Reflection {
         Map<String, Property> results = new HashMap<String, Property>();
         for (String propertyName : propertyNames) {
             Property prop = getProperty(target, propertyName);
-            results.put(propertyName, prop);
+            results.put(prop.getName(), prop);
         }
         return results;
     }
@@ -803,14 +862,14 @@ public class Reflection {
         invokeSetterMethodOnTarget(property.getName(), target, property.getValue());
     }
 
+    protected static final Inflector INFLECTOR = Inflector.getInstance();
+
     /**
      * A representation of a property on a Java object.
      */
     public static class Property implements Comparable<Property>, Serializable {
 
         private static final long serialVersionUID = 1L;
-
-        private static final Inflector INFLECTOR = Inflector.getInstance();
 
         private String name;
         private String label;
@@ -820,6 +879,7 @@ public class Reflection {
         private Class<?> type;
         private boolean readOnly;
         private String category;
+        private boolean inferred;
 
         /**
          * Create a new object property that has no fields initialized.
@@ -915,7 +975,7 @@ public class Reflection {
          */
         public void setLabel( String label ) {
             if (label == null && name != null) {
-                label = INFLECTOR.humanize(INFLECTOR.underscore(name));
+                label = INFLECTOR.titleCase(INFLECTOR.humanize(INFLECTOR.underscore(name)));
             }
             this.label = label;
         }
@@ -1052,6 +1112,24 @@ public class Reflection {
             } else {
                 this.allowedValues = null;
             }
+        }
+
+        /**
+         * Return whether this property was inferred purely by reflection, or whether annotations were used for its definition.
+         * 
+         * @return true if it was inferred only by reflection, or false if at least one annotation was found and used
+         */
+        public boolean isInferred() {
+            return inferred;
+        }
+
+        /**
+         * Set whether this property was inferred purely by reflection.
+         * 
+         * @param inferred true if it was inferred only by reflection, or false if at least one annotation was found and used
+         */
+        public void setInferred( boolean inferred ) {
+            this.inferred = inferred;
         }
 
         /**

@@ -193,58 +193,58 @@ public class ReflectionTest {
         assertThat(propsByName.size(), is(8));
         assertThat(props.containsAll(propsByName.values()), is(true));
 
-        Property property = propsByName.remove("Status");
-        assertThat(property.getName(), is("Status"));
+        Property property = propsByName.remove("status");
+        assertThat(property.getName(), is("status"));
         assertThat(property.getLabel(), is("Status"));
         assertThat(property.getType().equals(Status.class), is(true));
         assertThat(property.getValue(), is((Object)status));
         assertThat(property.isReadOnly(), is(true));
         assertThat(property, is(findProperty(property.getName(), props)));
 
-        property = propsByName.remove("Code");
-        assertThat(property.getName(), is("Code"));
+        property = propsByName.remove("code");
+        assertThat(property.getName(), is("code"));
         assertThat(property.getLabel(), is("Code"));
         assertThat(property.getType().equals(Integer.TYPE), is(true));
         assertThat(property.getValue(), is((Object)code));
         assertThat(property.isReadOnly(), is(true));
 
-        property = propsByName.remove("Message");
-        assertThat(property.getName(), is("Message"));
+        property = propsByName.remove("message");
+        assertThat(property.getName(), is("message"));
         assertThat(property.getLabel(), is("Message"));
         assertThat(property.getType().equals(I18n.class), is(true));
         assertThat(property.getValue(), is((Object)msg));
         assertThat(property.isReadOnly(), is(true));
 
-        property = propsByName.remove("MessageString");
-        assertThat(property.getName(), is("MessageString"));
-        assertThat(property.getLabel(), is("Message string"));
+        property = propsByName.remove("messageString");
+        assertThat(property.getName(), is("messageString"));
+        assertThat(property.getLabel(), is("Message String"));
         assertThat(property.getType().equals(String.class), is(true));
         assertThat(property.getValue(), is((Object)msg.text(params)));
         assertThat(property.isReadOnly(), is(true));
 
-        property = propsByName.remove("Parameters");
-        assertThat(property.getName(), is("Parameters"));
+        property = propsByName.remove("parameters");
+        assertThat(property.getName(), is("parameters"));
         assertThat(property.getLabel(), is("Parameters"));
         assertThat(property.getType().equals(Object[].class), is(true));
         assertThat(property.getValue(), is((Object)params));
         assertThat(property.isReadOnly(), is(true));
 
-        property = propsByName.remove("Resource");
-        assertThat(property.getName(), is("Resource"));
+        property = propsByName.remove("resource");
+        assertThat(property.getName(), is("resource"));
         assertThat(property.getLabel(), is("Resource"));
         assertThat(property.getType().equals(String.class), is(true));
         assertThat(property.getValue(), is((Object)resource));
         assertThat(property.isReadOnly(), is(true));
 
-        property = propsByName.remove("Location");
-        assertThat(property.getName(), is("Location"));
+        property = propsByName.remove("location");
+        assertThat(property.getName(), is("location"));
         assertThat(property.getLabel(), is("Location"));
         assertThat(property.getType().equals(String.class), is(true));
         assertThat(property.getValue(), is((Object)location));
         assertThat(property.isReadOnly(), is(true));
 
-        property = propsByName.remove("Throwable");
-        assertThat(property.getName(), is("Throwable"));
+        property = propsByName.remove("throwable");
+        assertThat(property.getName(), is("throwable"));
         assertThat(property.getLabel(), is("Throwable"));
         assertThat(property.getType().equals(Throwable.class), is(true));
         assertThat(property.getValue(), is((Object)throwable));
@@ -265,8 +265,8 @@ public class ReflectionTest {
         assertThat(props.size(), is(3));
         assertThat(propsByName.size(), is(3));
 
-        Property property = propsByName.remove("Identifier");
-        assertThat(property.getName(), is("Identifier"));
+        Property property = propsByName.remove("identifier");
+        assertThat(property.getName(), is("identifier"));
         assertThat(property.getLabel(), is(CommonI18n.noMoreContent.text()));
         assertThat(property.getDescription(), is(CommonI18n.nullActivityMonitorTaskName.text()));
         assertThat(property.getCategory(), is(CommonI18n.noMoreContent.text()));
@@ -275,8 +275,8 @@ public class ReflectionTest {
         assertThat(property.isReadOnly(), is(false));
         assertThat(property, is(findProperty(property.getName(), props)));
 
-        property = propsByName.remove("Count");
-        assertThat(property.getName(), is("Count"));
+        property = propsByName.remove("count");
+        assertThat(property.getName(), is("count"));
         assertThat(property.getLabel(), is("Count"));
         assertThat(property.getDescription(), is("This is the count"));
         assertThat(property.getCategory(), is(""));
@@ -284,9 +284,9 @@ public class ReflectionTest {
         assertThat(property.getValue(), is((Object)structure.getCount()));
         assertThat(property.isReadOnly(), is(false));
 
-        property = propsByName.remove("OnFire");
-        assertThat(property.getName(), is("OnFire"));
-        assertThat(property.getLabel(), is("On fire"));
+        property = propsByName.remove("onFire");
+        assertThat(property.getName(), is("onFire"));
+        assertThat(property.getLabel(), is("On Fire"));
         assertThat(property.getDescription(), is(""));
         assertThat(property.getCategory(), is(""));
         assertThat(property.getType().equals(Boolean.TYPE), is(true));

@@ -6,10 +6,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.util.Reflection;
+import org.modeshape.common.util.Reflection.Property;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
@@ -63,6 +67,35 @@ public class InMemoryRepositorySourceTest {
             connection.execute(context, readRoot);
             assertThat(readRoot.getActualLocationOfNode().getPath(), is(pathFor("/")));
         }
+    }
+
+    @Test
+    public void shouldHaveProperties() throws Exception {
+        Reflection reflection = new Reflection(source.getClass());
+        Property property = reflection.getProperty(source, "updatesAllowed");
+        assertThat(property.getDescription(), is(GraphI18n.updatesAllowedPropertyDescription.text()));
+        assertThat(property.getLabel(), is(GraphI18n.updatesAllowedPropertyLabel.text()));
+        assertThat(property.getCategory(), is(GraphI18n.updatesAllowedPropertyCategory.text()));
+        assertThat(property.getCategory(), is("Advanced"));
+        assertThat(property.isInferred(), is(false));
+        assertThat(property.isReadOnly(), is(true));
+        assertThat(property.isBooleanType(), is(true));
+
+        property = reflection.getProperty(source, "defaultCachePolicy");
+        assertThat(property.getDescription(), is(""));
+        assertThat(property.getLabel(), is("Default Cache Policy"));
+        assertThat(property.getCategory(), is(""));
+        assertThat(property.isInferred(), is(true));
+        assertThat(property.isReadOnly(), is(false));
+        assertThat(property.isBooleanType(), is(false));
+
+        Map<String, Property> properties = reflection.getAllPropertiesByNameOn(source);
+        assertThat(properties.containsKey("name"), is(true));
+        assertThat(properties.containsKey("jndiName"), is(true));
+        assertThat(properties.containsKey("defaultWorkspaceName"), is(true));
+        assertThat(properties.containsKey("predefinedWorkspaceNames"), is(true));
+        assertThat(properties.containsKey("updatesAllowed"), is(true));
+        assertThat(properties.containsKey("defaultCachePolicy"), is(true));
     }
 
 }

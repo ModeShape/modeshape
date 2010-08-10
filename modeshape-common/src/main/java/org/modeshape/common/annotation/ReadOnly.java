@@ -21,34 +21,24 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.common.util;
+package org.modeshape.common.annotation;
+
+import static java.lang.annotation.ElementType.CONSTRUCTOR;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PACKAGE;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 /**
- * Common utility methods for general objects.
+ * Annotation that can be used to specify that the target is read-only.
  */
-public class ObjectUtil {
+@Documented
+@Retention( RUNTIME )
+@Target( {FIELD, METHOD, CONSTRUCTOR, PACKAGE, TYPE} )
+public @interface ReadOnly {
 
-    public static <Type> boolean isEqualNoNulls( Type reference1,
-                                                 Type reference2 ) {
-        return reference1.equals(reference2);
-    }
-
-    public static <Type> boolean isEqualWithNulls( Type reference1,
-                                                   Type reference2 ) {
-        return reference1 == null ? reference2 == null : reference1.equals(reference2);
-    }
-
-    @SuppressWarnings( "unchecked" )
-    public static int compareNoNulls( Comparable reference1,
-                                      Comparable reference2 ) {
-        return reference1.compareTo(reference2);
-    }
-
-    @SuppressWarnings( "unchecked" )
-    public static int compareWithNulls( Comparable reference1,
-                                        Comparable reference2 ) {
-        if (reference1 == null) return reference2 == null ? 0 : 1;
-        if (reference2 == null) return 1;
-        return reference1.compareTo(reference2);
-    }
 }

@@ -45,6 +45,10 @@ import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.Category;
+import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Label;
+import org.modeshape.common.annotation.ReadOnly;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
@@ -96,15 +100,39 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
     protected static final String JNDI_NAME_ATTR = "jndiName";
     protected static final String RETRY_LIMIT_ATTR = "retryLimit";
 
+    @Description( i18n = GraphI18n.class, value = "namePropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "namePropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "namePropertyCategory" )
     @GuardedBy( "sourcesLock" )
     private String name;
+
+    @Description( i18n = GraphI18n.class, value = "jndiNamePropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "jndiNamePropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "jndiNamePropertyCategory" )
     @GuardedBy( "this" )
     private String jndiName;
+
+    @Description( i18n = GraphI18n.class, value = "defaultWorkspaceNamePropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "defaultWorkspaceNamePropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "defaultWorkspaceNamePropertyCategory" )
     private String defaultWorkspaceName = DEFAULT_WORKSPACE_NAME;
+
+    @Description( i18n = GraphI18n.class, value = "rootNodeUuidPropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "rootNodeUuidPropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "rootNodeUuidPropertyCategory" )
     private UUID rootNodeUuid = UUID.randomUUID();
-    private CachePolicy defaultCachePolicy;
+
+    @Description( i18n = GraphI18n.class, value = "predefinedWorkspacesPropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "predefinedWorkspacesPropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "predefinedWorkspacesPropertyCategory" )
     private volatile String[] predefinedWorkspaces = new String[] {};
+
+    @Description( i18n = GraphI18n.class, value = "retryLimitPropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "retryLimitPropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "retryLimitPropertyCategory" )
     private final AtomicInteger retryLimit = new AtomicInteger(DEFAULT_RETRY_LIMIT);
+
+    private CachePolicy defaultCachePolicy;
     private transient InMemoryRepository repository;
     private transient ExecutionContext defaultContext = new ExecutionContext();
     private transient RepositoryContext repositoryContext = new DefaultRepositoryContext();
@@ -483,6 +511,10 @@ public class InMemoryRepositorySource implements BaseRepositorySource, ObjectFac
         return CAPABILITIES;
     }
 
+    @Description( i18n = GraphI18n.class, value = "updatesAllowedPropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "updatesAllowedPropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "updatesAllowedPropertyCategory" )
+    @ReadOnly
     public boolean areUpdatesAllowed() {
         return true;
     }
