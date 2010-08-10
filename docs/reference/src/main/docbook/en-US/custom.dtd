@@ -11,7 +11,7 @@
 <!ENTITY SourceCode  					"http://www.jboss.org/modeshape/sourcecode.html">
 <!ENTITY MailingLists					"http://www.jboss.org/modeshape/mailinglists.html">
 <!ENTITY DocHome    					"http://docs.jboss.org/modeshape">
-<!ENTITY Downloads   					"http://downloads.jboss.org/modeshape">
+<!ENTITY DownloadsHome				"http://downloads.jboss.org/modeshape">
 <!ENTITY API        					"&DocHome;/&versionNumber;/api/org/modeshape/">
 <!ENTITY ReleaseNotes					"&DocHome;/&versionNumber;/release.html">
 <!ENTITY MODE       					"http://jira.jboss.org/browse/MODE">
@@ -23,7 +23,7 @@
 <!ENTITY SecureSubversion  		"https://svn.jboss.org/repos/modeshape/">
 <!ENTITY Fisheye							"http://fisheye.jboss.org/browse/modeshape/">
 <!ENTITY Forums     					"http://community.jboss.org/community/modeshape">
-<!ENTITY SingleDownload       "&Downloads;/&versionNumber;/modeshape-&versionNumber;-all-with-dependencies.jar">
+<!ENTITY SingleDownload       "&DownloadsHome;/&versionNumber;/modeshape-&versionNumber;-all-with-dependencies.jar">
 <!ENTITY JSR170  							"http://www.jcp.org/en/jsr/detail?id=170">
 <!ENTITY JSR283  							"http://www.jcp.org/en/jsr/detail?id=283">
 <!ENTITY JSR333  							"http://www.jcp.org/en/jsr/detail?id=333">
