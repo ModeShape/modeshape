@@ -55,7 +55,6 @@ import org.modeshape.common.annotation.Label;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
@@ -115,45 +114,46 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
     protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
     protected static final String UPDATES_ALLOWED = "updatesAllowed";
 
-    @Description( i18n = GraphI18n.class, value = "namePropertyDescription" )
-    @Label( i18n = GraphI18n.class, value = "namePropertyLabel" )
-    @Category( i18n = GraphI18n.class, value = "namePropertyCategory" )
+    @Description( i18n = InfinispanConnectorI18n.class, value = "namePropertyDescription" )
+    @Label( i18n = InfinispanConnectorI18n.class, value = "namePropertyLabel" )
+    @Category( i18n = InfinispanConnectorI18n.class, value = "namePropertyCategory" )
     private volatile String name;
 
-    @Description( i18n = GraphI18n.class, value = "rootNodeUuidPropertyDescription" )
-    @Label( i18n = GraphI18n.class, value = "rootNodeUuidPropertyLabel" )
-    @Category( i18n = GraphI18n.class, value = "rootNodeUuidPropertyCategory" )
+    @Description( i18n = InfinispanConnectorI18n.class, value = "rootNodeUuidPropertyDescription" )
+    @Label( i18n = InfinispanConnectorI18n.class, value = "rootNodeUuidPropertyLabel" )
+    @Category( i18n = InfinispanConnectorI18n.class, value = "rootNodeUuidPropertyCategory" )
     private volatile UUID rootNodeUuid = UUID.fromString(DEFAULT_ROOT_NODE_UUID);
 
-    @Description( i18n = GraphI18n.class, value = "cacheConfigurationNamePropertyDescription" )
-    @Label( i18n = GraphI18n.class, value = "cacheConfigurationNamePropertyLabel" )
-    @Category( i18n = GraphI18n.class, value = "cacheConfigurationNamePropertyCategory" )
+    @Description( i18n = InfinispanConnectorI18n.class, value = "cacheConfigurationNamePropertyDescription" )
+    @Label( i18n = InfinispanConnectorI18n.class, value = "cacheConfigurationNamePropertyLabel" )
+    @Category( i18n = InfinispanConnectorI18n.class, value = "cacheConfigurationNamePropertyCategory" )
     private volatile String cacheConfigurationName;
 
-    @Description( i18n = GraphI18n.class, value = "jndiNamePropertyDescription" )
-    @Label( i18n = GraphI18n.class, value = "jndiNamePropertyLabel" )
-    @Category( i18n = GraphI18n.class, value = "jndiNamePropertyCategory" )
+    @Description( i18n = InfinispanConnectorI18n.class, value = "cacheManagerJndiNamePropertyDescription" )
+    @Label( i18n = InfinispanConnectorI18n.class, value = "cacheManagerJndiNamePropertyLabel" )
+    @Category( i18n = InfinispanConnectorI18n.class, value = "cacheManagerJndiNamePropertyCategory" )
     private volatile String cacheManagerJndiName;
 
-    @Description( i18n = GraphI18n.class, value = "retryLimitPropertyDescription" )
-    @Label( i18n = GraphI18n.class, value = "retryLimitPropertyLabel" )
-    @Category( i18n = GraphI18n.class, value = "retryLimitPropertyCategory" )
+    @Description( i18n = InfinispanConnectorI18n.class, value = "retryLimitPropertyDescription" )
+    @Label( i18n = InfinispanConnectorI18n.class, value = "retryLimitPropertyLabel" )
+    @Category( i18n = InfinispanConnectorI18n.class, value = "retryLimitPropertyCategory" )
     private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
 
-    @Description( i18n = GraphI18n.class, value = "defaultWorkspaceNamePropertyDescription" )
-    @Label( i18n = GraphI18n.class, value = "defaultWorkspaceNamePropertyLabel" )
-    @Category( i18n = GraphI18n.class, value = "defaultWorkspaceNamePropertyCategory" )
+    @Description( i18n = InfinispanConnectorI18n.class, value = "defaultWorkspaceNamePropertyDescription" )
+    @Label( i18n = InfinispanConnectorI18n.class, value = "defaultWorkspaceNamePropertyLabel" )
+    @Category( i18n = InfinispanConnectorI18n.class, value = "defaultWorkspaceNamePropertyCategory" )
     private volatile String defaultWorkspace;
 
-    @Description( i18n = GraphI18n.class, value = "updatesAllowedPropertyDescription" )
-    @Label( i18n = GraphI18n.class, value = "updatesAllowedPropertyLabel" )
-    @Category( i18n = GraphI18n.class, value = "updatesAllowedPropertyCategory" )
+    @Description( i18n = InfinispanConnectorI18n.class, value = "predefinedWorkspacesPropertyDescription" )
+    @Label( i18n = InfinispanConnectorI18n.class, value = "predefinedWorkspacesPropertyLabel" )
+    @Category( i18n = InfinispanConnectorI18n.class, value = "predefinedWorkspacesPropertyCategory" )
+    private volatile String[] predefinedWorkspaces = new String[] {};
+
+    @Description( i18n = InfinispanConnectorI18n.class, value = "updatesAllowedPropertyDescription" )
+    @Label( i18n = InfinispanConnectorI18n.class, value = "updatesAllowedPropertyLabel" )
+    @Category( i18n = InfinispanConnectorI18n.class, value = "updatesAllowedPropertyCategory" )
     private volatile boolean updatesAllowed = DEFAULT_UPDATES_ALLOWED;
 
-    @Description( i18n = GraphI18n.class, value = "predefinedWorkspacesPropertyDescription" )
-    @Label( i18n = GraphI18n.class, value = "predefinedWorkspacesPropertyLabel" )
-    @Category( i18n = GraphI18n.class, value = "predefinedWorkspacesPropertyCategory" )
-    private volatile String[] predefinedWorkspaces = new String[] {};
     private volatile CachePolicy defaultCachePolicy;
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(true, true, false, true, false);
     private transient InfinispanRepository repository;

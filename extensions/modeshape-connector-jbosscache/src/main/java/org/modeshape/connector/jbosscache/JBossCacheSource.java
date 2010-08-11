@@ -51,6 +51,9 @@ import org.jboss.cache.Cache;
 import org.jboss.cache.CacheFactory;
 import org.jboss.cache.DefaultCacheFactory;
 import org.jboss.cache.config.ConfigurationException;
+import org.modeshape.common.annotation.Category;
+import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Label;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.Logger;
@@ -113,16 +116,52 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
     protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
     protected static final String UPDATES_ALLOWED = "updatesAllowed";
 
+    @Description( i18n = JBossCacheConnectorI18n.class, value = "namePropertyDescription" )
+    @Label( i18n = JBossCacheConnectorI18n.class, value = "namePropertyLabel" )
+    @Category( i18n = JBossCacheConnectorI18n.class, value = "namePropertyCategory" )
     private volatile String name;
+
+    @Description( i18n = JBossCacheConnectorI18n.class, value = "rootNodeUuidPropertyDescription" )
+    @Label( i18n = JBossCacheConnectorI18n.class, value = "rootNodeUuidPropertyLabel" )
+    @Category( i18n = JBossCacheConnectorI18n.class, value = "rootNodeUuidPropertyCategory" )
     private volatile UUID rootNodeUuid = UUID.randomUUID();
-    private volatile CachePolicy defaultCachePolicy;
+
+    @Description( i18n = JBossCacheConnectorI18n.class, value = "cacheConfigurationNamePropertyDescription" )
+    @Label( i18n = JBossCacheConnectorI18n.class, value = "cacheConfigurationNamePropertyLabel" )
+    @Category( i18n = JBossCacheConnectorI18n.class, value = "cacheConfigurationNamePropertyCategory" )
     private volatile String cacheConfigurationName;
+
+    @Description( i18n = JBossCacheConnectorI18n.class, value = "cacheFactoryJndiNamePropertyDescription" )
+    @Label( i18n = JBossCacheConnectorI18n.class, value = "cacheFactoryJndiNamePropertyLabel" )
+    @Category( i18n = JBossCacheConnectorI18n.class, value = "cacheFactoryrJndiNamePropertyCategory" )
     private volatile String cacheFactoryJndiName;
+
+    @Description( i18n = JBossCacheConnectorI18n.class, value = "cacheJndiNamePropertyDescription" )
+    @Label( i18n = JBossCacheConnectorI18n.class, value = "cacheJndiNamePropertyLabel" )
+    @Category( i18n = JBossCacheConnectorI18n.class, value = "cacheJndiNamePropertyCategory" )
     private volatile String cacheJndiName;
+
+    @Description( i18n = JBossCacheConnectorI18n.class, value = "retryLimitPropertyDescription" )
+    @Label( i18n = JBossCacheConnectorI18n.class, value = "retryLimitPropertyLabel" )
+    @Category( i18n = JBossCacheConnectorI18n.class, value = "retryLimitPropertyCategory" )
     private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
+
+    @Description( i18n = JBossCacheConnectorI18n.class, value = "defaultWorkspaceNamePropertyDescription" )
+    @Label( i18n = JBossCacheConnectorI18n.class, value = "defaultWorkspaceNamePropertyLabel" )
+    @Category( i18n = JBossCacheConnectorI18n.class, value = "defaultWorkspaceNamePropertyCategory" )
     private volatile String defaultWorkspace;
-    private volatile boolean updatesAllowed = DEFAULT_UPDATES_ALLOWED;
+
+    @Description( i18n = JBossCacheConnectorI18n.class, value = "predefinedWorkspacesPropertyDescription" )
+    @Label( i18n = JBossCacheConnectorI18n.class, value = "predefinedWorkspacesPropertyLabel" )
+    @Category( i18n = JBossCacheConnectorI18n.class, value = "predefinedWorkspacesPropertyCategory" )
     private volatile String[] predefinedWorkspaces = new String[] {};
+
+    @Description( i18n = JBossCacheConnectorI18n.class, value = "updatesAllowedPropertyDescription" )
+    @Label( i18n = JBossCacheConnectorI18n.class, value = "updatesAllowedPropertyLabel" )
+    @Category( i18n = JBossCacheConnectorI18n.class, value = "updatesAllowedPropertyCategory" )
+    private volatile boolean updatesAllowed = DEFAULT_UPDATES_ALLOWED;
+
+    private volatile CachePolicy defaultCachePolicy;
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(true, true, false, true, false);
     private transient JBossCacheRepository repository;
     private transient Context jndiContext;
@@ -417,6 +456,9 @@ public class JBossCacheSource implements BaseRepositorySource, ObjectFactory {
      * @see #getPredefinedWorkspaceNames()
      * @see #setCreatingWorkspacesAllowed(boolean)
      */
+    @Description( i18n = JBossCacheConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyDescription" )
+    @Label( i18n = JBossCacheConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyLabel" )
+    @Category( i18n = JBossCacheConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyCategory" )
     public boolean isCreatingWorkspacesAllowed() {
         return capabilities.supportsCreatingWorkspaces();
     }

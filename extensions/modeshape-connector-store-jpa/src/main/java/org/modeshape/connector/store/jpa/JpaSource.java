@@ -47,6 +47,10 @@ import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
 import org.hibernate.SessionFactory;
 import org.hibernate.ejb.Ejb3Configuration;
+import org.modeshape.common.annotation.AllowedValues;
+import org.modeshape.common.annotation.Category;
+import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Label;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
@@ -188,36 +192,137 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     private static final long serialVersionUID = 1L;
 
+    @Description( i18n = JpaConnectorI18n.class, value = "namePropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "namePropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "namePropertyCategory" )
     private volatile String name;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "dataSourceJndiNamePropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "dataSourceJndiNamePropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "dataSourceJndiNamePropertyCategory" )
     private volatile String dataSourceJndiName;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "dialectPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "dialectPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "dialectPropertyCategory" )
     private volatile String dialect;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "usernamePropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "usernamePropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "usernamePropertyCategory" )
     private volatile String username;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "passwordPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "passwordPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "passwordPropertyCategory" )
     private volatile String password;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "urlPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "urlPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "urlPropertyCategory" )
     private volatile String url;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "driverClassNamePropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "driverClassNamePropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "driverClassNamePropertyCategory" )
     private volatile String driverClassName;
+
+    // @Description( i18n = JpaConnectorI18n.class, value = "driverClassloaderNamePropertyDescription" )
+    // @Label( i18n = JpaConnectorI18n.class, value = "driverClassloaderNamePropertyLabel" )
+    // @Category( i18n = JpaConnectorI18n.class, value = "driverClassloaderNamePropertyCategory" )
     private volatile String driverClassloaderName;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "rootNodeUuidPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "rootNodeUuidPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "rootNodeUuidPropertyCategory" )
     private volatile String rootNodeUuid = DEFAULT_ROOT_NODE_UUID;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "maximumConnectionsInPoolPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "maximumConnectionsInPoolPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "maximumConnectionsInPoolPropertyCategory" )
     private volatile int maximumConnectionsInPool = DEFAULT_MAXIMUM_CONNECTIONS_IN_POOL;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "minimumConnectionsInPoolPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "minimumConnectionsInPoolPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "minimumConnectionsInPoolPropertyCategory" )
     private volatile int minimumConnectionsInPool = DEFAULT_MINIMUM_CONNECTIONS_IN_POOL;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "maximumConnectionIdleTimeInSecondsPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "maximumConnectionIdleTimeInSecondsPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "maximumConnectionIdleTimeInSecondsPropertyCategory" )
     private volatile int maximumConnectionIdleTimeInSeconds = DEFAULT_MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "maximumSizeOfStatementCachePropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "maximumSizeOfStatementCachePropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "maximumSizeOfStatementCachePropertyCategory" )
     private volatile int maximumSizeOfStatementCache = DEFAULT_MAXIMUM_NUMBER_OF_STATEMENTS_TO_CACHE;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "numberOfConnectionsToAcquireAsNeededPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "numberOfConnectionsToAcquireAsNeededPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "numberOfConnectionsToAcquireAsNeededPropertyCategory" )
     private volatile int numberOfConnectionsToAcquireAsNeeded = DEFAULT_NUMBER_OF_CONNECTIONS_TO_ACQUIRE_AS_NEEDED;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "idleTimeInSecondsBeforeTestingConnectionsPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "idleTimeInSecondsBeforeTestingConnectionsPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "idleTimeInSecondsBeforeTestingConnectionsPropertyCategory" )
     private volatile int idleTimeInSecondsBeforeTestingConnections = DEFAULT_IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "retryLimitPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "retryLimitPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "retryLimitPropertyCategory" )
     private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "cacheTimeToLiveInMillisecondsPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "cacheTimeToLiveInMillisecondsPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "cacheTimeToLiveInMillisecondsPropertyCategory" )
     private volatile int cacheTimeToLiveInMilliseconds = DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS * 1000;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "largeValueSizeInBytesPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "largeValueSizeInBytesPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "largeValueSizeInBytesPropertyCategory" )
     private volatile long largeValueSizeInBytes = DEFAULT_LARGE_VALUE_SIZE_IN_BYTES;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "showSqlPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "showSqlPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "showSqlPropertyCategory" )
     private volatile boolean showSql = DEFAULT_SHOW_SQL;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "compressDataPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "compressDataPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "compressDataPropertyCategory" )
     private volatile boolean compressData = DEFAULT_COMPRESS_DATA;
+
+    // @Description( i18n = JpaConnectorI18n.class, value = "referentialIntegrityEnforcedPropertyDescription" )
+    // @Label( i18n = JpaConnectorI18n.class, value = "referentialIntegrityEnforcedPropertyLabel" )
+    // @Category( i18n = JpaConnectorI18n.class, value = "referentialIntegrityEnforcedPropertyCategory" )
     private volatile boolean referentialIntegrityEnforced = DEFAULT_ENFORCE_REFERENTIAL_INTEGRITY;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "autoGenerateSchemaPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "autoGenerateSchemaPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "autoGenerateSchemaPropertyCategory" )
+    @AllowedValues( {"create", "create-drop", "update", "validate"} )
     private volatile String autoGenerateSchema = DEFAULT_AUTO_GENERATE_SCHEMA;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "defaultWorkspaceNamePropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "defaultWorkspaceNamePropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "defaultWorkspaceNamePropertyCategory" )
     private volatile String defaultWorkspace = DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "predefinedWorkspacesPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "predefinedWorkspacesPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "predefinedWorkspacesPropertyCategory" )
     private volatile String[] predefinedWorkspaces = new String[] {};
+
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
                                                                                                   SUPPORTS_SAME_NAME_SIBLINGS,
                                                                                                   DEFAULT_ALLOWS_UPDATES,
                                                                                                   SUPPORTS_EVENTS,
                                                                                                   DEFAULT_SUPPORTS_CREATING_WORKSPACES,
                                                                                                   SUPPORTS_REFERENCES);
+
+    @Description( i18n = JpaConnectorI18n.class, value = "modelNamePropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "modelNamePropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "modelNamePropertyCategory" )
     private volatile String modelName;
     private transient Model model;
     private transient DataSource dataSource;
@@ -266,6 +371,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * 
      * @return true if this source allows updates, or false if this source only supports reading content.
      */
+    @Description( i18n = JpaConnectorI18n.class, value = "updatesAllowedPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "updatesAllowedPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "updatesAllowedPropertyCategory" )
     public boolean areUpdatesAllowed() {
         return capabilities.supportsUpdates();
     }
@@ -471,6 +579,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * @see #getPredefinedWorkspaceNames()
      * @see #setCreatingWorkspacesAllowed(boolean)
      */
+    @Description( i18n = JpaConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyCategory" )
     public boolean isCreatingWorkspacesAllowed() {
         return capabilities.supportsCreatingWorkspaces();
     }

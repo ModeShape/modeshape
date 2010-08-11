@@ -49,6 +49,25 @@ public final class FileSystemI18n {
     public static I18n pathForWorkspaceCannotBeRead;
     public static I18n pathForWorkspaceIsNotDirectory;
 
+    public static I18n workspaceRootPathPropertyDescription;
+    public static I18n workspaceRootPathPropertyLabel;
+    public static I18n workspaceRootPathPropertyCategory;
+    public static I18n defaultWorkspaceNamePropertyDescription;
+    public static I18n defaultWorkspaceNamePropertyLabel;
+    public static I18n defaultWorkspaceNamePropertyCategory;
+    public static I18n predefinedWorkspaceNamesPropertyDescription;
+    public static I18n predefinedWorkspaceNamesPropertyLabel;
+    public static I18n predefinedWorkspaceNamesPropertyCategory;
+    public static I18n updatesAllowedPropertyDescription;
+    public static I18n updatesAllowedPropertyLabel;
+    public static I18n updatesAllowedPropertyCategory;
+    public static I18n exclusionPatternPropertyDescription;
+    public static I18n exclusionPatternPropertyLabel;
+    public static I18n exclusionPatternPropertyCategory;
+    public static I18n maxPathLengthPropertyDescription;
+    public static I18n maxPathLengthPropertyLabel;
+    public static I18n maxPathLengthPropertyCategory;
+
     // Writable messages
     public static I18n parentIsReadOnly;
     public static I18n fileAlreadyExists;

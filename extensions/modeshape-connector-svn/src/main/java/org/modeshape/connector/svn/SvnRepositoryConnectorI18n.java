@@ -66,6 +66,28 @@ public final class SvnRepositoryConnectorI18n {
     public static I18n deleteFailed;
     public static I18n nodeOrderingNotSupported;
 
+    public static I18n repositoryRootUrlPropertyDescription;
+    public static I18n repositoryRootUrlPropertyLabel;
+    public static I18n repositoryRootUrlPropertyCategory;
+    public static I18n usernamePropertyDescription;
+    public static I18n usernamePropertyLabel;
+    public static I18n usernamePropertyCategory;
+    public static I18n passwordPropertyDescription;
+    public static I18n passwordPropertyLabel;
+    public static I18n passwordPropertyCategory;
+    public static I18n creatingWorkspacesAllowedPropertyDescription;
+    public static I18n creatingWorkspacesAllowedPropertyLabel;
+    public static I18n creatingWorkspacesAllowedPropertyCategory;
+    public static I18n defaultWorkspaceNamePropertyDescription;
+    public static I18n defaultWorkspaceNamePropertyLabel;
+    public static I18n defaultWorkspaceNamePropertyCategory;
+    public static I18n predefinedWorkspaceNamesPropertyDescription;
+    public static I18n predefinedWorkspaceNamesPropertyLabel;
+    public static I18n predefinedWorkspaceNamesPropertyCategory;
+    public static I18n updatesAllowedPropertyDescription;
+    public static I18n updatesAllowedPropertyLabel;
+    public static I18n updatesAllowedPropertyCategory;
+
     static {
         try {
             I18n.initialize(SvnRepositoryConnectorI18n.class);

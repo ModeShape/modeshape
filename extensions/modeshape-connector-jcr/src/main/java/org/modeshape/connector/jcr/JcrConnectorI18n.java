@@ -45,6 +45,27 @@ public final class JcrConnectorI18n {
     public static I18n unableToFindNodeWithUuid;
     public static I18n nodeDoesNotExist;
 
+    public static I18n namePropertyDescription;
+    public static I18n namePropertyLabel;
+    public static I18n namePropertyCategory;
+    public static I18n retryLimitPropertyDescription;
+    public static I18n retryLimitPropertyLabel;
+    public static I18n retryLimitPropertyCategory;
+    public static I18n updatesAllowedPropertyDescription;
+    public static I18n updatesAllowedPropertyLabel;
+    public static I18n updatesAllowedPropertyCategory;
+
+    public static I18n repositoryJndiNamePropertyDescription;
+    public static I18n repositoryJndiNamePropertyLabel;
+    public static I18n repositoryJndiNamePropertyCategory;
+
+    public static I18n passwordPropertyDescription;
+    public static I18n passwordPropertyLabel;
+    public static I18n passwordPropertyCategory;
+    public static I18n usernamePropertyDescription;
+    public static I18n usernamePropertyLabel;
+    public static I18n usernamePropertyCategory;
+
     static {
         try {
             I18n.initialize(JcrConnectorI18n.class);

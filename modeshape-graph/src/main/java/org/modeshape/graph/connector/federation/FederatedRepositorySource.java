@@ -40,6 +40,9 @@ import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.Category;
+import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Label;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
@@ -82,7 +85,14 @@ public class FederatedRepositorySource implements RepositorySource, ObjectFactor
 
     private static final long serialVersionUID = 1L;
 
+    @Description( i18n = GraphI18n.class, value = "namePropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "namePropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "namePropertyCategory" )
     private volatile String name;
+
+    @Description( i18n = GraphI18n.class, value = "retryLimitPropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "retryLimitPropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "retryLimitPropertyCategory" )
     private volatile int retryLimit;
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(true, true, false, false, true);
     private volatile transient FederatedRepository configuration;

@@ -11,7 +11,11 @@ import javax.naming.BinaryRefAddr;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.StringRefAddr;
+import org.modeshape.common.annotation.Category;
+import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Label;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySourceException;
@@ -38,11 +42,22 @@ public abstract class AbstractRepositorySource implements BaseRepositorySource {
      */
     public static final CachePolicy DEFAULT_CACHE_POLICY = null;
 
+    @Description( i18n = GraphI18n.class, value = "retryLimitPropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "retryLimitPropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "retryLimitPropertyCategory" )
     protected int retryLimit = DEFAULT_RETRY_LIMIT;
-    protected String name;
+
+    @Description( i18n = GraphI18n.class, value = "namePropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "namePropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "namePropertyCategory" )
+    private volatile String name;
+
+    @Description( i18n = GraphI18n.class, value = "rootNodeUuidWithDefaultPropertyDescription" )
+    @Label( i18n = GraphI18n.class, value = "rootNodeUuidPropertyLabel" )
+    @Category( i18n = GraphI18n.class, value = "rootNodeUuidPropertyCategory" )
+    protected transient UUID rootNodeUuid = UUID.fromString(DEFAULT_ROOT_NODE_UUID);
 
     protected transient RepositoryContext repositoryContext;
-    protected transient UUID rootNodeUuid = UUID.fromString(DEFAULT_ROOT_NODE_UUID);
     protected transient CachePolicy cachePolicy = DEFAULT_CACHE_POLICY;
 
     /**

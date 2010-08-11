@@ -33,6 +33,9 @@ import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import javax.sql.DataSource;
 import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.Category;
+import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Label;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
 import org.modeshape.connector.meta.jdbc.JdbcMetadataRepository.JdbcMetadataTransaction;
@@ -112,7 +115,6 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
      */
     public static final String DEFAULT_NAME_OF_DEFAULT_SCHEMA = "default";
 
-
     private static final int DEFAULT_MAXIMUM_CONNECTIONS_IN_POOL = 5;
     private static final int DEFAULT_MINIMUM_CONNECTIONS_IN_POOL = 0;
     private static final int DEFAULT_MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS = 60 * 10; // 10 minutes
@@ -121,21 +123,84 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
     private static final int DEFAULT_IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS = 60 * 3; // 3 minutes
     private static final MetadataCollector DEFAULT_METADATA_COLLECTOR = new JdbcMetadataCollector();
 
+    @Description( i18n = JdbcMetadataI18n.class, value = "dataSourceJndiNamePropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "dataSourceJndiNamePropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "dataSourceJndiNamePropertyCategory" )
     private volatile String dataSourceJndiName;
+
+    @Description( i18n = JdbcMetadataI18n.class, value = "usernamePropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "usernamePropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "usernamePropertyCategory" )
     private volatile String username;
+
+    @Description( i18n = JdbcMetadataI18n.class, value = "passwordPropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "passwordPropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "passwordPropertyCategory" )
     private volatile String password;
+
+    @Description( i18n = JdbcMetadataI18n.class, value = "urlPropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "urlPropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "urlPropertyCategory" )
     private volatile String url;
+
+    @Description( i18n = JdbcMetadataI18n.class, value = "driverClassNamePropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "driverClassNamePropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "driverClassNamePropertyCategory" )
     private volatile String driverClassName;
+
+    // @Description( i18n = JdbcMetadataI18n.class, value = "driverClassloaderNamePropertyDescription" )
+    // @Label( i18n = JdbcMetadataI18n.class, value = "driverClassloaderNamePropertyLabel" )
+    // @Category( i18n = JdbcMetadataI18n.class, value = "driverClassloaderNamePropertyCategory" )
     private volatile String driverClassloaderName;
+
+    @Description( i18n = JdbcMetadataI18n.class, value = "maximumConnectionsInPoolPropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "maximumConnectionsInPoolPropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "maximumConnectionsInPoolPropertyCategory" )
     private volatile int maximumConnectionsInPool = DEFAULT_MAXIMUM_CONNECTIONS_IN_POOL;
+
+    @Description( i18n = JdbcMetadataI18n.class, value = "minimumConnectionsInPoolPropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "minimumConnectionsInPoolPropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "minimumConnectionsInPoolPropertyCategory" )
     private volatile int minimumConnectionsInPool = DEFAULT_MINIMUM_CONNECTIONS_IN_POOL;
+
+    @Description( i18n = JdbcMetadataI18n.class, value = "maximumConnectionIdleTimeInSecondsPropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "maximumConnectionIdleTimeInSecondsPropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "maximumConnectionIdleTimeInSecondsPropertyCategory" )
     private volatile int maximumConnectionIdleTimeInSeconds = DEFAULT_MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS;
+
+    @Description( i18n = JdbcMetadataI18n.class, value = "maximumSizeOfStatementCachePropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "maximumSizeOfStatementCachePropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "maximumSizeOfStatementCachePropertyCategory" )
     private volatile int maximumSizeOfStatementCache = DEFAULT_MAXIMUM_NUMBER_OF_STATEMENTS_TO_CACHE;
+
+    @Description( i18n = JdbcMetadataI18n.class, value = "numberOfConnectionsToAcquireAsNeededPropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "numberOfConnectionsToAcquireAsNeededPropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "numberOfConnectionsToAcquireAsNeededPropertyCategory" )
     private volatile int numberOfConnectionsToAcquireAsNeeded = DEFAULT_NUMBER_OF_CONNECTIONS_TO_ACQUIRE_AS_NEEDED;
+
+    @Description( i18n = JdbcMetadataI18n.class, value = "idleTimeInSecondsBeforeTestingConnectionsPropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "idleTimeInSecondsBeforeTestingConnectionsPropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "idleTimeInSecondsBeforeTestingConnectionsPropertyCategory" )
     private volatile int idleTimeInSecondsBeforeTestingConnections = DEFAULT_IDLE_TIME_IN_SECONDS_BEFORE_TESTING_CONNECTIONS;
+
+    @Description( i18n = JdbcMetadataI18n.class, value = "defaultWorkspaceNamePropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "defaultWorkspaceNamePropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "defaultWorkspaceNamePropertyCategory" )
     private volatile String defaultWorkspace = DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
+
+    @Description( i18n = JdbcMetadataI18n.class, value = "defaultCatalogNamePropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "defaultCatalogNamePropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "defaultCatalogNamePropertyCategory" )
     private volatile String defaultCatalogName = DEFAULT_NAME_OF_DEFAULT_CATALOG;
+
+    @Description( i18n = JdbcMetadataI18n.class, value = "defaultSchemaNamePropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "defaultSchemaNamePropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "defaultSchemaNamePropertyCategory" )
     private volatile String defaultSchemaName = DEFAULT_NAME_OF_DEFAULT_SCHEMA;
+
+    @Description( i18n = JdbcMetadataI18n.class, value = "metadataCollectorClassNamePropertyDescription" )
+    @Label( i18n = JdbcMetadataI18n.class, value = "metadataCollectorClassNamePropertyLabel" )
+    @Category( i18n = JdbcMetadataI18n.class, value = "metadataCollectorClassNamePropertyCategory" )
     private volatile String metadataCollectorClassName = DEFAULT_METADATA_COLLECTOR.getClass().getName();
 
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(SUPPORTS_SAME_NAME_SIBLINGS,
@@ -191,7 +256,7 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
                 Context context = new InitialContext();
                 dataSource = (DataSource)context.lookup(this.dataSourceJndiName);
             } catch (Throwable t) {
-                LOGGER.error(t, JdbcMetadataI18n.errorFindingDataSourceInJndi, name, dataSourceJndiName);
+                LOGGER.error(t, JdbcMetadataI18n.errorFindingDataSourceInJndi, getName(), dataSourceJndiName);
             }
         }
 
@@ -206,7 +271,7 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
                     }
                 } catch (Throwable t) {
                     I18n msg = JdbcMetadataI18n.errorSettingContextClassLoader;
-                    LOGGER.error(t, msg, name, driverClassloaderName);
+                    LOGGER.error(t, msg, getName(), driverClassloaderName);
                 }
             }
 
@@ -239,7 +304,7 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
     }
 
     public RepositoryConnection getConnection() throws RepositorySourceException {
-        if (this.name == null || this.name.trim().length() == 0) {
+        if (this.getName() == null || this.getName().trim().length() == 0) {
             throw new RepositorySourceException(JdbcMetadataI18n.repositorySourceMustHaveName.text());
         }
 
@@ -647,7 +712,7 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
      */
     public void setUpdatesAllowed( boolean updatesAllowed ) {
         if (updatesAllowed == false) {
-            throw new RepositorySourceException(JdbcMetadataI18n.sourceIsReadOnly.text(this.name));
+            throw new RepositorySourceException(JdbcMetadataI18n.sourceIsReadOnly.text(this.getName()));
         }
 
     }

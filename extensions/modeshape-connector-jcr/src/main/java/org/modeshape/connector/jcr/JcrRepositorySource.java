@@ -45,6 +45,9 @@ import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.Category;
+import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Label;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
@@ -100,13 +103,34 @@ public class JcrRepositorySource implements RepositorySource, ObjectFactory {
      */
     protected static final boolean SUPPORTS_REFERENCES = false;
 
+    @Description( i18n = JcrConnectorI18n.class, value = "namePropertyDescription" )
+    @Label( i18n = JcrConnectorI18n.class, value = "namePropertyLabel" )
+    @Category( i18n = JcrConnectorI18n.class, value = "namePropertyCategory" )
     private volatile String name;
+
+    @Description( i18n = JcrConnectorI18n.class, value = "repositoryJndiNamePropertyDescription" )
+    @Label( i18n = JcrConnectorI18n.class, value = "repositoryJndiNamePropertyLabel" )
+    @Category( i18n = JcrConnectorI18n.class, value = "repositoryJndiNamePropertyCategory" )
     private volatile String repositoryJndiName;
+
+    @Description( i18n = JcrConnectorI18n.class, value = "usernamePropertyDescription" )
+    @Label( i18n = JcrConnectorI18n.class, value = "usernamePropertyLabel" )
+    @Category( i18n = JcrConnectorI18n.class, value = "usernamePropertyCategory" )
     private volatile String username;
+
+    @Description( i18n = JcrConnectorI18n.class, value = "passwordPropertyDescription" )
+    @Label( i18n = JcrConnectorI18n.class, value = "passwordPropertyLabel" )
+    @Category( i18n = JcrConnectorI18n.class, value = "passwordPropertyCategory" )
     private volatile String password;
+
     private volatile Credentials credentials;
     private volatile CachePolicy defaultCachePolicy;
+
+    @Description( i18n = JcrConnectorI18n.class, value = "retryLimitPropertyDescription" )
+    @Label( i18n = JcrConnectorI18n.class, value = "retryLimitPropertyLabel" )
+    @Category( i18n = JcrConnectorI18n.class, value = "retryLimitPropertyCategory" )
     private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
+
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(SUPPORTS_SAME_NAME_SIBLINGS,
                                                                                                   SUPPORTS_UPDATES,
                                                                                                   SUPPORTS_EVENTS,
@@ -158,6 +182,9 @@ public class JcrRepositorySource implements RepositorySource, ObjectFactory {
      * 
      * @return true if this source supports updates, or false if this source only supports reading content.
      */
+    @Description( i18n = JcrConnectorI18n.class, value = "updatesAllowedPropertyDescription" )
+    @Label( i18n = JcrConnectorI18n.class, value = "updatesAllowedPropertyLabel" )
+    @Category( i18n = JcrConnectorI18n.class, value = "updatesAllowedPropertyCategory" )
     public boolean getUpdatesAllowed() {
         return capabilities.supportsUpdates();
     }

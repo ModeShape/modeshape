@@ -32,6 +32,10 @@ import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.Category;
+import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Label;
+import org.modeshape.common.annotation.ReadOnly;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
@@ -86,17 +90,41 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
      * This source supports udpates by default, but each instance may be configured to be read-only or updateable}.
      */
     public static final boolean DEFAULT_SUPPORTS_UPDATES = false;
+    /**
+     * The default name of the {@link #defaultWorkspace} property.
+     */
+    public static final String DEFAULT_WORKSPACE_NAME = "trunk";
 
     /**
      * This source supports creating references.
      */
     protected static final boolean SUPPORTS_REFERENCES = false;
 
+    @Description( i18n = SvnRepositoryConnectorI18n.class, value = "repositoryRootUrlPropertyDescription" )
+    @Label( i18n = SvnRepositoryConnectorI18n.class, value = "repositoryRootUrlPropertyLabel" )
+    @Category( i18n = SvnRepositoryConnectorI18n.class, value = "repositoryRootUrlPropertyCategory" )
     private volatile String repositoryRootUrl;
+
+    @Description( i18n = SvnRepositoryConnectorI18n.class, value = "usernamePropertyDescription" )
+    @Label( i18n = SvnRepositoryConnectorI18n.class, value = "usernamePropertyLabel" )
+    @Category( i18n = SvnRepositoryConnectorI18n.class, value = "usernamePropertyCategory" )
     private volatile String username;
+
+    @Description( i18n = SvnRepositoryConnectorI18n.class, value = "passwordPropertyDescription" )
+    @Label( i18n = SvnRepositoryConnectorI18n.class, value = "passwordPropertyLabel" )
+    @Category( i18n = SvnRepositoryConnectorI18n.class, value = "passwordPropertyCategory" )
     private volatile String password;
-    private volatile String defaultWorkspace;
+
+    @Description( i18n = SvnRepositoryConnectorI18n.class, value = "defaultWorkspaceNamePropertyDescription" )
+    @Label( i18n = SvnRepositoryConnectorI18n.class, value = "defaultWorkspaceNamePropertyLabel" )
+    @Category( i18n = SvnRepositoryConnectorI18n.class, value = "defaultWorkspaceNamePropertyCategory" )
+    private volatile String defaultWorkspace = DEFAULT_WORKSPACE_NAME;
+
+    @Description( i18n = SvnRepositoryConnectorI18n.class, value = "predefinedWorkspacesPropertyDescription" )
+    @Label( i18n = SvnRepositoryConnectorI18n.class, value = "predefinedWorkspacesPropertyLabel" )
+    @Category( i18n = SvnRepositoryConnectorI18n.class, value = "predefinedWorkspacesPropertyCategory" )
     private volatile String[] predefinedWorkspaces = new String[] {};
+
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
                                                                                                   SUPPORTS_SAME_NAME_SIBLINGS,
                                                                                                   DEFAULT_SUPPORTS_UPDATES,
@@ -168,6 +196,10 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
      * 
      * @return true if this source supports updates, or false if this source only supports reading content.
      */
+    @Description( i18n = SvnRepositoryConnectorI18n.class, value = "updatesAllowedPropertyDescription" )
+    @Label( i18n = SvnRepositoryConnectorI18n.class, value = "updatesAllowedPropertyLabel" )
+    @Category( i18n = SvnRepositoryConnectorI18n.class, value = "updatesAllowedPropertyCategory" )
+    @ReadOnly
     public boolean getSupportsUpdates() {
         return capabilities.supportsUpdates();
     }
@@ -233,6 +265,9 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
      * @see #getPredefinedWorkspaceNames()
      * @see #setCreatingWorkspacesAllowed(boolean)
      */
+    @Description( i18n = SvnRepositoryConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyDescription" )
+    @Label( i18n = SvnRepositoryConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyLabel" )
+    @Category( i18n = SvnRepositoryConnectorI18n.class, value = "creatingWorkspacesAllowedPropertyCategory" )
     public boolean isCreatingWorkspacesAllowed() {
         return capabilities.supportsCreatingWorkspaces();
     }
@@ -258,6 +293,9 @@ public class SvnRepositorySource extends AbstractRepositorySource implements Obj
      * @return true if this source allows updates by clients, or false if no updates are allowed
      * @see #setUpdatesAllowed(boolean)
      */
+    @Description( i18n = SvnRepositoryConnectorI18n.class, value = "updatesAllowedPropertyDescription" )
+    @Label( i18n = SvnRepositoryConnectorI18n.class, value = "updatesAllowedPropertyLabel" )
+    @Category( i18n = SvnRepositoryConnectorI18n.class, value = "updatesAllowedPropertyCategory" )
     @Override
     public boolean areUpdatesAllowed() {
         return capabilities.supportsUpdates();

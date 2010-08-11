@@ -41,6 +41,9 @@ import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.Category;
+import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Label;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
@@ -121,10 +124,29 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     public static final String DEFAULT_EXCLUSION_PATTERN = null;
     public static final FilenameFilter DEFAULT_FILENAME_FILTER = null;
 
+    @Description( i18n = FileSystemI18n.class, value = "defaultWorkspaceNamePropertyDescription" )
+    @Label( i18n = FileSystemI18n.class, value = "defaultWorkspaceNamePropertyLabel" )
+    @Category( i18n = FileSystemI18n.class, value = "defaultWorkspaceNamePropertyCategory" )
     private volatile String defaultWorkspaceName = DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
+
+    @Description( i18n = FileSystemI18n.class, value = "workspaceRootPathPropertyDescription" )
+    @Label( i18n = FileSystemI18n.class, value = "workspaceRootPathPropertyLabel" )
+    @Category( i18n = FileSystemI18n.class, value = "workspaceRootPathPropertyCategory" )
     private volatile String workspaceRootPath;
+
+    @Description( i18n = FileSystemI18n.class, value = "predefinedWorkspacesPropertyDescription" )
+    @Label( i18n = FileSystemI18n.class, value = "predefinedWorkspacesPropertyLabel" )
+    @Category( i18n = FileSystemI18n.class, value = "predefinedWorkspacesPropertyCategory" )
     private volatile String[] predefinedWorkspaces = new String[] {};
+
+    @Description( i18n = FileSystemI18n.class, value = "maxPathLengthPropertyDescription" )
+    @Label( i18n = FileSystemI18n.class, value = "maxPathLengthPropertyLabel" )
+    @Category( i18n = FileSystemI18n.class, value = "maxPathLengthPropertyCategory" )
     private volatile int maxPathLength = DEFAULT_MAX_PATH_LENGTH;
+
+    @Description( i18n = FileSystemI18n.class, value = "exclusionPatternPropertyDescription" )
+    @Label( i18n = FileSystemI18n.class, value = "exclusionPatternPropertyLabel" )
+    @Category( i18n = FileSystemI18n.class, value = "exclusionPatternPropertyCategory" )
     private volatile String exclusionPattern = DEFAULT_EXCLUSION_PATTERN;
     private volatile FilenameFilter filenameFilter = DEFAULT_FILENAME_FILTER;
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
@@ -382,6 +404,9 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      * @return true if this source allows updates by clients, or false if no updates are allowed
      * @see #setUpdatesAllowed(boolean)
      */
+    @Description( i18n = FileSystemI18n.class, value = "updatesAllowedPropertyDescription" )
+    @Label( i18n = FileSystemI18n.class, value = "updatesAllowedPropertyLabel" )
+    @Category( i18n = FileSystemI18n.class, value = "updatesAllowedPropertyCategory" )
     @Override
     public boolean areUpdatesAllowed() {
         return capabilities.supportsUpdates();

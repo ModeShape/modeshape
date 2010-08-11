@@ -124,6 +124,7 @@ public final class GraphI18n {
     public static I18n defaultWorkspaceNamePropertyDescription;
     public static I18n defaultWorkspaceNamePropertyLabel;
     public static I18n defaultWorkspaceNamePropertyCategory;
+    public static I18n rootNodeUuidWithDefaultPropertyDescription;
     public static I18n rootNodeUuidPropertyDescription;
     public static I18n rootNodeUuidPropertyLabel;
     public static I18n rootNodeUuidPropertyCategory;

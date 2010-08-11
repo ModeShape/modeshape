@@ -54,6 +54,63 @@ public final class JdbcMetadataI18n {
     public static I18n driverClassNameAndUrlAreRequired;
     public static I18n couldNotSetDriverProperties;
 
+    public static I18n defaultWorkspaceNamePropertyDescription;
+    public static I18n defaultWorkspaceNamePropertyLabel;
+    public static I18n defaultWorkspaceNamePropertyCategory;
+    public static I18n retryLimitPropertyDescription;
+    public static I18n retryLimitPropertyLabel;
+    public static I18n retryLimitPropertyCategory;
+    public static I18n updatesAllowedPropertyDescription;
+    public static I18n updatesAllowedPropertyLabel;
+    public static I18n updatesAllowedPropertyCategory;
+
+    public static I18n dataSourceJndiNamePropertyDescription;
+    public static I18n dataSourceJndiNamePropertyLabel;
+    public static I18n dataSourceJndiNamePropertyCategory;
+
+    public static I18n passwordPropertyDescription;
+    public static I18n passwordPropertyLabel;
+    public static I18n passwordPropertyCategory;
+    public static I18n usernamePropertyDescription;
+    public static I18n usernamePropertyLabel;
+    public static I18n usernamePropertyCategory;
+    public static I18n urlPropertyDescription;
+    public static I18n urlPropertyLabel;
+    public static I18n urlPropertyCategory;
+    public static I18n driverClassNamePropertyDescription;
+    public static I18n driverClassNamePropertyLabel;
+    public static I18n driverClassNamePropertyCategory;
+    public static I18n driverClassloaderNamePropertyDescription;
+    public static I18n driverClassloaderNamePropertyLabel;
+    public static I18n driverClassloaderNamePropertyCategory;
+    public static I18n maximumConnectionsInPoolPropertyDescription;
+    public static I18n maximumConnectionsInPoolPropertyLabel;
+    public static I18n maximumConnectionsInPoolPropertyCategory;
+    public static I18n minimumConnectionsInPoolPropertyDescription;
+    public static I18n minimumConnectionsInPoolPropertyLabel;
+    public static I18n minimumConnectionsInPoolPropertyCategory;
+    public static I18n maximumConnectionIdleTimeInSecondsPropertyDescription;
+    public static I18n maximumConnectionIdleTimeInSecondsPropertyLabel;
+    public static I18n maximumConnectionIdleTimeInSecondsPropertyCategory;
+    public static I18n maximumSizeOfStatementCachePropertyDescription;
+    public static I18n maximumSizeOfStatementCachePropertyLabel;
+    public static I18n maximumSizeOfStatementCachePropertyCategory;
+    public static I18n numberOfConnectionsToAcquireAsNeededPropertyDescription;
+    public static I18n numberOfConnectionsToAcquireAsNeededPropertyLabel;
+    public static I18n numberOfConnectionsToAcquireAsNeededPropertyCategory;
+    public static I18n idleTimeInSecondsBeforeTestingConnectionsPropertyDescription;
+    public static I18n idleTimeInSecondsBeforeTestingConnectionsPropertyLabel;
+    public static I18n idleTimeInSecondsBeforeTestingConnectionsPropertyCategory;
+    public static I18n defaultCatalogNamePropertyDescription;
+    public static I18n defaultCatalogNamePropertyLabel;
+    public static I18n defaultCatalogNamePropertyCategory;
+    public static I18n defaultSchemaNamePropertyDescription;
+    public static I18n defaultSchemaNamePropertyLabel;
+    public static I18n defaultSchemaNamePropertyCategory;
+    public static I18n metadataCollectorClassNamePropertyDescription;
+    public static I18n metadataCollectorClassNamePropertyLabel;
+    public static I18n metadataCollectorClassNamePropertyCategory;
+
     static {
         try {
             I18n.initialize(JdbcMetadataI18n.class);
