@@ -5,6 +5,7 @@
     <groupId>org.modeshape</groupId>
     <artifactId>modeshape</artifactId>
     <version>2.2-SNAPSHOT</version>
+    <relativePath>../..</relativePath>
   </parent>
   <!-- The groupId and version values are inherited from parent -->
   <artifactId>modeshape-jdbc</artifactId>
