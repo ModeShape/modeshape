@@ -89,19 +89,10 @@
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
-          <descriptors>
-            <descriptor>${project.basedir}/../../src/main/assembly/sequencer-with-dependencies.xml</descriptor>
-          </descriptors>
-					<finalName>${project.artifactId}-${project.version}</finalName>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
         </configuration>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
 			<!--
 				Adding OSGI metadata to the JAR without changing the packaging type.
