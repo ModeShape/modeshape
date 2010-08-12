@@ -40,45 +40,29 @@
 		<service name="Repositories" description="ModeShape Repositories"
 			class="RepositoryComponent" discovery="RepositoryDiscoveryComponent">
 		</service>
-		
-		<service name="Sequencing Service" description="ModeShape Sequencing Service" singleton="true"
-            class="SequencingServiceComponent" discovery="SequencingServiceDiscoveryComponent">
-        </service>
+
+		<service name="Sequencing Service" description="ModeShape Sequencing Service"
+			singleton="true" class="SequencingServiceComponent" discovery="SequencingServiceDiscoveryComponent">
+		</service>
 
 		<service name="Connectors" description="Connectors for repository"
 			class="ConnectorComponent" discovery="ConnectorDiscoveryComponent">
 
 			<resource-configuration>
-				<c:simple-property name="name" displayName="Name"
-					description="The name of this connector" required="false" readOnly="true" />
-				<c:simple-property name="retryLimit" displayName="Retry Limit"
-					description="The maximum number of retries to perform on an operation"
-					required="false" readOnly="true" />
-				<c:simple-property name="supportingCreatingWorkspaces"
-					displayName="Supporting Creating Workspaces" description="Indicates if creating workspaces is allowed"
-					required="false" readOnly="true" />
-				<c:simple-property name="supportingEvents"
-					displayName="Supporting Events"
-					description="Indicates if the publishing of changes events is supported"
-					required="false" readOnly="true" />
-				<c:simple-property name="supportingLocks"
-					displayName="Supporting Locks" description="Indicates if locks can be created"
-					required="false" readOnly="true" />
-				<c:simple-property name="supportingQueries"
-					displayName="Supporting Queries" description="Indicates if queries are supported"
-					required="false" readOnly="true" />
-				<c:simple-property name="supportingReferences"
-					displayName="Supporting References" description="Indicates if references by identifiers are supported"
-					required="false" readOnly="true" />
-				<c:simple-property name="supportingSameNameSiblings"
-					displayName="Supporting Same Name Siblings" description="Indicates if siblings can have the same name"
-					required="false" readOnly="true" />
-				<c:simple-property name="supportingSearches"
-					displayName="Supporting Searches" description="Indicates if full-text searches are supported"
-					required="false" readOnly="true" />
-				<c:simple-property name="supportingUpdates"
-					displayName="Supporting Updates" description="Indicates if updates can be made to the repository source"
-					required="false" readOnly="true" />
+				<c:list-property name="propertyList" displayName="Properties"
+					readOnly="true" >
+					<c:map-property name="map" description="Properties for this connector" readOnly="true">
+                		<c:simple-property name="label" displayName="Name"
+							description="The name of this property" required="false"
+							readOnly="true" />
+						<c:simple-property name="value" displayName="Value"
+							description="The value of this property" required="false"
+							readOnly="true" />
+						<c:simple-property name="description"
+							displayName="Description" description="The description of this property"
+							required="false" readOnly="true" />
+					</c:map-property>
+				</c:list-property>
 			</resource-configuration>
 
 		</service>

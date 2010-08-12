@@ -69,6 +69,10 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	 */
 	private JcrEngine engine;
 
+	public static enum Component {
+		CONNECTOR, SEQUENCER
+	}
+
 	public ManagedEngine() {
 		this.engine = null;
 	}
@@ -102,7 +106,10 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 						.getRepositorySource(repositoryName);
 				assert (repositorySource != null) : "Repository '"
 						+ repositoryName + "' does not exist";
-				connectors.add(new ManagedConnector(repositorySource));
+				ManagedConnector connector = new ManagedConnector(
+						repositorySource);
+
+				connectors.add(connector);
 			}
 		}
 
@@ -110,51 +117,106 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	}
 
 	/**
-	 * Get properties for a given object. This is a JBoss managed operation.
+	 * Obtains the managed connectors of this engine. This is a JBoss managed
+	 * operation.
 	 * 
-	 * @param clazz
-	 * @param instance
+	 * @param objectName
+	 * @param objectType
 	 * 
-	 * @return an unmodifiable collection of {@link Property}s (never
+	 * @return an unmodifiable collection of managed connectors (never
 	 *         <code>null</code>)
 	 */
-	@ManagementOperation(description = "Get properties for a given object", impact = Impact.ReadOnly)
-	public List<Property> getProperties(Class<Object> clazz, Object instance) {
-		Reflection reflection = new Reflection(clazz);
+	@ManagementOperation(description = "Obtains the properties for an object", impact = Impact.ReadOnly)
+	public List<ManagedProperty> getProperties(String objectName,
+			Component objectType) {
+
+		Reflection reflection = null;
+
 		List<Property> props = null;
+		List<ManagedProperty> managedProps = new ArrayList<ManagedProperty>();
 		try {
-			props = reflection.getAllPropertiesOn(instance);
+
+			if (objectType.equals(Component.CONNECTOR)) {
+				reflection = new Reflection(RepositorySource.class);
+				RepositorySource repositorySource = getConnector(objectName);
+				props = reflection.getAllPropertiesOn(repositorySource);
+			}
+
 		} catch (SecurityException e) {
 			Logger.getLogger(getClass()).log(Level.ERROR, e,
 					JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-					instance.toString());
+					objectName);
 		} catch (IllegalArgumentException e) {
 			{
-				Logger.getLogger(getClass()).log(Level.ERROR, e,
-						JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-						instance.toString());
+				Logger
+						.getLogger(getClass())
+						.log(
+								Level.ERROR,
+								e,
+								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
+								objectName);
 			}
 		} catch (NoSuchMethodException e) {
 			{
-				Logger.getLogger(getClass()).log(Level.ERROR, e,
-						JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-						instance.toString());
+				Logger
+						.getLogger(getClass())
+						.log(
+								Level.ERROR,
+								e,
+								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
+								objectName);
 			}
 		} catch (IllegalAccessException e) {
 			{
-				Logger.getLogger(getClass()).log(Level.ERROR, e,
-						JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-						instance.toString());
+				Logger
+						.getLogger(getClass())
+						.log(
+								Level.ERROR,
+								e,
+								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
+								objectName);
 			}
 		} catch (InvocationTargetException e) {
 			{
-				Logger.getLogger(getClass()).log(Level.ERROR, e,
-						JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-						instance.toString());
+				Logger
+						.getLogger(getClass())
+						.log(
+								Level.ERROR,
+								e,
+								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
+								objectName);
 			}
 		}
-		return props;
 
+		if (props != null) {
+			for (Property prop : props) {
+				if (prop.getType().isPrimitive()
+						|| prop.getType().toString().contains("String")) {
+					managedProps.add(new ManagedProperty(prop));
+				}
+			}
+		}
+ 
+		return managedProps;
+	}
+
+	/**
+	 * Obtains a connector by name.
+	 * 
+	 * @param connectorName
+	 * 
+	 * @return RepositorySource - may be <code>null</code>)
+	 */
+	public RepositorySource getConnector(String connectorName) {
+
+		RepositorySource repositorySource = null;
+		if (isRunning()) {
+			repositorySource = this.engine.getRepositorySource(connectorName);
+			assert (repositorySource != null) : "Connector '" + connectorName
+					+ "' does not exist";
+		}
+
+		return repositorySource;
 	}
 
 	/*
@@ -222,8 +284,8 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 		String version = null;
 		JcrRepository repository = getRepository(repositoryName);
 		if (repository != null) {
-			version = repository.getDescriptor(Repository.SPEC_VERSION_DESC) + " "
-					+ repository.getDescriptor(Repository.SPEC_NAME_DESC);
+			version = repository.getDescriptor(Repository.SPEC_VERSION_DESC)
+					+ " " + repository.getDescriptor(Repository.SPEC_NAME_DESC);
 		}
 		return version;
 	}
@@ -446,5 +508,85 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 		JcrConfiguration jcrConfig = new JcrConfiguration()
 				.loadFrom(configurationUrl);
 		this.engine = jcrConfig.build();
+	}
+
+	public static class ManagedProperty {
+		private static final long serialVersionUID = 1L;
+
+		private String name;
+		private String label;
+		private String description;
+		private String value;
+
+		public ManagedProperty() {
+
+		}
+
+		public ManagedProperty(Property property) {
+			this.setName(property.getName());
+			this.setLabel(property.getLabel());
+			this.setDescription(property.getDescription());
+			this.setValue(property.getValue().toString());
+		}
+
+		/**
+		 * @param description
+		 */
+		public void setDescription(String description) {
+			this.description=description;
+		}
+
+		/**
+		 * @param name
+		 *            Sets name to the specified value.
+		 */
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		/**
+		 * @return name
+		 */
+		public String getName() {
+			return name;
+		}
+
+		/**
+		 * @param label
+		 *            Sets label to the specified value.
+		 */
+		public void setLabel(String label) {
+			this.label = label;
+		}
+
+		/**
+		 * @return label
+		 */
+		public String getLabel() {
+			return label;
+		}
+
+		/**
+		 * @param value
+		 *            Sets value to the specified value.
+		 */
+		public void setValue(String value) {
+			this.value = value;
+		}
+
+		/**
+		 * @return value
+		 */
+		public String getValue() {
+			return this.value;
+		}
+
+		/**
+		 * @return description
+		 */
+		public String getDescription() {
+			return description;
+		}
+
 	}
 }
