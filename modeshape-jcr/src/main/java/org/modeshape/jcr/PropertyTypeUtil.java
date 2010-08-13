@@ -80,8 +80,9 @@ public class PropertyTypeUtil {
             case PropertyType.NAME:
                 return org.modeshape.graph.property.PropertyType.NAME;
             case PropertyType.REFERENCE:
-            case PropertyType.WEAKREFERENCE:
                 return org.modeshape.graph.property.PropertyType.REFERENCE;
+            case PropertyType.WEAKREFERENCE:
+                return org.modeshape.graph.property.PropertyType.WEAKREFERENCE;
         }
         assert false;
         return org.modeshape.graph.property.PropertyType.STRING;
@@ -122,6 +123,8 @@ public class PropertyTypeUtil {
                 return PropertyType.UNDEFINED;
             case REFERENCE:
                 return PropertyType.REFERENCE;
+            case WEAKREFERENCE:
+                return PropertyType.WEAKREFERENCE;
         }
         assert false;
         return PropertyType.UNDEFINED;
