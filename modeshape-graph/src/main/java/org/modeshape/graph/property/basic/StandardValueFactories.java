@@ -37,7 +37,7 @@ import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PropertyType;
-import org.modeshape.graph.property.Reference;
+import org.modeshape.graph.property.ReferenceFactory;
 import org.modeshape.graph.property.UuidFactory;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueTypeSystem;
@@ -59,7 +59,8 @@ public class StandardValueFactories extends AbstractValueFactories {
     private final ValueFactory<Long> longFactory;
     private final NameFactory nameFactory;
     private final PathFactory pathFactory;
-    private final ValueFactory<Reference> referenceFactory;
+    private final ReferenceFactory referenceFactory;
+    private final ReferenceFactory weakReferenceFactory;
     private final ValueFactory<URI> uriFactory;
     private final UuidFactory uuidFactory;
     private final ValueFactory<Object> objectFactory;
@@ -119,7 +120,10 @@ public class StandardValueFactories extends AbstractValueFactories {
         this.nameFactory = (NameFactory)getFactory(factories, new NameValueFactory(this.namespaceRegistry, decoder,
                                                                                    this.stringFactory));
         this.pathFactory = (PathFactory)getFactory(factories, new PathValueFactory(decoder, this.stringFactory, this.nameFactory));
-        this.referenceFactory = getFactory(factories, new ReferenceValueFactory(decoder, this.stringFactory));
+        this.referenceFactory = (ReferenceFactory)getFactory(factories, new ReferenceValueFactory(decoder, this.stringFactory,
+                                                                                                  false));
+        this.weakReferenceFactory = (ReferenceFactory)getFactory(factories, new ReferenceValueFactory(decoder,
+                                                                                                      this.stringFactory, true));
         this.uuidFactory = (UuidFactory)getFactory(factories, new UuidValueFactory(decoder, this.stringFactory));
         this.uriFactory = getFactory(factories, new UriValueFactory(this.namespaceRegistry, decoder, this.stringFactory));
         this.objectFactory = getFactory(factories, new ObjectValueFactory(decoder, this.stringFactory, this.binaryFactory));
@@ -214,8 +218,17 @@ public class StandardValueFactories extends AbstractValueFactories {
     /**
      * {@inheritDoc}
      */
-    public ValueFactory<Reference> getReferenceFactory() {
+    public ReferenceFactory getReferenceFactory() {
         return this.referenceFactory;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.property.ValueFactories#getWeakReferenceFactory()
+     */
+    public ReferenceFactory getWeakReferenceFactory() {
+        return this.weakReferenceFactory;
     }
 
     /**

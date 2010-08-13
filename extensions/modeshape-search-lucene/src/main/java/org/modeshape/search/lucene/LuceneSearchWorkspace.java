@@ -68,6 +68,7 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
         public static final String DEPTH = "::dep";
         public static final String FULL_TEXT = "::fts";
         public static final String REFERENCES = "::ref";
+        public static final String STRONG_REFERENCES = "::refInt";
     }
 
     private final String workspaceName;

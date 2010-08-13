@@ -38,6 +38,7 @@ public class ReferenceValue implements DynamicOperand {
     private final Set<SelectorName> selectorNames;
     private final String propertyName;
     private final int hc;
+    private final boolean includeWeakReferences;
 
     /**
      * Create a dynamic operand that evaluates to all of the reference values of the node identified by the selector.
@@ -49,6 +50,25 @@ public class ReferenceValue implements DynamicOperand {
         this.selectorNames = SelectorName.nameSetFrom(selectorName);
         this.propertyName = null;
         this.hc = HashCode.compute(selectorName, this.propertyName);
+        this.includeWeakReferences = true;
+    }
+
+    /**
+     * Create a dynamic operand that evaluates to the values of a single reference property of the node identified by the
+     * selector.
+     * 
+     * @param selectorName the name of the selector
+     * @param propertyName the name of the property
+     * @param includeWeakReferences true if weak references are to be included
+     * @throws IllegalArgumentException if the selector name is null
+     */
+    public ReferenceValue( SelectorName selectorName,
+                           String propertyName,
+                           boolean includeWeakReferences ) {
+        this.selectorNames = SelectorName.nameSetFrom(selectorName);
+        this.propertyName = propertyName;
+        this.hc = HashCode.compute(selectorName, this.propertyName);
+        this.includeWeakReferences = includeWeakReferences;
     }
 
     /**
@@ -64,6 +84,7 @@ public class ReferenceValue implements DynamicOperand {
         this.selectorNames = SelectorName.nameSetFrom(selectorName);
         this.propertyName = propertyName;
         this.hc = HashCode.compute(selectorName, this.propertyName);
+        this.includeWeakReferences = true;
     }
 
     /**
@@ -91,6 +112,15 @@ public class ReferenceValue implements DynamicOperand {
      */
     public final String propertyName() {
         return propertyName;
+    }
+
+    /**
+     * Get whether weak references should be included.
+     * 
+     * @return true if weak references should be included, or false otherwise
+     */
+    public boolean includesWeakReferences() {
+        return includeWeakReferences;
     }
 
     /**

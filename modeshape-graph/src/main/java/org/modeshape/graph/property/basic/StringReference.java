@@ -38,10 +38,27 @@ public class StringReference implements Reference {
     /**
      */
     private static final long serialVersionUID = 2299467578161645109L;
-    private String id;
+    private/*final*/String id;
+    private/*final*/boolean isWeak;
 
     public StringReference( String id ) {
         this.id = id;
+        this.isWeak = false;
+    }
+
+    public StringReference( String id,
+                            boolean weak ) {
+        this.id = id;
+        this.isWeak = weak;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.property.Reference#isWeak()
+     */
+    public boolean isWeak() {
+        return isWeak;
     }
 
     /**
@@ -64,6 +81,11 @@ public class StringReference implements Reference {
      */
     public int compareTo( Reference that ) {
         if (this == that) return 0;
+        if (this.isWeak()) {
+            if (!that.isWeak()) return -1;
+        } else {
+            if (that.isWeak()) return 1;
+        }
         if (that instanceof StringReference) {
             return this.id.compareTo(((StringReference)that).getString());
         }
@@ -77,7 +99,8 @@ public class StringReference implements Reference {
     public boolean equals( Object obj ) {
         if (obj == this) return true;
         if (obj instanceof Reference) {
-            return this.id.equals(((Reference)obj).getString());
+            Reference that = (Reference)obj;
+            return this.isWeak() == that.isWeak() && this.getString().equals(that.getString());
         }
         return super.equals(obj);
     }

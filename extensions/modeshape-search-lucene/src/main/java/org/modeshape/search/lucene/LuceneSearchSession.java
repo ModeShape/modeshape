@@ -77,6 +77,7 @@ import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
+import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.basic.BasicName;
@@ -500,6 +501,8 @@ public class LuceneSearchSession implements WorkspaceSession {
                     // Add a separate field for each property value ...
                     String valueStr = processor.stringFactory.create(pathFactory.create(value));
                     doc.add(new Field(nameString, valueStr, rule.getStoreOption(), Field.Index.NOT_ANALYZED));
+                    // Add a value to the common reference value ...
+                    doc.add(new Field(ContentIndex.REFERENCES, stringValue, Field.Store.NO, Field.Index.NOT_ANALYZED));
                 }
                 continue;
             }
@@ -512,6 +515,8 @@ public class LuceneSearchSession implements WorkspaceSession {
                     doc.add(new Field(nameString, stringValue, rule.getStoreOption(), Field.Index.NOT_ANALYZED));
                     // Add a value to the common reference value ...
                     doc.add(new Field(ContentIndex.REFERENCES, stringValue, Field.Store.NO, Field.Index.NOT_ANALYZED));
+                    // Add a value to the strong reference value ...
+                    doc.add(new Field(ContentIndex.STRONG_REFERENCES, stringValue, Field.Store.NO, Field.Index.NOT_ANALYZED));
                 }
                 continue;
             }
@@ -534,7 +539,14 @@ public class LuceneSearchSession implements WorkspaceSession {
                 doc.add(new Field(nameString, stringValue, rule.getStoreOption(), Field.Index.NOT_ANALYZED));
 
                 boolean treatedAsReference = false;
-                if (rule.canBeReference()) {
+                if (value instanceof Reference) {
+                    Reference ref = (Reference)value;
+                    doc.add(new Field(ContentIndex.REFERENCES, stringValue, Field.Store.YES, Field.Index.NOT_ANALYZED));
+                    if (!ref.isWeak()) {
+                        doc.add(new Field(ContentIndex.STRONG_REFERENCES, stringValue, Field.Store.YES, Field.Index.NOT_ANALYZED));
+                    }
+                    treatedAsReference = true;
+                } else if (rule.canBeReference()) {
                     if (stringValue.length() == 36 && stringValue.charAt(8) == '-') {
                         // The value looks like a string representation of a UUID ...
                         try {
@@ -971,7 +983,13 @@ public class LuceneSearchSession implements WorkspaceSession {
                                 Operator operator,
                                 Object value ) {
         String field = referenceValue.propertyName();
-        if (field == null) field = LuceneSearchWorkspace.ContentIndex.REFERENCES;
+        if (field == null) {
+            if (referenceValue.includesWeakReferences()) {
+                field = LuceneSearchWorkspace.ContentIndex.REFERENCES;
+            } else {
+                field = LuceneSearchWorkspace.ContentIndex.STRONG_REFERENCES;
+            }
+        }
         ValueFactories factories = processor.valueFactories;
         String stringValue = processor.stringFactory.create(value);
         switch (operator) {

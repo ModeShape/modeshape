@@ -77,6 +77,7 @@ import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
+import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.query.QueryBuilder;
 import org.modeshape.graph.query.model.QueryCommand;
@@ -223,8 +224,8 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
 
     final JcrValue valueFrom( javax.jcr.Node value ) throws UnsupportedRepositoryOperationException, RepositoryException {
         ValueFactories factories = cache.factories();
-        String uuid = factories.getStringFactory().create(value.getIdentifier());
-        return new JcrValue(factories, cache, PropertyType.REFERENCE, uuid);
+        Reference ref = factories.getReferenceFactory().create(value.getIdentifier());
+        return new JcrValue(factories, cache, PropertyType.REFERENCE, ref);
     }
 
     final JcrValue[] valuesFrom( int propertyType,

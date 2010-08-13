@@ -55,6 +55,7 @@ public enum PropertyType {
     PATH("Path", ValueComparators.PATH_COMPARATOR, new ObjectCanonicalizer(), Path.class),
     UUID("UUID", ValueComparators.UUID_COMPARATOR, new ObjectCanonicalizer(), UUID.class),
     REFERENCE("Reference", ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class),
+    WEAKREFERENCE("WeakReference", ValueComparators.REFERENCE_COMPARATOR, new ObjectCanonicalizer(), Reference.class),
     URI("URI", ValueComparators.URI_COMPARATOR, new ObjectCanonicalizer(), URI.class),
     OBJECT("Object", ValueComparators.OBJECT_COMPARATOR, new ObjectCanonicalizer(), Object.class);
 

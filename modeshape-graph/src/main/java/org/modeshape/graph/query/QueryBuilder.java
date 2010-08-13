@@ -1201,6 +1201,16 @@ public class QueryBuilder {
                                                  String property );
 
         /**
+         * Constrains the nodes in the the supplied table such that they must have a matching value for any of the node's non-weak
+         * reference properties.
+         * 
+         * @param table the name of the table; may not be null and must refer to a valid name or alias of a table appearing in the
+         *        FROM clause
+         * @return the interface for completing the value portion of the criteria specification; never null
+         */
+        public ComparisonBuilder strongReferenceValue( String table );
+
+        /**
          * Constrains the nodes in the the supplied table such that they must satisfy the supplied full-text search on the nodes'
          * property values.
          * 
@@ -1478,6 +1488,15 @@ public class QueryBuilder {
         public ComparisonBuilder propertyValue( String table,
                                                 String property ) {
             return comparisonBuilder(new PropertyValue(selector(table), property));
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.query.QueryBuilder.DynamicOperandBuilder#strongReferenceValue(java.lang.String)
+         */
+        public ComparisonBuilder strongReferenceValue( String table ) {
+            return comparisonBuilder(new ReferenceValue(selector(table), null, false));
         }
 
         /**

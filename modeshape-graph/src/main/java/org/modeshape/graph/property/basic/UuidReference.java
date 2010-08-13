@@ -38,10 +38,18 @@ public class UuidReference implements Reference {
     /**
      */
     private static final long serialVersionUID = 2299467578161645109L;
-    private UUID uuid;
+    private/*final*/UUID uuid;
+    private/*final*/boolean isWeak;
 
     public UuidReference( UUID uuid ) {
         this.uuid = uuid;
+        this.isWeak = false;
+    }
+
+    public UuidReference( UUID uuid,
+                          boolean weak ) {
+        this.uuid = uuid;
+        this.isWeak = weak;
     }
 
     /**
@@ -68,9 +76,23 @@ public class UuidReference implements Reference {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.property.Reference#isWeak()
+     */
+    public boolean isWeak() {
+        return isWeak;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public int compareTo( Reference that ) {
         if (this == that) return 0;
+        if (this.isWeak()) {
+            if (!that.isWeak()) return -1;
+        } else {
+            if (that.isWeak()) return 1;
+        }
         if (that instanceof UuidReference) {
             return this.uuid.compareTo(((UuidReference)that).getUuid());
         }
@@ -84,10 +106,12 @@ public class UuidReference implements Reference {
     public boolean equals( Object obj ) {
         if (obj == this) return true;
         if (obj instanceof UuidReference) {
-            return this.uuid.equals(((UuidReference)obj).getUuid());
+            UuidReference that = (UuidReference)obj;
+            return this.isWeak() == that.isWeak() && this.uuid.equals(that.getUuid());
         }
         if (obj instanceof Reference) {
-            return this.getString().equals(((Reference)obj).getString());
+            Reference that = (Reference)obj;
+            return this.isWeak() == that.isWeak() && this.getString().equals(that.getString());
         }
         return super.equals(obj);
     }

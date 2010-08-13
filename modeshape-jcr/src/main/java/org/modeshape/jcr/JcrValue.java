@@ -423,12 +423,20 @@ final class JcrValue implements Value, org.modeshape.jcr.api.Value {
                 }
 
             case PropertyType.REFERENCE:
-            case PropertyType.WEAKREFERENCE:
                 if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY) {
                     throw createValueFormatException(Node.class);
                 }
                 try {
                     return this.withTypeAndValue(type, valueFactories.getReferenceFactory().create(value));
+                } catch (org.modeshape.graph.property.ValueFormatException vfe) {
+                    throw createValueFormatException(vfe);
+                }
+            case PropertyType.WEAKREFERENCE:
+                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY) {
+                    throw createValueFormatException(Node.class);
+                }
+                try {
+                    return this.withTypeAndValue(type, valueFactories.getWeakReferenceFactory().create(value));
                 } catch (org.modeshape.graph.property.ValueFormatException vfe) {
                     throw createValueFormatException(vfe);
                 }

@@ -164,11 +164,16 @@ class NodeTypeSchemata implements Schemata {
                 first = false;
             }
             boolean canBeReference = false;
+            boolean isStrongReference = false;
             switch (defn.getRequiredType()) {
                 case PropertyType.REFERENCE:
+                    isStrongReference = true;
+                    canBeReference = true;
+                    break;
                 case PropertyType.WEAKREFERENCE:
                 case PropertyType.UNDEFINED:
                     canBeReference = true;
+                    break;
             }
             String type = typeSystem.getDefaultType();
             if (defn.getRequiredType() != PropertyType.UNDEFINED) {
@@ -186,7 +191,12 @@ class NodeTypeSchemata implements Schemata {
             builder.addColumn(tableName, columnName, type, fullTextSearchable);
 
             // And build an indexing rule for this type ...
-            if (indexRuleBuilder != null) addIndexRule(indexRuleBuilder, defn, type, typeSystem, canBeReference);
+            if (indexRuleBuilder != null) addIndexRule(indexRuleBuilder,
+                                                       defn,
+                                                       type,
+                                                       typeSystem,
+                                                       canBeReference,
+                                                       isStrongReference);
         }
     }
 
@@ -197,14 +207,17 @@ class NodeTypeSchemata implements Schemata {
      * @param defn the property definition; never null
      * @param type the TypeSystem type, which may be a more general type than dictated by the definition, since multiple
      *        definitions with the same name require the index rule to use the common base type; never null
-     * @param canBeReference true if the property described the rule can hold reference values, or false otherwise
      * @param typeSystem the type system; never null
+     * @param canBeReference true if the property described the rule can hold reference values, or false otherwise
+     * @param isStrongReference true if the index rule can be a reference and it should be included in referential integrity
+     *        checks
      */
     protected final void addIndexRule( IndexRules.Builder builder,
                                        JcrPropertyDefinition defn,
                                        String type,
                                        TypeSystem typeSystem,
-                                       boolean canBeReference ) {
+                                       boolean canBeReference,
+                                       boolean isStrongReference ) {
         Store store = Store.YES;
         Index index = defn.isFullTextSearchable() ? Index.ANALYZED : Index.NO;
         if (typeSystem.getStringFactory().getTypeName().equals(type)) {

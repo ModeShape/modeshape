@@ -40,6 +40,7 @@ import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.property.Reference;
+import org.modeshape.graph.property.ReferenceFactory;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
 
@@ -47,11 +48,15 @@ import org.modeshape.graph.property.ValueFormatException;
  * The standard {@link ValueFactory} for {@link PropertyType#REFERENCE} values.
  */
 @Immutable
-public class ReferenceValueFactory extends AbstractValueFactory<Reference> {
+public class ReferenceValueFactory extends AbstractValueFactory<Reference> implements ReferenceFactory {
+
+    private final boolean weak;
 
     public ReferenceValueFactory( TextDecoder decoder,
-                                  ValueFactory<String> stringValueFactory ) {
-        super(PropertyType.REFERENCE, decoder, stringValueFactory);
+                                  ValueFactory<String> stringValueFactory,
+                                  boolean weak ) {
+        super(weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE, decoder, stringValueFactory);
+        this.weak = weak;
     }
 
     /**
@@ -61,9 +66,9 @@ public class ReferenceValueFactory extends AbstractValueFactory<Reference> {
         if (value == null) return null;
         try {
             UUID uuid = UUID.fromString(value);
-            return new UuidReference(uuid);
+            return new UuidReference(uuid, weak);
         } catch (IllegalArgumentException err) {
-            return new StringReference(value);
+            return new StringReference(value, weak);
         }
     }
 

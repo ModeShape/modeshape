@@ -120,7 +120,14 @@ public interface ValueFactories extends Iterable<ValueFactory<?>> {
      * 
      * @return the factory; never null
      */
-    ValueFactory<Reference> getReferenceFactory();
+    ReferenceFactory getReferenceFactory();
+
+    /**
+     * Get the value factory for {@link PropertyType#REFERENCE reference} properties.
+     * 
+     * @return the factory; never null
+     */
+    ReferenceFactory getWeakReferenceFactory();
 
     /**
      * Get the value factory for {@link PropertyType#PATH path} properties.

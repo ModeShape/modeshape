@@ -79,6 +79,8 @@ import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
+import org.modeshape.graph.property.Reference;
+import org.modeshape.graph.property.ReferenceFactory;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.query.QueryBuilder;
@@ -851,8 +853,8 @@ class JcrSession implements Session {
                 if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(JcrSession.this.namespaces()))) {
                     throw new RepositoryException(JcrI18n.nodeNotReferenceable.text());
                 }
-                String uuid = valueFactories.getStringFactory().create(value.getIdentifier());
-                return new JcrValue(valueFactories, sessionCache, PropertyType.REFERENCE, uuid);
+                Reference ref = valueFactories.getReferenceFactory().create(value.getIdentifier());
+                return new JcrValue(valueFactories, sessionCache, PropertyType.REFERENCE, ref);
             }
 
             @Override
@@ -861,8 +863,10 @@ class JcrSession implements Session {
                 if (!value.isNodeType(JcrMixLexicon.REFERENCEABLE.getString(JcrSession.this.namespaces()))) {
                     throw new RepositoryException(JcrI18n.nodeNotReferenceable.text());
                 }
-                String uuid = valueFactories.getStringFactory().create(value.getIdentifier());
-                return new JcrValue(valueFactories, sessionCache, PropertyType.WEAKREFERENCE, uuid);
+                ReferenceFactory factory = weak ? valueFactories.getWeakReferenceFactory() : valueFactories.getReferenceFactory();
+                int refType = weak ? PropertyType.WEAKREFERENCE : PropertyType.REFERENCE;
+                Reference ref = factory.create(value.getIdentifier());
+                return new JcrValue(valueFactories, sessionCache, refType, ref);
             }
 
             @Override
@@ -1293,7 +1297,7 @@ class JcrSession implements Session {
                 query = builder.select("jcr:primaryType")
                                .fromAllNodesAs("allNodes")
                                .where()
-                               .referenceValue("allNodes")
+                               .strongReferenceValue("allNodes")
                                .isIn(someUuidsInBranch)
                                .and()
                                .path("allNodes")
@@ -1304,7 +1308,7 @@ class JcrSession implements Session {
                 query = builder.select("jcr:primaryType")
                                .fromAllNodesAs("allNodes")
                                .where()
-                               .referenceValue("allNodes")
+                               .strongReferenceValue("allNodes")
                                .isIn(someUuidsInBranch)
                                .end()
                                .query();

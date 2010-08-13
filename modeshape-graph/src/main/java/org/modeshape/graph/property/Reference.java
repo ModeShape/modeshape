@@ -51,4 +51,11 @@ public interface Reference extends Comparable<Reference>, Serializable {
      */
     public String getString( TextEncoder encoder );
 
+    /**
+     * Determine whether this reference is considered a weak reference.
+     * 
+     * @return true if this is a weak reference, or false otherwise
+     */
+    public boolean isWeak();
+
 }

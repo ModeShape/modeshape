@@ -50,9 +50,9 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.property.Reference;
+import org.modeshape.graph.property.ReferenceFactory;
 import org.modeshape.graph.property.UuidFactory;
 import org.modeshape.graph.property.ValueFactories;
-import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
 
 /**
@@ -292,8 +292,12 @@ public class Serializer {
                 char c = ((Character)value).charValue();
                 stream.writeChar(c);
             } else if (value instanceof Reference) {
-                stream.writeChar('R');
                 Reference ref = (Reference)value;
+                if (ref.isWeak()) {
+                    stream.writeChar('W');
+                } else {
+                    stream.writeChar('R');
+                }
                 stream.writeObject(ref.getString());
                 references.write(ref);
             } else if (value instanceof Binary) {
@@ -446,7 +450,6 @@ public class Serializer {
         assert oldUuidToNewUuid != null;
 
         UuidFactory uuidFactory = valueFactories.getUuidFactory();
-        ValueFactory<Reference> referenceFactory = valueFactories.getReferenceFactory();
 
         // Read the number of properties ...
         int count = input.readInt();
@@ -518,7 +521,27 @@ public class Serializer {
                     case 'R':
                         // Reference
                         String refValue = (String)input.readObject();
+                        ReferenceFactory referenceFactory = valueFactories.getReferenceFactory();
                         Reference ref = referenceFactory.create(refValue);
+                        try {
+                            UUID toUuid = uuidFactory.create(ref);
+                            String newUuid = oldUuidToNewUuid.get(toUuid.toString());
+                            if (newUuid != null) {
+                                // Create a new reference ...
+                                ref = referenceFactory.create(newUuid);
+                                refValue = ref.getString();
+                            }
+                        } catch (ValueFormatException e) {
+                            // Unknown reference, so simply write it again ...
+                        }
+                        // Write the reference ...
+                        output.writeObject(refValue);
+                        break;
+                    case 'W':
+                        // Weak Reference
+                        refValue = (String)input.readObject();
+                        referenceFactory = valueFactories.getWeakReferenceFactory();
+                        ref = referenceFactory.create(refValue);
                         try {
                             UUID toUuid = uuidFactory.create(ref);
                             String newUuid = oldUuidToNewUuid.get(toUuid.toString());
@@ -774,6 +797,17 @@ public class Serializer {
                     // Reference
                     String refValue = (String)stream.readObject();
                     Reference ref = valueFactories.getReferenceFactory().create(refValue);
+                    if (skip) {
+                        if (references != null) references.remove(ref);
+                    } else {
+                        value = ref;
+                        if (references != null) references.read(ref);
+                    }
+                    break;
+                case 'W':
+                    // Weak reference
+                    refValue = (String)stream.readObject();
+                    ref = valueFactories.getWeakReferenceFactory().create(refValue);
                     if (skip) {
                         if (references != null) references.remove(ref);
                     } else {
