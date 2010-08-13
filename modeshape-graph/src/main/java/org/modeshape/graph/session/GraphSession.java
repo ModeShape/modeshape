@@ -1645,7 +1645,10 @@ public class GraphSession<Payload, PropertyPayload> {
                 Location actualLocation = persistentNode.getLocation();
                 if (!this.location.isSame(actualLocation)) {
                     // The actual location is changed, so update it ...
-                    this.originalLocation = this.location = actualLocation;
+                    this.originalLocation = actualLocation;
+                    // However, the location of the node needs to be a function of the parent node's location,
+                    // which has already been loaded by this session ...
+                    this.location = actualLocation.with(this.location.getPath()); // copy the ID props, if any
                 }
                 // Update the persistent information ...
                 cache.nodeOperations.materialize(persistentNode, this);
@@ -1655,7 +1658,10 @@ public class GraphSession<Payload, PropertyPayload> {
                 Location actualLocation = subgraph.getLocation();
                 if (!this.location.isSame(actualLocation)) {
                     // The actual location is changed, so update it ...
-                    this.originalLocation = this.location = actualLocation;
+                    this.originalLocation = actualLocation;
+                    // However, the location of the node needs to be a function of the parent node's location,
+                    // which has already been loaded by this session ...
+                    this.location = actualLocation.with(this.location.getPath()); // copy the ID props, if any
                 }
                 // Update the persistent information ...
                 cache.nodeOperations.materialize(subgraph.getRoot(), this);

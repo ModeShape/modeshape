@@ -1408,7 +1408,7 @@ class SessionCache {
 
                 // Update the location of the JcrNode object...
                 Path newPath = existingChild.getPath();
-                existingChild.getPayload().getJcrNode().setLocation(existingChild.getLocation().with(newPath));
+                setNewLocation(existingChild, newPath);
 
                 return existingChild;
             } catch (ValidationException e) {
@@ -1417,6 +1417,22 @@ class SessionCache {
                 throw new RepositoryException(e.getMessage(), e);
             } catch (AccessControlException e) {
                 throw new AccessDeniedException(e.getMessage(), e);
+            }
+        }
+
+        private void setNewLocation( Node<JcrNodePayload, JcrPropertyPayload> node,
+                                     Path newPath ) {
+            AbstractJcrNode jcrNode = node.getPayload().getJcrNode(false);
+            if (jcrNode != null) {
+                // The JCR Node object has been cached, so update the location ...
+                node.getPayload().getJcrNode().setLocation(node.getLocation().with(newPath));
+
+                // Now update the location on the cached children of that moved node ...
+                for (Node<JcrNodePayload, JcrPropertyPayload> child : node.getChildren()) {
+                    if (!child.isLoaded()) continue;
+                    Path newChildPath = pathFactory.create(newPath, child.getSegment());
+                    setNewLocation(child, newChildPath);
+                }
             }
         }
 
@@ -3089,6 +3105,10 @@ class SessionCache {
          */
         public NodeDefinitionId getDefinitionId() {
             return this.nodeDefinitionId;
+        }
+
+        public AbstractJcrNode getJcrNode( boolean loadIfMissing ) {
+            return loadIfMissing ? getJcrNode() : jcrNode.get();
         }
 
         /**
