@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.jcr;
 
+import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
@@ -974,10 +975,8 @@ public class JcrRequestProcessor extends RequestProcessor {
                                            Object graphValue ) throws RepositoryException {
             if (graphValue == null) return null;
             switch (graphType) {
-                case DECIMAL:
                 case NAME:
                 case PATH:
-                case REFERENCE:
                 case UUID:
                 case URI:
                 case STRING:
@@ -987,6 +986,9 @@ public class JcrRequestProcessor extends RequestProcessor {
                 case BOOLEAN:
                     Boolean booleanValue = factories.getBooleanFactory().create(graphValue);
                     return jcrValueFactory.createValue(booleanValue.booleanValue());
+                case DECIMAL:
+                    BigDecimal decimalValue = factories.getDecimalFactory().create(graphValue);
+                    return jcrValueFactory.createValue(decimalValue);
                 case DOUBLE:
                     Double doubleValue = factories.getDoubleFactory().create(graphValue);
                     return jcrValueFactory.createValue(doubleValue);
@@ -1005,6 +1007,12 @@ public class JcrRequestProcessor extends RequestProcessor {
                     } finally {
                         binary.release();
                     }
+                case WEAKREFERENCE:
+                case REFERENCE:
+                    boolean isWeak = graphType == PropertyType.WEAKREFERENCE;
+                    String identifier = factories.getStringFactory().create(graphValue);
+                    Node node = session.getNodeByIdentifier(identifier);
+                    return jcrValueFactory.createValue(node, isWeak);
             }
             assert false;
             return null;
