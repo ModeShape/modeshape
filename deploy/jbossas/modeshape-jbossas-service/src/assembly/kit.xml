@@ -50,9 +50,9 @@
             <include>org.modeshape:modeshape-sequencer-jbpm-jpdl</include>
             <include>org.modeshape:modeshape-sequencer-classfile</include>
             <include>org.modeshape:modeshape-sequencer-java</include>
-            <!-- 
+ 
             <include>org.modeshape:modeshape-sequencer-msoffice</include>
-            -->
+
             <include>org.modeshape:modeshape-sequencer-images</include>
             <include>org.modeshape:modeshape-sequencer-mp3</include>
             
