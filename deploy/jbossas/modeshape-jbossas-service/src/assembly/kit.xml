@@ -34,6 +34,7 @@
             <include>org.modeshape:modeshape-search-lucene</include>
             <include>org.modeshape:modeshape-jbossas-service</include>
 
+            <!-- 3rd party dependencies required by the ModeShape JCR engine -->
             <include>joda-time:joda-time</include>
             <include>org.scannotation:scannotation</include>
             <include>com.google.collections:google-collections</include>
@@ -41,23 +42,22 @@
             <include>org.apache.lucene:lucene-analyzers</include>
             <include>org.apache.lucene:lucene-snowball</include>
             <include>org.apache.lucene:lucene-regex</include>     
-            
+
+            <!-- Most of the sequencers have no 3rd party dependencies other than those already included in JBoss AS or EAP -->
             <include>org.modeshape:modeshape-sequencer-cnd</include>
             <include>org.modeshape:modeshape-sequencer-ddl</include>
             <include>org.modeshape:modeshape-sequencer-text</include>
             <include>org.modeshape:modeshape-sequencer-xml</include>
             <include>org.modeshape:modeshape-sequencer-zip</include>
-            <include>org.modeshape:modeshape-sequencer-jbpm-jpdl</include>
             <include>org.modeshape:modeshape-sequencer-classfile</include>
             <include>org.modeshape:modeshape-sequencer-java</include>
- 
-            <include>org.modeshape:modeshape-sequencer-msoffice</include>
-
             <include>org.modeshape:modeshape-sequencer-images</include>
             <include>org.modeshape:modeshape-sequencer-mp3</include>
-            
+            <include>org.modeshape:modeshape-sequencer-jbpm-jpdl</include>
+            <include>org.modeshape:modeshape-sequencer-msoffice</include>
             <include>org.modeshape:modeshape-sequencer-msoffice:*with-dependencies.jar</include>
-           
+
+            <!-- Most of the connectors have no 3rd party dependencies other than those already included in JBoss AS or EAP -->
             <include>org.modeshape:modeshape-connector-filesystem</include>
             <include>org.modeshape:modeshape-connector-infinispan</include>
             <include>org.modeshape:modeshape-connector-jbosscache</include>

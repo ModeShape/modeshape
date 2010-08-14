@@ -39,7 +39,6 @@
             <mode:description>Class File sequencer</mode:description>        
             <mode:pathExpression>/files/class/(*.class[*])/jcr:content[@jcr:data] => /sequenced/class/$1 </mode:pathExpression>
         </mode:sequencer>
-        
         <mode:sequencer jcr:name="CND File Sequencer" mode:classname="org.modeshape.sequencer.cnd.CndSequencer">
             <mode:description>CND File sequencer</mode:description>        
             <mode:pathExpression>/files/cnd/(*.cnd[*])/jcr:content[@jcr:data] => /sequenced/cnd/$1 </mode:pathExpression>
@@ -52,30 +51,25 @@
             <mode:description>Java File sequencer</mode:description>        
             <mode:pathExpression>/files/javafile/(*.java[*])/jcr:content[@jcr:data] => /sequenced/java/$1 </mode:pathExpression>
         </mode:sequencer>
-        
+        <mode:sequencer jcr:name="MS Office File Sequencer" mode:classname="org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer">
+            <mode:description>Microsoft Office File sequencer</mode:description>        
+            <mode:pathExpression>/files/msoffice/(*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /sequenced/msoffice/$1 </mode:pathExpression>
+        </mode:sequencer>
+        <mode:sequencer jcr:name="XML File Sequencer" mode:classname="org.modeshape.sequencer.xml.XmlSequencer">
+            <mode:description>XML File sequencer</mode:description>        
+            <mode:pathExpression>/files/xml/(*.xml[*])/jcr:content[@jcr:data] => /sequenced/xml/$1 </mode:pathExpression>
+        </mode:sequencer>  
+        <mode:sequencer jcr:name="ZIP File Sequencer" mode:classname="org.modeshape.sequencer.zip.ZipSequencer">
+            <mode:description>ZIP File sequencer</mode:description>        
+            <mode:pathExpression>/files/zip/(*.zip[*])/jcr:content[@jcr:data] => /sequenced/zip/$1 </mode:pathExpression>
+        </mode:sequencer>                          
         <!--
         <mode:sequencer jcr:name="JBPM-JPDL File Sequencer" mode:classname="org.modeshape.sequencer.jpdl3.xxSequencer">
             <mode:description>JBPM-JPDL File sequencer</mode:description>        
             <mode:pathExpression>/files/jbpm-jpdlfile/(*.jpbm[*])/jcr:content[@jcr:data] => /sequenced/jbpm/$1 </mode:pathExpression>
         </mode:sequencer>    
         -->
- 
-        <mode:sequencer jcr:name="MS Office File Sequencer" mode:classname="org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer">
-            <mode:description>Microsoft Office File sequencer</mode:description>        
-            <mode:pathExpression>/files/msoffice/(*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /sequenced/msoffice/$1 </mode:pathExpression>
-        </mode:sequencer>
-
-        <mode:sequencer jcr:name="XML File Sequencer" mode:classname="org.modeshape.sequencer.xml.XmlSequencer">
-            <mode:description>XML File sequencer</mode:description>        
-            <mode:pathExpression>/files/xml/(*.xml[*])/jcr:content[@jcr:data] => /sequenced/xml/$1 </mode:pathExpression>
-        </mode:sequencer>  
-        
-        <mode:sequencer jcr:name="ZIP File Sequencer" mode:classname="org.modeshape.sequencer.zip.ZipSequencer">
-            <mode:description>ZIP File sequencer</mode:description>        
-            <mode:pathExpression>/files/zip/(*.zip[*])/jcr:content[@jcr:data] => /sequenced/zip/$1 </mode:pathExpression>
-        </mode:sequencer>                          
     </mode:sequencers>
-    
     
     <!-- Define the JCR repositories -->
     <mode:repositories>
