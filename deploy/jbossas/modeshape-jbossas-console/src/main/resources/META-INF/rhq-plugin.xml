@@ -49,7 +49,7 @@
             class="SequencerComponent" discovery="SequencerDiscoveryComponent">
 
             <resource-configuration>
-                <c:list-property name="propertyList" displayName="Properties"
+                <c:list-property name="propertyList" displayName="Properties" description="Properties for this sequencer"
                     readOnly="true" >
                     <c:map-property name="map" description="Properties for this sequencer" readOnly="true">
                         <c:simple-property name="label" displayName="Name"
@@ -71,7 +71,7 @@
 			class="ConnectorComponent" discovery="ConnectorDiscoveryComponent">
 
 			<resource-configuration>
-				<c:list-property name="propertyList" displayName="Properties"
+				<c:list-property name="propertyList" displayName="Properties" description="Properties for this connector"
 					readOnly="true" >
 					<c:map-property name="map" description="Properties for this connector" readOnly="true">
                 		<c:simple-property name="label" displayName="Name"

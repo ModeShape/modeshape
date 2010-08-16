@@ -23,6 +23,7 @@
  */
 package org.modeshape.jboss.managed;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,6 +54,7 @@ import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
+import org.modeshape.repository.sequencer.SequencerConfig;
 import org.modeshape.repository.sequencer.SequencingService;
 
 /**
@@ -117,13 +119,13 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	}
 
 	/**
-	 * Obtains the managed connectors of this engine. This is a JBoss managed
+	 * Obtains the properties for the passed in object. This is a JBoss managed
 	 * operation.
 	 * 
 	 * @param objectName
 	 * @param objectType
 	 * 
-	 * @return an unmodifiable collection of managed connectors (never
+	 * @return an collection of managed properties (may be
 	 *         <code>null</code>)
 	 */
 	@ManagementOperation(description = "Obtains the properties for an object", impact = Impact.ReadOnly)
@@ -191,12 +193,20 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 		if (props != null) {
 			for (Property prop : props) {
 				if (prop.getType().isPrimitive()
-						|| prop.getType().toString().contains("String")) {
+						|| prop.getType().toString().contains("java.lang.String")) {
+					if (prop.getValue().getClass().isArray()){
+						StringBuffer sb = new StringBuffer();
+						String[] stringArray = (String[])prop.getValue();
+						for (String cell:stringArray){
+							sb.append(cell).append(" ");
+						}
+					prop.setValue(sb.toString());
+					}
 					managedProps.add(new ManagedProperty(prop));
 				}
 			}
 		}
- 
+
 		return managedProps;
 	}
 
@@ -533,7 +543,7 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 		 * @param description
 		 */
 		public void setDescription(String description) {
-			this.description=description;
+			this.description = description;
 		}
 
 		/**

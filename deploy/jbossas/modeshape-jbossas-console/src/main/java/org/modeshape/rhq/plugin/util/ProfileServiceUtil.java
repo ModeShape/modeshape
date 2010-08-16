@@ -88,6 +88,28 @@ public class ProfileServiceUtil {
 
 		return mc;
 	}
+	
+	/**
+	 * Get the passed in {@link ManagedComponent}
+	 * @param connection 
+	 * 
+	 * @return {@link ManagedComponent}
+	 * @throws NamingException
+	 * @throws Exception
+	 */
+	public static ManagedComponent getManagedEngine( ProfileServiceConnection connection)
+			throws NamingException, Exception {
+
+		ManagedComponent mc = ProfileServiceUtil
+		.getManagedComponent(connection,
+				new ComponentType(
+						PluginConstants.ComponentType.Engine.MODESHAPE_TYPE,
+						PluginConstants.ComponentType.Engine.MODESHAPE_SUB_TYPE),
+				PluginConstants.ComponentType.Engine.MODESHAPE_ENGINE);
+
+		return mc;
+	}
+
 
 	/**
 	 * Get the {@link ManagedComponent} for the {@link ComponentType} and sub

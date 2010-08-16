@@ -23,13 +23,11 @@
  */
 package org.modeshape.rhq.plugin;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.jboss.managed.api.ComponentType;
 import org.jboss.managed.api.ManagedComponent;
 import org.jboss.metatype.api.values.CollectionValueSupport;
 import org.jboss.metatype.api.values.CompositeValueSupport;
@@ -69,13 +67,9 @@ public class ConnectorDiscoveryComponent implements
 		Set<DiscoveredResourceDetails> discoveredResources = new HashSet<DiscoveredResourceDetails>();
 
 		ManagedComponent mc = ProfileServiceUtil
-				.getManagedComponent(
+				.getManagedEngine(
 						((EngineComponent) discoveryContext
-								.getParentResourceComponent()).getConnection(),
-						new ComponentType(
-								PluginConstants.ComponentType.Engine.MODESHAPE_TYPE,
-								PluginConstants.ComponentType.Engine.MODESHAPE_SUB_TYPE),
-						PluginConstants.ComponentType.Engine.MODESHAPE_ENGINE);
+								.getParentResourceComponent()).getConnection());
 
 		String operation = "getConnectors";
 
