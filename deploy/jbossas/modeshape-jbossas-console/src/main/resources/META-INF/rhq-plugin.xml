@@ -44,6 +44,28 @@
 		<service name="Sequencing Service" description="ModeShape Sequencing Service"
 			singleton="true" class="SequencingServiceComponent" discovery="SequencingServiceDiscoveryComponent">
 		</service>
+		
+		<service name="Sequencers" description="Sequencers deployed to this ModeShape instance"
+            class="SequencerComponent" discovery="SequencerDiscoveryComponent">
+
+            <resource-configuration>
+                <c:list-property name="propertyList" displayName="Properties"
+                    readOnly="true" >
+                    <c:map-property name="map" description="Properties for this sequencer" readOnly="true">
+                        <c:simple-property name="label" displayName="Name"
+                            description="The name of this property" required="false"
+                            readOnly="true" />
+                        <c:simple-property name="value" displayName="Value"
+                            description="The value of this property" required="false"
+                            readOnly="true" />
+                        <c:simple-property name="description"
+                            displayName="Description" description="The description of this property"
+                            required="false" readOnly="true" />
+                    </c:map-property>
+                </c:list-property>
+            </resource-configuration>
+
+        </service>
 
 		<service name="Connectors" description="Connectors for repository"
 			class="ConnectorComponent" discovery="ConnectorDiscoveryComponent">
@@ -66,7 +88,7 @@
 			</resource-configuration>
 
 		</service>
-
+	
 	</server>
 
 </plugin>

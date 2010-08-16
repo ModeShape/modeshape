@@ -17,6 +17,7 @@ import org.jboss.metatype.api.values.CollectionValueSupport;
 import org.jboss.metatype.api.values.MetaValue;
 import org.jboss.metatype.api.values.MetaValueFactory;
 import org.modeshape.jboss.managed.ManagedRepository;
+import org.modeshape.jboss.managed.ManagedSequencerConfig;
 import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
 
 import com.sun.istack.Nullable;
@@ -547,6 +548,24 @@ public class ModeShapeManagementView implements PluginConstants {
 				if (value.getMetaType().isComposite()) {
 					ManagedRepository repository = (ManagedRepository)MetaValueFactory.getInstance().unwrap(value);
 					list.add(repository);
+				} else {
+					throw new IllegalStateException(pValue
+							+ " is not a Composite type"); //$NON-NLS-1$
+				}
+			}
+		}
+		return list;
+	}
+	
+	public static Collection<ManagedSequencerConfig> getSequencerCollectionValue(MetaValue pValue) {
+		Collection<ManagedSequencerConfig> list = new ArrayList<ManagedSequencerConfig>();
+		MetaType metaType = pValue.getMetaType();
+		if (metaType.isCollection()) {
+			for (MetaValue value : ((CollectionValueSupport) pValue)
+					.getElements()) {
+				if (value.getMetaType().isComposite()) {
+					ManagedSequencerConfig sequencer = (ManagedSequencerConfig)MetaValueFactory.getInstance().unwrap(value);
+					list.add(sequencer);
 				} else {
 					throw new IllegalStateException(pValue
 							+ " is not a Composite type"); //$NON-NLS-1$

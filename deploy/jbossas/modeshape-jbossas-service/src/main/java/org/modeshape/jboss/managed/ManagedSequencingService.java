@@ -23,7 +23,12 @@
  */
 package org.modeshape.jboss.managed;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+
+import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 
 import net.jcip.annotations.Immutable;
 
@@ -35,6 +40,9 @@ import org.jboss.managed.api.annotation.ManagementProperties;
 import org.jboss.managed.api.annotation.ManagementProperty;
 import org.jboss.managed.api.annotation.ViewUse;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.Logger;
+import org.modeshape.common.util.Logger.Level;
+import org.modeshape.jcr.JcrRepository;
 import org.modeshape.repository.sequencer.Sequencer;
 import org.modeshape.repository.sequencer.SequencerConfig;
 import org.modeshape.repository.sequencer.SequencingService;
@@ -60,7 +68,7 @@ public class ManagedSequencingService implements ModeShapeManagedObject {
     /**
      * The ModeShape object being managed and delegated to (never <code>null</code>).
      */
-    private final SequencingService sequencingService;
+    private SequencingService sequencingService;
 
     /**
      * Creates a JBoss managed object for the specified sequencing service.
@@ -97,16 +105,6 @@ public class ManagedSequencingService implements ModeShapeManagedObject {
         return this.sequencingService.getStatistics().getNumberOfNodesSkipped();
     }
 
-    /**
-     * he sequencers currently deployed. This is a JBoss managed readonly property.
-     * @return List of <code>Sequencers</code>
-     * 
-     */
-    @ManagementOperation( name = "Sequencers", description = "The sequencers currently deployed", impact=Impact.ReadOnly )
-    public List<SequencerConfig> getSequencers() {
-        return this.sequencingService.getSequencers();
-    }
-    
     @ManagementProperty( name = "Queued Jobs", description = "The number of queued jobs", readOnly = true, use = ViewUse.STATISTIC )
     public int getQueuedJobCount() {
         return 0;
@@ -143,6 +141,7 @@ public class ManagedSequencingService implements ModeShapeManagedObject {
 	 */
 	public void setEngine(ManagedEngine engine) {
 		this.engine = engine;
+		this.sequencingService = this.engine.getSequencingService();
 	}
 
 	/**
@@ -150,6 +149,47 @@ public class ManagedSequencingService implements ModeShapeManagedObject {
 	 */
 	public ManagedEngine getEngine() {
 		return engine;
+	}
+	
+	/*
+	 * ManagedSequencer operations
+	 */
+
+	/**
+     * The sequencers currently deployed. This is a JBoss managed readonly property.
+     * @return List of <code>Sequencers</code>
+     * 
+     */
+    @ManagementOperation( name = "Sequencers", description = "The sequencers currently deployed", impact=Impact.ReadOnly )
+    public Collection<ManagedSequencerConfig> getSequencers() {
+        List<SequencerConfig> sequencerConfigList = this.sequencingService.getSequencers();
+        List<ManagedSequencerConfig> managedSequencerConfigList = new ArrayList<ManagedSequencerConfig>();
+        for (SequencerConfig sequencerConfig:sequencerConfigList){
+        	managedSequencerConfigList.add(new ManagedSequencerConfig(sequencerConfig.getName(),sequencerConfig.getDescription()));
+        }
+        return managedSequencerConfigList;
+    }
+    
+
+	/**
+	 * Obtains the specified managed sequencer in this engine. 
+	 * 
+	 * @param sequencerName
+	 *            for the sequencer to be returned
+	 * 
+	 * @return a {@link SequencerConfig} or <code>null</code> if sequencer doesn't exist
+	 */
+    public SequencerConfig getSequencer(String sequencerName) {
+		SequencerConfig sequencer = null;
+		    List<SequencerConfig> sequencerConfigList = this.sequencingService.getSequencers();
+			
+		    for (SequencerConfig sequencerConfig:sequencerConfigList){
+		    	if (sequencerName.equals(sequencerConfig.getName())){
+		    		sequencer = sequencerConfig;
+		    }
+		}
+
+		return sequencer;
 	}
 
 }

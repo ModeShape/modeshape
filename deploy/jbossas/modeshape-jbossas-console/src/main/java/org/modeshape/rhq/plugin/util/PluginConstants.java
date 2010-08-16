@@ -92,5 +92,20 @@ public interface PluginConstants {
 
 			}
 		}
+		
+		public interface SequencerConfig {
+
+			public final static String NAME = "Sequencer"; //$NON-NLS-1$
+			public final static String DISPLAY_NAME = "Sequencer"; //$NON-NLS-1$
+			public final static String DESC = "A ModeShape sequencer"; //$NON-NLS-1$
+			
+			public static interface Operations {
+
+			}
+
+			public static interface Metrics {
+
+			}
+		}
 	}
 }
