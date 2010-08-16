@@ -112,7 +112,7 @@ public class ComponentLibrary<ComponentType, ConfigType extends ComponentConfig>
      * @see #setClassLoaderFactory(ClassLoaderFactory)
      */
     public List<ConfigType> getSequenceConfigs() {
-        return this.getSequenceConfigs();
+        return this.configs;
     }
     
     /**
