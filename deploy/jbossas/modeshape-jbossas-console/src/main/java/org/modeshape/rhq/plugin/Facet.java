@@ -18,9 +18,9 @@
  */
 package org.modeshape.rhq.plugin;
 
-
 import java.io.File;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +33,9 @@ import org.jboss.managed.api.ComponentType;
 import org.jboss.managed.api.ManagedComponent;
 import org.jboss.managed.api.ManagedProperty;
 import org.mc4j.ems.connection.EmsConnection;
+import org.modeshape.rhq.plugin.objects.ExecutedOperationResultImpl;
+import org.modeshape.rhq.plugin.objects.ExecutedResult;
+import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
 import org.modeshape.rhq.plugin.util.PluginConstants;
 import org.modeshape.rhq.plugin.util.ProfileServiceUtil;
 import org.rhq.core.domain.configuration.Configuration;
@@ -69,12 +72,14 @@ import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
  * This class implements required RHQ interfaces and provides common logic used
  * by all MetaMatrix components.
  */
-@SuppressWarnings({ "unchecked" })
-public abstract class Facet implements ProfileServiceComponent<ResourceComponent>, MeasurementFacet,
+@SuppressWarnings( { "unchecked" })
+public abstract class Facet implements
+		ProfileServiceComponent<ResourceComponent>, MeasurementFacet,
 		OperationFacet, ConfigurationFacet, ContentFacet, DeleteResourceFacet,
 		CreateChildResourceFacet {
 
-	protected final Log LOG = LogFactory.getLog(PluginConstants.DEFAULT_LOGGER_CATEGORY);
+	protected final Log LOG = LogFactory
+			.getLog(PluginConstants.DEFAULT_LOGGER_CATEGORY);
 
 	/**
 	 * Represents the resource configuration of the custom product being
@@ -126,7 +131,8 @@ public abstract class Facet implements ProfileServiceComponent<ResourceComponent
 	 * This is called when your component has been started with the given
 	 * context. You normally initialize some internal state of your component as
 	 * well as attempt to make a stateful connection to your managed resource.
-	 * @param context 
+	 * 
+	 * @param context
 	 * 
 	 * @see ResourceComponent#start(ResourceContext)
 	 */
@@ -160,7 +166,7 @@ public abstract class Facet implements ProfileServiceComponent<ResourceComponent
 	public void setResourceConfiguration(Configuration resourceConfiguration) {
 		this.resourceConfiguration = resourceConfiguration;
 	}
-	
+
 	public String componentType() {
 		return name;
 	}
@@ -195,12 +201,12 @@ public abstract class Facet implements ProfileServiceComponent<ResourceComponent
 
 	}
 
-//	protected void execute(final ExecutedResult result, final Map valueMap) {
-//		DQPManagementView dqp = new DQPManagementView();
-//
-//		dqp.executeOperation(result, valueMap);
-//
-//	}
+	protected void execute(final ExecutedResult result, final Map valueMap) {
+		ModeShapeManagementView mv = new ModeShapeManagementView();
+
+		mv.executeOperation(getConnection(), result, valueMap);
+
+	}
 
 	/*
 	 * (non-Javadoc) This method is called by JON to check the availability of
@@ -246,19 +252,19 @@ public abstract class Facet implements ProfileServiceComponent<ResourceComponent
 	 */
 	public OperationResult invokeOperation(String name,
 			Configuration configuration) {
-//		Map valueMap = new HashMap();
-//
-//		Set operationDefinitionSet = this.resourceContext.getResourceType()
-//				.getOperationDefinitions();
-//
-//		ExecutedResult result = new ExecutedOperationResultImpl(this
-//				.getComponentType(), name, operationDefinitionSet);
-//
-//		setOperationArguments(name, configuration, valueMap);
-//
-//		execute(result, valueMap);
+		Map valueMap = new HashMap<String, Object>();
 
-		return null; //((ExecutedOperationResultImpl) result).getOperationResult();
+		Set operationDefinitionSet = this.resourceContext.getResourceType()
+				.getOperationDefinitions();
+
+		ExecutedResult result = new ExecutedOperationResultImpl(this
+				.getComponentType(), name, operationDefinitionSet);
+
+		setOperationArguments(name, configuration, valueMap);
+
+		execute(result, valueMap);
+
+		return ((ExecutedOperationResultImpl) result).getOperationResult();
 
 	}
 
@@ -301,16 +307,17 @@ public abstract class Facet implements ProfileServiceComponent<ResourceComponent
 		resourceConfiguration = report.getConfiguration().deepCopy();
 
 		Configuration resourceConfig = report.getConfiguration();
-		
-		ManagementView managementView = null; 
+
+		ManagementView managementView = null;
 		ComponentType componentType = null;
 
 		ManagedComponent managedComponent = null;
 		report.setStatus(ConfigurationUpdateStatus.SUCCESS);
 		try {
-			
+
 			managementView = getConnection().getManagementView();
-			managedComponent = managementView.getComponent(this.name, componentType);
+			managedComponent = managementView.getComponent(this.name,
+					componentType);
 			Map<String, ManagedProperty> managedProperties = managedComponent
 					.getProperties();
 
@@ -319,7 +326,7 @@ public abstract class Facet implements ProfileServiceComponent<ResourceComponent
 							.getResourceType());
 
 			try {
-				managementView.updateComponent(managedComponent);				
+				managementView.updateComponent(managedComponent);
 			} catch (Exception e) {
 				LOG.error("Unable to update component ["
 						+ managedComponent.getName() + "] of type "
@@ -353,36 +360,36 @@ public abstract class Facet implements ProfileServiceComponent<ResourceComponent
 				+ managedComponent.toString() + "...");
 		ManagementView managementView = getConnection().getManagementView();
 		managementView.updateComponent(managedComponent);
-		
+
 	}
 
 	@Override
 	public void deleteResource() throws Exception {
 
-//		DeploymentManager deploymentManager = ProfileServiceUtil
-//				.getDeploymentManager();
-//
-//		log.debug("Stopping deployment [" + this.deploymentName + "]...");
-//		DeploymentProgress progress = deploymentManager
-//				.stop(this.deploymentName);
-//		DeploymentStatus stopStatus = DeploymentUtils.run(progress);
-//		if (stopStatus.isFailed()) {
-//			log.error("Failed to stop deployment '" + this.deploymentName
-//					+ "'.", stopStatus.getFailure());
-//			throw new Exception("Failed to stop deployment '"
-//					+ this.deploymentName + "' - cause: "
-//					+ stopStatus.getFailure());
-//		}
-//		log.debug("Removing deployment [" + this.deploymentName + "]...");
-//		progress = deploymentManager.remove(this.deploymentName);
-//		DeploymentStatus removeStatus = DeploymentUtils.run(progress);
-//		if (removeStatus.isFailed()) {
-//			log.error("Failed to remove deployment '" + this.deploymentName
-//					+ "'.", removeStatus.getFailure());
-//			throw new Exception("Failed to remove deployment '"
-//					+ this.deploymentName + "' - cause: "
-//					+ removeStatus.getFailure());
-//		}
+		// DeploymentManager deploymentManager = ProfileServiceUtil
+		// .getDeploymentManager();
+		//
+		// log.debug("Stopping deployment [" + this.deploymentName + "]...");
+		// DeploymentProgress progress = deploymentManager
+		// .stop(this.deploymentName);
+		// DeploymentStatus stopStatus = DeploymentUtils.run(progress);
+		// if (stopStatus.isFailed()) {
+		// log.error("Failed to stop deployment '" + this.deploymentName
+		// + "'.", stopStatus.getFailure());
+		// throw new Exception("Failed to stop deployment '"
+		// + this.deploymentName + "' - cause: "
+		// + stopStatus.getFailure());
+		// }
+		// log.debug("Removing deployment [" + this.deploymentName + "]...");
+		// progress = deploymentManager.remove(this.deploymentName);
+		// DeploymentStatus removeStatus = DeploymentUtils.run(progress);
+		// if (removeStatus.isFailed()) {
+		// log.error("Failed to remove deployment '" + this.deploymentName
+		// + "'.", removeStatus.getFailure());
+		// throw new Exception("Failed to remove deployment '"
+		// + this.deploymentName + "' - cause: "
+		// + removeStatus.getFailure());
+		// }
 
 	}
 
@@ -426,7 +433,7 @@ public abstract class Facet implements ProfileServiceComponent<ResourceComponent
 		packageDetails.setLocation(deploymentFile.getPath());
 		if (!deploymentFile.isDirectory())
 			packageDetails.setFileSize(deploymentFile.length());
-		packageDetails.setFileCreatedDate(null); 
+		packageDetails.setFileCreatedDate(null);
 		Set<ResourcePackageDetails> packages = new HashSet<ResourcePackageDetails>();
 		packages.add(packageDetails);
 
@@ -480,7 +487,7 @@ public abstract class Facet implements ProfileServiceComponent<ResourceComponent
 
 		return this.versions;
 	}
-	
+
 	public ProfileServiceConnection getConnection() {
 		return ((ApplicationServerComponent) this.resourceContext
 				.getParentResourceComponent()).getConnection();

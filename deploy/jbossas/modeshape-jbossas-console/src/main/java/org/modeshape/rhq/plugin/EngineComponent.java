@@ -23,6 +23,7 @@
  */
 package org.modeshape.rhq.plugin;
 
+import java.util.Map;
 import java.util.Set;
 
 import javax.naming.NamingException;
@@ -31,6 +32,9 @@ import org.jboss.managed.api.ManagedComponent;
 import org.jboss.metatype.api.values.MetaValue;
 import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
 import org.modeshape.rhq.plugin.util.ProfileServiceUtil;
+import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType;
+import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Engine;
+import org.rhq.core.domain.configuration.Configuration;
 import org.rhq.core.domain.measurement.AvailabilityType;
 import org.rhq.core.domain.measurement.MeasurementReport;
 import org.rhq.core.domain.measurement.MeasurementScheduleRequest;
@@ -45,7 +49,7 @@ public class EngineComponent extends Facet {
 	 */
 	@Override
 	String getComponentType() {
-		return null;
+		return ComponentType.Engine.MODESHAPE_ENGINE;
 	}
 
 	/**
@@ -74,6 +78,26 @@ public class EngineComponent extends Facet {
 
 		return isRunning;
 	}
+	
+	
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see org.modeshape.rhq.plugin.Facet#setOperationArguments(java.lang.String, org.rhq.core.domain.configuration.Configuration, java.util.Map)
+	 */
+	@Override
+	protected void setOperationArguments(String name,
+			Configuration configuration, Map<String, Object> valueMap) {
+		// Parameter logic for engine Operations
+		if (name.equals(Engine.Operations.SHUTDOWN)) {
+			//no parms
+		} else if (name.equals(Engine.Operations.RESTART)) {
+			//no parms
+		} 
+	}
+
+	
+
 
 	/**
 	 * {@inheritDoc}

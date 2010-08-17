@@ -54,7 +54,9 @@ public interface PluginConstants {
 			
 
 			public static interface Operations {
-
+				public final static String SHUTDOWN = "shutdown"; //$NON-NLS-1$
+				public final static String RESTART = "restart"; //$NON-NLS-1$
+				
 			}
 
 			public static interface Metrics {
