@@ -434,7 +434,9 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	 */
 	@ManagementOperation(description = "Shutdowns this engine", impact = Impact.Lifecycle)
 	public void shutdown() {
-		this.engine.shutdown();
+		if (isRunning()){
+			this.engine.shutdown();
+		}
 	}
 
 	/**
@@ -444,9 +446,9 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	 */
 	@ManagementOperation(description = "Starts this engine", impact = Impact.Lifecycle)
 	public void start() {
-		this.engine.start();
-		// force initialization and loading
-		this.getRepositories();
+		if (!isRunning()){
+			this.engine.start();
+		}
 	}
 
 	protected JcrEngine getEngine() {
