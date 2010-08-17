@@ -45,9 +45,11 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.Reflection;
 import org.modeshape.common.util.Logger.Level;
 import org.modeshape.common.util.Reflection.Property;
+import org.modeshape.graph.connector.RepositoryConnectionPool;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.jboss.managed.ManagedEngine.Component;
 import org.modeshape.jboss.managed.ManagedEngine.ManagedProperty;
+import org.modeshape.jboss.managed.util.ManagedUtils;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.repository.sequencer.Sequencer;
 import org.modeshape.repository.sequencer.SequencerConfig;
@@ -159,79 +161,12 @@ public class ManagedSequencingService implements ModeShapeManagedObject {
 	public List<ManagedProperty> getProperties(String objectName,
 			Component objectType) {
 
-		Reflection reflection = null;
-
-		List<Property> props = null;
 		List<ManagedProperty> managedProps = new ArrayList<ManagedProperty>();
-		try {
 
-			if (objectType.equals(Component.SEQUENCER)) {
-				reflection = new Reflection(SequencerConfig.class);
-				SequencerConfig sequencerConfig = getSequencer(objectName);
-				props = reflection.getAllPropertiesOn(sequencerConfig);
-			}
-
-		} catch (SecurityException e) {
-			Logger.getLogger(getClass()).log(Level.ERROR, e,
-					JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-					objectName);
-		} catch (IllegalArgumentException e) {
-			{
-				Logger
-						.getLogger(getClass())
-						.log(
-								Level.ERROR,
-								e,
-								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-								objectName);
-			}
-		} catch (NoSuchMethodException e) {
-			{
-				Logger
-						.getLogger(getClass())
-						.log(
-								Level.ERROR,
-								e,
-								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-								objectName);
-			}
-		} catch (IllegalAccessException e) {
-			{
-				Logger
-						.getLogger(getClass())
-						.log(
-								Level.ERROR,
-								e,
-								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-								objectName);
-			}
-		} catch (InvocationTargetException e) {
-			{
-				Logger
-						.getLogger(getClass())
-						.log(
-								Level.ERROR,
-								e,
-								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-								objectName);
-			}
-		}
-
-		if (props != null) {
-			for (Property prop : props) {
-				if (prop.getType().isPrimitive()
-						|| prop.getType().toString().contains("java.lang.String")) {
-					if (prop.getValue().getClass().isArray()){
-						StringBuffer sb = new StringBuffer();
-						String[] stringArray = (String[])prop.getValue();
-						for (String cell:stringArray){
-							sb.append(cell).append(" ");
-						}
-					prop.setValue(sb.toString());
-					}
-					managedProps.add(new ManagedProperty(prop));
-				}
-			}
+		if (objectType.equals(Component.SEQUENCER)) {
+			SequencerConfig sequencerConfig = getSequencer(objectName);
+			managedProps = ManagedUtils.getProperties(objectType,
+					sequencerConfig);
 		}
 
 		return managedProps;

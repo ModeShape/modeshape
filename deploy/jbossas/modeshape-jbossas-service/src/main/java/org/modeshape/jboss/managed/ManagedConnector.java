@@ -35,6 +35,7 @@ import org.jboss.managed.api.annotation.ViewUse;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.Logger.Level;
+import org.modeshape.graph.connector.RepositoryConnectionPool;
 import org.modeshape.graph.connector.RepositorySource;
 
 /**
@@ -46,6 +47,7 @@ public class ManagedConnector implements ModeShapeManagedObject {
     // TODO get rid of this constructor
     protected ManagedConnector() {
         this.connector = null;
+        this.connectionPool = null;
     }
 
     /****************************** above for temporary testing only ***********************************************************/
@@ -56,15 +58,24 @@ public class ManagedConnector implements ModeShapeManagedObject {
      * The ModeShape object being managed and delegated to (never <code>null</code>).
      */
     private final RepositorySource connector;
+    
+    /**
+     * The ModeShape connection pool for the source (never <code>null</code>).
+     */
+    private final RepositoryConnectionPool connectionPool;
+
 
     /**
      * Creates a JBoss managed object for the specified repository source.
      * 
      * @param connector the repository source being managed (never <code>null</code>)
+     * @param connectionPool 
      */
-    public ManagedConnector( RepositorySource connector ) {
+    public ManagedConnector( RepositorySource connector, RepositoryConnectionPool connectionPool ) {
         CheckArg.isNotNull(connector, "connector");
+        CheckArg.isNotNull(connectionPool, "connectionPool");
         this.connector = connector;
+        this.connectionPool = connectionPool;
     }
 
     /**
@@ -196,5 +207,12 @@ public class ManagedConnector implements ModeShapeManagedObject {
         CheckArg.isNonNegative(limit, "limit");
         this.connector.setRetryLimit(limit);
     }
+
+	/**
+	 * @return connectionPool
+	 */
+	public RepositoryConnectionPool getConnectionPool() {
+		return connectionPool;
+	}
 
 }

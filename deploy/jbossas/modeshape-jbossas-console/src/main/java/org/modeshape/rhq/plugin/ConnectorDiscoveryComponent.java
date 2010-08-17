@@ -106,6 +106,8 @@ public class ConnectorDiscoveryComponent implements
 
 			Configuration c = detail.getPluginConfiguration();
 
+
+			//Load connector properties
 			operation = "getProperties";
 
 			MetaValue[] args = new MetaValue[] {
@@ -119,23 +121,25 @@ public class ConnectorDiscoveryComponent implements
 			MetaValue[] propertyArray = ((CollectionValueSupport) properties)
 					.getElements();
 
-			PropertyList list = new PropertyList("propertyList");
-			PropertyMap propMap = null;
-			c.put(list);
+			PropertyList connectorlist = new PropertyList("connectorPropertyList");
+			c.put(connectorlist);
+			loadProperties(propertyArray, connectorlist);
+
+			//Load connection pool properties
+			args = new MetaValue[] {
+					MetaValueFactory.getInstance().create(name),
+					MetaValueFactory.getInstance().create(
+							ManagedEngine.Component.CONNECTIONPOOL) };
+
+			properties = ModeShapeManagementView
+					.executeManagedOperation(mc, operation, args);
+
+			propertyArray = ((CollectionValueSupport) properties)
+					.getElements();
+			PropertyList connectionPoollist = new PropertyList("connectionpoolPropertyList");
+			c.put(connectionPoollist);
+			loadProperties(propertyArray, connectionPoollist);
 			
-			for (MetaValue property : propertyArray) {
-
-				CompositeValueSupport proCvs = (CompositeValueSupport) property;
-				propMap = new PropertyMap("map");
-				propMap.put(new PropertySimple("label", ProfileServiceUtil
-						.stringValue(proCvs.get("label"))));
-				propMap.put(new PropertySimple("value", ProfileServiceUtil
-						.stringValue(proCvs.get("value"))));
-				propMap.put(new PropertySimple("description", ProfileServiceUtil
-						.stringValue(proCvs.get("description"))));
-				list.add(propMap);
-			}
-
 			detail.setPluginConfiguration(c);
 
 			// Add to return values
@@ -145,5 +149,27 @@ public class ConnectorDiscoveryComponent implements
 
 		return discoveredResources;
 
+	}
+
+	/**
+	 * @param propertyArray
+	 * @param list
+	 * @throws Exception
+	 */
+	private void loadProperties(MetaValue[] propertyArray, PropertyList list)
+			throws Exception {
+		PropertyMap propMap;
+		for (MetaValue property : propertyArray) {
+
+			CompositeValueSupport proCvs = (CompositeValueSupport) property;
+			propMap = new PropertyMap("map");
+			propMap.put(new PropertySimple("label", ProfileServiceUtil
+					.stringValue(proCvs.get("label"))));
+			propMap.put(new PropertySimple("value", ProfileServiceUtil
+					.stringValue(proCvs.get("value"))));
+			propMap.put(new PropertySimple("description", ProfileServiceUtil
+					.stringValue(proCvs.get("description"))));
+			list.add(propMap);
+		}
 	}
 }

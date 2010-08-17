@@ -23,7 +23,6 @@
  */
 package org.modeshape.jboss.managed;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,11 +49,12 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.Reflection;
 import org.modeshape.common.util.Logger.Level;
 import org.modeshape.common.util.Reflection.Property;
+import org.modeshape.graph.connector.RepositoryConnectionPool;
 import org.modeshape.graph.connector.RepositorySource;
+import org.modeshape.jboss.managed.util.ManagedUtils;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
-import org.modeshape.repository.sequencer.SequencerConfig;
 import org.modeshape.repository.sequencer.SequencingService;
 
 /**
@@ -72,7 +72,7 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	private JcrEngine engine;
 
 	public static enum Component {
-		CONNECTOR, SEQUENCER
+		CONNECTOR, SEQUENCER, CONNECTIONPOOL
 	}
 
 	public ManagedEngine() {
@@ -108,8 +108,13 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 						.getRepositorySource(repositoryName);
 				assert (repositorySource != null) : "Repository '"
 						+ repositoryName + "' does not exist";
+				RepositoryConnectionPool repositoryConnectionPool = this.engine
+						.getRepositoryService().getRepositoryLibrary()
+						.getConnectionPool(repositoryName);
+				assert (repositoryConnectionPool != null) : "Repository Connection Pool '"
+						+ repositoryConnectionPool + "' does not exist";
 				ManagedConnector connector = new ManagedConnector(
-						repositorySource);
+						repositorySource, repositoryConnectionPool);
 
 				connectors.add(connector);
 			}
@@ -125,86 +130,24 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	 * @param objectName
 	 * @param objectType
 	 * 
-	 * @return an collection of managed properties (may be
-	 *         <code>null</code>)
+	 * @return an collection of managed properties (may be <code>null</code>)
 	 */
 	@ManagementOperation(description = "Obtains the properties for an object", impact = Impact.ReadOnly)
 	public List<ManagedProperty> getProperties(String objectName,
 			Component objectType) {
 
-		Reflection reflection = null;
-
-		List<Property> props = null;
 		List<ManagedProperty> managedProps = new ArrayList<ManagedProperty>();
-		try {
 
-			if (objectType.equals(Component.CONNECTOR)) {
-				reflection = new Reflection(RepositorySource.class);
-				RepositorySource repositorySource = getConnector(objectName);
-				props = reflection.getAllPropertiesOn(repositorySource);
-			}
-
-		} catch (SecurityException e) {
-			Logger.getLogger(getClass()).log(Level.ERROR, e,
-					JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-					objectName);
-		} catch (IllegalArgumentException e) {
-			{
-				Logger
-						.getLogger(getClass())
-						.log(
-								Level.ERROR,
-								e,
-								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-								objectName);
-			}
-		} catch (NoSuchMethodException e) {
-			{
-				Logger
-						.getLogger(getClass())
-						.log(
-								Level.ERROR,
-								e,
-								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-								objectName);
-			}
-		} catch (IllegalAccessException e) {
-			{
-				Logger
-						.getLogger(getClass())
-						.log(
-								Level.ERROR,
-								e,
-								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-								objectName);
-			}
-		} catch (InvocationTargetException e) {
-			{
-				Logger
-						.getLogger(getClass())
-						.log(
-								Level.ERROR,
-								e,
-								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-								objectName);
-			}
-		}
-
-		if (props != null) {
-			for (Property prop : props) {
-				if (prop.getType().isPrimitive()
-						|| prop.getType().toString().contains("java.lang.String")) {
-					if (prop.getValue().getClass().isArray()){
-						StringBuffer sb = new StringBuffer();
-						String[] stringArray = (String[])prop.getValue();
-						for (String cell:stringArray){
-							sb.append(cell).append(" ");
-						}
-					prop.setValue(sb.toString());
-					}
-					managedProps.add(new ManagedProperty(prop));
-				}
-			}
+		if (objectType.equals(Component.CONNECTOR)) {
+			RepositorySource repositorySource = getConnector(objectName);
+			managedProps = ManagedUtils.getProperties(objectType,
+					repositorySource);
+		} else if (objectType.equals(Component.CONNECTIONPOOL)) {
+			RepositoryConnectionPool connectionPool = this.engine
+					.getRepositoryService().getRepositoryLibrary()
+					.getConnectionPool(objectName);
+			managedProps = ManagedUtils.getProperties(objectType,
+					connectionPool);
 		}
 
 		return managedProps;
