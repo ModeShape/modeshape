@@ -365,6 +365,7 @@ public class ModeShapeManagementView implements PluginConstants {
 				} catch (Exception e) {
 					final String msg = "Exception invoking " + operation; //$NON-NLS-1$
 					LOG.error(msg, e);
+					throw e;
 				}
 			}
 		}
