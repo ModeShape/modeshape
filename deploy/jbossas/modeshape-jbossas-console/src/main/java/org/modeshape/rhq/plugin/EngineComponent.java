@@ -25,15 +25,22 @@ package org.modeshape.rhq.plugin;
 
 import java.util.Set;
 
+import javax.naming.NamingException;
+
+import org.jboss.managed.api.ManagedComponent;
+import org.jboss.metatype.api.values.MetaValue;
+import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
+import org.modeshape.rhq.plugin.util.ProfileServiceUtil;
+import org.rhq.core.domain.measurement.AvailabilityType;
 import org.rhq.core.domain.measurement.MeasurementReport;
 import org.rhq.core.domain.measurement.MeasurementScheduleRequest;
 import org.rhq.core.pluginapi.inventory.CreateResourceReport;
 
 public class EngineComponent extends Facet {
-
+	
 	/**
 	 * {@inheritDoc}
-	 *
+	 * 
 	 * @see org.modeshape.rhq.plugin.Facet#getComponentType()
 	 */
 	@Override
@@ -43,8 +50,36 @@ public class EngineComponent extends Facet {
 
 	/**
 	 * {@inheritDoc}
-	 *
-	 * @see org.modeshape.rhq.plugin.Facet#getValues(org.rhq.core.domain.measurement.MeasurementReport, java.util.Set)
+	 * 
+	 * @see org.modeshape.rhq.plugin.Facet#getAvailability()
+	 */
+	@Override
+	public AvailabilityType getAvailability() {
+		AvailabilityType isRunning = AvailabilityType.DOWN;
+
+		try {
+			ManagedComponent mc = ProfileServiceUtil.getManagedEngine(this
+					.getConnection());
+			MetaValue running = ModeShapeManagementView
+					.executeManagedOperation(mc, "isRunning",
+							new MetaValue[] { null });
+			if (ProfileServiceUtil.booleanValue(running).equals(Boolean.TRUE)) {
+				isRunning = AvailabilityType.UP;
+			}
+		} catch (NamingException e) {
+			LOG.error("NamingException in getAvailability", e);
+		} catch (Exception e) {
+			LOG.error("Exception in getAvailability", e);
+		}
+
+		return isRunning;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * @see org.modeshape.rhq.plugin.Facet#getValues(org.rhq.core.domain.measurement.MeasurementReport,
+	 *      java.util.Set)
 	 */
 	@Override
 	public void getValues(MeasurementReport arg0,
@@ -53,7 +88,7 @@ public class EngineComponent extends Facet {
 
 	/**
 	 * {@inheritDoc}
-	 *
+	 * 
 	 * @see org.rhq.core.pluginapi.inventory.CreateChildResourceFacet#createResource(org.rhq.core.pluginapi.inventory.CreateResourceReport)
 	 */
 	@Override
