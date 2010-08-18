@@ -106,6 +106,20 @@ public final class CommonI18n {
     public static I18n expectingValidBooleanAtLineAndColumn;
     public static I18n endPositionMustBeGreaterThanStartingPosition;
 
+    // ComponentConfig annotations
+    public static I18n componentConfigNamePropertyDescription;
+    public static I18n componentConfigNamePropertyLabel;
+    public static I18n componentConfigNamePropertyCategory;
+    public static I18n componentConfigDescriptionPropertyDescription;
+    public static I18n componentConfigDescriptionPropertyLabel;
+    public static I18n componentConfigDescriptionPropertyCategory;
+    public static I18n componentConfigClassnamePropertyDescription;
+    public static I18n componentConfigClassnamePropertyLabel;
+    public static I18n componentConfigClassnamePropertyCategory;
+    public static I18n componentConfigClasspathPropertyDescription;
+    public static I18n componentConfigClasspathPropertyLabel;
+    public static I18n componentConfigClasspathPropertyCategory;
+
     static {
         try {
             I18n.initialize(CommonI18n.class);

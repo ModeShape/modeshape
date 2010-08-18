@@ -30,6 +30,9 @@ import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.CommonI18n;
+import org.modeshape.common.annotation.Category;
+import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Label;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ClassUtil;
 
@@ -39,10 +42,26 @@ import org.modeshape.common.util.ClassUtil;
 @Immutable
 public class ComponentConfig implements Comparable<ComponentConfig> {
 
+    @Description( i18n = CommonI18n.class, value = "componentConfigNamePropertyDescription" )
+    @Label( i18n = CommonI18n.class, value = "componentConfigNamePropertyLabel" )
+    @Category( i18n = CommonI18n.class, value = "componentConfigNamePropertyCategory" )
     private final String name;
+
+    @Description( i18n = CommonI18n.class, value = "componentConfigDescriptionPropertyDescription" )
+    @Label( i18n = CommonI18n.class, value = "componentConfigDescriptionPropertyLabel" )
+    @Category( i18n = CommonI18n.class, value = "componentConfigDescriptionPropertyCategory" )
     private final String description;
+
+    @Description( i18n = CommonI18n.class, value = "componentConfigClassnamePropertyDescription" )
+    @Label( i18n = CommonI18n.class, value = "componentConfigClassnamePropertyLabel" )
+    @Category( i18n = CommonI18n.class, value = "componentConfigClassnamePropertyCategory" )
     private final String componentClassname;
+
+    // @Description( i18n = CommonI18n.class, value = "componentConfigClasspathPropertyDescription" )
+    // @Label( i18n = CommonI18n.class, value = "componentConfigClasspathPropertyLabel" )
+    // @Category( i18n = CommonI18n.class, value = "componentConfigClasspathPropertyCategory" )
     private final List<String> classpath;
+
     private final Map<String, Object> properties;
     private final long timestamp;
 
