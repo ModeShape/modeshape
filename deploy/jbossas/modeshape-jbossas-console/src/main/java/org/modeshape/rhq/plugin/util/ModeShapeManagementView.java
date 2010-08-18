@@ -19,6 +19,7 @@ import org.jboss.metatype.api.values.MetaValueFactory;
 import org.modeshape.jboss.managed.ManagedRepository;
 import org.modeshape.jboss.managed.ManagedSequencerConfig;
 import org.modeshape.rhq.plugin.objects.ExecutedResult;
+import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Connector;
 import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Engine;
 import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
 
@@ -28,6 +29,9 @@ public class ModeShapeManagementView implements PluginConstants {
 
 	private static final Log LOG = LogFactory
 			.getLog(PluginConstants.DEFAULT_LOGGER_CATEGORY);
+
+	private static final MetaValueFactory metaValueFactory = MetaValueFactory
+			.getInstance();
 
 	public ModeShapeManagementView() {
 
@@ -40,80 +44,7 @@ public class ModeShapeManagementView implements PluginConstants {
 			String componentType, String identifier, String metric,
 			Map<String, Object> valueMap) {
 		Object resultObject = new Object();
-
-		// if
-		// (componentType.equals(PluginConstants.ComponentType.Platform.NAME)) {
-		// resultObject = getPlatformMetric(connection, componentType, metric,
-		// valueMap);
-		// } else if
-		// (componentType.equals(PluginConstants.ComponentType.VDB.NAME)) {
-		// resultObject = getVdbMetric(connection, componentType, identifier,
-		// metric, valueMap);
-		// }
-
-		return resultObject;
-	}
-
-	private Object getPlatformMetric(ProfileServiceConnection connection,
-			String componentType, String metric, Map<String, Object> valueMap) {
-
-		Object resultObject = new Object();
-
-		// if (metric
-		// .equals(PluginConstants.ComponentType.Platform.Metrics.QUERY_COUNT))
-		// {
-		// resultObject = new Double(getQueryCount(connection).doubleValue());
-		// } else {
-		// if (metric
-		// .equals(PluginConstants.ComponentType.Platform.Metrics.SESSION_COUNT))
-		// {
-		// resultObject = new Double(getSessionCount(connection).doubleValue());
-		// } else {
-		// if (metric
-		// .equals(PluginConstants.ComponentType.Platform.Metrics.LONG_RUNNING_QUERIES))
-		// {
-		// Collection<Request> longRunningQueries = new ArrayList<Request>();
-		// getRequestCollectionValue(getLongRunningQueries(connection),
-		// longRunningQueries);
-		// resultObject = new Double(longRunningQueries.size());
-		// }
-		// }
-		// }
-
-		return resultObject;
-	}
-
-	private Object getVdbMetric(ProfileServiceConnection connection,
-			String componentType, String identifier, String metric,
-			Map<String, Object> valueMap) {
-
-		Object resultObject = new Object();
-
-		// if (metric
-		// .equals(PluginConstants.ComponentType.VDB.Metrics.ERROR_COUNT)) {
-		// // TODO remove version parameter after AdminAPI is changed
-		// resultObject = getErrorCount(connection, (String)
-		// valueMap.get(VDB.NAME));
-		// } else if (metric
-		// .equals(PluginConstants.ComponentType.VDB.Metrics.STATUS)) {
-		// // TODO remove version parameter after AdminAPI is changed
-		// resultObject = getVDBStatus(connection, (String) valueMap
-		// .get(VDB.NAME), 1);
-		// } else if (metric
-		// .equals(PluginConstants.ComponentType.VDB.Metrics.QUERY_COUNT)) {
-		// resultObject = new Double(getQueryCount(connection).doubleValue());
-		// } else if (metric
-		// .equals(PluginConstants.ComponentType.VDB.Metrics.SESSION_COUNT)) {
-		// resultObject = new Double(getSessionCount(connection).doubleValue());
-		// } else if (metric
-		// .equals(PluginConstants.ComponentType.VDB.Metrics.LONG_RUNNING_QUERIES))
-		// {
-		// Collection<Request> longRunningQueries = new ArrayList<Request>();
-		// getRequestCollectionValue(getLongRunningQueries(connection),
-		// longRunningQueries);
-		// resultObject = new Double(longRunningQueries.size());
-		//
-		// }
+		// TODO add metrics once available
 
 		return resultObject;
 	}
@@ -132,6 +63,10 @@ public class ModeShapeManagementView implements PluginConstants {
 		} else if (operationResult.getComponentType().equals(
 				ComponentType.Repository.NAME)) {
 			// TODO Implement repo ops
+		} else if (operationResult.getComponentType().equals(
+				ComponentType.Connector.NAME)) {
+			executeConnectorOperation(connection, operationResult,
+					operationResult.getOperationName(), valueMap);
 		}
 
 	}
@@ -161,156 +96,26 @@ public class ModeShapeManagementView implements PluginConstants {
 		}
 	}
 
-	// private void executeVdbOperation(ProfileServiceConnection connection,
-	// ExecutedResult operationResult,
-	// final String operationName, final Map<String, Object> valueMap) {
-	// Collection<Request> resultObject = new ArrayList<Request>();
-	// Collection<Session> activeSessionsCollection = new ArrayList<Session>();
-	// String vdbName = (String) valueMap
-	// .get(PluginConstants.ComponentType.VDB.NAME);
-	// String vdbVersion = (String) valueMap
-	// .get(PluginConstants.ComponentType.VDB.VERSION);
-	//
-	// if (operationName.equals(VDB.Operations.GET_PROPERTIES)) {
-	// List<String> fieldNameList = operationResult.getFieldNameList();
-	// getProperties(connection, PluginConstants.ComponentType.VDB.NAME);
-	// operationResult.setContent(createReportResultList(fieldNameList,
-	// resultObject.iterator()));
-	// } else if (operationName.equals(VDB.Operations.GET_SESSIONS)) {
-	// List<String> fieldNameList = operationResult.getFieldNameList();
-	// MetaValue sessionMetaValue = getSessions(connection);
-	// getSessionCollectionValueForVDB(sessionMetaValue,
-	// activeSessionsCollection, vdbName);
-	// operationResult.setContent(createReportResultList(fieldNameList,
-	// activeSessionsCollection.iterator()));
-	// } else if (operationName.equals(VDB.Operations.GET_REQUESTS)) {
-	// List<String> fieldNameList = operationResult.getFieldNameList();
-	// MetaValue requestMetaValue = getRequestsForVDB(connection, vdbName,
-	// Integer
-	// .parseInt(vdbVersion));
-	// getRequestCollectionValue(requestMetaValue, resultObject);
-	// operationResult.setContent(createReportResultList(fieldNameList,
-	// resultObject.iterator()));
-	// }
-	//
-	// }
-	//
-	// /*
-	// * Helper methods
-	// */
-	//
-	// public MetaValue getProperties(ProfileServiceConnection connection, final
-	// String component) {
-	//
-	// MetaValue propertyValue = null;
-	// MetaValue args = null;
-	//
-	// try {
-	// propertyValue = executeManagedOperation(connection, mc,
-	// PluginConstants.Operation.GET_PROPERTIES, args);
-	// } catch (Exception e) {
-	//			final String msg = "Exception executing operation: " + Platform.Operations.GET_PROPERTIES; //$NON-NLS-1$
-	// LOG.error(msg, e);
-	// }
-	//
-	// return propertyValue;
-	//
-	// }
-	//
-	// protected MetaValue getRequests(ProfileServiceConnection connection) {
-	//
-	// MetaValue requestsCollection = null;
-	// MetaValue args = null;
-	//
-	// try {
-	// requestsCollection = executeManagedOperation(connection, mc,
-	//					
-	// PluginConstants.Operation.GET_REQUESTS, args);
-	// } catch (Exception e) {
-	//			final String msg = "Exception executing operation: " + Platform.Operations.GET_REQUESTS; //$NON-NLS-1$
-	// LOG.error(msg, e);
-	// }
-	//
-	// return requestsCollection;
-	//
-	// }
-	//
-	// protected MetaValue getRequestsForVDB(ProfileServiceConnection
-	// connection, String vdbName, int vdbVersion) {
-	//
-	// MetaValue requestsCollection = null;
-	// MetaValue[] args = new MetaValue[] {
-	// MetaValueFactory.getInstance().create(vdbName),
-	// MetaValueFactory.getInstance().create(vdbVersion) };
-	//
-	// try {
-	// requestsCollection = executeManagedOperation(connection, mc,
-	// PluginConstants.ComponentType.VDB.Operations.GET_REQUESTS,
-	// args);
-	// } catch (Exception e) {
-	//			final String msg = "Exception executing operation: " + Platform.Operations.GET_REQUESTS; //$NON-NLS-1$
-	// LOG.error(msg, e);
-	// }
-	//
-	// return requestsCollection;
-	//
-	// }
-	//
-	// protected MetaValue getTransactions(ProfileServiceConnection connection)
-	// {
-	//
-	// MetaValue transactionsCollection = null;
-	// MetaValue args = null;
-	//
-	// try {
-	// transactionsCollection = executeManagedOperation(connection, mc,
-	// Platform.Operations.GET_TRANSACTIONS, args);
-	// } catch (Exception e) {
-	//			final String msg = "Exception executing operation: " + Platform.Operations.GET_TRANSACTIONS; //$NON-NLS-1$
-	// LOG.error(msg, e);
-	// }
-	//
-	// return transactionsCollection;
-	//
-	// }
-	//
-	// public MetaValue getSessions(ProfileServiceConnection connection) {
-	//
-	// MetaValue sessionCollection = null;
-	// MetaValue args = null;
-	//
-	// try {
-	// sessionCollection = executeManagedOperation(connection, mc,
-	// PluginConstants.Operation.GET_SESSIONS, args);
-	// } catch (Exception e) {
-	//			final String msg = "Exception executing operation: " + Platform.Operations.GET_SESSIONS; //$NON-NLS-1$
-	// LOG.error(msg, e);
-	// }
-	// return sessionCollection;
-	//
-	// }
-	//
-	// public static String getVDBStatus(ProfileServiceConnection connection,
-	// String vdbName, int version) {
-	//
-	// ManagedComponent mcVdb = null;
-	// try {
-	// mcVdb = ProfileServiceUtil
-	// .getManagedComponent(connection,
-	// new org.jboss.managed.api.ComponentType(
-	// PluginConstants.ComponentType.VDB.TYPE,
-	// PluginConstants.ComponentType.VDB.SUBTYPE),
-	// vdbName);
-	// } catch (NamingException e) {
-	//			final String msg = "NamingException in getVDBStatus(): " + e.getExplanation(); //$NON-NLS-1$
-	// LOG.error(msg, e);
-	// } catch (Exception e) {
-	//			final String msg = "Exception in getVDBStatus(): " + e.getMessage(); //$NON-NLS-1$
-	// LOG.error(msg, e);
-	// }
-	//
-	//		return ProfileServiceUtil.getSimpleValue(mcVdb, "status", String.class); //$NON-NLS-1$
-	// }
+	private void executeConnectorOperation(ProfileServiceConnection connection,
+			ExecutedResult operationResult, final String operationName,
+			final Map<String, Object> valueMap) {
+
+		if (operationName.equals(Connector.Operations.PING)) {
+			try {
+				String connectorName = (String) valueMap
+						.get(Connector.Operations.Parameters.CONNECTOR_NAME);
+				MetaValue[] args = new MetaValue[] { metaValueFactory
+						.create(connectorName) };
+				MetaValue value = executeManagedOperation(ProfileServiceUtil
+						.getManagedEngine(connection), operationName, args);
+				operationResult.setContent(ProfileServiceUtil
+						.stringValue(value));
+			} catch (Exception e) {
+				final String msg = "Exception executing operation: " + Connector.Operations.PING; //$NON-NLS-1$
+				LOG.error(msg, e);
+			}
+		}
+	}
 
 	/**
 	 * @param mc
@@ -341,177 +146,6 @@ public class ModeShapeManagementView implements PluginConstants {
 
 	}
 
-	// public static MetaValue getManagedProperty(
-	// ProfileServiceConnection connection, ManagedComponent mc,
-	// String property, MetaValue... args) throws Exception {
-	//
-	// mc = getDQPManagementView(connection, mc);
-	//
-	// try {
-	// mc.getProperty(property);
-	// } catch (Exception e) {
-	//			final String msg = "Exception getting the AdminApi in " + property; //$NON-NLS-1$
-	// LOG.error(msg, e);
-	// }
-	//
-	//		throw new Exception("No property found with given name =" + property); //$NON-NLS-1$
-	// }
-	//
-	// private Integer getQueryCount(ProfileServiceConnection connection) {
-	//
-	// Integer count = new Integer(0);
-	//
-	// MetaValue requests = null;
-	// Collection<Request> requestsCollection = new ArrayList<Request>();
-	//
-	// requests = getRequests(connection);
-	//
-	// getRequestCollectionValue(requests, requestsCollection);
-	//
-	// if (requestsCollection != null && !requestsCollection.isEmpty()) {
-	// count = requestsCollection.size();
-	// }
-	//
-	// return count;
-	// }
-	//
-	// private Integer getSessionCount(ProfileServiceConnection connection) {
-	//
-	// Collection<Session> activeSessionsCollection = new ArrayList<Session>();
-	// MetaValue sessionMetaValue = getSessions(connection);
-	// getSessionCollectionValue(sessionMetaValue, activeSessionsCollection);
-	// return activeSessionsCollection.size();
-	// }
-	//
-	// /**
-	// * @param mcVdb
-	// * @return count
-	// * @throws Exception
-	// */
-	// private int getErrorCount(ProfileServiceConnection connection, String
-	// vdbName) {
-	//
-	// ManagedComponent mcVdb = null;
-	// try {
-	// mcVdb = ProfileServiceUtil
-	// .getManagedComponent(connection,
-	// new org.jboss.managed.api.ComponentType(
-	// PluginConstants.ComponentType.VDB.TYPE,
-	// PluginConstants.ComponentType.VDB.SUBTYPE),
-	// vdbName);
-	// } catch (NamingException e) {
-	//			final String msg = "NamingException in getVDBStatus(): " + e.getExplanation(); //$NON-NLS-1$
-	// LOG.error(msg, e);
-	// } catch (Exception e) {
-	//			final String msg = "Exception in getVDBStatus(): " + e.getMessage(); //$NON-NLS-1$
-	// LOG.error(msg, e);
-	// }
-	//
-	// // Get models from VDB
-	// int count = 0;
-	//		ManagedProperty property = mcVdb.getProperty("models"); //$NON-NLS-1$
-	// CollectionValueSupport valueSupport = (CollectionValueSupport) property
-	// .getValue();
-	// MetaValue[] metaValues = valueSupport.getElements();
-	//
-	// for (MetaValue value : metaValues) {
-	// GenericValueSupport genValueSupport = (GenericValueSupport) value;
-	// ManagedObjectImpl managedObject = (ManagedObjectImpl) genValueSupport
-	// .getValue();
-	//
-	// // Get any model errors/warnings
-	//			MetaValue errors = managedObject.getProperty("errors").getValue(); //$NON-NLS-1$
-	// if (errors != null) {
-	// CollectionValueSupport errorValueSupport = (CollectionValueSupport)
-	// errors;
-	// MetaValue[] errorArray = errorValueSupport.getElements();
-	// count += errorArray.length;
-	// }
-	// }
-	// return count;
-	// }
-	//
-	// protected MetaValue getLongRunningQueries(ProfileServiceConnection
-	// connection) {
-	//
-	// MetaValue requestsCollection = null;
-	// MetaValue args = null;
-	//
-	// try {
-	// requestsCollection = executeManagedOperation(connection, mc,
-	// Platform.Operations.GET_LONGRUNNINGQUERIES, args);
-	// } catch (Exception e) {
-	//			final String msg = "Exception executing operation: " + Platform.Operations.GET_LONGRUNNINGQUERIES; //$NON-NLS-1$
-	// LOG.error(msg, e);
-	// }
-	//
-	// return requestsCollection;
-	// }
-	//
-	// private void getRequestCollectionValue(MetaValue pValue,
-	// Collection<Request> list) {
-	// MetaType metaType = pValue.getMetaType();
-	// if (metaType.isCollection()) {
-	// for (MetaValue value : ((CollectionValueSupport) pValue)
-	// .getElements()) {
-	// if (value.getMetaType().isComposite()) {
-	// RequestMetadataMapper rmm = new RequestMetadataMapper();
-	// RequestMetadata request = (RequestMetadata) rmm
-	// .unwrapMetaValue(value);
-	// list.add(request);
-	// } else {
-	// throw new IllegalStateException(pValue
-	//							+ " is not a Composite type"); //$NON-NLS-1$
-	// }
-	// }
-	// }
-	// }
-	//
-	// private Collection<Session> getSessionsForVDB(ProfileServiceConnection
-	// connection, String vdbName) {
-	// Collection<Session> activeSessionsCollection = Collections.emptyList();
-	// MetaValue sessionMetaValue = getSessions(connection);
-	// getSessionCollectionValueForVDB(sessionMetaValue,
-	// activeSessionsCollection, vdbName);
-	// return activeSessionsCollection;
-	// }
-	//
-	// public static <T> void getTransactionCollectionValue(MetaValue pValue,
-	// Collection<Transaction> list) {
-	// MetaType metaType = pValue.getMetaType();
-	// if (metaType.isCollection()) {
-	// for (MetaValue value : ((CollectionValueSupport) pValue)
-	// .getElements()) {
-	// if (value.getMetaType().isComposite()) {
-	// Transaction transaction = (Transaction) MetaValueFactory
-	// .getInstance().unwrap(value);
-	// list.add(transaction);
-	// } else {
-	// throw new IllegalStateException(pValue
-	//							+ " is not a Composite type"); //$NON-NLS-1$
-	// }
-	// }
-	// }
-	// }
-	//
-	// public static <T> void getSessionCollectionValue(MetaValue pValue,
-	// Collection<Session> list) {
-	// MetaType metaType = pValue.getMetaType();
-	// if (metaType.isCollection()) {
-	// for (MetaValue value : ((CollectionValueSupport) pValue)
-	// .getElements()) {
-	// if (value.getMetaType().isComposite()) {
-	// Session Session = (Session) MetaValueFactory.getInstance()
-	// .unwrap(value);
-	// list.add(Session);
-	// } else {
-	// throw new IllegalStateException(pValue
-	//							+ " is not a Composite type"); //$NON-NLS-1$
-	// }
-	// }
-	// }
-	// }
-	//
 	public static Collection<ManagedRepository> getRepositoryCollectionValue(
 			MetaValue pValue) {
 		Collection<ManagedRepository> list = new ArrayList<ManagedRepository>();

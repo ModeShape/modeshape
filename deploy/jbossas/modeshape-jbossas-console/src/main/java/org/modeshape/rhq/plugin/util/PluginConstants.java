@@ -77,6 +77,29 @@ public interface PluginConstants {
 
 			}
 		}
+		
+		public interface Connector {
+
+			public final static String NAME = "Connector"; //$NON-NLS-1$
+	
+			public static interface Operations {
+				
+				//Connector operations
+				public final static String PING = "pingConnector"; //$NON-NLS-1$
+				
+				//Connection pool operations
+				// public final static String FLUSH = "flush"; //$NON-NLS-1$
+				
+				public static interface Parameters {
+					public final static String CONNECTOR_NAME = "connectorName"; //$NON-NLS-1$
+				}
+
+			}
+
+			public static interface Metrics {
+
+			}
+		}
 
 		public interface SequencingService {
 

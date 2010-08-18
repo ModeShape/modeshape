@@ -23,11 +23,19 @@
  */
 package org.modeshape.rhq.plugin;
 
+import java.util.Map;
 import java.util.Set;
 
+import org.mc4j.ems.connection.EmsConnection;
+import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Engine;
+import org.rhq.core.domain.configuration.Configuration;
 import org.rhq.core.domain.measurement.MeasurementReport;
 import org.rhq.core.domain.measurement.MeasurementScheduleRequest;
 import org.rhq.core.pluginapi.inventory.CreateResourceReport;
+import org.rhq.core.pluginapi.inventory.InvalidPluginConfigurationException;
+import org.rhq.core.pluginapi.inventory.ResourceComponent;
+import org.rhq.core.pluginapi.inventory.ResourceContext;
+import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
 
 public class RepositoryComponent extends Facet {
 
@@ -39,6 +47,22 @@ public class RepositoryComponent extends Facet {
 	@Override
 	String getComponentType() {
 		return null;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see org.modeshape.rhq.plugin.Facet#setOperationArguments(java.lang.String, org.rhq.core.domain.configuration.Configuration, java.util.Map)
+	 */
+	@Override
+	protected void setOperationArguments(String name,
+			Configuration configuration, Map<String, Object> valueMap) {
+		// Parameter logic for engine Operations
+		if (name.equals(Engine.Operations.SHUTDOWN)) {
+			//no parms
+		} else if (name.equals(Engine.Operations.RESTART)) {
+			//no parms
+		} 
 	}
 
 	/**
@@ -58,6 +82,27 @@ public class RepositoryComponent extends Facet {
 	 */
 	@Override
 	public CreateResourceReport createResource(CreateResourceReport arg0) {
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see org.rhq.plugins.jbossas5.ProfileServiceComponent#getConnection()
+	 */
+	@Override
+	public ProfileServiceConnection getConnection() {
+		return ((EngineComponent) this.resourceContext
+				.getParentResourceComponent()).getConnection();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see org.rhq.plugins.jmx.JMXComponent#getEmsConnection()
+	 */
+	@Override
+	public EmsConnection getEmsConnection() {
 		return null;
 	}
 

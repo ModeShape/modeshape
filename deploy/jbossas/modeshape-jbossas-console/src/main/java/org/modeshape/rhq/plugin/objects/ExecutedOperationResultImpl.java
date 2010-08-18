@@ -38,49 +38,49 @@ import org.rhq.core.domain.configuration.definition.PropertyDefinitionSimple;
 import org.rhq.core.domain.operation.OperationDefinition;
 import org.rhq.core.pluginapi.operation.OperationResult;
 
-
 public class ExecutedOperationResultImpl implements ExecutedResult {
 
 	Set operationDefinitionSet;
 
 	String operationName;
-	
+
 	String componentType;
 
 	final static String LISTNAME = "list"; //$NON-NLS-1$
-	
+
 	final static String MAPNAME = "map"; //$NON-NLS-1$
 
 	Object result;
-	
+
 	Object content;
 
 	List fieldNameList;
-	
+
 	OperationResult operationResult = new OperationResult();
 
 	public ExecutedOperationResultImpl() {
 	}
 
-	public ExecutedOperationResultImpl(String componentType, String operationName, Set operationDefinitionSet) {
+	public ExecutedOperationResultImpl(String componentType,
+			String operationName, Set operationDefinitionSet) {
 		this.componentType = componentType;
 		this.operationName = operationName;
 		this.operationDefinitionSet = operationDefinitionSet;
 		init();
 	}
-	
+
 	public String getComponentType() {
 		return this.componentType;
 	}
-	
+
 	public String getOperationName() {
 		return this.operationName;
 	}
-		
+
 	public OperationResult getOperationResult() {
 		return operationResult;
 	}
-	
+
 	public List getFieldNameList() {
 		return fieldNameList;
 	}
@@ -88,11 +88,11 @@ public class ExecutedOperationResultImpl implements ExecutedResult {
 	public Object getResult() {
 		return result;
 	}
-	
+
 	private void setComplexResult() {
 		PropertyList list = new PropertyList(LISTNAME); //$NON-NLS-1$
 		PropertyMap pm;
-		Iterator resultIter = ((List)content).iterator();
+		Iterator resultIter = ((List) content).iterator();
 		while (resultIter.hasNext()) {
 			Map reportRowMap = (Map) resultIter.next();
 			Iterator reportRowKeySetIter = reportRowMap.keySet().iterator();
@@ -100,7 +100,10 @@ public class ExecutedOperationResultImpl implements ExecutedResult {
 
 			while (reportRowKeySetIter.hasNext()) {
 				String key = (String) reportRowKeySetIter.next();
-				pm.put(new PropertySimple(key, reportRowMap.get(key)==null?"":reportRowMap.get(key))); //$NON-NLS-1$
+				pm
+						.put(new PropertySimple(
+								key,
+								reportRowMap.get(key) == null ? "" : reportRowMap.get(key))); //$NON-NLS-1$
 			}
 			list.add(pm);
 		}
@@ -128,12 +131,17 @@ public class ExecutedOperationResultImpl implements ExecutedResult {
 			OperationDefinition opDef = (OperationDefinition) operationsIter
 					.next();
 			if (opDef.getName().equals(operationName)) {
-				if (opDef.getResultsConfigurationDefinition()==null) break;
-					
+				if (opDef.getResultsConfigurationDefinition() == null)
+					break;
+
 				Map propDefs = opDef.getResultsConfigurationDefinition()
 						.getPropertyDefinitions();
 				PropertyDefinition listPropDefinition = (PropertyDefinition) propDefs
 						.get(LISTNAME);
+
+				if (listPropDefinition == null) {
+					return;
+				}
 
 				PropertyDefinition propertyDefinitionMap = ((PropertyDefinitionList) listPropDefinition)
 						.getMemberDefinition();
@@ -141,7 +149,7 @@ public class ExecutedOperationResultImpl implements ExecutedResult {
 						.getPropertyDefinitions();
 				Iterator simplePropertiesIter = simpleProperties.values()
 						.iterator();
-				
+
 				while (simplePropertiesIter.hasNext()) {
 					PropertyDefinition simpleProp = (PropertyDefinition) simplePropertiesIter
 							.next();
@@ -149,7 +157,7 @@ public class ExecutedOperationResultImpl implements ExecutedResult {
 							.getName();
 					fieldNameList.add(fieldName);
 				}
-				
+
 				break;
 			}
 		}

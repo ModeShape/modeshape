@@ -207,7 +207,8 @@ public class ManagedConnector implements ModeShapeManagedObject {
         CheckArg.isNonNegative(limit, "limit");
         this.connector.setRetryLimit(limit);
     }
-
+    
+    //Connection Pool operations and properties
 	/**
 	 * @return connectionPool
 	 */

@@ -23,12 +23,12 @@
  */
 package org.modeshape.jboss.managed;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -46,7 +46,6 @@ import org.jboss.managed.api.annotation.ViewUse;
 import org.joda.time.DateTime;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
-import org.modeshape.common.util.Reflection;
 import org.modeshape.common.util.Logger.Level;
 import org.modeshape.common.util.Reflection.Property;
 import org.modeshape.graph.connector.RepositoryConnectionPool;
@@ -151,25 +150,6 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 		}
 
 		return managedProps;
-	}
-
-	/**
-	 * Obtains a connector by name.
-	 * 
-	 * @param connectorName
-	 * 
-	 * @return RepositorySource - may be <code>null</code>)
-	 */
-	public RepositorySource getConnector(String connectorName) {
-
-		RepositorySource repositorySource = null;
-		if (isRunning()) {
-			repositorySource = this.engine.getRepositorySource(connectorName);
-			assert (repositorySource != null) : "Connector '" + connectorName
-					+ "' does not exist";
-		}
-
-		return repositorySource;
 	}
 
 	/*
@@ -368,6 +348,51 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	}
 
 	/*
+	 * Connector operations
+	 */
+
+	/**
+	 * Obtains a connector by name.
+	 * 
+	 * @param connectorName
+	 * 
+	 * @return RepositorySource - may be <code>null</code>)
+	 */
+	public RepositorySource getConnector(String connectorName) {
+
+		RepositorySource repositorySource = null;
+		if (isRunning()) {
+			repositorySource = this.engine.getRepositorySource(connectorName);
+			assert (repositorySource != null) : "Connector '" + connectorName
+					+ "' does not exist";
+		}
+
+		return repositorySource;
+	}
+
+	/**
+	 * Pings a connector by name.
+	 * 
+	 * @param connectorName
+	 * 
+	 * @return RepositorySource - may be <code>null</code>)
+	 */
+	@ManagementOperation(description = "Pings a connector by name", impact = Impact.ReadOnly)
+	public boolean pingConnector(String connectorName) {
+
+		RepositorySource repositorySource = null;
+		try {
+			repositorySource = this.engine.getRepositorySource(connectorName);
+			return repositorySource.getConnection().ping(2, TimeUnit.SECONDS);
+		} catch (Exception e) {
+			Logger.getLogger(getClass()).log(Level.ERROR, e,
+					JBossManagedI18n.errorDeterminingIfConnectionIsAlive,
+					connectorName);
+			return false;
+		}
+	}
+
+	/*
 	 * SequencingService operations
 	 */
 
@@ -434,7 +459,7 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	 */
 	@ManagementOperation(description = "Shutdowns this engine", impact = Impact.Lifecycle)
 	public void shutdown() {
-		if (isRunning()){
+		if (isRunning()) {
 			this.engine.shutdown();
 		}
 	}
@@ -446,7 +471,7 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	 */
 	@ManagementOperation(description = "Starts this engine", impact = Impact.Lifecycle)
 	public void start() {
-		if (!isRunning()){
+		if (!isRunning()) {
 			this.engine.start();
 		}
 	}

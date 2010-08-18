@@ -25,9 +25,14 @@ package org.modeshape.rhq.plugin;
 
 import java.util.Set;
 
+import org.mc4j.ems.connection.EmsConnection;
 import org.rhq.core.domain.measurement.MeasurementReport;
 import org.rhq.core.domain.measurement.MeasurementScheduleRequest;
 import org.rhq.core.pluginapi.inventory.CreateResourceReport;
+import org.rhq.core.pluginapi.inventory.InvalidPluginConfigurationException;
+import org.rhq.core.pluginapi.inventory.ResourceComponent;
+import org.rhq.core.pluginapi.inventory.ResourceContext;
+import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
 
 public class SequencingServiceComponent extends Facet {
 
@@ -58,6 +63,27 @@ public class SequencingServiceComponent extends Facet {
 	 */
 	@Override
 	public CreateResourceReport createResource(CreateResourceReport arg0) {
+		return null;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see org.rhq.plugins.jbossas5.ProfileServiceComponent#getConnection()
+	 */
+	@Override
+	public ProfileServiceConnection getConnection() {
+		return ((EngineComponent) this.resourceContext
+				.getParentResourceComponent()).getConnection();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see org.rhq.plugins.jmx.JMXComponent#getEmsConnection()
+	 */
+	@Override
+	public EmsConnection getEmsConnection() {
 		return null;
 	}
 

@@ -32,7 +32,6 @@ import org.jboss.deployers.spi.management.ManagementView;
 import org.jboss.managed.api.ComponentType;
 import org.jboss.managed.api.ManagedComponent;
 import org.jboss.managed.api.ManagedProperty;
-import org.mc4j.ems.connection.EmsConnection;
 import org.modeshape.rhq.plugin.objects.ExecutedOperationResultImpl;
 import org.modeshape.rhq.plugin.objects.ExecutedResult;
 import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
@@ -64,7 +63,6 @@ import org.rhq.core.pluginapi.inventory.ResourceContext;
 import org.rhq.core.pluginapi.measurement.MeasurementFacet;
 import org.rhq.core.pluginapi.operation.OperationFacet;
 import org.rhq.core.pluginapi.operation.OperationResult;
-import org.rhq.plugins.jbossas5.ApplicationServerComponent;
 import org.rhq.plugins.jbossas5.ProfileServiceComponent;
 import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
 
@@ -486,16 +484,6 @@ public abstract class Facet implements
 		}
 
 		return this.versions;
-	}
-
-	public ProfileServiceConnection getConnection() {
-		return ((ApplicationServerComponent) this.resourceContext
-				.getParentResourceComponent()).getConnection();
-	}
-
-	public EmsConnection getEmsConnection() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 }
