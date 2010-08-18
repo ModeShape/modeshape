@@ -30,37 +30,38 @@
         <mode:source jcr:name="repository" mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" mode:retryLimit="3" mode:defaultWorkspaceName="default"/>
     </mode:sources>
     
-       <mode:sequencers>
+    <mode:sequencers>
+			  <!-- These are configured for demonstration purposes. For real use, adjust the path expressions and use those appropriate for your use case. -->
         <mode:sequencer jcr:name="Fixed Length Text File Sequencer" mode:classname="org.modeshape.sequencer.text.FixedWidthTextSequencer">
-            <mode:description>Text File sequencer</mode:description>        
+            <mode:description>Sequences text files loaded into the repository under '/files/text', extracting comma-separated and delimited files into columnar information.</mode:description>        
             <mode:pathExpression>/files/text/(*.txt[*])/jcr:content[@jcr:data] => /sequenced/text/$1 </mode:pathExpression>
         </mode:sequencer>
         <mode:sequencer jcr:name="Class File Sequencer" mode:classname="org.modeshape.sequencer.classfile.ClassFileSequencer">
-            <mode:description>Class File sequencer</mode:description>        
+            <mode:description>Sequences Java class files loaded into the repository under '/files/class', extracting structural information.</mode:description>        
             <mode:pathExpression>/files/class/(*.class[*])/jcr:content[@jcr:data] => /sequenced/class/$1 </mode:pathExpression>
         </mode:sequencer>
         <mode:sequencer jcr:name="CND File Sequencer" mode:classname="org.modeshape.sequencer.cnd.CndSequencer">
-            <mode:description>CND File sequencer</mode:description>        
+            <mode:description>Sequences CND files loaded into the repository under '/files/cnd', extracting the contained node type definitions.</mode:description>        
             <mode:pathExpression>/files/cnd/(*.cnd[*])/jcr:content[@jcr:data] => /sequenced/cnd/$1 </mode:pathExpression>
         </mode:sequencer>
         <mode:sequencer jcr:name="DDL File Sequencer" mode:classname="org.modeshape.sequencer.ddl.DdlSequencer">
-            <mode:description>DDL File sequencer</mode:description>        
+            <mode:description>Sequences DDL files loaded into the repository under '/files/ddl', extracting the structured abstract syntax tree of the DDL commands and expressions.</mode:description>        
             <mode:pathExpression>/files/class/(*.ddl[*])/jcr:content[@jcr:data] => /sequenced/ddl/$1 </mode:pathExpression>
         </mode:sequencer>     
         <mode:sequencer jcr:name="Java File Sequencer" mode:classname="org.modeshape.sequencer.java.JavaMetadataSequencer">
-            <mode:description>Java File sequencer</mode:description>        
+            <mode:description>Sequences Java source files loaded into the repository under '/files/javafile', extracting structural information.</mode:description>        
             <mode:pathExpression>/files/javafile/(*.java[*])/jcr:content[@jcr:data] => /sequenced/java/$1 </mode:pathExpression>
         </mode:sequencer>
         <mode:sequencer jcr:name="MS Office File Sequencer" mode:classname="org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer">
-            <mode:description>Microsoft Office File sequencer</mode:description>        
+            <mode:description>Sequences Microsoft Office documents and presentations under '/files/msoffice', extracting summary information and structure.</mode:description>        
             <mode:pathExpression>/files/msoffice/(*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /sequenced/msoffice/$1 </mode:pathExpression>
         </mode:sequencer>
         <mode:sequencer jcr:name="XML File Sequencer" mode:classname="org.modeshape.sequencer.xml.XmlSequencer">
-            <mode:description>XML File sequencer</mode:description>        
+            <mode:description>Sequences XML files loaded into the repository under '/files/xml', extracting the contents into the equivalent JCR graph structure.</mode:description>        
             <mode:pathExpression>/files/xml/(*.xml[*])/jcr:content[@jcr:data] => /sequenced/xml/$1 </mode:pathExpression>
         </mode:sequencer>  
         <mode:sequencer jcr:name="ZIP File Sequencer" mode:classname="org.modeshape.sequencer.zip.ZipSequencer">
-            <mode:description>ZIP File sequencer</mode:description>        
+            <mode:description>Sequences ZIP files loaded into the repository under '/files/zip', extracting the archive file contents into the equivalent JCR graph structure of 'nt:file' and 'nt:folder' nodes.</mode:description>        
             <mode:pathExpression>/files/zip/(*.zip[*])/jcr:content[@jcr:data] => /sequenced/zip/$1 </mode:pathExpression>
         </mode:sequencer>                          
         <!--
