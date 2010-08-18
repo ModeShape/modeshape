@@ -72,7 +72,7 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	private JcrEngine engine;
 
 	public static enum Component {
-		CONNECTOR, SEQUENCER, CONNECTIONPOOL
+		CONNECTOR, SEQUENCER, CONNECTIONPOOL, SEQUENCINGSERVICE
 	}
 
 	public ManagedEngine() {

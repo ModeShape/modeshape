@@ -23,13 +23,9 @@
  */
 package org.modeshape.jboss.managed;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import javax.jcr.Repository;
-import javax.jcr.RepositoryException;
 
 import net.jcip.annotations.Immutable;
 
@@ -41,17 +37,9 @@ import org.jboss.managed.api.annotation.ManagementProperties;
 import org.jboss.managed.api.annotation.ManagementProperty;
 import org.jboss.managed.api.annotation.ViewUse;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.Logger;
-import org.modeshape.common.util.Reflection;
-import org.modeshape.common.util.Logger.Level;
-import org.modeshape.common.util.Reflection.Property;
-import org.modeshape.graph.connector.RepositoryConnectionPool;
-import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.jboss.managed.ManagedEngine.Component;
 import org.modeshape.jboss.managed.ManagedEngine.ManagedProperty;
 import org.modeshape.jboss.managed.util.ManagedUtils;
-import org.modeshape.jcr.JcrRepository;
-import org.modeshape.repository.sequencer.Sequencer;
 import org.modeshape.repository.sequencer.SequencerConfig;
 import org.modeshape.repository.sequencer.SequencingService;
 
@@ -167,6 +155,9 @@ public class ManagedSequencingService implements ModeShapeManagedObject {
 			SequencerConfig sequencerConfig = getSequencer(objectName);
 			managedProps = ManagedUtils.getProperties(objectType,
 					sequencerConfig);
+		} else if (objectType.equals(Component.SEQUENCINGSERVICE)) {
+			managedProps = ManagedUtils.getProperties(objectType, this.sequencingService);
+			managedProps.addAll(ManagedUtils.getProperties(objectType, this.sequencingService.getStatistics()));
 		}
 
 		return managedProps;

@@ -37,6 +37,8 @@ import org.modeshape.jboss.managed.JBossManagedI18n;
 import org.modeshape.jboss.managed.ManagedEngine.Component;
 import org.modeshape.jboss.managed.ManagedEngine.ManagedProperty;
 import org.modeshape.repository.sequencer.SequencerConfig;
+import org.modeshape.repository.sequencer.SequencingService;
+import org.modeshape.repository.sequencer.SequencingService.Statistics;
 
 /**
  * Class for common utility methods used for ModeShape Managed Objects
@@ -56,6 +58,12 @@ public class ManagedUtils {
 			reflection = new Reflection(RepositoryConnectionPool.class);
 		} else if (objectType.equals(Component.SEQUENCER)) {
 			reflection = new Reflection(SequencerConfig.class);
+		} else if (objectType.equals(Component.SEQUENCINGSERVICE)) {
+			if (object instanceof SequencingService){
+				reflection = new Reflection(SequencingService.class);
+			}else {
+				reflection = new Reflection(Statistics.class);
+			}
 		}
 
 		List<Property> props = null;
