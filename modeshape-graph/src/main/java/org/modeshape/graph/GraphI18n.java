@@ -211,6 +211,25 @@ public final class GraphI18n {
     public static I18n errorShuttingDownExecutorServiceInSearchEngineIndexer;
     public static I18n searchEngineIndexerForSourceHasAlreadyBeenClosed;
 
+    /* RepositoryConnectionPool */
+    public static I18n poolKeepAliveTimeDescription;
+    public static I18n poolKeepAliveTimeLabel;
+    public static I18n poolKeepAliveTimeCategory;
+    public static I18n poolCorePoolSizeDescription;
+    public static I18n poolCorePoolSizeLabel;
+    public static I18n poolCorePoolSizeCategory;
+    public static I18n poolMaxiumumPoolSizeDescription;
+    public static I18n poolMaxiumumPoolSizeLabel;
+    public static I18n poolMaxiumumPoolSizeCategory;
+    public static I18n poolValidateConnectionBeforeUseDescription;
+    public static I18n poolValidateConnectionBeforeUseLabel;
+    public static I18n poolValidateConnectionBeforeUseCategory;
+    public static I18n poolPingTimeoutDescription;
+    public static I18n poolPingTimeoutLabel;
+    public static I18n poolPingTimeoutCategory;
+    public static I18n poolMaximumFailedAttemptsBeforeErrorDescription;
+    public static I18n poolMaximumFailedAttemptsBeforeErrorLabel;
+    public static I18n poolMaximumFailedAttemptsBeforeErrorCategory;
     static {
         try {
             I18n.initialize(GraphI18n.class);

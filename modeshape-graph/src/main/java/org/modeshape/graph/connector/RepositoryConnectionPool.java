@@ -23,16 +23,6 @@
  */
 package org.modeshape.graph.connector;
 
-import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.ThreadSafe;
-import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.Logger;
-import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.GraphI18n;
-import org.modeshape.graph.cache.CachePolicy;
-import org.modeshape.graph.request.Request;
-
-import javax.transaction.xa.XAResource;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -45,6 +35,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import javax.transaction.xa.XAResource;
+import net.jcip.annotations.GuardedBy;
+import net.jcip.annotations.ThreadSafe;
+import org.modeshape.common.annotation.Category;
+import org.modeshape.common.annotation.Description;
+import org.modeshape.common.annotation.Label;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.Logger;
+import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.GraphI18n;
+import org.modeshape.graph.cache.CachePolicy;
+import org.modeshape.graph.request.Request;
 
 /**
  * A reusable implementation of a managed pool of connections that is optimized for safe concurrent operations.
@@ -103,18 +105,27 @@ public class RepositoryConnectionPool {
      * Timeout in nanoseconds for idle connections waiting to be used. Threads use this timeout only when there are more than
      * corePoolSize present. Otherwise they wait forever to be used.
      */
+    @Description( i18n = GraphI18n.class, value = "poolKeepAliveTimeDescription" )
+    @Label( i18n = GraphI18n.class, value = "poolKeepAliveTimeLabel" )
+    @Category( i18n = GraphI18n.class, value = "poolKeepAliveTimeCategory" )
     private volatile long keepAliveTime;
 
     /**
      * The target pool size, updated only while holding mainLock, but volatile to allow concurrent readability even during
      * updates.
      */
+    @Description( i18n = GraphI18n.class, value = "poolCorePoolSizeDescription" )
+    @Label( i18n = GraphI18n.class, value = "poolCorePoolSizeLabel" )
+    @Category( i18n = GraphI18n.class, value = "poolCorePoolSizeCategory" )
     @GuardedBy( "mainLock" )
     private volatile int corePoolSize;
 
     /**
      * Maximum pool size, updated only while holding mainLock but volatile to allow concurrent readability even during updates.
      */
+    @Description( i18n = GraphI18n.class, value = "poolMaxiumumPoolSizeDescription" )
+    @Label( i18n = GraphI18n.class, value = "poolMaxiumumPoolSizeLabel" )
+    @Category( i18n = GraphI18n.class, value = "poolMaxiumumPoolSizeCategory" )
     @GuardedBy( "mainLock" )
     private volatile int maximumPoolSize;
 
@@ -143,16 +154,25 @@ public class RepositoryConnectionPool {
     /**
      * Flag specifying whether a connection should be validated before returning it from the {@link #getConnection()} method.
      */
+    @Description( i18n = GraphI18n.class, value = "poolValidateConnectionBeforeUseDescription" )
+    @Label( i18n = GraphI18n.class, value = "poolValidateConnectionBeforeUseLabel" )
+    @Category( i18n = GraphI18n.class, value = "poolValidateConnectionBeforeUseCategory" )
     private final AtomicBoolean validateConnectionBeforeUse = new AtomicBoolean(false);
 
     /**
      * The time in nanoseconds that ping should wait before timing out and failing.
      */
+    @Description( i18n = GraphI18n.class, value = "poolPingTimeoutDescription" )
+    @Label( i18n = GraphI18n.class, value = "poolPingTimeoutLabel" )
+    @Category( i18n = GraphI18n.class, value = "poolPingTimeoutCategory" )
     private final AtomicLong pingTimeout = new AtomicLong(0);
 
     /**
      * The number of times an attempt to obtain a connection should fail with invalid connections before throwing an exception.
      */
+    @Description( i18n = GraphI18n.class, value = "poolMaximumFailedAttemptsBeforeErrorDescription" )
+    @Label( i18n = GraphI18n.class, value = "poolMaximumFailedAttemptsBeforeErrorLabel" )
+    @Category( i18n = GraphI18n.class, value = "poolMaximumFailedAttemptsBeforeErrorCategory" )
     private final AtomicInteger maxFailedAttemptsBeforeError = new AtomicInteger(10);
 
     private final AtomicLong totalConnectionsCreated = new AtomicLong(0);
@@ -257,6 +277,24 @@ public class RepositoryConnectionPool {
     }
 
     /**
+     * The ping timeout, in seconds.
+     * 
+     * @return pingTimeout
+     */
+    public long getPingTimeout() {
+        return TimeUnit.NANOSECONDS.toSeconds(this.pingTimeout.get());
+    }
+
+    /**
+     * Sets the ping timeout, in seconds.
+     * 
+     * @param pingTimeoutInSeconds the time to wait for a ping to complete
+     */
+    public void setPingTimeout( long pingTimeoutInSeconds ) {
+        setPingTimeout(pingTimeoutInSeconds, TimeUnit.SECONDS);
+    }
+
+    /**
      * @return maxFailedAttemptsBeforeError
      */
     public int getMaxFailedAttemptsBeforeError() {
@@ -298,6 +336,31 @@ public class RepositoryConnectionPool {
     public long getKeepAliveTime( TimeUnit unit ) {
         assert unit != null;
         return unit.convert(keepAliveTime, TimeUnit.NANOSECONDS);
+    }
+
+    /**
+     * Returns the connection keep-alive time, which is the amount of time which connections in excess of the core pool size may
+     * remain idle before being closed.
+     * 
+     * @return the time limit in seconds
+     * @see #setKeepAliveTime
+     */
+    public long getKeepAliveTime() {
+        return getKeepAliveTime(TimeUnit.SECONDS);
+    }
+
+    /**
+     * Sets the time limit for which connections may remain idle before being closed. If there are more than the core number of
+     * connections currently in the pool, after waiting this amount of time without being used, excess threads will be terminated.
+     * This overrides any value set in the constructor.
+     * 
+     * @param time the time to wait, in seconds. A time value of zero will cause excess connections to terminate immediately after
+     *        being returned.
+     * @throws IllegalArgumentException if time less than zero
+     * @see #getKeepAliveTime
+     */
+    public void setKeepAliveTime( long time ) {
+        setKeepAliveTime(time, TimeUnit.SECONDS);
     }
 
     /**
