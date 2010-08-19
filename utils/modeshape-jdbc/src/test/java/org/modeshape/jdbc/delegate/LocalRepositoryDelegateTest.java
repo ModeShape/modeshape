@@ -31,8 +31,6 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jdbc.JcrDriver;
 
@@ -59,19 +57,7 @@ public class LocalRepositoryDelegateTest {
     			"&" + JcrDriver.REPOSITORY_PROPERTY_NAME + "=" + REPOSITORY_NAME;
     
     private RepositoryDelegate delegate;
-        
-    @Before
-    public void beforeEach() throws SQLException {
-	delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_JNDI_URL_WITH_PARMS, new Properties(), null);
-	    //new LocalRepositoryDelegate(VALID_JNDI_URL_WITH_PARMS, new Properties(), null);
-	
-    }
 
-    @After
-    public void afterEach() throws Exception {
-
-
-    }
     
     @Test
     public void testNoContextOverride() throws SQLException  {
@@ -90,10 +76,12 @@ public class LocalRepositoryDelegateTest {
 	
 	assertThat(delegate.getConnectionInfo().getEffectiveUrl(), is( JcrDriver.JNDI_URL_PREFIX + "jcr/local?workspace=MyWorkspace&password=******&repositoryName=repositoryName&username=jsmith" ) );
 	
-        DriverPropertyInfo[] infos = delegate.getConnectionInfo().getPropertyInfos();
-        assertThat(infos.length, is(0));
+	DriverPropertyInfo[] infos = delegate.getConnectionInfo().getPropertyInfos();
+	assertThat(infos.length, is(0));
         
-	assertThat( ( ( LocalRepositoryDelegate.JNDIConnectionInfo)  delegate.getConnectionInfo()).getJndiName(), is(JNDINAME) );
+	assertThat( ( ( LocalRepositoryDelegate.JNDIConnectionInfo)  delegate.getConnectionInfo()).getRepositoryPath(), is(JNDINAME) );
+	
+	System.out.println("URL: " + delegate.getConnectionInfo().getUrl());
 	
     }
     

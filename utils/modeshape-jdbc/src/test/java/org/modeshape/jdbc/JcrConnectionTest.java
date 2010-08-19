@@ -81,13 +81,14 @@ public class JcrConnectionTest {
     public void beforeEach() throws Exception {
 	MockitoAnnotations.initMocks(this);
 
-	conn = new JcrConnection(repository, connInfo, jcrDelegate);
+	conn = new JcrConnection(jcrDelegate);
 
 	// Set up the connection information ...
 	when(connInfo.getWorkspaceName()).thenReturn("workspaceName");
 	when(connInfo.getRepositoryName()).thenReturn(REPOSITORY_NAME);
 	
 	when(jcrDelegate.isValid(anyInt())).thenReturn(Boolean.TRUE);
+	when(jcrDelegate.getConnectionInfo()).thenReturn(connInfo);
 
 	when(repository.login(anyString())).thenReturn(session);
 	when(repository.getDescriptor(anyString())).thenReturn("modeshape");

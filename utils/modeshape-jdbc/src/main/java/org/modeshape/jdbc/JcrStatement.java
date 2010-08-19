@@ -426,7 +426,7 @@ class JcrStatement implements Statement {
             // Convert the supplied SQL into JCR-SQL2 ...
             String jcrSql2 = connection.nativeSQL(sql);
             // Create the query ...
-            jcrResults = getJcrCommRepositoryInterface().execute(jcrSql2, this.sqlLanguage);
+            jcrResults = getJcrRepositoryDelegate().execute(jcrSql2, this.sqlLanguage);
             results = new JcrResultSet(this, jcrResults, null);
             moreResults = 1;
         } catch (RepositoryException e) {
@@ -435,8 +435,8 @@ class JcrStatement implements Statement {
         return true; // always a ResultSet
     }
     
-    protected RepositoryDelegate getJcrCommRepositoryInterface() {
-	return this.connection.getRepositoryDelegate();
+    protected RepositoryDelegate getJcrRepositoryDelegate() {
+    	return this.connection.getRepositoryDelegate();
     }
     
     
@@ -601,10 +601,12 @@ class JcrStatement implements Statement {
      */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
-        if (iface.isInstance(this)) {
-            return iface.cast(this);
-        }
-        throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text(Statement.class.getSimpleName(), iface.getName()));
-    }
+    	if (!isWrapperFor(iface)) {
+    	       throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text(Statement.class.getSimpleName(),
+                       iface.getName()));
+    	}
+    	
+    	return iface.cast(this);
+     }
 
 }

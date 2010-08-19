@@ -44,7 +44,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
@@ -57,13 +56,10 @@ import org.modeshape.jdbc.delegate.RepositoryDelegate;
  */
 public class JcrConnection implements Connection {
     
-    public static final String JCR_SQL2 = Query.JCR_SQL2; // will eventually be Query.JCR_SQL2
+    public static final String JCR_SQL2 = Query.JCR_SQL2; 
     @SuppressWarnings("deprecation")
     public static final String JCR_SQL = Query.SQL;
 
-
-    private final ConnectionInfo info;
-    private final Repository repository;
     private boolean closed;
     private boolean autoCommit = true;
     private int isolation = Connection.TRANSACTION_READ_COMMITTED;
@@ -72,19 +68,14 @@ public class JcrConnection implements Connection {
     private DatabaseMetaData metadata;
     private RepositoryDelegate jcrDelegate;
 
-    public JcrConnection( Repository repository,
-                             ConnectionInfo info, 
-                             RepositoryDelegate jcrDelegate ) {
-
-        this.info = info;
-        this.repository = repository;
+    public JcrConnection(RepositoryDelegate jcrDelegate ) {
         this.jcrDelegate = jcrDelegate;
-        assert this.info != null;
-        assert this.repository != null;
+        assert this.jcrDelegate != null;
+
     }
 
     public ConnectionInfo info() {
-        return info;
+        return this.jcrDelegate.getConnectionInfo();
     }
     
     /**
@@ -314,7 +305,7 @@ public class JcrConnection implements Connection {
      */
     @Override
     public String getCatalog() {
-        return info.getRepositoryName();
+        return this.info().getRepositoryName();
     }
 
     /**
@@ -672,12 +663,12 @@ public class JcrConnection implements Connection {
      */
     @Override
     public boolean isWrapperFor( Class<?> iface ) /*throws SQLException*/{
-	if ( iface.isInstance(this) ) {
-	    return true;
-	}
-	
-	return this.getRepositoryDelegate().isWrapperFor(iface); 
-    }
+		if ( iface.isInstance(this) ) {
+		    return true;
+		}
+		
+		return this.getRepositoryDelegate().isWrapperFor(iface); 
+	    }
 
     /**
      * {@inheritDoc}
@@ -686,9 +677,10 @@ public class JcrConnection implements Connection {
      */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
-	if (iface.isInstance(this)) {
-	    return iface.cast(this);
-	}
-	return getRepositoryDelegate().unwrap(iface);
+    	if (isWrapperFor(iface)) {
+		    return iface.cast(this);
+		}
+		return getRepositoryDelegate().unwrap(iface);
     }
+
 }

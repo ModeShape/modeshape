@@ -35,11 +35,10 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.Workspace;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.query.QueryResult;
@@ -56,26 +55,19 @@ import org.modeshape.jdbc.metadata.ResultsMetadataConstants;
  * This driver's implementation of JDBC {@link DatabaseMetaData}.
  */
 public class JcrMetaData implements DatabaseMetaData {
+ 
 	
     /** CONSTANTS */
 	protected static final String WILDCARD = "%"; //$NON-NLS-1$
 	protected static final Integer DEFAULT_ZERO = new Integer(0);
 	protected static final int NO_LIMIT = 0;
-	
-	
-    private Session session;
-    private JcrConnection connection;
-    
+
+    private JcrConnection connection;   
     private String catalogName;
 
-
-
-    public JcrMetaData( JcrConnection connection,
-                           Session session ) {
+    public JcrMetaData( JcrConnection connection ) {
         this.connection = connection;
-        this.session = session;
         assert this.connection != null;
-        assert this.session != null;
         catalogName = connection.getCatalog();
         assert catalogName != null;
     }
@@ -147,11 +139,11 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public String getDatabaseProductName() {
-        return session.getRepository().getDescriptor(Repository.REP_NAME_DESC);
+    	return this.connection.getRepositoryDelegate().getDescriptor(Repository.REP_NAME_DESC);
     }
 
     public String getDatabaseProductUrl() {
-        return session.getRepository().getDescriptor(Repository.REP_VENDOR_URL_DESC);
+		return this.connection.getRepositoryDelegate().getDescriptor(Repository.REP_VENDOR_URL_DESC);
     }
 
     /**
@@ -161,7 +153,7 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public String getDatabaseProductVersion() {
-        return session.getRepository().getDescriptor(Repository.REP_VERSION_DESC);
+		return this.connection.getRepositoryDelegate().getDescriptor(Repository.REP_VERSION_DESC);
     }
 
     /**
@@ -395,7 +387,8 @@ public class JcrMetaData implements DatabaseMetaData {
                                  String schemaPattern,
                                  String tableNamePattern,
                                  String columnNamePattern ) throws SQLException {
-      
+        JcrDriver.logger.log(Level.INFO, "getcolumns: " + catalog + ":" + schemaPattern + ":" + tableNamePattern + ":" + columnNamePattern);
+     
         // Get all tables if tableNamePattern is null
         if(tableNamePattern == null) {
             tableNamePattern = WILDCARD; 
@@ -466,6 +459,10 @@ public class JcrMetaData implements DatabaseMetaData {
 	    	  while (nodeIt.hasNext()) {
 	    		  
 	    		  NodeType type = nodeIt.next();
+	    		  
+	    		  if (type.getPropertyDefinitions() == null) {
+	    			  throw new SQLException("Program Error:  missing propertydefintions for " + type.getName());
+	    		  }
 		          
 		          List<PropertyDefinition> defns = filterPropertyDefnitions(columnNamePattern, type.getPropertyDefinitions());
 		       
@@ -520,6 +517,7 @@ public class JcrMetaData implements DatabaseMetaData {
 		    return new JcrResultSet(jcrstmt, queryresult, resultSetMetaData);
 
 		} catch (RepositoryException e) {
+			e.printStackTrace();
 			throw new SQLException(e.getLocalizedMessage());
 		} 
 
@@ -998,7 +996,7 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public String getSchemaTerm() throws SQLException {
-        return null;
+        return " ";
     }
 
     /**
@@ -1008,7 +1006,26 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public ResultSet getSchemas() throws SQLException {
-        return null;
+ 		List<List<?>> records = new ArrayList<List<?>> (1);
+  		
+		/***********************************************************************
+		 * Hardcoding JDBC column names for the columns returned in results object
+		 ***********************************************************************/
+		
+		Map<?,Object>[] metadataList = new Map[1];
+
+		metadataList[0] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.TABLE_SCHEM, 
+		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
+
+		MetadataProvider provider = new MetadataProvider(metadataList);
+	        
+	    ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
+	    
+	    JcrStatement stmt = new JcrStatement(this.connection);
+	    QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
+	    ResultSet rs = new JcrResultSet(stmt, queryresult, resultSetMetaData);
+		
+		return rs;
     }
 
     /**
@@ -1019,7 +1036,7 @@ public class JcrMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getSchemas( String catalog,
                                  String schemaPattern ) throws SQLException {
-        return null;
+        return getSchemas();
     }
 
     /**
@@ -1131,6 +1148,9 @@ public class JcrMetaData implements DatabaseMetaData {
                                 String tableNamePattern,
                                 String[] types ) throws SQLException {
     	
+        JcrDriver.logger.log(Level.INFO, "getTables: " + catalog + ":" + schemaPattern + ":" + tableNamePattern + ":" + types);
+
+    	
         // Get all tables if tableNamePattern is null
         if(tableNamePattern == null) {
             tableNamePattern = WILDCARD; 
@@ -1173,6 +1193,7 @@ public class JcrMetaData implements DatabaseMetaData {
 	    	  while (nodeIt.hasNext()) {
 	    		  
 	    		  NodeType type = nodeIt.next();
+	    		  boolean queryable = type.isQueryable();
 	    		  if (!type.isQueryable()) continue;
 	
 		          // list represents a record on the Results object.
@@ -1200,6 +1221,7 @@ public class JcrMetaData implements DatabaseMetaData {
 		    return new JcrResultSet(jcrstmt, queryresult, resultSetMetaData);
 
 		} catch (RepositoryException e) {
+			e.printStackTrace();
 			throw new SQLException(e.getLocalizedMessage());
 		} 
 	}
@@ -2212,8 +2234,7 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public boolean isWrapperFor( Class<?> iface ) {
-        return iface.isInstance(this) || iface.isInstance(session) || iface.isInstance(session.getRepository())
-               || iface.isInstance(session.getWorkspace());
+        return iface.isInstance(this);
     }
 
     /**
@@ -2223,23 +2244,13 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
-        if (iface.isInstance(this)) {
-            return iface.cast(this);
-        }
-        if (iface.isInstance(session)) {
-            return iface.cast(session);
-        }
-        Repository repository = session.getRepository();
-        if (iface.isInstance(repository)) {
-            return iface.cast(repository);
-        }
-        Workspace workspace = session.getWorkspace();
-        if (iface.isInstance(workspace)) {
-            return iface.cast(workspace);
-        }
-        throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text(DatabaseMetaData.class.getSimpleName(),
-                                                                            iface.getName()));
-    }
+    	if (!isWrapperFor(iface)) {
+    	       throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text(DatabaseMetaData.class.getSimpleName(),
+                       iface.getName()));
+    	}
+    	
+    	return iface.cast(this);
+     }
    
     private List<NodeType> filterNodeTypes(String tableNamePattern) throws RepositoryException {
   	  List<NodeType> nodetypes = null;
@@ -2289,8 +2300,10 @@ public class JcrMetaData implements DatabaseMetaData {
 		  
 	  } else {
 		  NodeType nt = this.connection.getRepositoryDelegate().nodeType(tableNamePattern);
-		  nodetypes = new ArrayList<NodeType>(1);
-		  nodetypes.add(nt);
+		  if (nt != null) {
+			  nodetypes = new ArrayList<NodeType>(1);
+			  nodetypes.add(nt);
+		  }
 	  }	    	  
 	  
 	  if (nodetypes.size() > 1) {	    	  

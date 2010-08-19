@@ -154,5 +154,12 @@ public interface RepositoryDelegate {
      * @throws RepositoryException
      */
     Set<String> getRepositoryNames() throws RepositoryException;
+    
+    /**
+     * Returns the value for the requested <code>descriptorKey</code>
+     * @param descriptorKey 
+     * @return String descriptor value
+     */
+    String getDescriptor(String descriptorKey);
 
 }

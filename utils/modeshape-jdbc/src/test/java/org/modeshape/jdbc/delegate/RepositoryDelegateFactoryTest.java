@@ -23,19 +23,13 @@
  */
 package org.modeshape.jdbc.delegate;
 
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertNotNull;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.Assert.assertThat;
 
-import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jdbc.JcrDriver;
 
@@ -55,6 +49,7 @@ public class RepositoryDelegateFactoryTest {
     private static final String VALID_HTTP_URL =  JcrDriver.HTTP_URL_PREFIX + "server:host";
     
     private static final String VALID_JNDI_URL =  JcrDriver.JNDI_URL_PREFIX + JNDINAME;
+
     
     private static final String VALID_JNDI_URL_WITH_PARMS =  VALID_JNDI_URL + 
     			"?workspace=" + WORKSPACE + 
@@ -70,11 +65,11 @@ public class RepositoryDelegateFactoryTest {
 	assertThat(delegate, instanceOf(LocalRepositoryDelegate.class));
     }
 
-    @Test(expected = SQLFeatureNotSupportedException.class)
-    public void shouldNotSupportCreatingHttpRepositoryDelegate() throws SQLException  {
+    @Test
+    public void shouldSupportCreatingHttpRepositoryDelegate() throws SQLException  {
 	RepositoryDelegateFactory.createRepositoryDelegate(VALID_HTTP_URL, new Properties(), null);	
     }
-    
+        
     @Test(expected = SQLException.class)
     public void shouldNotSupportCreatingInvalidURL() throws SQLException  {
 	RepositoryDelegateFactory.createRepositoryDelegate(INVALID_URL, new Properties(), null);	

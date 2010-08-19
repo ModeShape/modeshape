@@ -139,7 +139,7 @@ public class JcrMetaDataTest extends ResultsComparator {
         
         when(connection.getCatalog()).thenReturn("repo");
 
-        metadata = new JcrMetaData(connection, session);       
+        metadata = new JcrMetaData(connection);       
           
         when(delegate.getConnectionInfo()).thenReturn(connInfo);
         when(delegate.execute(anyString(), anyString())).thenReturn(queryResult);       

@@ -49,29 +49,30 @@ public final class JdbcI18n {
     public static I18n driverVersion;
     
     public static I18n driverErrorRegistering;
-
-    public static I18n invalidUrlPrefix;
-    public static I18n failedToReadPropertiesFromManifest;
-    public static I18n unableToGetJndiContext;
-    public static I18n urlMustContainJndiNameOfRepositoryOrRepositoriesObject;
-    public static I18n urlPropertyDescription;
+    
+    /*
+     * ConnectionInfo related text info
+     */
     public static I18n usernamePropertyDescription;
     public static I18n passwordPropertyDescription;
     public static I18n workspaceNamePropertyDescription;
     public static I18n repositoryNamePropertyDescription;
+    public static I18n urlPropertyDescription;
     public static I18n urlPropertyName;
     public static I18n usernamePropertyName;
     public static I18n passwordPropertyName;
     public static I18n workspaceNamePropertyName;
     public static I18n repositoryNamePropertyName;
-    public static I18n objectInJndiIsRepositories;
+
+
+    public static I18n invalidUrl;
+    public static I18n invalidUrlPrefix;
+    public static I18n failedToReadPropertiesFromManifest;
     public static I18n unableToFindNamedRepository;
-    public static I18n objectInJndiMustBeRepositoryOrRepositories;
-    public static I18n unableToFindObjectInJndi;
+    public static I18n noRepositoryNamesFound;
     public static I18n argumentMayNotBeNegative;
     public static I18n argumentMayNotBeNull;
     public static I18n requiredToSuppliedParameterMismatch;
-
 
     public static I18n connectionIsClosed;
     public static I18n statementIsClosed;
@@ -86,9 +87,34 @@ public final class JdbcI18n {
     public static I18n invalidColumnIndex;
     public static I18n currentRowNotSet;
     public static I18n noJcrTypeMapped;    
-    public static I18n noRepositoryNamesFound;
-    public static I18n configurationFileNotSpecified;
+    public static I18n unableToGetNodeTypes;
+    public static I18n unableToGetNodeType;
+    public static I18n noSuchNodeType;
 
+    
+    public static I18n repositoryNameInUse;
+    
+    /*
+     * JNDI connection option related text info
+     */
+    public static I18n objectInJndiMustBeRepositoryOrRepositories;
+    public static I18n unableToGetJndiContext;
+    public static I18n urlMustContainJndiNameOfRepositoryOrRepositoriesObject;
+    public static I18n unableToFindObjectInJndi;
+    public static I18n objectInJndiIsRepositories;
+
+    /**
+     * HTTP connection option related text info
+     */
+
+    
+    /*
+     * File connection option relatd text info
+     */
+    public static I18n configurationFileNotSpecified;
+    
+    
+    
     static {
         try {
             I18n.initialize(JdbcI18n.class);

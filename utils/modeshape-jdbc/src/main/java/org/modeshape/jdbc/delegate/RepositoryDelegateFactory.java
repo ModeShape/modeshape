@@ -23,8 +23,8 @@
  */
 package org.modeshape.jdbc.delegate;
 
+import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 
 import org.modeshape.jdbc.JcrDriver;
@@ -41,20 +41,35 @@ public class RepositoryDelegateFactory {
     
     private static final int JNDI_URL_OPTION = 1;
     private static final int HTTP_URL_OPTION = 2; 
-    private static final int FILE_URL_OPTION = 3;
 
     public static RepositoryDelegate createRepositoryDelegate(String url, Properties info, JcrContextFactory contextFactory) throws SQLException {
-	if (! acceptUrl(url)) {
-	    throw new SQLException(JdbcI18n.invalidUrlPrefix
-		    .text(JcrDriver.JNDI_URL_PREFIX, JcrDriver.HTTP_URL_PREFIX));
-	}
-	RepositoryDelegate jcri = create(url, info, contextFactory);
-	return jcri;
+		if (! acceptUrl(url)) {
+		    throw new SQLException(JdbcI18n.invalidUrlPrefix
+			    .text(JcrDriver.JNDI_URL_PREFIX, JcrDriver.HTTP_URL_PREFIX));
+		}
+		RepositoryDelegate jcri = create(url, info, contextFactory);
+		
+		// TODO:  an exception should be thrown if a property info is not available.
+		//			the getPropertyInfos on the driver should return what the driver
+		//			needs in order to connect
+//		DriverPropertyInfo[] infos = jcri.getConnectionInfo().getPropertyInfos();
+//		if (infos != null && infos.length > 0) {
+//			StringBuilder missing = new StringBuilder();
+//			for (int i = 0; i < infos.length; i++) {
+//				missing.append(infos[i].description);
+//				if (i + 1 < infos.length) {
+//					missing.append(",");
+//				}
+//			}			
+//			
+//			throw new SQLException(JdbcI18n.invalidUrl.text(missing.toString()));
+//		}
+		return jcri;
     }
 
     
     public static boolean acceptUrl(String url) {
-	return ( getUrlOption(url) > 0 ? true : false);
+    	return ( getUrlOption(url) > 0 ? true : false);
     }
     
     
@@ -69,30 +84,21 @@ public class RepositoryDelegateFactory {
             // This fits the pattern so far ...
             return HTTP_URL_OPTION;
         }
-        if (trimmedUrl.startsWith(JcrDriver.FILE_URL_PREFIX) && trimmedUrl.length() > JcrDriver.FILE_URL_PREFIX.length()) {
-            // This fits the pattern so far ...
-            return FILE_URL_OPTION;
-        }
 
         return -1;
     }
     
-    private static RepositoryDelegate create(String url, Properties info, JcrContextFactory contextFactory) throws SQLException {
+    private static RepositoryDelegate create(String url, Properties info, JcrContextFactory contextFactory) {
 	
-	switch (getUrlOption(url)) {
-	case JNDI_URL_OPTION:
-	    return new LocalRepositoryDelegate(url, info, contextFactory);
+		switch (getUrlOption(url)) {
+		case JNDI_URL_OPTION:
+		    return new LocalRepositoryDelegate(url, info, contextFactory);
 
-	    
-	case HTTP_URL_OPTION:
-	    throw new SQLFeatureNotSupportedException();
-//	    return new HttpRepositoryDelegate(url, info, contextFactory );
-
-	case FILE_URL_OPTION:
-			return new FileRepositoryDelegate(url, info);
-		
-	default:
-	    return null;
-	}
+		case HTTP_URL_OPTION:
+		    return new HttpRepositoryDelegate(url, info, contextFactory );
+			
+		default:
+		    return null;
+		}
     }
 }

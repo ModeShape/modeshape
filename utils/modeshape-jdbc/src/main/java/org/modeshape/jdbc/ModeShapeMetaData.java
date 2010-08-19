@@ -23,16 +23,14 @@
  */
 package org.modeshape.jdbc;
 
-import javax.jcr.Session;
 
 /**
  * Specialized implementation for ModeShape-specific features.
  */
 public class ModeShapeMetaData extends JcrMetaData {
 
-    public ModeShapeMetaData( JcrConnection connection,
-                                 Session session ) {
-        super(connection, session);
+    public ModeShapeMetaData( JcrConnection connection) {
+        super(connection);
     }
 
     /**

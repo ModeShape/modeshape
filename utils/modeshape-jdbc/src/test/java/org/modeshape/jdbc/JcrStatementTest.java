@@ -38,6 +38,7 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Set;
 
+import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.QueryResult;
@@ -391,6 +392,18 @@ public class JcrStatementTest {
 	public Set<String> getRepositoryNames() throws RepositoryException {
 	    return null;
 	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see org.modeshape.jdbc.delegate.RepositoryDelegate#getDescriptor(java.lang.String)
+	 */
+	@Override
+	public String getDescriptor(String descriptorKey) {
+		return null;
+	}
+
+
 	
 	
 

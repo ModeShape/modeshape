@@ -31,92 +31,75 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jdbc.JcrDriver;
 
 /**
  * 
  */
-public class FileRepositoryDelegateTest {
+public class HttpRepositoryDelegateTest {
 
     private static final String REPOSITORY_NAME = "repositoryName";
     
     private static final String USER_NAME="jsmith";
     private static final String PASSWORD="secret";
     private static final String WORKSPACE="MyWorkspace";
-    private static final String FILENAME="//configRepository.xml";
-    private static final String INVALID_URL =  JcrDriver.JNDI_URL_PREFIX + "notExist" ;
-    
+    private static final String SERVER="serverName:8080";
+    private static final String INVALID_URL =  JcrDriver.HTTP_URL_PREFIX  + SERVER;
 
-    private static final String VALID_FILE_URL =  JcrDriver.FILE_URL_PREFIX + FILENAME;
+    private static final String VALID_HTTP_URL =  JcrDriver.HTTP_URL_PREFIX + SERVER + "/modeshape-rest";
     
-    private static final String VALID_FILE_URL_WITH_PARMS =  VALID_FILE_URL + 
-    			"?workspace=" + WORKSPACE + 
-    			"&username=" + USER_NAME + 
-    			"&password=" + PASSWORD  + 
-    			"&" + JcrDriver.REPOSITORY_PROPERTY_NAME + "=" + REPOSITORY_NAME;
+    private static final String VALID_HTTP_URL_WITH_PARMS =  VALID_HTTP_URL + 
+    			"/" + REPOSITORY_NAME +
+    			"/" + WORKSPACE + 
+    			"?username=" + USER_NAME + 
+    			"&password=" + PASSWORD;
     
     private RepositoryDelegate delegate;
-        
-    @Before
-    public void beforeEach() throws SQLException {
-	delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_FILE_URL_WITH_PARMS, new Properties(), null);
-	
-    }
-
-    @After
-    public void afterEach() throws Exception {
-
-
-    }
     
     @Test
     public void testNoContextOverride() throws SQLException  {
-	delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_FILE_URL_WITH_PARMS, new Properties(), null);
+    	delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_HTTP_URL_WITH_PARMS, new Properties(), null);
     }
 
     @Test
     public void connectionInfoShouldBeValid() throws SQLException  {
-	delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_FILE_URL_WITH_PARMS, new Properties(), null);
-	
-	assertNotNull(delegate.getConnectionInfo());
-	assertThat(delegate.getConnectionInfo().getUsername(), is(USER_NAME) );
-	assertThat(delegate.getConnectionInfo().getPassword(), is( new String(PASSWORD).toCharArray()) );
-	assertThat(delegate.getConnectionInfo().getWorkspaceName(), is(WORKSPACE) );
-	assertThat(delegate.getConnectionInfo().getRepositoryName(), is(REPOSITORY_NAME) );
-	
-	assertThat(delegate.getConnectionInfo().getEffectiveUrl(), is( JcrDriver.FILE_URL_PREFIX + FILENAME + "?workspace=MyWorkspace&password=******&repositoryName=repositoryName&username=jsmith" ) );
-	
-        DriverPropertyInfo[] infos = delegate.getConnectionInfo().getPropertyInfos();
-        assertThat(infos.length, is(0));
-        
-	assertThat( ( ( FileRepositoryDelegate.FileConnectionInfo)  delegate.getConnectionInfo()).getFileName(), is(FILENAME) );
+		delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_HTTP_URL_WITH_PARMS, new Properties(), null);
+		
+		assertNotNull(delegate.getConnectionInfo());
+		assertThat(delegate.getConnectionInfo().getUsername(), is(USER_NAME) );
+		assertThat(delegate.getConnectionInfo().getPassword(), is( new String(PASSWORD).toCharArray()) );
+		
+		assertThat(delegate.getConnectionInfo().getEffectiveUrl(), is( VALID_HTTP_URL + "?workspace=MyWorkspace&password=******&repositoryName=repositoryName&username=jsmith" ) );
+		
+		DriverPropertyInfo[] infos = delegate.getConnectionInfo().getPropertyInfos();
+		assertThat(infos.length, is(0));
+	        
+		assertThat( ( delegate.getConnectionInfo()).getRepositoryPath(), is(SERVER + "/modeshape-rest") );
+		
+		System.out.println("URL: " + delegate.getConnectionInfo().getUrl());
 	
     }
-    
     
     @Test
     public void connectionPropertyInfoShouldIndicateMissingData() throws SQLException  {
-	delegate = RepositoryDelegateFactory.createRepositoryDelegate(INVALID_URL, new Properties(), null);
-	
-	assertNotNull(delegate.getConnectionInfo());
+		delegate = RepositoryDelegateFactory.createRepositoryDelegate(INVALID_URL, new Properties(), null);
+		
+		assertNotNull(delegate.getConnectionInfo());
 	
         DriverPropertyInfo[] infos = delegate.getConnectionInfo().getPropertyInfos();
-        assertThat(infos.length, is(4));
-  	
+        assertThat(infos.length, is(5));
     }
     
     @Test
-    public void shouldReturnEmptyPropertyInfosWhenSuppliedValidUrlAndAllPropertiesWithRepositoriesInJndi() throws SQLException {
-	Properties validProperties = new Properties();
+    public void shouldReturnEmptyPropertyInfosWhenSuppliedValidUrlAndAllPropertiesWithRepositoriesInHTTP() throws SQLException {
+    	Properties validProperties = new Properties();
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, WORKSPACE);
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME,  USER_NAME);
         validProperties.put(JcrDriver.PASSWORD_PROPERTY_NAME, PASSWORD);
         validProperties.put(JcrDriver.REPOSITORY_PROPERTY_NAME, REPOSITORY_NAME);
         
-	delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_FILE_URL, validProperties, null);
+        delegate = RepositoryDelegateFactory.createRepositoryDelegate(VALID_HTTP_URL, validProperties, null);
         DriverPropertyInfo[] infos = delegate.getConnectionInfo().getPropertyInfos();
         assertThat(infos.length, is(0));
     }
