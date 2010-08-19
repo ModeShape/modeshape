@@ -1087,6 +1087,16 @@ class JcrSession implements Session {
      * @see javax.jcr.Session#logout()
      */
     public void logout() {
+        terminate(true);
+    }
+
+    /**
+     * This method is called by {@link #logout()} and by {@link JcrRepository#terminateAllSessions()}. It should not be called
+     * from anywhere else.
+     * 
+     * @param removeFromActiveSession true if the session should be removed from the active session list
+     */
+    void terminate( boolean removeFromActiveSession ) {
         if (!isLive()) {
             return;
         }
@@ -1094,7 +1104,7 @@ class JcrSession implements Session {
         isLive = false;
         this.workspace().observationManager().removeAllEventListeners();
         this.lockManager().cleanLocks();
-        this.repository.sessionLoggedOut(this);
+        if (removeFromActiveSession) this.repository.sessionLoggedOut(this);
         this.executionContext.getSecurityContext().logout();
     }
 

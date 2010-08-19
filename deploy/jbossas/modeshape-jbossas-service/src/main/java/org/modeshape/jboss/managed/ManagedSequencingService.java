@@ -25,10 +25,9 @@ package org.modeshape.jboss.managed;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-
 import net.jcip.annotations.Immutable;
-
 import org.jboss.managed.api.ManagedOperation.Impact;
 import org.jboss.managed.api.annotation.ManagementComponent;
 import org.jboss.managed.api.annotation.ManagementObject;
@@ -44,190 +43,163 @@ import org.modeshape.repository.sequencer.SequencerConfig;
 import org.modeshape.repository.sequencer.SequencingService;
 
 /**
- * A <code>ManagedSequencingService</code> instance is a JBoss managed object
- * for a {@link SequencingService sequencing service}.
+ * A <code>ManagedSequencingService</code> instance is a JBoss managed object for a {@link SequencingService sequencing service}.
  */
 @Immutable
-@ManagementObject(isRuntime = true, name = "ModeShapeSequencingService", description = "A ModeShape sequencing service", componentType = @ManagementComponent(type = "ModeShape", subtype = "SequencingService"), properties = ManagementProperties.EXPLICIT)
+@ManagementObject( isRuntime = true, name = "ModeShapeSequencingService", description = "A ModeShape sequencing service", componentType = @ManagementComponent( type = "ModeShape", subtype = "SequencingService" ), properties = ManagementProperties.EXPLICIT )
 public class ManagedSequencingService implements ModeShapeManagedObject {
 
-	/**
-	 * The ModeShape ManagedEngine (never <code>null</code>).
-	 */
-	private ManagedEngine engine;
+    /**
+     * The ModeShape ManagedEngine (never <code>null</code>).
+     */
+    private ManagedEngine engine;
 
-	public ManagedSequencingService() {
-		this.sequencingService = null;
-	}
+    public ManagedSequencingService() {
+    }
 
-	/****************************** above for temporary testing only ***********************************************************/
+    /****************************** above for temporary testing only ***********************************************************/
 
-	/**
-	 * The ModeShape object being managed and delegated to (never
-	 * <code>null</code>).
-	 */
-	private SequencingService sequencingService;
+    /**
+     * Creates a JBoss managed object for the specified sequencing service.
+     * 
+     * @param managedEngine
+     */
+    public ManagedSequencingService( ManagedEngine managedEngine ) {
+        CheckArg.isNotNull(managedEngine, "managedEngine");
+    }
 
-	/**
-	 * Creates a JBoss managed object for the specified sequencing service.
-	 * 
-	 * @param managedEngine
-	 */
-	public ManagedSequencingService(ManagedEngine managedEngine) {
-		CheckArg.isNotNull(managedEngine, "managedEngine");
-		this.sequencingService = managedEngine.getSequencingService();
-	}
+    public void setManagedEngine( ManagedEngine managedEngine ) throws Exception {
+        this.engine = managedEngine;
+    }
 
-	@ManagementProperty(name = "Job Activity", description = "The number of sequencing jobs executed", readOnly = true, use = ViewUse.STATISTIC)
-	public int getJobActivity() {
-		// TODO implement getJobActivity()
-		return 0;
-	}
+    /**
+     * @return engine
+     */
+    public ManagedEngine getEngine() {
+        return engine;
+    }
 
-	/**
-	 * The number of nodes that have been sequenced. This is a JBoss managed
-	 * readonly property.
-	 * 
-	 * @return the count of sequenced nodes
-	 */
-	@ManagementProperty(name = "Nodes Sequenced", description = "The number of nodes that have been sequenced", readOnly = true, use = ViewUse.STATISTIC)
-	public long getNodesSequencedCount() {
-		return this.sequencingService.getStatistics()
-				.getNumberOfNodesSequenced();
-	}
+    @ManagementProperty( name = "Job Activity", description = "The number of sequencing jobs executed", readOnly = true, use = ViewUse.STATISTIC )
+    public int getJobActivity() {
+        // TODO implement getJobActivity()
+        return 0;
+    }
 
-	/**
-	 * The number of nodes that have been skipped. This is a JBoss managed
-	 * readonly property.
-	 * 
-	 * @return the count of skipped nodes
-	 */
-	@ManagementProperty(name = "Nodes Skipped", description = "The number of nodes skipped (not sequenced)", readOnly = true, use = ViewUse.STATISTIC)
-	public long getNodesSkippedCount() {
-		return this.sequencingService.getStatistics().getNumberOfNodesSkipped();
-	}
+    /**
+     * The number of nodes that have been sequenced. This is a JBoss managed readonly property.
+     * 
+     * @return the count of sequenced nodes
+     */
+    @ManagementProperty( name = "Nodes Sequenced", description = "The number of nodes that have been sequenced", readOnly = true, use = ViewUse.STATISTIC )
+    public long getNodesSequencedCount() {
+        SequencingService sequencingService = engine.getSequencingService();
+        return sequencingService == null ? 0 : sequencingService.getStatistics().getNumberOfNodesSequenced();
+    }
 
-	@ManagementProperty(name = "Queued Jobs", description = "The number of queued jobs", readOnly = true, use = ViewUse.STATISTIC)
-	public int getQueuedJobCount() {
-		return 0;
-	}
+    /**
+     * The number of nodes that have been skipped. This is a JBoss managed readonly property.
+     * 
+     * @return the count of skipped nodes
+     */
+    @ManagementProperty( name = "Nodes Skipped", description = "The number of nodes skipped (not sequenced)", readOnly = true, use = ViewUse.STATISTIC )
+    public long getNodesSkippedCount() {
+        SequencingService sequencingService = engine.getSequencingService();
+        return sequencingService == null ? 0 : sequencingService.getStatistics().getNumberOfNodesSkipped();
+    }
 
-	/**
-	 * Obtains the time the counting of nodes being sequenced and skipped began.
-	 * This is a JBoss managed readonly property.
-	 * 
-	 * @return the time the sequencing statistics began
-	 */
-	@ManagementProperty(name = "Start Time", description = "The time the sequencing statistics (sequenced, skipped) began", readOnly = true, use = ViewUse.RUNTIME)
-	public long getStartTime() {
-		// TODO this should return localized stringified version of time
-		return this.sequencingService.getStatistics().getStartTime();
-	}
+    @ManagementProperty( name = "Queued Jobs", description = "The number of queued jobs", readOnly = true, use = ViewUse.STATISTIC )
+    public int getQueuedJobCount() {
+        return 0;
+    }
 
-	/**
-	 * Obtains a current list of queued sequencing jobs. This is a JBoss managed
-	 * operation.
-	 * 
-	 * @return the jobs (never <code>null</code>)
-	 */
-	@ManagementOperation(description = "Obtains the list of queued managed jobs", impact = Impact.ReadOnly)
-	public Object listQueuedJobs() {
-		// TODO implement listQueuedJobs()
-		return null;
-	}
+    /**
+     * Obtains the time the counting of nodes being sequenced and skipped began. This is a JBoss managed readonly property.
+     * 
+     * @return the time the sequencing statistics began
+     */
+    @ManagementProperty( name = "Start Time", description = "The time the sequencing statistics (sequenced, skipped) began", readOnly = true, use = ViewUse.RUNTIME )
+    public long getStartTime() {
+        // TODO this should return localized stringified version of time
+        SequencingService sequencingService = engine.getSequencingService();
+        return sequencingService == null ? 0 : sequencingService.getStatistics().getStartTime();
+    }
 
-	/**
-	 * Obtains the properties for the passed in object. This is a JBoss managed
-	 * operation.
-	 * 
-	 * @param objectName
-	 * @param objectType
-	 * 
-	 * @return an collection of managed properties (may be <code>null</code>)
-	 */
-	@ManagementOperation(description = "Obtains the properties for an object", impact = Impact.ReadOnly)
-	public List<ManagedProperty> getProperties(String objectName,
-			Component objectType) {
+    /**
+     * Obtains a current list of queued sequencing jobs. This is a JBoss managed operation.
+     * 
+     * @return the jobs (never <code>null</code>)
+     */
+    @ManagementOperation( description = "Obtains the list of queued managed jobs", impact = Impact.ReadOnly )
+    public Object listQueuedJobs() {
+        // TODO implement listQueuedJobs()
+        return null;
+    }
 
-		List<ManagedProperty> managedProps = new ArrayList<ManagedProperty>();
+    /**
+     * Obtains the properties for the passed in object. This is a JBoss managed operation.
+     * 
+     * @param objectName
+     * @param objectType
+     * @return an collection of managed properties (may be <code>null</code>)
+     */
+    @ManagementOperation( description = "Obtains the properties for an object", impact = Impact.ReadOnly )
+    public List<ManagedProperty> getProperties( String objectName,
+                                                Component objectType ) {
+        SequencingService sequencingService = engine.getSequencingService();
+        if (sequencingService == null) return Collections.emptyList();
 
-		if (objectType.equals(Component.SEQUENCER)) {
-			SequencerConfig sequencerConfig = getSequencer(objectName);
-			managedProps = ManagedUtils.getProperties(objectType,
-					sequencerConfig);
-		} else if (objectType.equals(Component.SEQUENCINGSERVICE)) {
-			managedProps = ManagedUtils.getProperties(objectType, this.sequencingService);
-			managedProps.addAll(ManagedUtils.getProperties(objectType, this.sequencingService.getStatistics()));
-		}
+        List<ManagedProperty> managedProps = new ArrayList<ManagedProperty>();
 
-		return managedProps;
-	}
+        if (objectType.equals(Component.SEQUENCER)) {
+            SequencerConfig sequencerConfig = getSequencer(objectName);
+            managedProps = ManagedUtils.getProperties(objectType, sequencerConfig);
+        } else if (objectType.equals(Component.SEQUENCINGSERVICE)) {
+            managedProps = ManagedUtils.getProperties(objectType, sequencingService);
+            managedProps.addAll(ManagedUtils.getProperties(objectType, sequencingService.getStatistics()));
+        }
 
-	public void setManagedEngine(ManagedEngine managedEngine) throws Exception {
-		this.setEngine(managedEngine);
-	}
+        return managedProps;
+    }
 
-	/**
-	 * @param engine
-	 *            Sets engine to the specified value.
-	 */
-	public void setEngine(ManagedEngine engine) {
-		this.engine = engine;
-		this.sequencingService = this.engine.getSequencingService();
-	}
+    /**
+     * The sequencers currently deployed. This is a JBoss managed readonly property.
+     * 
+     * @return List of <code>Sequencers</code>
+     */
+    @ManagementOperation( name = "Sequencers", description = "The sequencers currently deployed", impact = Impact.ReadOnly )
+    public Collection<ManagedSequencerConfig> getSequencers() {
+        SequencingService sequencingService = engine.getSequencingService();
+        if (sequencingService == null) return Collections.emptyList();
 
-	/**
-	 * @return engine
-	 */
-	public ManagedEngine getEngine() {
-		return engine;
-	}
+        List<SequencerConfig> sequencerConfigList = sequencingService.getSequencers();
+        List<ManagedSequencerConfig> managedSequencerConfigList = new ArrayList<ManagedSequencerConfig>();
+        for (SequencerConfig sequencerConfig : sequencerConfigList) {
+            managedSequencerConfigList.add(new ManagedSequencerConfig(sequencerConfig.getName(), sequencerConfig.getDescription()));
+        }
+        return managedSequencerConfigList;
+    }
 
-	/*
-	 * ManagedSequencer operations
-	 */
+    /**
+     * Obtains the specified managed sequencer in this engine.
+     * 
+     * @param sequencerName for the sequencer to be returned
+     * @return a {@link SequencerConfig} or <code>null</code> if sequencer doesn't exist
+     */
+    public SequencerConfig getSequencer( String sequencerName ) {
+        SequencingService sequencingService = engine.getSequencingService();
+        if (sequencingService == null) return null;
+        return getSequencerFrom(sequencingService, sequencerName);
+    }
 
-	/**
-	 * The sequencers currently deployed. This is a JBoss managed readonly
-	 * property.
-	 * 
-	 * @return List of <code>Sequencers</code>
-	 * 
-	 */
-	@ManagementOperation(name = "Sequencers", description = "The sequencers currently deployed", impact = Impact.ReadOnly)
-	public Collection<ManagedSequencerConfig> getSequencers() {
-		List<SequencerConfig> sequencerConfigList = this.sequencingService
-				.getSequencers();
-		List<ManagedSequencerConfig> managedSequencerConfigList = new ArrayList<ManagedSequencerConfig>();
-		for (SequencerConfig sequencerConfig : sequencerConfigList) {
-			managedSequencerConfigList
-					.add(new ManagedSequencerConfig(sequencerConfig.getName(),
-							sequencerConfig.getDescription()));
-		}
-		return managedSequencerConfigList;
-	}
-
-	/**
-	 * Obtains the specified managed sequencer in this engine.
-	 * 
-	 * @param sequencerName
-	 *            for the sequencer to be returned
-	 * 
-	 * @return a {@link SequencerConfig} or <code>null</code> if sequencer
-	 *         doesn't exist
-	 */
-	public SequencerConfig getSequencer(String sequencerName) {
-		SequencerConfig sequencer = null;
-		List<SequencerConfig> sequencerConfigList = this.sequencingService
-				.getSequencers();
-
-		for (SequencerConfig sequencerConfig : sequencerConfigList) {
-			if (sequencerName.equals(sequencerConfig.getName())) {
-				sequencer = sequencerConfig;
-			}
-		}
-
-		return sequencer;
-	}
+    protected SequencerConfig getSequencerFrom( SequencingService sequencingService,
+                                                String sequencerName ) {
+        assert sequencingService != null;
+        for (SequencerConfig sequencerConfig : sequencingService.getSequencers()) {
+            if (sequencerName.equals(sequencerConfig.getName())) {
+                return sequencerConfig;
+            }
+        }
+        return null;
+    }
 
 }

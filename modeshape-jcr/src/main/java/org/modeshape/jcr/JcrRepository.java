@@ -1320,6 +1320,18 @@ public class JcrRepository implements Repository {
         return activeSessions;
     }
 
+    /**
+     * Terminate all active sessions.
+     */
+    void terminateAllSessions() {
+        synchronized (this.activeSessions) {
+            for (JcrSession session : this.activeSessions.keySet()) {
+                session.terminate(false); // don't remove from active sessions, as we're blocked and iterating on it ...
+            }
+            this.activeSessions.clear();
+        }
+    }
+
     protected static Properties getBundleProperties() {
         if (bundleProperties == null) {
             // This is idempotent, so we don't need to lock ...

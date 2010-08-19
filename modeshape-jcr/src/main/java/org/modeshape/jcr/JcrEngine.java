@@ -143,6 +143,16 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         }
     }
 
+    /**
+     * Blocks until the shutdown has completed, or the timeout occurs, or the current thread is interrupted, whichever happens
+     * first.
+     * 
+     * @param timeout the maximum time to wait for each component in this engine
+     * @param unit the time unit of the timeout argument
+     * @return <tt>true</tt> if this service complete shut down and <tt>false</tt> if the timeout elapsed before it was shut down
+     *         completely
+     * @throws InterruptedException if interrupted while waiting
+     */
     @Override
     public boolean awaitTermination( long timeout,
                                      TimeUnit unit ) throws InterruptedException {
@@ -168,16 +178,15 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                                       LOCK_SWEEP_INTERVAL_IN_MILLIS,
                                       TimeUnit.MILLISECONDS);
     }
-    
-	/**
-	 * Get the version of this engine.
-	 * 
-	 * @return version
-	 */
-	public String getEngineVersion() {
-		return JcrRepository.getBundleProperty(
-				Repository.REP_VERSION_DESC, true);
-	}
+
+    /**
+     * Get the version of this engine.
+     * 
+     * @return version
+     */
+    public String getEngineVersion() {
+        return JcrRepository.getBundleProperty(Repository.REP_VERSION_DESC, true);
+    }
 
     /**
      * Get the {@link Repository} implementation for the named repository.
@@ -271,7 +280,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         // Read the namespaces ...
         ExecutionContext context = getExecutionContext();
         Node namespacesNode = subgraph.getNode(ModeShapeLexicon.NAMESPACES);
-        descriptors.put(org.modeshape.jcr.api.Repository.REPOSITORY_NAME,repositoryName);
+        descriptors.put(org.modeshape.jcr.api.Repository.REPOSITORY_NAME, repositoryName);
         if (namespacesNode != null) {
             GraphNamespaceRegistry registry = new GraphNamespaceRegistry(configuration, namespacesNode.getLocation().getPath(),
                                                                          ModeShapeLexicon.URI);
@@ -377,46 +386,59 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
     protected final String readable( Location location ) {
         return location.getString(context.getNamespaceRegistry());
     }
-    
+
     /**
-	 * @return descriptors
-	 */
-	public Map<String, Object> initDescriptors() {
-		ValueFactories factories = this.getExecutionContext()
-				.getValueFactories();
-		descriptors.put(Repository.SPEC_NAME_DESC, valueFor(factories,
-				JcrI18n.SPEC_NAME_DESC.text()));
-		descriptors.put(Repository.SPEC_VERSION_DESC,
-				valueFor(factories, "2.0"));
+     * @return descriptors
+     */
+    public Map<String, Object> initDescriptors() {
+        ValueFactories factories = this.getExecutionContext().getValueFactories();
+        descriptors.put(Repository.SPEC_NAME_DESC, valueFor(factories, JcrI18n.SPEC_NAME_DESC.text()));
+        descriptors.put(Repository.SPEC_VERSION_DESC, valueFor(factories, "2.0"));
 
-		if (!descriptors.containsKey(Repository.REP_NAME_DESC)) {
-			descriptors.put(Repository.REP_NAME_DESC, valueFor(factories,
-					JcrRepository.getBundleProperty(Repository.REP_NAME_DESC,
-							true)));
-		}
-		if (!descriptors.containsKey(Repository.REP_VENDOR_DESC)) {
-			descriptors.put(Repository.REP_VENDOR_DESC, valueFor(factories,
-					JcrRepository.getBundleProperty(Repository.REP_VENDOR_DESC,
-							true)));
-		}
-		if (!descriptors.containsKey(Repository.REP_VENDOR_URL_DESC)) {
-			descriptors.put(Repository.REP_VENDOR_URL_DESC, valueFor(factories,
-					JcrRepository.getBundleProperty(
-							Repository.REP_VENDOR_URL_DESC, true)));
-		}
-		if (!descriptors.containsKey(Repository.REP_VERSION_DESC)) {
-			descriptors.put(Repository.REP_VERSION_DESC, valueFor(factories,
-					getEngineVersion()));
-		}
-		return descriptors;
-	}
+        if (!descriptors.containsKey(Repository.REP_NAME_DESC)) {
+            descriptors.put(Repository.REP_NAME_DESC, valueFor(factories,
+                                                               JcrRepository.getBundleProperty(Repository.REP_NAME_DESC, true)));
+        }
+        if (!descriptors.containsKey(Repository.REP_VENDOR_DESC)) {
+            descriptors.put(Repository.REP_VENDOR_DESC,
+                            valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VENDOR_DESC, true)));
+        }
+        if (!descriptors.containsKey(Repository.REP_VENDOR_URL_DESC)) {
+            descriptors.put(Repository.REP_VENDOR_URL_DESC,
+                            valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VENDOR_URL_DESC, true)));
+        }
+        if (!descriptors.containsKey(Repository.REP_VERSION_DESC)) {
+            descriptors.put(Repository.REP_VERSION_DESC, valueFor(factories, getEngineVersion()));
+        }
+        return descriptors;
+    }
 
-	private static JcrValue valueFor(ValueFactories valueFactories, int type,
-			Object value) {
-		return new JcrValue(valueFactories, null, type, value);
-	}
+    private static JcrValue valueFor( ValueFactories valueFactories,
+                                      int type,
+                                      Object value ) {
+        return new JcrValue(valueFactories, null, type, value);
+    }
 
-	private static JcrValue valueFor(ValueFactories valueFactories, String value) {
-		return valueFor(valueFactories, PropertyType.STRING, value);
-	}
+    private static JcrValue valueFor( ValueFactories valueFactories,
+                                      String value ) {
+        return valueFor(valueFactories, PropertyType.STRING, value);
+    }
+
+    /**
+     * This method is equivalent to calling {@link #shutdown()} followed by {@link #awaitTermination(long, TimeUnit)}, except that
+     * after those methods are called any remaining JCR sessions are terminated automatically. This is useful when shutting down
+     * while there are long-running JCR sessions (such as for event listeners).
+     * 
+     * @param timeout the maximum time to wait for each component in this engine
+     * @param unit the time unit of the timeout argument
+     * @throws InterruptedException if interrupted while waiting
+     */
+    public void shutdownAndAwaitTermination( long timeout,
+                                             TimeUnit unit ) throws InterruptedException {
+        shutdown();
+        awaitTermination(timeout, unit);
+        for (JcrRepository repository : repositories.values()) {
+            if (repository != null) repository.terminateAllSessions();
+        }
+    }
 }
