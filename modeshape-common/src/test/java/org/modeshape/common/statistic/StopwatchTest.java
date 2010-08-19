@@ -32,7 +32,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.concurrent.TimeUnit;
-import org.modeshape.common.statistic.Stopwatch;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -118,7 +117,7 @@ public class StopwatchTest {
             pause(100);
             stopwatch.stop();
         }
-        assertThat((double)stopwatch.getTotalDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(400, 100)));
+        assertThat((double)stopwatch.getTotalDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(400, 200)));
     }
 
     @Test
@@ -128,7 +127,7 @@ public class StopwatchTest {
             pause(100);
             stopwatch.stop();
         }
-        assertThat((double)stopwatch.getAverageDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(100, 25)));
+        assertThat((double)stopwatch.getAverageDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(100, 50)));
     }
 
     @Test
@@ -148,7 +147,7 @@ public class StopwatchTest {
             pause(50 * (i + 1));
             stopwatch.stop();
         }
-        assertThat((double)stopwatch.getMaximumDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(150, 25)));
+        assertThat((double)stopwatch.getMaximumDuration().getDuration(TimeUnit.MILLISECONDS), is(closeTo(150, 50)));
     }
 
     @Test
