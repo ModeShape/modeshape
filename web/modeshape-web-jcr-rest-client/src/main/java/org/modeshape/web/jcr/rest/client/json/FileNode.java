@@ -32,7 +32,6 @@ import java.util.TimeZone;
 import net.jcip.annotations.Immutable;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.util.Base64;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.web.jcr.rest.client.IJcrConstants;
 import org.modeshape.web.jcr.rest.client.Utils;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;
@@ -77,9 +76,8 @@ public final class FileNode extends JsonNode {
                      String path,
                      File file ) throws Exception {
         super(file.getName());
-
-        CheckArg.isNotNull(workspace, "workspace");
-        CheckArg.isNotNull(path, "path");
+    	assert workspace != null;
+    	assert path != null;
 
         this.file = file;
         this.path = path;
@@ -143,7 +141,7 @@ public final class FileNode extends JsonNode {
      * @see #getFileContentsUrl()
      */
     String getFileContents( String jsonResponse ) throws Exception {
-        CheckArg.isNotNull(jsonResponse, "jsonResponse");
+    	assert jsonResponse != null;
         JSONObject contentNode = new JSONObject(jsonResponse);
         JSONObject props = (JSONObject)contentNode.get(IJsonConstants.PROPERTIES_KEY);
         String encodedContents = props.getString(IJcrConstants.DATA_PROPERTY);

@@ -39,6 +39,8 @@ public final class RestClientI18n {
     public static I18n unknownHttpRequestMethodMsg;
 
     public static I18n workspaceShortDescription;
+    
+    public static I18n nodeTypeShortDescription;
 
     // JsonRestClient messages
 
@@ -63,6 +65,10 @@ public final class RestClientI18n {
     public static I18n unpublishSucceededMsg;
 
     public static I18n invalidQueryLanguageMsg;
+    
+    public static I18n getNodeTypesFailedMsg;
+    
+    public static I18n getNodeTypeFailedMsg;
 
     static {
         try {

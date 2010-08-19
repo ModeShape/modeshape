@@ -67,12 +67,12 @@ public final class RepositoryTest {
         assertThat(set.size(), equalTo(1));
     }
 
-    @Test( expected = RuntimeException.class )
+    @Test( expected = java.lang.AssertionError.class )
     public void shouldNotAllowNullName() {
         new Repository(null, SERVER1);
     }
 
-    @Test( expected = RuntimeException.class )
+    @Test( expected = java.lang.AssertionError.class )
     public void shouldNotAllowNullServer() {
         new Repository(NAME1, null);
     }

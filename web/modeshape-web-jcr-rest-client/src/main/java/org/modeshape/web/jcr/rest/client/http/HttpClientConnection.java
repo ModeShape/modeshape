@@ -26,6 +26,7 @@ package org.modeshape.web.jcr.rest.client.http;
 import static org.modeshape.web.jcr.rest.client.RestClientI18n.unknownHttpRequestMethodMsg;
 import java.net.URL;
 import javax.ws.rs.core.MediaType;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -39,7 +40,6 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.AbstractHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.web.jcr.rest.client.domain.Server;
 import org.modeshape.web.jcr.rest.client.json.IJsonConstants.RequestMethod;
 
@@ -85,9 +85,9 @@ public final class HttpClientConnection {
     public HttpClientConnection( Server server,
                                  URL url,
                                  RequestMethod method ) throws Exception {
-        CheckArg.isNotNull(server, "server");
-        CheckArg.isNotNull(url, "url");
-        CheckArg.isNotNull(method, "method");
+    	assert server != null;
+    	assert url != null;
+    	assert method != null;
 
         this.httpClient = new DefaultHttpClient();
         this.httpClient.getCredentialsProvider().setCredentials(new AuthScope(url.getHost(), url.getPort()),
@@ -154,7 +154,7 @@ public final class HttpClientConnection {
      * @throws Exception if there is a problem writing to the connection
      */
     public void write( byte[] bytes ) throws Exception {
-        CheckArg.isNotNull(bytes, "bytes");
+    	assert bytes != null;
 
         ByteArrayEntity entity = new ByteArrayEntity(bytes);
         if (contentType == null) {

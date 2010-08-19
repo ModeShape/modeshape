@@ -26,7 +26,6 @@ package org.modeshape.web.jcr.rest.client.json;
 import java.net.URL;
 import net.jcip.annotations.Immutable;
 import org.codehaus.jettison.json.JSONObject;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.web.jcr.rest.client.IJcrConstants;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;
 
@@ -58,9 +57,8 @@ public final class FolderNode extends JsonNode {
     public FolderNode( Workspace workspace,
                        String fullPath ) throws Exception {
         super(fullPath);
-
-        CheckArg.isNotNull(workspace, "workspace");
-        CheckArg.isNotNull(fullPath, "fullPath");
+    	assert workspace != null;
+    	assert fullPath != null;
 
         this.workspace = workspace;
 

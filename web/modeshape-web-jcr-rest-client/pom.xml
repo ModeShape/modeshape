@@ -40,11 +40,28 @@
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-jaxrs</artifactId>
 			<version>1.2.1.GA</version>
+			 <exclusions>
+                <exclusion>
+                    <artifactId>slf4j-simple</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-jaxb-provider</artifactId>
 			<version>1.2.1.GA</version>
+			<scope>runtime</scope>
+		      <exclusions>
+                <exclusion>
+                    <groupId>com.sun.xml.bind</groupId>
+                    <artifactId>jaxb-impl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.xml.stream</groupId>
+                    <artifactId>stream.buffer</artifactId>
+                </exclusion>
+            </exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
@@ -55,19 +72,21 @@
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
 			<version>4.0</version>
-			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.hamcrest</groupId>
 			<artifactId>hamcrest-library</artifactId>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
+			<scope>test</scope>
 		</dependency>
 		<!--
 			Logging (require SLF4J API for compiling, but use Log4J and its SLF4J
@@ -80,10 +99,12 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
+			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
+			<scope>runtime</scope>
 		</dependency>
 		<!-- 
         Java Concurrency in Practice annotations
@@ -109,34 +130,30 @@
 				<activeByDefault>true</activeByDefault>
 			</activation>
 			<build>
-				<pluginManagement>
-					<plugins>
-						<plugin>
-					       <artifactId>maven-assembly-plugin</artifactId>
-					        <configuration>
-					        <!--  using the kit.xml to exclude the log4j related jars from the jar-with-dependencies -->
-					             <descriptors>
-					                <descriptor>src/assembly/build-jar-with-dependencies.xml</descriptor>
-					                <descriptor>src/assembly/kit.xml</descriptor>
-					            </descriptors>
-					          <archive>
-					            <manifest>
-					              <addClasspath>true</addClasspath>
-					            </manifest>
-					          </archive>
-					        </configuration> 
-					        <executions>
-					          <execution>
-					            <id>make-command-line-tool</id>
-					            <phase>package</phase>
-					            <goals>
-					              <goal>single</goal>
-					            </goals>
-					          </execution>
-					        </executions>
-				      </plugin>
-					</plugins>
-				</pluginManagement>
+              <pluginManagement>
+                    <plugins>
+                        <plugin>
+
+                            <artifactId>maven-assembly-plugin</artifactId>
+                             <configuration>
+                                <descriptors>
+                                     <descriptor>src/assembly/build-jar-with-dependencies.xml</descriptor>
+                                     <!--
+                                    <descriptor>src/assembly/kit.xml</descriptor>  
+                                    -->
+                                </descriptors>
+                               </configuration>
+                                <executions>
+                                    <execution>
+                                        <phase>package</phase>
+                                            <goals>
+                                                <goal>single</goal>
+                                            </goals>
+                                    </execution>
+                                </executions>
+                        </plugin>                        
+                     </plugins>
+                </pluginManagement>
 				<plugins>
 					<plugin>
 						<groupId>org.codehaus.cargo</groupId>
@@ -216,6 +233,7 @@
 					<!--
 						Adding OSGI metadata to the JAR without changing the packaging type.
 					-->
+					
 					<plugin>
 						<artifactId>maven-jar-plugin</artifactId>
 						<configuration>
@@ -237,6 +255,7 @@
 							</execution>
 						</executions>
 					</plugin>
+					
 				</plugins>
 			</build>
 		</profile>

@@ -37,13 +37,13 @@ import java.util.Map;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.util.Base64;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.web.jcr.rest.client.IJcrConstants;
 import org.modeshape.web.jcr.rest.client.IRestClient;
 import org.modeshape.web.jcr.rest.client.RestClientI18n;
 import org.modeshape.web.jcr.rest.client.Status;
 import org.modeshape.web.jcr.rest.client.Status.Severity;
+import org.modeshape.web.jcr.rest.client.domain.NodeType;
 import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
@@ -202,7 +202,7 @@ public final class JsonRestClient implements IRestClient {
      * @see org.modeshape.web.jcr.rest.client.IRestClient#getRepositories(org.modeshape.web.jcr.rest.client.domain.Server)
      */
     public Collection<Repository> getRepositories( Server server ) throws Exception {
-        CheckArg.isNotNull(server, "server");
+    	assert server != null;
         LOGGER.trace("getRepositories: server={0}", server);
 
         ServerNode serverNode = new ServerNode(server);
@@ -226,8 +226,77 @@ public final class JsonRestClient implements IRestClient {
             }
         }
     }
-
+ 
     /**
+	 * {@inheritDoc}
+	 *
+	 * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeTypes(org.modeshape.web.jcr.rest.client.domain.Workspace, java.lang.String, java.lang.String)
+	 */
+	@Override
+	public Collection<NodeType> getNodeTypes(Workspace workspace, String relativePath, String nodeDepth)
+			throws Exception {
+    	assert workspace != null;
+        LOGGER.trace("getNodeTypes: workspace={0}, relativePath{1}, depth{2}", workspace, relativePath, nodeDepth);
+
+        NodeTypeNode nodetypeNode = new NodeTypeNode(workspace, relativePath, nodeDepth);
+        HttpClientConnection connection = connect(workspace.getServer(), nodetypeNode.getUrl(), RequestMethod.GET);
+
+        try {
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                return nodetypeNode.getNodeTypes(connection.read());
+            }
+
+            // not a good response code
+            LOGGER.error(RestClientI18n.connectionErrorMsg, responseCode, "getNodeTypes");
+            String msg = RestClientI18n.getNodeTypesFailedMsg.text(nodetypeNode.getUrl(),
+                                                                    responseCode);
+            throw new RuntimeException(msg);
+        } finally {
+            if (connection != null) {
+                LOGGER.trace("getNodeTypes: leaving");
+                connection.disconnect();
+            }
+        }
+	}
+	
+    /**
+	 * {@inheritDoc}
+	 *
+	 * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeType(Workspace, java.lang.String, java.lang.String)
+	 */
+	@Override
+	public NodeType getNodeType(Workspace workspace, String relativePath, String nodeDepth)
+			throws Exception {
+    	assert workspace != null;
+    	assert relativePath != null;
+        LOGGER.trace("getNodeType: workspace={0}, relativePath={1}", workspace, relativePath);
+
+        NodeTypeNode nodetypeNode = new NodeTypeNode(workspace, relativePath, nodeDepth);
+        HttpClientConnection connection = connect(workspace.getServer(), nodetypeNode.getUrl(), RequestMethod.GET);
+
+        try {
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                return nodetypeNode.getNodeType(connection.read());
+            }
+
+            // not a good response code
+            LOGGER.error(RestClientI18n.connectionErrorMsg, responseCode, "getNodeType");
+            String msg = RestClientI18n.getNodeTypeFailedMsg.text(relativePath, nodetypeNode.getUrl(),
+                                                                    responseCode);
+            throw new RuntimeException(msg);
+        } finally {
+            if (connection != null) {
+                LOGGER.trace("getNodeTypes: leaving");
+                connection.disconnect();
+            }
+        }
+	}
+
+	/**
      * {@inheritDoc}
      * 
      * @see org.modeshape.web.jcr.rest.client.IRestClient#getUrl(java.io.File, java.lang.String,
@@ -236,9 +305,9 @@ public final class JsonRestClient implements IRestClient {
     public URL getUrl( File file,
                        String path,
                        Workspace workspace ) throws Exception {
-        CheckArg.isNotNull(file, "file");
-        CheckArg.isNotNull(path, "path");
-        CheckArg.isNotNull(workspace, "workspace");
+    	assert file != null;
+    	assert path != null;
+    	assert workspace != null;
 
         // can't be a directory
         if (file.isDirectory()) {
@@ -254,7 +323,7 @@ public final class JsonRestClient implements IRestClient {
      * @see org.modeshape.web.jcr.rest.client.IRestClient#getWorkspaces(org.modeshape.web.jcr.rest.client.domain.Repository)
      */
     public Collection<Workspace> getWorkspaces( Repository repository ) throws Exception {
-        CheckArg.isNotNull(repository, "repository");
+    	assert repository != null;
         LOGGER.trace("getWorkspaces: repository={0}", repository);
 
         RepositoryNode repositoryNode = new RepositoryNode(repository);
@@ -351,9 +420,9 @@ public final class JsonRestClient implements IRestClient {
     public Status publish( Workspace workspace,
                            String path,
                            File file ) {
-        CheckArg.isNotNull(workspace, "workspace");
-        CheckArg.isNotNull(path, "path");
-        CheckArg.isNotNull(file, "file");
+    	assert workspace != null;
+    	assert path != null;
+    	assert file != null;
         LOGGER.trace("publish: workspace={0}, path={1}, file={2}", workspace.getName(), path, file.getAbsolutePath());
 
         try {
@@ -384,9 +453,9 @@ public final class JsonRestClient implements IRestClient {
     public Status unpublish( Workspace workspace,
                              String path,
                              File file ) {
-        CheckArg.isNotNull(workspace, "workspace");
-        CheckArg.isNotNull(path, "path");
-        CheckArg.isNotNull(file, "file");
+    	assert workspace != null;
+    	assert path != null;
+    	assert file != null;
         LOGGER.trace("unpublish: workspace={0}, path={1}, file={2}", workspace.getName(), path, file.getAbsolutePath());
 
         HttpClientConnection connection = null;
@@ -436,9 +505,10 @@ public final class JsonRestClient implements IRestClient {
                                  String statement,
                                  int offset,
                                  int limit ) throws Exception {
-        CheckArg.isNotNull(workspace, "workspace");
-        CheckArg.isNotNull(language, "language");
-        CheckArg.isNotNull(statement, "statement");
+       	assert workspace != null;
+       	assert language != null;
+       	assert statement != null;
+       	
         LOGGER.trace("query: workspace={0}, language={1}, file={2}, offset={3}, limit={4}",
                      workspace.getName(),
                      language,
@@ -566,7 +636,8 @@ public final class JsonRestClient implements IRestClient {
             System.out.println("  	 	" + WORKSPACENAME_PARM + " (default=default)");
             System.out.println(" 		" + USERNAME_PARM + "(default=admin");
             System.out.println("  	 	" + PWD_PARM + " (default=admin");
-            System.out.println("  	 	" + UNPUBLISH + " with no parameter, will activate");
+            System.out.println("  	 	" + UNPUBLISH + " with no parameter, will remove file(s)");
+           
 
             System.exit(0);
         }
@@ -640,14 +711,7 @@ public final class JsonRestClient implements IRestClient {
             e.printStackTrace();
             System.exit(-1);
         }
-
-        try {
-            client.getWorkspaces(repository);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
-
+        
         if (publish) {
 
             if (file_name != null) {

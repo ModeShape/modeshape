@@ -24,7 +24,7 @@
 package org.modeshape.web.jcr.rest.client.domain;
 
 import net.jcip.annotations.Immutable;
-import org.modeshape.common.util.CheckArg;
+
 import org.modeshape.common.util.HashCode;
 import org.modeshape.web.jcr.rest.client.RestClientI18n;
 
@@ -61,8 +61,8 @@ public class Workspace implements IModeShapeObject {
      */
     public Workspace( String name,
                       Repository repository ) {
-        CheckArg.isNotNull(name, "name");
-        CheckArg.isNotNull(repository, "repository");
+    	assert name != null;
+    	assert repository != null;
         this.name = name;
         this.repository = repository;
     }

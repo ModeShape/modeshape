@@ -70,7 +70,7 @@ public final class ServerTest {
         assertThat(set.size(), equalTo(1));
     }
 
-    @Test( expected = RuntimeException.class )
+    @Test( expected = java.lang.AssertionError.class )
     public void shouldNotAllowNullUrl() {
         new Server(null, USER1, PSWD1);
     }

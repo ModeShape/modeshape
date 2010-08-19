@@ -24,6 +24,7 @@
 package org.modeshape.web.jcr.rest.client.domain;
 
 import net.jcip.annotations.Immutable;
+
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.web.jcr.rest.client.RestClientI18n;
@@ -81,8 +82,8 @@ public class Server implements IModeShapeObject {
     public Server( String url,
                    String user,
                    String password ) {
-        CheckArg.isNotNull(url, "url");
-        CheckArg.isNotNull(user, "user");
+    	assert url != null;
+    	assert user != null;
 
         this.url = url;
         this.user = user;

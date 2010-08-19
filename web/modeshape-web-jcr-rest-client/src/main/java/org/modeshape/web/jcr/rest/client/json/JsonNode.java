@@ -25,7 +25,6 @@ package org.modeshape.web.jcr.rest.client.json;
 
 import java.net.URL;
 import org.codehaus.jettison.json.JSONObject;
-import org.modeshape.common.util.CheckArg;
 
 /**
  * The <code>JsonNode</code> class defines the API for interacing with JSON objects. Every <code>JsonNode</code> knows how to
@@ -50,7 +49,7 @@ public abstract class JsonNode extends JSONObject {
      * @param id the node identifier (never <code>null</code>)
      */
     protected JsonNode( String id ) {
-        CheckArg.isNotNull(id, "id");
+    	assert id != null;
         this.id = id;
     }
 
