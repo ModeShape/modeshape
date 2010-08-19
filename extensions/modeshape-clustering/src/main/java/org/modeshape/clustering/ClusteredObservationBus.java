@@ -178,11 +178,11 @@ public class ClusteredObservationBus implements ObservationBus {
             // Add a listener through which we'll know what's going on within the cluster ...
             channel.addChannelListener(listener);
 
-            // Now connect to the cluster ...
-            channel.connect(clusterName);
-
             // Set the receiver through which we'll receive all of the changes ...
             channel.setReceiver(receiver);
+
+            // Now connect to the cluster ...
+            channel.connect(clusterName);
         } catch (ChannelException e) {
             throw new IllegalStateException(ClusteringI18n.errorWhileStartingJGroups.text(configuration), e);
         }

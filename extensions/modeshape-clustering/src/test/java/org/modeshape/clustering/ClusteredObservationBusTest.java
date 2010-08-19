@@ -30,18 +30,19 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.stub;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.Vector;
+import org.jgroups.Address;
 import org.jgroups.ChannelListener;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.Receiver;
+import org.jgroups.View;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -61,12 +62,27 @@ public class ClusteredObservationBusTest {
     private ClusteredObservationBus bus;
     private ExecutionContext context = new ExecutionContext();
     protected JChannel mockChannel;
+    protected View mockView;
+    protected Vector<Address> channelMembers;
 
     @Before
     public void beforeEach() {
-        mockChannel = Mockito.mock(JChannel.class);
-        // Create a clustered bus that does NOT use a real JChannel ...
-        bus = newBus(mockChannel);
+        // Now create a mock JChannel and our bus ...
+        final JChannel mockChannel = Mockito.mock(JChannel.class);
+        this.mockChannel = mockChannel;
+        this.bus = new ClusteredObservationBus() {
+            @Override
+            protected JChannel newChannel( String configuration ) {
+                return mockChannel;
+            }
+        };
+        // Create a mocked view; the only thing ClusteredObservationBus uses it for is to
+        // call 'channel.getView().getMembers().size()', so mock these objects so that the
+        // size is 'numberOfMembers'
+        channelMembers = new Vector<Address>();
+        mockView = Mockito.mock(View.class);
+        stub(mockChannel.getView()).toReturn(mockView);
+        stub(mockView.getMembers()).toReturn(channelMembers);
     }
 
     @Test
@@ -178,15 +194,18 @@ public class ClusteredObservationBusTest {
         bus.start();
         verify(mockChannel, times(1)).addChannelListener(ArgumentCaptor.forClass(ChannelListener.class).capture());
         verify(mockChannel, times(1)).connect("clusterName");
-        verify(mockChannel, times(1)).setReceiver(ArgumentCaptor.forClass(Receiver.class).capture());
+
+        // Get the bus' receiver so we can set the view ...
+        ArgumentCaptor<Receiver> receiverArgument = ArgumentCaptor.forClass(Receiver.class);
+        verify(mockChannel, times(1)).setReceiver(receiverArgument.capture());
+
+        // Pretend that the channel has two members ...
+        setChannelMemberCount(2);
+        receiverArgument.getValue().viewAccepted(mockView);
 
         // When connected, JGroups will call back to the listener and the bus will record it as open.
         // But we have to do this manually because we've stubbed out JGroups ...
         bus.isOpen.set(true);
-
-        // JGroups also normally calls Receiver.viewAccepted(...), and the bus' receiver sets whether there are
-        // multiple members in the cluster. We need to set this manually because we've stubbed out JGroups ...
-        bus.multipleAddressesInCluster.set(true);
 
         // Now call the notify method ...
         bus.notify(changes());
@@ -197,19 +216,25 @@ public class ClusteredObservationBusTest {
     @Test
     public void shouldAllowNotifyToBeCalledAfterStartWithOneMemberAndShouldSendMessageToLocalObserversBuNotJGroups()
         throws Exception {
+        // Pretend that the channel has two members ...
+        setChannelMemberCount(1);
+
         bus.setClusterName("clusterName");
         bus.start();
         verify(mockChannel, times(1)).addChannelListener(ArgumentCaptor.forClass(ChannelListener.class).capture());
         verify(mockChannel, times(1)).connect("clusterName");
-        verify(mockChannel, times(1)).setReceiver(ArgumentCaptor.forClass(Receiver.class).capture());
+
+        // Get the bus' receiver so we can set the view ...
+        ArgumentCaptor<Receiver> receiverArgument = ArgumentCaptor.forClass(Receiver.class);
+        verify(mockChannel, times(1)).setReceiver(receiverArgument.capture());
+
+        // Pretend that the channel has only one member ...
+        setChannelMemberCount(1);
+        receiverArgument.getValue().viewAccepted(mockView);
 
         // When connected, JGroups will call back to the listener and the bus will record it as open.
         // But we have to do this manually because we've stubbed out JGroups ...
         bus.isOpen.set(true);
-
-        // JGroups also normally calls Receiver.viewAccepted(...), and the bus' receiver sets whether there are
-        // multiple members in the cluster. We need to set this manually because we've stubbed out JGroups ...
-        bus.multipleAddressesInCluster.set(false);
 
         // Add a local listener ...
         Observer observer = mock(Observer.class);
@@ -224,56 +249,18 @@ public class ClusteredObservationBusTest {
         verify(observer, times(1)).notify(changes);
     }
 
-    @Test
-    public void shouldProperlySendChangesThroughRealJGroupsCluster() throws Exception {
-
-        // Create three observers ...
-        CountDownLatch latch = new CountDownLatch(3);
-        CustomObserver observer1 = new CustomObserver(latch);
-        CustomObserver observer2 = new CustomObserver(latch);
-        CustomObserver observer3 = new CustomObserver(latch);
-
-        // Create three busses using a real JGroups cluster ...
-        String name = "MyCluster";
-        ClusteredObservationBus bus1 = startNewBus(name, observer1);
-        try {
-            ClusteredObservationBus bus2 = startNewBus(name, observer2);
-            try {
-                ClusteredObservationBus bus3 = startNewBus(name, observer3);
-                try {
-
-                    // Send changes to one of the busses ...
-                    Changes changes = changes();
-                    bus1.notify(changes);
-
-                    // Wait for the observers to be notified ...
-                    observer1.await();
-                    observer2.await();
-                    observer3.await();
-
-                    // Now verify that all of the observers received the notification ...
-                    assertThat(observer1.getObservedChanges().size(), is(1));
-                    assertThat(observer2.getObservedChanges().size(), is(1));
-                    assertThat(observer3.getObservedChanges().size(), is(1));
-                    assertThat(observer1.getObservedChanges().get(0), is(changes));
-                    assertThat(observer2.getObservedChanges().get(0), is(changes));
-                    assertThat(observer3.getObservedChanges().get(0), is(changes));
-
-                    // Stop the busses ...
-                } finally {
-                    bus3.shutdown();
-                }
-            } finally {
-                bus2.shutdown();
-            }
-        } finally {
-            bus1.shutdown();
-        }
-    }
-
     // ----------------------------------------------------------------------------------------------------------------
     // Utility methods
     // ----------------------------------------------------------------------------------------------------------------
+
+    protected void setChannelMemberCount( int count ) {
+        while (channelMembers.size() > count) {
+            channelMembers.remove(channelMembers.size() - 1);
+        }
+        while (channelMembers.size() < count) {
+            channelMembers.add(Mockito.mock(Address.class));
+        }
+    }
 
     protected void setAndGetClusterName( String name ) {
         bus.setClusterName(name);
@@ -287,30 +274,6 @@ public class ClusteredObservationBusTest {
         assertThat(configAfter, is(config));
     }
 
-    protected ClusteredObservationBus startNewBus( String name,
-                                                   Observer localObserver ) {
-        ClusteredObservationBus bus = newBus(null);
-        bus.setClusterName(name);
-        bus.start();
-        bus.register(localObserver);
-        return bus;
-    }
-
-    protected ClusteredObservationBus newBus( final JChannel channel ) {
-        return channel == null ? new ClusteredObservationBus() : new ClusteredObservationBus() {
-            /**
-             * {@inheritDoc}
-             * 
-             * @see org.modeshape.clustering.ClusteredObservationBus#newChannel(java.lang.String)
-             */
-            @Override
-            protected JChannel newChannel( String configuration ) {
-                return channel;
-            }
-        };
-
-    }
-
     protected Changes changes() {
         DateTime now = context.getValueFactories().getDateFactory().create();
         Path path = context.getValueFactories().getPathFactory().create("/a");
@@ -320,33 +283,5 @@ public class ClusteredObservationBusTest {
         request.setActualLocationOfNode(Location.create(childPath));
         List<ChangeRequest> requests = Collections.singletonList((ChangeRequest)request);
         return new Changes("processId", "contextId", "username", "sourceName", now, requests, null);
-    }
-
-    protected static class CustomObserver implements Observer {
-        private final List<Changes> receivedChanges = new ArrayList<Changes>();
-        private final CountDownLatch latch;
-
-        protected CustomObserver( CountDownLatch latch ) {
-            this.latch = latch;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.observe.Observer#notify(org.modeshape.graph.observe.Changes)
-         */
-        @Override
-        public void notify( Changes changes ) {
-            receivedChanges.add(changes);
-            latch.countDown();
-        }
-
-        public void await() throws InterruptedException {
-            latch.await(250, TimeUnit.MILLISECONDS);
-        }
-
-        public List<Changes> getObservedChanges() {
-            return receivedChanges;
-        }
     }
 }
