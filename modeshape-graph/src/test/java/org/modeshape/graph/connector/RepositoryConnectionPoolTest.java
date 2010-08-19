@@ -220,5 +220,29 @@ public class RepositoryConnectionPoolTest {
         pool.shutdown();
         pool.awaitTermination(4, TimeUnit.SECONDS);
     }
+    
+    @Test
+    public void shouldReturnTrueFromPingIfRunning() throws Exception {
+        int numConnectionsInPool = 2;
+        RepositoryConnectionPool pool = new RepositoryConnectionPool(source);
+        pool.setCorePoolSize(numConnectionsInPool);
+        pool.setMaximumPoolSize(numConnectionsInPool);
+        assertThat(pool.ping(), is(true));
+        assertThat(pool.ping(20, TimeUnit.SECONDS), is(true));
+        pool.shutdown();
+        pool.awaitTermination(4, TimeUnit.SECONDS);
+    }
+    
+    @Test
+    public void shouldReturnFalseFromPingIfNotRunning() throws Exception {
+        int numConnectionsInPool = 2;
+        RepositoryConnectionPool pool = new RepositoryConnectionPool(source);
+        pool.setCorePoolSize(numConnectionsInPool);
+        pool.setMaximumPoolSize(numConnectionsInPool);
+        pool.shutdown();
+        pool.awaitTermination(4, TimeUnit.SECONDS);
+        assertThat(pool.ping(), is(false));
+
+    }
 
 }
