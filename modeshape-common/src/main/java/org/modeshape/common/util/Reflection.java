@@ -458,6 +458,10 @@ public class Reflection {
             // Try 'is' getter ...
             methodNamesArray = findMethodNames("is" + javaPropertyName);
         }
+        if (methodNamesArray.length <= 0) {
+            // Try 'are' getter ...
+            methodNamesArray = findMethodNames("are" + javaPropertyName);
+        }
         return invokeBestMethodOnTarget(methodNamesArray, target);
     }
 
@@ -699,6 +703,7 @@ public class Reflection {
                 inferred = false;
             }
         }
+        
         Property property = new Property(propertyName, value, label, description, category, readOnly, type, allowedValues);
         property.setInferred(inferred);
         return property;
