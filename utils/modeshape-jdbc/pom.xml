@@ -172,58 +172,7 @@
                     </resource>
                 </resources>
                 <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.cargo</groupId>
-                        <artifactId>cargo-maven2-plugin</artifactId>
-                        <version>1.0.1-alpha-2</version>
-                        <executions>
-                            <execution>
-                                <id>start-container</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>start</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>stop-container</id>
-                                <phase>post-integration-test</phase>
-                                <goals>
-                                    <goal>stop</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <container>
-                                <containerId>${cargo.container}</containerId>
-                                <home>${cargo.container.home}</home>
-                            </container>
-                            <configuration>
-                                <properties>
-                                    <cargo.logging>high</cargo.logging>
-                                    <cargo.servlet.users>
-                                        dnauser:password:connect,readwrite|unauthorized:password:bogus
-                                    </cargo.servlet.users>
-                                    <cargo.servlet.port>8090</cargo.servlet.port>
-                                </properties>
-
-                                <deployables>
-                                    <!-- application to deploy -->
-                                    <deployable>
-                                        <groupId>org.modeshape</groupId>
-                                        <artifactId>modeshape-web-jcr-rest-war
-                                        </artifactId>
-                                        <type>war</type>
-                                        <properties>
-                                            <context>resources</context>
-                                        </properties>
-                                    </deployable>
-                                </deployables>
-                            </configuration>
-                            <wait>false</wait>
-                        </configuration>
-                    </plugin>
-                    
-                                        <!--
+                <!--
                         Override the default Surefire behavior to run during
                         integration-test phase
                     -->
@@ -300,6 +249,6 @@
     </plugins>
   </build>
   </profile>
-      </profiles>
+ </profiles>
         
 </project>
