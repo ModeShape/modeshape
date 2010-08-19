@@ -26,10 +26,18 @@ package org.modeshape.rhq.plugin;
 import java.util.Map;
 import java.util.Set;
 
+import javax.naming.NamingException;
+
+import org.jboss.metatype.api.values.MetaValue;
+import org.jboss.metatype.api.values.MetaValueFactory;
 import org.mc4j.ems.connection.EmsConnection;
+import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
+import org.modeshape.rhq.plugin.util.PluginConstants;
+import org.modeshape.rhq.plugin.util.ProfileServiceUtil;
 import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType;
 import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Connector;
 import org.rhq.core.domain.configuration.Configuration;
+import org.rhq.core.domain.measurement.AvailabilityType;
 import org.rhq.core.domain.measurement.MeasurementReport;
 import org.rhq.core.domain.measurement.MeasurementScheduleRequest;
 import org.rhq.core.pluginapi.inventory.CreateResourceReport;
@@ -39,7 +47,7 @@ public class ConnectorComponent extends Facet {
 
 	/**
 	 * {@inheritDoc}
-	 *
+	 * 
 	 * @see org.modeshape.rhq.plugin.Facet#getComponentType()
 	 */
 	@Override
@@ -47,26 +55,58 @@ public class ConnectorComponent extends Facet {
 		return ComponentType.Connector.NAME;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * @see org.modeshape.rhq.plugin.Facet#getAvailability()
+	 */
+	@Override
+	public AvailabilityType getAvailability() {
+
+		MetaValue value;
+		Boolean pingResultSuccess = new Boolean(false);
+		try {
+			String connectorName = this.resourceContext.getResourceKey();
+			MetaValue[] args = new MetaValue[] { MetaValueFactory.getInstance().create(connectorName) };
+			value = ModeShapeManagementView.executeManagedOperation(ProfileServiceUtil
+					.getManagedEngine(getConnection()), "pingConnector", args);
+			pingResultSuccess = ProfileServiceUtil.booleanValue(value);
+		} catch (NamingException e) {
+			LOG.error("Naming exception getting: "
+					+ PluginConstants.ComponentType.Engine.MODESHAPE_ENGINE);
+			return AvailabilityType.DOWN;
+		} catch (Exception e) {
+			LOG.error("Naming exception getting: "
+					+ PluginConstants.ComponentType.Engine.MODESHAPE_ENGINE);
+			return AvailabilityType.DOWN;
+		}
+
+		return (pingResultSuccess) ? AvailabilityType.UP
+				: AvailabilityType.DOWN;
+	}
 
 	/**
 	 * {@inheritDoc}
-	 *
-	 * @see org.modeshape.rhq.plugin.Facet#setOperationArguments(java.lang.String, org.rhq.core.domain.configuration.Configuration, java.util.Map)
+	 * 
+	 * @see org.modeshape.rhq.plugin.Facet#setOperationArguments(java.lang.String,
+	 *      org.rhq.core.domain.configuration.Configuration, java.util.Map)
 	 */
 	@Override
 	protected void setOperationArguments(String name,
 			Configuration configuration, Map<String, Object> valueMap) {
-		valueMap.put(Connector.Operations.Parameters.CONNECTOR_NAME, this.resourceContext.getResourceKey());
+		valueMap.put(Connector.Operations.Parameters.CONNECTOR_NAME,
+				this.resourceContext.getResourceKey());
 		// Parameter logic for engine Operations
 		if (name.equals(Connector.Operations.PING)) {
-			//only parameter is name which is already set
-		} 
+			// only parameter is name which is already set
+		}
 	}
-	
+
 	/**
 	 * {@inheritDoc}
-	 *
-	 * @see org.modeshape.rhq.plugin.Facet#getValues(org.rhq.core.domain.measurement.MeasurementReport, java.util.Set)
+	 * 
+	 * @see org.modeshape.rhq.plugin.Facet#getValues(org.rhq.core.domain.measurement.MeasurementReport,
+	 *      java.util.Set)
 	 */
 	@Override
 	public void getValues(MeasurementReport arg0,
@@ -75,7 +115,7 @@ public class ConnectorComponent extends Facet {
 
 	/**
 	 * {@inheritDoc}
-	 *
+	 * 
 	 * @see org.rhq.core.pluginapi.inventory.CreateChildResourceFacet#createResource(org.rhq.core.pluginapi.inventory.CreateResourceReport)
 	 */
 	@Override
@@ -83,10 +123,9 @@ public class ConnectorComponent extends Facet {
 		return null;
 	}
 
-
 	/**
 	 * {@inheritDoc}
-	 *
+	 * 
 	 * @see org.rhq.plugins.jbossas5.ProfileServiceComponent#getConnection()
 	 */
 	@Override
@@ -94,10 +133,10 @@ public class ConnectorComponent extends Facet {
 		return ((EngineComponent) this.resourceContext
 				.getParentResourceComponent()).getConnection();
 	}
-	
+
 	/**
 	 * {@inheritDoc}
-	 *
+	 * 
 	 * @see org.rhq.plugins.jmx.JMXComponent#getEmsConnection()
 	 */
 	@Override
