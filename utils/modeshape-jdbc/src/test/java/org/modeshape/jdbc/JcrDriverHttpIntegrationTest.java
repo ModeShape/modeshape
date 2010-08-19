@@ -24,43 +24,18 @@
 package org.modeshape.jdbc;
 
 import static org.junit.Assert.assertEquals;
-
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.when;
 
-import java.io.InputStream;
-import java.net.URL;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
-import javax.jcr.ImportUUIDBehavior;
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.naming.Context;
-
-import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
-import org.modeshape.jcr.JcrConfiguration;
-import org.modeshape.jcr.JcrEngine;
-import org.modeshape.jcr.JcrRepository;
-import org.modeshape.jcr.ModeShapeRoles;
-import org.modeshape.jcr.JcrRepository.Option;
-import org.modeshape.jcr.JcrRepository.QueryLanguage;
 
 
 /**
@@ -92,16 +67,10 @@ public class JcrDriverHttpIntegrationTest extends ConnectionResultsComparator {
 	}
 
     private JcrDriver driver;
-//    private String serverName= "localhost:8090";
-//    private String repositoryName= "mode:repository";
-//    private String workspaceName= "default";
-//    private String url = JcrDriver.HTTP_URL_PREFIX + serverName + "/resources/" + repositoryName + "/" + workspaceName + "?username=dnauser&password=password";
-
-    private String serverName= "localhost:8080";
-    private String repositoryName= "repository";
+    private String serverName= "localhost:8090";
+    private String repositoryName= "mode:repository";
     private String workspaceName= "default";
-    private String url = JcrDriver.HTTP_URL_PREFIX + serverName + "/modeshape-rest/" + repositoryName + "/" + workspaceName + "?username=admin&password=admin";
-
+    private String url = JcrDriver.HTTP_URL_PREFIX + serverName + "/resources/" + repositoryName + "/" + workspaceName + "?username=dnauser&password=password";
     
     private Properties properties;
 
@@ -311,7 +280,7 @@ public class JcrDriverHttpIntegrationTest extends ConnectionResultsComparator {
     	this.compareColumns = false;
     	String[] expected = {
     			"TABLE_CAT[String]",
-    			"repository"
+    			"mode:repository"
     			};
 
     	ResultSet rs = dbmd.getCatalogs();
@@ -340,6 +309,7 @@ public class JcrDriverHttpIntegrationTest extends ConnectionResultsComparator {
 	    assertRowCount(1);
     }
     
+    @Ignore
     @Test
     public void shouldGetAllTables() throws SQLException {
     	this.compareColumns = false;
@@ -421,6 +391,7 @@ public class JcrDriverHttpIntegrationTest extends ConnectionResultsComparator {
 //	    assertRowCount(2);
 //    }
 //    
+    @Ignore
     @Test
     public void shouldGetAllColumnsFor1Table() throws SQLException {
     	this.compareColumns = false;
