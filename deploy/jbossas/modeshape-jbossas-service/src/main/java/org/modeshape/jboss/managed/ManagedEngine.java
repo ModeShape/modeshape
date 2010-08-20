@@ -28,9 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -68,13 +66,7 @@ public final class ManagedEngine implements ModeShapeManagedObject {
      * The ModeShape object being managed and delegated to (never <code>null</code>).
      */
     private JcrEngine engine;
-    
-    /**
-     * Keys for map returned from pingConnector
-     */
-    public static String RESULT_KEY = "result";
-    public static String TIME_KEY = "time";
-    
+
     /**
      * The URL of the configuration file.
      */
@@ -500,12 +492,8 @@ public final class ManagedEngine implements ModeShapeManagedObject {
      * @return RepositorySource - may be <code>null</code>)
      */
     @ManagementOperation( description = "Pings a connector by name", impact = Impact.ReadOnly )
-    public Map<String, String> pingConnector( String connectorName ) {
-        Map<String, String> resultMap = new HashMap<String, String>();
-    	if (!isRunning()) {
-    		resultMap.put(RESULT_KEY, "false (ModeShape Engine is not running)");
-    		resultMap.put(TIME_KEY, "");
-    	}
+    public boolean pingConnector( String connectorName ) {
+        if (!isRunning()) return false;
 
         // Get engine to use for the rest of the method (this is synchronized) ...
         final JcrEngine engine = getEngine();
@@ -526,10 +514,7 @@ public final class ManagedEngine implements ModeShapeManagedObject {
             Logger.getLogger(getClass()).error(e, JBossManagedI18n.errorDeterminingIfConnectionIsAlive, connectorName);
         }
         if (pingDuration == null) pingDuration = new Duration(0L).toString();
-    	resultMap.put(RESULT_KEY, Boolean.toString(success));
-		resultMap.put(TIME_KEY, pingDuration);
-
-        return resultMap;
+        return success;
     }
 
     /*
@@ -578,7 +563,7 @@ public final class ManagedEngine implements ModeShapeManagedObject {
             this.setName(property.getName());
             this.setLabel(property.getLabel());
             this.setDescription(property.getDescription());
-            this.setValue(property.getValue() == null ? "" : property.getValue().toString());
+            this.setValue(property.getValue() == null ? " " : property.getValue().toString());
         }
 
         /**
