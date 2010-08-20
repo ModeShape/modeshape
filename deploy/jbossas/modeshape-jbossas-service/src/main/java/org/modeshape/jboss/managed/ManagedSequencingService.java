@@ -90,7 +90,7 @@ public class ManagedSequencingService implements ModeShapeManagedObject {
      * 
      * @return the count of sequenced nodes
      */
-    @ManagementProperty( name = "Nodes Sequenced", description = "The number of nodes that have been sequenced", readOnly = true, use = ViewUse.STATISTIC )
+    @ManagementOperation( name = "Nodes Sequenced", description = "The number of nodes that have been sequenced" )
     public long getNodesSequencedCount() {
         SequencingService sequencingService = engine.getSequencingService();
         return sequencingService == null ? 0 : sequencingService.getStatistics().getNumberOfNodesSequenced();
@@ -101,7 +101,7 @@ public class ManagedSequencingService implements ModeShapeManagedObject {
      * 
      * @return the count of skipped nodes
      */
-    @ManagementProperty( name = "Nodes Skipped", description = "The number of nodes skipped (not sequenced)", readOnly = true, use = ViewUse.STATISTIC )
+    @ManagementOperation( name = "Nodes Skipped", description = "The number of nodes skipped (not sequenced)" )
     public long getNodesSkippedCount() {
         SequencingService sequencingService = engine.getSequencingService();
         return sequencingService == null ? 0 : sequencingService.getStatistics().getNumberOfNodesSkipped();

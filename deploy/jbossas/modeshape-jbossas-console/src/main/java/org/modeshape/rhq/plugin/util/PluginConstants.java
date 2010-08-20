@@ -114,7 +114,8 @@ public interface PluginConstants {
 			}
 
 			public static interface Metrics {
-
+				public final static String NUM_NODES_SEQUENCED = "getNodesSequencedCount"; //$NON-NLS-1$
+				public final static String NUM_NODES_SKIPPED = "getNodesSkippedCount"; //$NON-NLS-1$
 			}
 		}
 		

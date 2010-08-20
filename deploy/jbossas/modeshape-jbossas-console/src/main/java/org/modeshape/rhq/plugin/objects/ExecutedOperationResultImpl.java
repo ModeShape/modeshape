@@ -28,6 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.jboss.managed.api.ManagedOperation;
+import org.jboss.metatype.api.values.MetaValue;
+import org.rhq.core.domain.configuration.Property;
 import org.rhq.core.domain.configuration.PropertyList;
 import org.rhq.core.domain.configuration.PropertyMap;
 import org.rhq.core.domain.configuration.PropertySimple;
@@ -37,6 +40,7 @@ import org.rhq.core.domain.configuration.definition.PropertyDefinitionMap;
 import org.rhq.core.domain.configuration.definition.PropertyDefinitionSimple;
 import org.rhq.core.domain.operation.OperationDefinition;
 import org.rhq.core.pluginapi.operation.OperationResult;
+import org.rhq.plugins.jbossas5.util.ConversionUtils;
 
 public class ExecutedOperationResultImpl implements ExecutedResult {
 
@@ -55,6 +59,14 @@ public class ExecutedOperationResultImpl implements ExecutedResult {
 	Object content;
 
 	List fieldNameList;
+	
+	Property property;
+	
+	PropertyDefinition propertyDefinition;
+	
+	ManagedOperation managedOperation;
+	
+	OperationDefinition operationDefinition;
 
 	OperationResult operationResult = new OperationResult();
 
@@ -121,6 +133,32 @@ public class ExecutedOperationResultImpl implements ExecutedResult {
 		this.result = content;
 		operationResult.setSimpleResult(content);
 	}
+	
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @see org.modeshape.rhq.plugin.objects.ExecutedResult#setContent(org.jboss.metatype.api.values.MetaValue)
+	 */
+	@Override
+	public void setContent(MetaValue content) {
+		this.content = content;
+		this.result = content;
+		ConversionUtils.convertManagedOperationResults(managedOperation, content, operationResult.getComplexResults(), operationDefinition);
+	}
+
+	/**
+	 * @return managedOperation
+	 */
+	public ManagedOperation getManagedOperation() {
+		return managedOperation;
+	}
+
+	/**
+	 * @param managedOperation Sets managedOperation to the specified value.
+	 */
+	public void setManagedOperation(ManagedOperation managedOperation) {
+		this.managedOperation = managedOperation;
+	}
 
 	private void init() {
 		fieldNameList = new LinkedList();
@@ -134,13 +172,15 @@ public class ExecutedOperationResultImpl implements ExecutedResult {
 				if (opDef.getResultsConfigurationDefinition() == null)
 					break;
 
+				this.operationDefinition=opDef;
+				
 				Map propDefs = opDef.getResultsConfigurationDefinition()
 						.getPropertyDefinitions();
 				PropertyDefinition listPropDefinition = (PropertyDefinition) propDefs
 						.get(LISTNAME);
 
 				if (listPropDefinition == null) {
-					return;
+					continue;
 				}
 
 				PropertyDefinition propertyDefinitionMap = ((PropertyDefinitionList) listPropDefinition)
@@ -162,4 +202,6 @@ public class ExecutedOperationResultImpl implements ExecutedResult {
 			}
 		}
 	}
+
+	
 }

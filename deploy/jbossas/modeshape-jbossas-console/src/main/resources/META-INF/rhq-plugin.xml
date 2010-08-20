@@ -51,24 +51,14 @@
 
 		<service name="Sequencing Service" description="ModeShape Sequencing Service"
 			singleton="true" class="SequencingServiceComponent" discovery="SequencingServiceDiscoveryComponent">
-			<resource-configuration>
-				<c:list-property name="propertyList"
-					displayName="Sequencing Service Properties" description="Properties for the Sequencing Service"
-					readOnly="true">
-					<c:map-property name="map"
-						description="Properties for the Sequencing Service" readOnly="true">
-						<c:simple-property name="label" displayName="Name"
-							description="The name of this property" required="false"
-							readOnly="true" />
-						<c:simple-property name="value" displayName="Value"
-							description="The value of this property" required="false"
-							readOnly="true" />
-						<c:simple-property name="description"
-							displayName="Description" description="The description of this property"
-							required="false" readOnly="true" />
-					</c:map-property>
-				</c:list-property>
-			</resource-configuration>
+
+			<metric displayName="Number Of Nodes Sequenced" defaultOn="true"
+				displayType="detail" category="throughput" property="getNodesSequencedCount"
+				description="The number of nodes sequenced" />
+
+			<metric displayName="Number Of Nodes Skipped" defaultOn="true"
+				displayType="detail" category="throughput" property="getNodesSkippedCount"
+				description="The number of nodes that were skipped because no sequencers applied" />
 
 		</service>
 
@@ -101,9 +91,7 @@
 			<operation name="pingConnector" displayName="Ping"
 				description="Ping the connector to test availability">
 				<results>
-					<c:simple-property displayName="Available"
-						name="operationResult" type="string"
-						description="True if ping was successful" />
+					<c:map-property name="operationResult" description="Results of ping to connector" />
 				</results>
 
 			</operation>

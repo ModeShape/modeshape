@@ -21,7 +21,9 @@ import org.modeshape.jboss.managed.ManagedSequencerConfig;
 import org.modeshape.rhq.plugin.objects.ExecutedResult;
 import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Connector;
 import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Engine;
+import org.rhq.plugins.jbossas5.adapter.impl.configuration.PropertyMapToPropertiesValueAdapter;
 import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
+import org.rhq.plugins.jbossas5.util.ConversionUtils;
 
 import com.sun.istack.Nullable;
 
@@ -42,10 +44,35 @@ public class ModeShapeManagementView implements PluginConstants {
 	 */
 	public Object getMetric(ProfileServiceConnection connection,
 			String componentType, String identifier, String metric,
-			Map<String, Object> valueMap) {
+			Map<String, Object> valueMap) throws Exception {
 		Object resultObject = new Object();
-		// TODO add metrics once available
 
+		if (componentType.equals(ComponentType.SequencingService.NAME)) {
+			resultObject = getSequencerServiceMetric(connection, componentType,
+					metric, valueMap);
+		} else if (componentType.equals(ComponentType.Repository.NAME)) {
+			resultObject = getSequencerServiceMetric(connection, componentType, metric,
+					valueMap);
+		}
+
+		return resultObject;
+	}
+
+	/*
+	 * Metric methods
+	 */
+	private Object getSequencerServiceMetric(
+			ProfileServiceConnection connection, String componentType,
+			String metric, Map<String, Object> valueMap) throws Exception {
+
+		Object resultObject = new Object();
+		MetaValue value = null;
+
+		if (metric.equals(ComponentType.SequencingService.Metrics.NUM_NODES_SEQUENCED) ||
+			metric.equals(ComponentType.SequencingService.Metrics.NUM_NODES_SKIPPED)) {
+			value = executeSequencingServiceOperation(connection, metric, valueMap);
+			resultObject = ProfileServiceUtil.stringValue(value);
+		} 
 		return resultObject;
 	}
 
@@ -107,14 +134,31 @@ public class ModeShapeManagementView implements PluginConstants {
 				MetaValue[] args = new MetaValue[] { metaValueFactory
 						.create(connectorName) };
 				MetaValue value = executeManagedOperation(ProfileServiceUtil
-						.getManagedEngine(connection), operationName, args);
-				operationResult.setContent(ProfileServiceUtil
-						.stringValue(value));
+						.getManagedEngine(connection), operationName,
+						operationResult, args);
+				operationResult.setContent(value);
 			} catch (Exception e) {
 				final String msg = "Exception executing operation: " + Connector.Operations.PING; //$NON-NLS-1$
 				LOG.error(msg, e);
 			}
 		}
+	}
+
+	private MetaValue executeSequencingServiceOperation(
+			ProfileServiceConnection connection, final String operationName,
+			final Map<String, Object> valueMap) {
+		MetaValue value = null;
+		try {
+			MetaValue[] args = new MetaValue[] {};
+			value = executeManagedOperation(ProfileServiceUtil
+					.getManagedSequencingService(connection), operationName, args);
+		} catch (Exception e) {
+			final String msg = "Exception executing operation: " + operationName; //$NON-NLS-1$
+			LOG.error(msg, e);
+		}
+		
+		return value;
+
 	}
 
 	/**
@@ -130,6 +174,38 @@ public class ModeShapeManagementView implements PluginConstants {
 		for (ManagedOperation mo : mc.getOperations()) {
 			String opName = mo.getName();
 			if (opName.equals(operation)) {
+				try {
+					if (args == null || (args.length == 1 && args[0] == null)) {
+						return mo.invoke();
+					}
+					return mo.invoke(args);
+				} catch (Exception e) {
+					final String msg = "Exception invoking " + operation; //$NON-NLS-1$
+					LOG.error(msg, e);
+					throw e;
+				}
+			}
+		}
+		throw new Exception("No operation found with given name =" + operation); //$NON-NLS-1$
+
+	}
+
+	/**
+	 * @param mc
+	 * @param operation
+	 * @param args
+	 * @param operationResult
+	 * @return {@link MetaValue}
+	 * @throws Exception
+	 */
+	public static MetaValue executeManagedOperation(ManagedComponent mc,
+			String operation, ExecutedResult operationResult,
+			@Nullable MetaValue... args) throws Exception {
+
+		for (ManagedOperation mo : mc.getOperations()) {
+			String opName = mo.getName();
+			if (opName.equals(operation)) {
+				operationResult.setManagedOperation(mo);
 				try {
 					if (args == null || (args.length == 1 && args[0] == null)) {
 						return mo.invoke();
@@ -164,6 +240,20 @@ public class ModeShapeManagementView implements PluginConstants {
 			}
 		}
 		return list;
+	}
+
+	public static String getConnectorPingString(MetaValue pValue)
+			throws Exception {
+		MetaType metaType = pValue.getMetaType();
+		StringBuffer sb = new StringBuffer();
+		if (metaType.isCollection()) {
+			for (MetaValue value : ((CollectionValueSupport) pValue)
+					.getElements()) {
+				String resultValue = ProfileServiceUtil.stringValue(value);
+				sb.append(resultValue + " ");
+			}
+		}
+		return sb.toString();
 	}
 
 	public static Collection<ManagedSequencerConfig> getSequencerCollectionValue(

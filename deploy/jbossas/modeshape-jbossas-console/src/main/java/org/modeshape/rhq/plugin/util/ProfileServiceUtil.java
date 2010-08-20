@@ -50,6 +50,7 @@ import org.jboss.metatype.api.types.SimpleMetaType;
 import org.jboss.metatype.api.values.EnumValue;
 import org.jboss.metatype.api.values.MetaValue;
 import org.jboss.metatype.api.values.SimpleValue;
+import org.modeshape.jboss.managed.ManagedSequencingService;
 import org.rhq.core.domain.configuration.Configuration;
 import org.rhq.core.domain.configuration.Property;
 import org.rhq.core.domain.configuration.PropertyMap;
@@ -110,6 +111,26 @@ public class ProfileServiceUtil {
 		return mc;
 	}
 
+	/**
+	 * Get the {@link ManagedSequencingService}
+	 * @param connection 
+	 * 
+	 * @return {@link ManagedSequencingService}
+	 * @throws NamingException
+	 * @throws Exception
+	 */
+	public static ManagedComponent getManagedSequencingService( ProfileServiceConnection connection)
+			throws NamingException, Exception {
+
+		ManagedComponent mc = ProfileServiceUtil
+		.getManagedComponent(connection,
+				new ComponentType(
+						PluginConstants.ComponentType.SequencingService.MODESHAPE_TYPE,
+						PluginConstants.ComponentType.SequencingService.MODESHAPE_SUB_TYPE),
+				PluginConstants.ComponentType.SequencingService.NAME);
+
+		return mc;
+	}
 
 	/**
 	 * Get the {@link ManagedComponent} for the {@link ComponentType} and sub

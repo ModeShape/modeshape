@@ -31,14 +31,9 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.Reflection;
 import org.modeshape.common.util.Logger.Level;
 import org.modeshape.common.util.Reflection.Property;
-import org.modeshape.graph.connector.RepositoryConnectionPool;
-import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.jboss.managed.JBossManagedI18n;
 import org.modeshape.jboss.managed.ManagedEngine.Component;
 import org.modeshape.jboss.managed.ManagedEngine.ManagedProperty;
-import org.modeshape.repository.sequencer.SequencerConfig;
-import org.modeshape.repository.sequencer.SequencingService;
-import org.modeshape.repository.sequencer.SequencingService.Statistics;
 
 /**
  * Class for common utility methods used for ModeShape Managed Objects
@@ -52,26 +47,12 @@ public class ManagedUtils {
 
 		Reflection reflection = null;
 
-		if (objectType.equals(Component.CONNECTOR)) {
-			reflection = new Reflection(RepositorySource.class);
-		} else if (objectType.equals(Component.CONNECTIONPOOL)) {
-			reflection = new Reflection(RepositoryConnectionPool.class);
-		} else if (objectType.equals(Component.SEQUENCER)) {
-			reflection = new Reflection(SequencerConfig.class);
-		} else if (objectType.equals(Component.SEQUENCINGSERVICE)) {
-			if (object instanceof SequencingService){
-				reflection = new Reflection(SequencingService.class);
-			}else {
-				reflection = new Reflection(Statistics.class);
-			}
-		}
+		reflection = new Reflection(object.getClass());
 
 		List<Property> props = null;
 		List<ManagedProperty> managedProps = new ArrayList<ManagedProperty>();
 		try {
-			if (reflection != null){
-				props = reflection.getAllPropertiesOn(object);
-			}
+			props = reflection.getAllPropertiesOn(object);
 		} catch (SecurityException e) {
 			LOGGER.log(Level.ERROR, e,
 					JBossManagedI18n.errorGettingPropertiesFromManagedObject,
@@ -116,10 +97,14 @@ public class ManagedUtils {
 
 		if (props != null) {
 			for (Property prop : props) {
+				if (prop.isInferred()) {
+					continue;
+				}
 				if (prop.getType().isPrimitive()
 						|| prop.getType().toString().contains(
 								"java.lang.String")) {
-					if (prop.getValue().getClass().isArray()) {
+					if (prop.getValue() != null
+							&& prop.getValue().getClass().isArray()) {
 						StringBuffer sb = new StringBuffer();
 						String[] stringArray = (String[]) prop.getValue();
 						for (String cell : stringArray) {
