@@ -23,13 +23,10 @@
  */
 package org.modeshape.jboss.managed.util;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.Reflection;
-import org.modeshape.common.util.Logger.Level;
 import org.modeshape.common.util.Reflection.Property;
 import org.modeshape.jboss.managed.JBossManagedI18n;
 import org.modeshape.jboss.managed.ManagedEngine.Component;
@@ -40,84 +37,24 @@ import org.modeshape.jboss.managed.ManagedEngine.ManagedProperty;
  */
 public class ManagedUtils {
 
-	private static final Logger LOGGER = Logger.getLogger(ManagedUtils.class);
+    private static final Logger LOGGER = Logger.getLogger(ManagedUtils.class);
 
-	public static List<ManagedProperty> getProperties(Component objectType,
-			Object object) {
+    public static List<ManagedProperty> getProperties( Component objectType,
+                                                       Object object ) {
+        Reflection reflection = new Reflection(object.getClass());
+        List<ManagedProperty> managedProps = new ArrayList<ManagedProperty>();
+        try {
+            for (Property prop : reflection.getAllPropertiesOn(object)) {
+                if (prop.isInferred()) continue;
+                if (prop.isPrimitive() || prop.getType().toString().contains("java.lang.String")) continue;
+                String valueAsString = reflection.getPropertyAsString(object, prop);
+                managedProps.add(new ManagedProperty(prop, valueAsString));
+            }
+        } catch (Throwable e) {
+            LOGGER.error(e, JBossManagedI18n.errorGettingPropertiesFromManagedObject, objectType);
+        }
 
-		Reflection reflection = null;
-
-		reflection = new Reflection(object.getClass());
-
-		List<Property> props = null;
-		List<ManagedProperty> managedProps = new ArrayList<ManagedProperty>();
-		try {
-			props = reflection.getAllPropertiesOn(object);
-		} catch (SecurityException e) {
-			LOGGER.log(Level.ERROR, e,
-					JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-					objectType);
-		} catch (IllegalArgumentException e) {
-			{
-				LOGGER
-						.log(
-								Level.ERROR,
-								e,
-								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-								objectType);
-			}
-		} catch (NoSuchMethodException e) {
-			{
-				LOGGER
-						.log(
-								Level.ERROR,
-								e,
-								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-								objectType);
-			}
-		} catch (IllegalAccessException e) {
-			{
-				LOGGER
-						.log(
-								Level.ERROR,
-								e,
-								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-								objectType);
-			}
-		} catch (InvocationTargetException e) {
-			{
-				LOGGER
-						.log(
-								Level.ERROR,
-								e,
-								JBossManagedI18n.errorGettingPropertiesFromManagedObject,
-								objectType);
-			}
-		}
-
-		if (props != null) {
-			for (Property prop : props) {
-				if (prop.isInferred()) {
-					continue;
-				}
-				if (prop.getType().isPrimitive()
-						|| prop.getType().toString().contains(
-								"java.lang.String")) {
-					if (prop.getValue() != null
-							&& prop.getValue().getClass().isArray()) {
-						StringBuffer sb = new StringBuffer();
-						String[] stringArray = (String[]) prop.getValue();
-						for (String cell : stringArray) {
-							sb.append(cell).append(" ");
-						}
-						prop.setValue(sb.toString());
-					}
-					managedProps.add(new ManagedProperty(prop));
-				}
-			}
-		}
-
-		return managedProps;
-	}
+        return managedProps;
+    }
 
 }

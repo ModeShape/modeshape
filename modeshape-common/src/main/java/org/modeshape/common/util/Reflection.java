@@ -653,7 +653,6 @@ public class Reflection {
         InvocationTargetException {
         CheckArg.isNotNull(target, "target");
         CheckArg.isNotEmpty(propertyName, "propertyName");
-        Object value = invokeGetterMethodOnTarget(propertyName, target);
         Method[] setters = findMethods("set" + propertyName, false);
         boolean readOnly = setters.length < 1;
         Class<?> type = Object.class;
@@ -703,8 +702,8 @@ public class Reflection {
                 inferred = false;
             }
         }
-        
-        Property property = new Property(propertyName, value, label, description, category, readOnly, type, allowedValues);
+
+        Property property = new Property(propertyName, label, description, category, readOnly, type, allowedValues);
         property.setInferred(inferred);
         return property;
     }
@@ -847,24 +846,92 @@ public class Reflection {
     }
 
     /**
-     * Set on the supplied target object the property described by this instance to the {@link Property#getValue() value}.
+     * Set the property on the supplied target object to the specified value.
      * 
      * @param target the target on which the setter is to be called; may not be null
      * @param property the property that is to be set on the target
+     * @param value the new value for the property
      * @throws NoSuchMethodException if a matching method is not found.
      * @throws SecurityException if access to the information is denied.
      * @throws IllegalAccessException if the setter method could not be accessed
      * @throws InvocationTargetException if there was an error invoking the setter method on the target
-     * @throws IllegalArgumentException if 'target' is null or if the {@link Property#getValue() value} is not legal
+     * @throws IllegalArgumentException if 'target' is null, 'property' is null, or 'property.getName()' is null
      */
     public void setProperty( Object target,
-                             Property property )
+                             Property property,
+                             Object value )
         throws SecurityException, IllegalArgumentException, NoSuchMethodException, IllegalAccessException,
         InvocationTargetException {
         CheckArg.isNotNull(target, "target");
         CheckArg.isNotNull(property, "property");
         CheckArg.isNotNull(property.getName(), "property.getName()");
-        invokeSetterMethodOnTarget(property.getName(), target, property.getValue());
+        invokeSetterMethodOnTarget(property.getName(), target, value);
+    }
+
+    /**
+     * Get current value for the property on the supplied target object.
+     * 
+     * @param target the target on which the setter is to be called; may not be null
+     * @param property the property that is to be set on the target
+     * @return the current value for the property; may be null
+     * @throws NoSuchMethodException if a matching method is not found.
+     * @throws SecurityException if access to the information is denied.
+     * @throws IllegalAccessException if the setter method could not be accessed
+     * @throws InvocationTargetException if there was an error invoking the setter method on the target
+     * @throws IllegalArgumentException if 'target' is null, 'property' is null, or 'property.getName()' is null
+     */
+    public Object getProperty( Object target,
+                               Property property )
+        throws SecurityException, IllegalArgumentException, NoSuchMethodException, IllegalAccessException,
+        InvocationTargetException {
+        CheckArg.isNotNull(target, "target");
+        CheckArg.isNotNull(property, "property");
+        CheckArg.isNotNull(property.getName(), "property.getName()");
+        return invokeGetterMethodOnTarget(property.getName(), target);
+    }
+
+    /**
+     * Get current value represented as a string for the property on the supplied target object.
+     * 
+     * @param target the target on which the setter is to be called; may not be null
+     * @param property the property that is to be set on the target
+     * @return the current value for the property; may be null
+     * @throws NoSuchMethodException if a matching method is not found.
+     * @throws SecurityException if access to the information is denied.
+     * @throws IllegalAccessException if the setter method could not be accessed
+     * @throws InvocationTargetException if there was an error invoking the setter method on the target
+     * @throws IllegalArgumentException if 'target' is null, 'property' is null, or 'property.getName()' is null
+     */
+    public String getPropertyAsString( Object target,
+                                       Property property )
+        throws SecurityException, IllegalArgumentException, NoSuchMethodException, IllegalAccessException,
+        InvocationTargetException {
+        Object value = getProperty(target, property);
+        StringBuilder sb = new StringBuilder();
+        writeObjectAsString(value, sb, false);
+        return sb.toString();
+    }
+
+    protected void writeObjectAsString( Object obj,
+                                        StringBuilder sb,
+                                        boolean wrapWithBrackets ) {
+        if (obj == null) {
+            sb.append("null");
+            return;
+        }
+        if (obj.getClass().isArray()) {
+            Object[] array = (Object[])obj;
+            boolean first = true;
+            if (wrapWithBrackets) sb.append("[");
+            for (Object value : array) {
+                if (first) first = false;
+                else sb.append(", ");
+                writeObjectAsString(value, sb, true);
+            }
+            if (wrapWithBrackets) sb.append("]");
+            return;
+        }
+        sb.append(obj);
     }
 
     protected static final Inflector INFLECTOR = Inflector.getInstance();
@@ -896,24 +963,21 @@ public class Reflection {
          * Create a new object property with the supplied parameters set.
          * 
          * @param name the property name; may be null
-         * @param value the value; may be null
          * @param label the human-readable property label; may be null
          * @param description the description for this property; may be null
          * @param readOnly true if the property is read-only, or false otherwise
          */
         public Property( String name,
-                         Object value,
                          String label,
                          String description,
                          boolean readOnly ) {
-            this(name, value, label, description, null, readOnly, null);
+            this(name, label, description, null, readOnly, null);
         }
 
         /**
          * Create a new object property with the supplied parameters set.
          * 
          * @param name the property name; may be null
-         * @param value the value; may be null
          * @param label the human-readable property label; may be null
          * @param description the description for this property; may be null
          * @param category the category for this property; may be null
@@ -922,7 +986,6 @@ public class Reflection {
          * @param allowedValues the array of allowed values, or null or empty if the values are not constrained
          */
         public Property( String name,
-                         Object value,
                          String label,
                          String description,
                          String category,
@@ -930,7 +993,6 @@ public class Reflection {
                          Class<?> type,
                          Object... allowedValues ) {
             setName(name);
-            setValue(value);
             if (label != null) setLabel(label);
             if (description != null) setDescription(description);
             setCategory(category);
@@ -1004,25 +1066,6 @@ public class Reflection {
         }
 
         /**
-         * Get the current value for this property.
-         * 
-         * @return the current value; may be null
-         */
-        public Object getValue() {
-            return value;
-        }
-
-        /**
-         * Set the new value for this property.
-         * 
-         * @param value the new value; may be null
-         */
-        public void setValue( Object value ) {
-            this.value = value;
-            if (type == null && value != null) type = value.getClass();
-        }
-
-        /**
          * Return whether this property is read-only.
          * 
          * @return true if the property is read-only, or false otherwise
@@ -1086,8 +1129,25 @@ public class Reflection {
         }
 
         /**
-         * Get the allowed values for this property. If this is non-null and non-empty, the {@link #getValue() value} must be one
-         * of these values.
+         * Determine if this is property's (the {@link #getType() type} is a primitive.
+         * 
+         * @return true if this property's type is a primitive, or false otherwise
+         */
+        public boolean isPrimitive() {
+            return type.isPrimitive();
+        }
+
+        /**
+         * Determine if this is property's (the {@link #getType() type} is an array.
+         * 
+         * @return true if this property's type is an array, or false otherwise
+         */
+        public boolean isArrayType() {
+            return type.isArray();
+        }
+
+        /**
+         * Get the allowed values for this property. If this is non-null and non-empty, the value must be one of these values.
          * 
          * @return collection of allowed values, or the empty set if the values are not constrained
          */
@@ -1096,8 +1156,8 @@ public class Reflection {
         }
 
         /**
-         * Set the allowed values for this property. If this is non-null and non-empty, the {@link #setValue(Object) value} is
-         * expected to be one of these values.
+         * Set the allowed values for this property. If this is non-null and non-empty, the value is expected to be one of these
+         * values.
          * 
          * @param allowedValues the collection of allowed values, or null or empty if the values are not constrained
          */
@@ -1106,8 +1166,8 @@ public class Reflection {
         }
 
         /**
-         * Set the allowed values for this property. If this is non-null and non-empty, the {@link #setValue(Object) value} is
-         * expected to be one of these values.
+         * Set the allowed values for this property. If this is non-null and non-empty, the value is expected to be one of these
+         * values.
          * 
          * @param allowedValues the array of allowed values, or null or empty if the values are not constrained
          */

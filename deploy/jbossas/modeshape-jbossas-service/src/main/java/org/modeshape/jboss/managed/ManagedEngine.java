@@ -559,11 +559,12 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 
         }
 
-        public ManagedProperty( Property property ) {
+        public ManagedProperty( Property property,
+                                String currentValue ) {
             this.setName(property.getName());
             this.setLabel(property.getLabel());
             this.setDescription(property.getDescription());
-            this.setValue(property.getValue() == null ? " " : property.getValue().toString());
+            this.value = currentValue;
         }
 
         /**
@@ -599,13 +600,6 @@ public final class ManagedEngine implements ModeShapeManagedObject {
          */
         public String getLabel() {
             return label;
-        }
-
-        /**
-         * @param value Sets value to the specified value.
-         */
-        public void setValue( String value ) {
-            this.value = value;
         }
 
         /**
