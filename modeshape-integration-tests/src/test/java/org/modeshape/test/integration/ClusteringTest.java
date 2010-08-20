@@ -199,6 +199,10 @@ public class ClusteringTest {
         session1.getRootNode().addNode("Base");
         session1.save();
 
+        // We're going to add some listeners, but if we do that too quickly, we might actually see the changes
+        // from previous saves. So, take a chill pill and wait a half-second ...
+        Thread.sleep(500);
+
         int eventTypes = Event.NODE_ADDED | Event.NODE_REMOVED;
         CustomListener listener1 = addListenerTo(session1, null, eventTypes, 1);
         CustomListener listener2 = addListenerTo(session2, "/Base", eventTypes, 1);
