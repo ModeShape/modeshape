@@ -27,7 +27,6 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -59,6 +58,8 @@ import org.modeshape.web.jcr.rest.client.json.JsonRestClient;
 public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
     private static final String HTTP_EXAMPLE_URL = JcrDriver.HTTP_URL_PREFIX + "{hostname}:{port}/{context root}";
     
+    private static final String URL_PATH = "/jcr:system/jcr:nodeTypes";
+    private static final String URL_DEPTH = "?depth=5";
     
     private JsonRestClient restClient;
     private Workspace workspace = null;
@@ -118,8 +119,14 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
     	if (nodeTypes == null) {
 	    	Collection<org.modeshape.web.jcr.rest.client.domain.NodeType> results;
 			try {
-				
-				results = this.restClient.getNodeTypes(workspace, "/jcr:system/jcr:nodeTypes", "?depth=5");
+				results = this.restClient.getNodeTypes(workspace, URL_PATH, URL_DEPTH);
+				if (results == null || results.size() == 0) {
+				    String msg = JdbcI18n.noNodeTypesReturned.text(this.workspace.getServer().getUrl() + "/" + 
+				    		this.workspace.getRepository().getName() + "/" +
+				    		this.workspace.getName() + 
+				    		URL_PATH +  URL_DEPTH);
+				    throw new RepositoryException(msg);								
+				}
 				Map<String, NodeType> loadingNodeTypes = new HashMap<String, NodeType>(results.size());
 				Iterator<org.modeshape.web.jcr.rest.client.domain.NodeType> resultsIt = results.iterator();
 				while (resultsIt.hasNext()) {		
@@ -132,16 +139,10 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
 					}
 								
 				}
-				if (loadingNodeTypes.size() > 0) {
-					this.nodeTypes = loadingNodeTypes;
-				} else {
-				    String msg = JdbcI18n.unableToGetNodeTypes.text();
-				    throw new RepositoryException(msg);			
-				}
+				this.nodeTypes = loadingNodeTypes;
 				
 			} catch (Exception e) {
-			    String msg = JdbcI18n.unableToGetNodeTypes.text();
-			    throw new RepositoryException(msg, e);			
+			    throw new RepositoryException(JdbcI18n.unableToGetNodeTypes.text(this.workspace.getRepository().getName()), e);			
 			}
     	}
 		

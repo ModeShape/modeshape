@@ -52,7 +52,7 @@ public class LocalRepositoryDelegateTest {
     
     private static final String VALID_JNDI_URL_WITH_PARMS =  VALID_JNDI_URL + 
     			"?workspace=" + WORKSPACE + 
-    			"&username=" + USER_NAME + 
+    			"&user=" + USER_NAME + 
     			"&password=" + PASSWORD  + 
     			"&" + JcrDriver.REPOSITORY_PROPERTY_NAME + "=" + REPOSITORY_NAME;
     
@@ -74,7 +74,7 @@ public class LocalRepositoryDelegateTest {
 	assertThat(delegate.getConnectionInfo().getWorkspaceName(), is(WORKSPACE) );
 	assertThat(delegate.getConnectionInfo().getRepositoryName(), is(REPOSITORY_NAME) );
 	
-	assertThat(delegate.getConnectionInfo().getEffectiveUrl(), is( JcrDriver.JNDI_URL_PREFIX + "jcr/local?workspace=MyWorkspace&password=******&repositoryName=repositoryName&username=jsmith" ) );
+	assertThat(delegate.getConnectionInfo().getEffectiveUrl(), is( JcrDriver.JNDI_URL_PREFIX + "jcr/local?user=jsmith&workspace=MyWorkspace&password=******&repositoryName=repositoryName" ) );
 	
 	DriverPropertyInfo[] infos = delegate.getConnectionInfo().getPropertyInfos();
 	assertThat(infos.length, is(0));

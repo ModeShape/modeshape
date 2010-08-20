@@ -1110,7 +1110,8 @@ public class JcrMetaData implements DatabaseMetaData {
      * 
      * @see java.sql.DatabaseMetaData#getTableTypes()
      */
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public ResultSet getTableTypes() throws SQLException {
 		
  		List<List<?>> records = new ArrayList<List<?>> (1);
@@ -1133,7 +1134,9 @@ public class JcrMetaData implements DatabaseMetaData {
 	    JcrStatement stmt = new JcrStatement(this.connection);
 	    QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
 	    ResultSet rs = new JcrResultSet(stmt, queryresult, resultSetMetaData);
-		
+	    
+	    Exception e = new Exception("==============  Called GetTableTypes ================");
+		e.printStackTrace();
 		return rs;
     }
 
@@ -1193,7 +1196,6 @@ public class JcrMetaData implements DatabaseMetaData {
 	    	  while (nodeIt.hasNext()) {
 	    		  
 	    		  NodeType type = nodeIt.next();
-	    		  boolean queryable = type.isQueryable();
 	    		  if (!type.isQueryable()) continue;
 	
 		          // list represents a record on the Results object.
@@ -1204,7 +1206,7 @@ public class JcrMetaData implements DatabaseMetaData {
 		          currentRow.add(catalogName); // TABLE_CAT
 		          currentRow.add("NULL"); // TABLE_SCHEM
 		          currentRow.add(type.getName()); //TABLE_NAME
-		          currentRow.add("VIEW");  //TABLE_TYPE
+		          currentRow.add(ResultsMetadataConstants.TABLE_TYPES.VIEW);  //TABLE_TYPE
 		          currentRow.add("Is Mixin: " + type.isMixin()); // REMARKS
 		          currentRow.add("NULL"); // TYPE_CAT
 		          currentRow.add("NULL");  // TYPE_SCHEM
@@ -1218,6 +1220,9 @@ public class JcrMetaData implements DatabaseMetaData {
       
 		    JcrStatement jcrstmt = new JcrStatement(this.connection);
 		    QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
+		    Exception te = new Exception("==============  Called GetTables ================ " + records.size());
+		    te.printStackTrace();
+		    
 		    return new JcrResultSet(jcrstmt, queryresult, resultSetMetaData);
 
 		} catch (RepositoryException e) {

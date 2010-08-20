@@ -52,7 +52,7 @@ public class HttpRepositoryDelegateTest {
     private static final String VALID_HTTP_URL_WITH_PARMS =  VALID_HTTP_URL + 
     			"/" + REPOSITORY_NAME +
     			"/" + WORKSPACE + 
-    			"?username=" + USER_NAME + 
+    			"?user=" + USER_NAME + 
     			"&password=" + PASSWORD;
     
     private RepositoryDelegate delegate;
@@ -70,7 +70,7 @@ public class HttpRepositoryDelegateTest {
 		assertThat(delegate.getConnectionInfo().getUsername(), is(USER_NAME) );
 		assertThat(delegate.getConnectionInfo().getPassword(), is( new String(PASSWORD).toCharArray()) );
 		
-		assertThat(delegate.getConnectionInfo().getEffectiveUrl(), is( VALID_HTTP_URL + "?workspace=MyWorkspace&password=******&repositoryName=repositoryName&username=jsmith" ) );
+		assertThat(delegate.getConnectionInfo().getEffectiveUrl(), is( VALID_HTTP_URL + "?user=jsmith&workspace=MyWorkspace&password=******&repositoryName=repositoryName" ) );
 		
 		DriverPropertyInfo[] infos = delegate.getConnectionInfo().getPropertyInfos();
 		assertThat(infos.length, is(0));

@@ -110,7 +110,11 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
     
     @Override
 	protected boolean isSessionAvailable() {
-    	return (session != null);
+    	try {
+			return (session() != null);
+		} catch (RepositoryException e) {
+		}
+		return false;
     }
     
     protected JcrContextFactory getJcrContext() {

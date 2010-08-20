@@ -58,7 +58,7 @@ public class JcrDriverHttpTest {
         validRepositoryName = "MyRepository";
         validServerName = "serverName:8080";
         validWorkspaceName = "default";
-        validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + validRepositoryName + "/" + validWorkspaceName + "?username=jsmith&password=secret";
+        validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + validRepositoryName + "/" + validWorkspaceName + "?user=jsmith&password=secret";
         validProperties = new Properties();
         
         driver = new JcrDriver();
@@ -178,10 +178,10 @@ public class JcrDriverHttpTest {
 
     @Test
     public void shouldAcceptValidUrls() {
-        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + this.validRepositoryName + "/MyWorkspace" + "&username=jsmith&password=secret"),
+        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + this.validRepositoryName + "/MyWorkspace" + "&user=jsmith&password=secret"),
                    is(true));
-        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + this.validRepositoryName + "&username=jsmith&password=secret"), is(true));
-        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + "&username=jsmith&password=secret"), is(true));
+        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + this.validRepositoryName + "&user=jsmith&password=secret"), is(true));
+        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + "&user=jsmith&password=secret"), is(true));
     }
 
     @Test
@@ -195,7 +195,7 @@ public class JcrDriverHttpTest {
 
     @Test
     public void shouldCreateConnectionInfoForUrlWithEscapedCharacters() throws SQLException{
-        validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape%20rest" + "?repositoryName=My%20Repository&workspace=My%20Workspace&username=j%20smith&password=secret";
+        validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape%20rest" + "?repositoryName=My%20Repository&workspace=My%20Workspace&user=j%20smith&password=secret";
         ConnectionInfo info = driver.createConnectionInfo(validUrl, validProperties);
         assertThat(info.getWorkspaceName(), is("My Workspace"));
         assertThat(info.getUsername(), is("j smith"));

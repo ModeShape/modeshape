@@ -160,10 +160,10 @@ public abstract class ConnectionInfo {
     }
 
     /**
-     * Get the JCR username. This is not required, and if abscent implies that
+     * Get the JCR user name. This is not required, and if abscent implies that
      * no credentials should be used when obtaining a JCR Session.
      * 
-     * @return the JCR username, or null if no username was specified
+     * @return the JCR user name, or null if no user name was specified
      */
     public String getUsername() {
     	return properties.getProperty(JcrDriver.USERNAME_PROPERTY_NAME);
@@ -310,7 +310,7 @@ public abstract class ConnectionInfo {
     public abstract String getUrlPrefix();
     
     /**
-     * Return the credentials based on the username and password.
+     * Return the credentials based on the user name and password.
      * 
      * @return Credentials
      */

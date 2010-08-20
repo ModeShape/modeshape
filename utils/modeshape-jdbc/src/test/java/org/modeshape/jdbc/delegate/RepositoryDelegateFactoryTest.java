@@ -53,7 +53,7 @@ public class RepositoryDelegateFactoryTest {
     
     private static final String VALID_JNDI_URL_WITH_PARMS =  VALID_JNDI_URL + 
     			"?workspace=" + WORKSPACE + 
-    			"&username=" + USER_NAME + 
+    			"&user=" + USER_NAME + 
     			"&password=" + PASSWORD  + 
     			"&" + JcrDriver.REPOSITORY_PROPERTY_NAME + "=" + REPOSITORY_NAME;
            

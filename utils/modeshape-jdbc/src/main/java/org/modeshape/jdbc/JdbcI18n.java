@@ -88,6 +88,7 @@ public final class JdbcI18n {
     public static I18n currentRowNotSet;
     public static I18n noJcrTypeMapped;    
     public static I18n unableToGetNodeTypes;
+    public static I18n noNodeTypesReturned;
     public static I18n unableToGetNodeType;
     public static I18n noSuchNodeType;
 

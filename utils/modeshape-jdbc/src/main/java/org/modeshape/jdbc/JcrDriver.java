@@ -67,10 +67,10 @@ import org.modeshape.jdbc.util.Collections;
  * </p>
  * <p>
  * Here's an example of a URL that defines a {@link Repository} instance located at "<code>jcr/local</code>" with a 
- * repository name of "repository" and a username of "jsmith", password of "secret", and workspace name of "My Workspace":
+ * repository name of "repository" and a user, password of "secret", and workspace name of "My Workspace":
  * 
  * <pre>
- *     jdbc:jcr:jndi:jcr/local?repositoryName=repository&username=jsmith&amp;password=secret&amp;workspace=My%20Workspace
+ *     jdbc:jcr:jndi:jcr/local?repositoryName=repository&user=jsmith&amp;password=secret&amp;workspace=My%20Workspace
  * </pre>
  * 
  * The "repository" property is required only if the object in JNDI is a {@literal org.modeshape.jcr.api.Repositories} object.
@@ -97,7 +97,7 @@ public class JcrDriver implements java.sql.Driver {
 
     public static final String WORKSPACE_PROPERTY_NAME = "workspace";
     public static final String REPOSITORY_PROPERTY_NAME = "repositoryName";
-    public static final String USERNAME_PROPERTY_NAME = "username";
+    public static final String USERNAME_PROPERTY_NAME = "user";
     public static final String PASSWORD_PROPERTY_NAME = "password";
 
     protected static final Set<String> ALL_PROPERTY_NAMES = Collections.unmodifiableSet(WORKSPACE_PROPERTY_NAME,

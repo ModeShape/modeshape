@@ -68,7 +68,7 @@ public class JcrDriverTest {
         validRepositoryName = "MyRepository";
         jndiNameForRepository = "java:MyRepository";
         jndiNameForRepositories = "java:Repositories";
-        validUrl = JcrDriver.JNDI_URL_PREFIX + jndiNameForRepository + "?workspace=MyWorkspace&username=jsmith&password=secret";
+        validUrl = JcrDriver.JNDI_URL_PREFIX + jndiNameForRepository + "?workspace=MyWorkspace&user=jsmith&password=secret";
         validProperties = new Properties();
         
         when(jndi.lookup(jndiNameForRepository)).thenReturn(repository);
@@ -214,9 +214,9 @@ public class JcrDriverTest {
 
     @Test
     public void shouldAcceptValidUrls() {
-        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=MyWorkspace&username=jsmith&password=secret"),
+        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=MyWorkspace&user=jsmith&password=secret"),
                    is(true));
-        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=MyWorkspace&username=jsmith"), is(true));
+        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=MyWorkspace&user=jsmith"), is(true));
         assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=My%20Workspace"), is(true));
         assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi"), is(true));
         assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?"), is(true));
@@ -237,7 +237,7 @@ public class JcrDriverTest {
 
     @Test
     public void shouldCreateConnectionInfoForUrlWithEscapedCharacters() throws SQLException{
-        validUrl = JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=My%20Workspace&username=j%20smith&password=secret&repositoryName=My%20Repository";
+        validUrl = JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=My%20Workspace&user=j%20smith&password=secret&repositoryName=My%20Repository";
         ConnectionInfo info = driver.createConnectionInfo(validUrl, validProperties);
         assertThat(info.getWorkspaceName(), is("My Workspace"));
         assertThat(info.getUsername(), is("j smith"));
