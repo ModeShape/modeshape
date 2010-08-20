@@ -98,7 +98,7 @@ public class ConnectorDiscoveryComponent implements
 					name, // Resource Key
 					name, // Resource name
 					null,
-					PluginConstants.ComponentType.Repository.MODESHAPE_REPOSITORY_DESC, // Description
+					PluginConstants.ComponentType.Connector.DESCRIPTION, // Description
 					discoveryContext.getDefaultPluginConfiguration(), // Plugin
 																		// config
 					null // Process info from a process scan
