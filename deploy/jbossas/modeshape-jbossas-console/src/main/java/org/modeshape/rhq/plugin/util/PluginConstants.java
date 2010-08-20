@@ -81,7 +81,8 @@ public interface PluginConstants {
 		public interface Connector {
 
 			public final static String NAME = "Connector"; //$NON-NLS-1$
-	
+			public final static String DESCRIPTION = "A description of a resource that can be used to access or store repository information"; //$NON-NLS-1$
+			
 			public static interface Operations {
 				
 				//Connector operations
