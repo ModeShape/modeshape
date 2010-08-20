@@ -175,6 +175,11 @@
                 <version>${project.version}</version>
             </dependency>                   
 
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-mimetype-detector-aperture</artifactId>
+                <version>${project.version}</version>
+            </dependency>                   
         <!-- 
             Java Concurrency in Practice annotations
         -->
