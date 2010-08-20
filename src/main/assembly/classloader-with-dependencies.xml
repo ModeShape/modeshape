@@ -1,12 +1,12 @@
 <assembly>
-  <id>with-dependencies</id>
+  <id>jar-with-dependencies</id>
   <includeBaseDirectory>false</includeBaseDirectory>
   <formats>
     <format>jar</format>
   </formats>
   <dependencySets>
     <dependencySet>
-      <unpack>false</unpack>
+      <unpack>true</unpack>
       <scope>runtime</scope>
 			<excludes>
 				<!-- No need to include the JCIP annotations -->

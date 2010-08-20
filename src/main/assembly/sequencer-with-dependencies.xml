@@ -1,12 +1,12 @@
 <assembly>
-  <id>with-dependencies</id>
+  <id>jar-with-dependencies</id>
   <includeBaseDirectory>false</includeBaseDirectory>
   <formats>
     <format>jar</format>
   </formats>
   <dependencySets>
     <dependencySet>
-      <unpack>false</unpack>
+      <unpack>true</unpack>
       <scope>runtime</scope>
 			<outputFileNameMapping>${artifact.artifactId}-${artifact.version}.${artifact.extension}</outputFileNameMapping>
 			<excludes>

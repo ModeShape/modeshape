@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<assembly>
+	<id>jar-with-dependencies</id>
+	<includeBaseDirectory>false</includeBaseDirectory>
+	<formats>
+		<format>jar</format>
+	</formats>
+	<dependencySets>
+		<dependencySet>
+			<unpack>true</unpack>
+			<scope>runtime</scope>
+		</dependencySet>
+	</dependencySets>
+	<!--fileSets>
+    <fileSet>
+      <directory>${project.build.outputDirectory}</directory>
+      <includes>
+				<include>${project.artifactId}-${project.version}.jar</include>
+      </includes>
+    </fileSet>
+  </fileSets-->
+</assembly>
