@@ -547,7 +547,7 @@ public class CndImporterTest {
         Node nodeType = node(name);
         assertThat(nodeType, hasProperty(JcrLexicon.IS_MIXIN, options.contains(NodeOptions.Mixin)));
         assertThat(nodeType, hasProperty(JcrLexicon.IS_ABSTRACT, options.contains(NodeOptions.Abstract)));
-        assertThat(nodeType, hasProperty(JcrLexicon.HAS_ORDERABLE_CHILD_NODES, options.contains(NodeOptions.Ordered)));
+        // assertThat(nodeType, hasProperty(JcrLexicon.HAS_ORDERABLE_CHILD_NODES, options.contains(NodeOptions.Ordered)));
         assertThat(nodeType, hasProperty(JcrLexicon.IS_QUERYABLE, !options.contains(NodeOptions.Queryable)));
         if (primaryItemName != null) {
             assertThat(nodeType, hasProperty(JcrLexicon.PRIMARY_ITEM_NAME, name(primaryItemName)));
