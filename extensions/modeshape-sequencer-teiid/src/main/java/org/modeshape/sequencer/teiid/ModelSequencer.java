@@ -38,6 +38,8 @@ import org.modeshape.graph.sequencer.StreamSequencerContext;
  */
 public class ModelSequencer implements StreamSequencer {
 
+    protected static final boolean USE_XMI_UUIDS_AS_JCR_UUIDS = false;
+
     /**
      * {@inheritDoc}
      * 
@@ -61,7 +63,7 @@ public class ModelSequencer implements StreamSequencer {
             Subgraph subgraph = graph.getSubgraphOfDepth(100).at("/xmi:XMI");
 
             // Register any namespaces that were used, but use the desired case (not what's used in XMI) ...
-            XmiModelReader reader = new XmiModelReader(context.getInputPath(), subgraph, true);
+            XmiModelReader reader = new XmiModelReader(context.getInputPath(), subgraph, true, USE_XMI_UUIDS_AS_JCR_UUIDS);
             for (Namespace namespace : localRegistry.getLocalNamespaces()) {
                 String uri = namespace.getNamespaceUri();
                 if (!registry.isRegisteredNamespaceUri(uri)) {

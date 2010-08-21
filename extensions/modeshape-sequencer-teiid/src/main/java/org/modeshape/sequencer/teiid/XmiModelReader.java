@@ -35,6 +35,7 @@ import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.text.Jsr283Encoder;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.graph.JcrLexicon;
+import org.modeshape.graph.JcrMixLexicon;
 import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.ModeShapeLexicon;
@@ -159,20 +160,24 @@ public class XmiModelReader extends XmiGraphReader {
     private final Multimap<Path, UUID> unresolved = ArrayListMultimap.create();
     private ModelObjectHandler defaultHandler;
     private final Map<UUID, PropertySet> mmuuidToPropertySet = new HashMap<UUID, PropertySet>();
+    protected final boolean useXmiUuidsAsJcrUuids;
 
     /**
      * @param modelPath
      * @param subgraph
      * @param generateShortTypeNames
+     * @param useXmiUuidsAsJcrUuids
      */
     public XmiModelReader( Path modelPath,
                            Subgraph subgraph,
-                           boolean generateShortTypeNames ) {
+                           boolean generateShortTypeNames,
+                           boolean useXmiUuidsAsJcrUuids ) {
         super(subgraph, generateShortTypeNames);
         this.referenceFactory = valueFactories.getWeakReferenceFactory();
         this.modelPath = modelPath;
         Path pathWithModelName = this.modelPath.getLastSegment().getName().equals(JcrLexicon.CONTENT) ? this.modelPath.getParent() : this.modelPath;
         this.modelName = pathWithModelName.getLastSegment().getName();
+        this.useXmiUuidsAsJcrUuids = useXmiUuidsAsJcrUuids;
         prepare();
     }
 
@@ -215,6 +220,15 @@ public class XmiModelReader extends XmiGraphReader {
         return result;
     }
 
+    @Override
+    protected UUID uuidFor( Node node ) {
+        return this.useXmiUuidsAsJcrUuids ? xmiUuidFor(node) : super.uuidFor(node);
+    }
+
+    protected Name referenceableType() {
+        return useXmiUuidsAsJcrUuids ? JcrMixLexicon.REFERENCEABLE : XmiLexicon.REFERENCEABLE;
+    }
+
     public void write( SequencerOutput output ) {
         writePhase1(output);
         writePhase2(output);
@@ -230,8 +244,8 @@ public class XmiModelReader extends XmiGraphReader {
         // Walk the subgraph and accumulate the map from mmuuid to generated node UUID ...
         mmuuidToNodeUuid.clear();
         for (SubgraphNode node : subgraph) {
-            UUID nodeUuid = uuidFor(node);
             UUID mmUuid = xmiUuidFor(node);
+            UUID nodeUuid = this.useXmiUuidsAsJcrUuids ? mmUuid : uuidFor(node);
             if (mmUuid != null) mmuuidToNodeUuid.put(mmUuid, nodeUuid);
         }
 
@@ -327,7 +341,7 @@ public class XmiModelReader extends XmiGraphReader {
                 }
                 names[i++] = ref.getName();
             }
-            if (names != null) {
+            if (names != null && !useXmiUuidsAsJcrUuids) {
                 Name refNameName = nameForResolvedName(propName);
                 output.setProperty(path, refNameName, names);
             }
@@ -625,30 +639,31 @@ public class XmiModelReader extends XmiGraphReader {
                         resolved = (ResolvedReference)value;
                     }
                     if (resolved == null) continue;
-                    if (resolved.getHref() != null) {
-                        // And record the reference value ...
-                        Name hrefName = reader.nameForHref(propName);
-                        output.setProperty(path, hrefName, resolved.getHref());
-                    }
+                    if (!reader.useXmiUuidsAsJcrUuids) {
+                        if (resolved.getHref() != null) {
+                            // And record the reference value ...
+                            Name hrefName = reader.nameForHref(propName);
+                            output.setProperty(path, hrefName, resolved.getHref());
+                        }
 
-                    // Record the identifier value ...
-                    if (resolved.getId() != null) {
-                        Name idName = reader.nameForResolvedId(propName);
-                        output.setProperty(path, idName, resolved.getId());
-                    }
+                        // Record the identifier value ...
+                        if (resolved.getId() != null) {
+                            Name idName = reader.nameForResolvedId(propName);
+                            output.setProperty(path, idName, resolved.getId());
+                        }
 
+                        // Record the name of the resolved object ...
+                        String resolvedName = resolved.getName();
+                        if (resolvedName != null) {
+                            Name refNameName = reader.nameForResolvedName(propName);
+                            output.setProperty(path, refNameName, resolvedName);
+                        }
+                    }
                     // Record the resolved reference value ...
                     Reference weakReference = resolved.getWeakReferenceValue();
                     if (weakReference != null) {
                         Name refName = reader.nameForResolvedReference(propName);
                         output.setProperty(path, refName, weakReference);
-                    }
-
-                    // Record the name of the resolved object ...
-                    String resolvedName = resolved.getName();
-                    if (resolvedName != null) {
-                        Name refNameName = reader.nameForResolvedName(propName);
-                        output.setProperty(path, refNameName, resolvedName);
                     }
                 }
             }
@@ -731,7 +746,7 @@ public class XmiModelReader extends XmiGraphReader {
                 }
             }
             if (node.getProperty(XmiLexicon.UUID) != null) {
-                propSet.add(JcrLexicon.MIXIN_TYPES, XmiLexicon.REFERENCEABLE);
+                propSet.add(JcrLexicon.MIXIN_TYPES, reader.referenceableType());
             }
 
             // Now process the properties ...
@@ -739,10 +754,13 @@ public class XmiModelReader extends XmiGraphReader {
                 Name name = property.getName();
                 if (name.equals(JcrLexicon.PRIMARY_TYPE) || name.equals(JcrLexicon.MIXIN_TYPES)) {
                     continue;
-                } else if (name.equals(ModeShapeLexicon.UUID)) {
-                    name = JcrLexicon.UUID;
+                } else if (name.equals(ModeShapeLexicon.UUID) || name.equals(JcrLexicon.UUID)) {
+                    output.setProperty(path, JcrLexicon.UUID, reader.uuidFor(node));
+                    continue;
                 } else if (name.equals(XmiLexicon.UUID)) {
-                    output.setProperty(path, name, reader.xmiUuidFor(node));
+                    if (!reader.useXmiUuidsAsJcrUuids) {
+                        output.setProperty(path, name, reader.xmiUuidFor(node));
+                    }
                     continue;
                 } else if (name.getNamespaceUri().isEmpty()) {
                     name = reader.nameFrom(name.getLocalName());
@@ -795,12 +813,14 @@ public class XmiModelReader extends XmiGraphReader {
                              SequencerOutput output ) {
             String primaryMetamodelUri = reader.firstValue(node, "primaryMetamodelUri");
             output.setProperty(path, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
-            output.setProperty(path, JcrLexicon.MIXIN_TYPES, CoreLexicon.IMPORT, XmiLexicon.REFERENCEABLE);
+            output.setProperty(path, JcrLexicon.MIXIN_TYPES, CoreLexicon.IMPORT, reader.referenceableType());
             output.setProperty(path, CoreLexicon.PRIMARY_METAMODEL_URI, primaryMetamodelUri);
             output.setProperty(path, CoreLexicon.MODEL_TYPE, reader.firstValue(node, "modelType"));
             output.setProperty(path, CoreLexicon.PATH, reader.firstValue(node, "path"));
-            output.setProperty(path, XmiLexicon.UUID, reader.firstValue(node, "xmi:uuid"));
             output.setProperty(path, JcrLexicon.UUID, reader.uuidFor(node));
+            if (reader.useXmiUuidsAsJcrUuids) {
+                output.setProperty(path, XmiLexicon.UUID, reader.firstValue(node, "xmi:uuid"));
+            }
 
             return path;
         }
