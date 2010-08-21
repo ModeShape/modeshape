@@ -25,6 +25,9 @@ package org.modeshape.jboss.managed.util;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.modeshape.common.text.Inflector;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.Reflection;
 import org.modeshape.common.util.Reflection.Property;
@@ -35,7 +38,7 @@ import org.modeshape.jboss.managed.ManagedEngine.ManagedProperty;
 /**
  * Class for common utility methods used for ModeShape Managed Objects
  */
-public class ManagedUtils {
+public class ManagedUtils { 
 
     private static final Logger LOGGER = Logger.getLogger(ManagedUtils.class);
 
@@ -71,6 +74,29 @@ public class ManagedUtils {
         }
         
         return managedProps;
+    }
+    
+    /**
+     * Set the human-readable label for the property. If null, this will be set to the
+     * {@link Inflector#humanize(String, String...) humanized} form of the name}.
+     * 
+     * @param name the label for the property; may not be null
+     * @return label
+     */
+    public static String createLabel( String name ) {
+       
+    	CheckArg.isNotNull(name, "name");
+    	name = name.replaceFirst("option.", "");
+    	name = name.replaceFirst("custom.", "");
+    	name = name.replace(".", " ");
+    	String label = null;
+    	Inflector inflector = Inflector.getInstance();
+    	
+    	if (name != null) {
+            label = inflector.titleCase(inflector.humanize(name));
+            label = label.replaceFirst("Jcr", "JCR");
+        }
+        return label;
     }
 
 }

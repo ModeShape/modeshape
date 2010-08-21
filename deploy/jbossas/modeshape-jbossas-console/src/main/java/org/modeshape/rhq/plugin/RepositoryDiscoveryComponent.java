@@ -31,12 +31,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jboss.managed.api.ComponentType;
 import org.jboss.managed.api.ManagedComponent;
+import org.jboss.metatype.api.values.CollectionValueSupport;
+import org.jboss.metatype.api.values.CompositeValueSupport;
 import org.jboss.metatype.api.values.MetaValue;
 import org.jboss.metatype.api.values.MetaValueFactory;
+import org.modeshape.jboss.managed.ManagedEngine;
 import org.modeshape.jboss.managed.ManagedRepository;
 import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
 import org.modeshape.rhq.plugin.util.PluginConstants;
 import org.modeshape.rhq.plugin.util.ProfileServiceUtil;
+import org.rhq.core.domain.configuration.Configuration;
+import org.rhq.core.domain.configuration.PropertyList;
+import org.rhq.core.domain.configuration.PropertyMap;
+import org.rhq.core.domain.configuration.PropertySimple;
 import org.rhq.core.pluginapi.inventory.DiscoveredResourceDetails;
 import org.rhq.core.pluginapi.inventory.InvalidPluginConfigurationException;
 import org.rhq.core.pluginapi.inventory.ResourceDiscoveryComponent;
@@ -105,6 +112,36 @@ public class RepositoryDiscoveryComponent implements
 					discoveryContext.getDefaultPluginConfiguration(), // Plugin config
 					null // Process info from a process scan
 			);
+			
+			Configuration c = detail.getPluginConfiguration();
+
+			operation = "getRepositoryProperties";
+
+			MetaValue[] args = new MetaValue[] {
+					MetaValueFactory.getInstance().create(name)};
+			
+			MetaValue properties = ModeShapeManagementView
+					.executeManagedOperation(mc, operation, args);
+
+			MetaValue[] propertyArray = ((CollectionValueSupport) properties)
+					.getElements();
+
+			PropertyList list = new PropertyList("propertyList");
+			PropertyMap propMap = null;
+			c.put(list);
+			
+			for (MetaValue property : propertyArray) {
+
+				CompositeValueSupport proCvs = (CompositeValueSupport) property;
+				propMap = new PropertyMap("map");
+				propMap.put(new PropertySimple("label", ProfileServiceUtil
+						.stringValue(proCvs.get("label"))));
+				propMap.put(new PropertySimple("value", ProfileServiceUtil
+						.stringValue(proCvs.get("value"))));
+				list.add(propMap);
+			}
+
+			
 
 			// Add to return values
 			discoveredResources.add(detail);

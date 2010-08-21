@@ -47,6 +47,21 @@
 
 		<service name="Repositories" description="ModeShape Repositories"
 			class="RepositoryComponent" discovery="RepositoryDiscoveryComponent">
+			
+			<resource-configuration>
+                <c:list-property name="propertyList" displayName="Properties"
+                    description="Properties for this sequencer" readOnly="true">
+                    <c:map-property name="map" description="Properties for this sequencer"
+                        readOnly="true">
+                        <c:simple-property name="label" displayName="Name"
+                            description="The name of this property" required="false"
+                            readOnly="true" />
+                        <c:simple-property name="value" displayName="Value"
+                            description="The value of this property" required="false"
+                            readOnly="true" />
+                      </c:map-property>
+                </c:list-property>
+            </resource-configuration>
 		</service>
 
 		<service name="Sequencing Service" description="ModeShape Sequencing Service"
