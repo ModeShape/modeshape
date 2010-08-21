@@ -61,6 +61,7 @@
 [mmcore:annotated] mixin
   - mmcore:description (string)
   - mmcore:keywords (string) multiple
+  + * (mmcore:tags) sns
 
 [mmcore:tags] mixin
   - * (undefined) multiple 

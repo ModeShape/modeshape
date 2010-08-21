@@ -225,10 +225,6 @@ public class XmiModelReader extends XmiGraphReader {
         return this.useXmiUuidsAsJcrUuids ? xmiUuidFor(node) : super.uuidFor(node);
     }
 
-    protected Name referenceableType() {
-        return useXmiUuidsAsJcrUuids ? JcrMixLexicon.REFERENCEABLE : XmiLexicon.REFERENCEABLE;
-    }
-
     public void write( SequencerOutput output ) {
         writePhase1(output);
         writePhase2(output);
@@ -279,22 +275,23 @@ public class XmiModelReader extends XmiGraphReader {
             }
         }
 
-        // Create the root node for this XMI model ...
-        output.setProperty(modelRootPath, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
-        output.setProperty(modelRootPath, JcrLexicon.MIXIN_TYPES, XmiLexicon.MODEL, CoreLexicon.MODEL);
-        output.setProperty(modelRootPath, XmiLexicon.VERSION, firstValue(xmi, "xmi:version", 2.0));
-
         // Process the model annotation first (if present) ...
         if (modelAnnotation != null) {
             UUID xmiUuid = xmiUuidFor(modelAnnotation);
             mmuuidToNodePath.put(xmiUuid, modelRootPath);
-            output.setProperty(modelRootPath, CoreLexicon.PRIMARY_METAMODEL_URI, getCurrentNamespaceUri());
-            output.setProperty(modelRootPath, CoreLexicon.MODEL_TYPE, firstValue(modelAnnotation, "modelType"));
-            output.setProperty(modelRootPath, XmiLexicon.UUID, xmiUuid);
+            PropertySet props = propertiesFor(xmiUuid, true);
+            props.add(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
+            props.add(JcrLexicon.MIXIN_TYPES, XmiLexicon.MODEL, CoreLexicon.MODEL, JcrMixLexicon.REFERENCEABLE);
+            if (!this.useXmiUuidsAsJcrUuids) {
+                props.add(JcrLexicon.MIXIN_TYPES, XmiLexicon.REFERENCEABLE);
+            }
+            props.add(XmiLexicon.VERSION, firstValue(xmi, "xmi:version", 2.0));
+            props.add(CoreLexicon.PRIMARY_METAMODEL_URI, getCurrentNamespaceUri());
+            props.add(CoreLexicon.MODEL_TYPE, firstValue(modelAnnotation, "modelType"));
+            props.writeTo(output, modelRootPath);
             output.setProperty(modelRootPath, JcrLexicon.UUID, uuidFor(modelAnnotation));
-            PropertySet props = propertiesFor(xmiUuid, false);
-            if (props != null) {
-                props.writeTo(output, modelRootPath);
+            if (!this.useXmiUuidsAsJcrUuids) {
+                output.setProperty(modelRootPath, XmiLexicon.UUID, xmiUuid);
             }
 
             // Process the model imports ...
@@ -302,6 +299,25 @@ public class XmiModelReader extends XmiGraphReader {
                 SubgraphNode modelImport = subgraph.getNode(modelImportLocation);
                 processObject(modelRootPath, modelImport, output);
             }
+        } else {
+            // Create the root node for this XMI model ...
+            output.setProperty(modelRootPath, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
+            if (this.useXmiUuidsAsJcrUuids) {
+                output.setProperty(modelRootPath,
+                                   JcrLexicon.MIXIN_TYPES,
+                                   XmiLexicon.MODEL,
+                                   CoreLexicon.MODEL,
+                                   JcrMixLexicon.REFERENCEABLE);
+            } else {
+                output.setProperty(modelRootPath,
+                                   JcrLexicon.MIXIN_TYPES,
+                                   XmiLexicon.MODEL,
+                                   CoreLexicon.MODEL,
+                                   JcrMixLexicon.REFERENCEABLE,
+                                   XmiLexicon.REFERENCEABLE);
+
+            }
+            output.setProperty(modelRootPath, XmiLexicon.VERSION, firstValue(xmi, "xmi:version", 2.0));
         }
     }
 
@@ -598,7 +614,9 @@ public class XmiModelReader extends XmiGraphReader {
         public void add( Name attributeName,
                          Object... values ) {
             if (values != null && values.length != 0) {
-                propsByName.put(attributeName, values);
+                for (Object value : values) {
+                    propsByName.put(attributeName, value);
+                }
             }
         }
 
@@ -745,8 +763,9 @@ public class XmiModelReader extends XmiGraphReader {
                     }
                 }
             }
+            propSet.add(JcrLexicon.MIXIN_TYPES, JcrMixLexicon.REFERENCEABLE);
             if (node.getProperty(XmiLexicon.UUID) != null) {
-                propSet.add(JcrLexicon.MIXIN_TYPES, reader.referenceableType());
+                propSet.add(JcrLexicon.MIXIN_TYPES, XmiLexicon.REFERENCEABLE);
             }
 
             // Now process the properties ...
@@ -813,13 +832,19 @@ public class XmiModelReader extends XmiGraphReader {
                              SequencerOutput output ) {
             String primaryMetamodelUri = reader.firstValue(node, "primaryMetamodelUri");
             output.setProperty(path, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
-            output.setProperty(path, JcrLexicon.MIXIN_TYPES, CoreLexicon.IMPORT, reader.referenceableType());
             output.setProperty(path, CoreLexicon.PRIMARY_METAMODEL_URI, primaryMetamodelUri);
             output.setProperty(path, CoreLexicon.MODEL_TYPE, reader.firstValue(node, "modelType"));
             output.setProperty(path, CoreLexicon.PATH, reader.firstValue(node, "path"));
             output.setProperty(path, JcrLexicon.UUID, reader.uuidFor(node));
-            if (reader.useXmiUuidsAsJcrUuids) {
+            if (!reader.useXmiUuidsAsJcrUuids) {
                 output.setProperty(path, XmiLexicon.UUID, reader.firstValue(node, "xmi:uuid"));
+                output.setProperty(path,
+                                   JcrLexicon.MIXIN_TYPES,
+                                   CoreLexicon.IMPORT,
+                                   JcrMixLexicon.REFERENCEABLE,
+                                   XmiLexicon.REFERENCEABLE);
+            } else {
+                output.setProperty(path, JcrLexicon.MIXIN_TYPES, CoreLexicon.IMPORT, JcrMixLexicon.REFERENCEABLE);
             }
 
             return path;
