@@ -23,6 +23,7 @@
  */
 package org.modeshape.sequencer.teiid;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.graph.sequencer.AbstractStreamSequencerTest;
 import org.modeshape.graph.sequencer.StreamSequencer;
@@ -91,9 +92,46 @@ public class ModelSequencerTest extends AbstractStreamSequencerTest {
     }
 
     @Test
+    public void shouldSequenceYeeHaaPhysicalRelationalModelForMarketData() throws Exception {
+        sequence("model/YeeHaa/MarketData.xmi");
+        assertNoProblems();
+        printOutput();
+    }
+
+    @Test
+    public void shouldSequenceYeeHaaPhysicalRelationalModelForCustomerAccounts() throws Exception {
+        sequence("model/YeeHaa/Customer_Accounts.xmi");
+        assertNoProblems();
+        printOutput();
+    }
+
+    @Test
+    public void shouldSequenceYeeHaaPhysicalRelationalModelForMyPortfolio() throws Exception {
+        sequence("model/YeeHaa/MyPortfolio.xmi");
+        assertNoProblems();
+        printOutput();
+    }
+
+    @Test
     public void shouldSequenceRepresentativeRelationalModel() throws Exception {
-        // print = true;
         sequence("model/relational/RelationalModel.xmi");
+        assertNoProblems();
+        printOutput();
+    }
+
+    @Test
+    public void shouldSequenceRelationalModelUsingXmlFromSource() throws Exception {
+        // print = true;
+        sequence("model/XmlParts/PartsView.xmi");
+        assertNoProblems();
+        printOutput();
+    }
+
+    @Test
+    @Ignore
+    public void shouldSequenceXmlDocumentModelForEmployees() throws Exception {
+        // Only relational models are supported at this time
+        sequence("model/QuickEmployees/EmpDoc.xmi");
         assertNoProblems();
         printOutput();
     }

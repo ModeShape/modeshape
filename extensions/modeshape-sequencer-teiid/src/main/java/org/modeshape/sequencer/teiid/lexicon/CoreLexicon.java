@@ -41,6 +41,7 @@ public class CoreLexicon {
     public static final Name TAGS = new BasicName(Namespace.URI, "tags");
     public static final Name PRIMARY_METAMODEL_URI = new BasicName(Namespace.URI, "primaryMetamodelUri");
     public static final Name MODEL_TYPE = new BasicName(Namespace.URI, "modelType");
+    public static final Name MODEL_FILE = new BasicName(Namespace.URI, "modelFile");
     public static final Name IMPORT = new BasicName(Namespace.URI, "import");
     public static final Name PATH = new BasicName(Namespace.URI, "path");
     public static final Name DESCRIPTION = new BasicName(Namespace.URI, "description");

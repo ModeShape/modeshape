@@ -230,7 +230,6 @@ public class CndFromEcore {
         } else {
             System.out.println(output);
         }
-
     }
 
     protected void write( StringBuilder writer,

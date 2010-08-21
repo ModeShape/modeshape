@@ -50,6 +50,7 @@
   - mmcore:supportsDistinct (boolean) = 'true'
   - mmcore:producerName (string)
   - mmcore:producerVersion (string)
+  - mmcore:modelFile (string)
 
 [mmcore:import] > xmi:referenceable mixin
   - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'

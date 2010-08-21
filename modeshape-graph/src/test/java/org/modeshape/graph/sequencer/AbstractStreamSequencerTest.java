@@ -103,7 +103,7 @@ public abstract class AbstractStreamSequencerTest {
     }
 
     protected StreamSequencerContext createSequencerContext( String pathStr ) {
-        return new StreamSequencerContext(context, path(pathStr), null, null, new SimpleProblems());
+        return new StreamSequencerContext(context, path("/" + pathStr), null, null, new SimpleProblems());
     }
 
     protected void assertNoProblems() {

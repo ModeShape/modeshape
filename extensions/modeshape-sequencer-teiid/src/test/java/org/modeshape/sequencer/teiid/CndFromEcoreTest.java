@@ -24,8 +24,10 @@
 package org.modeshape.sequencer.teiid;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
+@Ignore
 public class CndFromEcoreTest {
 
     private CndFromEcore converter;

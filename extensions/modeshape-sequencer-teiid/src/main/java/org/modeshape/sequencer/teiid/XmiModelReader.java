@@ -181,7 +181,11 @@ public class XmiModelReader extends XmiGraphReader {
         this.referenceFactory = valueFactories.getWeakReferenceFactory();
         this.modelPath = modelPath;
         Path pathWithModelName = this.modelPath.getLastSegment().getName().equals(JcrLexicon.CONTENT) ? this.modelPath.getParent() : this.modelPath;
-        this.modelName = pathWithModelName.getLastSegment().getName();
+        Name modelName = pathWithModelName.getLastSegment().getName();
+        // Remove the ".xmi" from the end of the local name (the root will have a 'xmi:model' mixin type, so they can easily be
+        // found) ...
+        String modelNameWithoutExtension = modelName.getLocalName().replaceAll("\\.xmi$", "");
+        this.modelName = nameFactory.create(modelName.getNamespaceUri(), modelNameWithoutExtension);
         this.useXmiUuidsAsJcrUuids = useXmiUuidsAsJcrUuids;
         prepare();
     }
@@ -231,13 +235,17 @@ public class XmiModelReader extends XmiGraphReader {
         return this.useXmiUuidsAsJcrUuids ? xmiUuidFor(node) : super.uuidFor(node);
     }
 
-    public void write( SequencerOutput output ) {
-        writePhase1(output);
-        writePhase2(output);
-        writePhase3(output);
+    public boolean isAcceptedPrimaryMetamodel( String uri ) {
+        return RelationalLexicon.Namespace.URI.equals(uri);
     }
 
-    public void writePhase1( SequencerOutput output ) {
+    public boolean write( SequencerOutput output ) {
+        if (!writePhase1(output)) return false;
+        if (!writePhase2(output)) return false;
+        return writePhase3(output);
+    }
+
+    public boolean writePhase1( SequencerOutput output ) {
         clearHandlers();
         registerDefaultHandler(new SkipBranchHandler());
         registerHandler("annotations", new AnnotationHandler());
@@ -256,7 +264,9 @@ public class XmiModelReader extends XmiGraphReader {
         Path modelRootPath = relativePathFrom(modelName);
         SubgraphNode modelAnnotation = xmi.getNode("mmcore:ModelAnnotation");
         if (modelAnnotation != null) {
-            setCurrentNamespaceUri(firstValue(modelAnnotation, "primaryMetamodelUri"));
+            String primaryMetamodelUri = firstValue(modelAnnotation, "primaryMetamodelUri");
+            if (!isAcceptedPrimaryMetamodel(primaryMetamodelUri)) return false;
+            setCurrentNamespaceUri(primaryMetamodelUri);
         }
 
         // Process the annotations and transformations, before we write out any nodes.
@@ -325,9 +335,11 @@ public class XmiModelReader extends XmiGraphReader {
             }
             output.setProperty(modelRootPath, XmiLexicon.VERSION, firstValue(xmi, "xmi:version", 2.0));
         }
+        output.setProperty(modelRootPath, CoreLexicon.MODEL_FILE, stringFrom(modelPath));
+        return true;
     }
 
-    public void writePhase2( SequencerOutput output ) {
+    public boolean writePhase2( SequencerOutput output ) {
         clearHandlers();
         registerDefaultHandler(new DefaultModelObjectHandler());
         registerHandler("modelImports", new ModelImportHandler());
@@ -344,9 +356,10 @@ public class XmiModelReader extends XmiGraphReader {
             SubgraphNode modelObject = subgraph.getNode(objectLocation);
             processObject(modelRootPath, modelObject, output);
         }
+        return true;
     }
 
-    public void writePhase3( SequencerOutput output ) {
+    public boolean writePhase3( SequencerOutput output ) {
 
         // Now attempt to resolve any references that were previously unresolved ...
         for (Path propPath : unresolved.keySet()) {
@@ -368,6 +381,7 @@ public class XmiModelReader extends XmiGraphReader {
                 output.setProperty(path, refNameName, names);
             }
         }
+        return true;
     }
 
     protected Name nameFromKey( String keyName ) {
@@ -918,17 +932,19 @@ public class XmiModelReader extends XmiGraphReader {
                 // Get the transformation details ...
                 Path helperNestedNodePath = reader.path(transformation.getLocation().getPath(), "helper/nested");
                 SubgraphNode helperNested = subgraph.getNode(helperNestedNodePath);
-                props.add(TransformLexicon.SELECT_SQL, reader.firstValue(helperNested, "selectSql"));
-                props.add(TransformLexicon.INSERT_SQL, reader.firstValue(helperNested, "insertSql"));
-                props.add(TransformLexicon.UPDATE_SQL, reader.firstValue(helperNested, "updateSql"));
-                props.add(TransformLexicon.DELETE_SQL, reader.firstValue(helperNested, "deleteSql"));
-                props.add(TransformLexicon.INSERT_ALLOWED, reader.firstValue(helperNested, "insertAllowed", true));
-                props.add(TransformLexicon.UPDATE_ALLOWED, reader.firstValue(helperNested, "updateAllowed", true));
-                props.add(TransformLexicon.DELETE_ALLOWED, reader.firstValue(helperNested, "deleteAllowed", true));
-                props.add(TransformLexicon.INSERT_SQL_DEFAULT, reader.firstValue(helperNested, "insertSqlDefault", true));
-                props.add(TransformLexicon.UPDATE_SQL_DEFAULT, reader.firstValue(helperNested, "updateSqlDefault", true));
-                props.add(TransformLexicon.DELETE_SQL_DEFAULT, reader.firstValue(helperNested, "deleteSqlDefault", true));
-                // props.add(TransformLexicon.OUTPUT_LOCKED, firstValue(helperNested,"outputLocked",false));
+                if (helperNested != null) {
+                    props.add(TransformLexicon.SELECT_SQL, reader.firstValue(helperNested, "selectSql"));
+                    props.add(TransformLexicon.INSERT_SQL, reader.firstValue(helperNested, "insertSql"));
+                    props.add(TransformLexicon.UPDATE_SQL, reader.firstValue(helperNested, "updateSql"));
+                    props.add(TransformLexicon.DELETE_SQL, reader.firstValue(helperNested, "deleteSql"));
+                    props.add(TransformLexicon.INSERT_ALLOWED, reader.firstValue(helperNested, "insertAllowed", true));
+                    props.add(TransformLexicon.UPDATE_ALLOWED, reader.firstValue(helperNested, "updateAllowed", true));
+                    props.add(TransformLexicon.DELETE_ALLOWED, reader.firstValue(helperNested, "deleteAllowed", true));
+                    props.add(TransformLexicon.INSERT_SQL_DEFAULT, reader.firstValue(helperNested, "insertSqlDefault", true));
+                    props.add(TransformLexicon.UPDATE_SQL_DEFAULT, reader.firstValue(helperNested, "updateSqlDefault", true));
+                    props.add(TransformLexicon.DELETE_SQL_DEFAULT, reader.firstValue(helperNested, "deleteSqlDefault", true));
+                    // props.add(TransformLexicon.OUTPUT_LOCKED, firstValue(helperNested,"outputLocked",false));
+                }
 
                 for (Location childLocation : transformation.getChildren()) {
                     Name childName = childLocation.getPath().getLastSegment().getName();
