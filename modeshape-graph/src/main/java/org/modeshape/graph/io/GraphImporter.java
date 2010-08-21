@@ -169,8 +169,8 @@ public class GraphImporter {
 
         // Determine where the content is to be placed ...
         Path parentPath = location.getPath();
-        Name nameAttribute = JcrLexicon.NAME;
-        Name typeAttribute = JcrLexicon.PRIMARY_TYPE;
+        Name nameAttribute = getNameAttribute();
+        Name typeAttribute = getTypeAttribute();
         Name typeAttributeValue = null;
         NamespaceRegistry reg = graph.getContext().getNamespaceRegistry();
         if (reg.isRegisteredNamespaceUri(JcrNtLexicon.Namespace.URI)) {
@@ -211,8 +211,8 @@ public class GraphImporter {
 
         // Determine where the content is to be placed ...
         Path parentPath = location.getPath();
-        Name nameAttribute = JcrLexicon.NAME;
-        Name typeAttribute = JcrLexicon.PRIMARY_TYPE;
+        Name nameAttribute = getNameAttribute();
+        Name typeAttribute = getTypeAttribute();
         Name typeAttributeValue = null;
         NamespaceRegistry reg = graph.getContext().getNamespaceRegistry();
         if (reg.isRegisteredNamespaceUri(JcrNtLexicon.Namespace.URI)) {
@@ -224,6 +224,14 @@ public class GraphImporter {
         XmlHandler handler = new XmlHandler(destination, skip, parentPath, decoder, nameAttribute, typeAttribute,
                                             typeAttributeValue, scoping);
         return handler;
+    }
+
+    protected Name getNameAttribute() {
+        return JcrLexicon.NAME;
+    }
+
+    protected Name getTypeAttribute() {
+        return JcrLexicon.PRIMARY_TYPE;
     }
 
 }

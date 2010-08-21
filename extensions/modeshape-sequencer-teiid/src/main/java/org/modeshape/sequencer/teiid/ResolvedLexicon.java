@@ -23,38 +23,17 @@
  */
 package org.modeshape.sequencer.teiid;
 
-import org.junit.Before;
-import org.junit.Test;
+/**
+ * A namespace that is used for properties generated for an EObject reference and that holds the WEAKREFERENCE to the resolved
+ * objects.
+ * 
+ * @see NameOfLexicon
+ */
+public class ResolvedLexicon {
 
-public class CndFromEcoreTest {
-
-    private CndFromEcore converter;
-
-    @Before
-    public void beforeEach() {
-        converter = new CndFromEcore();
+    public static class Namespace {
+        public static final String URI = "http://www.modeshape.org/teiid/resolved/1.0";
+        public static final String PREFIX = "resolved";
     }
 
-    @Test
-    public void shouldPrintUsageForNoInputFiles() throws Exception {
-        CndFromEcore.main(new String[] {"-o", "my.cnd"});
-    }
-
-    @Test
-    public void shouldConvertRelationalEcore() {
-        converter.setEcoreFileNames("src/test/resources/ecore/relational.ecore");
-        converter.execute();
-    }
-
-    @Test
-    public void shouldConvertJdbcEcore() {
-        converter.setEcoreFileNames("src/test/resources/ecore/Jdbc.ecore");
-        converter.execute();
-    }
-
-    @Test
-    public void shouldConvertTransformation() {
-        converter.setEcoreFileNames("src/test/resources/ecore/transformation.ecore");
-        converter.execute();
-    }
 }

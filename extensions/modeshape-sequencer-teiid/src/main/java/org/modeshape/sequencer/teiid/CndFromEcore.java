@@ -27,14 +27,10 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.i18n.I18n;
-import org.modeshape.common.text.Inflector;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
@@ -42,10 +38,7 @@ import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.SubgraphNode;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.Property;
-import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.NamespaceRegistry.Namespace;
 import org.modeshape.graph.property.basic.LocalNamespaceRegistry;
 import com.beust.jcommander.JCommander;
@@ -197,7 +190,7 @@ public class CndFromEcore {
                 Graph graph = Graph.create(source, context);
                 graph.importXmlFrom(ecoreFileName).into("/"); // file path or URL or even on classpath
                 Subgraph subgraph = graph.getSubgraphOfDepth(20).at("/ecore:EPackage");
-                GraphReader reader = new GraphReader(subgraph, generatesMixins(), generateShortNames());
+                CndGraphReader reader = new CndGraphReader(subgraph, generatesMixins(), generateShortNames());
                 reader.writeTo(sb);
 
                 ecoreFileContributions.add(sb.toString());
@@ -266,37 +259,21 @@ public class CndFromEcore {
         }
     }
 
-    protected static class GraphReader {
-        private final ExecutionContext context;
-        private final ValueFactory<String> stringFactory;
-        private final ValueFactory<Boolean> booleanFactory;
-        private final NameFactory nameFactory;
-        private final Subgraph subgraph;
-        private final NamespaceRegistry namespaces;
-        private final Inflector inflector;
+    protected static class CndGraphReader extends XmiGraphReader {
         private final boolean generateMixins;
-        private final boolean generateShortNames;
-        private String currentNamespaceUri;
 
-        protected GraphReader( Subgraph subgraph,
-                               boolean generateMixins,
-                               boolean generateShortNames ) {
-            this.subgraph = subgraph;
-            this.context = subgraph.getGraph().getContext();
-            this.nameFactory = this.context.getValueFactories().getNameFactory();
-            this.stringFactory = this.context.getValueFactories().getStringFactory();
-            this.booleanFactory = this.context.getValueFactories().getBooleanFactory();
-            this.namespaces = this.context.getNamespaceRegistry();
-            this.inflector = Inflector.getInstance();
+        protected CndGraphReader( Subgraph subgraph,
+                                  boolean generateMixins,
+                                  boolean generateShortNames ) {
+            super(subgraph, generateShortNames);
             this.generateMixins = generateMixins;
-            this.generateShortNames = generateShortNames;
         }
 
         protected void writeTo( StringBuilder sb ) {
             SubgraphNode pkg = subgraph.getRoot();
             String pkgName = inflector.titleCase(firstValue(pkg, "name"));
             String uri = firstValue(pkg, "nsURI");
-            String prefix = firstValue(pkg, "nsPrefix");
+            String prefix = namespacePrefix(firstValue(pkg, "nsPrefix"));
 
             // Add the CND output from this file to the complete output ...
             sb.append("// -------------------------------------------").append(NEWLINE);
@@ -305,7 +282,7 @@ public class CndFromEcore {
 
             // Register the namespace ...
             namespaces.register(prefix, uri);
-            this.currentNamespaceUri = uri;
+            setCurrentNamespaceUri(uri);
 
             // Look for EEnums ...
             Multimap<Name, String> literalsByEnumName = ArrayListMultimap.create();
@@ -402,166 +379,5 @@ public class CndFromEcore {
                 sb.append(NEWLINE);
             }
         }
-
-        protected String firstValue( SubgraphNode node,
-                                     String propertyName ) {
-            return firstValue(node, propertyName, null);
-        }
-
-        protected String firstValue( SubgraphNode node,
-                                     String propertyName,
-                                     String defaultValue ) {
-            Property property = node.getProperty(propertyName);
-            if (property == null || property.isEmpty()) {
-                return defaultValue;
-            }
-            return stringFactory.create(property.getFirstValue());
-        }
-
-        protected boolean firstValue( SubgraphNode node,
-                                      String propertyName,
-                                      boolean defaultValue ) {
-            Property property = node.getProperty(propertyName);
-            if (property == null || property.isEmpty()) {
-                return defaultValue;
-            }
-            return booleanFactory.create(property.getFirstValue());
-        }
-
-        protected long firstValue( SubgraphNode node,
-                                   String propertyName,
-                                   long defaultValue ) {
-            Property property = node.getProperty(propertyName);
-            if (property == null || property.isEmpty()) {
-                return defaultValue;
-            }
-            return context.getValueFactories().getLongFactory().create(property.getFirstValue());
-        }
-
-        protected List<String> values( SubgraphNode node,
-                                       String propertyName,
-                                       String regexDelimiter ) {
-            Property property = node.getProperty(propertyName);
-            if (property == null || property.isEmpty()) {
-                return Collections.emptyList();
-            }
-            List<String> values = new ArrayList<String>();
-            for (Object value : property) {
-                String stringValue = stringFactory.create(value);
-                for (String val : stringValue.split(regexDelimiter)) {
-                    if (val != null) values.add(val);
-                }
-            }
-            return values;
-        }
-
-        protected List<Name> names( SubgraphNode node,
-                                    String propertyName,
-                                    String regexDelimiter ) {
-            Property property = node.getProperty(propertyName);
-            if (property == null || property.isEmpty()) {
-                return Collections.emptyList();
-            }
-            List<Name> values = new ArrayList<Name>();
-            for (Object value : property) {
-                String stringValue = stringFactory.create(value);
-                for (String val : stringValue.split(regexDelimiter)) {
-                    if (val != null) {
-                        values.add(nameFrom(val));
-                    }
-                }
-            }
-            return values;
-        }
-
-        protected String jcrTypeNameFor( Name dataType ) {
-            if (ECORE_NAMESPACE.equals(dataType.getNamespaceUri())) {
-                // This is a built-in datatype ...
-                String localName = dataType.getLocalName();
-                String result = EDATATYPE_TO_JCR_TYPENAME.get(localName);
-                if (result != null) return result;
-            }
-            return "UNDEFINED";
-        }
-
-        protected Name nameFrom( String name ) {
-            String value = name;
-            if (value.startsWith("#//")) {
-                value = value.substring(3);
-            } else if (value.startsWith("//")) {
-                value = value.substring(2);
-            }
-            if (value.startsWith("ecore:EDataType ")) {
-                value = value.substring("ecore:DataType ".length() + 1);
-                // otherwise, just continue ...
-            }
-            // Look for the namespace ...
-            Name result = null;
-            String[] parts = value.split("\\#");
-            if (parts.length == 2) {
-                String uri = parts[0].trim();
-                String localName = nameFrom(parts[1]).getLocalName(); // removes '#//'
-                result = shortenName(nameFactory.create(uri, localName));
-            } else {
-                value = inflector.underscore(value, '_', '-', '.');
-                value = inflector.lowerCamelCase(value, '_');
-                result = shortenName(nameFactory.create(value));
-            }
-            if (this.currentNamespaceUri != null && result.getNamespaceUri().length() == 0) {
-                result = nameFactory.create(this.currentNamespaceUri, result.getLocalName());
-            }
-            return result;
-        }
-
-        protected String stringFrom( Object value ) {
-            return stringFactory.create(value);
-        }
-
-        protected Name shortenName( Name name ) {
-            if (generateShortNames) {
-                // If the local name begins with the namespace prefix, remove it ...
-                String localName = name.getLocalName();
-                String prefix = namespaces.getPrefixForNamespaceUri(name.getNamespaceUri(), false);
-                if (prefix != null && localName.startsWith(prefix) && localName.length() > prefix.length()) {
-                    localName = localName.substring(prefix.length());
-                    localName = inflector.underscore(localName, '_', '-', '.');
-                    localName = inflector.lowerCamelCase(localName, '_');
-                    if (localName.length() > 0) return nameFactory.create(name.getNamespaceUri(), localName);
-                }
-            }
-            return name;
-        }
     }
-
-    protected static final String ECORE_NAMESPACE = "http://www.eclipse.org/emf/2002/Ecore";
-
-    protected static final Map<String, String> EDATATYPE_TO_JCR_TYPENAME;
-
-    static {
-        Map<String, String> types = new HashMap<String, String>();
-        types.put("eBoolean", "BOOLEAN");
-        types.put("eShort", "LONG");
-        types.put("eInt", "LONG");
-        types.put("eLong", "LONG");
-        types.put("eFloat", "DOUBLE");
-        types.put("eDouble", "DOUBLE");
-        types.put("eBigDecimal", "DECIMAL");
-        types.put("eBigInteger", "DECIMAL");
-        types.put("eDate", "DATE");
-        types.put("eString", "STRING");
-        types.put("eChar", "STRING");
-        types.put("eByte", "BINARY");
-        types.put("eByteArray", "BINARY");
-        types.put("eObject", "UNDEFINED");
-        types.put("eBooleanObject", "BOOLEAN");
-        types.put("eShortObject", "LONG");
-        types.put("eIntObject", "LONG");
-        types.put("eLongObject", "LONG");
-        types.put("eFloatObject", "DOUBLE");
-        types.put("eDoubleObject", "DOUBLE");
-        types.put("eCharObject", "STRING");
-        types.put("eByteObject", "BINARY");
-        EDATATYPE_TO_JCR_TYPENAME = Collections.unmodifiableMap(types);
-    }
-
 }

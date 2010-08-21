@@ -36,6 +36,14 @@ public interface SubgraphNode extends Node {
      * @param childName the name of the child node
      * @return the node, or null if the node is not {@link Subgraph#includes(Path) included} in these results
      */
+    SubgraphNode getNode( String childName );
+
+    /**
+     * Get the node at the supplied path that is relative to this node.
+     * 
+     * @param childName the name of the child node
+     * @return the node, or null if the node is not {@link Subgraph#includes(Path) included} in these results
+     */
     SubgraphNode getNode( Name childName );
 
     /**

@@ -23,66 +23,30 @@
  */
 package org.modeshape.sequencer.cnd;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import org.modeshape.graph.sequencer.MockSequencerContext;
-import org.modeshape.graph.sequencer.MockSequencerOutput;
-import org.modeshape.graph.sequencer.StreamSequencerContext;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.graph.sequencer.AbstractStreamSequencerTest;
+import org.modeshape.graph.sequencer.StreamSequencer;
 
 /**
  * 
  */
-public class CndSequencerTest {
-    private CndSequencer sequencer;
-    private InputStream content;
-    private MockSequencerOutput output;
-    private URL cndEmpty;
-    private URL cndImages;
-    private URL cndMp3;
-    private URL cndBuiltIns;
-    private URL standardDdl;
-    private StreamSequencerContext context;
+public class CndSequencerTest extends AbstractStreamSequencerTest {
 
-    @Before
-    public void beforeEach() {
-        sequencer = new CndSequencer();
-        context = new MockSequencerContext("/a/mySequencer.cnd");
-        context.getNamespaceRegistry().register("jcr", "http://www.jcp.org/jcr/1.0");
-        context.getNamespaceRegistry().register("nt", "http://www.jcp.org/jcr/nt/1.0");
-        context.getNamespaceRegistry().register("mix", "http://www.jcp.org/jcr/mix/1.0");
-        output = new MockSequencerOutput(context);
-        cndEmpty = this.getClass().getClassLoader().getResource("empty.cnd");
-        cndImages = this.getClass().getClassLoader().getResource("images.cnd");
-        cndMp3 = this.getClass().getClassLoader().getResource("mp3.cnd");
-        cndBuiltIns = this.getClass().getClassLoader().getResource("builtin_nodetypes.cnd");
-        standardDdl = this.getClass().getClassLoader().getResource("StandardDdl.cnd");
-    }
-
-    @After
-    public void afterEach() throws Exception {
-        if (content != null) {
-            try {
-                content.close();
-            } finally {
-                content = null;
-            }
-        }
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.sequencer.AbstractStreamSequencerTest#createSequencer()
+     */
+    @Override
+    protected StreamSequencer createSequencer() {
+        return new CndSequencer();
     }
 
     @Test
     public void shouldGenerateNodeTypesForCndFileWithJSR170BuiltIns() throws IOException {
-        URL url = this.cndBuiltIns;
-        assertThat(url, is(notNullValue()));
-        content = url.openStream();
-        assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, context);
+        sequence("builtin_nodetypes.cnd");
+        assertNoProblems();
         // assertThat(output.getPropertyValues("image:metadata", "jcr:primaryType"), is(new Object[] {"image:metadata"}));
         // assertThat(output.getPropertyValues("image:metadata", "jcr:mimeType"), is(new Object[] {"image/jpeg"}));
         // assertThat(output.getPropertyValues("image:metadata", "image:formatName"), is(new Object[] {"JPEG"}));
@@ -101,38 +65,26 @@ public class CndSequencerTest {
 
     @Test
     public void shouldGenerateNodeTypesForEmptyCndFile() throws IOException {
-        URL url = this.cndEmpty;
-        assertThat(url, is(notNullValue()));
-        content = url.openStream();
-        assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, context);
+        sequence("empty.cnd");
+        assertNoProblems();
     }
 
     @Test
     public void shouldGenerateNodeTypesForCndFileWithImageNodeTypes() throws IOException {
-        URL url = this.cndImages;
-        assertThat(url, is(notNullValue()));
-        content = url.openStream();
-        assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, context);
+        sequence("images.cnd");
+        assertNoProblems();
     }
 
     @Test
     public void shouldGenerateNodeTypesForCndFileWithMp3NodeTypes() throws IOException {
-        URL url = this.cndMp3;
-        assertThat(url, is(notNullValue()));
-        content = url.openStream();
-        assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, context);
+        sequence("mp3.cnd");
+        assertNoProblems();
     }
-    
+
     @Test
     public void shouldGenerateNodeTypesForCndFileWithDdlTypes() throws IOException {
-        URL url = this.standardDdl;
-        assertThat(url, is(notNullValue()));
-        content = url.openStream();
-        assertThat(content, is(notNullValue()));
-        sequencer.sequence(content, output, context);
+        sequence("StandardDdl.cnd");
+        assertNoProblems();
     }
 
 }

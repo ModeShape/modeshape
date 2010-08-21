@@ -54,6 +54,7 @@ import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceException;
+import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.io.GraphImporter;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.DateTime;
@@ -182,6 +183,19 @@ public class Graph {
             }
         };
         return new Graph(connectorSourceName, connectionFactory, context);
+    }
+
+    /**
+     * Create a graph instance that uses a transient, in-memory source and the supplied {@link ExecutionContext context}.
+     * 
+     * @param context the context in which all executions should be performed
+     * @return the new graph
+     * @throws IllegalArgumentException if the context parameter is null
+     */
+    public static Graph create( ExecutionContext context ) {
+        InMemoryRepositorySource source = new InMemoryRepositorySource();
+        source.setName("Transient source");
+        return create(source, context);
     }
 
     private final String sourceName;
@@ -2716,9 +2730,31 @@ public class Graph {
 
         return new ImportInto<Conjunction<Graph>>() {
             private boolean skipRootElement = false;
+            private Name nameAttribute = JcrLexicon.NAME;
+            private Name typeAttribute = JcrLexicon.PRIMARY_TYPE;
 
             public ImportInto<Conjunction<Graph>> skippingRootElement( boolean skipRootElement ) {
                 this.skipRootElement = skipRootElement;
+                return this;
+            }
+
+            public ImportInto<Conjunction<Graph>> usingAttributeForName( String nameAttribute ) {
+                if (nameAttribute != null) this.nameAttribute = createName(nameAttribute);
+                return this;
+            }
+
+            public ImportInto<Conjunction<Graph>> usingAttributeForName( Name nameAttribute ) {
+                if (nameAttribute != null) this.nameAttribute = nameAttribute;
+                return this;
+            }
+
+            public ImportInto<Conjunction<Graph>> usingAttributeForType( String typeAttribute ) {
+                if (typeAttribute != null) this.typeAttribute = createName(typeAttribute);
+                return this;
+            }
+
+            public ImportInto<Conjunction<Graph>> usingAttributeForType( Name typeAttribute ) {
+                if (typeAttribute != null) this.typeAttribute = typeAttribute;
                 return this;
             }
 
@@ -2748,7 +2784,19 @@ public class Graph {
             }
 
             public Conjunction<Graph> into( Location at ) throws IOException, SAXException {
-                GraphImporter importer = new GraphImporter(Graph.this);
+                final Name nameAttribute = this.nameAttribute;
+                final Name typeAttribute = this.typeAttribute;
+                GraphImporter importer = new GraphImporter(Graph.this) {
+                    @Override
+                    protected Name getNameAttribute() {
+                        return nameAttribute;
+                    }
+
+                    @Override
+                    protected Name getTypeAttribute() {
+                        return typeAttribute;
+                    }
+                };
                 importer.importXml(stream, at, skipRootElement).execute(); // 'importXml' creates and uses a new batch
                 return Graph.this.nextGraph;
             }
@@ -2766,9 +2814,31 @@ public class Graph {
     public ImportInto<Conjunction<Graph>> importXmlFrom( final URI uri ) {
         return new ImportInto<Conjunction<Graph>>() {
             private boolean skipRootElement = false;
+            private Name nameAttribute = JcrLexicon.NAME;
+            private Name typeAttribute = JcrLexicon.PRIMARY_TYPE;
 
             public ImportInto<Conjunction<Graph>> skippingRootElement( boolean skipRootElement ) {
                 this.skipRootElement = skipRootElement;
+                return this;
+            }
+
+            public ImportInto<Conjunction<Graph>> usingAttributeForName( String nameAttribute ) {
+                if (nameAttribute != null) this.nameAttribute = createName(nameAttribute);
+                return this;
+            }
+
+            public ImportInto<Conjunction<Graph>> usingAttributeForName( Name nameAttribute ) {
+                if (nameAttribute != null) this.nameAttribute = nameAttribute;
+                return this;
+            }
+
+            public ImportInto<Conjunction<Graph>> usingAttributeForType( String typeAttribute ) {
+                if (typeAttribute != null) this.typeAttribute = createName(typeAttribute);
+                return this;
+            }
+
+            public ImportInto<Conjunction<Graph>> usingAttributeForType( Name typeAttribute ) {
+                if (typeAttribute != null) this.typeAttribute = typeAttribute;
                 return this;
             }
 
@@ -2798,7 +2868,19 @@ public class Graph {
             }
 
             public Conjunction<Graph> into( Location at ) throws IOException, SAXException {
-                GraphImporter importer = new GraphImporter(Graph.this);
+                final Name nameAttribute = this.nameAttribute;
+                final Name typeAttribute = this.typeAttribute;
+                GraphImporter importer = new GraphImporter(Graph.this) {
+                    @Override
+                    protected Name getNameAttribute() {
+                        return nameAttribute;
+                    }
+
+                    @Override
+                    protected Name getTypeAttribute() {
+                        return typeAttribute;
+                    }
+                };
                 importer.importXml(uri, at, skipRootElement).execute(); // 'importXml' creates and uses a new batch
                 return Graph.this.nextGraph;
             }
@@ -2892,6 +2974,10 @@ public class Graph {
 
     protected Path createPath( String path ) {
         return getContext().getValueFactories().getPathFactory().create(path);
+    }
+
+    protected Name createName( String name ) {
+        return getContext().getValueFactories().getNameFactory().create(name);
     }
 
     protected List<Segment> getSegments( List<Location> locations ) {
@@ -6534,6 +6620,43 @@ public class Graph {
      * @param <Next> The interface that is to be returned when this request is completed
      */
     public interface ImportInto<Next> {
+
+        /**
+         * Specify the name of the XML attribute that should be used as the node name. If this is not specified (or the attribute
+         * name is null) the importer will look for the "jcr:name" attribute.
+         * 
+         * @param nameAttribute the name of the XML attribute containing the name for each node
+         * @return the interface used to specify the location where the content should be placed
+         */
+        ImportInto<Next> usingAttributeForName( String nameAttribute );
+
+        /**
+         * Specify the name of the XML attribute that should be used as the node name. If this is not specified (or the attribute
+         * name is null) the importer will look for the "jcr:name" attribute.
+         * 
+         * @param nameAttribute the name of the XML attribute containing the name for each node
+         * @return the interface used to specify the location where the content should be placed
+         */
+        ImportInto<Next> usingAttributeForName( Name nameAttribute );
+
+        /**
+         * Specify the name of the XML attribute that should be used as the node's type. If this is not specified (or the
+         * attribute name is null) the importer will look for the "jcr:primaryType" attribute.
+         * 
+         * @param typeAttribute the name of the XML attribute containing the type for each node
+         * @return the interface used to specify the location where the content should be placed
+         */
+        ImportInto<Next> usingAttributeForType( String typeAttribute );
+
+        /**
+         * Specify the name of the XML attribute that should be used as the node's type. If this is not specified (or the
+         * attribute name is null) the importer will look for the "jcr:primaryType" attribute.
+         * 
+         * @param typeAttribute the name of the XML attribute containing the type for each node
+         * @return the interface used to specify the location where the content should be placed
+         */
+        ImportInto<Next> usingAttributeForType( Name typeAttribute );
+
         /**
          * Specify whether the root element in the XML document should be skipped (that is, not be represented by a node). By
          * default, the root element is not skipped.
@@ -7229,6 +7352,13 @@ public class Graph {
             return getChildren().iterator();
         }
 
+        public SubgraphNode getNode( String childName ) {
+            Path path = getContext().getValueFactories().getPathFactory().create(location.getPath(), childName);
+            Location location = request.getLocationFor(path);
+            if (location == null) return null;
+            return new SubgraphNodeImpl(location, request);
+        }
+
         public SubgraphNode getNode( Name childName ) {
             Path path = getContext().getValueFactories().getPathFactory().create(location.getPath(), childName);
             Location location = request.getLocationFor(path);
@@ -7313,7 +7443,7 @@ public class Graph {
             // colors = ["blue", "red", "green"] (multi-valued property)
 
             StringBuilder sb = new StringBuilder();
-            sb.append(property.getName().getLocalName());
+            sb.append(getContext().getValueFactories().getStringFactory().create(property.getName()));
             sb.append(" = ");
             if (property.isEmpty()) {
                 sb.append("null");

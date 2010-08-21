@@ -23,38 +23,19 @@
  */
 package org.modeshape.sequencer.teiid;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.basic.BasicName;
 
-public class CndFromEcoreTest {
+/**
+ * 
+ */
+public class EcoreLexicon {
 
-    private CndFromEcore converter;
-
-    @Before
-    public void beforeEach() {
-        converter = new CndFromEcore();
+    public static class Namespace {
+        public static final String URI = "http://www.eclipse.org/emf/2002/Ecore";
+        public static final String PREFIX = "ecore";
     }
 
-    @Test
-    public void shouldPrintUsageForNoInputFiles() throws Exception {
-        CndFromEcore.main(new String[] {"-o", "my.cnd"});
-    }
+    public static final Name PACKAGE = new BasicName(Namespace.URI, "EPackage");
 
-    @Test
-    public void shouldConvertRelationalEcore() {
-        converter.setEcoreFileNames("src/test/resources/ecore/relational.ecore");
-        converter.execute();
-    }
-
-    @Test
-    public void shouldConvertJdbcEcore() {
-        converter.setEcoreFileNames("src/test/resources/ecore/Jdbc.ecore");
-        converter.execute();
-    }
-
-    @Test
-    public void shouldConvertTransformation() {
-        converter.setEcoreFileNames("src/test/resources/ecore/transformation.ecore");
-        converter.execute();
-    }
 }

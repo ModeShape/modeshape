@@ -23,38 +23,21 @@
  */
 package org.modeshape.sequencer.teiid;
 
-import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.graph.sequencer.AbstractStreamSequencerTest;
+import org.modeshape.graph.sequencer.StreamSequencer;
 
-public class CndFromEcoreTest {
+public class ModelSequencerTest extends AbstractStreamSequencerTest {
 
-    private CndFromEcore converter;
-
-    @Before
-    public void beforeEach() {
-        converter = new CndFromEcore();
+    @Override
+    protected StreamSequencer createSequencer() {
+        return new ModelSequencer();
     }
 
     @Test
-    public void shouldPrintUsageForNoInputFiles() throws Exception {
-        CndFromEcore.main(new String[] {"-o", "my.cnd"});
-    }
-
-    @Test
-    public void shouldConvertRelationalEcore() {
-        converter.setEcoreFileNames("src/test/resources/ecore/relational.ecore");
-        converter.execute();
-    }
-
-    @Test
-    public void shouldConvertJdbcEcore() {
-        converter.setEcoreFileNames("src/test/resources/ecore/Jdbc.ecore");
-        converter.execute();
-    }
-
-    @Test
-    public void shouldConvertTransformation() {
-        converter.setEcoreFileNames("src/test/resources/ecore/transformation.ecore");
-        converter.execute();
+    public void shouldSequenceBooksPhysicalRelationalModel() throws Exception {
+        sequence("model/old/BooksO.xmi");
+        assertNoProblems();
+        printOutput();
     }
 }

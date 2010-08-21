@@ -14,12 +14,12 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="description" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="keywords" upperBound="-1"
         eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="tags" upperBound="-1" eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EStringToStringMapEntry"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="tags" upperBound="-1" eType="ecore:EClass Ecore.ecore#//EStringToStringMapEntry"
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="annotationContainer" eType="#//AnnotationContainer"
         transient="true" eOpposite="#//AnnotationContainer/annotations"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="annotatedObject" eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="extensionObject" eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotatedObject" eType="ecore:EClass Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="extensionObject" eType="ecore:EClass Ecore.ecore#//EObject"
         transient="true" containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="AnnotationContainer">
@@ -55,7 +55,7 @@
         defaultValueLiteral="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="supportsWhereAll" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
         defaultValueLiteral="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="tags" upperBound="-1" eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EStringToStringMapEntry"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="tags" upperBound="-1" eType="ecore:EClass Ecore.ecore#//EStringToStringMapEntry"
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="namespaceUri" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="ProducerName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -70,7 +70,7 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="references" upperBound="-1"
         eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="linkedObjects" upperBound="-1"
-        eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"/>
+        eType="ecore:EClass Ecore.ecore#//EObject"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="linkContainer" eType="#//LinkContainer"
         transient="true" eOpposite="#//LinkContainer/links"/>
   </eClassifiers>

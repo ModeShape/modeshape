@@ -170,7 +170,7 @@ public abstract class BasicProperty implements Property {
                              TextEncoder delimiterEncoder ) {
         StringBuilder sb = new StringBuilder();
         sb.append(getName().getString(namespaceRegistry, encoder, delimiterEncoder));
-        sb.append(" = ");
+        sb.append("=");
         if (isEmpty()) {
             sb.append("null");
         } else {
@@ -179,6 +179,7 @@ public abstract class BasicProperty implements Property {
             for (Object value : this) {
                 if (first) first = false;
                 else sb.append(",");
+                sb.append('"');
                 if (value instanceof Path) {
                     Path path = (Path)value;
                     sb.append(path.getString(namespaceRegistry, encoder, delimiterEncoder));
@@ -188,6 +189,7 @@ public abstract class BasicProperty implements Property {
                 } else {
                     sb.append(value);
                 }
+                sb.append('"');
             }
             if (isMultiple()) sb.append("]");
         }

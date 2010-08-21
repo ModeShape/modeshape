@@ -25,22 +25,22 @@ package org.modeshape.graph.sequencer;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
-import org.modeshape.graph.sequencer.StreamSequencerContext;
-import org.modeshape.graph.sequencer.SequencerOutput;
 
 /**
  * @author Randall Hauch
  * @author John Verhaeg
  */
 @NotThreadSafe
-public class MockSequencerOutput implements SequencerOutput {
+public class MockSequencerOutput implements SequencerOutput, Iterable<Path> {
 
     private final Map<Path, Map<Name, Property>> propertiesByPath;
     private final StreamSequencerContext context;
@@ -123,6 +123,20 @@ public class MockSequencerOutput implements SequencerOutput {
         return this.propertiesByPath.containsKey(nodePath);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Iterable#iterator()
+     */
+    public Iterator<Path> iterator() {
+        if (nodePathsInCreationOrder != null) {
+            return nodePathsInCreationOrder.iterator();
+        }
+        LinkedList<Path> paths = new LinkedList<Path>(propertiesByPath.keySet());
+        Collections.sort(paths);
+        return paths.iterator();
+    }
+
     public Map<Name, Property> getProperties( Path nodePath ) {
         Map<Name, Property> properties = this.propertiesByPath.get(nodePath);
         if (properties == null) return null;
@@ -166,6 +180,29 @@ public class MockSequencerOutput implements SequencerOutput {
 
     public boolean hasProperties() {
         return this.propertiesByPath.size() > 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (Path path : this) {
+            if (!path.isRoot()) {
+                sb.append(StringUtil.createString(' ', path.size() * 2));
+                sb.append(path.getLastSegment().getString(context.getNamespaceRegistry()));
+            } else {
+                sb.append("/");
+            }
+            for (Property property : getProperties(path).values()) {
+                sb.append(" " + property.getString(context.getNamespaceRegistry()));
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 
 }

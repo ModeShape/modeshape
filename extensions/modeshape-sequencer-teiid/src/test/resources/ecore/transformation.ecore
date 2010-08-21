@@ -38,13 +38,13 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="TransformationMappingRoot" abstract="true"
       eSuperTypes="Mapping.ecore#//MappingRoot">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="ecore:EClass Ecore.ecore#//EObject"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="TransformationMapping" eSuperTypes="Mapping.ecore#//Mapping"/>
   <eClassifiers xsi:type="ecore:EClass" name="SqlAlias">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="alias" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="aliasedObject" lowerBound="1"
-        eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"/>
+        eType="ecore:EClass Ecore.ecore#//EObject"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="sqlTransformation" eType="#//SqlTransformation"
         transient="true" eOpposite="#//SqlTransformation/aliases"/>
   </eClassifiers>
@@ -71,7 +71,7 @@
   <eClassifiers xsi:type="ecore:EClass" name="MappingClassColumn" eSuperTypes="#//MappingClassObject">
     <eStructuralFeatures xsi:type="ecore:EReference" name="mappingClass" lowerBound="1"
         eType="#//MappingClass" transient="true" eOpposite="#//MappingClass/columns"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="type" lowerBound="1" eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="type" lowerBound="1" eType="ecore:EClass Ecore.ecore#//EObject"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="MappingClassObject" abstract="true">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
@@ -80,7 +80,7 @@
   <eClassifiers xsi:type="ecore:EClass" name="MappingClassSet">
     <eStructuralFeatures xsi:type="ecore:EReference" name="mappingClasses" upperBound="-1"
         eType="#//MappingClass" containment="true" eOpposite="#//MappingClass/mappingClassSet"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="ecore:EClass Ecore.ecore#//EObject"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="inputBinding" upperBound="-1"
         eType="#//InputBinding" containment="true" eOpposite="#//InputBinding/mappingClassSet"/>
   </eClassifiers>
@@ -92,7 +92,7 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="inputSet" lowerBound="1"
         eType="#//InputSet" transient="true" eOpposite="#//InputSet/inputParameters"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="type" lowerBound="1" eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="type" lowerBound="1" eType="ecore:EClass Ecore.ecore#//EObject"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="InputSet">
     <eStructuralFeatures xsi:type="ecore:EReference" name="mappingClass" lowerBound="1"
@@ -151,10 +151,10 @@
         transient="true" eOpposite="#//ExpressionOwner/expressions"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="TargetNode" eSuperTypes="#//DataFlowNode">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="ecore:EClass Ecore.ecore#//EObject"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="SourceNode" eSuperTypes="#//DataFlowNode">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="source" eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="source" eType="ecore:EClass Ecore.ecore#//EObject"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="AbstractOperationNode" abstract="true"
       eSuperTypes="#//DataFlowNode #//ExpressionOwner">

@@ -1,0 +1,195 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ * See the COPYRIGHT.txt file distributed with this work for information
+ * regarding copyright ownership.  Some portions may be licensed
+ * to Red Hat, Inc. under one or more contributor license agreements.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors. 
+ *
+ * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+ * is licensed to you under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * ModeShape is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+ 
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<relational='http://www.metamatrix.com/metamodels/Relational'>
+<xmi = "http://www.omg.org/XMI">
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[relational:relationalEntity] > xmi:referenceable abstract mixin
+ - relational:nameInSource (string) 
+
+// -------------------------------------------
+// Catalogs and Schemas
+// -------------------------------------------
+
+[relational:catalog] > relational:relationalEntity mixin
+ + * (relational:schema) = nt:unstructured copy
+ + * (relational:table) = nt:unstructured copy
+ + * (relational:procedure) = nt:unstructured copy sns
+ + * (relational:index) = nt:unstructured copy
+ + * (relational:logicalRelationship) = nt:unstructured copy
+
+[relational:schema] > relational:relationalEntity mixin
+ + * (relational:table) = nt:unstructured copy
+ + * (relational:procedure) = nt:unstructured copy sns
+ + * (relational:index) = nt:unstructured copy
+ + * (relational:logicalRelationship) = nt:unstructured copy
+
+// -------------------------------------------
+// Tables and Views
+// -------------------------------------------
+
+[relational:columnSet] > relational:relationalEntity abstract mixin
+ + * (relational:column) = nt:unstructured copy mandatory
+
+[relational:table] > relational:columnSet mixin
+ - relational:system (boolean) = 'false' 
+ - relational:cardinality (long) 
+ - relational:supportsUpdate (boolean) = 'true' 
+ - relational:materialized (boolean) = 'false' 
+ - relational:logicalRelationships (weakreference) multiple 
+ - relational:logicalRelationshipHrefs (string) multiple 
+ - relational:logicalRelationshipNames (string) multiple 
+ + * (relational:accessPattern) = nt:unstructured copy sns
+
+[relational:column] > relational:relationalEntity mixin
+ - relational:nativeType (string) 
+ - relational:type (weakreference) mandatory 
+ - relational:typeHref (string) 
+ - relational:typeName (string) 
+ - relational:length (long) 
+ - relational:fixedLength (boolean) 
+ - relational:precision (long) 
+ - relational:scale (long) 
+ - relational:nullable (string) = 'NULLABLE' < 'NO_NULLS', 'NULLABLE', 'NULLABLE_UNKNOWN'
+ - relational:autoIncremented (boolean) = 'false' 
+ - relational:defaultValue (string) 
+ - relational:minimumValue (string) 
+ - relational:maximumValue (string) 
+ - relational:format (string) 
+ - relational:characterSetName (string) 
+ - relational:collationName (string) 
+ - relational:selectable (boolean) = 'true' 
+ - relational:updateable (boolean) = 'true' 
+ - relational:caseSensitive (boolean) = 'true' 
+ - relational:searchability (string) = 'SEARCHABLE' < 'SEARCHABLE', 'ALL_EXCEPT_LIKE', 'LIKE_ONLY', 'UNSEARCHABLE'
+ - relational:currency (boolean) = 'false'
+ - relational:radix (long) = '10'
+ - relational:signed (boolean) = 'true' 
+ - relational:distinctValueCount (long) = '-1' 
+ - relational:nullValueCount (long) = '-1' 
+ - relational:uniqueKeys (weakreference) multiple 
+ - relational:uniqueKeyHrefs (string) multiple 
+ - relational:uniqueKeyNames (string) multiple 
+ - relational:indexes (weakreference) multiple 
+ - relational:indexHrefs (string) multiple 
+ - relational:indexNames (string) multiple 
+ - relational:foreignKeys (weakreference) multiple 
+ - relational:foreignKeyHrefs (string) multiple 
+ - relational:foreignKeyNames (string) multiple 
+ - relational:accessPatterns (weakreference) multiple 
+ - relational:accessPatternHrefs (string) multiple 
+ - relational:accessPatternNames (string) multiple
+
+//[relational:baseTable] > relational:table 
+
+[relational:view] > relational:table mixin
+
+// -------------------------------------------
+// Constraints
+// -------------------------------------------
+
+[relational:uniqueKey] > relational:relationalEntity abstract mixin
+ - relational:columns (weakreference) multiple mandatory
+ - relational:columnHrefs (string) multiple 
+ - relational:columnNames (string) multiple 
+ - relational:foreignKeys (weakreference) multiple 
+ - relational:foreignKeyHrefs (string) multiple 
+ - relational:foreignKeyNames (string) multiple 
+
+[relational:uniqueConstraint] > relational:uniqueKey mixin
+
+[relational:primaryKey] > relational:uniqueKey mixin
+
+[relational:foreignKey] > relational:relationship mixin
+ - relational:foreignKeyMultiplicity (string) = 'ZERO_TO_MANY' < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
+ - relational:primaryKeyMultiplicity (string) = 'ONE' < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
+ - relational:columns (weakreference) multiple mandatory
+ - relational:columnHrefs (string) multiple 
+ - relational:columnNames (string) multiple 
+ - relational:uniqueKeys (weakreference) multiple 
+ - relational:uniqueKeyHrefs (string) multiple 
+ - relational:uniqueKeyNames (string) multiple 
+
+[relational:index] > relational:relationalEntity mixin
+ - relational:filterCondition (string) 
+ - relational:nullable (boolean) = 'true' 
+ - relational:autoUpdate (boolean) 
+ - relational:unique (boolean) 
+ - relational:columns (weakreference) multiple mandatory
+ - relational:columnHrefs (string) multiple 
+ - relational:columnNames (string) multiple 
+
+[relational:accessPattern] > relational:relationalEntity mixin
+ - relational:columns (UNDEFINED) mandatory multiple 
+
+// -------------------------------------------
+// Procedures
+// -------------------------------------------
+
+[relational:procedure] > relational:relationalEntity mixin
+ - relational:function (boolean) 
+ - relational:updateCount (string) < 'AUTO', 'ZERO', 'ONE', 'MULTIPLE'
+ + * (relational:procedureParameter) = nt:unstructured copy sns
+ + * (relational:procedureResult) = nt:unstructured copy
+
+[relational:procedureParameter] > relational:relationalEntity mixin
+ - relational:direction (string) < 'IN', 'OUT', 'INOUT', 'RETURN', 'UNKNOWN'
+ - relational:defaultValue (string) 
+ - relational:nativeType (string) 
+ - relational:type (weakreference) mandatory 
+ - relational:typeHref (string) 
+ - relational:typeName (string) 
+ - relational:length (long) 
+ - relational:precision (long) 
+ - relational:scale (long) 
+ - relational:nullable (string) = 'NULLABLE' < 'NO_NULLS', 'NULLABLE', 'NULLABLE_UNKNOWN'
+ - relational:radix (long) = '10' 
+
+[relational:procedureResult] > relational:columnSet mixin
+
+// -------------------------------------------
+// Logical Relationships
+// -------------------------------------------
+
+[relational:relationship] > relational:relationalEntity abstract mixin
+
+[relational:logicalRelationship] > relational:relationship mixin
+ + * (relational:procedureParameter) = nt:unstructured copy sns
+
+[relational:logicalRelationshipEnd] > relational:relationalEntity mixin
+ - relational:multiplicity (string) < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
+ - relational:table (weakreference) multiple mandatory
+ - relational:tableHref (string) multiple 
+ - relational:tableName (string) multiple
+
+
+
+

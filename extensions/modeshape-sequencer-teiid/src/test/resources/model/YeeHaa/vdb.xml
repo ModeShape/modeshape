@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<vdb version="1" name="YahooUdfTest">
+    <property value="false" name="preview"/>
+    <model visible="true" type="PHYSICAL" name="MarketData" path="/YeeHaa/MarketData.xmi">
+        <property value="2664067804" name="checksum"/>
+        <property value="false" name="builtIn"/>
+        <property value="2390276647.INDEX" name="indexName"/>
+        <source translator-name="yahoo" name="MarketData"/>
+        <validation-error path="stock/Volume" severity="WARNING">Missing or invalid Precision on column with a numeric datatype (See validation Preferences)</validation-error>
+        <validation-error path="stock/High" severity="WARNING">Missing or invalid Precision on column with a numeric datatype (See validation Preferences)</validation-error>
+        <validation-error path="stock/Last" severity="WARNING">Missing or invalid Precision on column with a numeric datatype (See validation Preferences)</validation-error>
+        <validation-error path="stock/Change" severity="WARNING">Missing or invalid Precision on column with a numeric datatype (See validation Preferences)</validation-error>
+        <validation-error path="stock/Low" severity="WARNING">Missing or invalid Precision on column with a numeric datatype (See validation Preferences)</validation-error>
+        <validation-error path="stock/Open" severity="WARNING">Missing or invalid Precision on column with a numeric datatype (See validation Preferences)</validation-error>
+    </model>
+    <model visible="true" type="PHYSICAL" name="Customer_Accounts" path="/YeeHaa/Customer_Accounts.xmi">
+        <property value="2251491193" name="checksum"/>
+        <property value="false" name="builtIn"/>
+        <property value="44635933.INDEX" name="indexName"/>
+        <source translator-name="jdbc-simple" connection-jndi-name="7cb39da8-cc49-49e8-979c-96073dc4d619_YeeHaa_Customer_Accounts" name="Customer_Accounts"/>
+    </model>
+    <model visible="true" type="VIRTUAL" name="MyPortfolio" path="/YeeHaa/MyPortfolio.xmi">
+        <property value="3751366859" name="checksum"/>
+        <property value="false" name="builtIn"/>
+        <property value="3731081500.INDEX" name="indexName"/>
+        <property value="/YeeHaa/Products.xmi" name="imports"/>
+        <property value="/YeeHaa/Customer_Accounts.xmi" name="imports"/>
+        <property value="/YeeHaa/MarketData.xmi" name="imports"/>
+        <validation-error path="Positions/CurrentValue" severity="WARNING">Missing or invalid Precision on column with a numeric datatype (See validation Preferences)</validation-error>
+        <validation-error path="Positions/Last" severity="WARNING">Missing or invalid Precision on column with a numeric datatype (See validation Preferences)</validation-error>
+    </model>
+    <model visible="true" type="PHYSICAL" name="Products" path="/YeeHaa/Products.xmi">
+        <property value="3341106474" name="checksum"/>
+        <property value="false" name="builtIn"/>
+        <property value="1619991242.INDEX" name="indexName"/>
+        <source translator-name="oracle" connection-jndi-name="7cb39da8-cc49-49e8-979c-96073dc4d619_YeeHaa_Products" name="Products"/>
+    </model>
+</vdb>

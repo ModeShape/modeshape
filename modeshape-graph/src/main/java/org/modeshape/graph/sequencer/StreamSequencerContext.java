@@ -31,8 +31,12 @@ import java.util.Set;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
+import org.modeshape.common.component.ClassLoaderFactory;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.SecurityContext;
+import org.modeshape.graph.mimetype.MimeTypeDetector;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 
@@ -110,5 +114,76 @@ public class StreamSequencerContext extends ExecutionContext {
      */
     public Problems getProblems() {
         return this.problems;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.ExecutionContext#with(org.modeshape.common.component.ClassLoaderFactory)
+     */
+    @Override
+    public StreamSequencerContext with( ClassLoaderFactory classLoaderFactory ) {
+        return new StreamSequencerContext(super.with(classLoaderFactory), inputPath, inputProperties, mimeType, problems);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.ExecutionContext#with(java.util.Map)
+     */
+    @Override
+    public StreamSequencerContext with( Map<String, String> data ) {
+        return new StreamSequencerContext(super.with(data), inputPath, inputProperties, mimeType, problems);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.ExecutionContext#with(org.modeshape.graph.mimetype.MimeTypeDetector)
+     */
+    @Override
+    public StreamSequencerContext with( MimeTypeDetector mimeTypeDetector ) {
+        return new StreamSequencerContext(super.with(mimeTypeDetector), inputPath, inputProperties, mimeType, problems);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.ExecutionContext#with(org.modeshape.graph.property.NamespaceRegistry)
+     */
+    @Override
+    public StreamSequencerContext with( NamespaceRegistry namespaceRegistry ) {
+        return new StreamSequencerContext(super.with(namespaceRegistry), inputPath, inputProperties, mimeType, problems);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.ExecutionContext#with(org.modeshape.graph.SecurityContext)
+     */
+    @Override
+    public StreamSequencerContext with( SecurityContext securityContext ) {
+        return new StreamSequencerContext(super.with(securityContext), inputPath, inputProperties, mimeType, problems);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.ExecutionContext#with(java.lang.String, java.lang.String)
+     */
+    @Override
+    public StreamSequencerContext with( String key,
+                                        String value ) {
+        return new StreamSequencerContext(super.with(key, value), inputPath, inputProperties, mimeType, problems);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.ExecutionContext#with(java.lang.String)
+     */
+    @Override
+    public StreamSequencerContext with( String processId ) {
+        return new StreamSequencerContext(super.with(processId), inputPath, inputProperties, mimeType, problems);
     }
 }
