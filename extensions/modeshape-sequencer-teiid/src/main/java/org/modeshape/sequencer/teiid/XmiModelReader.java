@@ -55,6 +55,7 @@ import org.modeshape.sequencer.teiid.lexicon.JdbcLexicon;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
 import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
+import org.modeshape.sequencer.teiid.lexicon.XsiLexicon;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
@@ -145,6 +146,10 @@ public class XmiModelReader extends XmiGraphReader {
         for (String value : new HashSet<String>(dataTypes.values())) {
             dataTypes.put(xsdUrl + value, value);
         }
+        sdtUrl = "http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#";
+        for (String value : new HashSet<String>(dataTypes.values())) {
+            dataTypes.put(sdtUrl + value, value);
+        }
 
         STANDARD_DATA_TYPE_URLS_TO_NAMES = Collections.unmodifiableMap(dataTypes);
         STANDARD_DATA_TYPE_URLS_BY_UUID = Collections.unmodifiableMap(dataTypesByUuid);
@@ -187,6 +192,7 @@ public class XmiModelReader extends XmiGraphReader {
         namespaces.register(TransformLexicon.Namespace.PREFIX, TransformLexicon.Namespace.URI);
         namespaces.register(JdbcLexicon.Namespace.PREFIX, JdbcLexicon.Namespace.URI);
         namespaces.register(RelationalLexicon.Namespace.PREFIX, RelationalLexicon.Namespace.URI);
+        namespaces.register(XsiLexicon.Namespace.PREFIX, XsiLexicon.Namespace.URI);
 
         replaceTypeName("relational:importSetting", "jdbcs:importedFrom");
         replaceTypeName("jdbcs:jdbcSource", "jdbcs:source");
@@ -741,7 +747,12 @@ public class XmiModelReader extends XmiGraphReader {
             // Figure out the mixins, which will include the primary type and any other mixins ...
             Property primaryType = node.getProperty(JcrLexicon.PRIMARY_TYPE);
             Property mixinTypes = node.getProperty(JcrLexicon.MIXIN_TYPES);
+            String xsiTypeValue = reader.firstValue(node, "xsi:type");
             Name pt = reader.typeNameFrom(reader.nameFrom(reader.stringFrom(primaryType.getFirstValue())));
+            if ("relational:View".equals(xsiTypeValue)) {
+                int x = 0;
+            }
+            Name xsiType = xsiTypeValue != null ? reader.typeNameFrom(reader.nameFrom(xsiTypeValue)) : null;
             if (JcrNtLexicon.UNSTRUCTURED.equals(pt)) {
                 if (mixinTypes != null) {
                     for (Object mixinTypeName : mixinTypes) {
@@ -749,13 +760,21 @@ public class XmiModelReader extends XmiGraphReader {
                         propSet.add(JcrLexicon.MIXIN_TYPES, reader.typeNameFrom(mixinName));
                     }
                 } else {
-                    // There are no mixin types, so let's assume that the object had no 'name' attribute, that
-                    // the type was placed in the name (and thus no mixin types), and that the name is also
-                    // the mixin type ...
-                    propSet.add(JcrLexicon.MIXIN_TYPES, reader.typeNameFrom(path.getLastSegment().getName()));
+                    if (xsiType != null) {
+                        propSet.add(JcrLexicon.MIXIN_TYPES, xsiType);
+                    } else {
+                        // There are no mixin types, so let's assume that the object had no 'name' attribute, that
+                        // the type was placed in the name (and thus no mixin types), and that the name is also
+                        // the mixin type ...
+                        propSet.add(JcrLexicon.MIXIN_TYPES, reader.typeNameFrom(path.getLastSegment().getName()));
+                    }
                 }
             } else {
-                propSet.add(JcrLexicon.MIXIN_TYPES, pt);
+                if (xsiType != null) {
+                    propSet.add(JcrLexicon.MIXIN_TYPES, reader.typeNameFrom(xsiType));
+                } else {
+                    propSet.add(JcrLexicon.MIXIN_TYPES, pt);
+                }
                 if (mixinTypes != null) {
                     for (Object mixinTypeName : mixinTypes) {
                         Name mixinName = reader.nameFrom(reader.stringFrom(mixinTypeName));
@@ -771,7 +790,7 @@ public class XmiModelReader extends XmiGraphReader {
             // Now process the properties ...
             for (Property property : node.getProperties()) {
                 Name name = property.getName();
-                if (name.equals(JcrLexicon.PRIMARY_TYPE) || name.equals(JcrLexicon.MIXIN_TYPES)) {
+                if (name.equals(JcrLexicon.PRIMARY_TYPE) || name.equals(JcrLexicon.MIXIN_TYPES) || name.equals(XsiLexicon.TYPE)) {
                     continue;
                 } else if (name.equals(ModeShapeLexicon.UUID) || name.equals(JcrLexicon.UUID)) {
                     output.setProperty(path, JcrLexicon.UUID, reader.uuidFor(node));
