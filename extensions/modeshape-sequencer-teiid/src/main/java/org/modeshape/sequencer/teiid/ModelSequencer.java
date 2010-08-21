@@ -75,7 +75,7 @@ public class ModelSequencer implements StreamSequencer {
             // Now process the input graph and output the desired format ...
             reader.writePhase1(output);
             reader.writePhase2(output);
-
+            reader.writePhase3(output);
         } catch (RuntimeException e) {
             throw e;
         } catch (Throwable e) {

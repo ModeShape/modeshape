@@ -36,31 +36,35 @@
 //------------------------------------------------------------------------------
 
 [mmcore:model] > xmi:referenceable mixin
-- mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
-- mmcore:primaryMetamodelUri (string)
-- mmcore:description (string)
-- mmcore:nameInSource (string)
-- mmcore:maxSetSize (long) = '100'
-- mmcore:visible (boolean) = 'true'
-- mmcore:supportsDistinct (boolean) = 'true'
-- mmcore:supportsJoin (boolean) = 'true'
-- mmcore:supportsOrderBy (boolean) = 'true'
-- mmcore:supportsOuterJoin (boolean) = 'true'
-- mmcore:supportsWhereAll (boolean) = 'true'
-- mmcore:supportsDistinct (boolean) = 'true'
-- mmcore:producerName (string)
-- mmcore:producerVersion (string)
+  - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
+  - mmcore:primaryMetamodelUri (string)
+  - mmcore:description (string)
+  - mmcore:nameInSource (string)
+  - mmcore:maxSetSize (long) = '100'
+  - mmcore:visible (boolean) = 'true'
+  - mmcore:supportsDistinct (boolean) = 'true'
+  - mmcore:supportsJoin (boolean) = 'true'
+  - mmcore:supportsOrderBy (boolean) = 'true'
+  - mmcore:supportsOuterJoin (boolean) = 'true'
+  - mmcore:supportsWhereAll (boolean) = 'true'
+  - mmcore:supportsDistinct (boolean) = 'true'
+  - mmcore:producerName (string)
+  - mmcore:producerVersion (string)
 
 [mmcore:import] > xmi:referenceable mixin
-- mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
-- mmcore:primaryMetamodelUri (string)
-- mmcore:path (string)
-- mmcore:name (string)
-- mmcore:modelLocation (string)
+  - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
+  - mmcore:primaryMetamodelUri (string)
+  - mmcore:path (string)
+  - mmcore:name (string)
+  - mmcore:modelLocation (string)
 
 [mmcore:annotated] mixin
-- mmcore:description (string)
-- mmcore:keywords (string) multiple
+  - mmcore:description (string)
+  - mmcore:keywords (string) multiple
+
+[mmcore:tags] mixin
+  - * (undefined) multiple 
+  - * (undefined) 
 
 
 

@@ -27,7 +27,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,6 +64,8 @@ import com.google.common.collect.Multimap;
 public class XmiModelReader extends XmiGraphReader {
 
     public static final Map<String, String> STANDARD_DATA_TYPE_URLS_TO_NAMES;
+    public static final Map<UUID, String> STANDARD_DATA_TYPE_URLS_BY_UUID;
+    public static final Map<String, UUID> STANDARD_DATA_TYPE_UUIDS_BY_NAMES;
     protected static final TextEncoder ENCODER = new Jsr283Encoder();
     static {
         Map<String, String> dataTypes = new HashMap<String, String>();
@@ -122,21 +123,31 @@ public class XmiModelReader extends XmiGraphReader {
         dataTypes.put(sdtUrl + "3dcaf900-e8dc-1e2a-b433-fb67ea35c07e", "NOTATION");
         dataTypes.put(sdtUrl + "d9998500-ebba-1e2a-9319-8eaa9b2276c7", "hexBinary");
         dataTypes.put(sdtUrl + "b4c99380-ebc6-1e2a-9319-8eaa9b2276c7", "base64Binary");
+
+        // Populate the name-to-UUID mapping ...
+        Map<UUID, String> dataTypesByUuid = new HashMap<UUID, String>();
+        Map<String, UUID> dataTypeUuidsByName = new HashMap<String, UUID>();
+        for (Map.Entry<String, String> entry : dataTypes.entrySet()) {
+            String url = entry.getKey();
+            String name = entry.getValue();
+            try {
+                UUID uuid = UUID.fromString(url.substring(sdtUrl.length()));
+                dataTypesByUuid.put(uuid, name);
+                dataTypeUuidsByName.put(name, uuid);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Newer models have simple data types hrefs that contain names ...
         String xsdUrl = "http://www.w3.org/2001/XMLSchema#";
         for (String value : new HashSet<String>(dataTypes.values())) {
             dataTypes.put(xsdUrl + value, value);
         }
-        // Newer models have simple data types hrefs that contain names ...
-        sdtUrl = "http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#";
-        for (String value : new HashSet<String>(dataTypes.values())) {
-            dataTypes.put(xsdUrl + value, value);
-        }
-        STANDARD_DATA_TYPE_URLS_TO_NAMES = Collections.unmodifiableMap(dataTypes);
-    }
 
-    protected enum Phase {
-        ONE,
-        TWO;
+        STANDARD_DATA_TYPE_URLS_TO_NAMES = Collections.unmodifiableMap(dataTypes);
+        STANDARD_DATA_TYPE_URLS_BY_UUID = Collections.unmodifiableMap(dataTypesByUuid);
+        STANDARD_DATA_TYPE_UUIDS_BY_NAMES = Collections.unmodifiableMap(dataTypeUuidsByName);
     }
 
     private final Name modelName;
@@ -144,10 +155,10 @@ public class XmiModelReader extends XmiGraphReader {
     private final ReferenceFactory referenceFactory;
     private final Map<UUID, UUID> mmuuidToNodeUuid = new HashMap<UUID, UUID>();
     private final Map<UUID, Path> mmuuidToNodePath = new HashMap<UUID, Path>();
-    private final Map<Phase, Map<Name, ModelObjectHandler>> handlers = new HashMap<Phase, Map<Name, ModelObjectHandler>>();
+    private final Map<Name, ModelObjectHandler> handlers = new HashMap<Name, ModelObjectHandler>();
     private final Multimap<Path, UUID> unresolved = ArrayListMultimap.create();
-    private final Map<Phase, ModelObjectHandler> defaultHandlers = new HashMap<Phase, ModelObjectHandler>();
-    private Phase phase = Phase.ONE;
+    private ModelObjectHandler defaultHandler;
+    private final Map<UUID, PropertySet> mmuuidToPropertySet = new HashMap<UUID, PropertySet>();
 
     /**
      * @param modelPath
@@ -160,52 +171,61 @@ public class XmiModelReader extends XmiGraphReader {
         super(subgraph, generateShortTypeNames);
         this.referenceFactory = valueFactories.getWeakReferenceFactory();
         this.modelPath = modelPath;
-        Path pathWithModelName = modelPath.getLastSegment().getName().equals(JcrLexicon.CONTENT) ? modelPath.getParent() : modelPath;
+        Path pathWithModelName = this.modelPath.getLastSegment().getName().equals(JcrLexicon.CONTENT) ? this.modelPath.getParent() : this.modelPath;
         this.modelName = pathWithModelName.getLastSegment().getName();
-        this.defaultHandlers.put(Phase.ONE, new DefaultModelObjectHandler());
-        this.defaultHandlers.put(Phase.TWO, new SkipNodeHandler());
-        registerHandlers();
+        prepare();
     }
 
-    protected void registerHandlers() {
+    protected void prepare() {
         // Register some of the namespaces we'll need ...
         namespaces.register(DiagramLexicon.Namespace.PREFIX, DiagramLexicon.Namespace.URI);
         namespaces.register(TransformLexicon.Namespace.PREFIX, TransformLexicon.Namespace.URI);
         namespaces.register(JdbcLexicon.Namespace.PREFIX, JdbcLexicon.Namespace.URI);
         namespaces.register(RelationalLexicon.Namespace.PREFIX, RelationalLexicon.Namespace.URI);
 
-        // Register the phase 1 handlers ...
-        registerHandler("modelImports", new ModelImportHandler(), Phase.ONE);
-        registerHandler("mmcore:AnnotationContainer", new SkipBranchHandler(), Phase.ONE);
-        registerHandler("diagram:DiagramContainer", new SkipBranchHandler(), Phase.ONE);
-        registerHandler("importSettings", new DefaultModelObjectHandler(JdbcLexicon.IMPORTED_FROM), Phase.ONE);
         replaceTypeName("relational:importSetting", "jdbcs:importedFrom");
         replaceTypeName("jdbcs:jdbcSource", "jdbcs:source");
-
-        // Register the phase 2 handlers ...
-        registerHandler("annotations", new AnnotationHandler(), Phase.TWO);
-        registerHandler("transformationMappings", new TransformationHandler(), Phase.TWO);
     }
 
     protected void registerHandler( String name,
-                                    ModelObjectHandler handler,
-                                    Phase phase ) {
-        registerHandler(nameFactory.create(name), handler, phase);
+                                    ModelObjectHandler handler ) {
+        registerHandler(nameFactory.create(name), handler);
     }
 
     protected void registerHandler( Name name,
-                                    ModelObjectHandler handler,
-                                    Phase phase ) {
-        Map<Name, ModelObjectHandler> handlersForPhase = handlers.get(phase);
-        if (handlersForPhase == null) {
-            handlersForPhase = new HashMap<Name, ModelObjectHandler>();
-            handlers.put(phase, handlersForPhase);
+                                    ModelObjectHandler handler ) {
+        handlers.put(name, handler);
+    }
+
+    protected void registerDefaultHandler( ModelObjectHandler handler ) {
+        defaultHandler = handler;
+    }
+
+    protected void clearHandlers() {
+        this.handlers.clear();
+    }
+
+    protected PropertySet propertiesFor( UUID mmuuid,
+                                         boolean createIfMissing ) {
+        PropertySet result = mmuuidToPropertySet.get(mmuuid);
+        if (result == null && createIfMissing) {
+            result = new PropertySet(this);
+            mmuuidToPropertySet.put(mmuuid, result);
         }
-        handlersForPhase.put(name, handler);
+        return result;
+    }
+
+    public void write( SequencerOutput output ) {
+        writePhase1(output);
+        writePhase2(output);
+        writePhase3(output);
     }
 
     public void writePhase1( SequencerOutput output ) {
-        phase = Phase.ONE;
+        clearHandlers();
+        registerDefaultHandler(new SkipBranchHandler());
+        registerHandler("annotations", new AnnotationHandler());
+        registerHandler("transformationMappings", new TransformationHandler());
 
         // Walk the subgraph and accumulate the map from mmuuid to generated node UUID ...
         mmuuidToNodeUuid.clear();
@@ -215,50 +235,82 @@ public class XmiModelReader extends XmiGraphReader {
             if (mmUuid != null) mmuuidToNodeUuid.put(mmUuid, nodeUuid);
         }
 
-        // Create the root node for this XMI model ...
+        // Figure out the primary metamodel before we do anything else ...
         SubgraphNode xmi = subgraph.getRoot();
-        Path modelPath = relativePathFrom(modelName);
-        output.setProperty(modelPath, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
-        output.setProperty(modelPath, JcrLexicon.MIXIN_TYPES, XmiLexicon.MODEL, CoreLexicon.MODEL);
-        output.setProperty(modelPath, XmiLexicon.VERSION, firstValue(xmi, "xmi:version", 2.0));
-
-        // Process the model annotation (if present) ...
+        Path modelRootPath = relativePathFrom(modelName);
         SubgraphNode modelAnnotation = xmi.getNode("mmcore:ModelAnnotation");
-        Location modelAnnotationLocation = null;
         if (modelAnnotation != null) {
-            modelAnnotationLocation = modelAnnotation.getLocation();
-            UUID xmiUuid = xmiUuidFor(modelAnnotation);
-            mmuuidToNodePath.put(xmiUuid, modelPath);
             setCurrentNamespaceUri(firstValue(modelAnnotation, "primaryMetamodelUri"));
-            output.setProperty(modelPath, CoreLexicon.PRIMARY_METAMODEL_URI, getCurrentNamespaceUri());
-            output.setProperty(modelPath, CoreLexicon.MODEL_TYPE, firstValue(modelAnnotation, "modelType"));
-            output.setProperty(modelPath, XmiLexicon.UUID, xmiUuid);
-            output.setProperty(modelPath, JcrLexicon.UUID, uuidFor(modelAnnotation));
+        }
+
+        // Process the annotations and transformations, before we write out any nodes.
+        // This is because these two steps read in the properties that are projected
+        // (via PropertySet objects keyed by the mmuuid) onto the real objects.
+        // Since the SequencerOutput does not let us output properties on a node
+        // afte we've moved on to other nodes, we need to read these 'projected' properties first.
+        SubgraphNode annotationContainer = xmi.getNode("mmcore:AnnotationContainer");
+        if (annotationContainer != null) {
+            // Process the annotations ...
+            for (Location objectLocation : annotationContainer.getChildren()) {
+                SubgraphNode modelObject = subgraph.getNode(objectLocation);
+                processObject(modelRootPath, modelObject, output);
+            }
+        }
+        SubgraphNode transformationContainer = xmi.getNode("transform:TransformationContainer");
+        if (transformationContainer != null) {
+            // Process the annotations ...
+            for (Location objectLocation : transformationContainer.getChildren()) {
+                SubgraphNode modelObject = subgraph.getNode(objectLocation);
+                processObject(modelRootPath, modelObject, output);
+            }
+        }
+
+        // Create the root node for this XMI model ...
+        output.setProperty(modelRootPath, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
+        output.setProperty(modelRootPath, JcrLexicon.MIXIN_TYPES, XmiLexicon.MODEL, CoreLexicon.MODEL);
+        output.setProperty(modelRootPath, XmiLexicon.VERSION, firstValue(xmi, "xmi:version", 2.0));
+
+        // Process the model annotation first (if present) ...
+        if (modelAnnotation != null) {
+            UUID xmiUuid = xmiUuidFor(modelAnnotation);
+            mmuuidToNodePath.put(xmiUuid, modelRootPath);
+            output.setProperty(modelRootPath, CoreLexicon.PRIMARY_METAMODEL_URI, getCurrentNamespaceUri());
+            output.setProperty(modelRootPath, CoreLexicon.MODEL_TYPE, firstValue(modelAnnotation, "modelType"));
+            output.setProperty(modelRootPath, XmiLexicon.UUID, xmiUuid);
+            output.setProperty(modelRootPath, JcrLexicon.UUID, uuidFor(modelAnnotation));
+            PropertySet props = propertiesFor(xmiUuid, false);
+            if (props != null) {
+                props.writeTo(output, modelRootPath);
+            }
 
             // Process the model imports ...
             for (Location modelImportLocation : modelAnnotation.getChildren()) {
                 SubgraphNode modelImport = subgraph.getNode(modelImportLocation);
-                processObject(modelPath, modelImport, output);
+                processObject(modelRootPath, modelImport, output);
             }
-        }
-
-        // Process the other top-level model objects ...
-        for (Location objectLocation : xmi.getChildren()) {
-            if (objectLocation.equals(modelAnnotationLocation)) continue;
-            SubgraphNode modelObject = subgraph.getNode(objectLocation);
-            processObject(modelPath, modelObject, output);
         }
     }
 
     public void writePhase2( SequencerOutput output ) {
-        phase = Phase.TWO;
+        clearHandlers();
+        registerDefaultHandler(new DefaultModelObjectHandler());
+        registerHandler("modelImports", new ModelImportHandler());
+        registerHandler("mmcore:ModelAnnotation", new SkipBranchHandler());
+        registerHandler("mmcore:AnnotationContainer", new SkipBranchHandler());
+        registerHandler("transform:TransformationContainer", new SkipBranchHandler());
+        registerHandler("diagram:DiagramContainer", new SkipBranchHandler());
+        registerHandler("importSettings", new DefaultModelObjectHandler(JdbcLexicon.IMPORTED_FROM));
 
-        // Process the other top-level model objects ...
         SubgraphNode xmi = subgraph.getRoot();
+        Path modelRootPath = relativePathFrom(modelName);
+        // Process the other top-level model objects ...
         for (Location objectLocation : xmi.getChildren()) {
             SubgraphNode modelObject = subgraph.getNode(objectLocation);
-            processObject(modelPath, modelObject, output);
+            processObject(modelRootPath, modelObject, output);
         }
+    }
+
+    public void writePhase3( SequencerOutput output ) {
 
         // Now attempt to resolve any references that were previously unresolved ...
         for (Path propPath : unresolved.keySet()) {
@@ -280,26 +332,6 @@ public class XmiModelReader extends XmiGraphReader {
                 output.setProperty(path, refNameName, names);
             }
         }
-    }
-
-    protected void writeTags( SequencerOutput output,
-                              Path pathToTaggedObject,
-                              String key,
-                              String value ) {
-        String[] parts = key.split("\\:", 1);
-        if (parts.length < 2) {
-            // Just write the tag on the tagged object ...
-            Name tagName = nameFactory.create(ENCODER.encode(key));
-            output.setProperty(pathToTaggedObject, tagName, value);
-            return;
-        }
-        // Use the first part of the tag name as the name of a child node ...
-        Name childName = nameFactory.create(ENCODER.encode(parts[0]));
-        Path childPath = pathFactory.create(pathToTaggedObject, childName);
-        output.setProperty(childPath, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
-        // And the rest of the key as the property name ...
-        Name tagName = nameFactory.create(ENCODER.encode(parts[1]));
-        output.setProperty(childPath, tagName, value);
     }
 
     protected Name nameFromKey( String keyName ) {
@@ -324,6 +356,13 @@ public class XmiModelReader extends XmiGraphReader {
         Path actualPath = handler.process(path, node, subgraph, this, output);
 
         if (actualPath != null) {
+            // Before we do anything else, write out any PropertySet for this object ...
+            UUID mmuuid = xmiUuidFor(node);
+            PropertySet props = propertiesFor(mmuuid, false);
+            if (props != null) {
+                props.writeTo(output, actualPath);
+            }
+
             // Register the newly created object ...
             UUID xmiUuid = xmiUuidFor(node);
             mmuuidToNodePath.put(xmiUuid, actualPath);
@@ -340,35 +379,53 @@ public class XmiModelReader extends XmiGraphReader {
     }
 
     protected ModelObjectHandler findHandler( Node node ) {
-        ModelObjectHandler handler = null;
-        Map<Name, ModelObjectHandler> handlers = this.handlers.get(phase);
-        if (handlers != null) {
-            // Find the handler for the 'jcr:primaryType' as literally specified ...
-            String primaryTypeStr = firstValue(node, JcrLexicon.PRIMARY_TYPE);
-            Name primaryType = nameFactory.create(primaryTypeStr);
+        // Find the handler for the 'jcr:primaryType' as literally specified ...
+        String primaryTypeStr = firstValue(node, JcrLexicon.PRIMARY_TYPE);
+        Name primaryType = nameFactory.create(primaryTypeStr);
+        ModelObjectHandler handler = handlers.get(primaryType);
+        if (handler == null && primaryTypeStr.indexOf(':') == -1) {
+            // Find the handler for the 'jcr:primaryType' using the current namespace ...
+            primaryType = nameFactory.create(currentNamespaceUri, primaryTypeStr);
             handler = handlers.get(primaryType);
-            if (handler == null && primaryTypeStr.indexOf(':') == -1) {
-                // Find the handler for the 'jcr:primaryType' using the current namespace ...
-                primaryType = nameFactory.create(currentNamespaceUri, primaryTypeStr);
-                handler = handlers.get(primaryType);
-                if (handler == null) {
-                    // Find the handler for the 'jcr:primaryType' using the 'mmcore' namespace ...
-                    primaryType = nameFactory.create(CoreLexicon.Namespace.URI, primaryTypeStr);
-                    handler = handlers.get(primaryType);
-                }
-            }
             if (handler == null) {
-                // Try the object name ...
-                Location objectLocation = node.getLocation();
-                Name name = objectLocation.getPath().getLastSegment().getName();
-                handler = handlers.get(name);
+                // Find the handler for the 'jcr:primaryType' using the 'mmcore' namespace ...
+                primaryType = nameFactory.create(CoreLexicon.Namespace.URI, primaryTypeStr);
+                handler = handlers.get(primaryType);
             }
         }
         if (handler == null) {
+            // Try the object name ...
+            Location objectLocation = node.getLocation();
+            Name name = objectLocation.getPath().getLastSegment().getName();
+            handler = handlers.get(name);
+        }
+        if (handler == null) {
             // Use the default handler ...
-            handler = defaultHandlers.get(phase);
+            handler = defaultHandler;
         }
         return handler;
+    }
+
+    protected UUID resolveInternalReference( String href ) {
+        if (href == null) {
+            return null;
+        }
+        UUID mmuuid = null;
+        if (href.startsWith("mmuuid/")) {
+            // It's a local reference ...
+            try {
+                mmuuid = uuidFactory.create(href.substring(7));
+            } catch (ValueFormatException e) {
+                // ignore
+            }
+        } else {
+            try {
+                mmuuid = uuidFactory.create(href);
+            } catch (ValueFormatException e) {
+                // ignore
+            }
+        }
+        return mmuuid;
     }
 
     protected ResolvedReference resolve( Path ownerPath,
@@ -385,23 +442,21 @@ public class XmiModelReader extends XmiGraphReader {
             String id = null;
             if (index != -1) {
                 id = href.substring(index + "mmuuid/".length());
+            } else {
+                UUID uuid = STANDARD_DATA_TYPE_UUIDS_BY_NAMES.get(name);
+                if (uuid != null) id = uuid.toString();
             }
             return new ResolvedReference(href, name, id);
         }
-        UUID mmuuid = null;
-        if (href.startsWith("mmuuid/")) {
-            // It's a local reference ...
-            try {
-                mmuuid = uuidFactory.create(href.substring(7));
-            } catch (ValueFormatException e) {
-                // ignore
+        UUID mmuuid = resolveInternalReference(href);
+        if (mmuuid == null) {
+            // Not an internal reference ...
+            int index = href.indexOf("mmuuid/");
+            String id = null;
+            if (index != -1) {
+                id = href.substring(index + "mmuuid/".length());
             }
-        } else {
-            try {
-                mmuuid = uuidFactory.create(href);
-            } catch (ValueFormatException e) {
-                // ignore
-            }
+            return new ResolvedReference(href, null, null, id, null);
         }
         return resolve(ownerPath, attributeName, href, mmuuid);
     }
@@ -422,7 +477,7 @@ public class XmiModelReader extends XmiGraphReader {
         }
         if (path != null || weakReference != null) {
             String resolvedName = path != null ? stringFrom(path.getLastSegment()) : null;
-            return new ResolvedReference(href, resolvedName, path, mmuuid, weakReference);
+            return new ResolvedReference(href, resolvedName, path, mmuuid.toString(), weakReference);
         }
         return null;
     }
@@ -449,14 +504,14 @@ public class XmiModelReader extends XmiGraphReader {
         public ResolvedReference( String href,
                                   String name,
                                   Path path,
-                                  UUID id,
+                                  String id,
                                   Reference reference ) {
             this.href = href;
             this.standardDataType = false;
             this.name = name;
             this.reference = reference;
             this.path = path;
-            this.id = id.toString();
+            this.id = id;
         }
 
         public boolean isStandardDataType() {
@@ -484,62 +539,135 @@ public class XmiModelReader extends XmiGraphReader {
         }
     }
 
-    protected ReferenceSetter createReferenceSetter() {
-        return new ReferenceSetter(this);
+    protected PropertySet createPropertySet() {
+        return new PropertySet(this);
     }
 
-    public static class ReferenceSetter {
-        private final Multimap<Name, Object> inputsByName = ArrayListMultimap.create();
+    public static class PropertySet {
+        private final Multimap<Name, Object> refsByName = ArrayListMultimap.create();
+        private final Multimap<Name, Object> propsByName = ArrayListMultimap.create();
+        private final Map<String, String> tags = new HashMap<String, String>();
         private final XmiModelReader reader;
 
-        protected ReferenceSetter( XmiModelReader reader ) {
+        protected PropertySet( XmiModelReader reader ) {
             this.reader = reader;
         }
 
-        public void add( Name attributeName,
-                         ResolvedReference resolved ) {
-            if (resolved.getHref() != null) {
-                // And record the reference value ...
-                Name hrefName = reader.nameForHref(attributeName);
-                inputsByName.put(hrefName, resolved.getHref());
+        public void addTag( String name,
+                            String value ) {
+            if (value != null) {
+                tags.put(name, value);
             }
+        }
 
-            // Record the identifier value ...
-            if (resolved.getId() != null) {
-                Name idName = reader.nameForResolvedId(attributeName);
-                inputsByName.put(idName, resolved.getId());
+        public void addRef( Name attributeName,
+                            ResolvedReference resolved ) {
+            if (resolved != null) {
+                refsByName.put(attributeName, resolved);
             }
+        }
 
-            // Record the resolved reference value ...
-            Reference weakReference = resolved.getWeakReferenceValue();
-            if (weakReference != null) {
-                Name refName = reader.nameForResolvedReference(attributeName);
-                inputsByName.put(refName, weakReference);
-            }
-
-            // Record the name of the resolved object ...
-            String resolvedName = resolved.getName();
-            if (resolvedName != null) {
-                Name refNameName = reader.nameForResolvedName(attributeName);
-                inputsByName.put(refNameName, resolvedName);
+        public void addRef( Name attributeName,
+                            String href ) {
+            if (href != null) {
+                refsByName.put(attributeName, href);
             }
         }
 
         public void add( Name attributeName,
-                         String href ) {
-            ResolvedReference resolved = reader.resolve(null, null, href);
-            if (resolved == null) {
-                return;
+                         Object value ) {
+            if (value != null) {
+                propsByName.put(attributeName, value);
             }
-            add(attributeName, resolved);
+        }
+
+        public void add( Name attributeName,
+                         Object... values ) {
+            if (values != null && values.length != 0) {
+                propsByName.put(attributeName, values);
+            }
         }
 
         public void writeTo( SequencerOutput output,
                              Path path ) {
-            for (Name propName : inputsByName.keySet()) {
-                Collection<Object> values = inputsByName.get(propName);
+            // Figure out which tags are applied to this object ...
+            boolean tagProps = false;
+            for (Map.Entry<String, String> tag : tags.entrySet()) {
+                String key = tag.getKey();
+                String[] parts = key.split(":", 2);
+                if (parts.length < 2) {
+                    // Just write the tag on the tagged object ...
+                    Name tagName = reader.nameFrom(ENCODER.encode(key));
+                    add(tagName, tag.getValue());
+                    tagProps = true;
+                }
+            }
+            if (tagProps) {
+                add(JcrLexicon.MIXIN_TYPES, CoreLexicon.TAGS);
+            }
+
+            // Now write out the individual properties ...
+            for (Name propName : propsByName.keySet()) {
+                Collection<Object> values = propsByName.get(propName);
                 Object[] valueArray = values.toArray(new Object[values.size()]);
                 output.setProperty(path, propName, valueArray);
+            }
+
+            // And write out the reference properties ...
+            for (Name propName : refsByName.keySet()) {
+                Collection<Object> values = refsByName.get(propName);
+                for (Object value : values) {
+                    ResolvedReference resolved = null;
+                    if (value instanceof String) {
+                        String href = (String)value;
+                        resolved = reader.resolve(null, null, href);
+                    } else if (value instanceof ResolvedReference) {
+                        resolved = (ResolvedReference)value;
+                    }
+                    if (resolved == null) continue;
+                    if (resolved.getHref() != null) {
+                        // And record the reference value ...
+                        Name hrefName = reader.nameForHref(propName);
+                        output.setProperty(path, hrefName, resolved.getHref());
+                    }
+
+                    // Record the identifier value ...
+                    if (resolved.getId() != null) {
+                        Name idName = reader.nameForResolvedId(propName);
+                        output.setProperty(path, idName, resolved.getId());
+                    }
+
+                    // Record the resolved reference value ...
+                    Reference weakReference = resolved.getWeakReferenceValue();
+                    if (weakReference != null) {
+                        Name refName = reader.nameForResolvedReference(propName);
+                        output.setProperty(path, refName, weakReference);
+                    }
+
+                    // Record the name of the resolved object ...
+                    String resolvedName = resolved.getName();
+                    if (resolvedName != null) {
+                        Name refNameName = reader.nameForResolvedName(propName);
+                        output.setProperty(path, refNameName, resolvedName);
+                    }
+                }
+            }
+
+            // And finally write out the tags that have to be placed onto child nodes ...
+            for (Map.Entry<String, String> tag : tags.entrySet()) {
+                String key = tag.getKey();
+                String[] parts = key.split(":", 2);
+                if (parts.length >= 2) {
+                    // Use the first part of the tag name as the name of a child node ...
+                    Name childName = reader.nameFactory.create(ENCODER.encode(parts[0]));
+                    Path childPath = reader.path(path, childName);
+                    output.setProperty(childPath, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
+                    output.setProperty(childPath, JcrLexicon.MIXIN_TYPES, CoreLexicon.TAGS);
+                    // And the rest of the key as the property name ...
+                    Name tagName = reader.nameFactory.create(ENCODER.encode(parts[1]));
+                    String value = tag.getValue();
+                    output.setProperty(childPath, tagName, value);
+                }
             }
         }
     }
@@ -573,34 +701,38 @@ public class XmiModelReader extends XmiGraphReader {
             }
             output.setProperty(path, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
 
+            // Get the propert set for this object ...
+            UUID mmuuid = reader.xmiUuidFor(node);
+            PropertySet propSet = mmuuid != null ? reader.propertiesFor(mmuuid, true) : reader.createPropertySet();
+
             // Figure out the mixins, which will include the primary type and any other mixins ...
             Property primaryType = node.getProperty(JcrLexicon.PRIMARY_TYPE);
             Property mixinTypes = node.getProperty(JcrLexicon.MIXIN_TYPES);
             Name pt = reader.typeNameFrom(reader.nameFrom(reader.stringFrom(primaryType.getFirstValue())));
-            List<Object> mixinTypeNames = new LinkedList<Object>();
             if (JcrNtLexicon.UNSTRUCTURED.equals(pt)) {
                 if (mixinTypes != null) {
                     for (Object mixinTypeName : mixinTypes) {
-                        mixinTypeNames.add(mixinTypeName);
+                        Name mixinName = reader.nameFrom(reader.stringFrom(mixinTypeName));
+                        propSet.add(JcrLexicon.MIXIN_TYPES, reader.typeNameFrom(mixinName));
                     }
                 } else {
                     // There are no mixin types, so let's assume that the object had no 'name' attribute, that
                     // the type was placed in the name (and thus no mixin types), and that the name is also
                     // the mixin type ...
-                    mixinTypeNames.add(reader.typeNameFrom(path.getLastSegment().getName()));
+                    propSet.add(JcrLexicon.MIXIN_TYPES, reader.typeNameFrom(path.getLastSegment().getName()));
                 }
             } else {
-                mixinTypeNames.add(pt);
+                propSet.add(JcrLexicon.MIXIN_TYPES, pt);
                 if (mixinTypes != null) {
-                    for (Object value : mixinTypes) {
-                        mixinTypeNames.add(reader.typeNameFrom(reader.nameFrom(reader.stringFrom(value))));
+                    for (Object mixinTypeName : mixinTypes) {
+                        Name mixinName = reader.nameFrom(reader.stringFrom(mixinTypeName));
+                        propSet.add(JcrLexicon.MIXIN_TYPES, reader.typeNameFrom(mixinName));
                     }
                 }
             }
             if (node.getProperty(XmiLexicon.UUID) != null) {
-                mixinTypeNames.add(XmiLexicon.REFERENCEABLE);
+                propSet.add(JcrLexicon.MIXIN_TYPES, XmiLexicon.REFERENCEABLE);
             }
-            output.setProperty(path, JcrLexicon.MIXIN_TYPES, filterMixinTypeNames(mixinTypeNames));
 
             // Now process the properties ...
             for (Property property : node.getProperties()) {
@@ -617,10 +749,10 @@ public class XmiModelReader extends XmiGraphReader {
                 }
                 List<UUID> references = reader.references(property);
                 if (references != null) {
-                    ReferenceSetter setter = reader.createReferenceSetter();
+                    PropertySet setter = reader.createPropertySet();
                     for (UUID uuid : references) {
                         ResolvedReference resolved = reader.resolve(path, name, null, uuid);
-                        setter.add(name, resolved);
+                        setter.addRef(name, resolved);
                     }
                     setter.writeTo(output, path);
                 } else {
@@ -630,17 +762,18 @@ public class XmiModelReader extends XmiGraphReader {
             }
 
             // Look at the children to see if there are any references ...
-            ReferenceSetter setter = reader.createReferenceSetter();
             for (Location childLocation : node.getChildren()) {
                 SubgraphNode child = subgraph.getNode(childLocation);
                 if (child.getProperty("href") != null) {
                     // The child node is a reference, so figure out the EObject reference name ...
                     Name attributeName = reader.nameFrom(childLocation.getPath().getLastSegment().getName());
                     String href = reader.firstValue(child, "href");
-                    setter.add(attributeName, href);
+                    propSet.addRef(attributeName, href);
                 }
             }
-            setter.writeTo(output, path);
+            if (mmuuid == null) {
+                propSet.writeTo(output, path);
+            }
             return path;
         }
 
@@ -668,6 +801,7 @@ public class XmiModelReader extends XmiGraphReader {
             output.setProperty(path, CoreLexicon.PATH, reader.firstValue(node, "path"));
             output.setProperty(path, XmiLexicon.UUID, reader.firstValue(node, "xmi:uuid"));
             output.setProperty(path, JcrLexicon.UUID, reader.uuidFor(node));
+
             return path;
         }
     }
@@ -682,20 +816,19 @@ public class XmiModelReader extends XmiGraphReader {
             List<UUID> mmuuids = reader.references(annotation.getProperty("annotatedObject"));
             if (mmuuids != null) {
                 for (UUID mmuuid : mmuuids) {
-                    ResolvedReference resolvedRef = reader.resolve(null, null, null, mmuuid);
-                    if (resolvedRef.getPath() != null) {
-                        Path annotatedPath = resolvedRef.getPath();
-                        // Process the description ...
-                        output.setProperty(annotatedPath, CoreLexicon.DESCRIPTION, reader.firstValue(annotation, "description"));
-                        // Process the tags ...
-                        for (Location tagLocation : annotation.getChildren()) {
-                            Name childName = tagLocation.getPath().getLastSegment().getName();
-                            if (childName.getLocalName().equals("tags")) {
-                                SubgraphNode tag = subgraph.getNode(tagLocation);
-                                String key = reader.firstValue(tag, "key");
-                                String value = reader.firstValue(tag, "value");
-                                reader.writeTags(output, annotatedPath, key, value);
-                            }
+                    PropertySet props = reader.propertiesFor(mmuuid, true);
+                    // Process the description ...
+                    String desc = reader.firstValue(annotation, "description");
+                    props.add(CoreLexicon.DESCRIPTION, reader.firstValue(annotation, "description"));
+                    props.add(JcrLexicon.MIXIN_TYPES, CoreLexicon.ANNOTATED);
+                    // Process the tags ...
+                    for (Location tagLocation : annotation.getChildren()) {
+                        Name childName = tagLocation.getPath().getLastSegment().getName();
+                        if (childName.getLocalName().equals("tags")) {
+                            SubgraphNode tag = subgraph.getNode(tagLocation);
+                            String key = reader.firstValue(tag, "key");
+                            String value = reader.firstValue(tag, "value");
+                            props.addTag(key, value);
                         }
                     }
                 }
@@ -713,67 +846,51 @@ public class XmiModelReader extends XmiGraphReader {
                              SequencerOutput output ) {
             String hrefToTransformedObject = reader.firstValue(transformation, "target");
             if (hrefToTransformedObject != null) {
-                ResolvedReference resolvedRef = reader.resolve(null, null, hrefToTransformedObject);
-                if (resolvedRef.getPath() != null) {
-                    Path annotatedPath = resolvedRef.getPath();
-                    // Get the transformation details ...
-                    Path helperNestedNodePath = reader.path(transformation.getLocation().getPath(), "helper/nested");
-                    SubgraphNode helperNested = subgraph.getNode(helperNestedNodePath);
-                    output.setProperty(annotatedPath, TransformLexicon.SELECT_SQL, reader.firstValue(helperNested, "selectSql"));
-                    output.setProperty(annotatedPath, TransformLexicon.INSERT_SQL, reader.firstValue(helperNested, "insertSql"));
-                    output.setProperty(annotatedPath, TransformLexicon.UPDATE_SQL, reader.firstValue(helperNested, "updateSql"));
-                    output.setProperty(annotatedPath, TransformLexicon.DELETE_SQL, reader.firstValue(helperNested, "deleteSql"));
-                    output.setProperty(annotatedPath, TransformLexicon.INSERT_ALLOWED, reader.firstValue(helperNested,
-                                                                                                         "insertAllowed",
-                                                                                                         true));
-                    output.setProperty(annotatedPath, TransformLexicon.UPDATE_ALLOWED, reader.firstValue(helperNested,
-                                                                                                         "updateAllowed",
-                                                                                                         true));
-                    output.setProperty(annotatedPath, TransformLexicon.DELETE_ALLOWED, reader.firstValue(helperNested,
-                                                                                                         "deleteAllowed",
-                                                                                                         true));
-                    output.setProperty(annotatedPath, TransformLexicon.INSERT_SQL_DEFAULT, reader.firstValue(helperNested,
-                                                                                                             "insertSqlDefault",
-                                                                                                             true));
-                    output.setProperty(annotatedPath, TransformLexicon.UPDATE_SQL_DEFAULT, reader.firstValue(helperNested,
-                                                                                                             "updateSqlDefault",
-                                                                                                             true));
-                    output.setProperty(annotatedPath, TransformLexicon.DELETE_SQL_DEFAULT, reader.firstValue(helperNested,
-                                                                                                             "deleteSqlDefault",
-                                                                                                             true));
-                    // output.setProperty(annotatedPath, TransformLexicon.OUTPUT_LOCKED, firstValue(helperNested,
-                    // "outputLocked",false));
-                    ReferenceSetter setter = reader.createReferenceSetter();
-                    for (Location childLocation : transformation.getChildren()) {
-                        Name childName = childLocation.getPath().getLastSegment().getName();
-                        SubgraphNode child = subgraph.getNode(childLocation);
-                        if (childName.getLocalName().equals("inputs")) {
-                            // Record the inputs to the transformed object ...
-                            // Now collect the inputs to the transformation ...
-                            String inputHref = reader.firstValue(child, "href");
+                UUID mmuuid = reader.resolveInternalReference(hrefToTransformedObject);
+                PropertySet props = reader.propertiesFor(mmuuid, true);
+
+                props.add(JcrLexicon.MIXIN_TYPES, TransformLexicon.TRANSFORMED);
+
+                // Get the transformation details ...
+                Path helperNestedNodePath = reader.path(transformation.getLocation().getPath(), "helper/nested");
+                SubgraphNode helperNested = subgraph.getNode(helperNestedNodePath);
+                props.add(TransformLexicon.SELECT_SQL, reader.firstValue(helperNested, "selectSql"));
+                props.add(TransformLexicon.INSERT_SQL, reader.firstValue(helperNested, "insertSql"));
+                props.add(TransformLexicon.UPDATE_SQL, reader.firstValue(helperNested, "updateSql"));
+                props.add(TransformLexicon.DELETE_SQL, reader.firstValue(helperNested, "deleteSql"));
+                props.add(TransformLexicon.INSERT_ALLOWED, reader.firstValue(helperNested, "insertAllowed", true));
+                props.add(TransformLexicon.UPDATE_ALLOWED, reader.firstValue(helperNested, "updateAllowed", true));
+                props.add(TransformLexicon.DELETE_ALLOWED, reader.firstValue(helperNested, "deleteAllowed", true));
+                props.add(TransformLexicon.INSERT_SQL_DEFAULT, reader.firstValue(helperNested, "insertSqlDefault", true));
+                props.add(TransformLexicon.UPDATE_SQL_DEFAULT, reader.firstValue(helperNested, "updateSqlDefault", true));
+                props.add(TransformLexicon.DELETE_SQL_DEFAULT, reader.firstValue(helperNested, "deleteSqlDefault", true));
+                // props.add(TransformLexicon.OUTPUT_LOCKED, firstValue(helperNested,"outputLocked",false));
+
+                for (Location childLocation : transformation.getChildren()) {
+                    Name childName = childLocation.getPath().getLastSegment().getName();
+                    SubgraphNode child = subgraph.getNode(childLocation);
+                    if (childName.getLocalName().equals("inputs")) {
+                        // Record the inputs to the transformed object ...
+                        // Now collect the inputs to the transformation ...
+                        String inputHref = reader.firstValue(child, "href");
+                        if (inputHref == null) continue;
+                        Name name = TransformLexicon.INPUTS;
+                        props.addRef(name, inputHref);
+                    } else if (childName.getLocalName().equals("nested")) {
+                        // Record the nested transformation ...
+                        // Find the output (the transformed) object ...
+                        String outputHref = reader.firstValue(child, "outputs");
+                        UUID nestedMmuuid = reader.resolveInternalReference(outputHref);
+                        PropertySet nestedProps = reader.propertiesFor(nestedMmuuid, true);
+                        for (Location inputLocation : child.getChildren()) {
+                            SubgraphNode inputNode = subgraph.getNode(inputLocation);
+                            String inputHref = reader.firstValue(inputNode, "href");
                             if (inputHref == null) continue;
                             Name name = TransformLexicon.INPUTS;
-                            setter.add(name, inputHref);
-                        } else if (childName.getLocalName().equals("nested")) {
-                            // Record the nested transformation ...
-                            // Find the output (the transformed) object ...
-                            String outputHref = reader.firstValue(child, "outputs");
-                            ResolvedReference resolvedOutput = reader.resolve(null, null, outputHref);
-                            if (resolvedOutput != null && resolvedOutput.getPath() != null) {
-                                // Now collect the inputs to the transformation ...
-                                ReferenceSetter outputSetter = reader.createReferenceSetter();
-                                for (Location inputLocation : child.getChildren()) {
-                                    SubgraphNode inputNode = subgraph.getNode(inputLocation);
-                                    String inputHref = reader.firstValue(inputNode, "href");
-                                    if (inputHref == null) continue;
-                                    Name name = TransformLexicon.INPUTS;
-                                    outputSetter.add(name, inputHref);
-                                }
-                                outputSetter.writeTo(output, resolvedOutput.getPath());
-                            }
+                            nestedProps.addRef(name, inputHref);
+                            nestedProps.add(JcrLexicon.MIXIN_TYPES, TransformLexicon.TRANSFORMED);
                         }
                     }
-                    setter.writeTo(output, annotatedPath);
                 }
             }
             return null; // don't process any children

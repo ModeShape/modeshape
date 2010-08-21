@@ -37,6 +37,8 @@ public class CoreLexicon {
     }
 
     public static final Name MODEL = new BasicName(Namespace.URI, "model");
+    public static final Name ANNOTATED = new BasicName(Namespace.URI, "annotated");
+    public static final Name TAGS = new BasicName(Namespace.URI, "tags");
     public static final Name PRIMARY_METAMODEL_URI = new BasicName(Namespace.URI, "primaryMetamodelUri");
     public static final Name MODEL_TYPE = new BasicName(Namespace.URI, "modelType");
     public static final Name IMPORT = new BasicName(Namespace.URI, "import");
