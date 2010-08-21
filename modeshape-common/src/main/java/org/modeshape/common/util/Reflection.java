@@ -612,7 +612,7 @@ public class Reflection {
 
         throw new NoSuchMethodException(methodName);
     }
-
+    
     /**
      * Get the representation of the named property (with the supplied labe, category, description, and allowed values) on the
      * target object.
@@ -670,9 +670,10 @@ public class Reflection {
         Field field = null;
         try {
             // Find the corresponding field ...
-            field = targetClass.getDeclaredField(Inflector.getInstance().lowerCamelCase(propertyName));
+            field = getField(targetClass, propertyName);
         } catch (NoSuchFieldException e) {
-            // Do nothing, since we can't find the class' field matching the 'propertyName' ...
+            // Nothing to do here
+        	
         }
         if (description == null) {
             Description desc = getAnnotation(Description.class, field, getters, setters);
@@ -707,8 +708,35 @@ public class Reflection {
         property.setInferred(inferred);
         return property;
     }
-
-    protected static <AnnotationType extends Annotation> AnnotationType getAnnotation( Class<AnnotationType> annotationType,
+    
+    /**
+     * Get a Field intance for a given class and property. Iterate over super classes of a class
+     * when a  <@link NoSuchFieldException> occurs until no more super classes are found then re-throw
+     * the <@link NoSuchFieldException>.
+     * 
+     * @param targetClass
+     * @param propertyName
+     * @return Field
+     * @throws NoSuchFieldException
+     */
+    protected Field getField(Class<?> targetClass, String propertyName) throws NoSuchFieldException{
+    	Field field = null;
+    	
+    	try{
+    		field = targetClass.getDeclaredField(Inflector.getInstance().lowerCamelCase(propertyName));
+    	}catch(NoSuchFieldException e){
+    		Class<?> clazz = targetClass.getSuperclass();
+    		if (clazz!=null){
+    				field = getField(clazz,propertyName);
+    		}else{
+    			throw e;
+    		}
+    	}
+    		
+    	return field;
+    }
+    
+ 	protected static <AnnotationType extends Annotation> AnnotationType getAnnotation( Class<AnnotationType> annotationType,
                                                                                        Field field,
                                                                                        Method[] getters,
                                                                                        Method[] setters ) {
