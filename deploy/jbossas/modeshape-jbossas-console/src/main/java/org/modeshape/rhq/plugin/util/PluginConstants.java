@@ -98,7 +98,6 @@ public interface PluginConstants {
 			}
 
 			public static interface Metrics {
-				public final static String ISRUNNING = "isRunning"; //$NON-NLS-1$
 				public final static String INUSECONNECTIONS = "getInUseConnections"; //$NON-NLS-1$
 			}
 		}

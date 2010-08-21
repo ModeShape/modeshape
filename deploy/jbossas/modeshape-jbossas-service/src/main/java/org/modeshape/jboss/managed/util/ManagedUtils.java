@@ -43,17 +43,33 @@ public class ManagedUtils {
                                                        Object object ) {
         Reflection reflection = new Reflection(object.getClass());
         List<ManagedProperty> managedProps = new ArrayList<ManagedProperty>();
+        List<Property> props = new ArrayList<Property>();
+        boolean allInferred = true;
         try {
-            for (Property prop : reflection.getAllPropertiesOn(object)) {
+        	props = reflection.getAllPropertiesOn(object);
+            for (Property prop : props) {
                 if (prop.isInferred()) continue;
-                if (prop.isPrimitive() || prop.getType().toString().contains("java.lang.String")) continue;
-                String valueAsString = reflection.getPropertyAsString(object, prop);
-                managedProps.add(new ManagedProperty(prop, valueAsString));
+                allInferred = false;
+                if (prop.isPrimitive() || prop.getType().toString().contains("java.lang.String")){
+                	String valueAsString = reflection.getPropertyAsString(object, prop);
+                    managedProps.add(new ManagedProperty(prop, valueAsString));
+                }
             }
+        
+            //If all properties are inferred, then we will loop again and just use them all (as long as they are)
+	        if (allInferred){
+	        	for (Property prop : props) {
+	                if (prop.isPrimitive() || prop.getType().toString().contains("java.lang.String")){
+	                	String valueAsString = reflection.getPropertyAsString(object, prop);
+	                    managedProps.add(new ManagedProperty(prop, valueAsString));
+	                }
+	            }
+	        }
+
         } catch (Throwable e) {
             LOGGER.error(e, JBossManagedI18n.errorGettingPropertiesFromManagedObject, objectType);
         }
-
+        
         return managedProps;
     }
 

@@ -36,7 +36,6 @@ import org.jboss.metatype.api.values.CompositeValueSupport;
 import org.jboss.metatype.api.values.MetaValue;
 import org.jboss.metatype.api.values.MetaValueFactory;
 import org.modeshape.jboss.managed.ManagedEngine;
-import org.modeshape.jboss.managed.ManagedRepository;
 import org.modeshape.jboss.managed.ManagedSequencerConfig;
 import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
 import org.modeshape.rhq.plugin.util.PluginConstants;

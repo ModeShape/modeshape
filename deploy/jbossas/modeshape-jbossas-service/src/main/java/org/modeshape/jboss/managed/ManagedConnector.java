@@ -23,19 +23,13 @@
  */
 package org.modeshape.jboss.managed;
 
-import java.util.concurrent.TimeUnit;
-import org.jboss.managed.api.ManagedOperation.Impact;
 import org.jboss.managed.api.annotation.ManagementComponent;
 import org.jboss.managed.api.annotation.ManagementObject;
 import org.jboss.managed.api.annotation.ManagementObjectID;
-import org.jboss.managed.api.annotation.ManagementOperation;
 import org.jboss.managed.api.annotation.ManagementProperties;
 import org.jboss.managed.api.annotation.ManagementProperty;
 import org.jboss.managed.api.annotation.ViewUse;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.Logger;
-import org.modeshape.common.util.Logger.Level;
-import org.modeshape.graph.connector.RepositoryConnectionPool;
 import org.modeshape.graph.connector.RepositorySource;
 
 /**
@@ -47,7 +41,6 @@ public class ManagedConnector implements ModeShapeManagedObject {
     // TODO get rid of this constructor
     protected ManagedConnector() {
         this.connector = null;
-        this.connectionPool = null;
     }
 
     /****************************** above for temporary testing only ***********************************************************/
@@ -60,22 +53,13 @@ public class ManagedConnector implements ModeShapeManagedObject {
     private final RepositorySource connector;
     
     /**
-     * The ModeShape connection pool for the source (never <code>null</code>).
-     */
-    private final RepositoryConnectionPool connectionPool;
-
-
-    /**
      * Creates a JBoss managed object for the specified repository source.
      * 
      * @param connector the repository source being managed (never <code>null</code>)
-     * @param connectionPool 
      */
-    public ManagedConnector( RepositorySource connector, RepositoryConnectionPool connectionPool ) {
+    public ManagedConnector( RepositorySource connector ) {
         CheckArg.isNotNull(connector, "connector");
-        CheckArg.isNotNull(connectionPool, "connectionPool");
         this.connector = connector;
-        this.connectionPool = connectionPool;
     }
 
     /**
@@ -181,24 +165,6 @@ public class ManagedConnector implements ModeShapeManagedObject {
     }
 
     /**
-     * Indicates if the connection is valid and alive. This is a JBoss managed operation.
-     * 
-     * @return true if connection can still be used
-     */
-    @ManagementOperation( description = "Indicates if the connection is valid and alive", impact = Impact.ReadOnly )
-    public boolean ping() {
-        try {
-            return this.connector.getConnection().ping(2, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            Logger.getLogger(getClass()).log(Level.ERROR,
-                                             e,
-                                             JBossManagedI18n.errorDeterminingIfConnectionIsAlive,
-                                             this.connector.getName());
-            return false;
-        }
-    }
-
-    /**
      * Sets the maximum number of retries to perform on an operation. This is a JBoss managed property.
      * 
      * @param limit the new retry limit (must be non-negative)
@@ -208,12 +174,4 @@ public class ManagedConnector implements ModeShapeManagedObject {
         this.connector.setRetryLimit(limit);
     }
     
-    //Connection Pool operations and properties
-	/**
-	 * @return connectionPool
-	 */
-	public RepositoryConnectionPool getConnectionPool() {
-		return connectionPool;
-	}
-
 }

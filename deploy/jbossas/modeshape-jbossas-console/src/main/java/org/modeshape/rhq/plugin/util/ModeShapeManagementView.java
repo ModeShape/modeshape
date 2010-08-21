@@ -20,10 +20,7 @@ import org.modeshape.jboss.managed.ManagedRepository;
 import org.modeshape.jboss.managed.ManagedSequencerConfig;
 import org.modeshape.rhq.plugin.objects.ExecutedResult;
 import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Connector;
-import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Engine;
-import org.rhq.plugins.jbossas5.adapter.impl.configuration.PropertyMapToPropertiesValueAdapter;
 import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
-import org.rhq.plugins.jbossas5.util.ConversionUtils;
 
 import com.sun.istack.Nullable;
 
@@ -50,9 +47,9 @@ public class ModeShapeManagementView implements PluginConstants {
 		if (componentType.equals(ComponentType.SequencingService.NAME)) {
 			resultObject = getSequencerServiceMetric(connection, componentType,
 					metric, valueMap);
-		} else if (componentType.equals(ComponentType.Repository.NAME)) {
-			resultObject = getSequencerServiceMetric(connection, componentType, metric,
-					valueMap);
+		} else if (componentType.equals(ComponentType.Connector.NAME)) {
+			resultObject = getConnectorMetric(connection, componentType,
+					metric, valueMap);
 		}
 
 		return resultObject;
@@ -68,11 +65,35 @@ public class ModeShapeManagementView implements PluginConstants {
 		Object resultObject = new Object();
 		MetaValue value = null;
 
-		if (metric.equals(ComponentType.SequencingService.Metrics.NUM_NODES_SEQUENCED) ||
-			metric.equals(ComponentType.SequencingService.Metrics.NUM_NODES_SKIPPED)) {
-			value = executeSequencingServiceOperation(connection, metric, valueMap);
+		if (metric
+				.equals(ComponentType.SequencingService.Metrics.NUM_NODES_SEQUENCED)
+				|| metric
+						.equals(ComponentType.SequencingService.Metrics.NUM_NODES_SKIPPED)) {
+			value = executeSequencingServiceOperation(connection, metric,
+					valueMap);
 			resultObject = ProfileServiceUtil.stringValue(value);
-		} 
+		}
+		return resultObject;
+	}
+
+	private Object getConnectorMetric(ProfileServiceConnection connection,
+			String componentType, String metric, Map<String, Object> valueMap)
+			throws Exception {
+
+		Object resultObject = new Object();
+		MetaValue value = null;
+
+		if (metric.equals(ComponentType.Connector.Metrics.INUSECONNECTIONS)) {
+			value = executeManagedOperation(
+					ProfileServiceUtil.getManagedEngine(connection),
+					metric,
+					new MetaValue[] { MetaValueFactory
+							.getInstance()
+							.create(
+									valueMap
+											.get(ComponentType.Connector.Operations.Parameters.CONNECTOR_NAME)) });
+			resultObject = ProfileServiceUtil.stringValue(value);
+		}
 		return resultObject;
 	}
 
@@ -102,24 +123,13 @@ public class ModeShapeManagementView implements PluginConstants {
 			ExecutedResult operationResult, final String operationName,
 			final Map<String, Object> valueMap) {
 
-		if (operationName.equals(Engine.Operations.RESTART)) {
-			try {
-				executeManagedOperation(ProfileServiceUtil
-						.getManagedEngine(connection), operationName,
-						new MetaValue[] { null });
-			} catch (Exception e) {
-				final String msg = "Exception executing operation: " + Engine.Operations.RESTART; //$NON-NLS-1$
-				LOG.error(msg, e);
-			}
-		} else if (operationName.equals(Engine.Operations.SHUTDOWN)) {
-			try {
-				executeManagedOperation(ProfileServiceUtil
-						.getManagedEngine(connection), operationName,
-						new MetaValue[] { null });
-			} catch (Exception e) {
-				final String msg = "Exception executing operation: " + Engine.Operations.SHUTDOWN; //$NON-NLS-1$
-				LOG.error(msg, e);
-			}
+		try {
+			executeManagedOperation(ProfileServiceUtil
+					.getManagedEngine(connection), operationName,
+					new MetaValue[] { null });
+		} catch (Exception e) {
+			final String msg = "Exception executing operation: " + operationName; //$NON-NLS-1$
+			LOG.error(msg, e);
 		}
 	}
 
@@ -151,12 +161,13 @@ public class ModeShapeManagementView implements PluginConstants {
 		try {
 			MetaValue[] args = new MetaValue[] {};
 			value = executeManagedOperation(ProfileServiceUtil
-					.getManagedSequencingService(connection), operationName, args);
+					.getManagedSequencingService(connection), operationName,
+					args);
 		} catch (Exception e) {
 			final String msg = "Exception executing operation: " + operationName; //$NON-NLS-1$
 			LOG.error(msg, e);
 		}
-		
+
 		return value;
 
 	}

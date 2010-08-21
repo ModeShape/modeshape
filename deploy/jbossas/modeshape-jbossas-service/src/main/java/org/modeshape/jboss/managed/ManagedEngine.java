@@ -205,17 +205,40 @@ public final class ManagedEngine implements ModeShapeManagedObject {
         for (String repositoryName : engine.getRepositoryNames()) {
             RepositorySource repositorySource = engine.getRepositorySource(repositoryName);
             assert repositorySource != null : "Repository '" + repositoryName + "' does not exist";
-            RepositoryConnectionPool repositoryConnectionPool = engine.getRepositoryService()
-                                                                      .getRepositoryLibrary()
-                                                                      .getConnectionPool(repositoryName);
-            assert repositoryConnectionPool != null : "Repository Connection Pool for repository '" + repositoryName
-                                                      + "' does not exist";
-            connectors.add(new ManagedConnector(repositorySource, repositoryConnectionPool));
+            connectors.add(new ManagedConnector(repositorySource));
         }
-
+        
         return Collections.unmodifiableCollection(connectors);
     }
 
+	/**
+	 * Tests to see if a connector isRunning.
+	 * 
+	 * @param connectorName
+	 * @return boolean 
+	 */
+	@ManagementOperation(description = "Pings a connector by name", impact = Impact.ReadOnly)
+	public long getInUseConnections(String connectorName) {
+		if (!isRunning())
+			return 0;
+
+		// Get engine to use for the rest of the method (this is synchronized)
+		final JcrEngine engine = getEngine();
+		assert engine != null;
+
+		long totalConnectionsInUse = 0;
+		try {
+			totalConnectionsInUse = engine.getRepositoryService().getRepositoryLibrary().getConnectionPool(connectorName).getInUseCount();
+		} catch (Exception e) {
+			Logger.getLogger(getClass()).error(e,
+					JBossManagedI18n.errorDeterminingTotalInUseConnections,
+					connectorName);
+		}
+		
+		return totalConnectionsInUse;
+	}
+	
+    
     /**
      * Obtains the properties for the passed in object. This is a JBoss managed operation.
      * 

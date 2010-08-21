@@ -69,9 +69,11 @@ public class ConnectorComponent extends Facet {
 		Boolean pingResultSuccess = new Boolean(false);
 		try {
 			String connectorName = this.resourceContext.getResourceKey();
-			MetaValue[] args = new MetaValue[] { MetaValueFactory.getInstance().create(connectorName) };
-			value = ModeShapeManagementView.executeManagedOperation(ProfileServiceUtil
-					.getManagedEngine(getConnection()), "pingConnector", args);
+			MetaValue[] args = new MetaValue[] { MetaValueFactory.getInstance()
+					.create(connectorName) };
+			value = ModeShapeManagementView.executeManagedOperation(
+					ProfileServiceUtil.getManagedEngine(getConnection()),
+					"pingConnector", args);
 			pingResultSuccess = ProfileServiceUtil.booleanValue(value);
 		} catch (NamingException e) {
 			LOG.error("Naming exception getting: "
@@ -133,17 +135,9 @@ public class ConnectorComponent extends Facet {
 						.getName()
 						.equals(
 								PluginConstants.ComponentType.Connector.Metrics.INUSECONNECTIONS)) {
-					report.addData(new MeasurementDataTrait(request, (String) metricReturnObject));
-				} else {
-					if (request
-							.getName()
-							.equals(
-									PluginConstants.ComponentType.Connector.Metrics.ISRUNNING)) {
-						report.addData(new MeasurementDataTrait(request, (String) metricReturnObject));
-					}
-
+					report.addData(new MeasurementDataTrait(request,
+							(String) metricReturnObject));
 				}
-
 			} catch (Exception e) {
 				LOG.error("Failed to obtain measurement [" + name //$NON-NLS-1$
 						+ "]. Cause: " + e); //$NON-NLS-1$

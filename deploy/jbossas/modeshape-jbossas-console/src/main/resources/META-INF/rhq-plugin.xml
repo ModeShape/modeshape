@@ -91,12 +91,15 @@
 			<operation name="pingConnector" displayName="Ping"
 				description="Ping the connector to test availability">
 				<results>
-					<c:map-property name="operationResult" description="Results of ping to connector" />
+					<c:simple-property name="operationResult" type="boolean" description="Results of ping to connector" />
 				</results>
-
 			</operation>
-
-			<resource-configuration>
+			
+			<metric displayName="Total Connections in Use" defaultOn="true"
+                displayType="detail" category="utilization" property="getInUseConnections"
+                description="The number of nodes sequenced" />
+                
+            <resource-configuration>
 				<c:list-property name="connectorPropertyList"
 					displayName="Connector Properties" description="Properties for this connector"
 					readOnly="true">

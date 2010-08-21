@@ -64,7 +64,6 @@ import org.rhq.core.pluginapi.measurement.MeasurementFacet;
 import org.rhq.core.pluginapi.operation.OperationFacet;
 import org.rhq.core.pluginapi.operation.OperationResult;
 import org.rhq.plugins.jbossas5.ProfileServiceComponent;
-import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
 
 /**
  * This class implements required RHQ interfaces and provides common logic used
