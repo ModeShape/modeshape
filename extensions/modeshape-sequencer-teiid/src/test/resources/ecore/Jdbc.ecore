@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="ASCII"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="jdbc"
+    nsURI="http://www.metamatrix.com/metamodels/JDBC" nsPrefix="jdbc">
+  <eClassifiers xsi:type="ecore:EClass" name="JdbcSourceProperty">
+    <eReferences name="source" eType="#//JdbcSource" transient="true" eOpposite="#//JdbcSource/properties"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="JdbcDriver">
+    <eReferences name="jdbcDriverContainer" eType="#//JdbcDriverContainer" transient="true"
+        eOpposite="#//JdbcDriverContainer/jdbcDrivers"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="urlSyntax" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="jarFileUris" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        upperBound="-1"/>
+    <eAttributes name="availableDriverClassNames" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        upperBound="-1"/>
+    <eAttributes name="preferredDriverClassName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="JdbcSource">
+    <eReferences name="jdbcDriver" eType="#//JdbcDriver"/>
+    <eReferences name="properties" eType="#//JdbcSourceProperty" upperBound="-1" containment="true"
+        eOpposite="#//JdbcSourceProperty/source"/>
+    <eReferences name="jdbcSourceContainer" eType="#//JdbcSourceContainer" transient="true"
+        eOpposite="#//JdbcSourceContainer/jdbcSources"/>
+    <eReferences name="importSettings" eType="#//JdbcImportSettings" containment="true"
+        eOpposite="#//JdbcImportSettings/source"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="driverName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="driverClass" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="username" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="url" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="JdbcDriverContainer">
+    <eReferences name="jdbcDrivers" eType="#//JdbcDriver" upperBound="-1" containment="true"
+        eOpposite="#//JdbcDriver/jdbcDriverContainer"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="JdbcSourceContainer">
+    <eReferences name="jdbcSources" eType="#//JdbcSource" upperBound="-1" containment="true"
+        eOpposite="#//JdbcSource/jdbcSourceContainer"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="JdbcImportSettings">
+    <eReferences name="source" eType="#//JdbcSource" transient="true" eOpposite="#//JdbcSource/importSettings"/>
+    <eReferences name="options" eType="#//JdbcImportOptions" upperBound="-1" containment="true"
+        eOpposite="#//JdbcImportOptions/importSettings"/>
+    <eAttributes name="createCatalogsInModel" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eAttributes name="createSchemasInModel" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eAttributes name="convertCaseInModel" eType="#//CaseConversion"/>
+    <eAttributes name="generateSourceNamesInModel" eType="#//SourceNames" defaultValueLiteral="UNQUALIFIED"/>
+    <eAttributes name="includedCatalogPaths" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        upperBound="-1"/>
+    <eAttributes name="includedSchemaPaths" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        upperBound="-1"/>
+    <eAttributes name="excludedObjectPaths" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        upperBound="-1"/>
+    <eAttributes name="includeForeignKeys" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eAttributes name="includeIndexes" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eAttributes name="includeProcedures" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eAttributes name="includeApproximateIndexes" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eAttributes name="includeUniqueIndexes" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eAttributes name="includedTableTypes" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        upperBound="-1"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="JdbcImportOptions">
+    <eReferences name="importSettings" eType="#//JdbcImportSettings" transient="true"
+        lowerBound="1" eOpposite="#//JdbcImportSettings/options"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="CaseConversion">
+    <eLiterals name="NONE"/>
+    <eLiterals name="TO_UPPERCASE" value="1"/>
+    <eLiterals name="TO_LOWERCASE" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="SourceNames">
+    <eLiterals name="NONE"/>
+    <eLiterals name="UNQUALIFIED" value="1"/>
+    <eLiterals name="FULLY_QUALIFIED" value="2"/>
+  </eClassifiers>
+</ecore:EPackage>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="xmlservice"
+    nsURI="http://www.metamatrix.com/metamodels/XmlService" nsPrefix="mmxs">
+  <eClassifiers xsi:type="ecore:EClass" name="XmlOperation" eSuperTypes="#//XmlServiceComponent">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="inputs" upperBound="-1"
+        eType="#//XmlInput" containment="true" eOpposite="#//XmlInput/operation"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="output" eType="#//XmlOutput"
+        containment="true" eOpposite="#//XmlOutput/operation"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="updateCount" eType="#//OperationUpdateCount"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlInput" eSuperTypes="#//XmlMessage #//XmlServiceComponent">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="operation" lowerBound="1"
+        eType="#//XmlOperation" transient="true" eOpposite="#//XmlOperation/inputs"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="type" lowerBound="1" eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlServiceComponent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nameInSource" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlOutput" eSuperTypes="#//XmlMessage #//XmlServiceComponent">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="operation" lowerBound="1"
+        eType="#//XmlOperation" transient="true" eOpposite="#//XmlOperation/output"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="result" eType="#//XmlResult"
+        containment="true" eOpposite="#//XmlResult/output"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlMessage" eSuperTypes="#//XmlServiceComponent">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="contentElement" eType="ecore:EClass ../../../plugin/org.eclipse.xsd/model/XSD.ecore#//XSDElementDeclaration"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlResult">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="output" lowerBound="1"
+        eType="#//XmlOutput" transient="true" eOpposite="#//XmlOutput/result"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="OperationUpdateCount">
+    <eLiterals name="AUTO"/>
+    <eLiterals name="ZERO" value="1"/>
+    <eLiterals name="ONE" value="2"/>
+    <eLiterals name="MULTIPLE" value="3"/>
+  </eClassifiers>
+</ecore:EPackage>

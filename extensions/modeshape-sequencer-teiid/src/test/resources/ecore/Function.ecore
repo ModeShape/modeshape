@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="ASCII"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="function"
+    nsURI="http://www.metamatrix.com/metamodels/MetaMatrixFunction" nsPrefix="mmfunction">
+  <eClassifiers xsi:type="ecore:EClass" name="Function" abstract="true">
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="category" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="pushDown" eType="#//PushDownType" defaultValueLiteral="ALLOWED"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ScalarFunction" eSuperTypes="#//Function">
+    <eReferences name="inputParameters" eType="#//FunctionParameter" upperBound="-1"
+        containment="true" eOpposite="#//FunctionParameter/function"/>
+    <eReferences name="returnParameter" eType="#//ReturnParameter" lowerBound="1"
+        containment="true" eOpposite="#//ReturnParameter/function"/>
+    <eAttributes name="invocationClass" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="invocationMethod" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="deterministic" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="FunctionParameter">
+    <eReferences name="function" eType="#//ScalarFunction" transient="true" lowerBound="1"
+        eOpposite="#//ScalarFunction/inputParameters"/>
+    <eAttributes name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eAttributes name="type" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ReturnParameter">
+    <eReferences name="function" eType="#//ScalarFunction" transient="true" lowerBound="1"
+        eOpposite="#//ScalarFunction/returnParameter"/>
+    <eAttributes name="type" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="PushDownType">
+    <eLiterals name="REQUIRED"/>
+    <eLiterals name="ALLOWED" value="1"/>
+    <eLiterals name="NOT_ALLOWED" value="2"/>
+  </eClassifiers>
+</ecore:EPackage>

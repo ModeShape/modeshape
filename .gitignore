@@ -82,6 +82,7 @@
 /extensions/modeshape-sequencer-mp3/target
 /extensions/modeshape-sequencer-msoffice/target
 /extensions/modeshape-sequencer-text/target
+/extensions/modeshape-sequencer-teiid/target
 /extensions/modeshape-sequencer-xml/target
 /extensions/modeshape-sequencer-zip/target
 

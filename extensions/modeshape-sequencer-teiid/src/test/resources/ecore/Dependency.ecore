@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="ASCII"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="dependency"
+    nsURI="http://www.metamatrix.com/metamodels/Dependency" nsPrefix="dependency">
+  <eClassifiers xsi:type="ecore:EClass" name="DependencyInfo"/>
+</ecore:EPackage>

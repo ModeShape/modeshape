@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="xml"
+    nsURI="http://www.metamatrix.com/metamodels/XmlDocument" nsPrefix="vxmldoc">
+  <eClassifiers xsi:type="ecore:EClass" name="XmlFragment" eSuperTypes="#//XmlDocumentEntity #//XmlCommentHolder #//ProcessingInstructionHolder">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="root" lowerBound="1" eType="#//XmlRoot"
+        containment="true" eOpposite="#//XmlRoot/fragment"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlDocument" eSuperTypes="#//XmlFragment">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="encoding" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        defaultValueLiteral="UTF-8"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="formatted" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="version" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        defaultValueLiteral="1.0"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="standalone" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="soapEncoding" eType="#//SoapEncoding"
+        defaultValueLiteral="NONE"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlDocumentEntity" abstract="true">
+    <eOperations name="getPathInDocument" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eOperations name="getXPath" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlElement" eSuperTypes="#//XmlBaseElement #//XmlCommentHolder #//ProcessingInstructionHolder #//XmlElementHolder #//XmlContainerHolder #//XmlValueHolder">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="recursive" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributes" upperBound="-1"
+        eType="#//XmlAttribute" containment="true" eOpposite="#//XmlAttribute/element"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="declaredNamespaces" upperBound="-1"
+        eType="#//XmlNamespace" containment="true" eOpposite="#//XmlNamespace/element"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlAttribute" eSuperTypes="#//XmlDocumentNode #//XmlValueHolder">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="use" eType="ecore:EEnum ../../../plugin/org.eclipse.xsd/model/XSD.ecore#//XSDAttributeUseCategory"
+        changeable="false" volatile="true" transient="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="element" lowerBound="1"
+        eType="#//XmlElement" transient="true" eOpposite="#//XmlElement/attributes"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlDocumentNode" abstract="true" eSuperTypes="#//XmlDocumentEntity #//XmlBuildable">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="excludeFromDocument" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="minOccurs" unique="false"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt" changeable="false"
+        volatile="true" transient="true" defaultValueLiteral="1"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="maxOccurs" unique="false"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt" changeable="false"
+        volatile="true" transient="true" defaultValueLiteral="1"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="xsdComponent" eType="ecore:EClass ../../../plugin/org.eclipse.xsd/model/XSD.ecore#//XSDComponent"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="namespace" eType="#//XmlNamespace"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlRoot" eSuperTypes="#//XmlElement">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="fragment" lowerBound="1"
+        eType="#//XmlFragment" transient="true" eOpposite="#//XmlFragment/root"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlComment" eSuperTypes="#//XmlDocumentEntity">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="text" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="parent" lowerBound="1"
+        eType="#//XmlCommentHolder" transient="true" eOpposite="#//XmlCommentHolder/comments"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlNamespace" eSuperTypes="#//XmlDocumentEntity">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="prefix" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="uri" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="element" lowerBound="1"
+        eType="#//XmlElement" transient="true" eOpposite="#//XmlElement/declaredNamespaces"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlContainerNode" abstract="true" eSuperTypes="#//XmlDocumentEntity #//XmlElementHolder #//XmlContainerHolder #//ChoiceOption #//XmlBuildable">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="excludeFromDocument" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="false"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="minOccurs" unique="false"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt" changeable="false"
+        volatile="true" transient="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="maxOccurs" unique="false"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt" changeable="false"
+        volatile="true" transient="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="xsdComponent" eType="ecore:EClass ../../../plugin/org.eclipse.xsd/model/XSD.ecore#//XSDComponent"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="parent" lowerBound="1"
+        eType="#//XmlContainerHolder" transient="true" eOpposite="#//XmlContainerHolder/containers"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlSequence" eSuperTypes="#//XmlContainerNode"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlAll" eSuperTypes="#//XmlContainerNode"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlChoice" eSuperTypes="#//XmlContainerNode">
+    <eOperations name="getOrderedChoiceOptions" eType="#//List"/>
+    <eOperations name="setOrderedChoiceOptions">
+      <eParameters name="options" eType="#//List"/>
+    </eOperations>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="defaultErrorMode" eType="#//ChoiceErrorMode"
+        defaultValueLiteral="THROW"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="defaultOption" eType="#//ChoiceOption"
+        eOpposite="#//ChoiceOption/defaultFor"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlCommentHolder" abstract="true" interface="true">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="comments" upperBound="-1"
+        eType="#//XmlComment" containment="true" eOpposite="#//XmlComment/parent"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ProcessingInstruction" eSuperTypes="#//XmlDocumentEntity">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="rawText" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="target" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="parent" lowerBound="1"
+        eType="#//ProcessingInstructionHolder" transient="true" eOpposite="#//ProcessingInstructionHolder/processingInstructions"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ProcessingInstructionHolder" abstract="true"
+      interface="true">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="processingInstructions"
+        upperBound="-1" eType="#//ProcessingInstruction" containment="true" eOpposite="#//ProcessingInstruction/parent"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlElementHolder" abstract="true" interface="true">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="elements" upperBound="-1"
+        eType="#//XmlBaseElement" containment="true" eOpposite="#//XmlBaseElement/parent"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlFragmentUse" eSuperTypes="#//XmlBaseElement">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="fragment" lowerBound="1"
+        eType="#//XmlFragment"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlBaseElement" abstract="true" eSuperTypes="#//XmlDocumentNode #//ChoiceOption">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="parent" eType="#//XmlElementHolder"
+        transient="true" eOpposite="#//XmlElementHolder/elements"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlContainerHolder" abstract="true"
+      interface="true">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="containers" upperBound="-1"
+        eType="#//XmlContainerNode" containment="true" eOpposite="#//XmlContainerNode/parent"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="SoapEncoding">
+    <eLiterals name="NONE"/>
+    <eLiterals name="DEFAULT" value="1"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ChoiceOption" abstract="true" interface="true">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="choiceCriteria" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="choiceOrder" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="-1">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="Represents the order that this choice option appears in the choice, with a default value of -1 if the choice value hasn't been set (or doesn't apply)."/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="defaultFor" eType="#//XmlChoice"
+        eOpposite="#//XmlChoice/defaultOption"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="ChoiceErrorMode">
+    <eLiterals name="THROW"/>
+    <eLiterals name="RECORD" value="1"/>
+    <eLiterals name="DISCARD" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlValueHolder" abstract="true" interface="true">
+    <eOperations name="isValueFixed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eOperations name="isValueDefault" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="valueType" eType="#//ValueType"
+        defaultValueLiteral="IGNORED"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="ValueType">
+    <eLiterals name="IGNORED"/>
+    <eLiterals name="DEFAULT" value="1"/>
+    <eLiterals name="FIXED" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EDataType" name="List" instanceClassName="java.util.List"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XmlBuildable" abstract="true" interface="true">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="buildState" eType="#//BuildStatus"
+        defaultValueLiteral="COMPLETE"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="BuildStatus">
+    <eLiterals name="COMPLETE"/>
+    <eLiterals name="INCOMPLETE" value="1"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="NormalizationType">
+    <eLiterals name="PRESERVE"/>
+    <eLiterals name="REPLACE" value="1"/>
+    <eLiterals name="COLLAPSE" value="2"/>
+  </eClassifiers>
+</ecore:EPackage>

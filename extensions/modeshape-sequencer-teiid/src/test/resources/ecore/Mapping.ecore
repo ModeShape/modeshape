@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="mapping"
+    nsURI="http://www.eclipse.org/emf/2002/Mapping" nsPrefix="mapping">
+  <eClassifiers xsi:type="ecore:EClass" name="MappingHelper">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="mapper" eType="#//Mapping"
+        transient="true" eOpposite="#//Mapping/helper"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="helpedObject" eType="ecore:EClass ../../org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="nestedIn" eType="#//MappingHelper"
+        transient="true" eOpposite="#//MappingHelper/nested"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="nested" upperBound="-1"
+        eType="#//MappingHelper" containment="true" eOpposite="#//MappingHelper/nestedIn"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Mapping">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="helper" eType="#//MappingHelper"
+        containment="true" eOpposite="#//MappingHelper/mapper"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="nested" upperBound="-1"
+        eType="#//Mapping" containment="true" eOpposite="#//Mapping/nestedIn"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="nestedIn" eType="#//Mapping"
+        transient="true" eOpposite="#//Mapping/nested"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="inputs" upperBound="-1"
+        eType="ecore:EClass ../../org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="outputs" upperBound="-1"
+        eType="ecore:EClass ../../org.eclipse.emf.ecore/model/Ecore.ecore#//EObject"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="typeMapping" eType="#//Mapping"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="TypeConverter" eSuperTypes="#//MappingHelper"/>
+  <eClassifiers xsi:type="ecore:EClass" name="FunctionPair" eSuperTypes="#//TypeConverter">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="in2out" eType="ecore:EClass ../../org.eclipse.emf.ecore/model/Ecore.ecore#//EOperation"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="out2in" eType="ecore:EClass ../../org.eclipse.emf.ecore/model/Ecore.ecore#//EOperation"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="FunctionNamePair" eSuperTypes="#//TypeConverter">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="in2out" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="out2in" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="MappingStrategy" eSuperTypes="#//MappingHelper"/>
+  <eClassifiers xsi:type="ecore:EClass" name="MappingRoot" eSuperTypes="#//Mapping">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="outputReadOnly" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="topToBottom" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="commandStack" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ComplexTypeConverter" eSuperTypes="#//TypeConverter">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="in2out" eType="#//Mapping"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="out2in" eType="#//Mapping"/>
+  </eClassifiers>
+</ecore:EPackage>

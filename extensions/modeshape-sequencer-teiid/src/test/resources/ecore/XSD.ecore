@@ -1,0 +1,650 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="xsd"
+    nsURI="http://www.eclipse.org/xsd/2002/XSD" nsPrefix="xsd">
+  <eClassifiers xsi:type="ecore:EClass" name="XSDAnnotation" eSuperTypes="#//XSDComponent #//XSDRedefineContent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="applicationInformation"
+        upperBound="-1" eType="#//DOMElement"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="userInformation" upperBound="-1"
+        eType="#//DOMElement"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="attributes" upperBound="-1"
+        eType="#//DOMAttr"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDAttributeDeclaration" eSuperTypes="#//XSDFeature #//XSDSchemaContent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="attributeDeclarationReference"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean" changeable="false"
+        volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotation" eType="#//XSDAnnotation"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="anonymousTypeDefinition"
+        eType="#//XSDSimpleTypeDefinition" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="typeDefinition" lowerBound="1"
+        eType="#//XSDSimpleTypeDefinition" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="resolvedAttributeDeclaration"
+        lowerBound="1" eType="#//XSDAttributeDeclaration" resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDAttributeGroupContent" abstract="true"
+      eSuperTypes="#//XSDConcreteComponent"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDAttributeGroupDefinition" eSuperTypes="#//XSDRedefinableComponent #//XSDAttributeGroupContent #//XSDRedefineContent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="attributeGroupDefinitionReference"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean" changeable="false"
+        volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotation" eType="#//XSDAnnotation"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="contents" upperBound="-1"
+        eType="#//XSDAttributeGroupContent" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeUses" upperBound="-1"
+        eType="#//XSDAttributeUse" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeWildcardContent"
+        eType="#//XSDWildcard" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeWildcard" eType="#//XSDWildcard"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="resolvedAttributeGroupDefinition"
+        lowerBound="1" eType="#//XSDAttributeGroupDefinition" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="syntheticWildcard" eType="#//XSDWildcard"
+        transient="true" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDAttributeUse" eSuperTypes="#//XSDComponent #//XSDAttributeGroupContent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="required" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="#//Value"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="constraint" eType="#//XSDConstraint"
+        unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="use" eType="#//XSDAttributeUseCategory"
+        unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="lexicalValue" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeDeclaration" lowerBound="1"
+        eType="#//XSDAttributeDeclaration" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="content" lowerBound="1"
+        eType="#//XSDAttributeDeclaration" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDBoundedFacet" eSuperTypes="#//XSDFundamentalFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDCardinalityFacet" eSuperTypes="#//XSDFundamentalFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="#//XSDCardinality"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDComplexTypeContent" abstract="true"
+      eSuperTypes="#//XSDComponent"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDComplexTypeDefinition" eSuperTypes="#//XSDTypeDefinition #//XSDScope">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="derivationMethod" eType="#//XSDDerivationMethod"
+        defaultValueLiteral="restriction" unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="final" upperBound="-1"
+        eType="#//XSDComplexFinal"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="abstract" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="contentTypeCategory" eType="#//XSDContentTypeCategory"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="prohibitedSubstitutions"
+        upperBound="-1" eType="#//XSDProhibitedSubstitutions"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="lexicalFinal" upperBound="-1"
+        eType="#//XSDComplexFinal" unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="block" upperBound="-1"
+        eType="#//XSDProhibitedSubstitutions" unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="mixed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="contentAnnotation" eType="#//XSDAnnotation"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="baseTypeDefinition" lowerBound="1"
+        eType="#//XSDTypeDefinition" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="content" eType="#//XSDComplexTypeContent"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="contentType" eType="#//XSDComplexTypeContent"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeUses" upperBound="-1"
+        eType="#//XSDAttributeUse" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeContents" upperBound="-1"
+        eType="#//XSDAttributeGroupContent" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeWildcard" eType="#//XSDWildcard"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeWildcardContent"
+        eType="#//XSDWildcard" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="rootTypeDefinition" lowerBound="1"
+        eType="#//XSDTypeDefinition" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="syntheticParticle" eType="#//XSDParticle"
+        transient="true" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="syntheticWildcard" eType="#//XSDWildcard"
+        transient="true" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDComponent" abstract="true" eSuperTypes="#//XSDConcreteComponent"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDConcreteComponent" abstract="true">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="element" eType="#//DOMElement"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="container" eType="#//XSDConcreteComponent"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="rootContainer" lowerBound="1"
+        eType="#//XSDConcreteComponent" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="schema" eType="#//XSDSchema"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="diagnostics" upperBound="-1"
+        eType="#//XSDDiagnostic" transient="true" containment="true" resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDConstrainingFacet" abstract="true"
+      eSuperTypes="#//XSDFacet"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDDiagnostic" eSuperTypes="#//XSDConcreteComponent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="severity" eType="#//XSDDiagnosticSeverity"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="message" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="locationURI" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="line" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="1"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="column" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="1"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="node" eType="#//DOMNode"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="annotationURI" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="key" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="substitutions" upperBound="-1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="components" lowerBound="1"
+        upperBound="-1" eType="#//XSDConcreteComponent" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="primaryComponent" lowerBound="1"
+        eType="#//XSDConcreteComponent" volatile="true" transient="true" resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDElementDeclaration" eSuperTypes="#//XSDFeature #//XSDSchemaContent #//XSDTerm">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="nillable" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="disallowedSubstitutions"
+        upperBound="-1" eType="#//XSDDisallowedSubstitutions"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="substitutionGroupExclusions"
+        upperBound="-1" eType="#//XSDSubstitutionGroupExclusions"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="abstract" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="lexicalFinal" upperBound="-1"
+        eType="#//XSDProhibitedSubstitutions" unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="block" upperBound="-1"
+        eType="#//XSDDisallowedSubstitutions" unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="elementDeclarationReference"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean" changeable="false"
+        volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="circular" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        changeable="false" volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotation" eType="#//XSDAnnotation"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="anonymousTypeDefinition"
+        eType="#//XSDTypeDefinition" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="typeDefinition" lowerBound="1"
+        eType="#//XSDTypeDefinition" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="identityConstraintDefinitions"
+        upperBound="-1" eType="#//XSDIdentityConstraintDefinition" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="resolvedElementDeclaration"
+        lowerBound="1" eType="#//XSDElementDeclaration" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="substitutionGroupAffiliation"
+        eType="#//XSDElementDeclaration" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="substitutionGroup" upperBound="-1"
+        eType="#//XSDElementDeclaration" resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDEnumerationFacet" eSuperTypes="#//XSDRepeatableFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" upperBound="-1"
+        eType="#//Value"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDFacet" abstract="true" eSuperTypes="#//XSDComponent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="lexicalValue" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="facetName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        changeable="false" volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="effectiveValue" eType="#//Value"
+        changeable="false" volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotation" eType="#//XSDAnnotation"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="simpleTypeDefinition" eType="#//XSDSimpleTypeDefinition"
+        changeable="false" volatile="true" resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDFeature" abstract="true" eSuperTypes="#//XSDNamedComponent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="#//Value"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="constraint" eType="#//XSDConstraint"
+        unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="form" eType="#//XSDForm"
+        unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="lexicalValue" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="global" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        changeable="false" volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="featureReference" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        changeable="false" volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="scope" eType="#//XSDScope"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="resolvedFeature" lowerBound="1"
+        eType="#//XSDFeature" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="type" lowerBound="1" eType="#//XSDTypeDefinition"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDFixedFacet" abstract="true" eSuperTypes="#//XSDConstrainingFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="fixed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        unsettable="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDFractionDigitsFacet" eSuperTypes="#//XSDFixedFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDFundamentalFacet" abstract="true"
+      eSuperTypes="#//XSDFacet"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDIdentityConstraintDefinition" eSuperTypes="#//XSDNamedComponent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="identityConstraintCategory"
+        eType="#//XSDIdentityConstraintCategory"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotation" eType="#//XSDAnnotation"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="referencedKey" eType="#//XSDIdentityConstraintDefinition"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="selector" lowerBound="1"
+        eType="#//XSDXPathDefinition" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="fields" lowerBound="1"
+        upperBound="-1" eType="#//XSDXPathDefinition" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDImport" eSuperTypes="#//XSDSchemaDirective">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="namespace" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotation" eType="#//XSDAnnotation"
+        containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDInclude" eSuperTypes="#//XSDSchemaCompositor">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotation" eType="#//XSDAnnotation"
+        containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDLengthFacet" eSuperTypes="#//XSDFixedFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDMaxExclusiveFacet" eSuperTypes="#//XSDMaxFacet"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDMaxFacet" abstract="true" eSuperTypes="#//XSDFixedFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="#//Value"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="inclusive" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        changeable="false" volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="exclusive" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        changeable="false" volatile="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDMaxInclusiveFacet" eSuperTypes="#//XSDMaxFacet"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDMaxLengthFacet" eSuperTypes="#//XSDFixedFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDMinExclusiveFacet" eSuperTypes="#//XSDMinFacet"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDMinFacet" abstract="true" eSuperTypes="#//XSDFixedFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="#//Value"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="inclusive" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        changeable="false" volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="exclusive" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        changeable="false" volatile="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDMinInclusiveFacet" eSuperTypes="#//XSDMinFacet"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDMinLengthFacet" eSuperTypes="#//XSDFixedFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDModelGroup" eSuperTypes="#//XSDTerm">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="compositor" eType="#//XSDCompositor"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotation" eType="#//XSDAnnotation"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="contents" upperBound="-1"
+        eType="#//XSDParticle" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="particles" lowerBound="1"
+        upperBound="-1" eType="#//XSDParticle" resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDModelGroupDefinition" eSuperTypes="#//XSDRedefinableComponent #//XSDParticleContent #//XSDRedefineContent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="modelGroupDefinitionReference"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean" changeable="false"
+        volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotation" eType="#//XSDAnnotation"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="modelGroup" lowerBound="1"
+        eType="#//XSDModelGroup" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="resolvedModelGroupDefinition"
+        lowerBound="1" eType="#//XSDModelGroupDefinition" resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDNamedComponent" abstract="true" eSuperTypes="#//XSDComponent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="targetNamespace" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="aliasName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        changeable="false" volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="uRI" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        changeable="false" volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="aliasURI" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        changeable="false" volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="qName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        changeable="false" volatile="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDNotationDeclaration" eSuperTypes="#//XSDNamedComponent #//XSDSchemaContent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="systemIdentifier" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="publicIdentifier" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotation" eType="#//XSDAnnotation"
+        containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDNumericFacet" eSuperTypes="#//XSDFundamentalFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDOrderedFacet" eSuperTypes="#//XSDFundamentalFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="#//XSDOrdered"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDParticle" eSuperTypes="#//XSDComplexTypeContent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="minOccurs" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="1" unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="maxOccurs" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+        defaultValueLiteral="1" unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="content" lowerBound="1"
+        eType="#//XSDParticleContent" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="term" lowerBound="1" eType="#//XSDTerm"
+        resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDParticleContent" abstract="true"
+      eSuperTypes="#//XSDConcreteComponent"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDPatternFacet" eSuperTypes="#//XSDRepeatableFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" upperBound="-1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDRedefinableComponent" abstract="true"
+      eSuperTypes="#//XSDNamedComponent #//XSDRedefineContent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="circular" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        changeable="false" volatile="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDRedefineContent" abstract="true"
+      eSuperTypes="#//XSDSchemaContent"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDRedefine" eSuperTypes="#//XSDSchemaCompositor">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotations" upperBound="-1"
+        eType="#//XSDAnnotation" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="contents" upperBound="-1"
+        eType="#//XSDRedefineContent" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDRepeatableFacet" abstract="true"
+      eSuperTypes="#//XSDConstrainingFacet">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotations" upperBound="-1"
+        eType="#//XSDAnnotation" resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDSchema" eSuperTypes="#//XSDScope">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="document" eType="#//DOMDocument"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="schemaLocation" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="targetNamespace" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="attributeFormDefault" eType="#//XSDForm"
+        defaultValueLiteral="unqualified" unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="elementFormDefault" eType="#//XSDForm"
+        defaultValueLiteral="unqualified" unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="finalDefault" upperBound="-1"
+        eType="#//XSDProhibitedSubstitutions" unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="blockDefault" upperBound="-1"
+        eType="#//XSDDisallowedSubstitutions" unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="version" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="contents" upperBound="-1"
+        eType="#//XSDSchemaContent" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="elementDeclarations" upperBound="-1"
+        eType="#//XSDElementDeclaration" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeDeclarations"
+        upperBound="-1" eType="#//XSDAttributeDeclaration" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="attributeGroupDefinitions"
+        upperBound="-1" eType="#//XSDAttributeGroupDefinition" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="typeDefinitions" upperBound="-1"
+        eType="#//XSDTypeDefinition" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="modelGroupDefinitions"
+        upperBound="-1" eType="#//XSDModelGroupDefinition" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="identityConstraintDefinitions"
+        upperBound="-1" eType="#//XSDIdentityConstraintDefinition" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="notationDeclarations" upperBound="-1"
+        eType="#//XSDNotationDeclaration" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotations" upperBound="-1"
+        eType="#//XSDAnnotation" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="allDiagnostics" upperBound="-1"
+        eType="#//XSDDiagnostic" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="referencingDirectives"
+        upperBound="-1" eType="#//XSDSchemaDirective" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="rootVersion" lowerBound="1"
+        eType="#//XSDSchema" changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="originalVersion" eType="#//XSDSchema"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="incorporatedVersions" upperBound="-1"
+        eType="#//XSDSchema" transient="true" containment="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="schemaForSchema" lowerBound="1"
+        eType="#//XSDSchema" changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDSchemaCompositor" abstract="true"
+      eSuperTypes="#//XSDSchemaDirective">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="incorporatedSchema" eType="#//XSDSchema"
+        resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDSchemaContent" abstract="true" eSuperTypes="#//XSDConcreteComponent"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDSchemaDirective" abstract="true"
+      eSuperTypes="#//XSDSchemaContent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="schemaLocation" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="resolvedSchema" eType="#//XSDSchema"
+        resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDScope" abstract="true" eSuperTypes="#//XSDComponent"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDSimpleTypeDefinition" eSuperTypes="#//XSDTypeDefinition #//XSDComplexTypeContent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="variety" eType="#//XSDVariety"
+        unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="final" upperBound="-1"
+        eType="#//XSDSimpleFinal"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="lexicalFinal" upperBound="-1"
+        eType="#//XSDSimpleFinal" unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="validFacets" upperBound="-1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="contents" upperBound="-1"
+        eType="#//XSDSimpleTypeDefinition" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="facetContents" upperBound="-1"
+        eType="#//XSDConstrainingFacet" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="facets" upperBound="-1"
+        eType="#//XSDConstrainingFacet" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="memberTypeDefinitions"
+        upperBound="-1" eType="#//XSDSimpleTypeDefinition" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="fundamentalFacets" lowerBound="1"
+        upperBound="-1" eType="#//XSDFundamentalFacet" transient="true" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="baseTypeDefinition" lowerBound="1"
+        eType="#//XSDSimpleTypeDefinition" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="primitiveTypeDefinition"
+        eType="#//XSDSimpleTypeDefinition" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="itemTypeDefinition" eType="#//XSDSimpleTypeDefinition"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="rootTypeDefinition" lowerBound="1"
+        eType="#//XSDSimpleTypeDefinition" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="minFacet" eType="#//XSDMinFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="maxFacet" eType="#//XSDMaxFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="maxInclusiveFacet" eType="#//XSDMaxInclusiveFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="minInclusiveFacet" eType="#//XSDMinInclusiveFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="minExclusiveFacet" eType="#//XSDMinExclusiveFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="maxExclusiveFacet" eType="#//XSDMaxExclusiveFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="lengthFacet" eType="#//XSDLengthFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="whiteSpaceFacet" eType="#//XSDWhiteSpaceFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="enumerationFacets" upperBound="-1"
+        eType="#//XSDEnumerationFacet" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="patternFacets" upperBound="-1"
+        eType="#//XSDPatternFacet" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="cardinalityFacet" lowerBound="1"
+        eType="#//XSDCardinalityFacet" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="numericFacet" lowerBound="1"
+        eType="#//XSDNumericFacet" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="maxLengthFacet" eType="#//XSDMaxLengthFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="minLengthFacet" eType="#//XSDMinLengthFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="totalDigitsFacet" eType="#//XSDTotalDigitsFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="fractionDigitsFacet" eType="#//XSDFractionDigitsFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="orderedFacet" lowerBound="1"
+        eType="#//XSDOrderedFacet" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="boundedFacet" lowerBound="1"
+        eType="#//XSDBoundedFacet" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="effectiveMaxFacet" eType="#//XSDMaxFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="effectiveWhiteSpaceFacet"
+        eType="#//XSDWhiteSpaceFacet" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="effectiveMaxLengthFacet"
+        eType="#//XSDMaxLengthFacet" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="effectiveFractionDigitsFacet"
+        eType="#//XSDFractionDigitsFacet" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="effectivePatternFacet"
+        eType="#//XSDPatternFacet" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="effectiveEnumerationFacet"
+        eType="#//XSDEnumerationFacet" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="effectiveTotalDigitsFacet"
+        eType="#//XSDTotalDigitsFacet" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="effectiveMinLengthFacet"
+        eType="#//XSDMinLengthFacet" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="effectiveLengthFacet" eType="#//XSDLengthFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="effectiveMinFacet" eType="#//XSDMinFacet"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="syntheticFacets" upperBound="-1"
+        eType="#//XSDFacet" transient="true" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDTerm" abstract="true" eSuperTypes="#//XSDComponent #//XSDParticleContent"/>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDTotalDigitsFacet" eSuperTypes="#//XSDFixedFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDTypeDefinition" abstract="true" eSuperTypes="#//XSDRedefinableComponent #//XSDRedefineContent">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotation" eType="#//XSDAnnotation"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="derivationAnnotation" eType="#//XSDAnnotation"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotations" upperBound="-1"
+        eType="#//XSDAnnotation" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="rootType" lowerBound="1"
+        eType="#//XSDTypeDefinition" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="baseType" lowerBound="1"
+        eType="#//XSDTypeDefinition" changeable="false" volatile="true" transient="true"
+        resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="simpleType" eType="#//XSDSimpleTypeDefinition"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="complexType" eType="#//XSDParticle"
+        changeable="false" volatile="true" transient="true" resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDWhiteSpaceFacet" eSuperTypes="#//XSDFixedFacet">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="#//XSDWhiteSpace"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDWildcard" eSuperTypes="#//XSDTerm">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="namespaceConstraintCategory"
+        eType="#//XSDNamespaceConstraintCategory"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="namespaceConstraint" upperBound="-1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="processContents" eType="#//XSDProcessContents"
+        unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="lexicalNamespaceConstraint"
+        upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        unsettable="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotation" eType="#//XSDAnnotation"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotations" upperBound="-1"
+        eType="#//XSDAnnotation" resolveProxies="false"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="XSDXPathDefinition" eSuperTypes="#//XSDComponent">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="variety" eType="#//XSDXPathVariety"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="annotation" eType="#//XSDAnnotation"
+        containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EDataType" name="DOMAttr" instanceClassName="org.w3c.dom.Attr"/>
+  <eClassifiers xsi:type="ecore:EDataType" name="DOMDocument" instanceClassName="org.w3c.dom.Document"/>
+  <eClassifiers xsi:type="ecore:EDataType" name="DOMElement" instanceClassName="org.w3c.dom.Element"/>
+  <eClassifiers xsi:type="ecore:EDataType" name="DOMNode" instanceClassName="org.w3c.dom.Node"/>
+  <eClassifiers xsi:type="ecore:EDataType" name="Value" instanceClassName="java.lang.Object"/>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDAttributeUseCategory">
+    <eLiterals name="optional"/>
+    <eLiterals name="prohibited" value="1"/>
+    <eLiterals name="required" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDCardinality">
+    <eLiterals name="finite"/>
+    <eLiterals name="countablyInfinite" value="1"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDComplexFinal">
+    <eLiterals name="extension"/>
+    <eLiterals name="restriction" value="1"/>
+    <eLiterals name="all" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDCompositor">
+    <eLiterals name="all"/>
+    <eLiterals name="choice" value="1"/>
+    <eLiterals name="sequence" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDConstraint">
+    <eLiterals name="default"/>
+    <eLiterals name="fixed" value="1"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDContentTypeCategory">
+    <eLiterals name="empty"/>
+    <eLiterals name="simple" value="1"/>
+    <eLiterals name="mixed" value="2"/>
+    <eLiterals name="elementOnly" value="3"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDDerivationMethod">
+    <eLiterals name="extension"/>
+    <eLiterals name="restriction" value="1"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDDiagnosticSeverity">
+    <eLiterals name="fatal"/>
+    <eLiterals name="error" value="1"/>
+    <eLiterals name="warning" value="2"/>
+    <eLiterals name="information" value="3"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDDisallowedSubstitutions">
+    <eLiterals name="substitution"/>
+    <eLiterals name="extension" value="1"/>
+    <eLiterals name="restriction" value="2"/>
+    <eLiterals name="all" value="3"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDForm">
+    <eLiterals name="qualified"/>
+    <eLiterals name="unqualified" value="1"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDIdentityConstraintCategory">
+    <eLiterals name="key"/>
+    <eLiterals name="keyref" value="1"/>
+    <eLiterals name="unique" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDNamespaceConstraintCategory">
+    <eLiterals name="any"/>
+    <eLiterals name="not" value="1"/>
+    <eLiterals name="set" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDOrdered">
+    <eLiterals name="false"/>
+    <eLiterals name="partial" value="1"/>
+    <eLiterals name="total" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDProcessContents">
+    <eLiterals name="strict"/>
+    <eLiterals name="lax" value="1"/>
+    <eLiterals name="skip" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDProhibitedSubstitutions">
+    <eLiterals name="extension"/>
+    <eLiterals name="restriction" value="1"/>
+    <eLiterals name="all" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDSimpleFinal">
+    <eLiterals name="list"/>
+    <eLiterals name="restriction" value="1"/>
+    <eLiterals name="union" value="2"/>
+    <eLiterals name="all" value="3"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDSubstitutionGroupExclusions">
+    <eLiterals name="extension"/>
+    <eLiterals name="restriction" value="1"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDVariety">
+    <eLiterals name="atomic"/>
+    <eLiterals name="list" value="1"/>
+    <eLiterals name="union" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDWhiteSpace">
+    <eLiterals name="preserve"/>
+    <eLiterals name="replace" value="1"/>
+    <eLiterals name="collapse" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="XSDXPathVariety">
+    <eLiterals name="selector"/>
+    <eLiterals name="field" value="1"/>
+  </eClassifiers>
+</ecore:EPackage>

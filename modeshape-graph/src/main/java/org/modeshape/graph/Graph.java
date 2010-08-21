@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -2813,8 +2814,67 @@ public class Graph {
      * @throws IllegalArgumentException if the <code>uri</code> or destination path are null
      */
     public ImportInto<Conjunction<Graph>> importXmlFrom( String pathToFile ) {
-        CheckArg.isNotNull(pathToFile, "pathToFile");
-        return importXmlFrom(new File(pathToFile).toURI());
+        CheckArg.isNotEmpty(pathToFile, "pathToFile");
+        // Try the file name ...
+        File file = new File(pathToFile);
+        if (file.exists() && file.canRead()) {
+            return importXmlFrom(new File(pathToFile).toURI());
+        }
+        // See if there is a resource on the classpath ...
+        ClassLoader classLoader = getClass().getClassLoader();
+        InputStream stream = classLoader.getResourceAsStream(pathToFile);
+        if (stream != null) {
+            try {
+                stream.close();
+                return importXmlFrom(pathToFile, classLoader);
+            } catch (IOException e) {
+                // shouldn't happen, but continue anyway ...
+            }
+        }
+        // Try a URL ...
+        try {
+            return importXmlFrom(new URI(pathToFile));
+        } catch (URISyntaxException e) {
+            // Must not be a URI ...
+        }
+        // Try the resource on the classpath anyway ...
+        return importXmlFrom(pathToFile, getClass().getClassLoader());
+    }
+
+    /**
+     * Import the content from the XML file at the supplied file location, specifying via the returned {@link ImportInto object}
+     * where the content is to be imported.
+     * 
+     * @param resourceName the name of the resource file on the classpath
+     * @param classLoader the classloader that should be used to load the resource; may be null if the class' current classloader
+     *        should be used
+     * @return the object that should be used to specify into which the content is to be imported
+     * @throws IllegalArgumentException if the <code>uri</code> or destination path are null
+     */
+    public ImportInto<Conjunction<Graph>> importXmlFrom( String resourceName,
+                                                         ClassLoader classLoader ) {
+        CheckArg.isNotEmpty(resourceName, "resourceName");
+        // Try the resource on the classpath ...
+        if (classLoader == null) classLoader = getClass().getClassLoader();
+        InputStream stream = null;
+        RuntimeException error = null;
+        try {
+            stream = getClass().getResourceAsStream(resourceName);
+            return importXmlFrom(stream);
+        } catch (RuntimeException e) {
+            error = e;
+            throw e;
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (Throwable e2) {
+                    if (error == null) {
+                        throw new RuntimeException(e2);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -7171,6 +7231,14 @@ public class Graph {
 
         public SubgraphNode getNode( Name childName ) {
             Path path = getContext().getValueFactories().getPathFactory().create(location.getPath(), childName);
+            Location location = request.getLocationFor(path);
+            if (location == null) return null;
+            return new SubgraphNodeImpl(location, request);
+        }
+
+        public SubgraphNode getNode( Segment childSegment ) {
+            Path path = getContext().getValueFactories().getPathFactory().create(location.getPath(), childSegment);
+            path = path.getNormalizedPath();
             Location location = request.getLocationFor(path);
             if (location == null) return null;
             return new SubgraphNodeImpl(location, request);

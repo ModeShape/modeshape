@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="sdt"
+    nsURI="http://www.metamatrix.com/metamodels/SimpleDatatypes" nsPrefix="mmsdt">
+  <eClassifiers xsi:type="ecore:EClass" name="Domain" eSuperTypes="XSD.ecore#//XSDSchema"/>
+  <eClassifiers xsi:type="ecore:EClass" name="SimpleDatatype" eSuperTypes="XSD.ecore#//XSDSimpleTypeDefinition core.ecore#//Datatype">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="runtimeType" eType="#//RuntimeType"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="runtimeTypeName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+        changeable="false" volatile="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="RuntimeType">
+    <eLiterals name="string"/>
+    <eLiterals name="boolean" value="1"/>
+    <eLiterals name="byte" value="2"/>
+    <eLiterals name="short" value="3"/>
+    <eLiterals name="char" value="4"/>
+    <eLiterals name="integer" value="5"/>
+    <eLiterals name="long" value="6"/>
+    <eLiterals name="biginteger" value="7"/>
+    <eLiterals name="float" value="8"/>
+    <eLiterals name="double" value="9"/>
+    <eLiterals name="bigdecimal" value="10"/>
+    <eLiterals name="date" value="11"/>
+    <eLiterals name="time" value="12"/>
+    <eLiterals name="timestamp" value="13"/>
+    <eLiterals name="object" value="14"/>
+    <eLiterals name="null" value="15"/>
+    <eLiterals name="blob" value="16"/>
+    <eLiterals name="clob" value="17"/>
+  </eClassifiers>
+</ecore:EPackage>

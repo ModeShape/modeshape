@@ -41,6 +41,14 @@ public interface SubgraphNode extends Node {
     /**
      * Get the node at the supplied path that is relative to this node.
      * 
+     * @param childSegment the segment for the immediate child of this node
+     * @return the node, or null if the node is not {@link Subgraph#includes(Location) included} in these results
+     */
+    SubgraphNode getNode( Path.Segment childSegment );
+
+    /**
+     * Get the node at the supplied path that is relative to this node.
+     * 
      * @param relativePath the name that makes up a relative path to the node that is an immediate child of the
      *        {@link Subgraph#getRoot() root}
      * @return the node, or null if the node is not {@link Subgraph#includes(Path) included} in these results

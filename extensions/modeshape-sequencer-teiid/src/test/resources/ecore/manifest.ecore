@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  JBoss, Home of Professional Open Source.
+
+  See the LEGAL.txt file distributed with this work for information regarding copyright ownership and licensing.
+
+  See the AUTHORS.txt file distributed with this work for a full listing of individual contributors.
+-->
+<ecore:EPackage xmi:version="2.0"
+    xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="manifest"
+    nsURI="http://www.metamatrix.com/metamodels/VirtualDatabase" nsPrefix="vdb">
+  <eClassifiers xsi:type="ecore:EClass" name="VirtualDatabase" eSuperTypes="#//ProblemMarkerContainer">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="identifier" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="uuid" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="description" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="version" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="provider" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="timeLastChanged" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="timeLastProduced" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="timeLastChangedAsDate"
+        eType="#//JavaDate" volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="timeLastProducedAsDate"
+        eType="#//JavaDate" volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="producerName" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="producerVersion" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="includeModelFiles" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="models" upperBound="-1"
+        eType="#//ModelReference" containment="true" eOpposite="#//ModelReference/virtualDatabase"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="wsdlOptions" eType="#//WsdlOptions"
+        containment="true" eOpposite="#//WsdlOptions/virtualDatabase"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="nonModels" upperBound="-1"
+        eType="#//NonModelReference" containment="true" eOpposite="#//NonModelReference/virtualDatabase"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ModelReference" eSuperTypes="core.ecore#//ModelImport #//ProblemMarkerContainer">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="version" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="uri" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="visible" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"
+        defaultValueLiteral="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="accessibility" eType="#//ModelAccessibility"
+        defaultValueLiteral="PUBLIC"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="timeLastSynchronized" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="timeLastSynchronizedAsDate"
+        eType="#//JavaDate" volatile="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="checksum" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//ELong"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="virtualDatabase" lowerBound="1"
+        eType="#//VirtualDatabase" transient="true" eOpposite="#//VirtualDatabase/models"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="uses" upperBound="-1" eType="#//ModelReference"
+        eOpposite="#//ModelReference/usedBy"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="usedBy" upperBound="-1"
+        eType="#//ModelReference" eOpposite="#//ModelReference/uses"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="modelSource" eType="#//ModelSource"
+        containment="true" eOpposite="#//ModelSource/model"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ProblemMarkerContainer" abstract="true">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="severity" eType="#//Severity"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="markers" upperBound="-1"
+        eType="#//ProblemMarker" containment="true" eOpposite="#//ProblemMarker/marked"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="Severity">
+    <eLiterals name="OK"/>
+    <eLiterals name="INFO" value="1"/>
+    <eLiterals name="WARNING" value="2"/>
+    <eLiterals name="ERROR" value="3"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ProblemMarker">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="severity" eType="#//Severity"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="message" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="target" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="targetUri" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="code" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="stackTrace" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="marked" lowerBound="1"
+        eType="#//ProblemMarkerContainer" transient="true" eOpposite="#//ProblemMarkerContainer/markers"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="children" upperBound="-1"
+        eType="#//ProblemMarker" containment="true" eOpposite="#//ProblemMarker/parent"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="parent" eType="#//ProblemMarker"
+        transient="true" eOpposite="#//ProblemMarker/children"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ModelSource">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="properties" upperBound="-1"
+        eType="#//ModelSourceProperty" containment="true" eOpposite="#//ModelSourceProperty/source"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="model" lowerBound="1" eType="#//ModelReference"
+        transient="true" eOpposite="#//ModelReference/modelSource"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ModelSourceProperty">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="source" lowerBound="1"
+        eType="#//ModelSource" transient="true" eOpposite="#//ModelSource/properties"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EDataType" name="JavaDate" instanceClassName="java.util.Date"/>
+  <eClassifiers xsi:type="ecore:EClass" name="WsdlOptions">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="targetNamespaceUri" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="defaultNamespaceUri" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="virtualDatabase" lowerBound="1"
+        eType="#//VirtualDatabase" transient="true" eOpposite="#//VirtualDatabase/wsdlOptions"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="ModelAccessibility">
+    <eLiterals name="PUBLIC"/>
+    <eLiterals name="PROTECTED" value="1"/>
+    <eLiterals name="PRIVATE" value="2"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="NonModelReference">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="path" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="checksum" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//ELong"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="properties" upperBound="-1"
+        eType="ecore:EClass ../../../plugin/org.eclipse.emf.ecore/model/Ecore.ecore#//EStringToStringMapEntry"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="virtualDatabase" lowerBound="1"
+        eType="#//VirtualDatabase" transient="true" eOpposite="#//VirtualDatabase/nonModels"/>
+  </eClassifiers>
+</ecore:EPackage>
