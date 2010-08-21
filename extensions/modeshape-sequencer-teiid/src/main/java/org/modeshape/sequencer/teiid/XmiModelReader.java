@@ -255,7 +255,7 @@ public class XmiModelReader extends XmiGraphReader {
         mmuuidToNodeUuid.clear();
         for (SubgraphNode node : subgraph) {
             UUID mmUuid = xmiUuidFor(node);
-            UUID nodeUuid = this.useXmiUuidsAsJcrUuids ? mmUuid : uuidFor(node);
+            UUID nodeUuid = uuidFor(node);
             if (mmUuid != null) mmuuidToNodeUuid.put(mmUuid, nodeUuid);
         }
 
@@ -297,18 +297,17 @@ public class XmiModelReader extends XmiGraphReader {
             mmuuidToNodePath.put(xmiUuid, modelRootPath);
             PropertySet props = propertiesFor(xmiUuid, true);
             props.add(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
-            props.add(JcrLexicon.MIXIN_TYPES, XmiLexicon.MODEL, CoreLexicon.MODEL, JcrMixLexicon.REFERENCEABLE);
-            if (!this.useXmiUuidsAsJcrUuids) {
-                props.add(JcrLexicon.MIXIN_TYPES, XmiLexicon.REFERENCEABLE);
-            }
+            props.add(JcrLexicon.MIXIN_TYPES,
+                      XmiLexicon.MODEL,
+                      CoreLexicon.MODEL,
+                      JcrMixLexicon.REFERENCEABLE,
+                      XmiLexicon.REFERENCEABLE);
             props.add(XmiLexicon.VERSION, firstValue(xmi, "xmi:version", 2.0));
             props.add(CoreLexicon.PRIMARY_METAMODEL_URI, getCurrentNamespaceUri());
             props.add(CoreLexicon.MODEL_TYPE, firstValue(modelAnnotation, "modelType"));
             props.writeTo(output, modelRootPath);
             output.setProperty(modelRootPath, JcrLexicon.UUID, uuidFor(modelAnnotation));
-            if (!this.useXmiUuidsAsJcrUuids) {
-                output.setProperty(modelRootPath, XmiLexicon.UUID, xmiUuid);
-            }
+            output.setProperty(modelRootPath, XmiLexicon.UUID, xmiUuid);
 
             // Process the model imports ...
             for (Location modelImportLocation : modelAnnotation.getChildren()) {
@@ -318,21 +317,13 @@ public class XmiModelReader extends XmiGraphReader {
         } else {
             // Create the root node for this XMI model ...
             output.setProperty(modelRootPath, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
-            if (this.useXmiUuidsAsJcrUuids) {
-                output.setProperty(modelRootPath,
-                                   JcrLexicon.MIXIN_TYPES,
-                                   XmiLexicon.MODEL,
-                                   CoreLexicon.MODEL,
-                                   JcrMixLexicon.REFERENCEABLE);
-            } else {
-                output.setProperty(modelRootPath,
-                                   JcrLexicon.MIXIN_TYPES,
-                                   XmiLexicon.MODEL,
-                                   CoreLexicon.MODEL,
-                                   JcrMixLexicon.REFERENCEABLE,
-                                   XmiLexicon.REFERENCEABLE);
+            output.setProperty(modelRootPath,
+                               JcrLexicon.MIXIN_TYPES,
+                               XmiLexicon.MODEL,
+                               CoreLexicon.MODEL,
+                               JcrMixLexicon.REFERENCEABLE,
+                               XmiLexicon.REFERENCEABLE);
 
-            }
             output.setProperty(modelRootPath, XmiLexicon.VERSION, firstValue(xmi, "xmi:version", 2.0));
         }
         output.setProperty(modelRootPath, CoreLexicon.MODEL_FILE, stringFrom(modelPath));
@@ -810,9 +801,7 @@ public class XmiModelReader extends XmiGraphReader {
                     output.setProperty(path, JcrLexicon.UUID, reader.uuidFor(node));
                     continue;
                 } else if (name.equals(XmiLexicon.UUID)) {
-                    if (!reader.useXmiUuidsAsJcrUuids) {
-                        output.setProperty(path, name, reader.xmiUuidFor(node));
-                    }
+                    output.setProperty(path, name, reader.xmiUuidFor(node));
                     continue;
                 } else if (name.getNamespaceUri().isEmpty()) {
                     name = reader.nameFrom(name.getLocalName());
@@ -869,16 +858,12 @@ public class XmiModelReader extends XmiGraphReader {
             output.setProperty(path, CoreLexicon.MODEL_TYPE, reader.firstValue(node, "modelType"));
             output.setProperty(path, CoreLexicon.PATH, reader.firstValue(node, "path"));
             output.setProperty(path, JcrLexicon.UUID, reader.uuidFor(node));
-            if (!reader.useXmiUuidsAsJcrUuids) {
-                output.setProperty(path, XmiLexicon.UUID, reader.firstValue(node, "xmi:uuid"));
-                output.setProperty(path,
-                                   JcrLexicon.MIXIN_TYPES,
-                                   CoreLexicon.IMPORT,
-                                   JcrMixLexicon.REFERENCEABLE,
-                                   XmiLexicon.REFERENCEABLE);
-            } else {
-                output.setProperty(path, JcrLexicon.MIXIN_TYPES, CoreLexicon.IMPORT, JcrMixLexicon.REFERENCEABLE);
-            }
+            output.setProperty(path, XmiLexicon.UUID, reader.firstValue(node, "xmi:uuid"));
+            output.setProperty(path,
+                               JcrLexicon.MIXIN_TYPES,
+                               CoreLexicon.IMPORT,
+                               JcrMixLexicon.REFERENCEABLE,
+                               XmiLexicon.REFERENCEABLE);
 
             return path;
         }

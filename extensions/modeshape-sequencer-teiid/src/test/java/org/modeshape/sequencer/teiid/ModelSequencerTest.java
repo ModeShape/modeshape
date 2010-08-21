@@ -72,6 +72,7 @@ public class ModelSequencerTest extends AbstractStreamSequencerTest {
 
     @Test
     public void shouldSequencePartsSupplierPhysicalRelationalModelForSourceB() throws Exception {
+        // print = true;
         sequence("model/parts/PartSupplier_SourceB.xmi");
         assertNoProblems();
         printOutput();
