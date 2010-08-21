@@ -25,6 +25,8 @@
 //------------------------------------------------------------------------------
 // N A M E S P A C E S
 //------------------------------------------------------------------------------
+
+<nt  = "http://www.jcp.org/jcr/nt/1.0">
 <relational='http://www.metamatrix.com/metamodels/Relational'>
 <xmi = "http://www.omg.org/XMI">
 
@@ -35,42 +37,13 @@
 [relational:relationalEntity] > xmi:referenceable abstract mixin
  - relational:nameInSource (string) 
 
-// -------------------------------------------
-// Catalogs and Schemas
-// -------------------------------------------
-
-[relational:catalog] > relational:relationalEntity mixin
- + * (relational:schema) = nt:unstructured copy
- + * (relational:table) = nt:unstructured copy
- + * (relational:procedure) = nt:unstructured copy sns
- + * (relational:index) = nt:unstructured copy
- + * (relational:logicalRelationship) = nt:unstructured copy
-
-[relational:schema] > relational:relationalEntity mixin
- + * (relational:table) = nt:unstructured copy
- + * (relational:procedure) = nt:unstructured copy sns
- + * (relational:index) = nt:unstructured copy
- + * (relational:logicalRelationship) = nt:unstructured copy
+[relational:relationship] > nt:unstructured, relational:relationalEntity abstract
 
 // -------------------------------------------
-// Tables and Views
+// Columns and Column Sets
 // -------------------------------------------
 
-[relational:columnSet] > relational:relationalEntity abstract mixin
- + * (relational:column) = nt:unstructured copy
-
-[relational:table] > relational:columnSet mixin
- - relational:system (boolean) = 'false' 
- - relational:cardinality (long) 
- - relational:supportsUpdate (boolean) = 'true' 
- - relational:materialized (boolean) = 'false' 
- - relational:logicalRelationships (weakreference) multiple 
- - relational:logicalRelationshipHrefs (string) multiple 
- - relational:logicalRelationshipXmiUuids (string) multiple 
- - relational:logicalRelationshipNames (string) multiple 
- + * (relational:accessPattern) = nt:unstructured copy sns
-
-[relational:column] > relational:relationalEntity mixin
+[relational:column] > nt:unstructured, relational:relationalEntity
  - relational:nativeType (string) 
  - relational:type (weakreference)  
  - relational:typeHref (string) 
@@ -114,15 +87,14 @@
  - relational:accessPatternXmiUuids (string) multiple 
  - relational:accessPatternNames (string) multiple
 
-//[relational:baseTable] > relational:table 
-
-[relational:view] > relational:table mixin
+[relational:columnSet] > nt:unstructured, relational:relationalEntity abstract orderable
+ + * (relational:column) = relational:column copy
 
 // -------------------------------------------
 // Constraints
 // -------------------------------------------
 
-[relational:uniqueKey] > relational:relationalEntity abstract mixin
+[relational:uniqueKey] > nt:unstructured, relational:relationalEntity abstract
  - relational:columns (weakreference) multiple
  - relational:columnXmiUuids (string) multiple
  - relational:columnNames (string) multiple 
@@ -131,11 +103,11 @@
  - relational:foreignKeyXmiUuids (string) multiple 
  - relational:foreignKeyNames (string) multiple 
 
-[relational:uniqueConstraint] > relational:uniqueKey mixin
+[relational:uniqueConstraint] > relational:uniqueKey
 
-[relational:primaryKey] > relational:uniqueKey mixin
+[relational:primaryKey] > relational:uniqueKey
 
-[relational:foreignKey] > relational:relationship mixin
+[relational:foreignKey] > relational:relationship
  - relational:foreignKeyMultiplicity (string) = 'ZERO_TO_MANY' < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
  - relational:primaryKeyMultiplicity (string) = 'ONE' < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
  - relational:columns (weakreference) multiple
@@ -146,7 +118,7 @@
  - relational:uniqueKeyXmiUuids (string) multiple 
  - relational:uniqueKeyNames (string) multiple 
 
-[relational:index] > relational:relationalEntity mixin
+[relational:index] > nt:unstructured, relational:relationalEntity
  - relational:filterCondition (string) 
  - relational:nullable (boolean) = 'true' 
  - relational:autoUpdate (boolean) 
@@ -155,20 +127,36 @@
  - relational:columnXmiUuids (string) multiple 
  - relational:columnNames (string) multiple 
 
-[relational:accessPattern] > relational:relationalEntity mixin
+[relational:accessPattern] > nt:unstructured, relational:relationalEntity orderable
  - relational:columns (UNDEFINED) multiple 
+
+// -------------------------------------------
+// Tables and Views
+// -------------------------------------------
+
+[relational:table] > relational:columnSet abstract orderable
+ - relational:system (boolean) = 'false' 
+ - relational:cardinality (long) 
+ - relational:supportsUpdate (boolean) = 'true' 
+ - relational:materialized (boolean) = 'false' 
+ - relational:logicalRelationships (weakreference) multiple 
+ - relational:logicalRelationshipHrefs (string) multiple 
+ - relational:logicalRelationshipXmiUuids (string) multiple 
+ - relational:logicalRelationshipNames (string) multiple 
+ + * (relational:primaryKey) = relational:primaryKey copy
+ + * (relational:foreignKey) = relational:foreignKey copy
+ + * (relational:accessPattern) = relational:accessPattern copy sns
+
+[relational:baseTable] > relational:table orderable
+
+[relational:view] > relational:table orderable
+
 
 // -------------------------------------------
 // Procedures
 // -------------------------------------------
 
-[relational:procedure] > relational:relationalEntity mixin
- - relational:function (boolean) 
- - relational:updateCount (string) < 'AUTO', 'ZERO', 'ONE', 'MULTIPLE'
- + * (relational:procedureParameter) = nt:unstructured copy sns
- + * (relational:procedureResult) = nt:unstructured copy
-
-[relational:procedureParameter] > relational:relationalEntity mixin
+[relational:procedureParameter] > nt:unstructured, relational:relationalEntity
  - relational:direction (string) < 'IN', 'OUT', 'INOUT', 'RETURN', 'UNKNOWN'
  - relational:defaultValue (string) 
  - relational:nativeType (string) 
@@ -181,24 +169,43 @@
  - relational:nullable (string) = 'NULLABLE' < 'NO_NULLS', 'NULLABLE', 'NULLABLE_UNKNOWN'
  - relational:radix (long) = '10' 
 
-[relational:procedureResult] > relational:columnSet mixin
+[relational:procedureResult] > relational:columnSet orderable
+
+[relational:procedure] > nt:unstructured, relational:relationalEntity orderable
+ - relational:function (boolean) 
+ - relational:updateCount (string) < 'AUTO', 'ZERO', 'ONE', 'MULTIPLE'
+ + * (relational:procedureParameter) = relational:procedureParameter copy sns
+ + * (relational:procedureResult) = relational:procedureResult copy
+
 
 // -------------------------------------------
 // Logical Relationships
 // -------------------------------------------
 
-[relational:relationship] > relational:relationalEntity abstract mixin
-
-[relational:logicalRelationship] > relational:relationship mixin
- + * (relational:logicalRelationshipEnd) = nt:unstructured copy sns
-
-[relational:logicalRelationshipEnd] > relational:relationalEntity mixin
+[relational:logicalRelationshipEnd] > nt:unstructured, relational:relationalEntity
  - relational:multiplicity (string) < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
  - relational:table (weakreference)
  - relational:tableHref (string)
  - relational:tableXmiUuid (string)
  - relational:tableName (string)
 
+[relational:logicalRelationship] > relational:relationship orderable
+ + * (relational:logicalRelationshipEnd) = relational:logicalRelationshipEnd copy sns
 
+// -------------------------------------------
+// Catalogs and Schemas
+// -------------------------------------------
 
+[relational:schema] > nt:unstructured, relational:relationalEntity orderable
+ + * (relational:table) = relational:baseTable copy
+ + * (relational:procedure) = relational:procedure copy sns
+ + * (relational:index) = relational:index copy
+ + * (relational:logicalRelationship) = relational:logicalRelationship copy
 
+[relational:catalog] > nt:unstructured, relational:relationalEntity orderable
+ + * (relational:schema) = relational:schema copy
+ + * (relational:table) = relational:baseTable copy
+ + * (relational:procedure) = relational:procedure copy sns
+ + * (relational:index) = relational:index copy
+ + * (relational:logicalRelationship) = relational:logicalRelationship copy
+ 

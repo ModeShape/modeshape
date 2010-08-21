@@ -80,6 +80,24 @@ public class SequencerTest {
         assertNodeType("ddl:tableOperand", true, false, true, false, null, 0, 0, "nt:base", "ddl:operand");
         assertNodeType("derbyddl:functionOperand", true, false, true, false, null, 0, 0, "nt:base", "ddl:operand");
         assertNodeType("text:column", false, true, true, false, null, 0, 1);
+        assertNodeType("relational:column",
+                       false,
+                       false,
+                       true,
+                       false,
+                       null,
+                       0,
+                       42,
+                       "nt:unstructured",
+                       "relational:relationalEntity");
+        assertNodeType("relational:baseTable", false, false, true, true, null, 0, 0, "relational:table");
+        assertNodeTypes("relational:relationalEntity",
+                        "relational:column",
+                        "relational:columnSet",
+                        "relational:uniqueKey",
+                        "relational:primaryKey",
+                        "relational:foreignKey",
+                        "jdbcs:imported");
     }
 
     @Test
@@ -101,15 +119,34 @@ public class SequencerTest {
                      .addNodeTypes(resourceUrl("org/modeshape/sequencer/ddl/dialect/derby/DerbyDdl.cnd"))
                      .addNodeTypes(resourceUrl("org/modeshape/sequencer/ddl/dialect/oracle/OracleDdl.cnd"))
                      .addNodeTypes(resourceUrl("org/modeshape/sequencer/ddl/dialect/postgres/PostgresDdl.cnd"))
+                     .addNodeTypes(resourceUrl("org/modeshape/sequencer/teiid/teiid.cnd"))
                      .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
         engine = configuration.build();
         engine.start();
         repository = engine.getRepository("repo");
         session = repository.login();
 
-        assertNodeType("ddl:tableOperand", true, false, true, false, null, 0, 0, "nt:base", "ddl:operand");
-        assertNodeType("derbyddl:functionOperand", true, false, true, false, null, 0, 0, "nt:base", "ddl:operand");
-        assertNodeType("text:column", false, true, true, false, null, 0, 1);
+        // assertNodeType("ddl:tableOperand", true, false, true, false, null, 0, 0, "nt:base", "ddl:operand");
+        // assertNodeType("derbyddl:functionOperand", true, false, true, false, null, 0, 0, "nt:base", "ddl:operand");
+        // assertNodeType("text:column", false, true, true, false, null, 0, 1);
+        assertNodeType("relational:column",
+                       false,
+                       false,
+                       true,
+                       false,
+                       null,
+                       0,
+                       42,
+                       "nt:unstructured",
+                       "relational:relationalEntity");
+        assertNodeType("relational:baseTable", false, false, true, true, null, 0, 0, "relational:table");
+        assertNodeTypes("relational:relationalEntity",
+                        "relational:column",
+                        "relational:columnSet",
+                        "relational:uniqueKey",
+                        "relational:primaryKey",
+                        "relational:foreignKey",
+                        "jdbcs:imported");
     }
 
     // @Test
@@ -176,7 +213,13 @@ public class SequencerTest {
         assertThat(nodeType.getDeclaredSupertypes().length, is(supertypes.length));
         assertThat(nodeType.getDeclaredChildNodeDefinitions().length, is(numberOfDeclaredChildNodeDefinitions));
         assertThat(nodeType.getDeclaredPropertyDefinitions().length, is(numberOfDeclaredPropertyDefinitions));
+    }
 
+    protected void assertNodeTypes( String... nodeTypeNames ) throws Exception {
+        for (String nodeTypeName : nodeTypeNames) {
+            NodeType nodeType = session.getWorkspace().getNodeTypeManager().getNodeType(nodeTypeName);
+            assertThat(nodeType, is(notNullValue()));
+        }
     }
 
 }

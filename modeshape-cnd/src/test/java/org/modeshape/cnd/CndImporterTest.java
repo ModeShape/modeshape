@@ -464,6 +464,15 @@ public class CndImporterTest {
     }
 
     @Test
+    public void shouldImportCndForTeiidSequencer() throws Exception {
+        importer.importFrom(openCndFile("teiid.cnd"), problems);
+        if (problems.size() != 0) printProblems();
+        assertThat(problems.size(), is(0));
+        assertNodeType("relational:catalog", new String[] {"nt:unstructured", "relational:relationalEntity"}, NO_PRIMARY_NAME);
+
+    }
+
+    @Test
     public void shouldNotImportFileThatIsNotAValidCnd() throws Exception {
         importer.importFrom(openCndFile("invalid.cnd"), problems);
         assertThat(problems.size(), is(1));

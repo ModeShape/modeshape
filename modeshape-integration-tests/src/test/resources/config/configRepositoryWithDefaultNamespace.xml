@@ -89,6 +89,7 @@
                 <resource>/org/modeshape/sequencer/ddl/dialect/derby/DerbyDdl.cnd</resource>
                 <resource>/org/modeshape/sequencer/ddl/dialect/oracle/OracleDdl.cnd</resource>
                 <resource>/org/modeshape/sequencer/ddl/dialect/postgres/PostgresDdl.cnd</resource>
+                <resource>/org/modeshape/sequencer/teiid/teiid.cnd</resource>
             </jcr:nodeTypes>
         </repository>
     </repositories>

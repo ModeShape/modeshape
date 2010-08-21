@@ -50,5 +50,3 @@
  - transform:insertSqlDefault (boolean) = 'true' 
  - transform:updateSqlDefault (boolean) = 'true' 
  - transform:deleteSqlDefault (boolean) = 'true' 
- * (transform:alias) = nt:unstructured
-

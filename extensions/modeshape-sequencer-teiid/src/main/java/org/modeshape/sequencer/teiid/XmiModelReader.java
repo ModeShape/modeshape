@@ -23,6 +23,7 @@
  */
 package org.modeshape.sequencer.teiid;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -166,6 +167,7 @@ public class XmiModelReader extends XmiGraphReader {
     private ModelObjectHandler defaultHandler;
     private final Map<UUID, PropertySet> mmuuidToPropertySet = new HashMap<UUID, PropertySet>();
     protected final boolean useXmiUuidsAsJcrUuids;
+    protected final DefaultProperties defaults;
 
     /**
      * @param modelPath
@@ -178,6 +180,11 @@ public class XmiModelReader extends XmiGraphReader {
                            boolean generateShortTypeNames,
                            boolean useXmiUuidsAsJcrUuids ) {
         super(subgraph, generateShortTypeNames);
+        try {
+            this.defaults = DefaultProperties.getDefaults();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         this.referenceFactory = valueFactories.getWeakReferenceFactory();
         this.modelPath = modelPath;
         Path pathWithModelName = this.modelPath.getLastSegment().getName().equals(JcrLexicon.CONTENT) ? this.modelPath.getParent() : this.modelPath;
@@ -296,12 +303,8 @@ public class XmiModelReader extends XmiGraphReader {
             UUID xmiUuid = xmiUuidFor(modelAnnotation);
             mmuuidToNodePath.put(xmiUuid, modelRootPath);
             PropertySet props = propertiesFor(xmiUuid, true);
-            props.add(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
-            props.add(JcrLexicon.MIXIN_TYPES,
-                      XmiLexicon.MODEL,
-                      CoreLexicon.MODEL,
-                      JcrMixLexicon.REFERENCEABLE,
-                      XmiLexicon.REFERENCEABLE);
+            props.add(JcrLexicon.PRIMARY_TYPE, XmiLexicon.MODEL);
+            props.add(JcrLexicon.MIXIN_TYPES, CoreLexicon.MODEL, JcrMixLexicon.REFERENCEABLE, XmiLexicon.REFERENCEABLE);
             props.add(XmiLexicon.VERSION, firstValue(xmi, "xmi:version", 2.0));
             props.add(CoreLexicon.PRIMARY_METAMODEL_URI, getCurrentNamespaceUri());
             props.add(CoreLexicon.MODEL_TYPE, firstValue(modelAnnotation, "modelType"));
@@ -316,10 +319,9 @@ public class XmiModelReader extends XmiGraphReader {
             }
         } else {
             // Create the root node for this XMI model ...
-            output.setProperty(modelRootPath, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
+            output.setProperty(modelRootPath, JcrLexicon.PRIMARY_TYPE, XmiLexicon.MODEL);
             output.setProperty(modelRootPath,
                                JcrLexicon.MIXIN_TYPES,
-                               XmiLexicon.MODEL,
                                CoreLexicon.MODEL,
                                JcrMixLexicon.REFERENCEABLE,
                                XmiLexicon.REFERENCEABLE);
@@ -631,6 +633,18 @@ public class XmiModelReader extends XmiGraphReader {
             }
         }
 
+        private void addDefaultsForType( Collection<Object> nodeTypes ) {
+            if (nodeTypes == null || nodeTypes.isEmpty()) return;
+            for (Object nodeType : nodeTypes) {
+                String nodeTypeString = reader.stringFrom(nodeType);
+                for (Map.Entry<String, Object> defaultValue : reader.defaults.getDefaultsFor(nodeTypeString).entrySet()) {
+                    Name name = reader.nameFrom(defaultValue.getKey());
+                    if (propsByName.containsKey(name)) continue;
+                    add(name, defaultValue.getValue());
+                }
+            }
+        }
+
         public void writeTo( SequencerOutput output,
                              Path path ) {
             // Figure out which tags are applied to this object ...
@@ -648,6 +662,10 @@ public class XmiModelReader extends XmiGraphReader {
             if (tagProps) {
                 add(JcrLexicon.MIXIN_TYPES, CoreLexicon.TAGS);
             }
+
+            // Add any missing properties that have defaults ...
+            addDefaultsForType(propsByName.get(JcrLexicon.PRIMARY_TYPE));
+            addDefaultsForType(propsByName.get(JcrLexicon.MIXIN_TYPES));
 
             // Now write out the individual properties ...
             for (Name propName : propsByName.keySet()) {
@@ -743,7 +761,6 @@ public class XmiModelReader extends XmiGraphReader {
                 // This is a reference that should have been handled in the processing of the parent node
                 return null;
             }
-            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
 
             // Get the propert set for this object ...
             UUID mmuuid = reader.xmiUuidFor(node);
@@ -753,11 +770,7 @@ public class XmiModelReader extends XmiGraphReader {
             Property primaryType = node.getProperty(JcrLexicon.PRIMARY_TYPE);
             Property mixinTypes = node.getProperty(JcrLexicon.MIXIN_TYPES);
             String xsiTypeValue = reader.firstValue(node, "xsi:type");
-            Name pt = reader.typeNameFrom(reader.nameFrom(reader.stringFrom(primaryType.getFirstValue())));
-            if ("relational:View".equals(xsiTypeValue)) {
-                int x = 0;
-            }
-            Name xsiType = xsiTypeValue != null ? reader.typeNameFrom(reader.nameFrom(xsiTypeValue)) : null;
+            Name pt = xsiTypeValue != null ? reader.typeNameFrom(reader.nameFrom(xsiTypeValue)) : reader.typeNameFrom(reader.nameFrom(reader.stringFrom(primaryType.getFirstValue())));
             if (JcrNtLexicon.UNSTRUCTURED.equals(pt)) {
                 if (mixinTypes != null) {
                     for (Object mixinTypeName : mixinTypes) {
@@ -765,21 +778,12 @@ public class XmiModelReader extends XmiGraphReader {
                         propSet.add(JcrLexicon.MIXIN_TYPES, reader.typeNameFrom(mixinName));
                     }
                 } else {
-                    if (xsiType != null) {
-                        propSet.add(JcrLexicon.MIXIN_TYPES, xsiType);
-                    } else {
-                        // There are no mixin types, so let's assume that the object had no 'name' attribute, that
-                        // the type was placed in the name (and thus no mixin types), and that the name is also
-                        // the mixin type ...
-                        propSet.add(JcrLexicon.MIXIN_TYPES, reader.typeNameFrom(path.getLastSegment().getName()));
-                    }
+                    // There are no mixin types, so let's assume that the object had no 'name' attribute, that
+                    // the type was placed in the name (and thus no mixin types), and that the name is also
+                    // the mixin type ...
+                    propSet.add(JcrLexicon.MIXIN_TYPES, reader.typeNameFrom(path.getLastSegment().getName()));
                 }
             } else {
-                if (xsiType != null) {
-                    propSet.add(JcrLexicon.MIXIN_TYPES, reader.typeNameFrom(xsiType));
-                } else {
-                    propSet.add(JcrLexicon.MIXIN_TYPES, pt);
-                }
                 if (mixinTypes != null) {
                     for (Object mixinTypeName : mixinTypes) {
                         Name mixinName = reader.nameFrom(reader.stringFrom(mixinTypeName));
@@ -791,6 +795,7 @@ public class XmiModelReader extends XmiGraphReader {
             if (node.getProperty(XmiLexicon.UUID) != null) {
                 propSet.add(JcrLexicon.MIXIN_TYPES, XmiLexicon.REFERENCEABLE);
             }
+            propSet.add(JcrLexicon.PRIMARY_TYPE, pt);
 
             // Now process the properties ...
             for (Property property : node.getProperties()) {
@@ -808,12 +813,12 @@ public class XmiModelReader extends XmiGraphReader {
                 }
                 List<UUID> references = reader.references(property);
                 if (references != null) {
-                    PropertySet setter = reader.createPropertySet();
+                    // PropertySet setter = reader.createPropertySet();
                     for (UUID uuid : references) {
                         ResolvedReference resolved = reader.resolve(path, name, null, uuid);
-                        setter.addRef(name, resolved);
+                        propSet.addRef(name, resolved);
                     }
-                    setter.writeTo(output, path);
+                    propSet.writeTo(output, path);
                 } else {
                     // No references; just regular values ...
                     output.setProperty(path, name, property.getValuesAsArray());
@@ -853,17 +858,13 @@ public class XmiModelReader extends XmiGraphReader {
                              XmiModelReader reader,
                              SequencerOutput output ) {
             String primaryMetamodelUri = reader.firstValue(node, "primaryMetamodelUri");
-            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
+            output.setProperty(path, JcrLexicon.PRIMARY_TYPE, CoreLexicon.IMPORT);
             output.setProperty(path, CoreLexicon.PRIMARY_METAMODEL_URI, primaryMetamodelUri);
             output.setProperty(path, CoreLexicon.MODEL_TYPE, reader.firstValue(node, "modelType"));
             output.setProperty(path, CoreLexicon.PATH, reader.firstValue(node, "path"));
             output.setProperty(path, JcrLexicon.UUID, reader.uuidFor(node));
             output.setProperty(path, XmiLexicon.UUID, reader.firstValue(node, "xmi:uuid"));
-            output.setProperty(path,
-                               JcrLexicon.MIXIN_TYPES,
-                               CoreLexicon.IMPORT,
-                               JcrMixLexicon.REFERENCEABLE,
-                               XmiLexicon.REFERENCEABLE);
+            output.setProperty(path, JcrLexicon.MIXIN_TYPES, JcrMixLexicon.REFERENCEABLE, XmiLexicon.REFERENCEABLE);
 
             return path;
         }

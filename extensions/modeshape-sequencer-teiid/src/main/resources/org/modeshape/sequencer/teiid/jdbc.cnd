@@ -25,21 +25,23 @@
 //------------------------------------------------------------------------------
 // N A M E S P A C E S
 //------------------------------------------------------------------------------
-<jdbcs = "http://www.metamatrix.com/metamodels/JDBC">
+
+<nt  = "http://www.jcp.org/jcr/nt/1.0">
 <xmi = "http://www.omg.org/XMI">
+<jdbcs = "http://www.metamatrix.com/metamodels/JDBC">
 
 //------------------------------------------------------------------------------
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
 
-[jdbcs:source] > xmi:referenceable mixin
+[jdbcs:source] > nt:unstructured, xmi:referenceable
  - jdbcs:name (string) 
  - jdbcs:driverName (string) 
  - jdbcs:driverClass (string) 
  - jdbcs:username (string) 
  - jdbcs:url (string) 
 
-[jdbcs:imported] > xmi:referenceable mixin
+[jdbcs:imported] > nt:unstructured, xmi:referenceable
  - jdbcs:createCatalogsInModel (boolean) = 'true' 
  - jdbcs:createSchemasInModel (boolean) = 'true' 
  - jdbcs:convertCaseInModel (string) < 'NONE', 'TO_UPPERCASE', 'TO_LOWERCASE'
@@ -53,4 +55,3 @@
  - jdbcs:includeApproximateIndexes (boolean) = 'true' 
  - jdbcs:includeUniqueIndexes (boolean) = 'false' 
  - jdbcs:includedTableTypes (string) multiple 
-

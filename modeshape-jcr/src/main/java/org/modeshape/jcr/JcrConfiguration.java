@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.Set;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.cnd.CndImporter;
+import org.modeshape.common.collection.Problem;
+import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.component.ClassLoaderFactory;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
@@ -639,6 +641,13 @@ public class JcrConfiguration extends ModeShapeConfiguration {
                 CndImporter importer = createCndImporter();
                 importer.importFrom(stream, getProblems(), url.toString());
 
+                if (getProblems().hasErrors()) {
+                    for (Problem problem : getProblems()) {
+                        if (problem.getStatus() == Status.ERROR) {
+                            throw new ModeShapeConfigurationException(problem.getThrowable());
+                        }
+                    }
+                }
                 // Record any new namespaces added by this import ...
                 registerNewNamespaces(namespacesBefore);
             } catch (IOException e) {

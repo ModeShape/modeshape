@@ -36,8 +36,8 @@
 [xmi:referenceable] mixin
  - xmi:uuid (string) mandatory
 
-[xmi:model] > nt:unstructured, xmi:referenceable orderable
- - xmi:version (string) = '2.0'
+[xmi:model] > xmi:referenceable mixin
+ - xmi:version (double) = '2.0'
 
 
 //------------------------------------------------------------------------------
@@ -58,11 +58,12 @@
   - mmcore:supportsOrderBy (boolean) = 'true'
   - mmcore:supportsOuterJoin (boolean) = 'true'
   - mmcore:supportsWhereAll (boolean) = 'true'
+  - mmcore:supportsDistinct (boolean) = 'true'
   - mmcore:producerName (string)
   - mmcore:producerVersion (string)
   - mmcore:modelFile (string)
 
-[mmcore:import] > nt:unstructured, xmi:referenceable orderable
+[mmcore:import] > xmi:referenceable mixin
   - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
   - mmcore:primaryMetamodelUri (string)
   - mmcore:path (string)
@@ -156,7 +157,7 @@
 
 [relational:primaryKey] > relational:uniqueKey
 
-[relational:foreignKey] > relational:relationship
+[relational:foreignKey] > relational:relationship mixin
  - relational:foreignKeyMultiplicity (string) = 'ZERO_TO_MANY' < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
  - relational:primaryKeyMultiplicity (string) = 'ONE' < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
  - relational:columns (weakreference) multiple
@@ -205,7 +206,7 @@
 // Procedures
 // -------------------------------------------
 
-[relational:procedureParameter] > nt:unstructured, relational:relationalEntity
+[relational:procedureParameter] > nt:unstructured, relational:relationalEntity mixin
  - relational:direction (string) < 'IN', 'OUT', 'INOUT', 'RETURN', 'UNKNOWN'
  - relational:defaultValue (string) 
  - relational:nativeType (string) 
@@ -218,7 +219,7 @@
  - relational:nullable (string) = 'NULLABLE' < 'NO_NULLS', 'NULLABLE', 'NULLABLE_UNKNOWN'
  - relational:radix (long) = '10' 
 
-[relational:procedureResult] > relational:columnSet orderable
+[relational:procedureResult] > relational:columnSet mixin orderable
 
 [relational:procedure] > nt:unstructured, relational:relationalEntity orderable
  - relational:function (boolean) 
@@ -238,7 +239,7 @@
  - relational:tableXmiUuid (string)
  - relational:tableName (string)
 
-[relational:logicalRelationship] > relational:relationship orderable
+[relational:logicalRelationship] > relational:relationship mixin orderable
  + * (relational:logicalRelationshipEnd) = relational:logicalRelationshipEnd copy sns
 
 // -------------------------------------------
@@ -291,14 +292,14 @@
 // (from 'jdbc.cnd')
 //------------------------------------------------------------------------------
 
-[jdbcs:source] > nt:unstructured, xmi:referenceable
+[jdbcs:source] > xmi:referenceable mixin
  - jdbcs:name (string) 
  - jdbcs:driverName (string) 
  - jdbcs:driverClass (string) 
  - jdbcs:username (string) 
  - jdbcs:url (string) 
 
-[jdbcs:imported] > nt:unstructured, xmi:referenceable
+[jdbcs:imported] > xmi:referenceable mixin
  - jdbcs:createCatalogsInModel (boolean) = 'true' 
  - jdbcs:createSchemasInModel (boolean) = 'true' 
  - jdbcs:convertCaseInModel (string) < 'NONE', 'TO_UPPERCASE', 'TO_LOWERCASE'

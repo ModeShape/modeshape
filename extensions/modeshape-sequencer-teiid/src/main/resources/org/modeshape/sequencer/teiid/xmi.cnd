@@ -25,6 +25,8 @@
 //------------------------------------------------------------------------------
 // N A M E S P A C E S
 //------------------------------------------------------------------------------
+
+<nt  = "http://www.jcp.org/jcr/nt/1.0">
 <xmi = "http://www.omg.org/XMI">
 
 //------------------------------------------------------------------------------
@@ -34,6 +36,6 @@
 [xmi:referenceable] mixin
  - xmi:uuid (string) mandatory
 
-[xmi:model] > xmi:referenceable mixin
+[xmi:model] > nt:unstructured, xmi:referenceable orderable
  - xmi:version (double) = '2.0'
 

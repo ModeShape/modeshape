@@ -25,9 +25,8 @@
 //------------------------------------------------------------------------------
 // N A M E S P A C E S
 //------------------------------------------------------------------------------
-<jcr = "http://www.jcp.org/jcr/1.0">
+
 <nt  = "http://www.jcp.org/jcr/nt/1.0">
-<mix = "http://www.jcp.org/jcr/mix/1.0">
 <xmi = "http://www.omg.org/XMI">
 <mmcore = "http://www.metamatrix.com/metamodels/Core">
 
@@ -52,7 +51,7 @@
   - mmcore:producerVersion (string)
   - mmcore:modelFile (string)
 
-[mmcore:import] > xmi:referenceable mixin
+[mmcore:import] > nt:unstructured, xmi:referenceable orderable
   - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
   - mmcore:primaryMetamodelUri (string)
   - mmcore:path (string)
@@ -62,12 +61,7 @@
 [mmcore:annotated] mixin
   - mmcore:description (string)
   - mmcore:keywords (string) multiple
-  + * (mmcore:tags) sns
 
 [mmcore:tags] mixin
   - * (undefined) multiple 
   - * (undefined) 
-
-
-
-
