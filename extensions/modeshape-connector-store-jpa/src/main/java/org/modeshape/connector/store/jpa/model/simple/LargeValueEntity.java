@@ -23,7 +23,6 @@
  */
 package org.modeshape.connector.store.jpa.model.simple;
 
-import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import javax.persistence.Column;
@@ -52,8 +51,7 @@ import org.modeshape.graph.property.PropertyType;
 @NamedQueries( {
     @NamedQuery( name = "LargeValueEntity.selectUnused", query = "select largeValue.hash from LargeValueEntity largeValue where largeValue.hash not in (select values.hash from NodeEntity node join node.largeValues values)" ),
     @NamedQuery( name = "LargeValueEntity.deleteAllUnused", query = "delete LargeValueEntity lve where lve.hash not in (select values.hash from NodeEntity node join node.largeValues values)" ),
-    @NamedQuery( name = "LargeValueEntity.deleteIn", query = "delete LargeValueEntity lve where lve.hash in (:inValues)" )
-    } )
+    @NamedQuery( name = "LargeValueEntity.deleteIn", query = "delete LargeValueEntity lve where lve.hash in (:inValues)" )} )
 public class LargeValueEntity {
 
     @Id
@@ -241,17 +239,13 @@ public class LargeValueEntity {
     public static LargeValueEntity create( byte[] data,
                                            PropertyType type,
                                            boolean compressed ) {
-        try {
-            String hashStr = StringUtil.getHexString(computeHash(data));
-            LargeValueEntity entity = new LargeValueEntity();
+        String hashStr = StringUtil.getHexString(computeHash(data));
+        LargeValueEntity entity = new LargeValueEntity();
 
-            entity.setData(data);
-            entity.setType(type);
-            entity.setCompressed(compressed);
-            entity.setHash(hashStr);
-            return entity;
-        } catch (UnsupportedEncodingException uee) {
-            throw new IllegalStateException(uee);
-        }
+        entity.setData(data);
+        entity.setType(type);
+        entity.setCompressed(compressed);
+        entity.setHash(hashStr);
+        return entity;
     }
 }

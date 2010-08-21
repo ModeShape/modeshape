@@ -228,7 +228,11 @@ public class ReferenceResolver {
             if (index != -1) {
                 id = href.substring(index + "mmuuid/".length());
             }
-            return new ResolvedReference(href, null, null, id, null);
+            mmuuid = this.uuidFactory.create(id);
+            ResolvedReference result = resolve(ownerPath, attributeName, href, mmuuid);
+            if (result == null) {
+                return new ResolvedReference(href, null, null, id, null);
+            }
         }
         return resolve(ownerPath, attributeName, href, mmuuid);
     }

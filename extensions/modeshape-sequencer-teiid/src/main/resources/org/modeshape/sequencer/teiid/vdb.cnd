@@ -28,41 +28,35 @@
 
 <nt  = "http://www.jcp.org/jcr/nt/1.0">
 <xmi = "http://www.omg.org/XMI">
+<vdb = "http://www.metamatrix.com/metamodels/VirtualDatabase">
 <mmcore = "http://www.metamatrix.com/metamodels/Core">
 
 //------------------------------------------------------------------------------
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
 
-[mmcore:model] > xmi:referenceable mixin
-  - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
-  - mmcore:primaryMetamodelUri (string)
-  - mmcore:description (string)
-  - mmcore:nameInSource (string)
-  - mmcore:maxSetSize (long) = '100'
-  - mmcore:visible (boolean) = 'true'
-  - mmcore:supportsDistinct (boolean) = 'true'
-  - mmcore:supportsJoin (boolean) = 'true'
-  - mmcore:supportsOrderBy (boolean) = 'true'
-  - mmcore:supportsOuterJoin (boolean) = 'true'
-  - mmcore:supportsWhereAll (boolean) = 'true'
-  - mmcore:supportsDistinct (boolean) = 'true'
-  - mmcore:producerName (string)
-  - mmcore:producerVersion (string)
-  - mmcore:originalFile (string)
-  - mmcore:sha1 (string)
+[vdb:virtualDatabase] > nt:unstructured
+ - vdb:description (string) 
+ - vdb:version (long) = '1'
+ - vdb:preview (boolean) = 'false'
+ - vdb:originalFile (string)
+ - mmcore:sha1 (string)
+ 
+[vdb:model] > xmi:model, mmcore:model
+ - vdb:visible (boolean) = 'true'
+ - vdb:checksum (long)
+ - vdb:builtIn (boolean) = 'false'
+ - vdb:pathInVdb (string)
+ - vdb:sourceTranslator (string)
+ - vdb:sourceJndiName (string)
+ - vdb:sourceName (string)
+ + * (vdb:markers) = vdb:markers copy
 
-[mmcore:import] > nt:unstructured, xmi:referenceable orderable
-  - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
-  - mmcore:primaryMetamodelUri (string)
-  - mmcore:path (string)
-  - mmcore:name (string)
-  - mmcore:modelLocation (string)
+[vdb:markers] > nt:unstructured
+ + * (vdb:marker) = vdb:validationError copy sns
 
-[mmcore:annotated] mixin
-  - mmcore:description (string)
-  - mmcore:keywords (string) multiple
-
-[mmcore:tags] mixin
-  - * (undefined) multiple 
-  - * (undefined) 
+[vdb:marker] > nt:unstructured
+ - vdb:severity (string) = 'WARNING' < 'WARNING','ERROR','INFO'
+ - vdb:path (string)
+ - vdb:message (string)
+ 

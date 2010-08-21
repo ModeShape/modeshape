@@ -67,7 +67,7 @@ public class MockSequencerOutput implements SequencerOutput, Iterable<Path> {
                              Name propertyName,
                              Object... values ) {
         Map<Name, Property> properties = propertiesByPath.get(nodePath);
-        if (values == null || values.length == 0) {
+        if (values == null || values.length == 0 || (values.length == 1 && values[0] == null)) {
             // remove the property ...
             if (properties != null) {
                 properties.remove(propertyName);
@@ -194,6 +194,9 @@ public class MockSequencerOutput implements SequencerOutput, Iterable<Path> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (Path path : this) {
+            if (path == null) {
+                continue;
+            }
             if (!path.isRoot()) {
                 sb.append(StringUtil.createString(' ', path.size() * 2));
                 sb.append(path.getLastSegment().getString(context.getNamespaceRegistry()));

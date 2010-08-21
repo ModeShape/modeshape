@@ -73,11 +73,11 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
         // Find or create the entry for this node ...
         List<PropertyValue> properties = this.data.get(nodePath);
         if (properties == null) {
-            if (values == null || values.length == 0) return; // do nothing
+            if (values == null || values.length == 0 || (values.length == 1 && values[0] == null)) return; // do nothing
             properties = new ArrayList<PropertyValue>();
             this.data.put(nodePath, properties);
         }
-        if (values == null || values.length == 0) {
+        if (values == null || values.length == 0 || (values.length == 1 && values[0] == null)) {
             properties.remove(new PropertyValue(propertyName, null));
         } else {
             Object propValue = values.length == 1 ? values[0] : values;

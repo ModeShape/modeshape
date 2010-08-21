@@ -208,4 +208,133 @@ public class SecureHash {
         }
         return digest.digest();
     }
+
+    /**
+     * Create an InputStream instance that wraps another stream and that computes the secure hash (using the algorithm with the
+     * supplied name) as the returned stream is used. This can be used to compute the hash of a stream while the stream is being
+     * processed by another reader, and saves from having to process the same stream twice.
+     * 
+     * @param algorithm the hashing function algorithm that should be used
+     * @param inputStream the stream containing the content that is to be hashed
+     * @return the hash of the contents as a byte array
+     * @throws NoSuchAlgorithmException
+     */
+    public static HashingInputStream createHashingStream( Algorithm algorithm,
+                                                          InputStream inputStream ) throws NoSuchAlgorithmException {
+        return createHashingStream(algorithm.digestName(), inputStream);
+    }
+
+    /**
+     * Create an InputStream instance that wraps another stream and that computes the secure hash (using the algorithm with the
+     * supplied name) as the returned stream is used. This can be used to compute the hash of a stream while the stream is being
+     * processed by another reader, and saves from having to process the same stream twice.
+     * 
+     * @param digestName the name of the hashing function (or {@link MessageDigest message digest}) that should be used
+     * @param inputStream the stream containing the content that is to be hashed
+     * @return the hash of the contents as a byte array
+     * @throws NoSuchAlgorithmException
+     */
+    public static HashingInputStream createHashingStream( String digestName,
+                                                          InputStream inputStream ) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance(digestName);
+        return new HashingInputStream(digest, inputStream);
+    }
+
+    /**
+     * Get the string representation of the supplied binary hash.
+     * 
+     * @param hash the binary hash
+     * @return the hex-encoded representation of the binary hash, or null if the hash is null
+     */
+    public static String asHexString( byte[] hash ) {
+        return hash != null ? StringUtil.getHexString(hash) : null;
+    }
+
+    public static class HashingInputStream extends InputStream {
+        private final MessageDigest digest;
+        private final InputStream stream;
+        private byte[] hash;
+
+        protected HashingInputStream( MessageDigest digest,
+                                      InputStream input ) {
+            this.digest = digest;
+            this.stream = input;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.io.InputStream#read()
+         */
+        @Override
+        public int read() throws IOException {
+            int result = stream.read();
+            if (result != -1) {
+                digest.update((byte)result);
+            }
+            return result;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.io.InputStream#read(byte[], int, int)
+         */
+        @Override
+        public int read( byte[] b,
+                         int off,
+                         int len ) throws IOException {
+            // Read from the stream ...
+            int n = stream.read(b, off, len);
+            if (n != -1) {
+                digest.update(b, off, n);
+            }
+            return n;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.io.InputStream#read(byte[])
+         */
+        @Override
+        public int read( byte[] b ) throws IOException {
+            int n = stream.read(b);
+            if (n != -1) {
+                digest.update(b, 0, n);
+            }
+            return n;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.io.InputStream#close()
+         */
+        @Override
+        public void close() throws IOException {
+            stream.close();
+            if (hash == null) hash = digest.digest();
+        }
+
+        /**
+         * Get the hash of the content read by this stream. This method will return null if the stream has not yet been closed.
+         * 
+         * @return the hash of the contents as a byte array, or null if the stream has not yet been closed
+         */
+        public byte[] getHash() {
+            return hash;
+        }
+
+        /**
+         * Get the string representation of the binary hash of the content read by this stream. This method will return null if
+         * the stream has not yet been closed.
+         * 
+         * @return the hex-encoded representation of the binary hash of the contents, or null if the stream has not yet been
+         *         closed
+         */
+        public String getHashAsHexString() {
+            return SecureHash.asHexString(hash);
+        }
+    }
 }

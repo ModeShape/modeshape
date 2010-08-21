@@ -3,14 +3,14 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
-* See the AUTHORS.txt file in the distribution for a full listing of 
-* individual contributors.
+ * See the AUTHORS.txt file in the distribution for a full listing of 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -23,30 +23,34 @@
  */
 package org.modeshape.sequencer.teiid;
 
-import org.modeshape.common.i18n.I18n;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import java.io.InputStream;
+import org.junit.Before;
+import org.junit.Test;
+import org.modeshape.graph.ExecutionContext;
 
 /**
- * The internationalized string constants for the <code>org.modeshape.sequencer.teiid*</code> packages.
+ * 
  */
-public final class TeiidI18n {
+public class VdbManifestTest {
 
-    public static I18n modelSequencerTaskName;
-    public static I18n vdbSequencerTaskName;
-    public static I18n errorSequencingModelContent;
-    public static I18n errorSequencingVdbContent;
+    private ExecutionContext context;
 
-    public static I18n readingEcoreFile;
-    public static I18n errorReadingEcoreFile;
-    public static I18n errorWritingCndFile;
+    @Before
+    public void beforeEach() {
+        context = new ExecutionContext();
+    }
 
-    public static I18n errorReadingVdbFile;
-    public static I18n errorClosingVdbFile;
+    @Test
+    public void shouldReadVdbManifestFromQuickEmployees() throws Exception {
+        VdbManifest manifest = VdbManifest.read(streamFor("/model/QuickEmployees/vdb.xml"), context);
+    }
 
-    static {
-        try {
-            I18n.initialize(TeiidI18n.class);
-        } catch (final Exception err) {
-            System.err.println(err);
-        }
+    protected InputStream streamFor( String resourcePath ) throws Exception {
+        InputStream istream = getClass().getResourceAsStream(resourcePath);
+        assertThat(istream, is(notNullValue()));
+        return istream;
     }
 }

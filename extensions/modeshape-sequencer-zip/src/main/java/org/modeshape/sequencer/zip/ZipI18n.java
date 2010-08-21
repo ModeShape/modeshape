@@ -21,30 +21,21 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.teiid;
+package org.modeshape.sequencer.zip;
 
 import org.modeshape.common.i18n.I18n;
 
 /**
- * The internationalized string constants for the <code>org.modeshape.sequencer.teiid*</code> packages.
+ * The internationalized string constants for the <code>org.modeshape.sequencer.zip</code> packages.
  */
-public final class TeiidI18n {
+public final class ZipI18n {
 
-    public static I18n modelSequencerTaskName;
-    public static I18n vdbSequencerTaskName;
-    public static I18n errorSequencingModelContent;
-    public static I18n errorSequencingVdbContent;
-
-    public static I18n readingEcoreFile;
-    public static I18n errorReadingEcoreFile;
-    public static I18n errorWritingCndFile;
-
-    public static I18n errorReadingVdbFile;
-    public static I18n errorClosingVdbFile;
+    public static I18n errorReadingZipFile;
+    public static I18n errorClosingZipFile;
 
     static {
         try {
-            I18n.initialize(TeiidI18n.class);
+            I18n.initialize(ZipI18n.class);
         } catch (final Exception err) {
             System.err.println(err);
         }

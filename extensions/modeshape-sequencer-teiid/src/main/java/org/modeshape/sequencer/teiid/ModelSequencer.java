@@ -24,14 +24,21 @@
 package org.modeshape.sequencer.teiid;
 
 import java.io.InputStream;
+import org.modeshape.common.util.SecureHash;
+import org.modeshape.common.util.SecureHash.Algorithm;
+import org.modeshape.common.util.SecureHash.HashingInputStream;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Subgraph;
+import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
+import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.NamespaceRegistry.Namespace;
 import org.modeshape.graph.property.basic.LocalNamespaceRegistry;
 import org.modeshape.graph.sequencer.SequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencer;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
+import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 
 /**
  * A sequencer of Teiid XMI model files.
@@ -39,6 +46,21 @@ import org.modeshape.graph.sequencer.StreamSequencerContext;
 public class ModelSequencer implements StreamSequencer {
 
     protected static final boolean USE_XMI_UUIDS_AS_JCR_UUIDS = false;
+
+    private VdbModel vdbModel;
+    private Path parentPath;
+    private ReferenceResolver resolver;
+
+    public ModelSequencer() {
+    }
+
+    protected ModelSequencer( VdbModel vdbModel,
+                              Path parentPathOfModel,
+                              ReferenceResolver resolver ) {
+        this.parentPath = parentPathOfModel;
+        this.vdbModel = vdbModel;
+        this.resolver = resolver;
+    }
 
     /**
      * {@inheritDoc}
@@ -49,6 +71,35 @@ public class ModelSequencer implements StreamSequencer {
     public void sequence( InputStream stream,
                           SequencerOutput output,
                           StreamSequencerContext context ) {
+
+        // Figure out the name of the model ...
+        String originalFilePath = null;
+        Name modelName = null;
+        if (vdbModel != null) {
+            Path pathToOriginalVdb = context.getInputPath();
+            originalFilePath = context.getValueFactories().getStringFactory().create(pathToOriginalVdb);
+            String pathInVdb = vdbModel.getPathInVdb();
+            String modelFileName = pathInVdb;
+            int index = modelFileName.lastIndexOf('/') + 1;
+            if (index != -1 && index < modelFileName.length()) {
+                modelFileName = modelFileName.substring(index);
+            }
+            modelName = context.getValueFactories().getNameFactory().create(modelFileName);
+        } else {
+            Path pathToModelFile = context.getInputPath();
+            if (pathToModelFile != null && !pathToModelFile.isRoot()) {
+                if (pathToModelFile.getLastSegment().getName().equals(JcrLexicon.CONTENT)) pathToModelFile = pathToModelFile.getParent();
+                if (!pathToModelFile.isRoot()) modelName = pathToModelFile.getLastSegment().getName();
+            }
+            originalFilePath = context.getValueFactories().getStringFactory().create(pathToModelFile);
+        }
+        if (modelName == null) {
+            modelName = XmiLexicon.MODEL;
+        }
+        // Remove the ".xmi" extension
+        String modelNameWithoutExtension = modelName.getLocalName().replaceAll("\\.xmi$", "");
+        modelName = context.getValueFactories().getNameFactory().create(modelName.getNamespaceUri(), modelNameWithoutExtension);
+
         // Use a local namespace registry so that we know which namespaces were used ...
         NamespaceRegistry registry = context.getNamespaceRegistry();
         LocalNamespaceRegistry localRegistry = new LocalNamespaceRegistry(registry);
@@ -57,13 +108,19 @@ public class ModelSequencer implements StreamSequencer {
         Graph graph = Graph.create(context);
         try {
             // Load the input into the transient graph ...
-            graph.importXmlFrom(stream).usingAttributeForName("name").into("/");
+            HashingInputStream hashingStream = SecureHash.createHashingStream(Algorithm.SHA_1, stream);
+            graph.importXmlFrom(hashingStream).usingAttributeForName("name").into("/");
+            hashingStream.close();
+            String sha1 = hashingStream.getHashAsHexString();
 
             // Now read the graph ...
             Subgraph subgraph = graph.getSubgraphOfDepth(100).at("/xmi:XMI");
 
             // Register any namespaces that were used, but use the desired case (not what's used in XMI) ...
-            XmiModelReader reader = new XmiModelReader(context.getInputPath(), subgraph, true, USE_XMI_UUIDS_AS_JCR_UUIDS);
+            XmiModelReader reader = new XmiModelReader(parentPath, modelName, originalFilePath, subgraph, true,
+                                                       USE_XMI_UUIDS_AS_JCR_UUIDS, vdbModel);
+            if (resolver != null) reader.setResolver(resolver);
+            if (sha1 != null) reader.setSha1Hash(sha1);
             for (Namespace namespace : localRegistry.getLocalNamespaces()) {
                 String uri = namespace.getNamespaceUri();
                 if (!registry.isRegisteredNamespaceUri(uri)) {
@@ -82,7 +139,7 @@ public class ModelSequencer implements StreamSequencer {
             context.getProblems().addError(e, TeiidI18n.errorSequencingModelContent, e.getLocalizedMessage());
         } finally {
             try {
-                stream.close();
+                if (stream != null) stream.close();
             } catch (Throwable e) {
                 context.getProblems().addError(e, TeiidI18n.errorSequencingModelContent, e.getLocalizedMessage());
             }

@@ -38,6 +38,7 @@ import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.text.XmlNameEncoder;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.io.Destination;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
@@ -403,7 +404,15 @@ public class XmlHandler extends DefaultHandler2 {
 
         String s = characterDataBuffer.toString().trim();
         if (s.length() > 0) {
-            elementStack.removeFirst().addAsPropertySetTo(s);
+            ElementEntry entry = elementStack.removeFirst();
+            if (entry.isPropertyElement()) {
+                // This is just a child element that is really a property ...
+                entry.addAsPropertySetTo(s);
+            } else {
+                // This is actually a child node that fits the JCR 'jcr:xmlcharacters' pattern ...
+                entry.addProperty(JcrLexicon.XMLCHARACTERS, s);
+                entry.submit();
+            }
         } else if (!elementStack.isEmpty()) {
             elementStack.removeFirst().submit();
         }
@@ -516,6 +525,20 @@ public class XmlHandler extends DefaultHandler2 {
             this.name = name;
             this.state = ElementEntryState.TBD;
             properties = LinkedHashMultimap.create();
+        }
+
+        /**
+         * Returns whether this element entry looks (at this point) like a property element: it has no properties or just a single
+         * "jcr:primaryType" property.
+         * 
+         * @return true if this looks like a property element, or false otherwise
+         */
+        protected boolean isPropertyElement() {
+            if (state == ElementEntryState.PROPERTY) return true;
+            int count = properties.size();
+            if (count == 0) return true;
+            if (count == 1 && properties.containsKey(JcrLexicon.PRIMARY_TYPE)) return true;
+            return false;
         }
 
         private int getNextSnsForChildNamed( Name childName ) {

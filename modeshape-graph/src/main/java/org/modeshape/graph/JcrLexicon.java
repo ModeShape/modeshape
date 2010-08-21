@@ -75,5 +75,6 @@ public class JcrLexicon {
     public static final Name SAME_NAME_SIBLINGS = new BasicName(Namespace.URI, "sameNameSiblings");
     public static final Name SUPERTYPES = new BasicName(Namespace.URI, "supertypes");
     public static final Name VALUE_CONSTRAINTS = new BasicName(Namespace.URI, "valueConstraints");
+    public static final Name XMLCHARACTERS = new BasicName(Namespace.URI, "xmlcharacters");
 
 }

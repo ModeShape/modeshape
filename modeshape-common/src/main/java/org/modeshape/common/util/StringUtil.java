@@ -31,6 +31,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -447,18 +448,22 @@ public class StringUtil {
      * 
      * @param bytes the byte array
      * @return the hex string representation of the byte array; never null
-     * @throws UnsupportedEncodingException
      */
-    public static String getHexString( byte[] bytes ) throws UnsupportedEncodingException {
-        byte[] hex = new byte[2 * bytes.length];
-        int index = 0;
+    public static String getHexString( byte[] bytes ) {
+        try {
+            byte[] hex = new byte[2 * bytes.length];
+            int index = 0;
 
-        for (byte b : bytes) {
-            int v = b & 0xFF;
-            hex[index++] = HEX_CHAR_TABLE[v >>> 4];
-            hex[index++] = HEX_CHAR_TABLE[v & 0xF];
+            for (byte b : bytes) {
+                int v = b & 0xFF;
+                hex[index++] = HEX_CHAR_TABLE[v >>> 4];
+                hex[index++] = HEX_CHAR_TABLE[v & 0xF];
+            }
+            return new String(hex, "ASCII");
+        } catch (UnsupportedEncodingException e) {
+            BigInteger bi = new BigInteger(1, bytes);
+            return String.format("%0" + (bytes.length << 1) + "x", bi);
         }
-        return new String(hex, "ASCII");
     }
 
     private StringUtil() {

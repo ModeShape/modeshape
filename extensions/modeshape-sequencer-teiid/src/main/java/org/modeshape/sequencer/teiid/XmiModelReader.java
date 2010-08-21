@@ -49,11 +49,13 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.sequencer.SequencerOutput;
 import org.modeshape.sequencer.teiid.ReferenceResolver.ResolvedReference;
+import org.modeshape.sequencer.teiid.VdbModel.ValidationMarker;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
 import org.modeshape.sequencer.teiid.lexicon.DiagramLexicon;
 import org.modeshape.sequencer.teiid.lexicon.JdbcLexicon;
 import org.modeshape.sequencer.teiid.lexicon.RelationalLexicon;
 import org.modeshape.sequencer.teiid.lexicon.TransformLexicon;
+import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
 import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
 import org.modeshape.sequencer.teiid.lexicon.XsiLexicon;
 import com.google.common.collect.ArrayListMultimap;
@@ -67,39 +69,49 @@ public class XmiModelReader extends XmiGraphReader {
 
     protected static final TextEncoder ENCODER = new Jsr283Encoder();
 
-    private final Name modelName;
-    private final Path modelPath;
+    private final Path modelRootPath;
+    private final String originalFile;
     private final Map<Name, ModelObjectHandler> handlers = new HashMap<Name, ModelObjectHandler>();
     private ModelObjectHandler defaultHandler;
     private final Map<UUID, PropertySet> mmuuidToPropertySet = new HashMap<UUID, PropertySet>();
     protected final boolean useXmiUuidsAsJcrUuids;
     protected final DefaultProperties defaults;
     protected ReferenceResolver resolver;
+    private VdbModel vdbModel;
+    private String sha1;
 
     /**
-     * @param modelPath
-     * @param subgraph
-     * @param generateShortTypeNames
-     * @param useXmiUuidsAsJcrUuids
+     * Create a reader for XMI model files.
+     * 
+     * @param parentPath the path under which the model node should be created by this reaader; may be null if the path is to be
+     *        determined
+     * @param modelName the name of the model file
+     * @param pathToModelFile the path of the original model file
+     * @param subgraph the subgraph containing the model contents
+     * @param generateShortTypeNames true if shorter node type and property type names should be used (where the local part of
+     *        'shorter' names will not begin with the prefix), or false if the names should be used as is
+     * @param useXmiUuidsAsJcrUuids true if the 'xmi:uuid' values are to be used as the 'jcr:uuid' values, or false if new UUIDs
+     *        should be generated for 'jcr:uuid'; should only be true if a model can appear in a repository workspace only once
+     * @param vdbModel information about the model, or null if the original model file is stand-alone and was not contained in a
+     *        VDB
      */
-    public XmiModelReader( Path modelPath,
+    public XmiModelReader( Path parentPath,
+                           Name modelName,
+                           String pathToModelFile,
                            Subgraph subgraph,
                            boolean generateShortTypeNames,
-                           boolean useXmiUuidsAsJcrUuids ) {
+                           boolean useXmiUuidsAsJcrUuids,
+                           VdbModel vdbModel ) {
         super(subgraph, generateShortTypeNames);
         try {
             this.defaults = DefaultProperties.getDefaults();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        this.modelPath = modelPath;
-        Path pathWithModelName = this.modelPath.getLastSegment().getName().equals(JcrLexicon.CONTENT) ? this.modelPath.getParent() : this.modelPath;
-        Name modelName = pathWithModelName.getLastSegment().getName();
-        // Remove the ".xmi" from the end of the local name (the root will have a 'xmi:model' mixin type, so they can easily be
-        // found) ...
-        String modelNameWithoutExtension = modelName.getLocalName().replaceAll("\\.xmi$", "");
-        this.modelName = nameFactory.create(modelName.getNamespaceUri(), modelNameWithoutExtension);
+        this.originalFile = pathToModelFile;
+        this.modelRootPath = parentPath != null ? pathFactory.create(parentPath, modelName) : pathFactory.createRelativePath(modelName);
         this.useXmiUuidsAsJcrUuids = useXmiUuidsAsJcrUuids;
+        this.vdbModel = vdbModel;
         setResolver(null);
         prepare();
     }
@@ -139,6 +151,13 @@ public class XmiModelReader extends XmiGraphReader {
      */
     public void setResolver( ReferenceResolver resolver ) {
         this.resolver = resolver != null ? resolver : new ReferenceResolver(subgraph.getGraph().getContext());
+    }
+
+    /**
+     * @param sha1 Sets sha1 to the specified value.
+     */
+    public void setSha1Hash( String sha1 ) {
+        this.sha1 = sha1;
     }
 
     protected PropertySet propertiesFor( UUID mmuuid,
@@ -186,7 +205,6 @@ public class XmiModelReader extends XmiGraphReader {
 
         // Figure out the primary metamodel before we do anything else ...
         SubgraphNode xmi = subgraph.getRoot();
-        Path modelRootPath = relativePathFrom(modelName);
         SubgraphNode modelAnnotation = xmi.getNode("mmcore:ModelAnnotation");
         if (modelAnnotation != null) {
             String primaryMetamodelUri = firstValue(modelAnnotation, "primaryMetamodelUri");
@@ -217,27 +235,24 @@ public class XmiModelReader extends XmiGraphReader {
         }
 
         // Process the model annotation first (if present) ...
+        Name primaryType = vdbModel != null ? VdbLexicon.MODEL : XmiLexicon.MODEL;
         if (modelAnnotation != null) {
             UUID xmiUuid = xmiUuidFor(modelAnnotation);
             resolver.recordXmiUuid(xmiUuid, modelRootPath);
             PropertySet props = propertiesFor(xmiUuid, true);
-            props.add(JcrLexicon.PRIMARY_TYPE, XmiLexicon.MODEL);
+            props.add(JcrLexicon.PRIMARY_TYPE, primaryType);
             props.add(JcrLexicon.MIXIN_TYPES, CoreLexicon.MODEL, JcrMixLexicon.REFERENCEABLE, XmiLexicon.REFERENCEABLE);
             props.add(XmiLexicon.VERSION, firstValue(xmi, "xmi:version", 2.0));
             props.add(CoreLexicon.PRIMARY_METAMODEL_URI, getCurrentNamespaceUri());
             props.add(CoreLexicon.MODEL_TYPE, firstValue(modelAnnotation, "modelType"));
+            props.add(CoreLexicon.PRODUCER_NAME, firstValue(modelAnnotation, "ProducerName"));
+            props.add(CoreLexicon.PRODUCER_VERSION, firstValue(modelAnnotation, "ProducerVersion"));
             props.writeTo(output, modelRootPath);
             output.setProperty(modelRootPath, JcrLexicon.UUID, uuidFor(modelAnnotation));
             output.setProperty(modelRootPath, XmiLexicon.UUID, xmiUuid);
-
-            // Process the model imports ...
-            for (Location modelImportLocation : modelAnnotation.getChildren()) {
-                SubgraphNode modelImport = subgraph.getNode(modelImportLocation);
-                processObject(modelRootPath, modelImport, output);
-            }
         } else {
             // Create the root node for this XMI model ...
-            output.setProperty(modelRootPath, JcrLexicon.PRIMARY_TYPE, XmiLexicon.MODEL);
+            output.setProperty(modelRootPath, JcrLexicon.PRIMARY_TYPE, primaryType);
             output.setProperty(modelRootPath,
                                JcrLexicon.MIXIN_TYPES,
                                CoreLexicon.MODEL,
@@ -246,7 +261,46 @@ public class XmiModelReader extends XmiGraphReader {
 
             output.setProperty(modelRootPath, XmiLexicon.VERSION, firstValue(xmi, "xmi:version", 2.0));
         }
-        output.setProperty(modelRootPath, CoreLexicon.MODEL_FILE, stringFrom(modelPath));
+
+        if (originalFile != null) {
+            output.setProperty(modelRootPath, CoreLexicon.ORIGINAL_FILE, originalFile);
+        }
+        if (sha1 != null) {
+            output.setProperty(modelRootPath, CoreLexicon.SHA1_HASH, sha1);
+        }
+
+        // Write out the VDB-related information (if applicable) ...
+        if (vdbModel != null) {
+            output.setProperty(modelRootPath, VdbLexicon.VISIBLE, vdbModel.isVisible());
+            output.setProperty(modelRootPath, VdbLexicon.CHECKSUM, vdbModel.getChecksum());
+            output.setProperty(modelRootPath, VdbLexicon.BUILT_IN, vdbModel.isVisible());
+            output.setProperty(modelRootPath, VdbLexicon.PATH_IN_VDB, vdbModel.getPathInVdb());
+            String translator = vdbModel.getSourceTranslator();
+            String sourceName = vdbModel.getSourceName();
+            String jndiName = vdbModel.getSourceJndiName();
+            if (translator != null) output.setProperty(modelRootPath, VdbLexicon.SOURCE_TRANSLATOR, translator);
+            if (sourceName != null) output.setProperty(modelRootPath, VdbLexicon.SOURCE_NAME, sourceName);
+            if (jndiName != null) output.setProperty(modelRootPath, VdbLexicon.SOURCE_JNDI_NAME, jndiName);
+            if (!vdbModel.getProblems().isEmpty()) {
+                Path markersPath = path(modelRootPath, VdbLexicon.MARKERS);
+                output.setProperty(markersPath, JcrLexicon.PRIMARY_TYPE, VdbLexicon.MARKERS);
+                for (ValidationMarker marker : vdbModel.getProblems()) {
+                    Path markerPath = path(markersPath, VdbLexicon.MARKER);
+                    output.setProperty(markerPath, JcrLexicon.PRIMARY_TYPE, VdbLexicon.MARKER);
+                    output.setProperty(markerPath, VdbLexicon.SEVERITY, marker.getSeverity().name());
+                    output.setProperty(markerPath, VdbLexicon.PATH, marker.getPath());
+                    output.setProperty(markerPath, VdbLexicon.MESSAGE, marker.getMessage());
+                }
+            }
+        }
+
+        if (modelAnnotation != null) {
+            // Process the model imports ...
+            for (Location modelImportLocation : modelAnnotation.getChildren()) {
+                SubgraphNode modelImport = subgraph.getNode(modelImportLocation);
+                processObject(modelRootPath, modelImport, output);
+            }
+        }
         return true;
     }
 
@@ -261,7 +315,6 @@ public class XmiModelReader extends XmiGraphReader {
         registerHandler("importSettings", new DefaultModelObjectHandler(JdbcLexicon.IMPORTED_FROM));
 
         SubgraphNode xmi = subgraph.getRoot();
-        Path modelRootPath = relativePathFrom(modelName);
         // Process the other top-level model objects ...
         for (Location objectLocation : xmi.getChildren()) {
             SubgraphNode modelObject = subgraph.getNode(objectLocation);
