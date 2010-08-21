@@ -126,6 +126,11 @@
             </dependency>    
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-teiid</artifactId>
+                <version>${project.version}</version>
+            </dependency>            
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-text</artifactId>
                 <version>${project.version}</version>
             </dependency>            

@@ -53,6 +53,7 @@
             <include>org.modeshape:modeshape-sequencer-text</include>
             <include>org.modeshape:modeshape-sequencer-xml</include>
             <include>org.modeshape:modeshape-sequencer-zip</include>
+            <include>org.modeshape:modeshape-sequencer-teiid</include>
             <include>org.modeshape:modeshape-sequencer-classfile</include>
             <include>org.modeshape:modeshape-sequencer-java</include>
             <include>org.modeshape:modeshape-sequencer-images</include>

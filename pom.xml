@@ -144,6 +144,7 @@
 		<module>extensions/modeshape-sequencer-java</module>
 		<module>extensions/modeshape-sequencer-classfile</module>
 		<module>extensions/modeshape-sequencer-msoffice</module>
+		<module>extensions/modeshape-sequencer-teiid</module>
 		<module>extensions/modeshape-sequencer-text</module>
 		<module>extensions/modeshape-sequencer-xml</module>
 		<module>extensions/modeshape-sequencer-zip</module>
