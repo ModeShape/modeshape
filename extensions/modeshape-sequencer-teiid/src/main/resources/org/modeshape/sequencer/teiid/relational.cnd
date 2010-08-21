@@ -66,13 +66,15 @@
  - relational:materialized (boolean) = 'false' 
  - relational:logicalRelationships (weakreference) multiple 
  - relational:logicalRelationshipHrefs (string) multiple 
+ - relational:logicalRelationshipIds (string) multiple 
  - relational:logicalRelationshipNames (string) multiple 
  + * (relational:accessPattern) = nt:unstructured copy sns
 
 [relational:column] > relational:relationalEntity mixin
  - relational:nativeType (string) 
- - relational:type (weakreference) mandatory 
- - relational:typeHref (string) 
+ - relational:type (weakreference)  
+ - relational:typeHref (string) mandatory
+ - relational:typeId (string) 
  - relational:typeName (string) 
  - relational:length (long) 
  - relational:fixedLength (boolean) 
@@ -97,15 +99,19 @@
  - relational:nullValueCount (long) = '-1' 
  - relational:uniqueKeys (weakreference) multiple 
  - relational:uniqueKeyHrefs (string) multiple 
+ - relational:uniqueKeyIds (string) multiple 
  - relational:uniqueKeyNames (string) multiple 
  - relational:indexes (weakreference) multiple 
  - relational:indexHrefs (string) multiple 
+ - relational:indexIds (string) multiple 
  - relational:indexNames (string) multiple 
  - relational:foreignKeys (weakreference) multiple 
  - relational:foreignKeyHrefs (string) multiple 
+ - relational:foreignKeyIds (string) multiple 
  - relational:foreignKeyNames (string) multiple 
  - relational:accessPatterns (weakreference) multiple 
  - relational:accessPatternHrefs (string) multiple 
+ - relational:accessPatternIds (string) multiple 
  - relational:accessPatternNames (string) multiple
 
 //[relational:baseTable] > relational:table 
@@ -117,11 +123,12 @@
 // -------------------------------------------
 
 [relational:uniqueKey] > relational:relationalEntity abstract mixin
- - relational:columns (weakreference) multiple mandatory
- - relational:columnHrefs (string) multiple 
+ - relational:columns (weakreference) multiple
+ - relational:columnIds (string) multiple
  - relational:columnNames (string) multiple 
  - relational:foreignKeys (weakreference) multiple 
- - relational:foreignKeyHrefs (string) multiple 
+ - relational:foreignKeyHrefs (string) multiple
+ - relational:foreignKeyIds (string) multiple 
  - relational:foreignKeyNames (string) multiple 
 
 [relational:uniqueConstraint] > relational:uniqueKey mixin
@@ -131,11 +138,12 @@
 [relational:foreignKey] > relational:relationship mixin
  - relational:foreignKeyMultiplicity (string) = 'ZERO_TO_MANY' < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
  - relational:primaryKeyMultiplicity (string) = 'ONE' < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
- - relational:columns (weakreference) multiple mandatory
- - relational:columnHrefs (string) multiple 
+ - relational:columns (weakreference) multiple
+ - relational:columnIds (string) multiple 
  - relational:columnNames (string) multiple 
  - relational:uniqueKeys (weakreference) multiple 
  - relational:uniqueKeyHrefs (string) multiple 
+ - relational:uniqueKeyIds (string) multiple 
  - relational:uniqueKeyNames (string) multiple 
 
 [relational:index] > relational:relationalEntity mixin
@@ -143,8 +151,8 @@
  - relational:nullable (boolean) = 'true' 
  - relational:autoUpdate (boolean) 
  - relational:unique (boolean) 
- - relational:columns (weakreference) multiple mandatory
- - relational:columnHrefs (string) multiple 
+ - relational:columns (weakreference) multiple
+ - relational:columnIds (string) multiple 
  - relational:columnNames (string) multiple 
 
 [relational:accessPattern] > relational:relationalEntity mixin
@@ -165,7 +173,7 @@
  - relational:defaultValue (string) 
  - relational:nativeType (string) 
  - relational:type (weakreference) mandatory 
- - relational:typeHref (string) 
+ - relational:typeId (string) 
  - relational:typeName (string) 
  - relational:length (long) 
  - relational:precision (long) 
@@ -182,13 +190,14 @@
 [relational:relationship] > relational:relationalEntity abstract mixin
 
 [relational:logicalRelationship] > relational:relationship mixin
- + * (relational:procedureParameter) = nt:unstructured copy sns
+ + * (relational:logicalRelationshipEnd) = nt:unstructured copy sns
 
 [relational:logicalRelationshipEnd] > relational:relationalEntity mixin
  - relational:multiplicity (string) < 'ONE', 'MANY', 'ZERO_TO_ONE', 'ZERO_TO_MANY', 'UNSPECIFIED'
- - relational:table (weakreference) multiple mandatory
- - relational:tableHref (string) multiple 
- - relational:tableName (string) multiple
+ - relational:table (weakreference)
+ - relational:tableHref (string)
+ - relational:tableId (string)
+ - relational:tableName (string)
 
 
 

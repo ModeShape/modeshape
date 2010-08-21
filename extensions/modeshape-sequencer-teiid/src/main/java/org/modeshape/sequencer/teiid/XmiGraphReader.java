@@ -368,6 +368,26 @@ public class XmiGraphReader {
         return nameFactory.create(eObjectReferenceName.getNamespaceUri(), singular + suffix);
     }
 
+    /**
+     * Determine the name of the property that is used to hold the identifier(s) for the resolved EObject reference.
+     * <p>
+     * The resulting name fits one of two patterns, depending upon whether the {@link Name#getLocalName() local part} of the
+     * reference name is singular or plural. If singular, then the resulting name will have "Id" appended to the
+     * {@link Name#getLocalName() local part} of the supplied name. If plural, then the resulting name will consist of the
+     * singularlized {@link Name#getLocalName() local part} appended with "Ids". In all cases, the {@link Name#getNamespaceUri()
+     * namespace URI} of the resulting name will match that of the supplied name.
+     * </p>
+     * 
+     * @param eObjectReferenceName the name of the normal EObject reference property, which is typically a href
+     * @return the name
+     */
+    protected Name nameForResolvedId( Name eObjectReferenceName ) {
+        String localPart = eObjectReferenceName.getLocalName();
+        String singular = inflector.singularize(localPart);
+        String suffix = singular.equals(localPart) ? "Id" : "Ids";
+        return nameFactory.create(eObjectReferenceName.getNamespaceUri(), singular + suffix);
+    }
+
     protected String stringFrom( Object value ) {
         return stringFactory.create(value);
     }

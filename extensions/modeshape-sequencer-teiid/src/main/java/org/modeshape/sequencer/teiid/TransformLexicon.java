@@ -50,6 +50,5 @@ public class TransformLexicon {
     public static final Name ALIAS = new BasicName(Namespace.URI, "alias");
     public static final Name WITH_SQL = new BasicName(Namespace.URI, "withSql");
     public static final Name TRANSFORMED = new BasicName(Namespace.URI, "transformed");
-    public static final Name ORIGINAL = new BasicName(Namespace.URI, "original");
     public static final Name INPUTS = new BasicName(Namespace.URI, "inputs");
 }

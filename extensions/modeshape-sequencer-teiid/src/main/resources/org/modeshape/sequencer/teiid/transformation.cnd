@@ -33,9 +33,10 @@
 //------------------------------------------------------------------------------
 
 [transform:transformed] mixin
- - transform:inputs (weakreference)
- - transform:inputHrefs (string)
- - transform:inputNames (string)
+ - transform:transformedFrom (weakreference)
+ - transform:transformedFromHrefs (string)
+ - transform:transformedFromIds (string)
+ - transform:transformedFromNames (string)
 
 [transform:withSql] mixin
  - transform:selectSql (string) 
@@ -50,9 +51,4 @@
  - transform:updateSqlDefault (boolean) = 'true' 
  - transform:deleteSqlDefault (boolean) = 'true' 
  * (transform:alias) = nt:unstructured
-
-[transform:alias] mixin
- - transform:original (weakreference) 
- - transform:originalHref (string) 
- - transform:originalName (string)
 

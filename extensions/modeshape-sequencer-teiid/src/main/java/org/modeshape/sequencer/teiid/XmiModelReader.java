@@ -61,6 +61,7 @@ public class XmiModelReader extends XmiGraphReader {
     protected static final TextEncoder ENCODER = new Jsr283Encoder();
     static {
         Map<String, String> dataTypes = new HashMap<String, String>();
+        // Really old models have simple data types hrefs that contain UUIDs ...
         String sdtUrl = "http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#mmuuid:";
         dataTypes.put(sdtUrl + "4ca2ae00-3a95-1e20-921b-eeee28353879", "NMTOKEN");
         dataTypes.put(sdtUrl + "4df43700-3b13-1e20-921b-eeee28353879", "normalizedString");
@@ -118,6 +119,11 @@ public class XmiModelReader extends XmiGraphReader {
         for (String value : new HashSet<String>(dataTypes.values())) {
             dataTypes.put(xsdUrl + value, value);
         }
+        // Newer models have simple data types hrefs that contain names ...
+        sdtUrl = "http://www.metamatrix.com/metamodels/SimpleDatatypes-instance#";
+        for (String value : new HashSet<String>(dataTypes.values())) {
+            dataTypes.put(xsdUrl + value, value);
+        }
         STANDARD_DATA_TYPE_URLS_TO_NAMES = Collections.unmodifiableMap(dataTypes);
     }
 
@@ -163,7 +169,7 @@ public class XmiModelReader extends XmiGraphReader {
         handlers.put(name, handler);
     }
 
-    public void writeTo( SequencerOutput output ) {
+    public void writePhase1( SequencerOutput output ) {
         System.out.println(subgraph);
 
         // Walk the subgraph and accumulate the map from mmuuid to generated node UUID ...
@@ -207,7 +213,9 @@ public class XmiModelReader extends XmiGraphReader {
             SubgraphNode modelObject = subgraph.getNode(objectLocation);
             processObject(modelPath, modelObject, output);
         }
+    }
 
+    public void writePhase2( SequencerOutput output ) {
         // Now attempt to resolve any references that were previously unresolved ...
         for (Path propPath : unresolved.keySet()) {
             Path path = propPath.getParent();
@@ -216,7 +224,7 @@ public class XmiModelReader extends XmiGraphReader {
             Object[] names = new String[mmuuids.size()];
             int i = 0;
             for (UUID mmuuid : mmuuids) {
-                ResolvedReference ref = resolve(null, null, mmuuid);
+                ResolvedReference ref = resolve(null, null, null, mmuuid);
                 if (ref.getName() == null) {
                     names = null;
                     break;
@@ -230,27 +238,28 @@ public class XmiModelReader extends XmiGraphReader {
         }
 
         // Now after all of the model objects have been read in, process the annotations ...
+        SubgraphNode xmi = subgraph.getRoot();
         SubgraphNode annotations = xmi.getNode("mmcore:AnnotationContainer");
         if (annotations != null) {
             for (Location annotationLocation : annotations.getChildren()) {
                 SubgraphNode annotation = subgraph.getNode(annotationLocation);
-                String hrefToAnnotatedObject = firstValue(annotation, "annotatedObject");
-                if (hrefToAnnotatedObject != null) {
-                    ResolvedReference resolvedRef = resolve(null, null, hrefToAnnotatedObject);
-                    if (resolvedRef.getPath() != null) {
-                        Path annotatedPath = resolvedRef.getPath();
-                        // Process the description ...
-                        output.setProperty(annotatedPath, CoreLexicon.DESCRIPTION, firstValue(annotation, "description"));
-                        // Process the tags ...
-                        for (Location tagLocation : annotation.getChildren()) {
-                            Name childName = tagLocation.getPath().getLastSegment().getName();
-                            if (childName.getLocalName().equals("tags")) {
-                                SubgraphNode tag = subgraph.getNode(tagLocation);
-                                String key = firstValue(tag, "key");
-                                String value = firstValue(tag, "value");
-                                // Keys often contain a ':', but these are almost never what we think of as namespace prefixes
-                                Name propertyName = nameFromKey(key);
-                                output.setProperty(annotatedPath, propertyName, value);
+                List<UUID> mmuuids = references(annotation.getProperty("annotatedObject"));
+                if (mmuuids != null) {
+                    for (UUID mmuuid : mmuuids) {
+                        ResolvedReference resolvedRef = resolve(null, null, null, mmuuid);
+                        if (resolvedRef.getPath() != null) {
+                            Path annotatedPath = resolvedRef.getPath();
+                            // Process the description ...
+                            output.setProperty(annotatedPath, CoreLexicon.DESCRIPTION, firstValue(annotation, "description"));
+                            // Process the tags ...
+                            for (Location tagLocation : annotation.getChildren()) {
+                                Name childName = tagLocation.getPath().getLastSegment().getName();
+                                if (childName.getLocalName().equals("tags")) {
+                                    SubgraphNode tag = subgraph.getNode(tagLocation);
+                                    String key = firstValue(tag, "key");
+                                    String value = firstValue(tag, "value");
+                                    writeTags(output, annotatedPath, key, value);
+                                }
                             }
                         }
                     }
@@ -271,11 +280,142 @@ public class XmiModelReader extends XmiGraphReader {
                         // Get the transformation details ...
                         Path helperNestedNodePath = pathFactory.create(transformationLocation.getPath(), "helper/nested");
                         SubgraphNode helperNested = subgraph.getNode(helperNestedNodePath);
-                        // output.setProperty(annotatedPath, TransformLexicon.DESCRIPTION, firstValue(annotation, "description"));
+                        output.setProperty(annotatedPath, TransformLexicon.SELECT_SQL, firstValue(helperNested, "selectSql"));
+                        output.setProperty(annotatedPath, TransformLexicon.INSERT_SQL, firstValue(helperNested, "insertSql"));
+                        output.setProperty(annotatedPath, TransformLexicon.UPDATE_SQL, firstValue(helperNested, "updateSql"));
+                        output.setProperty(annotatedPath, TransformLexicon.DELETE_SQL, firstValue(helperNested, "deleteSql"));
+                        output.setProperty(annotatedPath, TransformLexicon.INSERT_ALLOWED, firstValue(helperNested,
+                                                                                                      "insertAllowed",
+                                                                                                      true));
+                        output.setProperty(annotatedPath, TransformLexicon.UPDATE_ALLOWED, firstValue(helperNested,
+                                                                                                      "updateAllowed",
+                                                                                                      true));
+                        output.setProperty(annotatedPath, TransformLexicon.DELETE_ALLOWED, firstValue(helperNested,
+                                                                                                      "deleteAllowed",
+                                                                                                      true));
+                        output.setProperty(annotatedPath, TransformLexicon.INSERT_SQL_DEFAULT, firstValue(helperNested,
+                                                                                                          "insertSqlDefault",
+                                                                                                          true));
+                        output.setProperty(annotatedPath, TransformLexicon.UPDATE_SQL_DEFAULT, firstValue(helperNested,
+                                                                                                          "updateSqlDefault",
+                                                                                                          true));
+                        output.setProperty(annotatedPath, TransformLexicon.DELETE_SQL_DEFAULT, firstValue(helperNested,
+                                                                                                          "deleteSqlDefault",
+                                                                                                          true));
+                        // output.setProperty(annotatedPath, TransformLexicon.OUTPUT_LOCKED, firstValue(helperNested,
+                        // "outputLocked",false));
+                        Multimap<Name, Object> inputsByName = ArrayListMultimap.create();
+                        for (Location childLocation : transformation.getChildren()) {
+                            Name childName = childLocation.getPath().getLastSegment().getName();
+                            SubgraphNode child = subgraph.getNode(childLocation);
+                            if (childName.getLocalName().equals("inputs")) {
+                                // Record the inputs to the transformed object ...
+                                // Now collect the inputs to the transformation ...
+                                String inputHref = firstValue(child, "href");
+                                if (inputHref == null) continue;
+                                Name name = TransformLexicon.INPUTS;
+                                ResolvedReference resolved = resolve(null, null, inputHref);
+                                if (resolved.getHref() != null) {
+                                    // And record the reference value ...
+                                    Name hrefName = nameForHref(name);
+                                    inputsByName.put(hrefName, resolved.getHref());
+                                }
+
+                                // Record the identifier value ...
+                                if (resolved.getId() != null) {
+                                    Name idName = nameForResolvedId(name);
+                                    inputsByName.put(idName, resolved.getId());
+                                }
+
+                                // Record the resolved reference value ...
+                                Reference weakReference = resolved.getWeakReferenceValue();
+                                if (weakReference != null) {
+                                    Name refName = nameForResolvedReference(name);
+                                    inputsByName.put(refName, weakReference);
+                                }
+
+                                // Record the name of the resolved object ...
+                                String resolvedName = resolved.getName();
+                                if (resolvedName != null) {
+                                    Name refNameName = nameForResolvedName(name);
+                                    inputsByName.put(refNameName, resolvedName);
+                                }
+                            } else if (childName.getLocalName().equals("nested")) {
+                                // Record the nested transformation ...
+                                // Find the output (the transformed) object ...
+                                String outputHref = firstValue(child, "output");
+                                ResolvedReference resolvedOutput = resolve(null, null, outputHref);
+                                if (resolvedOutput != null && resolvedOutput.getPath() != null) {
+                                    // Now collect the inputs to the transformation ...
+                                    Multimap<Name, Object> valuesByName = ArrayListMultimap.create();
+                                    for (Location inputLocation : child.getChildren()) {
+                                        String inputHref = firstValue(child, "href");
+                                        if (inputHref == null) continue;
+                                        Name name = TransformLexicon.INPUTS;
+                                        ResolvedReference resolved = resolve(null, null, inputHref);
+                                        if (resolved.getHref() != null) {
+                                            // And record the reference value ...
+                                            Name hrefName = nameForHref(name);
+                                            valuesByName.put(hrefName, resolved.getHref());
+                                        }
+
+                                        // Record the identifier value ...
+                                        if (resolved.getId() != null) {
+                                            Name idName = nameForResolvedId(name);
+                                            valuesByName.put(idName, resolved.getId());
+                                        }
+
+                                        // Record the resolved reference value ...
+                                        Reference weakReference = resolved.getWeakReferenceValue();
+                                        if (weakReference != null) {
+                                            Name refName = nameForResolvedReference(name);
+                                            valuesByName.put(refName, weakReference);
+                                        }
+
+                                        // Record the name of the resolved object ...
+                                        String resolvedName = resolved.getName();
+                                        if (resolvedName != null) {
+                                            Name refNameName = nameForResolvedName(name);
+                                            valuesByName.put(refNameName, resolvedName);
+                                        }
+                                    }
+                                    for (Name propName : valuesByName.keySet()) {
+                                        Collection<Object> values = valuesByName.get(propName);
+                                        Object[] valueArray = values.toArray(new Object[values.size()]);
+                                        output.setProperty(resolvedOutput.getPath(), propName, valueArray);
+                                    }
+                                }
+                            }
+                        }
+                        for (Name propName : inputsByName.keySet()) {
+                            Collection<Object> values = inputsByName.get(propName);
+                            Object[] valueArray = values.toArray(new Object[values.size()]);
+                            output.setProperty(annotatedPath, propName, valueArray);
+                        }
                     }
                 }
             }
         }
+    }
+
+    protected void writeTags( SequencerOutput output,
+                              Path pathToTaggedObject,
+                              String key,
+                              String value ) {
+        String[] parts = key.split("\\:", 1);
+        if (parts.length < 2) {
+            // Just write the tag on the tagged object ...
+            Name tagName = nameFactory.create(ENCODER.encode(key));
+            output.setProperty(pathToTaggedObject, tagName, value);
+            return;
+        }
+        // Use the first part of the tag name as the name of a child node ...
+        Name childName = nameFactory.create(ENCODER.encode(parts[0]));
+        Path childPath = pathFactory.create(pathToTaggedObject, childName);
+        output.setProperty(childPath, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.UNSTRUCTURED);
+        // And the rest of the key as the property name ...
+        Name tagName = nameFactory.create(ENCODER.encode(parts[1]));
+        output.setProperty(childPath, tagName, value);
     }
 
     protected Name nameFromKey( String keyName ) {
@@ -352,7 +492,13 @@ public class XmiModelReader extends XmiGraphReader {
         // First check the standard data types ...
         String name = STANDARD_DATA_TYPE_URLS_TO_NAMES.get(href);
         if (name != null) {
-            return new ResolvedReference(name);
+            // If the href contains a UUID, then extract it ...
+            int index = href.indexOf("mmuuid/");
+            String id = null;
+            if (index != -1) {
+                id = href.substring(index + "mmuuid/".length());
+            }
+            return new ResolvedReference(href, name, id);
         }
         UUID mmuuid = null;
         if (href.startsWith("mmuuid/")) {
@@ -369,11 +515,12 @@ public class XmiModelReader extends XmiGraphReader {
                 // ignore
             }
         }
-        return resolve(ownerPath, attributeName, mmuuid);
+        return resolve(ownerPath, attributeName, href, mmuuid);
     }
 
     protected ResolvedReference resolve( Path ownerPath,
                                          Name attributeName,
+                                         String href,
                                          UUID mmuuid ) {
         if (mmuuid == null) {
             return null;
@@ -387,35 +534,48 @@ public class XmiModelReader extends XmiGraphReader {
         }
         if (path != null || weakReference != null) {
             String resolvedName = path != null ? stringFrom(path.getLastSegment()) : null;
-            return new ResolvedReference(resolvedName, path, weakReference);
+            return new ResolvedReference(href, resolvedName, path, weakReference);
         }
         return null;
     }
 
     public static class ResolvedReference {
+        private final String href;
         private final Reference reference;
         private final String name;
         private final Path path;
+        private final String id;
         private final boolean standardDataType;
 
-        public ResolvedReference( String standardDataTypeName ) {
+        public ResolvedReference( String href,
+                                  String standardDataTypeName,
+                                  String id ) {
+            this.href = href;
             this.standardDataType = true;
             this.name = standardDataTypeName;
+            this.id = id;
             this.reference = null;
             this.path = null;
         }
 
-        public ResolvedReference( String name,
+        public ResolvedReference( String href,
+                                  String name,
                                   Path path,
                                   Reference reference ) {
+            this.href = href;
             this.standardDataType = false;
             this.name = name;
             this.reference = reference;
             this.path = path;
+            this.id = reference.getString();
         }
 
         public boolean isStandardDataType() {
             return standardDataType;
+        }
+
+        public String getHref() {
+            return href;
         }
 
         public String getName() {
@@ -424,6 +584,10 @@ public class XmiModelReader extends XmiGraphReader {
 
         public Path getPath() {
             return path;
+        }
+
+        public String getId() {
+            return id;
         }
 
         public Reference getWeakReferenceValue() {
@@ -489,11 +653,19 @@ public class XmiModelReader extends XmiGraphReader {
                 if (references != null) {
                     Multimap<Name, Object> valuesByName = ArrayListMultimap.create();
                     for (UUID uuid : references) {
-                        ResolvedReference resolved = reader.resolve(path, name, uuid);
+                        ResolvedReference resolved = reader.resolve(path, name, null, uuid);
                         if (resolved != null) {
-                            // And record the reference value ...
-                            Name hrefName = reader.nameForHref(name);
-                            valuesByName.put(hrefName, "mmuuid/" + uuid);
+                            if (resolved.getHref() != null) {
+                                // And record the reference value ...
+                                Name hrefName = reader.nameForHref(name);
+                                valuesByName.put(hrefName, resolved.getHref());
+                            }
+
+                            // Record the identifier value ...
+                            if (resolved.getId() != null) {
+                                Name idName = reader.nameForResolvedId(name);
+                                valuesByName.put(idName, resolved.getId());
+                            }
 
                             // Record the resolved reference value ...
                             Reference weakReference = resolved.getWeakReferenceValue();
@@ -528,7 +700,7 @@ public class XmiModelReader extends XmiGraphReader {
                     // The child node is a reference, so figure out the EObject reference name ...
                     Name attributeName = childLocation.getPath().getLastSegment().getName();
 
-                    // And record the reference value ...
+                    // And record the reference value (each child should only have one 'href' value) ...
                     String href = reader.firstValue(child, "href");
                     Name hrefName = reader.nameForHref(attributeName);
                     valuesByName.put(hrefName, href);
@@ -536,6 +708,12 @@ public class XmiModelReader extends XmiGraphReader {
                     // Now try resolving the 'href' value ...
                     ResolvedReference resolved = reader.resolve(path, attributeName, href);
                     if (resolved != null) {
+                        // Record the identifier value ...
+                        if (resolved.getId() != null) {
+                            Name idName = reader.nameForResolvedId(attributeName);
+                            valuesByName.put(idName, resolved.getId());
+                        }
+
                         // Record the resolved reference value ...
                         Reference weakReference = resolved.getWeakReferenceValue();
                         if (weakReference != null) {
