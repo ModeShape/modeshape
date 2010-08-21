@@ -25,32 +25,32 @@
 //------------------------------------------------------------------------------
 // N A M E S P A C E S
 //------------------------------------------------------------------------------
-<jdbc='http://www.metamatrix.com/metamodels/JDBC'>
+<jdbcs = "http://www.metamatrix.com/metamodels/JDBC">
 <xmi = "http://www.omg.org/XMI">
 
 //------------------------------------------------------------------------------
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
 
-[jdbc:source] > xmi:referenceable mixin
- - jdbc:name (string) 
- - jdbc:driverName (string) 
- - jdbc:driverClass (string) 
- - jdbc:username (string) 
- - jdbc:url (string) 
+[jdbcs:source] > xmi:referenceable mixin
+ - jdbcs:name (string) 
+ - jdbcs:driverName (string) 
+ - jdbcs:driverClass (string) 
+ - jdbcs:username (string) 
+ - jdbcs:url (string) 
 
-[jdbc:importSettings] > xmi:referenceable mixin
- - jdbc:createCatalogsInModel (boolean) = 'true' 
- - jdbc:createSchemasInModel (boolean) = 'true' 
- - jdbc:convertCaseInModel (string) < 'NONE', 'TO_UPPERCASE', 'TO_LOWERCASE'
- - jdbc:generateSourceNamesInModel (string) = 'UNQUALIFIED' < 'NONE', 'UNQUALIFIED', 'FULLY_QUALIFIED'
- - jdbc:includedCatalogPaths (string) multiple 
- - jdbc:includedSchemaPaths (string) multiple 
- - jdbc:excludedObjectPaths (string) multiple 
- - jdbc:includeForeignKeys (boolean) = 'true' 
- - jdbc:includeIndexes (boolean) = 'true' 
- - jdbc:includeProcedures (boolean) = 'false' 
- - jdbc:includeApproximateIndexes (boolean) = 'true' 
- - jdbc:includeUniqueIndexes (boolean) = 'false' 
- - jdbc:includedTableTypes (string) multiple 
+[jdbcs:imported] > xmi:referenceable mixin
+ - jdbcs:createCatalogsInModel (boolean) = 'true' 
+ - jdbcs:createSchemasInModel (boolean) = 'true' 
+ - jdbcs:convertCaseInModel (string) < 'NONE', 'TO_UPPERCASE', 'TO_LOWERCASE'
+ - jdbcs:generateSourceNamesInModel (string) = 'UNQUALIFIED' < 'NONE', 'UNQUALIFIED', 'FULLY_QUALIFIED'
+ - jdbcs:includedCatalogPaths (string) multiple 
+ - jdbcs:includedSchemaPaths (string) multiple 
+ - jdbcs:excludedObjectPaths (string) multiple 
+ - jdbcs:includeForeignKeys (boolean) = 'true' 
+ - jdbcs:includeIndexes (boolean) = 'true' 
+ - jdbcs:includeProcedures (boolean) = 'false' 
+ - jdbcs:includeApproximateIndexes (boolean) = 'true' 
+ - jdbcs:includeUniqueIndexes (boolean) = 'false' 
+ - jdbcs:includedTableTypes (string) multiple 
 

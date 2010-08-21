@@ -21,19 +21,18 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.teiid;
+package org.modeshape.sequencer.teiid.lexicon;
 
 /**
- * A namespace that is used for properties generated for an EObject reference and that holds the WEAKREFERENCE to the resolved
- * objects.
+ * A namespace that is used for properties generated for an EObject reference and that holds the name of the resolved objects.
  * 
- * @see NameOfLexicon
+ * @see ResolvedLexicon
  */
-public class ResolvedLexicon {
+public class NameOfLexicon {
 
     public static class Namespace {
-        public static final String URI = "http://www.modeshape.org/teiid/resolved/1.0";
-        public static final String PREFIX = "resolved";
+        public static final String URI = "http://www.modeshape.org/teiid/nameof/1.0";
+        public static final String PREFIX = "nameof";
     }
 
 }

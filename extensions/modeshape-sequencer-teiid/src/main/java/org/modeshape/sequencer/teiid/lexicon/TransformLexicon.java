@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.teiid;
+package org.modeshape.sequencer.teiid.lexicon;
 
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.basic.BasicName;

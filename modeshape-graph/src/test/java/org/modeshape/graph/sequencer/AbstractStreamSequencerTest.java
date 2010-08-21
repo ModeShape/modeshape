@@ -44,9 +44,11 @@ public abstract class AbstractStreamSequencerTest {
     protected StreamSequencer sequencer;
     protected MockSequencerOutput output;
     protected StreamSequencerContext sequencerContext;
+    protected boolean print = false;
 
     @Before
     public void beforeEach() {
+        print = false;
         context = new ExecutionContext();
         sequencer = createSequencer();
     }
@@ -116,6 +118,8 @@ public abstract class AbstractStreamSequencerTest {
     }
 
     protected void printOutput() {
-        System.out.println(output);
+        if (print) {
+            System.out.println(output);
+        }
     }
 }

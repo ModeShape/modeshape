@@ -21,27 +21,16 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.teiid;
+package org.modeshape.sequencer.teiid.lexicon;
 
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.basic.BasicName;
 
 /**
  * 
  */
-public class CoreLexicon {
+public class RelationalLexicon {
 
     public static class Namespace {
-        public static final String URI = "http://www.metamatrix.com/metamodels/Core";
-        public static final String PREFIX = "mmcore";
+        public static final String URI = "http://www.metamatrix.com/metamodels/Relational";
+        public static final String PREFIX = "relational";
     }
-
-    public static final Name MODEL = new BasicName(Namespace.URI, "model");
-    public static final Name PRIMARY_METAMODEL_URI = new BasicName(Namespace.URI, "primaryMetamodelUri");
-    public static final Name MODEL_TYPE = new BasicName(Namespace.URI, "modelType");
-    public static final Name IMPORT = new BasicName(Namespace.URI, "import");
-    public static final Name PATH = new BasicName(Namespace.URI, "path");
-    public static final Name DESCRIPTION = new BasicName(Namespace.URI, "description");
-    public static final Name KEYWORDS = new BasicName(Namespace.URI, "keywords");
-
 }

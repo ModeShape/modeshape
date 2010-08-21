@@ -21,21 +21,17 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.teiid;
+package org.modeshape.sequencer.teiid.lexicon;
 
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.basic.BasicName;
 
 /**
  * 
  */
-public class EcoreLexicon {
+public class DiagramLexicon {
 
     public static class Namespace {
-        public static final String URI = "http://www.eclipse.org/emf/2002/Ecore";
-        public static final String PREFIX = "ecore";
+        public static final String URI = "http://www.metamatrix.com/metamodels/Diagram";
+        public static final String PREFIX = "diagram";
     }
-
-    public static final Name PACKAGE = new BasicName(Namespace.URI, "EPackage");
 
 }

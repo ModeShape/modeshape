@@ -23,13 +23,16 @@
  */
 package org.modeshape.graph.sequencer;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
@@ -197,12 +200,30 @@ public class MockSequencerOutput implements SequencerOutput, Iterable<Path> {
             } else {
                 sb.append("/");
             }
-            for (Property property : getProperties(path).values()) {
-                sb.append(" " + property.getString(context.getNamespaceRegistry()));
+            Property primaryType = getProperty(path, JcrLexicon.PRIMARY_TYPE);
+            if (primaryType != null) {
+                sb.append(" " + primaryType.getString(context.getNamespaceRegistry()));
+            }
+            Property mixinTypes = getProperty(path, JcrLexicon.MIXIN_TYPES);
+            if (mixinTypes != null) {
+                sb.append(" " + mixinTypes.getString(context.getNamespaceRegistry()));
+            }
+            Property uuid = getProperty(path, JcrLexicon.UUID);
+            if (uuid != null) {
+                sb.append(" " + uuid.getString(context.getNamespaceRegistry()));
             }
             sb.append("\n");
+            List<Property> props = new ArrayList<Property>(getProperties(path).values());
+            Collections.sort(props);
+            for (Property property : props) {
+                if (property.equals(primaryType)) continue;
+                if (property.equals(mixinTypes)) continue;
+                if (property.equals(uuid)) continue;
+                sb.append(StringUtil.createString(' ', path.size() * 2)).append("  - ");
+                sb.append(property.getString(context.getNamespaceRegistry()));
+                sb.append("\n");
+            }
         }
         return sb.toString();
     }
-
 }

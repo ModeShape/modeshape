@@ -35,7 +35,7 @@
 [transform:transformed] mixin
  - transform:transformedFrom (weakreference)
  - transform:transformedFromHrefs (string)
- - transform:transformedFromIds (string)
+ - transform:transformedFromXmiUuids (string)
  - transform:transformedFromNames (string)
 
 [transform:withSql] mixin

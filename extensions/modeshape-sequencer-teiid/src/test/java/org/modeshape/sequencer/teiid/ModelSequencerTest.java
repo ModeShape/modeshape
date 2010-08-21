@@ -35,8 +35,56 @@ public class ModelSequencerTest extends AbstractStreamSequencerTest {
     }
 
     @Test
-    public void shouldSequenceBooksPhysicalRelationalModel() throws Exception {
+    public void shouldSequenceOldBooksPhysicalRelationalModelForOracle() throws Exception {
+        print = true;
         sequence("model/old/BooksO.xmi");
+        assertNoProblems();
+        printOutput();
+    }
+
+    @Test
+    public void shouldSequenceOldBooksPhysicalRelationalModelForSqlServer() throws Exception {
+        sequence("model/old/BooksS.xmi");
+        assertNoProblems();
+        printOutput();
+    }
+
+    @Test
+    public void shouldSequenceNewBooksPhysicalRelationalModelForSourceA() throws Exception {
+        print = true;
+        sequence("model/books/Books_SourceA.xmi");
+        assertNoProblems();
+        printOutput();
+    }
+
+    @Test
+    public void shouldSequenceNewBooksPhysicalRelationalModelForSourceB() throws Exception {
+        print = true;
+        sequence("model/books/Books_SourceB.xmi");
+        assertNoProblems();
+        printOutput();
+    }
+
+    @Test
+    public void shouldSequencePartsSupplierPhysicalRelationalModelForSourceA() throws Exception {
+        print = true;
+        sequence("model/parts/PartsSupplier_SourceA.xmi");
+        assertNoProblems();
+        printOutput();
+    }
+
+    @Test
+    public void shouldSequencePartsSupplierPhysicalRelationalModelForSourceB() throws Exception {
+        print = true;
+        sequence("model/parts/PartSupplier_SourceB.xmi");
+        assertNoProblems();
+        printOutput();
+    }
+
+    @Test
+    public void shouldSequencePartsSupplierVirtualRelationalModel() throws Exception {
+        print = true;
+        sequence("model/parts/PartsVirtual.xmi");
         assertNoProblems();
         printOutput();
     }

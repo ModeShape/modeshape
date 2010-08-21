@@ -54,15 +54,11 @@ public class ModelSequencer implements StreamSequencer {
 
         Graph graph = Graph.create(context);
         try {
-            // Register some of the namespaces we'll need ...
-            localRegistry.register(DiagramLexicon.Namespace.PREFIX, DiagramLexicon.Namespace.URI);
-            localRegistry.register(TransformLexicon.Namespace.PREFIX, TransformLexicon.Namespace.URI);
-
             // Load the input into the transient graph ...
             graph.importXmlFrom(stream).usingAttributeForName("name").into("/");
 
             // Now read the graph ...
-            Subgraph subgraph = graph.getSubgraphOfDepth(5).at("/xmi:XMI");
+            Subgraph subgraph = graph.getSubgraphOfDepth(100).at("/xmi:XMI");
 
             // Register any namespaces that were used, but use the desired case (not what's used in XMI) ...
             XmiModelReader reader = new XmiModelReader(context.getInputPath(), subgraph, true);

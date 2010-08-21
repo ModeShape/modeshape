@@ -48,6 +48,7 @@ import org.modeshape.graph.property.UuidFactory;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
+import org.modeshape.sequencer.teiid.lexicon.EcoreLexicon;
 
 /**
  * A class that can be used to read an XMI file that has been imported into a graph.
@@ -96,6 +97,7 @@ public class XmiGraphReader {
     protected final Inflector inflector;
     protected final boolean generateShortNames;
     protected String currentNamespaceUri;
+    protected final Map<Name, Name> typeNameReplacements = new HashMap<Name, Name>();
 
     protected XmiGraphReader( Subgraph subgraph,
                               boolean generateShortNames ) {
@@ -111,6 +113,16 @@ public class XmiGraphReader {
         this.namespaces = this.context.getNamespaceRegistry();
         this.inflector = Inflector.getInstance();
         this.generateShortNames = generateShortNames;
+    }
+
+    protected void replaceTypeName( Name replaced,
+                                    Name with ) {
+        typeNameReplacements.put(replaced, with);
+    }
+
+    protected void replaceTypeName( String replaced,
+                                    String with ) {
+        replaceTypeName(nameFrom(replaced), nameFrom(with));
     }
 
     protected void setCurrentNamespaceUri( String uri ) {
@@ -250,6 +262,11 @@ public class XmiGraphReader {
     }
 
     protected Path path( Path parent,
+                         String relativePath ) {
+        return pathFactory.create(parent, relativePath);
+    }
+
+    protected Path path( Path parent,
                          Name name,
                          int snsIndex ) {
         return path(parent, pathFactory.createSegment(name, snsIndex));
@@ -312,7 +329,9 @@ public class XmiGraphReader {
         if (!singularLocalName.equals(name.getLocalName())) {
             name = nameFactory.create(name.getNamespaceUri(), singularLocalName);
         }
-        return name;
+        Name replacement = typeNameReplacements.get(name);
+        name = replacement != null ? replacement : name;
+        return shortenName(name);
     }
 
     /**
@@ -372,10 +391,10 @@ public class XmiGraphReader {
      * Determine the name of the property that is used to hold the identifier(s) for the resolved EObject reference.
      * <p>
      * The resulting name fits one of two patterns, depending upon whether the {@link Name#getLocalName() local part} of the
-     * reference name is singular or plural. If singular, then the resulting name will have "Id" appended to the
+     * reference name is singular or plural. If singular, then the resulting name will have "XmiUuid" appended to the
      * {@link Name#getLocalName() local part} of the supplied name. If plural, then the resulting name will consist of the
-     * singularlized {@link Name#getLocalName() local part} appended with "Ids". In all cases, the {@link Name#getNamespaceUri()
-     * namespace URI} of the resulting name will match that of the supplied name.
+     * singularlized {@link Name#getLocalName() local part} appended with "XmiUuids". In all cases, the
+     * {@link Name#getNamespaceUri() namespace URI} of the resulting name will match that of the supplied name.
      * </p>
      * 
      * @param eObjectReferenceName the name of the normal EObject reference property, which is typically a href
@@ -384,7 +403,7 @@ public class XmiGraphReader {
     protected Name nameForResolvedId( Name eObjectReferenceName ) {
         String localPart = eObjectReferenceName.getLocalName();
         String singular = inflector.singularize(localPart);
-        String suffix = singular.equals(localPart) ? "Id" : "Ids";
+        String suffix = singular.equals(localPart) ? "XmiUuid" : "XmiUuids";
         return nameFactory.create(eObjectReferenceName.getNamespaceUri(), singular + suffix);
     }
 

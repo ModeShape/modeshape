@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.sequencer.teiid;
+package org.modeshape.sequencer.teiid.lexicon;
 
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.basic.BasicName;
@@ -29,13 +29,17 @@ import org.modeshape.graph.property.basic.BasicName;
 /**
  * 
  */
-public class XsiLexicon {
+public class XmiLexicon {
 
     public static class Namespace {
-        public static final String URI = "http://www.w3.org/2001/XMLSchema-instance";
-        public static final String PREFIX = "xsi";
+        public static final String URI = "http://www.omg.org/XMI";
+        public static final String PREFIX = "xmi";
     }
 
-    public static final Name TYPE = new BasicName(Namespace.URI, "type");
+    public static final Name MODEL = new BasicName(Namespace.URI, "model");
+    public static final Name XMI = new BasicName(Namespace.URI, "xmi");
+    public static final Name VERSION = new BasicName(Namespace.URI, "version");
+    public static final Name UUID = new BasicName(Namespace.URI, "uuid");
+    public static final Name REFERENCEABLE = new BasicName(Namespace.URI, "referenceable");
 
 }
