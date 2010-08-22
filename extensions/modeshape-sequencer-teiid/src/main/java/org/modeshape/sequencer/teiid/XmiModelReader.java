@@ -297,6 +297,7 @@ public class XmiModelReader extends XmiGraphReader {
         }
 
         if (modelAnnotation != null) {
+            registerHandler("modelImports", new ModelImportHandler());
             // Process the model imports ...
             for (Location modelImportLocation : modelAnnotation.getChildren()) {
                 SubgraphNode modelImport = subgraph.getNode(modelImportLocation);
@@ -309,7 +310,6 @@ public class XmiModelReader extends XmiGraphReader {
     public boolean writePhase2( SequencerOutput output ) {
         clearHandlers();
         registerDefaultHandler(new DefaultModelObjectHandler());
-        registerHandler("modelImports", new ModelImportHandler());
         registerHandler("mmcore:ModelAnnotation", new SkipBranchHandler());
         registerHandler("mmcore:AnnotationContainer", new SkipBranchHandler());
         registerHandler("transform:TransformationContainer", new SkipBranchHandler());
@@ -373,16 +373,18 @@ public class XmiModelReader extends XmiGraphReader {
         Path actualPath = handler.process(path, node, subgraph, this, output);
 
         if (actualPath != null) {
-            // Before we do anything else, write out any PropertySet for this object ...
-            UUID mmuuid = xmiUuidFor(node);
-            PropertySet props = propertiesFor(mmuuid, false);
-            if (props != null) {
-                props.writeTo(output, actualPath);
-            }
+            if (!(handler instanceof SkipNodeHandler)) {
+                // Before we do anything else, write out any PropertySet for this object ...
+                UUID mmuuid = xmiUuidFor(node);
+                PropertySet props = propertiesFor(mmuuid, false);
+                if (props != null) {
+                    props.writeTo(output, actualPath);
+                }
 
-            // Register the newly created object ...
-            UUID xmiUuid = xmiUuidFor(node);
-            resolver.recordXmiUuid(xmiUuid, actualPath);
+                // Register the newly created object ...
+                UUID xmiUuid = xmiUuidFor(node);
+                resolver.recordXmiUuid(xmiUuid, actualPath);
+            }
 
             // Process the nested objects ...
             for (Location childLocation : node.getChildren()) {

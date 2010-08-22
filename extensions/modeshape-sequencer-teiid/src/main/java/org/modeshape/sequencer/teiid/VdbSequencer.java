@@ -147,6 +147,7 @@ public class VdbSequencer implements StreamSequencer {
             for (VdbModel model : manifest.modelsInDependencyOrder()) {
                 if (model.getType().equalsIgnoreCase(ModelType.PHYSICAL) || model.getType().equalsIgnoreCase(ModelType.VIRTUAL)) {
                     ModelSequencer sequencer = new ModelSequencer(model, vdbPath, resolver);
+                    sequencer.setUseXmiUuidsAsJcrUuids(false);
                     ZipEntry modelEntry = vdbArchive.getEntry(model.getPathInVdb());
                     if (modelEntry == null) {
                         // Some older VDBs have the model paths as absolute ...

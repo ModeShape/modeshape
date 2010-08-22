@@ -138,6 +138,8 @@
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/mp3.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/ddl.xml"/>
   	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/text.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/teiid_model.xml"/>
+  	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="content/sequencers/teiid_vdb.xml"/>
 	</part>
 	<part id="provided-mime-type-detectors-part">
 		<title>MIME Type Detector Library</title>

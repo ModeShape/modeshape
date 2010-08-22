@@ -32,8 +32,10 @@
 	<title>Looking to the future</title>
 	<para>
 		ModeShape &versionNumber; provides a very capable JCR implementation with powerful and unique features not matched
-		by other implementations.  This release moves ModeShape to the JCR 2.0 API, implements several new features, 
-		and includes fixes and improvements. 
+		by other implementations.  
+		Version &versionNumber; improves the JDBC driver, the JBoss AS deployment, and the JOPR/RHQ monitoring
+		plugin. There are also two new sequencers for Teiid relational models and virtual database definitions.
+		Of course, the release also comes with quite a few <ulink url="&ReleaseNotes;">bug fixes and improvements</ulink>.
 	</para>
 	<para>ModeShape now implements all of the required JCR 2.0 features:
     <itemizedlist>
@@ -57,9 +59,14 @@
       <listitem><para>same-name siblings</para></listitem>
       <listitem><para>orderable child nodes</para></listitem>
     </itemizedlist>
-    ModeShape supports the JCR-SQL2 and JQOM query languages defined in <ulink url="&JSR283;">JSR-283</ulink>, 
-    plus the XPath and JCR-SQL languages defined in <ulink url="&JSR170;">JSR-170</ulink> but deprecated in
-    <ulink url="&JSR283;">JSR-283</ulink>.
+    ModeShape supports the following query languages:
+    <itemizedlist>
+      <listitem><para><link linkend="jcr-sql2-query-language">JCR-SQL2</link> defined in <ulink url="&JSR283;">JSR-283</ulink></para></listitem>
+      <listitem><para><link linkend="jcr-qom-query-language">JCR-QOM</link> defined in <ulink url="&JSR283;">JSR-283</ulink></para></listitem>
+      <listitem><para><link linkend="jcr-xpath-query-language">XPath</link> defined in <ulink url="&JSR170;">JSR-170</ulink></para></listitem>
+      <listitem><para><link linkend="jcr-sql-query-language">JCR-SQL</link> defined in <ulink url="&JSR170;">JSR-170</ulink></para></listitem>
+      <listitem><para><link linkend="fulltext-search-query-language">Full-text search</link> that is similar to a search engine</para></listitem>
+    </itemizedlist>
 	</para>
 	<para>
 		At this point, ModeShape passes virtually all of the JCR Technology Compatibility Kit (TCK) tests,
@@ -68,10 +75,10 @@
 	</para>
 	<para>
 		What's next for ModeShape? 
-		We also plan to add support for clustering multiple ModeShape engines spread across multiple JVM processes.
-		And each expect to introduce more 
-		<link linkend="repository-connectors">connectors</link> and <link linkend="sequencers">sequencers</link> to our library.
-		Other items on our <ulink url="&Roadmap;">roadmap</ulink> include a JDBC driver for ModeShape, 
+		Over the next few releases, we'll be adding more
+		<link linkend="repository-connectors">connectors</link> and <link linkend="sequencers">sequencers</link> to our library,
+		and making a variety of improvements and bug fixes.
+		Other items on our <ulink url="&Roadmap;">roadmap</ulink> include
 		a web user interface, Seam integration, and integration with even more kinds of
 		information systems and repositories.
 	</para>

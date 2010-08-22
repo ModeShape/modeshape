@@ -1,4 +1,4 @@
-<!ENTITY versionNumber "2.1.0.Final">
+<!ENTITY versionNumber "2.2.0.Final">
 <!ENTITY copyrightYears "2008-2010">
 <!ENTITY copyrightHolder "Red Hat, Inc.">
 
@@ -284,4 +284,7 @@
 
 <!ENTITY DdlSequencer	  							"<ulink url='&API;sequencer/ddl/DdlSequencer'><classname>DdlSequencer</classname></ulink>">
 <!ENTITY DdlParser		  							"<ulink url='&API;sequencer/ddl/DdlParser'><interface>DdlParser</interface></ulink>">
+
+<!ENTITY ModelSequencer		  	  			"<ulink url='&API;sequencer/teiid/ModelSequencer.html'><classname>ModelSequencer</classname></ulink>">
+<!ENTITY VdbSequencer		  	    			"<ulink url='&API;sequencer/teiid/VdbSequencer.html'><classname>VdbSequencer</classname></ulink>">
 

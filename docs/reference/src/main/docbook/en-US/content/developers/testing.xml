@@ -158,12 +158,16 @@
 	      <listitem><para>node type management</para></listitem>
 	      <listitem><para>same-name siblings</para></listitem>
 	      <listitem><para>orderable child nodes</para></listitem>
+	      <listitem><para>shareable nodes</para></listitem>
 	    </itemizedlist>
-	    ModeShape supports the <link linkend="jcr-sql2-query-language">JCR-SQL2</link> and 
-	    <link linkend="jcr-qom-query-language">JCR-QOM</link> query languages defined in <ulink url="&JSR283;">JSR-283</ulink>, 
-	    plus the <link linkend="jcr-xpath-query-language">XPath</link> and 
-	    <link linkend="jcr-sql-query-language">JCR-SQL</link> languages defined in <ulink url="&JSR170;">JSR-170</ulink> but deprecated in
-	    <ulink url="&JSR283;">JSR-283</ulink>.
+	    ModeShape supports the following query languages:
+	    <itemizedlist>
+	      <listitem><para><link linkend="jcr-sql2-query-language">JCR-SQL2</link> defined in <ulink url="&JSR283;">JSR-283</ulink></para></listitem>
+	      <listitem><para><link linkend="jcr-qom-query-language">JCR-QOM</link> defined in <ulink url="&JSR283;">JSR-283</ulink></para></listitem>
+	      <listitem><para><link linkend="jcr-xpath-query-language">XPath</link> defined in <ulink url="&JSR170;">JSR-170</ulink></para></listitem>
+	      <listitem><para><link linkend="jcr-sql-query-language">JCR-SQL</link> defined in <ulink url="&JSR170;">JSR-170</ulink></para></listitem>
+	      <listitem><para><link linkend="fulltext-search-query-language">Full-text search</link> that is similar to a search engine</para></listitem>
+	    </itemizedlist>
 		</para>
 		<para>
 			The ModeShape project also frequently runs the JCR TCK unit tests from the reference implementation.  (These tests are not

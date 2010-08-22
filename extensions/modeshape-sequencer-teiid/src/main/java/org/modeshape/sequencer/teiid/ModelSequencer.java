@@ -45,11 +45,10 @@ import org.modeshape.sequencer.teiid.lexicon.XmiLexicon;
  */
 public class ModelSequencer implements StreamSequencer {
 
-    protected static final boolean USE_XMI_UUIDS_AS_JCR_UUIDS = false;
-
     private VdbModel vdbModel;
     private Path parentPath;
     private ReferenceResolver resolver;
+    private boolean useXmiUuidsAsJcrUuids = false;
 
     public ModelSequencer() {
     }
@@ -60,6 +59,20 @@ public class ModelSequencer implements StreamSequencer {
         this.parentPath = parentPathOfModel;
         this.vdbModel = vdbModel;
         this.resolver = resolver;
+    }
+
+    /**
+     * @return useXmiUuidsAsJcrUuids
+     */
+    public boolean isUseXmiUuidsAsJcrUuids() {
+        return useXmiUuidsAsJcrUuids;
+    }
+
+    /**
+     * @param useXmiUuidsAsJcrUuids Sets useXmiUuidsAsJcrUuids to the specified value.
+     */
+    public void setUseXmiUuidsAsJcrUuids( boolean useXmiUuidsAsJcrUuids ) {
+        this.useXmiUuidsAsJcrUuids = useXmiUuidsAsJcrUuids;
     }
 
     /**
@@ -118,7 +131,7 @@ public class ModelSequencer implements StreamSequencer {
 
             // Register any namespaces that were used, but use the desired case (not what's used in XMI) ...
             XmiModelReader reader = new XmiModelReader(parentPath, modelName, originalFilePath, subgraph, true,
-                                                       USE_XMI_UUIDS_AS_JCR_UUIDS, vdbModel);
+                                                       useXmiUuidsAsJcrUuids, vdbModel);
             if (resolver != null) reader.setResolver(resolver);
             if (sha1 != null) reader.setSha1Hash(sha1);
             for (Namespace namespace : localRegistry.getLocalNamespaces()) {

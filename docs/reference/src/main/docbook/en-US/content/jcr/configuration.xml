@@ -766,16 +766,9 @@ configuration.save();
 			<para>
 				The <ulink url="http://jboss.org/jbossas">JBoss Application Server</ulink> (or JBoss AS) is a very popular
 				open source Java application server, with an extremely healthy and active community. 
-				ModeShape 2.1 introduces a new way to deploy ModeShape into JBoss AS as as a central, shared service
+				ModeShape offers a way to deploy ModeShape into JBoss AS as as a central, shared service
 				that can be monitored and administered using the embedded console.
 			</para>
-			<note>
-				<para>
-					This deployment mechanism is considered a "technology preview", meaning that it may undergo fairly significant
-					changes in the next few releases. We're pretty proud of the level of integration with JBoss AS, however,
-					so we do encourage you to try it and give us your feedback.
-				</para>
-			</note>
 			<para>
 				ModeShape provides a downloadable ZIP file that can be unzipped into any JBoss AS profile. When you do this,
 				that profile will contain all the files necessary for ModeShape to run when the server is started.
@@ -836,11 +829,11 @@ configuration.save();
 						</para>
 					</listitem>
 					<listitem>
-						<para>A plugin for the embedded JBoss AS console, represented as a WAR file in the "deploy" directory.
+						<para>A plugin for the embedded JBoss AS console, represented as a WAR file in the "<code>deploy</code>" directory.
 							This plugin also works with <ulink url="http://support.rhq-project.org/display/RHQ/Home">RHQ</ulink>/
 							<ulink url="http://jboss.org/jopr">JOPR</ulink> administration, monitoring, alerting, operational
-							control and configuration system. <emphasis role="strong">This feature is currently incomplete,
-							but is undergoing active development.</emphasis>
+							control and configuration system.  <emphasis>(We plan to add more metrics and operations over the 
+							next few releases, as we gain more experience using the ModeShape JOPR plugin.)</emphasis>
 						</para>
 					</listitem>
 					<listitem>
@@ -849,7 +842,8 @@ configuration.save();
 							classpath so it can be used in any deployed component. A single JDBC DataSource is
 							also configured in the "<code>deploy/modeshape-services.jar/modeshape-jdbc-ds.xml</code>" 
 							file to use the single default in-memory repository available out of the box. Simply edit
-							this file to add or change the DataSource definitions.
+							this file to add or change the DataSource definitions. The driver can also be used
+							in a separate JVM to issue queries and access database metadata.
 						</para>
 					</listitem>
 				</itemizedlist>
@@ -868,13 +862,17 @@ deploy/
 deploy/modeshape-jboss-beans.xml  
 deploy/modeshape-services.jar/
 deploy/modeshape-services.jar/META-INF/
+deploy/modeshape-services.jar/aperture-1.1.0.Beta1.jar 
 deploy/modeshape-services.jar/google-collections-1.0.jar  
 deploy/modeshape-services.jar/joda-time-1.6.jar  
 deploy/modeshape-services.jar/lucene-analyzers-3.0.0.jar  
 deploy/modeshape-services.jar/lucene-core-3.0.0.jar  
 deploy/modeshape-services.jar/lucene-regex-3.0.0.jar  
 deploy/modeshape-services.jar/lucene-snowball-3.0.0.jar  
+deploy/modeshape-services.jar/poi-3.6.jar  
+deploy/modeshape-services.jar/poi-scratchpad-3.6.jar  
 deploy/modeshape-services.jar/managedConfigRepository.xml  
+deploy/modeshape-services.jar/rdf2go.api-4.6.2.jar
 deploy/modeshape-services.jar/META-INF/jboss-beans.xml  
 deploy/modeshape-services.jar/modeshape-cnd-&versionNumber;.jar  
 deploy/modeshape-services.jar/modeshape-common-&versionNumber;.jar  
@@ -889,6 +887,7 @@ deploy/modeshape-services.jar/modeshape-graph-&versionNumber;.jar
 deploy/modeshape-services.jar/modeshape-jbossas-service-&versionNumber;.jar  
 deploy/modeshape-services.jar/modeshape-jcr-&versionNumber;.jar  
 deploy/modeshape-services.jar/modeshape-jdbc-ds.xml  
+deploy/modeshape-services.jar/modeshape-mimetype-detector-aperture-&versionNumber;.jar  
 deploy/modeshape-services.jar/modeshape-repository-&versionNumber;.jar  
 deploy/modeshape-services.jar/modeshape-search-lucene-&versionNumber;.jar  
 deploy/modeshape-services.jar/modeshape-sequencer-classfile-&versionNumber;.jar  
@@ -896,6 +895,8 @@ deploy/modeshape-services.jar/modeshape-sequencer-cnd-&versionNumber;.jar
 deploy/modeshape-services.jar/modeshape-sequencer-ddl-&versionNumber;.jar  
 deploy/modeshape-services.jar/modeshape-sequencer-java-&versionNumber;.jar  
 deploy/modeshape-services.jar/modeshape-sequencer-jbpm-jpdl-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-sequencer-msoffice-&versionNumber;.jar  
+deploy/modeshape-services.jar/modeshape-sequencer-teiid-&versionNumber;.jar  
 deploy/modeshape-services.jar/modeshape-sequencer-text-&versionNumber;.jar  
 deploy/modeshape-services.jar/modeshape-sequencer-xml-&versionNumber;.jar  
 deploy/modeshape-services.jar/modeshape-sequencer-zip-&versionNumber;.jar  
@@ -1105,7 +1106,7 @@ try {
 <programlisting role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-jcr</artifactId>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 ]]></programlisting>
 				<para>
@@ -1115,7 +1116,7 @@ try {
 <programlisting role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-clustering</artifactId>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 ]]></programlisting>
 				<para>
@@ -1125,52 +1126,57 @@ try {
 <programlisting role="XML"><![CDATA[<dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-cnd</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-ddl</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshapce</groupid>
   <artifactid>modeshape-sequencer-images</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-classfile</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-java</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-mp3</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-msoffice</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-xml</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
+</dependency>
+<dependency>
+  <groupid>org.modeshape</groupid>
+  <artifactid>modeshape-sequencer-teiid</artifactid>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-text</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-sequencer-zip</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 ]]></programlisting>
 			<para>
@@ -1179,37 +1185,37 @@ try {
 <programlisting role="XML"><![CDATA[<dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-filesystem</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-infinispan</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-jcr</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-jbosscache</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-jdbc-metadata</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-store-jpa</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>
 <dependency>
   <groupid>org.modeshape</groupid>
   <artifactid>modeshape-connector-svn</artifactid>
-  <version>2.1.0.Final</version>
+  <version>2.2.0.Final</version>
 </dependency>]]></programlisting>
 	      <para>
 		      The sequencer and connector libraries you choose, plus every third-party library they need, will be pulled in automatically 
@@ -1255,36 +1261,37 @@ try {
 				<itemizedlist>
 	        <listitem>
 	          <para>
-	            <emphasis role="strong"><code>modeshape-jcr-&versionNumber;-with-dependencies.jar</code></emphasis> contains the JARs 
-							necessary to run the core ModeShape JCR repository engine, 
-	            the in-memory connector, and the federating connector;
+	            <emphasis role="strong"><code>modeshape-jcr-&versionNumber;-jar-with-dependencies.jar</code></emphasis> contains all of the
+	 						classes (except those under <code>javax.jcr</code>) necessary to run the core ModeShape JCR repository engine using
+							the in-memory connector and the federating connector;
 	          </para>
 	        </listitem>
 	        <listitem>
 	          <para>
-	            one <emphasis role="strong"><code>modeshape-connector-&lt;type>-&versionNumber;-with-dependencies.jar</code></emphasis> 
-							for each type of connector, each containing the JARs necessary 
-	            for that connector;
+	            one <emphasis role="strong"><code>modeshape-connector-&lt;type>-&versionNumber;-jar-with-dependencies.jar</code></emphasis> 
+							for each type of connector, each containing all of the classes necessary for that connector, designed to be added to the classpath
+							after the <code>modeshape-jcr-&versionNumber;-jar-with-dependencies.jar</code> file;
 	          </para>
 	        </listitem>
 	        <listitem>
 	          <para>
-	            one <emphasis role="strong"><code>modeshape-sequencer-&lt;type>-&versionNumber;-with-dependencies.jar</code></emphasis> 
-							for each type of sequencer, each containing the JARs necessary
-	            for that sequencer;
+	            one <emphasis role="strong"><code>modeshape-sequencer-&lt;type>-&versionNumber;-jar-with-dependencies.jar</code></emphasis> 
+							for each type of connector, each containing all of the classes necessary for that sequencer, designed to be added to the classpath
+							after the <code>modeshape-jcr-&versionNumber;-jar-with-dependencies.jar</code> file;
 	          </para>
 	        </listitem>
 	        <listitem>
 	          <para>
-	            <emphasis role="strong"><code>modeshape-mimetype-detector-aperture-&versionNumber;-with-dependencies.jar</code></emphasis> 
-							contains all of the JARs required for the component that detects 
-	            the MIME type of files based upon names and/or content; and
+	            <emphasis role="strong"><code>modeshape-mimetype-detector-aperture-&versionNumber;-jar-with-dependencies.jar</code></emphasis> 
+							containing all of the classes necessary for detecting the MIME type of files based upon
+							their name and/or content, designed to be added to the classpath
+							after the <code>modeshape-jcr-&versionNumber;-jar-with-dependencies.jar</code> file;
 	          </para>
 	        </listitem>
 	        <listitem>
 	          <para>
 	            <emphasis role="strong"><code>modeshape-jpa-ddl-gen-&versionNumber;-jar-with-dependencies.jar</code></emphasis> 
-							contains all of the JARs required to run the DDL generation utility.
+							contains all of the classes required to run the DDL generation utility as a standalone application.
 	          </para>
 	        </listitem>
 	      </itemizedlist>

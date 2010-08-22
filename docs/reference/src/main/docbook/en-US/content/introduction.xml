@@ -446,6 +446,16 @@
         </listitem>
         <listitem>
           <para>
+            <emphasis role="strong">modeshape-sequencer-teiid</emphasis>
+            contains two sequencers. ModelSequencer extracts the structured data model contained with a Teiid relational XMI model, 
+						including the catalogs, schemas, tables, views, columns, primary keys, foreign keys, indexes, procedures, 
+						procedure parameters, procedure results, logical relationships, and the JDBC source from which the model was imported.
+						Teiid VDB files contain several models, so the VdbSequencer extracts the virtual database metadata and
+						the structured data model from each of the models contained within the VDB.
+          </para>
+        </listitem>  
+        <listitem>
+          <para>
             <emphasis role="strong">modeshape-sequencer-text</emphasis>
             is a ModeShape sequencer that extracts data from text streams. There are separate sequencers for character-delimited sequencing 
 						and fixed width sequencing, but both treat the incoming text stream as a series of rows separated by line-terminators
@@ -530,10 +540,10 @@
           </para>
         </listitem>
       </itemizedlist>
-      New in ModeShape 2.1 is the modules defining the components used to 
+      ModeShape recently added several modules that make it very easy to
 			<link linkend="deloying_modeshape_to_jbossas">deploy ModeShape in JBoss AS or EAP</link> as a
   		full-fledged, central, shared service that can be monitored and administered using the embedded console
-			and used directly by web applications deployed to the application server. Our Maven build will produce
+			and used directly by web applications deployed to the application server. Our Maven build produces
 			a "kit" ZIP file that can be unzipped into a JBoss AS profile. When your server restarts, ModeShape will be
 			running with a very simple configuration (although that can be easily changed).
 		</para>
@@ -544,7 +554,8 @@
           <para>
             <emphasis role="strong">modeshape-jbossas-service</emphasis>
 						provides several components that are deployed through the microcontainer in JBoss AS, registered
-						in JNDI, and exposed through the Profile Service for monitoring and management.
+						in JNDI, and exposed through the Profile Service for monitoring and management. This service leverages
+						the JAAS support within the application server.
           </para>
         </listitem>
         <listitem>
@@ -552,22 +563,25 @@
             <emphasis role="strong">modeshape-jbossas-console</emphasis>
 						defines the plugin for <ulink url="http://support.rhq-project.org/display/RHQ/Home">RHQ</ulink>/
 						<ulink url="http://jboss.org/jopr">JOPR</ulink> that enables administration, monitoring, alerting, operational
-						control and configuration.
-						<emphasis>Note that this is currently a technology preview, because the plugin does not yet offer
-						full functionality. We included it so that you can try it out and see what we're planning, but we'll
-						be adding the rest of the functionality in the next release (which is due out in mid-August 2010).</emphasis>
+						control and configuration. All of the major components within a ModeShape engine are exposed as JOPR
+						resources, and the plugin provides a number of metrics and administrative operations as well as
+						exposing most configuration properties.
+						<emphasis>(We plan to add more metrics and operations over the next few releases, as we gain more
+						experience using the ModeShape JOPR plugin.)</emphasis>
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">modeshape-jbossas-web-rest-war</emphasis>
-						defines a variant of the more general <code>modeshape-web-rest-war</code> that is tailored for deployment on JBoss AS.
+						defines a variant of the more general <code>modeshape-web-rest-war</code> that is tailored for deployment on JBoss AS,
+						since it reuses the same ModeShape service deployed into the application server.
           </para>
         </listitem>
         <listitem>
           <para>
             <emphasis role="strong">modeshape-jbossas-web-webdav-war</emphasis>
-						defines a variant of the more general <code>modeshape-web-webdav-war</code> that is tailored for deployment on JBoss AS.
+						defines a variant of the more general <code>modeshape-web-webdav-war</code> that is tailored for deployment on JBoss AS,
+						since it reuses the same ModeShape service deployed into the application server.
           </para>
         </listitem>
       </itemizedlist>
@@ -611,9 +625,9 @@
             <emphasis role="strong">modeshape-jdbc</emphasis> provides a JDBC driver implementation that allows JDBC clients 
 						to query the contents of a JCR repository using <link linkend="jcr-sql2-query-language">JCR-SQL2</link>. 
 						The driver even supports JDBC metadata, so client applications can dynamically discover the tables and columns available for querying
-						(which are determined from the node types).  <emphasis>Note that this JDBC driver is currently a technology preview, because not 
-						all JCR-SQL2 queries can be submitted, and because the driver only works in the same process as ModeShape.
-						Addressing these limitations one of the major goals of the next release.</emphasis>
+						(which are determined from the node types). It can be configured as a data source in JBoss AS, and can even
+						leverage the ModeShape service, allowing JDBC-based access to the same repository content available
+						via the JCR API, RESTful service, or WebDAV.
 					</para>
         </listitem>
       </itemizedlist>
@@ -656,10 +670,11 @@
   <sect1 id="whats_new">
     <title>What's new?</title>
 	  <para>
-			With version &versionNumber;, ModeShape introduces clustering support, shareable nodes, a technology preview of the JBoss AS deployment kit,
-			a JDBC driver, and quite a few <ulink url="&ReleaseNotes;">bug fixes and improvements</ulink>.
+			With version &versionNumber;, ModeShape improved the JDBC driver, the JBoss AS deployment, and the JOPR/RHQ monitoring
+			plugin. There are also two new sequencers for Teiid relational models and virtual database definitions.
+			Of course, the release also comes with quite a few <ulink url="&ReleaseNotes;">bug fixes and improvements</ulink>.
 		</para>
-		<para>This means that <emphasis role="strong">ModeShape implements all of the required JCR 2.0 features</emphasis>: 
+		<para><emphasis role="strong">ModeShape implements all of the required JCR 2.0 features</emphasis>: 
 			repository acquisition, authentication, reading/navigating, query, export, node type discovery, and permissions and 
 			capability checking. 
 			<emphasis role="strong">ModeShape also implements most of the optional JCR 2.0 features</emphasis>:

@@ -786,8 +786,9 @@ final &LoginContext; loginContext = ...;
 		      <listitem><para>node type management</para></listitem>
 		      <listitem><para>same-name siblings</para></listitem>
 		      <listitem><para>orderable child nodes</para></listitem>
+		      <listitem><para>shareable nodes</para></listitem>
 		    </itemizedlist>
-		    The remaining optional features (shareable nodes, access control management, lifecycle management, 
+		    The remaining optional features (access control management, lifecycle management, 
 				retention and hold, and transactions) may be introduced in future versions.
 	    </para>
 	  </sect2>
@@ -807,15 +808,14 @@ final &LoginContext; loginContext = ...;
 				<link linkend="jcr-spec-support">JCR specification support</link> section for details).
 			</para>
 			<para>
-			  ModeShape &versionNumber; currently passes 1371 of the 1391 JCR TCK tests, where 17 of these 20 failures appear
+			  ModeShape &versionNumber; currently passes 1372 of the 1391 JCR TCK tests, where 17 of these 19 failures appear
 			  to be bugs in the TCK tests (see 
 			  <ulink url="https://issues.apache.org/jira/browse/JCR-2648">JCR-2648</ulink>, 
 			  <ulink url="https://issues.apache.org/jira/browse/JCR-2661">JCR-2661</ulink>, 
 			  <ulink url="https://issues.apache.org/jira/browse/JCR-2662">JCR-2662</ulink>, and
-			  <ulink url="https://issues.apache.org/jira/browse/JCR-2663">JCR-2663</ulink>). The remaining 3 failures are
-			  due to known issues (see 
-			  <ulink url="&MODE;-760">MODE-760</ulink> and
-			  <ulink url="&MODE;-786">MODE-786</ulink>).
+			  <ulink url="https://issues.apache.org/jira/browse/JCR-2663">JCR-2663</ulink>). The remaining 2 failures are
+			  due to a known issue (see 
+			  <ulink url="&MODE;-760">MODE-760</ulink>).
 		  </para>
 		</sect2>
 		<sect2 id="modeshape_jcr_security">

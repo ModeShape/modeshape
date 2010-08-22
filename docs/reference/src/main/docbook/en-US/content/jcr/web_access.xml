@@ -399,13 +399,13 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	  	to add the JARs for those dependencies into the <code>WEB-INF/lib</code> directory as well.  You will also have to 
 	  	change the version numbers on the JARs to reflect the current version of ModeShape. 
 	  </para>
-	  <node>
+	  <note>
 		  <para>
 			  Your servlet container may already provide a logging system, and you may need to remove the "slf4j-log4j12-1.5.8.jar"
 			  and replace with the appropriate <ulink url="&SLF4JManual;">SLF4J binding</ulink> jar. Or, if your servlet container
 			  already uses SLF4J globally, you may want to remove all of the "slf4j*.jar" files.
 		  </para>
-	  </node>
+	  </note>
 	  <para>
 	  	This WAR can be deployed into your servlet container.
 	  </para>
@@ -616,13 +616,6 @@ PUT http://www.example.com/resources/modeshape%3arepository/default/items/newNod
 	"someOtherProperty": "newValue"
 }
 ]]></programlisting>
-		<note>
-			<para>
-			The PUT method doesn't currently support adding or removing mixin types.  This will be corrected in the future.
-			A <ulink url="https://jira.jboss.org/jira/browse/ModeShape-447">JIRA issue</ulink> has been created to help 
-			track this issue.
-			</para>
-		</note>
 		</para>
 
 
@@ -1002,13 +995,13 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	  	to add the JARs for those dependencies into the <code>WEB-INF/lib</code> directory as well.  You will also have to 
 	  	change the version numbers on the JARs to reflect the current version of ModeShape. 
 	  </para>
-	  <node>
+	  <note>
 		  <para>
 			  Your servlet container may already provide a logging system, and you may need to remove the "slf4j-log4j12-1.5.8.jar"
 			  and replace with the appropriate <ulink url="&SLF4JManual;">SLF4J binding</ulink> jar. Or, if your servlet container
 			  already uses SLF4J globally, you may want to remove all of the "slf4j*.jar" files.
 		  </para>
-	  </node>
+	  </note>
 	  <para>
 	  	This WAR can be deployed into your servlet container.
 	  </para>

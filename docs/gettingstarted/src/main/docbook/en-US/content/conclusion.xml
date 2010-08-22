@@ -53,8 +53,9 @@
 	<sect1 id="future">
 		<title>Future directions</title>
 	  <para>
-			With version &versionNumber;, ModeShape introduces clustering support, shareable nodes, a technology preview of the JBoss AS deployment kit,
-			a JDBC driver, and quite a few <ulink url="&ReleaseNotes;">bug fixes and improvements</ulink>.
+			With version &versionNumber;, ModeShape improved the JDBC driver, the JBoss AS deployment, and the JOPR/RHQ monitoring
+			plugin. There are also two new sequencers for Teiid relational models and virtual database definitions.
+			Of course, the release also comes with quite a few <ulink url="&ReleaseNotes;">bug fixes and improvements</ulink>.
 		</para>
 		<para>This means that <emphasis role="strong">ModeShape implements all of the required JCR 2.0 features</emphasis>: 
 			repository acquisition, authentication, reading/navigating, query, export, node type discovery, and permissions and 
@@ -66,8 +67,8 @@
 			retention and hold, and transactions) may be introduced in future versions.
 		</para>
 		<para>
-			The next release will add more sequencers and improved monitoring and managing in the JBoss AS embedded console.
-			Other items on our long-term roadmap include more connectors and sequencers, a web user interface, Seam integration, and integration with even more kinds of
+			Over the next few releases, we'll be adding more sequencers, connectors, and making a variety of improvements and bug fixes.
+			Other items on our long-term roadmap include a web user interface, Seam integration, and integration with even more kinds of
 			information systems and repositories.
 		</para>
 	</sect1>
