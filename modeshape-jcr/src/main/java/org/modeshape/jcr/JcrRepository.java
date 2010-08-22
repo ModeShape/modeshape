@@ -568,10 +568,8 @@ public class JcrRepository implements Repository {
             nodeTypeReader.readBuiltInTypes();
             this.repositoryTypeManager.registerNodeTypes(nodeTypeReader);
         } catch (RepositoryException re) {
-            re.printStackTrace();
             throw new IllegalStateException("Could not load node type definition files", re);
         } catch (IOException ioe) {
-            ioe.printStackTrace();
             throw new IllegalStateException("Could not access node type definition files", ioe);
         }
         if (WORKSPACES_SHARE_SYSTEM_BRANCH) {

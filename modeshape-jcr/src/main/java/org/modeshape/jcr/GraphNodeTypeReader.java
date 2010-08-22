@@ -347,7 +347,6 @@ class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
                 NodeTypeDefinition nodeType = nodeTypeFrom(nodeTypeNode, nodeTypeSubgraph);
                 results.add(nodeType);
             } catch (ConstraintViolationException e) {
-                e.printStackTrace();
                 String resource = stringFactory.create(locationOfParentOfNodeTypes.getPath());
                 problems.addError(e, JcrI18n.errorImportingNodeTypeContent, resource, e.getMessage());
             }

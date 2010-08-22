@@ -36,13 +36,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
-
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.query.QueryResult;
-
 import org.modeshape.jdbc.metadata.JDBCColumnNames;
 import org.modeshape.jdbc.metadata.JDBCColumnPositions;
 import org.modeshape.jdbc.metadata.MetaDataQueryResult;
@@ -50,19 +48,17 @@ import org.modeshape.jdbc.metadata.MetadataProvider;
 import org.modeshape.jdbc.metadata.ResultSetMetaDataImpl;
 import org.modeshape.jdbc.metadata.ResultsMetadataConstants;
 
-
 /**
  * This driver's implementation of JDBC {@link DatabaseMetaData}.
  */
 public class JcrMetaData implements DatabaseMetaData {
- 
-	
-    /** CONSTANTS */
-	protected static final String WILDCARD = "%"; //$NON-NLS-1$
-	protected static final Integer DEFAULT_ZERO = new Integer(0);
-	protected static final int NO_LIMIT = 0;
 
-    private JcrConnection connection;   
+    /** CONSTANTS */
+    protected static final String WILDCARD = "%"; //$NON-NLS-1$
+    protected static final Integer DEFAULT_ZERO = new Integer(0);
+    protected static final int NO_LIMIT = 0;
+
+    private JcrConnection connection;
     private String catalogName;
 
     public JcrMetaData( JcrConnection connection ) {
@@ -139,11 +135,11 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public String getDatabaseProductName() {
-    	return this.connection.getRepositoryDelegate().getDescriptor(Repository.REP_NAME_DESC);
+        return this.connection.getRepositoryDelegate().getDescriptor(Repository.REP_NAME_DESC);
     }
 
     public String getDatabaseProductUrl() {
-		return this.connection.getRepositoryDelegate().getDescriptor(Repository.REP_VENDOR_URL_DESC);
+        return this.connection.getRepositoryDelegate().getDescriptor(Repository.REP_VENDOR_URL_DESC);
     }
 
     /**
@@ -153,7 +149,7 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public String getDatabaseProductVersion() {
-		return this.connection.getRepositoryDelegate().getDescriptor(Repository.REP_VERSION_DESC);
+        return this.connection.getRepositoryDelegate().getDescriptor(Repository.REP_VERSION_DESC);
     }
 
     /**
@@ -328,30 +324,33 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public ResultSet getCatalogs() throws SQLException {
- 		List<List<?>> records = new ArrayList<List<?>> (1);
-  		
- 		List<String> row = Arrays.asList(catalogName);
-		records.add(row);
+        List<List<?>> records = new ArrayList<List<?>>(1);
 
-		
-		/***********************************************************************
-		 * Hardcoding JDBC column names for the columns returned in results object
-		 ***********************************************************************/
-		
-		Map<?,Object>[] metadataList = new Map[1];
+        List<String> row = Arrays.asList(catalogName);
+        records.add(row);
 
-		metadataList[0] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.CATALOGS.TABLE_CAT, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
+        /***********************************************************************
+         * Hardcoding JDBC column names for the columns returned in results object
+         ***********************************************************************/
 
-		MetadataProvider provider = new MetadataProvider(metadataList);
-	        
-	    ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
-	    
-	    JcrStatement stmt = new JcrStatement(this.connection);
-	    QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
-	    ResultSet rs = new JcrResultSet(stmt, queryresult, resultSetMetaData);
-		
-		return rs;
+        Map<?, Object>[] metadataList = new Map[1];
+
+        metadataList[0] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.CATALOGS.TABLE_CAT,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+
+        MetadataProvider provider = new MetadataProvider(metadataList);
+
+        ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
+
+        JcrStatement stmt = new JcrStatement(this.connection);
+        QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
+        ResultSet rs = new JcrResultSet(stmt, queryresult, resultSetMetaData);
+
+        return rs;
     }
 
     /**
@@ -382,145 +381,232 @@ public class JcrMetaData implements DatabaseMetaData {
      * 
      * @see java.sql.DatabaseMetaData#getColumns(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
      */
+    @SuppressWarnings( "unchecked" )
     @Override
     public ResultSet getColumns( String catalog,
                                  String schemaPattern,
                                  String tableNamePattern,
                                  String columnNamePattern ) throws SQLException {
-        JcrDriver.logger.log(Level.INFO, "getcolumns: " + catalog + ":" + schemaPattern + ":" + tableNamePattern + ":" + columnNamePattern);
-     
+        JcrDriver.logger.log(Level.FINE, "getcolumns: " + catalog + ":" + schemaPattern + ":" + tableNamePattern + ":"
+                                         + columnNamePattern);
+
         // Get all tables if tableNamePattern is null
-        if(tableNamePattern == null) {
-            tableNamePattern = WILDCARD; 
+        if (tableNamePattern == null) {
+            tableNamePattern = WILDCARD;
         }
-        
-        Map<?,Object>[] metadataList = new Map[JDBCColumnPositions.COLUMNS.MAX_COLUMNS];
-		
-		metadataList[0] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.TABLE_CAT, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[1] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.TABLE_SCHEM, 
-				JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[2] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.TABLE_NAME, 
-				JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);
-		metadataList[3] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.COLUMN_NAME, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);	
-		metadataList[4] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.DATA_TYPE, 
-		        JcrType.DefaultDataTypes.LONG, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);
-		metadataList[5] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.TYPE_NAME, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);
-		metadataList[6] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.COLUMN_SIZE, 
-		        JcrType.DefaultDataTypes.LONG, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);
-		metadataList[7] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.BUFFER_LENGTH, 
-		        JcrType.DefaultDataTypes.LONG, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[8] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.DECIMAL_DIGITS, 
-		        JcrType.DefaultDataTypes.LONG, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);
-		metadataList[9] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.NUM_PREC_RADIX, 
-		        JcrType.DefaultDataTypes.LONG, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);
-		
-		metadataList[10] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.NULLABLE, 
-		        JcrType.DefaultDataTypes.LONG, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);
-		metadataList[11] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.REMARKS, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[12] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.COLUMN_DEF, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[13] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.SQL_DATA_TYPE, 
-		        JcrType.DefaultDataTypes.LONG, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);	
-		metadataList[14] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.SQL_DATETIME_SUB, 
-		        JcrType.DefaultDataTypes.LONG, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);
-		metadataList[15] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.CHAR_OCTET_LENGTH, 
-		        JcrType.DefaultDataTypes.LONG, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);
-		metadataList[16] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.ORDINAL_POSITION, 
-		        JcrType.DefaultDataTypes.LONG, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);
-		metadataList[17] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.IS_NULLABLE, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[18] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.SCOPE_CATLOG, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[19] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.SCOPE_SCHEMA, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
 
-		metadataList[20] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.SCOPE_TABLE, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[21] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.SOURCE_DATA_TYPE, 
-		        JcrType.DefaultDataTypes.LONG, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);
+        Map<?, Object>[] metadataList = new Map[JDBCColumnPositions.COLUMNS.MAX_COLUMNS];
 
-				
-		MetadataProvider provider = new MetadataProvider(metadataList);
-	        
-	    ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
-	    
-		List<List<?>> records = new ArrayList<List<?>>();
-		
-		try {
-			
-	    	  List<NodeType> nodetypes = filterNodeTypes(tableNamePattern);
-	
-	    	  Iterator<NodeType> nodeIt = nodetypes.iterator();
-	      // process each node 
-	    	  while (nodeIt.hasNext()) {
-	    		  
-	    		  NodeType type = nodeIt.next();
-	    		  
-	    		  if (type.getPropertyDefinitions() == null) {
-	    			  throw new SQLException("Program Error:  missing propertydefintions for " + type.getName());
-	    		  }
-		          
-		          List<PropertyDefinition> defns = filterPropertyDefnitions(columnNamePattern, type.getPropertyDefinitions());
-		       
-		          int ordinal = 0;
-		    	  Iterator<PropertyDefinition> defnsIt = defns.iterator();
-			      // build the list of records.
-		    	  while (defnsIt.hasNext()) {
-		        	  
-		        	  PropertyDefinition propDefn = defnsIt.next();
-		        	  
-			          // list represents a record on the Results object.
-			          List<Object> currentRow = new ArrayList<Object>(JDBCColumnPositions.COLUMNS.MAX_COLUMNS);
+        metadataList[0] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.COLUMNS.TABLE_CAT,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[1] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.COLUMNS.TABLE_SCHEM,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[2] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.COLUMNS.TABLE_NAME,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
+        metadataList[3] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.COLUMNS.COLUMN_NAME,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
+        metadataList[4] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.COLUMNS.DATA_TYPE,
+                                                             JcrType.DefaultDataTypes.LONG,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
+        metadataList[5] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.COLUMNS.TYPE_NAME,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
+        metadataList[6] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.COLUMNS.COLUMN_SIZE,
+                                                             JcrType.DefaultDataTypes.LONG,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
+        metadataList[7] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.COLUMNS.BUFFER_LENGTH,
+                                                             JcrType.DefaultDataTypes.LONG,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[8] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.COLUMNS.DECIMAL_DIGITS,
+                                                             JcrType.DefaultDataTypes.LONG,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
+        metadataList[9] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.COLUMNS.NUM_PREC_RADIX,
+                                                             JcrType.DefaultDataTypes.LONG,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
 
-			          JcrType jcrtype = JcrType.typeInfo(propDefn.getRequiredType());
-			          
-			          currentRow.add(catalogName); // TABLE_CAT
-			          currentRow.add("NULL"); // TABLE_SCHEM
-			          currentRow.add(type.getName()); //TABLE_NAME
-			          currentRow.add(propDefn.getName());  //COLUMN_NAME
-			          currentRow.add( jcrtype.getJdbcType()); // DATA_TYPE
-			          currentRow.add( jcrtype.getJcrName()); // TYPE_NAME
-			          currentRow.add( jcrtype.getNominalDisplaySize());  // COLUMN_SIZE
-			          currentRow.add("NULL");  // BUFFER_LENGTH
-			          currentRow.add( JcrMetaData.DEFAULT_ZERO); // DECIMAL_DIGITS
-			          currentRow.add( JcrMetaData.DEFAULT_ZERO); //  NUM_PREC_RADIX
-			          
-			          currentRow.add( (propDefn.isMandatory() ? ResultsMetadataConstants.NULL_TYPES.NOT_NULL : ResultsMetadataConstants.NULL_TYPES.NULLABLE)); // NULLABLE
-			          currentRow.add( "");  // REMARKS
-			          currentRow.add("NULL");  // COLUMN_DEF
-			          currentRow.add( JcrMetaData.DEFAULT_ZERO); // COLUMN_DEF
-			          currentRow.add( JcrMetaData.DEFAULT_ZERO); //  SQL_DATETIME_SUB
+        metadataList[10] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.COLUMNS.NULLABLE,
+                                                              JcrType.DefaultDataTypes.LONG,
+                                                              ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                              this.connection);
+        metadataList[11] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.COLUMNS.REMARKS,
+                                                              JcrType.DefaultDataTypes.STRING,
+                                                              ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                              this.connection);
+        metadataList[12] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.COLUMNS.COLUMN_DEF,
+                                                              JcrType.DefaultDataTypes.STRING,
+                                                              ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                              this.connection);
+        metadataList[13] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.COLUMNS.SQL_DATA_TYPE,
+                                                              JcrType.DefaultDataTypes.LONG,
+                                                              ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                              this.connection);
+        metadataList[14] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.COLUMNS.SQL_DATETIME_SUB,
+                                                              JcrType.DefaultDataTypes.LONG,
+                                                              ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                              this.connection);
+        metadataList[15] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.COLUMNS.CHAR_OCTET_LENGTH,
+                                                              JcrType.DefaultDataTypes.LONG,
+                                                              ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                              this.connection);
+        metadataList[16] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.COLUMNS.ORDINAL_POSITION,
+                                                              JcrType.DefaultDataTypes.LONG,
+                                                              ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                              this.connection);
+        metadataList[17] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.COLUMNS.IS_NULLABLE,
+                                                              JcrType.DefaultDataTypes.STRING,
+                                                              ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                              this.connection);
+        metadataList[18] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.COLUMNS.SCOPE_CATLOG,
+                                                              JcrType.DefaultDataTypes.STRING,
+                                                              ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                              this.connection);
+        metadataList[19] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.COLUMNS.SCOPE_SCHEMA,
+                                                              JcrType.DefaultDataTypes.STRING,
+                                                              ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                              this.connection);
 
-			          currentRow.add( JcrMetaData.DEFAULT_ZERO ); // CHAR_OCTET_LENGTH
-			          currentRow.add( new Integer( ordinal + 1));  // ORDINAL_POSITION
-			          currentRow.add( propDefn.isMandatory() ? "NO" : "YES");  // IS_NULLABLE
-			          currentRow.add( "NULL"); // SCOPE_CATLOG
-			          currentRow.add( "NULL"); //  SCOPE_SCHEMA
+        metadataList[20] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.COLUMNS.SCOPE_TABLE,
+                                                              JcrType.DefaultDataTypes.STRING,
+                                                              ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                              this.connection);
+        metadataList[21] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.COLUMNS.SOURCE_DATA_TYPE,
+                                                              JcrType.DefaultDataTypes.LONG,
+                                                              ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                              this.connection);
 
-			          currentRow.add( "NULL"); // SCOPE_TABLE
-			          currentRow.add( JcrMetaData.DEFAULT_ZERO); //  SOURCE_DATA_TYPE
+        MetadataProvider provider = new MetadataProvider(metadataList);
 
-			          // add the current row to the list of records.
-			          records.add(currentRow);
-			          
-			          ++ordinal;   
-		          }   
-		          
-	    	  }// end of while
-      
-		    JcrStatement jcrstmt = new JcrStatement(this.connection);
-		    QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
-		    return new JcrResultSet(jcrstmt, queryresult, resultSetMetaData);
+        ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
 
-		} catch (RepositoryException e) {
-			e.printStackTrace();
-			throw new SQLException(e.getLocalizedMessage());
-		} 
+        List<List<?>> records = new ArrayList<List<?>>();
 
+        try {
+
+            List<NodeType> nodetypes = filterNodeTypes(tableNamePattern);
+
+            Iterator<NodeType> nodeIt = nodetypes.iterator();
+            // process each node
+            while (nodeIt.hasNext()) {
+
+                NodeType type = nodeIt.next();
+
+                if (type.getPropertyDefinitions() == null) {
+                    throw new SQLException("Program Error:  missing propertydefintions for " + type.getName());
+                }
+
+                List<PropertyDefinition> defns = filterPropertyDefnitions(columnNamePattern, type.getPropertyDefinitions());
+
+                int ordinal = 0;
+                Iterator<PropertyDefinition> defnsIt = defns.iterator();
+                // build the list of records.
+                while (defnsIt.hasNext()) {
+
+                    PropertyDefinition propDefn = defnsIt.next();
+
+                    // list represents a record on the Results object.
+                    List<Object> currentRow = new ArrayList<Object>(JDBCColumnPositions.COLUMNS.MAX_COLUMNS);
+
+                    JcrType jcrtype = JcrType.typeInfo(propDefn.getRequiredType());
+
+                    currentRow.add(catalogName); // TABLE_CAT
+                    currentRow.add("NULL"); // TABLE_SCHEM
+                    currentRow.add(type.getName()); // TABLE_NAME
+                    currentRow.add(propDefn.getName()); // COLUMN_NAME
+                    currentRow.add(jcrtype.getJdbcType()); // DATA_TYPE
+                    currentRow.add(jcrtype.getJcrName()); // TYPE_NAME
+                    currentRow.add(jcrtype.getNominalDisplaySize()); // COLUMN_SIZE
+                    currentRow.add("NULL"); // BUFFER_LENGTH
+                    currentRow.add(JcrMetaData.DEFAULT_ZERO); // DECIMAL_DIGITS
+                    currentRow.add(JcrMetaData.DEFAULT_ZERO); // NUM_PREC_RADIX
+
+                    currentRow.add((propDefn.isMandatory() ? ResultsMetadataConstants.NULL_TYPES.NOT_NULL : ResultsMetadataConstants.NULL_TYPES.NULLABLE)); // NULLABLE
+                    currentRow.add(""); // REMARKS
+                    currentRow.add("NULL"); // COLUMN_DEF
+                    currentRow.add(JcrMetaData.DEFAULT_ZERO); // COLUMN_DEF
+                    currentRow.add(JcrMetaData.DEFAULT_ZERO); // SQL_DATETIME_SUB
+
+                    currentRow.add(JcrMetaData.DEFAULT_ZERO); // CHAR_OCTET_LENGTH
+                    currentRow.add(new Integer(ordinal + 1)); // ORDINAL_POSITION
+                    currentRow.add(propDefn.isMandatory() ? "NO" : "YES"); // IS_NULLABLE
+                    currentRow.add("NULL"); // SCOPE_CATLOG
+                    currentRow.add("NULL"); // SCOPE_SCHEMA
+
+                    currentRow.add("NULL"); // SCOPE_TABLE
+                    currentRow.add(JcrMetaData.DEFAULT_ZERO); // SOURCE_DATA_TYPE
+
+                    // add the current row to the list of records.
+                    records.add(currentRow);
+
+                    ++ordinal;
+                }
+
+            }// end of while
+
+            JcrStatement jcrstmt = new JcrStatement(this.connection);
+            QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
+            return new JcrResultSet(jcrstmt, queryresult, resultSetMetaData);
+
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage());
+        }
 
     }
 
@@ -1006,26 +1092,30 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public ResultSet getSchemas() throws SQLException {
- 		List<List<?>> records = new ArrayList<List<?>> (1);
-  		
-		/***********************************************************************
-		 * Hardcoding JDBC column names for the columns returned in results object
-		 ***********************************************************************/
-		
-		Map<?,Object>[] metadataList = new Map[1];
+        List<List<?>> records = new ArrayList<List<?>>(1);
 
-		metadataList[0] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.COLUMNS.TABLE_SCHEM, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
+        /***********************************************************************
+         * Hardcoding JDBC column names for the columns returned in results object
+         ***********************************************************************/
 
-		MetadataProvider provider = new MetadataProvider(metadataList);
-	        
-	    ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
-	    
-	    JcrStatement stmt = new JcrStatement(this.connection);
-	    QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
-	    ResultSet rs = new JcrResultSet(stmt, queryresult, resultSetMetaData);
-		
-		return rs;
+        Map<?, Object>[] metadataList = new Map[1];
+
+        metadataList[0] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.COLUMNS.TABLE_SCHEM,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+
+        MetadataProvider provider = new MetadataProvider(metadataList);
+
+        ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
+
+        JcrStatement stmt = new JcrStatement(this.connection);
+        QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
+        ResultSet rs = new JcrResultSet(stmt, queryresult, resultSetMetaData);
+
+        return rs;
     }
 
     /**
@@ -1110,34 +1200,35 @@ public class JcrMetaData implements DatabaseMetaData {
      * 
      * @see java.sql.DatabaseMetaData#getTableTypes()
      */
-    @SuppressWarnings("unchecked")
-	@Override
+    @SuppressWarnings( "unchecked" )
+    @Override
     public ResultSet getTableTypes() throws SQLException {
-		
- 		List<List<?>> records = new ArrayList<List<?>> (1);
- 		List<String> row = Arrays.asList(new String[] {ResultsMetadataConstants.TABLE_TYPES.VIEW} );
-		records.add(row);
-	
-		/***********************************************************************
-		 * Hardcoding JDBC column names for the columns returned in results object
-		 ***********************************************************************/
 
-		Map<?,Object>[] metadataList = new Map[1];
+        List<List<?>> records = new ArrayList<List<?>>(1);
+        List<String> row = Arrays.asList(new String[] {ResultsMetadataConstants.TABLE_TYPES.VIEW});
+        records.add(row);
 
-		metadataList[0] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.TABLE_TYPES.TABLE_TYPE, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
+        /***********************************************************************
+         * Hardcoding JDBC column names for the columns returned in results object
+         ***********************************************************************/
 
-		MetadataProvider provider = new MetadataProvider(metadataList);
-	        
-	    ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
-	    
-	    JcrStatement stmt = new JcrStatement(this.connection);
-	    QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
-	    ResultSet rs = new JcrResultSet(stmt, queryresult, resultSetMetaData);
-	    
-	    Exception e = new Exception("==============  Called GetTableTypes ================");
-		e.printStackTrace();
-		return rs;
+        Map<?, Object>[] metadataList = new Map[1];
+
+        metadataList[0] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.TABLE_TYPES.TABLE_TYPE,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+
+        MetadataProvider provider = new MetadataProvider(metadataList);
+
+        ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
+
+        JcrStatement stmt = new JcrStatement(this.connection);
+        QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
+        ResultSet rs = new JcrResultSet(stmt, queryresult, resultSetMetaData);
+        return rs;
     }
 
     /**
@@ -1150,86 +1241,122 @@ public class JcrMetaData implements DatabaseMetaData {
                                 String schemaPattern,
                                 String tableNamePattern,
                                 String[] types ) throws SQLException {
-    	
-        JcrDriver.logger.log(Level.INFO, "getTables: " + catalog + ":" + schemaPattern + ":" + tableNamePattern + ":" + types);
 
-    	
+        JcrDriver.logger.log(Level.FINE, "getTables: " + catalog + ":" + schemaPattern + ":" + tableNamePattern + ":" + types);
+
         // Get all tables if tableNamePattern is null
-        if(tableNamePattern == null) {
-            tableNamePattern = WILDCARD; 
+        if (tableNamePattern == null) {
+            tableNamePattern = WILDCARD;
         }
-        
-        Map<?,Object>[] metadataList = new Map[JDBCColumnPositions.TABLES.MAX_COLUMNS];
-		
-		metadataList[0] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.TABLES.TABLE_CAT, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[1] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.TABLES.TABLE_SCHEM, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[2] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.TABLES.TABLE_NAME, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);
-		metadataList[3] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.TABLES.TABLE_TYPE, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NOT_NULL, this.connection);	
-		metadataList[4] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.TABLES.REMARKS, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[5] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.TABLES.TYPE_CAT, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[6] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.TABLES.TYPE_SCHEM, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[7] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.TABLES.TYPE_NAME, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[8] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.TABLES.SELF_REFERENCING_COL_NAME, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-		metadataList[9] = MetadataProvider.getColumnMetadata(catalogName, null, JDBCColumnNames.TABLES.REF_GENERATION, 
-		        JcrType.DefaultDataTypes.STRING, ResultsMetadataConstants.NULL_TYPES.NULLABLE, this.connection);
-				
-		MetadataProvider provider = new MetadataProvider(metadataList);
-	        
-	    ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
-	    
-		List<List<?>> records = new ArrayList<List<?>>();
-		
-		try {
-	    	  List<NodeType> nodetypes = filterNodeTypes(tableNamePattern);
-	
-	    	  Iterator<NodeType> nodeIt = nodetypes.iterator();
-	    	  // build the list of records from the nodetypes.
-	    	  while (nodeIt.hasNext()) {
-	    		  
-	    		  NodeType type = nodeIt.next();
-	    		  if (!type.isQueryable()) continue;
-	
-		          // list represents a record on the Results object.
-		          List<Object> currentRow = new ArrayList<Object>(JDBCColumnPositions.TABLES.MAX_COLUMNS);
-		          // add values in the current record on the Results object to the list
-		          // number of values to be fetched from each row is MAX_COLUMNS.
-		          
-		          currentRow.add(catalogName); // TABLE_CAT
-		          currentRow.add("NULL"); // TABLE_SCHEM
-		          currentRow.add(type.getName()); //TABLE_NAME
-		          currentRow.add(ResultsMetadataConstants.TABLE_TYPES.VIEW);  //TABLE_TYPE
-		          currentRow.add("Is Mixin: " + type.isMixin()); // REMARKS
-		          currentRow.add("NULL"); // TYPE_CAT
-		          currentRow.add("NULL");  // TYPE_SCHEM
-		          currentRow.add("NULL");  // TYPE_NAME
-		          currentRow.add(type.getPrimaryItemName()); // SELF_REF
-		          currentRow.add("DERIVED"); //  REF_GEN
-	        
-	          // add the current row to the list of records.
-		          records.add(currentRow);
-	    	  }// end of while
-      
-		    JcrStatement jcrstmt = new JcrStatement(this.connection);
-		    QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
-		    Exception te = new Exception("==============  Called GetTables ================ " + records.size());
-		    te.printStackTrace();
-		    
-		    return new JcrResultSet(jcrstmt, queryresult, resultSetMetaData);
 
-		} catch (RepositoryException e) {
-			e.printStackTrace();
-			throw new SQLException(e.getLocalizedMessage());
-		} 
-	}
+        Map<?, Object>[] metadataList = new Map[JDBCColumnPositions.TABLES.MAX_COLUMNS];
+
+        metadataList[0] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.TABLES.TABLE_CAT,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[1] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.TABLES.TABLE_SCHEM,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[2] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.TABLES.TABLE_NAME,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
+        metadataList[3] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.TABLES.TABLE_TYPE,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
+        metadataList[4] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.TABLES.REMARKS,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[5] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.TABLES.TYPE_CAT,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[6] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.TABLES.TYPE_SCHEM,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[7] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.TABLES.TYPE_NAME,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[8] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.TABLES.SELF_REFERENCING_COL_NAME,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[9] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.TABLES.REF_GENERATION,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+
+        MetadataProvider provider = new MetadataProvider(metadataList);
+
+        ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
+
+        List<List<?>> records = new ArrayList<List<?>>();
+
+        try {
+            List<NodeType> nodetypes = filterNodeTypes(tableNamePattern);
+
+            Iterator<NodeType> nodeIt = nodetypes.iterator();
+            // build the list of records from the nodetypes.
+            while (nodeIt.hasNext()) {
+
+                NodeType type = nodeIt.next();
+                if (!type.isQueryable()) continue;
+
+                // list represents a record on the Results object.
+                List<Object> currentRow = new ArrayList<Object>(JDBCColumnPositions.TABLES.MAX_COLUMNS);
+                // add values in the current record on the Results object to the list
+                // number of values to be fetched from each row is MAX_COLUMNS.
+
+                currentRow.add(catalogName); // TABLE_CAT
+                currentRow.add("NULL"); // TABLE_SCHEM
+                currentRow.add(type.getName()); // TABLE_NAME
+                currentRow.add(ResultsMetadataConstants.TABLE_TYPES.VIEW); // TABLE_TYPE
+                currentRow.add("Is Mixin: " + type.isMixin()); // REMARKS
+                currentRow.add("NULL"); // TYPE_CAT
+                currentRow.add("NULL"); // TYPE_SCHEM
+                currentRow.add("NULL"); // TYPE_NAME
+                currentRow.add(type.getPrimaryItemName()); // SELF_REF
+                currentRow.add("DERIVED"); // REF_GEN
+
+                // add the current row to the list of records.
+                records.add(currentRow);
+            }// end of while
+
+            JcrStatement jcrstmt = new JcrStatement(this.connection);
+            QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
+
+            return new JcrResultSet(jcrstmt, queryresult, resultSetMetaData);
+
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage());
+        }
+    }
 
     /**
      * {@inheritDoc}
@@ -1484,7 +1611,7 @@ public class JcrMetaData implements DatabaseMetaData {
     @Override
     public boolean storesMixedCaseIdentifiers() {
         return false; // JCR node types are case-sensitive
-    }       
+    }
 
     /**
      * {@inheritDoc}
@@ -2249,143 +2376,141 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
-    	if (!isWrapperFor(iface)) {
-    	       throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text(DatabaseMetaData.class.getSimpleName(),
-                       iface.getName()));
-    	}
-    	
-    	return iface.cast(this);
-     }
-   
-    private List<NodeType> filterNodeTypes(String tableNamePattern) throws RepositoryException {
-  	  List<NodeType> nodetypes = null;
+        if (!isWrapperFor(iface)) {
+            throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text(DatabaseMetaData.class.getSimpleName(),
+                                                                                iface.getName()));
+        }
 
-  	  if (tableNamePattern.trim().equals(WILDCARD) ) {
-		  nodetypes = this.connection.getRepositoryDelegate().nodeTypes();
-	  } else if (tableNamePattern.contains(WILDCARD)) {
-		  nodetypes = new ArrayList<NodeType>();
-		  String partName = null;
-		  boolean isLeading = false;
-		  boolean isTrailing = false;
-		  partName = tableNamePattern;
-
-	        if(partName.startsWith(WILDCARD))
-	        {
-	        	partName = partName.substring(1);
-	        	isLeading = true;
-	        }
-	        if (partName.endsWith(WILDCARD) && partName.length() > 1 )
-	        {
-	        	partName = partName.substring(0, partName.length() -1 );
-	        	isTrailing = true;
-	        }
-
-		  List<NodeType> nts = this.connection.getRepositoryDelegate().nodeTypes();
-    	  Iterator<NodeType> nodeIt = nts.iterator();
-	      // build the list of records from server's Results object.
-	    	  while (nodeIt.hasNext()) {
-	    		  
-	    		  NodeType type = nodeIt.next();
-	    		  
-	    		  if (isLeading) {
-	    			  if (isTrailing) {
-	    				  if (type.getName().indexOf(partName, 1) > -1) {
-	    					  nodetypes.add(type);
-	    				  }
-	    			  } else  if (type.getName().endsWith(partName) ) {
-	    					  nodetypes.add(type);
-	    			  }
-	    			  
-	    		  } else if (isTrailing) {
-	    			  if (type.getName().startsWith(partName) ) {
-    					  nodetypes.add(type);
-	    			  }
-	    		  }			    		  
-	    	  }
-		  
-	  } else {
-		  NodeType nt = this.connection.getRepositoryDelegate().nodeType(tableNamePattern);
-		  if (nt != null) {
-			  nodetypes = new ArrayList<NodeType>(1);
-			  nodetypes.add(nt);
-		  }
-	  }	    	  
-	  
-	  if (nodetypes.size() > 1) {	    	  
-  	    final Comparator<NodeType> name_order =
-              new Comparator<NodeType>() {
-						public int compare(NodeType e1, NodeType e2) {
-						return e1.getName().compareTo(e2.getName());
-						}
-			};
-			Collections.sort(nodetypes, name_order);
-	  }
-
-	  return nodetypes;
+        return iface.cast(this);
     }
-    
-    private List<PropertyDefinition> filterPropertyDefnitions(
-			String columnNamePattern, PropertyDefinition[] defns) {
-		List<PropertyDefinition> resultDefns = new ArrayList<PropertyDefinition>(defns.length);
 
-		if (columnNamePattern.trim().equals(WILDCARD)) {
-			resultDefns = Arrays.asList(defns);
-		} else if (columnNamePattern.contains(WILDCARD)) {
-			String partName = null;
-			boolean isLeading = false;
-			boolean isTrailing = false;
-			partName = columnNamePattern;
+    private List<NodeType> filterNodeTypes( String tableNamePattern ) throws RepositoryException {
+        List<NodeType> nodetypes = null;
 
-			if (partName.startsWith(WILDCARD)) {
-				partName = partName.substring(1);
-				isLeading = true;
-			}
-			if (partName.endsWith(WILDCARD) && partName.length() > 1) {
-				partName = partName.substring(0, partName.length() - 1);
-				isTrailing = true;
-			}
+        if (tableNamePattern.trim().equals(WILDCARD)) {
+            nodetypes = this.connection.getRepositoryDelegate().nodeTypes();
+        } else if (tableNamePattern.contains(WILDCARD)) {
+            nodetypes = new ArrayList<NodeType>();
+            String partName = null;
+            boolean isLeading = false;
+            boolean isTrailing = false;
+            partName = tableNamePattern;
 
-			for (int i = 0; i < defns.length; i++) {
+            if (partName.startsWith(WILDCARD)) {
+                partName = partName.substring(1);
+                isLeading = true;
+            }
+            if (partName.endsWith(WILDCARD) && partName.length() > 1) {
+                partName = partName.substring(0, partName.length() - 1);
+                isTrailing = true;
+            }
 
-				PropertyDefinition defn = defns[i];
+            List<NodeType> nts = this.connection.getRepositoryDelegate().nodeTypes();
+            Iterator<NodeType> nodeIt = nts.iterator();
+            // build the list of records from server's Results object.
+            while (nodeIt.hasNext()) {
 
-				if (isLeading) {
-					if (isTrailing) {
-						if (defn.getName().indexOf(partName, 1) > -1) {
-							resultDefns.add(defn);
-						}
-					} else if (defn.getName().endsWith(partName)) {
-						resultDefns.add(defn);
-					}
+                NodeType type = nodeIt.next();
 
-				} else if (isTrailing) {
-					if (defn.getName().startsWith(partName)) {
-						resultDefns.add(defn);
-					}
-				}
-			}
+                if (isLeading) {
+                    if (isTrailing) {
+                        if (type.getName().indexOf(partName, 1) > -1) {
+                            nodetypes.add(type);
+                        }
+                    } else if (type.getName().endsWith(partName)) {
+                        nodetypes.add(type);
+                    }
 
-		} else {
-			for (int i = 0; i < defns.length; i++) {
-				PropertyDefinition defn = defns[i];
-				if (defn.getName().equals(columnNamePattern)) {
-					resultDefns.add(defn);
-				}
-			}
+                } else if (isTrailing) {
+                    if (type.getName().startsWith(partName)) {
+                        nodetypes.add(type);
+                    }
+                }
+            }
 
-		}
+        } else {
+            NodeType nt = this.connection.getRepositoryDelegate().nodeType(tableNamePattern);
+            if (nt != null) {
+                nodetypes = new ArrayList<NodeType>(1);
+                nodetypes.add(nt);
+            }
+        }
 
-		if (resultDefns.size() > 1) {
-			final Comparator<PropertyDefinition> name_order = new Comparator<PropertyDefinition>() {
-				public int compare(PropertyDefinition e1, PropertyDefinition e2) {
-					return e1.getName().compareTo(e2.getName());
-				}
-			};
-			Collections.sort(resultDefns, name_order);
-		}
+        if (nodetypes.size() > 1) {
+            final Comparator<NodeType> name_order = new Comparator<NodeType>() {
+                public int compare( NodeType e1,
+                                    NodeType e2 ) {
+                    return e1.getName().compareTo(e2.getName());
+                }
+            };
+            Collections.sort(nodetypes, name_order);
+        }
 
-		return resultDefns;
-	}
+        return nodetypes;
+    }
 
+    private List<PropertyDefinition> filterPropertyDefnitions( String columnNamePattern,
+                                                               PropertyDefinition[] defns ) {
+        List<PropertyDefinition> resultDefns = new ArrayList<PropertyDefinition>(defns.length);
+
+        if (columnNamePattern.trim().equals(WILDCARD)) {
+            resultDefns = Arrays.asList(defns);
+        } else if (columnNamePattern.contains(WILDCARD)) {
+            String partName = null;
+            boolean isLeading = false;
+            boolean isTrailing = false;
+            partName = columnNamePattern;
+
+            if (partName.startsWith(WILDCARD)) {
+                partName = partName.substring(1);
+                isLeading = true;
+            }
+            if (partName.endsWith(WILDCARD) && partName.length() > 1) {
+                partName = partName.substring(0, partName.length() - 1);
+                isTrailing = true;
+            }
+
+            for (int i = 0; i < defns.length; i++) {
+
+                PropertyDefinition defn = defns[i];
+
+                if (isLeading) {
+                    if (isTrailing) {
+                        if (defn.getName().indexOf(partName, 1) > -1) {
+                            resultDefns.add(defn);
+                        }
+                    } else if (defn.getName().endsWith(partName)) {
+                        resultDefns.add(defn);
+                    }
+
+                } else if (isTrailing) {
+                    if (defn.getName().startsWith(partName)) {
+                        resultDefns.add(defn);
+                    }
+                }
+            }
+
+        } else {
+            for (int i = 0; i < defns.length; i++) {
+                PropertyDefinition defn = defns[i];
+                if (defn.getName().equals(columnNamePattern)) {
+                    resultDefns.add(defn);
+                }
+            }
+
+        }
+
+        if (resultDefns.size() > 1) {
+            final Comparator<PropertyDefinition> name_order = new Comparator<PropertyDefinition>() {
+                public int compare( PropertyDefinition e1,
+                                    PropertyDefinition e2 ) {
+                    return e1.getName().compareTo(e2.getName());
+                }
+            };
+            Collections.sort(resultDefns, name_order);
+        }
+
+        return resultDefns;
+    }
 
 }
