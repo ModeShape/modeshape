@@ -24,30 +24,26 @@
 package org.modeshape.jboss.managed.util;
 
 import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
-
-import com.mchange.util.AssertException;
 
 /**
  *
  */
 public class ManagedUtilsTest {
 
-  
     @Test
     public void shouldReturnLabelFormatted() throws Exception {
-    	String label = ManagedUtils.createLabel("options.locking.supported");
-    	assertTrue(label.equals("Options Locking Supported"));
-    }
-    
-    @Test
-    public void shouldReturnErrorOnNullName() throws Exception {
-    	try {
-    		ManagedUtils.createLabel(null);
-    	}catch(IllegalArgumentException e){
-    		assertTrue(e.getMessage().equals("The name argument may not be null"));
-    	}
+        String label = ManagedUtils.createLabel("options.locking.supported");
+        assertTrue(label.equals("Options Locking Supported"));
     }
 
-  }
+    @Test
+    public void shouldReturnErrorOnNullName() throws Exception {
+        try {
+            ManagedUtils.createLabel(null);
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().equals("The name argument may not be null"));
+        }
+    }
+
+}

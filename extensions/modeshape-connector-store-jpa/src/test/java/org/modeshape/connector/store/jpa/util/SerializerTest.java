@@ -32,7 +32,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -44,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.common.util.StringUtil;
@@ -56,8 +57,6 @@ import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactories;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author Randall Hauch
@@ -499,7 +498,7 @@ public class SerializerTest {
          */
         public Object read( ValueFactories valueFactories,
                             byte[] hash,
-                            long length ) throws IOException {
+                            long length ) {
             String key = StringUtil.getHexString(hash);
             return skippedKeys.add(key);
         }
@@ -517,7 +516,7 @@ public class SerializerTest {
             throw new UnsupportedOperationException();
         }
 
-        public boolean isSkipped( Binary binary ) throws UnsupportedEncodingException {
+        public boolean isSkipped( Binary binary ) {
             String key = StringUtil.getHexString(binary.getHash());
             return isSkipped(key);
         }
@@ -567,21 +566,21 @@ public class SerializerTest {
          */
         public Object read( ValueFactories valueFactories,
                             byte[] hash,
-                            long length ) throws IOException {
+                            long length ) {
             LargeValue largeValue = get(hash);
             return largeValue != null ? largeValue.value : null;
         }
 
-        public LargeValue get( String obj ) throws IOException, NoSuchAlgorithmException {
+        public LargeValue get( String obj ) throws NoSuchAlgorithmException {
             byte[] hash = SecureHash.getHash(SecureHash.Algorithm.SHA_1, obj.getBytes());
             return get(hash);
         }
 
-        public LargeValue get( Binary obj ) throws IOException {
+        public LargeValue get( Binary obj ) {
             return get(obj.getHash());
         }
 
-        public LargeValue get( byte[] hash ) throws IOException {
+        public LargeValue get( byte[] hash ) {
             String hexHash = StringUtil.getHexString(hash);
             return largeValuesByHexHash.get(hexHash);
         }
@@ -595,7 +594,7 @@ public class SerializerTest {
         public void write( byte[] hash,
                            long length,
                            PropertyType type,
-                           Object value ) throws IOException {
+                           Object value ) {
             String hexHash = StringUtil.getHexString(hash);
             largeValuesByHexHash.put(hexHash, new LargeValue(hash, length, type, value));
         }
