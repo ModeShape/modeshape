@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<configuration xmlns:mode="http://www.modeshape.org/1.0"
+               xmlns:jcr="http://www.jcp.org/jcr/1.0"
+               xmlns:nt="http://www.jcp.org/jcr/nt/1.0">
+    <!-- JCR Repositories.  This is required, with a separate repository for each JCR repository instance. -->
+    <mode:repositories>
+        <mode:repository jcr:name="Content" mode:source="Store">
+            <mode:options>
+                <mode:option jcr:name="jaasLoginConfigName" value="modeshape-jcr"/>
+            </mode:options>
+            <jcr:nodeTypes>
+                <mode:resource>/org/modeshape/sequencer/teiid/teiid.cnd</mode:resource>
+            </jcr:nodeTypes>
+        </mode:repository>
+    </mode:repositories>
+
+    <!-- Define the sources from which content is made available.  -->
+    <mode:sources jcr:primaryType="nt:unstructured">
+        <mode:source jcr:name="Store" mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource" mode:defaultWorkspaceName="default"/>
+    </mode:sources>
+
+    <!-- Define the sequencers. This is an optional section. -->
+    <mode:sequencers>
+        <mode:sequencer jcr:name="Teiid Model Sequencer" mode:classname="org.modeshape.sequencer.teiid.ModelSequencer">
+            <mode:description>Sequences Teiid relational models (e.g., *.xmi) loaded into the repository under '/files', extracting the structure defined in the models.</mode:description>
+            <!-- Note this path expression captures the path below '/files' but excludes the filename, and places the sequenced
+                 content under the same relative path below '/sequenced/teiid/models'. For example, if an XMI model is uploaded
+                 to '/files/my/favorites/CustomerDetails.xmi', then the sequenced output will be placed at
+                 the '/sequenced/teiid/models/CustomerDetails' node, which will have a primary type of 'xmi:model' and will
+                 contain under it the nodes representing the catalogs, schemas, tables, views, columns, etc. Of course, the 
+                 path expression can be modified as needed; for example, to include the filename of the XMI model in the 
+                 sequenced output path. -->
+            <mode:pathExpression>/files(//)(*.xmi[*])/jcr:content[@jcr:data] => /sequenced/teiid/models$1 </mode:pathExpression>
+        </mode:sequencer>
+        <mode:sequencer jcr:name="Teiid VDB Sequencer" mode:classname="org.modeshape.sequencer.teiid.VdbSequencer">
+            <mode:description>Sequences Teiid Virtual Databases (e.g., *.vdb) loaded into the repository under '/files', extracting the VDB metadata and the structure defined in the VDB's relational models.</mode:description>        
+            <!-- Note this path expression captures the path below '/files' but excludes the filename, and places the sequenced
+                 content under the same relative path below '/sequenced/teiid/models'. For example, if a VDB file is uploaded
+                 to '/files/my/favorites/Customers.vdb', then the sequenced output will be placed at
+                 the '/sequenced/teiid/models/Customer' node, which will have a primary type of 'vdb:virtualDatabase' and will
+                 contain under it the nodes representing the models (which will each contain the nodes representing that
+                 model's catalogs, schemas, tables, views, columns, etc.).  Of course, the path expression
+                 can be modified as needed; for example, to include the filename of the XMI model in the sequenced output path. -->
+            <mode:pathExpression>/files(//)(*.vdb[*])/jcr:content[@jcr:data] => /sequenced/teiid/vdbs$1 </mode:pathExpression>
+        </mode:sequencer>
+    </mode:sequencers>
+</configuration>

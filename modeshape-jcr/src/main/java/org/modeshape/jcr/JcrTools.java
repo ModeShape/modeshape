@@ -23,12 +23,23 @@
  */
 package org.modeshape.jcr;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Calendar;
+import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.mimetype.MimeTypeDetector;
 
 /**
  * Utility methods for working with JCR nodes.
@@ -56,19 +67,19 @@ public class JcrTools {
     }
 
     /**
-     * Get the node under a specified node at a location defined by the specified relative path. If node is required, then a problem
-     * is created and added to the Problems list.
+     * Get the node under a specified node at a location defined by the specified relative path. If node is required, then a
+     * problem is created and added to the Problems list.
      * 
      * @param node a parent node from which to obtain a node relative to. may not be null
      * @param relativePath the path of the desired node. may not be null
      * @param required true if node is required to exist under the given node.
      * @return the node located relative the the input node
-     * @throws RepositoryException 
+     * @throws RepositoryException
      * @throws IllegalArgumentException if the node, relativePath or problems argument is null
      */
     public Node getNode( Node node,
                          String relativePath,
-                         boolean required) throws RepositoryException {
+                         boolean required ) throws RepositoryException {
         CheckArg.isNotNull(node, "node");
         CheckArg.isNotNull(relativePath, "relativePath");
         Node result = null;
@@ -79,7 +90,7 @@ public class JcrTools {
                 throw e;
             }
         }
-        
+
         return result;
     }
 
@@ -87,7 +98,7 @@ public class JcrTools {
      * Get the readable string form for a specified node.
      * 
      * @param node the node to obtain the readable string form. may be null
-     * @return the readable string form for a specified node. 
+     * @return the readable string form for a specified node.
      */
     public String getReadable( Node node ) {
         if (node == null) return "";
@@ -98,8 +109,210 @@ public class JcrTools {
         }
     }
 
+    public MimeTypeDetector mimeTypeDetector( Session session ) {
+        Repository repository = session.getRepository();
+        ExecutionContext context = null;
+        if (repository instanceof JcrRepository) {
+            JcrRepository jcrRepository = (JcrRepository)repository;
+            context = jcrRepository.getExecutionContext();
+        } else {
+            context = new ExecutionContext();
+        }
+        return context.getMimeTypeDetector();
+    }
+
     /**
-     * Get or create a node at the specified path. 
+     * Detect the MIME type for the named filename.
+     * 
+     * @param session the JCR session
+     * @param fileName the file name
+     * @return the MIME type
+     */
+    public String detectMimeType( Session session,
+                                  String fileName ) {
+        try {
+            return mimeTypeDetector(session).mimeTypeOf(fileName, null);
+        } catch (IOException e) {
+            // We're not reading the content, so wrap this as it is unexpected ...
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Detect the MIME type for the named filename.
+     * 
+     * @param session the JCR session
+     * @param file the file
+     * @param useContent true if the content of the file at the URL should also be used to determine the MIME type, or false if
+     *        only the URL itself should be used
+     * @return the MIME type
+     * @throws IOException if there is an error reading the file
+     */
+    public String detectMimeType( Session session,
+                                  File file,
+                                  boolean useContent ) throws IOException {
+        InputStream stream = null;
+        boolean error = false;
+        try {
+            if (useContent) stream = new BufferedInputStream(new FileInputStream(file));
+            return mimeTypeDetector(session).mimeTypeOf(file.getName(), stream);
+        } catch (IOException e) {
+            error = true;
+            throw e;
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    if (!error) throw e;
+                }
+            }
+        }
+    }
+
+    /**
+     * Detect the MIME type for the named filename.
+     * 
+     * @param session the JCR session
+     * @param url the URL
+     * @param useContent true if the content of the file at the URL should also be used to determine the MIME type, or false if
+     *        only the URL itself should be used
+     * @return the MIME type
+     * @throws IOException if there is an error reading the file
+     */
+    public String detectMimeType( Session session,
+                                  URL url,
+                                  boolean useContent ) throws IOException {
+        InputStream stream = null;
+        boolean error = false;
+        try {
+            if (useContent) stream = url.openStream();
+            return mimeTypeDetector(session).mimeTypeOf(url.getPath(), stream);
+        } catch (IOException e) {
+            error = true;
+            throw e;
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    if (!error) throw e;
+                }
+            }
+        }
+    }
+
+    /**
+     * Upload the content in the supplied stream into the repository at the defined path, using the given session. This method
+     * will create a 'nt:file' node at the supplied path, and any non-existant ancestors with nodes of type 'nt:folder'. As
+     * defined by the JCR specification, the binary content (and other properties) will be placed on a child of the 'nt:file' node
+     * named 'jcr:content' with a node type of 'nt:resource'.
+     * <p>
+     * This method always closes the supplied stream.
+     * </p>
+     * 
+     * @param session the JCR session
+     * @param path the path to the file
+     * @param stream the stream containing the content to be uploaded
+     * @return the newly created 'nt:file' node
+     * @throws RepositoryException if there is a problem uploading the file
+     * @throws IOException if there is a problem using the stream
+     */
+    public Node uploadFile( Session session,
+                            String path,
+                            InputStream stream ) throws RepositoryException, IOException {
+        CheckArg.isNotNull(session, "session");
+        CheckArg.isNotNull(path, "path");
+        CheckArg.isNotNull(stream, "stream");
+        Node fileNode = null;
+        boolean error = false;
+        try {
+            // Create an 'nt:file' node at the supplied path, creating any missing intermediate nodes of type 'nt:folder' ...
+            fileNode = findOrCreateNode(session.getRootNode(), path, "nt:folder", "nt:file");
+
+            // Upload the file to that node ...
+            Node contentNode = findOrCreateChild(fileNode, "jcr:content", "nt:resource");
+            Binary binary = session.getValueFactory().createBinary(stream);
+            contentNode.setProperty("jcr:data", binary);
+        } catch (RepositoryException e) {
+            error = true;
+            throw e;
+        } catch (RuntimeException e) {
+            error = true;
+            throw e;
+        } finally {
+            try {
+                stream.close();
+            } catch (RuntimeException e) {
+                if (!error) throw e; // don't override any exception thrown in the block above
+            }
+        }
+        return fileNode;
+    }
+
+    /**
+     * Upload the content at the supplied URL into the repository at the defined path, using the given session. This method will
+     * create a 'nt:file' node at the supplied path, and any non-existant ancestors with nodes of type 'nt:folder'. As defined by
+     * the JCR specification, the binary content (and other properties) will be placed on a child of the 'nt:file' node named
+     * 'jcr:content' with a node type of 'nt:resource'.
+     * 
+     * @param session the JCR session
+     * @param path the path to the file
+     * @param contentUrl the URL where the content can be found
+     * @return the newly created 'nt:file' node
+     * @throws RepositoryException if there is a problem uploading the file
+     * @throws IOException if there is a problem using the stream
+     */
+    public Node uploadFile( Session session,
+                            String path,
+                            URL contentUrl ) throws RepositoryException, IOException {
+        CheckArg.isNotNull(session, "session");
+        CheckArg.isNotNull(path, "path");
+        CheckArg.isNotNull(contentUrl, "contentUrl");
+
+        // Open the URL's stream first ...
+        InputStream stream = contentUrl.openStream();
+        return uploadFile(session, path, stream);
+    }
+
+    /**
+     * Upload the content in the supplied file into the repository at the defined path, using the given session. This method will
+     * create a 'nt:file' node at the supplied path, and any non-existant ancestors with nodes of type 'nt:folder'. As defined by
+     * the JCR specification, the binary content (and other properties) will be placed on a child of the 'nt:file' node named
+     * 'jcr:content' with a node type of 'nt:resource'.
+     * 
+     * @param session the JCR session
+     * @param path the path to the file
+     * @param file the existing and readable file to be uploaded
+     * @return the newly created 'nt:file' node
+     * @throws RepositoryException if there is a problem uploading the file
+     * @throws IOException if there is a problem using the stream
+     * @throws IllegalArgumentException if the file does not exist or is not readable
+     */
+    public Node uploadFile( Session session,
+                            String path,
+                            File file ) throws RepositoryException, IOException {
+        CheckArg.isNotNull(session, "session");
+        CheckArg.isNotNull(path, "path");
+        CheckArg.isNotNull(file, "file");
+
+        if (!file.exists()) {
+            throw new IllegalArgumentException("The file \"" + file.getCanonicalPath() + "\" does not exist");
+        }
+        if (!file.canRead()) {
+            throw new IllegalArgumentException("The file \"" + file.getCanonicalPath() + "\" is not readable");
+        }
+        // Determine the 'lastModified' timestamp ...
+        Calendar lastModified = Calendar.getInstance();
+        lastModified.setTimeInMillis(file.lastModified());
+
+        // Open the URL's stream first ...
+        InputStream stream = new BufferedInputStream(new FileInputStream(file));
+        return uploadFile(session, path, stream);
+    }
+
+    /**
+     * Get or create a node at the specified path.
      * 
      * @param session the JCR session. may not be null
      * @param path the path of the desired node to be found or created. may not be null
@@ -129,7 +342,7 @@ public class JcrTools {
     }
 
     /**
-     * Get or create a node at the specified path. 
+     * Get or create a node at the specified path.
      * 
      * @param session the JCR session. may not be null
      * @param path the path of the desired node to be found or created. may not be null
@@ -149,7 +362,7 @@ public class JcrTools {
     }
 
     /**
-     * Get or create a node at the specified path. 
+     * Get or create a node at the specified path.
      * 
      * @param parentNode the parent node. may not be null
      * @param path the path of the desired child node. may not be null
@@ -201,7 +414,7 @@ public class JcrTools {
     }
 
     /**
-     * Get or create a node with the specified node under the specified parent node. 
+     * Get or create a node with the specified node under the specified parent node.
      * 
      * @param parent the parent node. may not be null
      * @param name the name of the child node. may not be null
@@ -211,7 +424,7 @@ public class JcrTools {
      */
     public Node findOrCreateChild( Node parent,
                                    String name ) throws RepositoryException {
-        return findOrCreateChild( parent, name, null);
+        return findOrCreateChild(parent, name, null);
     }
 
     /**
@@ -226,7 +439,7 @@ public class JcrTools {
     public Node findOrCreateChild( Node parent,
                                    String name,
                                    String nodeType ) throws RepositoryException {
-        return findOrCreateNode( parent, name, nodeType, nodeType);
+        return findOrCreateNode(parent, name, nodeType, nodeType);
     }
 
 }

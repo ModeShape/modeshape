@@ -48,8 +48,26 @@
 						<mode:columnStartPositions></mode:columnStartPositions>
         </mode:sequencer>
         <mode:sequencer jcr:name="Teiid Model Sequencer" mode:classname="org.modeshape.sequencer.teiid.ModelSequencer">
-            <mode:description>Sequences Teiid relational models (e.g., *.xmi) loaded into the repository under '/files', extracting the structure defined in the models.</mode:description>        
-            <mode:pathExpression>/files//(*.xmi[*])/jcr:content[@jcr:data] => /sequenced/teiid/models/$1 </mode:pathExpression>
+            <mode:description>Sequences Teiid relational models (e.g., *.xmi) loaded into the repository under '/files', extracting the structure defined in the models.</mode:description>
+            <!-- Note this path expression captures the path below '/files' but excludes the filename, and places the sequenced
+                 content under the same relative path below '/sequenced/teiid/models'. For example, if an XMI model is uploaded
+                 to '/files/my/favorites/CustomerDetails.xmi', then the sequenced output will be placed at
+                 the '/sequenced/teiid/models/CustomerDetails' node, which will have a primary type of 'xmi:model' and will
+                 contain under it the nodes representing the catalogs, schemas, tables, views, columns, etc. Of course, the 
+                 path expression can be modified as needed; for example, to include the filename of the XMI model in the 
+                 sequenced output path. -->
+            <mode:pathExpression>/files(//)(*.xmi[*])/jcr:content[@jcr:data] => /sequenced/teiid/models$1 </mode:pathExpression>
+        </mode:sequencer>
+        <mode:sequencer jcr:name="Teiid VDB Sequencer" mode:classname="org.modeshape.sequencer.teiid.VdbSequencer">
+            <mode:description>Sequences Teiid Virtual Databases (e.g., *.vdb) loaded into the repository under '/files', extracting the VDB metadata and the structure defined in the VDB's relational models.</mode:description>        
+            <!-- Note this path expression captures the path below '/files' but excludes the filename, and places the sequenced
+                 content under the same relative path below '/sequenced/teiid/models'. For example, if a VDB file is uploaded
+                 to '/files/my/favorites/Customers.vdb', then the sequenced output will be placed at
+                 the '/sequenced/teiid/models/Customer' node, which will have a primary type of 'vdb:virtualDatabase' and will
+                 contain under it the nodes representing the models (which will each contain the nodes representing that
+                 model's catalogs, schemas, tables, views, columns, etc.).  Of course, the path expression
+                 can be modified as needed; for example, to include the filename of the XMI model in the sequenced output path. -->
+            <mode:pathExpression>/files(//)(*.vdb[*])/jcr:content[@jcr:data] => /sequenced/teiid/vdbs$1 </mode:pathExpression>
         </mode:sequencer>
         <mode:sequencer jcr:name="Class File Sequencer" mode:classname="org.modeshape.sequencer.classfile.ClassFileSequencer">
             <mode:description>Sequences Java class files loaded into the repository under '/files', extracting structural information.</mode:description>        

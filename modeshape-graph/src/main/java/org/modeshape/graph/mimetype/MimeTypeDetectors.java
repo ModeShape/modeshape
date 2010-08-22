@@ -37,6 +37,8 @@ import org.modeshape.common.util.Logger;
 @ThreadSafe
 public final class MimeTypeDetectors implements MimeTypeDetector {
 
+    public static final String DEFAULT_MIME_TYPE = "application/octet-stream";
+
     /**
      * Class loader factory instance that always returns the {@link Thread#getContextClassLoader() current thread's context class
      * loader}, or if <code>null</code> the class loader for this class.
@@ -116,10 +118,10 @@ public final class MimeTypeDetectors implements MimeTypeDetector {
             try {
                 content.reset();
                 for (int chr = content.read(); chr >= 0; chr = content.read()) {
-                    if (chr == 0) return "application/octet-stream";
+                    if (chr == 0) return DEFAULT_MIME_TYPE;
                 }
             } catch (IOException meansTooManyBytesRead) {
-                return "application/octet-stream";
+                return DEFAULT_MIME_TYPE;
             }
         }
         return "text/plain";

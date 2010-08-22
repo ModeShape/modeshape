@@ -678,6 +678,7 @@ application/vnd.syncml.dm+xml           xdm
 application/vnd.syncml.dm.notification
 application/vnd.syncml.ds.notification
 application/vnd.tao.intent-module-archive   tao
+application/vnd.teiid.vdb           vdb
 application/vnd.tmobile-livetv          tmo
 application/vnd.trid.tpt            tpt
 application/vnd.triscape.mxs            mxs
@@ -728,7 +729,7 @@ application/vnd.wv.ssp+xml
 application/vnd.xara                xar
 application/vnd.xfdl                xfdl
 application/vnd.xfdl.webform
-application/vnd.xmi+xml
+application/vnd.xmi+xml             xmi
 application/vnd.xmpie.cpkg
 application/vnd.xmpie.dpkg
 application/vnd.xmpie.plan

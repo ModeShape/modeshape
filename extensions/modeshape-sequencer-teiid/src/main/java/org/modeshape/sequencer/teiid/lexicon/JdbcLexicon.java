@@ -37,5 +37,5 @@ public class JdbcLexicon {
     }
 
     public static final Name SOURCE = new BasicName(Namespace.URI, "source");
-    public static final Name IMPORTED_FROM = new BasicName(Namespace.URI, "importedFrom");
+    public static final Name IMPORTED = new BasicName(Namespace.URI, "imported");
 }

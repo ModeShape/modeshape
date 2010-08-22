@@ -124,7 +124,9 @@ public class XmiModelReader extends XmiGraphReader {
         namespaces.register(RelationalLexicon.Namespace.PREFIX, RelationalLexicon.Namespace.URI);
         namespaces.register(XsiLexicon.Namespace.PREFIX, XsiLexicon.Namespace.URI);
 
-        replaceTypeName("relational:importSetting", "jdbcs:importedFrom");
+        replaceTypeName("relational:importSetting", "jdbcs:imported");
+        replaceTypeName("relational:result", "relational:procedureResult");
+        replaceTypeName("relational:parameter", "relational:procedureParameter");
         replaceTypeName("jdbcs:jdbcSource", "jdbcs:source");
     }
 
@@ -266,7 +268,7 @@ public class XmiModelReader extends XmiGraphReader {
             output.setProperty(modelRootPath, CoreLexicon.ORIGINAL_FILE, originalFile);
         }
         if (sha1 != null) {
-            output.setProperty(modelRootPath, CoreLexicon.SHA1_HASH, sha1);
+            output.setProperty(modelRootPath, ModeShapeLexicon.SHA1, sha1);
         }
 
         // Write out the VDB-related information (if applicable) ...
@@ -312,7 +314,7 @@ public class XmiModelReader extends XmiGraphReader {
         registerHandler("mmcore:AnnotationContainer", new SkipBranchHandler());
         registerHandler("transform:TransformationContainer", new SkipBranchHandler());
         registerHandler("diagram:DiagramContainer", new SkipBranchHandler());
-        registerHandler("importSettings", new DefaultModelObjectHandler(JdbcLexicon.IMPORTED_FROM));
+        registerHandler("importSettings", new DefaultModelObjectHandler(JdbcLexicon.IMPORTED));
 
         SubgraphNode xmi = subgraph.getRoot();
         // Process the other top-level model objects ...

@@ -62,4 +62,7 @@ public class ModeShapeLexicon {
     public static final Name PROJECTION = new BasicName(Namespace.URI, "projection");
     public static final Name PROJECTIONS = new BasicName(Namespace.URI, "projections");
 
+    public static final Name HASHED = new BasicName(Namespace.URI, "hashed");
+    public static final Name SHA1 = new BasicName(Namespace.URI, "sha1");
+
 }

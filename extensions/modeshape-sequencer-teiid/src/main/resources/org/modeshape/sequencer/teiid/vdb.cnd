@@ -50,10 +50,10 @@
  - vdb:sourceTranslator (string)
  - vdb:sourceJndiName (string)
  - vdb:sourceName (string)
- + * (vdb:markers) = vdb:markers copy
+ + vdb:markers (vdb:markers) = vdb:markers copy
 
 [vdb:markers] > nt:unstructured
- + * (vdb:marker) = vdb:validationError copy sns
+ + vdb:marker (vdb:marker) = vdb:marker copy sns
 
 [vdb:marker] > nt:unstructured
  - vdb:severity (string) = 'WARNING' < 'WARNING','ERROR','INFO'

@@ -42,6 +42,7 @@ import org.modeshape.common.util.SecureHash.HashingInputStream;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrMixLexicon;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.property.BinaryFactory;
 import org.modeshape.graph.property.DateTimeFactory;
 import org.modeshape.graph.property.Name;
@@ -140,7 +141,7 @@ public class VdbSequencer implements StreamSequencer {
             output.setProperty(vdbPath, VdbLexicon.VERSION, (long)manifest.getVersion());
             output.setProperty(vdbPath, VdbLexicon.PREVIEW, manifest.isPreview());
             output.setProperty(vdbPath, VdbLexicon.ORIGINAL_FILE, pathToArchiveFile);
-            output.setProperty(vdbPath, CoreLexicon.SHA1_HASH, sha1);
+            output.setProperty(vdbPath, ModeShapeLexicon.SHA1, sha1);
 
             ReferenceResolver resolver = new ReferenceResolver(context);
             for (VdbModel model : manifest.modelsInDependencyOrder()) {

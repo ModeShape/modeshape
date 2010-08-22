@@ -29,12 +29,13 @@
 <nt  = "http://www.jcp.org/jcr/nt/1.0">
 <xmi = "http://www.omg.org/XMI">
 <mmcore = "http://www.metamatrix.com/metamodels/Core">
+<mode = "http://www.modeshape.org/1.0">
 
 //------------------------------------------------------------------------------
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
 
-[mmcore:model] > xmi:referenceable mixin
+[mmcore:model] > xmi:referenceable, mode:hashed mixin
   - mmcore:modelType (string) = 'UNKNOWN' < 'PHYSICAL','VIRTUAL','TYPE','VDB_ARCHIVE','UNKNOWN','FUNCTION','CONFIGURATION','METAMODEL','EXTENSION','LOGICAL','MATERIALIZATION'
   - mmcore:primaryMetamodelUri (string)
   - mmcore:description (string)

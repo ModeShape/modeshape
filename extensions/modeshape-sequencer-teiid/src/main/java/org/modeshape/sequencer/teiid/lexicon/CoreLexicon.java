@@ -48,6 +48,5 @@ public class CoreLexicon {
     public static final Name KEYWORDS = new BasicName(Namespace.URI, "keywords");
     public static final Name PRODUCER_NAME = new BasicName(Namespace.URI, "producerName");
     public static final Name PRODUCER_VERSION = new BasicName(Namespace.URI, "producerVersion");
-    public static final Name SHA1_HASH = new BasicName(Namespace.URI, "sha1");
 
 }
