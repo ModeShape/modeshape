@@ -89,9 +89,8 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
           <descriptors>
-            <descriptor>${project.basedir}/../../src/main/assembly/connector-with-dependencies.xml</descriptor>
+            <descriptor>src/main/assembly/with-dependencies.xml</descriptor>
           </descriptors>
-					<finalName>${project.artifactId}-${project.version}</finalName>
         </configuration>
         <executions>
           <execution>
@@ -107,11 +106,11 @@
 			-->
 			<plugin>
 				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-					</archive>
-				</configuration>
+        <configuration>
+          <archive>
+            <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+          </archive>
+        </configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.felix</groupId>
