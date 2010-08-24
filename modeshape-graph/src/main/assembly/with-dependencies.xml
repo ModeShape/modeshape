@@ -9,6 +9,16 @@
 		<dependencySet>
 			<unpack>true</unpack>
 			<scope>runtime</scope>
+            <unpackOptions>
+				<excludes>
+				<exclude>/META-INF/*.RSA</exclude>
+				<exclude>/META-INF/*.DSA</exclude>
+				<exclude>/META-INF/*.SF</exclude>
+				<exclude>/META-INF/*.rsa</exclude>
+				<exclude>/META-INF/*.dsa</exclude>
+				<exclude>/META-INF/*.sf</exclude>
+				</excludes>
+            </unpackOptions>
 		</dependencySet>
 	</dependencySets>
 	<!--fileSets>
