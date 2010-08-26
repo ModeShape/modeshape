@@ -35,7 +35,6 @@ import net.jcip.annotations.Immutable;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.util.Version;
 import org.modeshape.common.text.FilenameEncoder;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.text.UrlEncoder;
@@ -136,7 +135,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
         super(sourceName, connectionFactory, verifyWorkspaceInSource);
         CheckArg.isNotNull(configuration, "configuration");
         this.configuration = configuration;
-        this.analyzer = analyzer != null ? analyzer : new StandardAnalyzer(Version.LUCENE_30);
+        this.analyzer = analyzer != null ? analyzer : new StandardAnalyzer(configuration.getVersion());
         this.rules = rules != null ? rules : DEFAULT_RULES;
     }
 

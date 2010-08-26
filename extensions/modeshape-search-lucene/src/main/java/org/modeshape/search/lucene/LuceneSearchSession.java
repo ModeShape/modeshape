@@ -213,6 +213,16 @@ public class LuceneSearchSession implements WorkspaceSession {
         return workspace.analyzer;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession#getVersion()
+     */
+    @Override
+    public Version getVersion() {
+        return workspace.getVersion();
+    }
+
     public boolean hasWriters() {
         return contentWriter != null;
     }
@@ -347,7 +357,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                                  int offset ) throws ParseException, IOException {
         // Parse the full-text search and search against the 'fts' field ...
         long planningNanos = System.nanoTime();
-        QueryParser parser = new QueryParser(Version.LUCENE_29, ContentIndex.FULL_TEXT, workspace.analyzer);
+        QueryParser parser = new QueryParser(workspace.getVersion(), ContentIndex.FULL_TEXT, workspace.analyzer);
         Query query = parser.parse(fullTextSearchExpression);
         planningNanos = System.nanoTime() - planningNanos;
 

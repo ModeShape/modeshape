@@ -32,6 +32,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.LockFactory;
 import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.util.Version;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.text.NoOpEncoder;
 import org.modeshape.common.text.TextEncoder;
@@ -188,6 +189,16 @@ public class LuceneConfigurations {
         protected RamDirectoryFactory() {
         }
 
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.search.lucene.LuceneConfiguration#getVersion()
+         */
+        @Override
+        public Version getVersion() {
+            return Version.LUCENE_30;
+        }
+
         @Override
         protected RAMDirectory createDirectory( String workspaceName,
                                                 String indexName ) {
@@ -284,6 +295,16 @@ public class LuceneConfigurations {
             this.lockFactory = lockFactory;
             this.workspaceNameEncoder = workspaceNameEncoder != null ? workspaceNameEncoder : new NoOpEncoder();
             this.indexNameEncoder = indexNameEncoder != null ? indexNameEncoder : new NoOpEncoder();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.search.lucene.LuceneConfiguration#getVersion()
+         */
+        @Override
+        public Version getVersion() {
+            return Version.LUCENE_30;
         }
 
         @Override

@@ -373,10 +373,11 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 	|	+ jcr-2.0.jar
 	|	+ joda-time-1.6.jar
 	|	+ junit-dep-4.4.jar
-	|	+ lucene-analyzers-3.0.0.jar
-	|	+ lucene-core-3.0.0.jar
-	|	+ lucene-regex-3.0.0.jar
-	|	+ lucene-snowball-3.0.0.jar
+	|	+ lucene-analyzers-3.0.2.jar
+	|	+ lucene-core-3.0.2.jar
+	|	+ lucene-regex-3.0.2.jar
+	|	+ lucene-snowball-3.0.2.jar
+	|	+ lucene-misc-3.0.2.jar
 	|	+ modeshape-cnd-&versionNumber;.jar
 	|	+ modeshape-common-&versionNumber;.jar
 	|	+ modeshape-graph-&versionNumber;.jar

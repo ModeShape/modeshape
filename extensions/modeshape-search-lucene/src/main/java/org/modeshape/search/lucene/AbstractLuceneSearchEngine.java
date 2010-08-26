@@ -37,6 +37,8 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryParser.complexPhrase.ComplexPhraseQueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Collector;
@@ -45,6 +47,7 @@ import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.util.Version;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
@@ -109,6 +112,7 @@ import org.modeshape.graph.search.AbstractSearchEngine;
 import org.modeshape.graph.search.SearchEngine;
 import org.modeshape.graph.search.SearchEngineProcessor;
 import org.modeshape.graph.search.SearchEngineWorkspace;
+import org.modeshape.search.lucene.query.CompareStringQuery;
 import org.modeshape.search.lucene.query.HasValueQuery;
 import org.modeshape.search.lucene.query.MatchNoneQuery;
 
@@ -290,7 +294,7 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
         /**
          * Create the field name that will be used to store the full-text searchable property values.
          * 
-         * @param propertyName the name of the property; may not be null
+         * @param propertyName the name of the property; may not null
          * @return the field name for the full-text searchable property values; never null
          */
         protected abstract String fullTextFieldName( String propertyName );
@@ -785,8 +789,30 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                 }
                 if (term instanceof FullTextSearch.SimpleTerm) {
                     FullTextSearch.SimpleTerm simple = (FullTextSearch.SimpleTerm)term;
+                    Analyzer analyzer = session.getAnalyzer();
                     if (simple.containsWildcards()) {
-                        return session.findNodesLike(fieldName, simple.getValue(), false);
+                        // Use the ComplexPhraseQueryParser, but instead of wildcard queries (which don't work with leading
+                        // wildcards) we should use our like queries (which often use RegexQuery where applicable) ...
+                        ComplexPhraseQueryParser parser = new ComplexPhraseQueryParser(session.getVersion(), fieldName, analyzer) {
+                            @Override
+                            protected Query getWildcardQuery( String field,
+                                                              String termStr ) {
+                                return CompareStringQuery.createQueryForNodesWithFieldLike(termStr, field, valueFactories, false);
+                            }
+                        };
+                        try {
+                            String expression = simple.getValue();
+                            // The ComplexPhraseQueryParser only understands the '?' and '*' as being wildcards ...
+                            expression = expression.replaceAll("(?<![\\\\])_", "?");
+                            expression = expression.replaceAll("(?<![\\\\])%", "*");
+                            // // Replace any '-' between tokens, except when preceded or followed by a digit, '*', or '?' ...
+                            expression = expression.replaceAll("((?<![\\d*?]))[-]((?![\\d*?]))", "$1 $2");
+                            // Then use the parser ...
+                            Query query = parser.parse(expression);
+                            return query;
+                        } catch (ParseException e) {
+                            throw new IOException(e);
+                        }
                     }
                     PhraseQuery query = new PhraseQuery();
                     query.setSlop(0); // terms must be adjacent
@@ -840,6 +866,8 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
         IndexSearcher getContentSearcher() throws IOException;
 
         Analyzer getAnalyzer();
+
+        Version getVersion();
 
         /**
          * Create a {@link TupleCollector} instance that collects the results from the index(es).

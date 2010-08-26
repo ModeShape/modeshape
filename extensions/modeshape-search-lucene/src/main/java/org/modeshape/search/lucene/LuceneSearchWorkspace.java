@@ -88,7 +88,7 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
         assert configuration != null;
         this.workspaceName = workspaceName;
         this.workspaceDirectoryName = workspaceName.trim().length() != 0 ? workspaceName : UUID.randomUUID().toString();
-        this.analyzer = analyzer != null ? analyzer : new StandardAnalyzer(Version.LUCENE_30);
+        this.analyzer = analyzer != null ? analyzer : new StandardAnalyzer(configuration.getVersion());
         this.rules = rules != null ? rules : LuceneSearchEngine.DEFAULT_RULES;
         this.configuration = configuration;
         this.contentDirectory = this.configuration.getDirectory(workspaceDirectoryName, INDEX_NAME);
@@ -141,4 +141,15 @@ public class LuceneSearchWorkspace implements SearchEngineWorkspace {
             changesLock.unlock();
         }
     }
+
+    /**
+     * Get the version information for Lucene.
+     * 
+     * @return the version information; never null
+     * @see org.modeshape.search.lucene.LuceneConfiguration#getVersion()
+     */
+    public Version getVersion() {
+        return configuration.getVersion();
+    }
+
 }
