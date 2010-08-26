@@ -25,15 +25,23 @@ package org.modeshape.search.lucene;
 
 import net.jcip.annotations.ThreadSafe;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.util.Version;
 import org.modeshape.graph.search.SearchEngineException;
 
 /**
  * Interface used to obtain the Lucene {@link Directory} instance that should be used for a workspace given the name of the
- * workspace. There are several implementations (see {@link LuceneConfigurations}), but custom implementations can always be
- * used.
+ * workspace. There are several implementations (see {@link LuceneConfigurations}), but custom implementations can always be used.
  */
 @ThreadSafe
 public interface LuceneConfiguration {
+
+    /**
+     * Get the version for the Lucene configuration.
+     * 
+     * @return the version
+     */
+    Version getVersion();
+
     /**
      * Get the {@link Directory} that should be used for the workspace with the supplied name.
      * 
