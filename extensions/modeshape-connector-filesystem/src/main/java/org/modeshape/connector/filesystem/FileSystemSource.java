@@ -591,6 +591,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
                                                                                                                      JcrLexicon.ENCODED,
                                                                                                                      JcrLexicon.MIMETYPE,
                                                                                                                      JcrLexicon.LAST_MODIFIED,
+                                                                                                                     JcrLexicon.LAST_MODIFIED_BY,
                                                                                                                      JcrLexicon.UUID,
                                                                                                                      ModeShapeIntLexicon.NODE_DEFINITON})));
         /**
@@ -601,6 +602,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
                                                                                                                         Arrays.asList(new Name[] {
                                                                                                                             JcrLexicon.PRIMARY_TYPE,
                                                                                                                             JcrLexicon.CREATED,
+                                                                                                                            JcrLexicon.CREATED_BY,
                                                                                                                             JcrLexicon.UUID,
                                                                                                                             ModeShapeIntLexicon.NODE_DEFINITON})));
 
