@@ -30,7 +30,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import net.jcip.annotations.Immutable;
-import org.modeshape.common.util.Base64;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.graph.GraphI18n;
@@ -132,7 +131,7 @@ public abstract class AbstractBinary implements Binary {
             sb.append("binary[");
             sb.append(getSize());
             sb.append("] with hash ");
-            sb.append(Base64.encodeBytes(getHash()));
+            sb.append(SecureHash.asHexString(getHash()));
             return sb.toString();
         } finally {
             release();

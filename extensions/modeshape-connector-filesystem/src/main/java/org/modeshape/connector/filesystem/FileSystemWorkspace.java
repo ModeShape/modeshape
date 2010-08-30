@@ -197,17 +197,16 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
                 fos = new FileOutputStream(temp);
 
                 Property dataProp = properties.get(JcrLexicon.DATA);
-                if (dataProp == null) {
-                    I18n msg = FileSystemI18n.missingRequiredProperty;
-                    String dataPropName = JcrLexicon.DATA.getString();
-                    throw new RepositorySourceException(source.getName(), msg.text(parentPath,
-                                                                                   getName(),
-                                                                                   source.getName(),
-                                                                                   dataPropName));
-                }
-
                 BinaryFactory binaryFactory = context.getValueFactories().getBinaryFactory();
-                Binary binary = binaryFactory.create(properties.get(JcrLexicon.DATA).getFirstValue());
+                Binary binary = null;
+                if (dataProp == null) {
+                    // There is no content, so make empty content ...
+                    binary = binaryFactory.create(new byte[] {});
+                    dataProp = context.getPropertyFactory().create(JcrLexicon.DATA, new Object[] {binary});
+                } else {
+                    // Must read the value ...
+                    binary = binaryFactory.create(properties.get(JcrLexicon.DATA).getFirstValue());
+                }
 
                 IoUtil.write(binary.getStream(), fos);
 
