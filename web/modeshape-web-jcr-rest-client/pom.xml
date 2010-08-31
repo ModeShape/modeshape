@@ -124,13 +124,9 @@
 		</plugins>
 	</reporting>
 	<profiles>
-		<profile>
-			<id>cargo-1</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-			<build>
-              <pluginManagement>
+	    <profile>
+			<id>assembly</id>
+				<build>
                     <plugins>
                         <plugin>
 
@@ -142,6 +138,11 @@
                                     <descriptor>src/assembly/kit.xml</descriptor>  
                                     -->
                                 </descriptors>
+								<archive>
+									<manifest>
+										<addClasspath>true</addClasspath>
+									</manifest>
+								</archive>
                                </configuration>
                                 <executions>
                                     <execution>
@@ -152,8 +153,15 @@
                                     </execution>
                                 </executions>
                         </plugin>                        
-                     </plugins>
-                </pluginManagement>
+				</plugins>
+			</build>	
+		</profile>
+		<profile>
+			<id>cargo-1</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<build>
 				<plugins>
 					<plugin>
 						<groupId>org.codehaus.cargo</groupId>

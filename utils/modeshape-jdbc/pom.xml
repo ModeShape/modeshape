@@ -229,34 +229,40 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <configuration>
-        <!--  using the kit.xml to exclude the log4j related jars from the jar-with-dependencies -->
-             <descriptors>
-                <descriptor>src/assembly/kit.xml</descriptor>
-            </descriptors>
-          <archive>
-            <manifest>
-              <addClasspath>true</addClasspath>
-            </manifest>
-          </archive>
-        </configuration> 
-        <executions>
-          <execution>
-            <id>make-my-jar-with-dependencies</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      
+      </plugin>    
     </plugins>
   </build>
   </profile>
+  	    <profile>
+			<id>assembly</id>
+				<build>
+
+                    <plugins>
+                        <plugin>
+
+                            <artifactId>maven-assembly-plugin</artifactId>
+                             <configuration>
+                                <descriptors>
+                                     <descriptor>src/assembly/kit.xml</descriptor>
+                                </descriptors>
+								<archive>
+									<manifest>
+										<addClasspath>true</addClasspath>
+									</manifest>
+								</archive>
+                               </configuration>
+                                <executions>
+                                    <execution>
+                                        <phase>package</phase>
+                                            <goals>
+                                                <goal>single</goal>
+                                            </goals>
+                                    </execution>
+                                </executions>
+                        </plugin>                        
+				</plugins>
+			</build>	
+		</profile>
  </profiles>
         
 </project>
