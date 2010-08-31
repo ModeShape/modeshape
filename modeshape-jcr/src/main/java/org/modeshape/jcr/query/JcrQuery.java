@@ -23,6 +23,7 @@
  */
 package org.modeshape.jcr.query;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.RepositoryException;
@@ -73,7 +74,7 @@ public class JcrQuery extends JcrAbstractQuery {
         assert query != null;
         this.query = query;
         this.hints = hints;
-        this.variables = null;
+        this.variables = new HashMap<String, Object>();
     }
 
     protected QueryCommand query() {

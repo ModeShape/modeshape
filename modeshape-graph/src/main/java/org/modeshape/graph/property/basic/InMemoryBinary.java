@@ -45,6 +45,7 @@ public class InMemoryBinary extends AbstractBinary {
     private int hc;
 
     public InMemoryBinary( byte[] bytes ) {
+        super();
         CheckArg.isNotNull(bytes, "bytes");
         this.bytes = bytes;
     }

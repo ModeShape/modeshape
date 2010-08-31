@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,8 @@ import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
@@ -1251,6 +1254,11 @@ public class GraphTest {
     public void shouldPerformSearchWhenConnectorSupportsQueries() {
         // Set the expected results that will be returned from the connector ...
         Columns columns = mock(Columns.class);
+        when(columns.iterator()).thenAnswer(new Answer<Iterator<Column>>() {
+            public Iterator<Column> answer( InvocationOnMock invocation ) throws Throwable {
+                return Collections.<Column>emptyList().iterator();
+            }
+        });
         List<Object[]> tuples = Collections.emptyList();
         Statistics stats = mock(Statistics.class);
         nextColumns = columns;

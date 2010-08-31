@@ -53,6 +53,7 @@ public class FileSystemRepositoryWriteTest {
     private JcrConfiguration configuration;
     private JcrEngine engine;
     private List<Session> sessions = new ArrayList<Session>();
+    @SuppressWarnings( "unused" )
     private boolean print = false;
     private JcrTools tools;
 

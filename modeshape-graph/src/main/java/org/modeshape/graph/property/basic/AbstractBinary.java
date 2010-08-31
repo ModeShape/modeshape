@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.text.DecimalFormat;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import net.jcip.annotations.Immutable;
@@ -127,15 +128,29 @@ public abstract class AbstractBinary implements Binary {
     public String toString() {
         try {
             acquire();
-            StringBuilder sb = new StringBuilder(super.toString());
-            sb.append("binary[");
-            sb.append(getSize());
-            sb.append("] with hash ");
+            StringBuilder sb = new StringBuilder();
+            sb.append("binary (");
+            sb.append(getReadableSize());
+            sb.append(", SHA1=");
             sb.append(SecureHash.asHexString(getHash()));
+            sb.append(')');
             return sb.toString();
         } finally {
             release();
         }
+    }
+
+    public String getReadableSize() {
+        long size = getSize();
+        float decimalInKb = size / 1024.0f;
+        if (decimalInKb < 1) return Long.toString(size) + "B";
+        float decimalInMb = decimalInKb / 1024.0f;
+        if (decimalInMb < 1) return new DecimalFormat("#,##0.00").format(decimalInKb) + "KB";
+        float decimalInGb = decimalInMb / 1024.0f;
+        if (decimalInGb < 1) return new DecimalFormat("#,##0.00").format(decimalInMb) + "MB";
+        float decimalInTb = decimalInGb / 1024.0f;
+        if (decimalInTb < 1) return new DecimalFormat("#,##0.00").format(decimalInGb) + "GB";
+        return new DecimalFormat("#,##0.00").format(decimalInTb) + "TB";
     }
 
 }

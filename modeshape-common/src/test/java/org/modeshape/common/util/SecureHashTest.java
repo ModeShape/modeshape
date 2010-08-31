@@ -101,7 +101,7 @@ public class SecureHashTest {
         // The hash should also be the same ...
         assertThat(hashThruHashingStream, is(hashThruStream));
 
-        System.out.println(algorithm.digestName() + "---> " + hashingStream.getHashAsHexString() + " of " + resourceName);
+        // System.out.println(algorithm.digestName() + "---> " + hashingStream.getHashAsHexString() + " of " + resourceName);
     }
 
 }

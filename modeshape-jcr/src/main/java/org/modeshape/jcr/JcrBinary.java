@@ -117,4 +117,14 @@ class JcrBinary implements javax.jcr.Binary, org.modeshape.jcr.api.Binary {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return binary.toString();
+    }
+
 }
