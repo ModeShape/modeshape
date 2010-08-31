@@ -23,10 +23,15 @@
  */
 package org.modeshape.test.integration.sequencer;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import java.util.HashMap;
+import java.util.Map;
 import javax.jcr.Node;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 /**
  * 
@@ -159,6 +164,70 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         printQuery("SELECT * FROM [relational:procedure]", 0);
         printQuery("SELECT * FROM [relational:procedureParameter]", 0);
         printQuery("SELECT * FROM [relational:procedureResult]", 0);
+    }
+
+    @FixFor( "MODE-860" )
+    @Test
+    public void shouldFindVdbsUsingQueryWithMultipleVariables() throws Exception {
+        String[] vdbFiles = {"YahooUdfTest.vdb", "qe.vdb", "qe.2.vdb", "qe.3.vdb", "qe.4.vdb", "PartsFromXml.vdb"};
+        uploadVdbs("/files/", vdbFiles);
+
+        // Print out the top level of the VDBs ...
+        Node files = assertNode("/files");
+        // print = true;
+        printSubgraph(files, 5);
+
+        // Wait for the sequencing to finish ...
+        waitUntilSequencedNodesIs(vdbFiles.length, 20);
+        session.refresh(false);
+
+        // Print out the top level of the VDBs ...
+        // print = true;
+        Node vdbs = assertNode("/sequenced");
+        printSubgraph(vdbs, 4);
+
+        // Query for the VDBs by path glob ...
+        printQuery("SELECT * FROM [nt:file] WHERE PATH() LIKE '/file*/*.vdb'", 6);
+        printQuery("SELECT * FROM [nt:file] WHERE PATH() LIKE '*/Yah*.vdb'", 1);
+        printQuery("SELECT * FROM [nt:file] WHERE PATH() LIKE '/files/q*.vdb'", 4);
+        printQuery("SELECT * FROM [nt:file] WHERE PATH() LIKE '/files/q*.2.vdb'", 1);
+        printQuery("SELECT file.*,content.* FROM [nt:file] AS file JOIN [nt:resource] AS content ON ISCHILDNODE(content,file) WHERE PATH(file) LIKE '/files/q*.2.vdb'",
+                   1);
+        printQuery("SELECT file.*,content.[jcr:lastModified],content.[jcr:lastModifiedBy] FROM [nt:file] AS file JOIN [nt:resource] AS content ON ISCHILDNODE(content,file) WHERE PATH(file) LIKE '/files/q*.2.vdb'",
+                   1);
+
+        // Query for the VDBs by path glob using variable ...
+        printQuery("SELECT * FROM [nt:file] WHERE PATH() LIKE $path", vars("path", "/files/q*.2.vdb"), 1);
+
+        // Query for the VDBs by version range ...
+        printQuery("SELECT [jcr:primaryType],[jcr:created],[jcr:createdBy] FROM [nt:file] WHERE PATH() LIKE $path",
+                   vars("path", "/files/q*.2.vdb"),
+                   1);
+    }
+
+    protected void uploadFiles( String destinationPath,
+                                String... resourcePaths ) throws Exception {
+        for (String resourcePath : resourcePaths) {
+            uploadFile(resourcePath, destinationPath);
+        }
+    }
+
+    protected void uploadVdbs( String destinationPath,
+                               String... resourcePaths ) throws Exception {
+        for (String resourcePath : resourcePaths) {
+            uploadFile("sequencers/teiid/vdb/" + resourcePath, destinationPath);
+        }
+    }
+
+    protected Map<String, String> vars( String... keyValuePairs ) {
+        assertThat(keyValuePairs.length % 2, is(0));
+        Map<String, String> map = new HashMap<String, String>();
+        for (int i = 0; i != keyValuePairs.length; ++i) {
+            String key = keyValuePairs[i];
+            String value = keyValuePairs[++i];
+            map.put(key, value);
+        }
+        return map;
     }
 
 }

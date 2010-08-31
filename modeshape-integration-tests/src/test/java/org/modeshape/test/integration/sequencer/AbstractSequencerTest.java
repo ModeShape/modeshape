@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
@@ -41,6 +42,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
@@ -495,7 +497,19 @@ public abstract class AbstractSequencerTest {
      * @throws RepositoryException
      */
     protected void printSubgraph( Node node ) throws RepositoryException {
-        printSubgraph(node, " ", node.getDepth(), true);
+        printSubgraph(node, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Load the subgraph below this node, and print it to System.out if printing is enabled.
+     * 
+     * @param node the root of the subgraph
+     * @param maxDepth the maximum depth of the subgraph that should be printed
+     * @throws RepositoryException
+     */
+    protected void printSubgraph( Node node,
+                                  int maxDepth ) throws RepositoryException {
+        printSubgraph(node, " ", node.getDepth(), maxDepth);
     }
 
     /**
@@ -505,7 +519,7 @@ public abstract class AbstractSequencerTest {
      * @throws RepositoryException
      */
     protected void printNode( Node node ) throws RepositoryException {
-        printSubgraph(node, " ", node.getDepth(), true);
+        printSubgraph(node, " ", node.getDepth(), 1);
     }
 
     /**
@@ -514,16 +528,18 @@ public abstract class AbstractSequencerTest {
      * @param node the root of the subgraph
      * @param lead the string that each line should begin with; may be null if there is no such string
      * @param depthOfSubgraph the depth of this subgraph's root node
-     * @param recursive true if the
+     * @param maxDepthOfSubgraph the maximum depth of the subgraph that should be printed
      * @throws RepositoryException
      */
     private void printSubgraph( Node node,
                                 String lead,
                                 int depthOfSubgraph,
-                                boolean recursive ) throws RepositoryException {
+                                int maxDepthOfSubgraph ) throws RepositoryException {
         if (!print) return;
+        int currentDepth = node.getDepth() - depthOfSubgraph + 1;
+        if (currentDepth > maxDepthOfSubgraph) return;
         if (lead == null) lead = "";
-        String nodeLead = lead + StringUtil.createString(' ', (node.getDepth() - depthOfSubgraph) * 2);
+        String nodeLead = lead + StringUtil.createString(' ', (currentDepth - 1) * 2);
 
         StringBuilder sb = new StringBuilder();
         sb.append(nodeLead);
@@ -562,25 +578,35 @@ public abstract class AbstractSequencerTest {
             Property property = node.getProperty(propertyName);
             sb = new StringBuilder();
             sb.append(nodeLead).append("  - ").append(propertyName).append('=');
+            boolean binary = property.getType() == PropertyType.BINARY;
             if (property.isMultiple()) {
                 sb.append('[');
                 boolean first = true;
                 for (Value value : property.getValues()) {
                     if (first) first = false;
                     else sb.append(',');
-                    sb.append(value.getString());
+                    if (binary) {
+                        sb.append(value.getBinary());
+                    } else {
+                        sb.append(value.getString());
+                    }
                 }
                 sb.append(']');
             } else {
-                sb.append(property.getValue().getString());
+                Value value = property.getValue();
+                if (binary) {
+                    sb.append(value.getBinary());
+                } else {
+                    sb.append(value.getString());
+                }
             }
             System.out.println(sb);
         }
 
-        if (recursive) {
+        if (currentDepth < maxDepthOfSubgraph) {
             for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
                 Node child = iter.nextNode();
-                printSubgraph(child, lead, depthOfSubgraph, true);
+                printSubgraph(child, lead, depthOfSubgraph, maxDepthOfSubgraph);
             }
         }
     }
@@ -596,7 +622,7 @@ public abstract class AbstractSequencerTest {
 
     protected void printProperties( Node node ) throws RepositoryException, PathNotFoundException, ValueFormatException {
         if (!print) return;
-        printSubgraph(node, " ", node.getDepth(), false);
+        printSubgraph(node, " ", node.getDepth(), 1);
     }
 
     protected void printStart( String fileName,
@@ -619,7 +645,7 @@ public abstract class AbstractSequencerTest {
      * @throws RepositoryException
      */
     protected QueryResult printQuery( String jcrSql2 ) throws RepositoryException {
-        return printQuery(jcrSql2, Query.JCR_SQL2, -1);
+        return printQuery(jcrSql2, Query.JCR_SQL2, null, -1);
     }
 
     /**
@@ -632,13 +658,36 @@ public abstract class AbstractSequencerTest {
      */
     protected QueryResult printQuery( String jcrSql2,
                                       long expectedNumberOfResults ) throws RepositoryException {
-        return printQuery(jcrSql2, Query.JCR_SQL2, expectedNumberOfResults);
+        return printQuery(jcrSql2, Query.JCR_SQL2, null, expectedNumberOfResults);
+    }
+
+    /**
+     * Execute the supplied JCR-SQL2 query and, if printing is enabled, print out the results.
+     * 
+     * @param jcrSql2 the JCR-SQL2 query
+     * @param variables the variables for the query
+     * @param expectedNumberOfResults the expected number of rows in the results, or -1 if this is not to be checked
+     * @return the results
+     * @throws RepositoryException
+     */
+    protected QueryResult printQuery( String jcrSql2,
+                                      Map<String, String> variables,
+                                      long expectedNumberOfResults ) throws RepositoryException {
+        return printQuery(jcrSql2, Query.JCR_SQL2, variables, expectedNumberOfResults);
     }
 
     protected QueryResult printQuery( String queryExpression,
                                       String queryLanguage,
+                                      Map<String, String> variables,
                                       long expectedNumberOfResults ) throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery(queryExpression, queryLanguage);
+        if (variables != null && !variables.isEmpty()) {
+            for (Map.Entry<String, String> entry : variables.entrySet()) {
+                String key = entry.getKey();
+                Value value = session.getValueFactory().createValue(entry.getValue());
+                query.bindValue(key, value);
+            }
+        }
         QueryResult results = query.execute();
         if (expectedNumberOfResults >= 0L) {
             assertThat("Expected different number of rows from '" + queryExpression + "'",
@@ -648,6 +697,7 @@ public abstract class AbstractSequencerTest {
         if (print) {
             System.out.println(queryExpression);
             System.out.println(results);
+            System.out.println();
         }
         return results;
     }

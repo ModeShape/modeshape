@@ -33,6 +33,7 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.model.TypeSystem.TypeFactory;
 
@@ -48,6 +49,7 @@ public class QueryResults implements org.modeshape.graph.query.QueryResults {
     private final Problems problems;
     private final Columns columns;
     private final List<Object[]> tuples;
+    private final int[] tupleIndexesForColumns;
     private final Statistics statistics;
     private final String plan;
 
@@ -72,6 +74,16 @@ public class QueryResults implements org.modeshape.graph.query.QueryResults {
         this.tuples = tuples;
         this.statistics = statistics;
         this.plan = plan;
+        // Precompute the indexes for each tuple, given the desired columns ...
+        this.tupleIndexesForColumns = new int[this.columns.getColumnCount() + this.columns.getLocationCount()];
+        int i = 0;
+        for (Column column : this.columns) {
+            this.tupleIndexesForColumns[i++] = this.columns.getColumnIndexForProperty(column.selectorName().getString(),
+                                                                                      column.propertyName());
+        }
+        for (String selectorName : this.columns.getSelectorNames()) {
+            this.tupleIndexesForColumns[i++] = this.columns.getLocationIndex(selectorName);
+        }
     }
 
     /**
@@ -280,7 +292,7 @@ public class QueryResults implements org.modeshape.graph.query.QueryResults {
         if (useData) {
             for (Object[] tuple : getTuples()) {
                 for (int i = 0, j = 1; i != tupleLength; ++i, ++j) {
-                    String valueStr = stringOf(typeSystem, tuple[i]);
+                    String valueStr = stringOf(typeSystem, tuple[this.tupleIndexesForColumns[i]]);
                     if (valueStr == null) continue;
                     columnWidths[j] = Math.max(Math.min(maxWidth, valueStr.length()), columnWidths[j]);
                 }
@@ -347,7 +359,7 @@ public class QueryResults implements org.modeshape.graph.query.QueryResults {
         sb.append("| ").append(StringUtil.justifyLeft(Integer.toString(rowNumber), columnWidths[0], ' ')).append(' ');
         // Print the remaining columns ...
         for (int i = 0, j = 1; i != tupleLength; ++i, ++j) {
-            String valueStr = stringOf(typeSystem, tuple[i]);
+            String valueStr = stringOf(typeSystem, tuple[tupleIndexesForColumns[i]]);
             valueStr = StringUtil.justifyLeft(valueStr, columnWidths[j], ' ');
             sb.append('|').append(' ').append(valueStr).append(' ');
         }
