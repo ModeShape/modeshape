@@ -45,7 +45,8 @@
             <include>org.apache.lucene:lucene-core</include>
             <include>org.apache.lucene:lucene-analyzers</include>
             <include>org.apache.lucene:lucene-snowball</include>
-            <include>org.apache.lucene:lucene-regex</include>     
+            <include>org.apache.lucene:lucene-regex</include>    
+			<include>org.apache.lucene:lucene-misc</include> 			
 
             <!-- Most of the sequencers have no 3rd party dependencies other than those already included in JBoss AS or EAP -->
             <include>org.modeshape:modeshape-sequencer-cnd</include>
