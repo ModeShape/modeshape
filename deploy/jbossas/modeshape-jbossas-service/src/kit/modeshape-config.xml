@@ -116,6 +116,7 @@
             </mode:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here.-->
             <jcr:nodeTypes>
+                <mode:resource>/org/modeshape/sequencer/teiid/teiid.cnd</mode:resource>
                 <mode:resource>/org/modeshape/connector/meta/jdbc/connector-metajdbc.cnd</mode:resource>
                 <mode:resource>/org/modeshape/sequencer/classfile/sequencer-classfile.cnd</mode:resource>
                 <mode:resource>/org/modeshape/sequencer/image/images.cnd</mode:resource>
