@@ -76,6 +76,7 @@ import org.modeshape.jcr.api.query.qom.QueryCommand;
 import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
 import org.modeshape.jcr.api.query.qom.SetCriteria;
 import org.modeshape.jcr.api.query.qom.SetQuery;
+import org.modeshape.jcr.api.query.qom.Subquery;
 import org.modeshape.jcr.query.JcrQueryContext;
 
 /**
@@ -659,6 +660,17 @@ public class JcrQueryObjectModelFactory
             jcrValues.add(jcrValue);
         }
         return new JcrSetCriteria(jcrOperand, jcrValues);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.jcr.api.query.qom.QueryObjectModelFactory#subquery(org.modeshape.jcr.api.query.qom.QueryCommand)
+     */
+    @Override
+    public Subquery subquery( QueryCommand subqueryCommand ) {
+        JcrQueryCommand jcrCommand = CheckArg.getInstanceOf(subqueryCommand, JcrQueryCommand.class, "subqueryCommand");
+        return new JcrSubquery(jcrCommand);
     }
 
     /**

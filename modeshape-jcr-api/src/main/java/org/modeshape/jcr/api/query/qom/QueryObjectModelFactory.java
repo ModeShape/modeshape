@@ -206,6 +206,17 @@ public interface QueryObjectModelFactory extends javax.jcr.query.qom.QueryObject
                            StaticOperand... values ) throws InvalidQueryException, RepositoryException;
 
     /**
+     * Creates a subquery that can be used as a {@link StaticOperand} in another query.
+     * 
+     * @param subqueryCommand the query command that is to be used as the subquery
+     * @return the constraint; non-null
+     * @throws InvalidQueryException if a particular validity test is possible on this method, the implemention chooses to perform
+     *         that test (and not leave it until later, on {@link #createQuery}), and the parameters given fail that test
+     * @throws RepositoryException if the operation otherwise fails
+     */
+    public Subquery subquery( QueryCommand subqueryCommand ) throws InvalidQueryException, RepositoryException;
+
+    /**
      * Create an arithmetic dynamic operand that adds the numeric value of the two supplied operand(s).
      * 
      * @param left the left-hand-side operand; not null
