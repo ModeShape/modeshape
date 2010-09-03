@@ -621,13 +621,24 @@ ORDER BY nodeSet1.title,
 	        <para>
 						Support for the <code>IN</code> and <code>NOT IN</code> clauses to more easily and concisely supply multiple
 						of discrete static operands.
-						For example, "<code>WHERE ... [my:type].[prop1] IN (3,5,7,10,11,50) ...</code>".
+						For example, "<code>WHERE ... prop1 IN (3,5,7,10,11,50) ...</code>".
 	        </para>
         </listitem>
         <listitem>
 	        <para>
 						Support for the <code>BETWEEN</code> clause to more easily and concisely supply a range of discrete operands.
-						For example, "<code>WHERE ... [my:type].[prop1] BETWEEN 3 EXCLUSIVE AND 10 ...</code>".
+						For example, "<code>WHERE ... prop1 BETWEEN 3 EXCLUSIVE AND 10 ...</code>".
+	        </para>
+        </listitem>
+        <listitem>
+	        <para>
+						Support for (non-correlated) subqueries in the <code>WHERE</code> clause, wherever a <emphasis>static operand</emphasis> can be used.
+						Subqueries can even be used within another subquery. All subqueries must return a single column, and each row's single
+						value will be treated as a literal value. If the subquery is used in a clause that expects a single value 
+						(e.g., in a comparison), only the subquery's first row will be used. If the subquery is used in a clause that
+						allows multiple values (e.g., <code>IN (...)</code>), then all of the subquery's rows will be used.
+						For example, this query "<code>WHERE ... prop1 IN ( SELECT my:prop2 FROM my:type2 WHERE my:prop3 &lt; '1000' ) AND ...</code>"
+						will use the results of the subquery as the literal values in the <code>IN</code> clause.
 	        </para>
         </listitem>
       </itemizedlist>
@@ -694,8 +705,12 @@ ntname ::= quotedntname | unquotedntname
 quotedntname ::= ''' unquotedntname ''' 
 unquotedntname ::= /* A node type name */ 
 
-value ::= ''' literalvalue ''' | literalvalue
+value ::= literal | subquery
+
+literal ::= ''' literalvalue ''' | literalvalue
 literalvalue ::= /* A property value (in standard string form) */
+
+subquery ::= '(' QueryCommand ')' | QueryCommand
 
 like ::= propname 'LIKE' likepattern [ escape ]
 likepattern ::= ''' likechar { likepattern } '''
@@ -811,6 +826,17 @@ offset ::= /* Non-negative integer value */
 						"<code>... ORDER BY</code> <code>(SCORE(type1) * SCORE(type2)) ASC,</code> <code>LENGTH(type2.property1) DESC</code>".
 						For detail, see the <link linkend="jcr-sql2-ordering">grammar for order-by clauses</link>.
 					</para>
+        </listitem>
+        <listitem>
+	        <para>
+						Support for (non-correlated) subqueries in the <code>WHERE</code> clause, wherever a <emphasis>static operand</emphasis> can be used.
+						Subqueries can even be used within another subquery. All subqueries must return a single column, and each row's single
+						value will be treated as a literal value. If the subquery is used in a clause that expects a single value 
+						(e.g., in a comparison), only the subquery's first row will be used. If the subquery is used in a clause that
+						allows multiple values (e.g., <code>IN (...)</code>), then all of the subquery's rows will be used.
+						For example, this query "<code>WHERE ... [my:type].[prop1] IN ( SELECT [my:prop2] FROM [my:type2] WHERE [my:prop3] &lt; '1000' ) AND ...</code>"
+						will use the results of the subquery as the literal values in the <code>IN</code> clause.
+	        </para>
         </listitem>
       </itemizedlist>
 		</para>
@@ -1095,7 +1121,7 @@ simplePath ::= /* A JCR Path (rather Name) that contains only SQL-legal
 				<title>Static Operands</title>
 <programlisting><![CDATA[
 	
-StaticOperand ::= Literal | BindVariableValue
+StaticOperand ::= Literal | BindVariableValue | Subquery
 
 Literal
 Literal ::= CastLiteral | UncastLiteral
@@ -1120,6 +1146,15 @@ BindVariableValue ::= '$'bindVariableName
 
 bindVariableName ::= /* A string that conforms to the JCR Name syntax, though the prefix
                         does not need to be a registered namespace prefix. */
+
+]]></programlisting>
+			</sect2>
+			<sect2>
+				<title>Subqueries</title>
+<programlisting><![CDATA[
+
+Subquery ::= '(' QueryCommand  ')' |
+             QueryCommand
 
 ]]></programlisting>
 			</sect2>

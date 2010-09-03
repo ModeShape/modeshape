@@ -23,6 +23,7 @@
  */
 package org.modeshape.graph.query.model;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -80,6 +81,31 @@ public class Visitors {
      */
     public static String readable( Visitable visitable ) {
         return visit(visitable, new ReadableVisitor()).getString();
+    }
+
+    /**
+     * Using a visitor, obtain the {@link Subquery} objects that are contained within the supplied {@link Visitable object}. This
+     * method does find Subquery objets nested in other Subquery objects.
+     * 
+     * @param visitable the visitable
+     * @param includeNestedSubqueries true if any Subquery objects within other Subquery objects should be included, or false if
+     *        only the top-level Subquery objects should be included
+     * @return the collection of subqueries; never null but possibly empty if no subqueries were found
+     */
+    public static Collection<Subquery> subqueries( Visitable visitable,
+                                                   final boolean includeNestedSubqueries ) {
+        final Collection<Subquery> subqueries = new LinkedList<Subquery>();
+        Visitors.visitAll(visitable, new Visitors.AbstractVisitor() {
+            @Override
+            public void visit( Subquery subquery ) {
+                subqueries.add(subquery);
+                if (includeNestedSubqueries) {
+                    // Now look for any subqueries in the subquery ...
+                    subquery.query().accept(this);
+                }
+            }
+        });
+        return subqueries;
     }
 
     /**
@@ -240,6 +266,11 @@ public class Visitors {
             @Override
             public void visit( PropertyValue prop ) {
                 symbols.add(prop.selectorName());
+            }
+
+            @Override
+            public void visit( Subquery obj ) {
+                // do nothing ...
             }
 
             @Override
@@ -517,6 +548,14 @@ public class Visitors {
         /**
          * {@inheritDoc}
          * 
+         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Subquery)
+         */
+        public void visit( Subquery obj ) {
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.ReferenceValue)
          */
         public void visit( ReferenceValue obj ) {
@@ -588,17 +627,15 @@ public class Visitors {
             this.strategy = strategy;
         }
 
-        protected final void enqueue( Visitable objectToBeVisited ) {
+        protected void enqueue( Visitable objectToBeVisited ) {
             if (objectToBeVisited != null) {
                 itemQueue.add(objectToBeVisited);
             }
         }
 
-        protected final void enqueue( Iterable<? extends Visitable> objectsToBeVisited ) {
+        protected void enqueue( Iterable<? extends Visitable> objectsToBeVisited ) {
             for (Visitable objectToBeVisited : objectsToBeVisited) {
-                if (objectToBeVisited != null) {
-                    itemQueue.add(objectToBeVisited);
-                }
+                enqueue(objectToBeVisited);
             }
         }
 
@@ -622,7 +659,7 @@ public class Visitors {
          * 
          * @param strategy the visitor that should be called at every node.
          */
-        protected WalkAllVisitor( Visitor strategy ) {
+        public WalkAllVisitor( Visitor strategy ) {
             super(strategy);
         }
 
@@ -944,6 +981,17 @@ public class Visitors {
             enqueue(query.columns());
             enqueue(query.constraint());
             enqueue(query.orderings());
+            visitNext();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Subquery)
+         */
+        public void visit( Subquery subquery ) {
+            strategy.visit(subquery);
+            enqueue(subquery.query());
             visitNext();
         }
 
@@ -1486,6 +1534,17 @@ public class Visitors {
                 append(' ');
                 query.limits().accept(this);
             }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.query.model.Visitor#visit(org.modeshape.graph.query.model.Subquery)
+         */
+        public void visit( Subquery subquery ) {
+            append('(');
+            subquery.query().accept(this);
+            append(')');
         }
 
         /**

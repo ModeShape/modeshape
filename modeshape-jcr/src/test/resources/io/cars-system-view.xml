@@ -145,5 +145,17 @@
       <sv:property sv:name="car:mpgHighway" sv:type="Long"><sv:value>20</sv:value></sv:property>
       <sv:property sv:name="car:engine" sv:type="String"><sv:value>4.6L 260 hp V8 5-speed (heavy-duty)</sv:value></sv:property>
     </sv:node>
+    <sv:node sv:name="Toyota Land Cruiser">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>
+      <sv:property sv:name="car:maker" sv:type="String"><sv:value>Toyota</sv:value></sv:property>
+      <sv:property sv:name="car:model" sv:type="String"><sv:value>Land Cruiser FJ55</sv:value></sv:property>
+      <sv:property sv:name="car:year" sv:type="String"><sv:value>1967</sv:value></sv:property>
+      <sv:property sv:name="car:msrp" sv:type="String"><sv:value>$13,255</sv:value></sv:property>
+      <sv:property sv:name="car:userRating" sv:type="Long"><sv:value>5</sv:value></sv:property>
+      <sv:property sv:name="car:valueRating" sv:type="Long"><sv:value>3</sv:value></sv:property>
+      <sv:property sv:name="car:mpgCity" sv:type="Long"><sv:value>7</sv:value></sv:property>
+      <sv:property sv:name="car:mpgHighway" sv:type="Long"><sv:value>9</sv:value></sv:property>
+      <sv:property sv:name="car:engine" sv:type="String"><sv:value>3.9 L I6 F</sv:value></sv:property>
+    </sv:node>
   </sv:node>
 </sv:node>

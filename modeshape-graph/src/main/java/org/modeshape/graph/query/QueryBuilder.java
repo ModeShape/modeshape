@@ -86,6 +86,7 @@ import org.modeshape.graph.query.model.SetCriteria;
 import org.modeshape.graph.query.model.SetQuery;
 import org.modeshape.graph.query.model.Source;
 import org.modeshape.graph.query.model.StaticOperand;
+import org.modeshape.graph.query.model.Subquery;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.model.UpperCase;
 import org.modeshape.graph.query.model.Visitors;
@@ -1908,6 +1909,16 @@ public class QueryBuilder {
         /**
          * Define the right-hand side of a comparison.
          * 
+         * @param subquery the subquery
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder literal( QueryCommand subquery ) {
+            return comparisonBuilder.is(operator, subquery);
+        }
+
+        /**
+         * Define the right-hand side of a comparison.
+         * 
          * @param variableName the name of the variable
          * @return the constraint builder; never null
          */
@@ -2180,6 +2191,26 @@ public class QueryBuilder {
         /**
          * Define the upper boundary value of a range.
          * 
+         * @param subquery the subquery
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder subquery( Subquery subquery ) {
+            return comparisonBuilder.constraintBuilder.setConstraint(new Between(comparisonBuilder.left, lowerBound, subquery));
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
+         * @param subquery the subquery
+         * @return the constraint builder; never null
+         */
+        public ConstraintBuilder subquery( QueryCommand subquery ) {
+            return subquery(new Subquery(subquery));
+        }
+
+        /**
+         * Define the upper boundary value of a range.
+         * 
          * @param literal the literal value that is to be cast
          * @return the constraint builder; never null
          */
@@ -2433,6 +2464,26 @@ public class QueryBuilder {
          */
         public AndBuilder<UpperBoundary> variable( String variableName ) {
             return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, new BindVariableName(variableName)));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param subquery the subquery
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> subquery( Subquery subquery ) {
+            return new AndBuilder<UpperBoundary>(new UpperBoundary(comparisonBuilder, subquery));
+        }
+
+        /**
+         * Define the lower boundary value of a range.
+         * 
+         * @param subquery the subquery
+         * @return the constraint builder; never null
+         */
+        public AndBuilder<UpperBoundary> subquery( QueryCommand subquery ) {
+            return subquery(new Subquery(subquery));
         }
 
         /**
@@ -2703,6 +2754,16 @@ public class QueryBuilder {
             this.constraintBuilder = constraintBuilder;
         }
 
+        public ConstraintBuilder isInSubquery( QueryCommand subquery ) {
+            CheckArg.isNotNull(subquery, "subquery");
+            return this.constraintBuilder.setConstraint(new SetCriteria(left, new Subquery(subquery)));
+        }
+
+        public ConstraintBuilder isInSubquery( Subquery subquery ) {
+            CheckArg.isNotNull(subquery, "subquery");
+            return this.constraintBuilder.setConstraint(new SetCriteria(left, subquery));
+        }
+
         public ConstraintBuilder isIn( Object... literals ) {
             CheckArg.isNotNull(literals, "literals");
             Collection<StaticOperand> right = new ArrayList<StaticOperand>();
@@ -2841,22 +2902,63 @@ public class QueryBuilder {
          * Define the right-hand-side of the constraint using the supplied operator.
          * 
          * @param operator the operator; may not be null
-         * @param literal the literal value
+         * @param subquery the subquery
          * @return the builder used to create the constraint clause, ready to be used to create other constraints clauses or
          *         complete already-started clauses; never null
          */
         public ConstraintBuilder is( Operator operator,
-                                     Object literal ) {
+                                     QueryCommand subquery ) {
             assert operator != null;
-            Literal value = literal instanceof Literal ? (Literal)literal : new Literal(literal);
-            return this.constraintBuilder.setConstraint(new Comparison(left, operator, value));
+            return is(operator, subquery);
         }
 
         /**
          * Define the right-hand-side of the constraint using the supplied operator.
          * 
-         * @param lowerBoundLiteral the literal value that represents the lower bound of the range (inclusive)
-         * @param upperBoundLiteral the literal value that represents the upper bound of the range (inclusive)
+         * @param operator the operator; may not be null
+         * @param subquery the subquery
+         * @return the builder used to create the constraint clause, ready to be used to create other constraints clauses or
+         *         complete already-started clauses; never null
+         */
+        public ConstraintBuilder is( Operator operator,
+                                     Subquery subquery ) {
+            assert operator != null;
+            return is(operator, subquery);
+        }
+
+        /**
+         * Define the right-hand-side of the constraint using the supplied operator.
+         * 
+         * @param operator the operator; may not be null
+         * @param literalOrSubquery the literal value or subquery
+         * @return the builder used to create the constraint clause, ready to be used to create other constraints clauses or
+         *         complete already-started clauses; never null
+         */
+        public ConstraintBuilder is( Operator operator,
+                                     Object literalOrSubquery ) {
+            assert operator != null;
+            return this.constraintBuilder.setConstraint(new Comparison(left, operator, adapt(literalOrSubquery)));
+        }
+
+        protected StaticOperand adapt( Object literalOrSubquery ) {
+            if (literalOrSubquery instanceof QueryCommand) {
+                // Wrap the query in a subquery ...
+                return new Subquery((QueryCommand)literalOrSubquery);
+            }
+            if (literalOrSubquery instanceof Subquery) {
+                return (Subquery)literalOrSubquery;
+            }
+            if (literalOrSubquery instanceof Literal) {
+                return (Literal)literalOrSubquery;
+            }
+            return new Literal(literalOrSubquery);
+        }
+
+        /**
+         * Define the right-hand-side of the constraint using the supplied operator.
+         * 
+         * @param lowerBoundLiteral the literal value that represents the lower bound of the range (inclusive); may be a subquery
+         * @param upperBoundLiteral the literal value that represents the upper bound of the range (inclusive); may be a subquery
          * @return the builder used to create the constraint clause, ready to be used to create other constraints clauses or
          *         complete already-started clauses; never null
          */
@@ -2864,9 +2966,7 @@ public class QueryBuilder {
                                             Object upperBoundLiteral ) {
             assert lowerBoundLiteral != null;
             assert upperBoundLiteral != null;
-            Literal lower = lowerBoundLiteral instanceof Literal ? (Literal)lowerBoundLiteral : new Literal(lowerBoundLiteral);
-            Literal upper = upperBoundLiteral instanceof Literal ? (Literal)upperBoundLiteral : new Literal(upperBoundLiteral);
-            return this.constraintBuilder.setConstraint(new Between(left, lower, upper));
+            return this.constraintBuilder.setConstraint(new Between(left, adapt(lowerBoundLiteral), adapt(upperBoundLiteral)));
         }
 
         /**
@@ -2949,78 +3049,78 @@ public class QueryBuilder {
         /**
          * Define the right-hand-side of the constraint to be equivalent to the supplied literal value.
          * 
-         * @param literal the literal value
+         * @param literalOrSubquery the literal value or a subquery
          * @return the builder used to create the constraint clause, ready to be used to create other constraints clauses or
          *         complete already-started clauses; never null
          */
-        public ConstraintBuilder isEqualTo( Object literal ) {
-            return is(Operator.EQUAL_TO, literal);
+        public ConstraintBuilder isEqualTo( Object literalOrSubquery ) {
+            return is(Operator.EQUAL_TO, literalOrSubquery);
         }
 
         /**
          * Define the right-hand-side of the constraint to be greater than the supplied literal value.
          * 
-         * @param literal the literal value
+         * @param literalOrSubquery the literal value or a subquery
          * @return the builder used to create the constraint clause, ready to be used to create other constraints clauses or
          *         complete already-started clauses; never null
          */
-        public ConstraintBuilder isGreaterThan( Object literal ) {
-            return is(Operator.GREATER_THAN, literal);
+        public ConstraintBuilder isGreaterThan( Object literalOrSubquery ) {
+            return is(Operator.GREATER_THAN, literalOrSubquery);
         }
 
         /**
          * Define the right-hand-side of the constraint to be greater than or equal to the supplied literal value.
          * 
-         * @param literal the literal value
+         * @param literalOrSubquery the literal value or a subquery
          * @return the builder used to create the constraint clause, ready to be used to create other constraints clauses or
          *         complete already-started clauses; never null
          */
-        public ConstraintBuilder isGreaterThanOrEqualTo( Object literal ) {
-            return is(Operator.GREATER_THAN_OR_EQUAL_TO, literal);
+        public ConstraintBuilder isGreaterThanOrEqualTo( Object literalOrSubquery ) {
+            return is(Operator.GREATER_THAN_OR_EQUAL_TO, literalOrSubquery);
         }
 
         /**
          * Define the right-hand-side of the constraint to be less than the supplied literal value.
          * 
-         * @param literal the literal value
+         * @param literalOrSubquery the literal value or a subquery
          * @return the builder used to create the constraint clause, ready to be used to create other constraints clauses or
          *         complete already-started clauses; never null
          */
-        public ConstraintBuilder isLessThan( Object literal ) {
-            return is(Operator.LESS_THAN, literal);
+        public ConstraintBuilder isLessThan( Object literalOrSubquery ) {
+            return is(Operator.LESS_THAN, literalOrSubquery);
         }
 
         /**
          * Define the right-hand-side of the constraint to be less than or equal to the supplied literal value.
          * 
-         * @param literal the literal value
+         * @param literalOrSubquery the literal value or a subquery
          * @return the builder used to create the constraint clause, ready to be used to create other constraints clauses or
          *         complete already-started clauses; never null
          */
-        public ConstraintBuilder isLessThanOrEqualTo( Object literal ) {
-            return is(Operator.LESS_THAN_OR_EQUAL_TO, literal);
+        public ConstraintBuilder isLessThanOrEqualTo( Object literalOrSubquery ) {
+            return is(Operator.LESS_THAN_OR_EQUAL_TO, literalOrSubquery);
         }
 
         /**
          * Define the right-hand-side of the constraint to be LIKE the supplied literal value.
          * 
-         * @param literal the literal value
+         * @param literalOrSubquery the literal value or a subquery
          * @return the builder used to create the constraint clause, ready to be used to create other constraints clauses or
          *         complete already-started clauses; never null
          */
-        public ConstraintBuilder isLike( Object literal ) {
-            return is(Operator.LIKE, literal);
+        public ConstraintBuilder isLike( Object literalOrSubquery ) {
+            return is(Operator.LIKE, literalOrSubquery);
         }
 
         /**
          * Define the right-hand-side of the constraint to be not equal to the supplied literal value.
          * 
-         * @param literal the literal value
+         * @param literalOrSubquery the literal value or a subquery
          * @return the builder used to create the constraint clause, ready to be used to create other constraints clauses or
          *         complete already-started clauses; never null
          */
-        public ConstraintBuilder isNotEqualTo( Object literal ) {
-            return is(Operator.NOT_EQUAL_TO, literal);
+        public ConstraintBuilder isNotEqualTo( Object literalOrSubquery ) {
+            return is(Operator.NOT_EQUAL_TO, literalOrSubquery);
         }
 
         /**

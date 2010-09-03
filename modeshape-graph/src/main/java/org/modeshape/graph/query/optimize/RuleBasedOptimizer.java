@@ -69,6 +69,9 @@ public class RuleBasedOptimizer implements Optimizer {
      */
     protected void populateRuleStack( LinkedList<OptimizerRule> ruleStack,
                                       PlanHints hints ) {
+        if (hints.hasSubqueries) {
+            ruleStack.addFirst(RaiseVariableName.INSTANCE);
+        }
         ruleStack.addFirst(RewriteAsRangeCriteria.INSTANCE);
         if (hints.hasJoin) {
             ruleStack.addFirst(ChooseJoinAlgorithm.USE_ONLY_NESTED_JOIN_ALGORITHM);

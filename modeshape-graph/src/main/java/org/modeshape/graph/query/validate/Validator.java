@@ -54,6 +54,7 @@ import org.modeshape.graph.query.model.ReferenceValue;
 import org.modeshape.graph.query.model.SameNode;
 import org.modeshape.graph.query.model.SameNodeJoinCondition;
 import org.modeshape.graph.query.model.SelectorName;
+import org.modeshape.graph.query.model.Subquery;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.model.Visitor;
 import org.modeshape.graph.query.model.Visitors.AbstractVisitor;
@@ -379,6 +380,16 @@ public class Validator extends AbstractVisitor {
             }
         }
         super.visit(obj);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.Visitors.AbstractVisitor#visit(org.modeshape.graph.query.model.Subquery)
+     */
+    @Override
+    public void visit( Subquery subquery ) {
+        // Don't validate subqueries; this is done as a separate step ...
     }
 
     /**

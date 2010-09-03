@@ -359,6 +359,24 @@ public abstract class QueryProcessor implements Processor {
                     }
                 }
                 break;
+            case DEPENDENT_QUERY:
+                // Create the components under the JOIN ...
+                assert node.getChildCount() == 2;
+                leftPlan = node.getFirstChild();
+                rightPlan = node.getLastChild();
+
+                // Define the columns for each side, taken from the supplied columns ...
+                leftColumns = createColumnsFor(leftPlan, columns);
+                rightColumns = createColumnsFor(rightPlan, columns);
+
+                left = createComponent(originalQuery, context, leftPlan, leftColumns, analyzer);
+                right = createComponent(originalQuery, context, rightPlan, rightColumns, analyzer);
+
+                // Look for a variable name on the left and right plans ...
+                String leftVariableName = leftPlan.getProperty(Property.VARIABLE_NAME, String.class);
+                String rightVariableName = rightPlan.getProperty(Property.VARIABLE_NAME, String.class);
+                component = new DependentQueryComponent(context, left, right, leftVariableName, rightVariableName);
+                break;
             case SOURCE:
                 assert false : "Source nodes should always be below ACCESS nodes by the time a plan is executed";
                 throw new UnsupportedOperationException();

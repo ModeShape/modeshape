@@ -303,7 +303,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 23);
+        assertResults(query, result, 24);
         assertResultsHaveColumns(result, "jcr:primaryType");
     }
 
@@ -313,7 +313,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 12);
+        assertResults(query, result, 13);
         assertResultsHaveColumns(result, carColumnNames());
     }
 
@@ -324,7 +324,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 12);
+        assertResults(query, result, 13);
         assertResultsHaveColumns(result, carColumnNames());
     }
 
@@ -335,7 +335,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 12);
+        assertResults(query, result, 13);
         assertResultsHaveColumns(result, carColumnNames());
         // Results are sorted by lexicographic MSRP (as a string, not as a number)!!!
         assertRow(result, 1).has("car:model", "LR3").and("car:msrp", "$48,525").and("car:mpgCity", 12);
@@ -379,7 +379,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 22);
+        assertResults(query, result, 23);
         assertResultsHaveColumns(result, "jcr:primaryType");
     }
 
@@ -390,7 +390,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4);
+        assertResults(query, result, 5);
         assertResultsHaveColumns(result, carColumnNames());
     }
 
@@ -401,7 +401,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4L);
+        assertResults(query, result, 5L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
             "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
             "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
@@ -415,7 +415,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 12L);
+        assertResults(query, result, 13L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
             "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
             "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
@@ -429,7 +429,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4);
+        assertResults(query, result, 5);
         assertResultsHaveColumns(result, carColumnNames());
     }
 
@@ -441,7 +441,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 4L);
+        assertResults(query, result, 5L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
             "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
             "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
@@ -456,7 +456,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 12L);
+        assertResults(query, result, 13L);
         assertResultsHaveColumns(result, "category.jcr:primaryType", "cars.jcr:primaryType");
     }
 
@@ -469,7 +469,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 2L);
+        assertResults(query, result, 3L);
         assertResultsHaveColumns(result, "category.jcr:primaryType", "cars.jcr:primaryType");
     }
 
@@ -496,6 +496,34 @@ public class JcrQueryManagerTest {
         query.execute();
     }
 
+    @FixFor( "MODE-869" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithSubqueryInCriteria() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT * FROM [car:Car] WHERE [car:maker] IN (SELECT [car:maker] FROM [car:Car] WHERE [car:year] >= 2008)",
+                                          Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13); // the 13 types of cars made by makers that made cars in 2008
+        assertResultsHaveColumns(result, carColumnNames());
+    }
+
+    @FixFor( "MODE-869" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteSqlQueryWithSubqueryInCriteria2() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT * FROM [car:Car] WHERE [car:maker] IN (SELECT [car:maker] FROM [car:Car] WHERE PATH() LIKE '%/Hybrid/%')",
+                                          Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 4); // the 4 types of cars made by makers that make hybrids
+        assertResultsHaveColumns(result, carColumnNames());
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // JCR-SQL Queries
     // ----------------------------------------------------------------------------------------------------------------
@@ -510,7 +538,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 12);
+        assertResults(query, result, 13);
         assertResultsHaveColumns(result, "jcr:path", "jcr:score", "car:model");
     }
 
@@ -524,7 +552,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 12);
+        assertResults(query, result, 13);
         assertResultsHaveColumns(result, "jcr:path", "jcr:score", "car:model");
     }
 
@@ -538,7 +566,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 12);
+        assertResults(query, result, 13);
         assertResultsHaveColumns(result, "jcr:path", "jcr:score", "car:model");
     }
 
@@ -611,11 +639,11 @@ public class JcrQueryManagerTest {
     public void shouldBeAbleToCreateXPathQuery() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,car:Car)", Query.XPATH);
         assertThat(query, is(notNullValue()));
-        assertResults(query, query.execute(), 12);
+        assertResults(query, query.execute(), 13);
 
         query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
         assertThat(query, is(notNullValue()));
-        assertResults(query, query.execute(), 22);
+        assertResults(query, query.execute(), 23);
     }
 
     @SuppressWarnings( "deprecation" )
@@ -624,7 +652,7 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:base)", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 23);
+        assertResults(query, result, 24);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
@@ -636,7 +664,7 @@ public class JcrQueryManagerTest {
                              .createQuery("//element(*,nt:base) order by @jcr:path", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 23);
+        assertResults(query, result, 24);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 
@@ -648,7 +676,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         // print = true;
-        assertResults(query, result, 12);
+        assertResults(query, result, 13);
         assertResultsHaveColumns(result, "car:maker", "jcr:path", "jcr:score");
     }
 
@@ -658,7 +686,7 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 22);
+        assertResults(query, result, 23);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
@@ -670,14 +698,14 @@ public class JcrQueryManagerTest {
         Query query = manager.createQuery("//element(*,nt:unstructured) order by @jcr:primaryType", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 22);
+        assertResults(query, result, 23);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
 
         query = manager.createQuery("//element(*,car:Car) order by @car:year", Query.XPATH);
         assertThat(query, is(notNullValue()));
         result = query.execute();
-        assertResults(query, result, 12);
+        assertResults(query, result, 13);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "car:year", "jcr:path", "jcr:score");
     }
@@ -724,7 +752,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         // print = true;
-        assertResults(query, result, 16);
+        assertResults(query, result, 17);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
@@ -747,7 +775,7 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(" /jcr:root/Cars//*[@car:year]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 12);
+        assertResults(query, result, 13);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
@@ -760,7 +788,7 @@ public class JcrQueryManagerTest {
                              .createQuery(" /jcr:root/Cars//*[@car:year] order by @car:year ascending", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 12);
+        assertResults(query, result, 13);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "car:year", "jcr:path", "jcr:score");
     }
@@ -772,7 +800,7 @@ public class JcrQueryManagerTest {
                                                                            Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        assertResults(query, result, 22);
+        assertResults(query, result, 23);
         assertThat(result, is(notNullValue()));
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
@@ -804,7 +832,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 12);
+        assertResults(query, result, 13);
         assertResultsHaveColumns(result,
                                  "jcr:primaryType",
                                  "jcr:path",
@@ -1106,7 +1134,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        assertResults(query, result, 23);
+        assertResults(query, result, 24);
         assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
     }
 

@@ -39,6 +39,7 @@ import org.modeshape.graph.query.model.And;
 import org.modeshape.graph.query.model.ArithmeticOperand;
 import org.modeshape.graph.query.model.ArithmeticOperator;
 import org.modeshape.graph.query.model.Between;
+import org.modeshape.graph.query.model.BindVariableName;
 import org.modeshape.graph.query.model.ChildNode;
 import org.modeshape.graph.query.model.ChildNodeJoinCondition;
 import org.modeshape.graph.query.model.Column;
@@ -68,6 +69,7 @@ import org.modeshape.graph.query.model.SameNodeJoinCondition;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.model.SetCriteria;
 import org.modeshape.graph.query.model.StaticOperand;
+import org.modeshape.graph.query.model.Subquery;
 import org.modeshape.graph.query.model.UpperCase;
 import org.modeshape.graph.query.model.Visitors;
 import org.modeshape.graph.query.model.Visitors.AbstractVisitor;
@@ -416,6 +418,7 @@ public class PlanUtil {
             case DUP_REMOVE:
             case LIMIT:
             case NULL:
+            case DEPENDENT_QUERY:
             case ACCESS:
                 // None of these have to be changed ...
                 break;
@@ -758,6 +761,7 @@ public class PlanUtil {
                 case GROUP:
                     // Don't yet use GROUP BY
                 case SET_OPERATION:
+                case DEPENDENT_QUERY:
                 case DUP_REMOVE:
                 case LIMIT:
                 case NULL:
@@ -1155,4 +1159,97 @@ public class PlanUtil {
         }
     }
 
+    public static Constraint replaceSubqueriesWithBindVariables( QueryContext context,
+                                                                 Constraint constraint,
+                                                                 Map<String, Subquery> subqueriesByVariableName ) {
+        if (constraint instanceof And) {
+            And and = (And)constraint;
+            Constraint left = replaceSubqueriesWithBindVariables(context, and.left(), subqueriesByVariableName);
+            Constraint right = replaceSubqueriesWithBindVariables(context, and.right(), subqueriesByVariableName);
+            if (left == and.left() && right == and.right()) return and;
+            return new And(left, right);
+        }
+        if (constraint instanceof Or) {
+            Or or = (Or)constraint;
+            Constraint left = replaceSubqueriesWithBindVariables(context, or.left(), subqueriesByVariableName);
+            Constraint right = replaceSubqueriesWithBindVariables(context, or.right(), subqueriesByVariableName);
+            if (left == or.left() && right == or.right()) return or;
+            return new Or(left, right);
+        }
+        if (constraint instanceof Not) {
+            Not not = (Not)constraint;
+            Constraint wrapped = replaceSubqueriesWithBindVariables(context, not.constraint(), subqueriesByVariableName);
+            if (wrapped == not.constraint()) return not;
+            return new Not(wrapped);
+        }
+        if (constraint instanceof SameNode) {
+            return constraint;
+        }
+        if (constraint instanceof ChildNode) {
+            return constraint;
+        }
+        if (constraint instanceof DescendantNode) {
+            return constraint;
+        }
+        if (constraint instanceof PropertyExistence) {
+            return constraint;
+        }
+        if (constraint instanceof FullTextSearch) {
+            return constraint;
+        }
+        if (constraint instanceof Between) {
+            Between between = (Between)constraint;
+            DynamicOperand lhs = between.operand();
+            StaticOperand lower = between.lowerBound(); // Current only a literal; therefore, no reference to selector
+            StaticOperand upper = between.upperBound(); // Current only a literal; therefore, no reference to selector
+            StaticOperand newLower = replaceSubqueriesWithBindVariables(context, lower, subqueriesByVariableName);
+            StaticOperand newUpper = replaceSubqueriesWithBindVariables(context, upper, subqueriesByVariableName);
+            if (lower == newLower && upper == newUpper) return between;
+            return new Between(lhs, newLower, newUpper, between.isLowerBoundIncluded(), between.isUpperBoundIncluded());
+        }
+        if (constraint instanceof Comparison) {
+            Comparison comparison = (Comparison)constraint;
+            DynamicOperand lhs = comparison.operand1();
+            StaticOperand rhs = comparison.operand2(); // Current only a literal; therefore, no reference to selector
+            StaticOperand newRhs = replaceSubqueriesWithBindVariables(context, rhs, subqueriesByVariableName);
+            if (rhs == newRhs) return comparison;
+            return new Comparison(lhs, comparison.operator(), newRhs);
+        }
+        if (constraint instanceof SetCriteria) {
+            SetCriteria criteria = (SetCriteria)constraint;
+            DynamicOperand lhs = criteria.leftOperand();
+            boolean foundSubquery = false;
+            List<StaticOperand> newStaticOperands = new LinkedList<StaticOperand>();
+            for (StaticOperand rhs : criteria.rightOperands()) {
+                StaticOperand newRhs = replaceSubqueriesWithBindVariables(context, rhs, subqueriesByVariableName);
+                newStaticOperands.add(newRhs);
+                if (rhs != newRhs) {
+                    foundSubquery = true;
+                }
+            }
+            if (!foundSubquery) return criteria;
+            return new SetCriteria(lhs, newStaticOperands);
+        }
+        return constraint;
+    }
+
+    public static StaticOperand replaceSubqueriesWithBindVariables( QueryContext context,
+                                                                    StaticOperand staticOperand,
+                                                                    Map<String, Subquery> subqueriesByVariableName ) {
+        if (staticOperand instanceof Subquery) {
+            Subquery subquery = (Subquery)staticOperand;
+            // Create a variable name ...
+            int i = 1;
+            String variableName = "__subquery";
+            while (context.getVariables().containsKey(variableName + i)) {
+                ++i;
+            }
+            variableName = variableName + i;
+            subqueriesByVariableName.put(variableName, subquery);
+            context.getVariables().put(variableName, null);
+            // Replace with a variable substitution ...
+            return new BindVariableName(variableName);
+        }
+        return staticOperand;
+    }
 }
