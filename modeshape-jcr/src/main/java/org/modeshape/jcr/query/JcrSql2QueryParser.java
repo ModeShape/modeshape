@@ -56,6 +56,7 @@ import org.modeshape.graph.query.model.SetCriteria;
 import org.modeshape.graph.query.model.SetQuery;
 import org.modeshape.graph.query.model.Source;
 import org.modeshape.graph.query.model.StaticOperand;
+import org.modeshape.graph.query.model.Subquery;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.model.FullTextSearch.Term;
 import org.modeshape.graph.query.model.SetQuery.Operation;
@@ -100,6 +101,7 @@ import org.modeshape.jcr.query.qom.JcrSetCriteria;
 import org.modeshape.jcr.query.qom.JcrSetQuery;
 import org.modeshape.jcr.query.qom.JcrSource;
 import org.modeshape.jcr.query.qom.JcrStaticOperand;
+import org.modeshape.jcr.query.qom.JcrSubquery;
 import org.modeshape.jcr.query.qom.JcrUpperCase;
 
 /**
@@ -577,6 +579,16 @@ public class JcrSql2QueryParser extends SqlQueryParser {
     @Override
     protected JcrBindVariableName bindVariableName( String variableName ) {
         return new JcrBindVariableName(variableName);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.parse.SqlQueryParser#subquery(org.modeshape.graph.query.model.QueryCommand)
+     */
+    @Override
+    protected Subquery subquery( QueryCommand queryCommand ) {
+        return new JcrSubquery((JcrQueryCommand)queryCommand);
     }
 
     /**

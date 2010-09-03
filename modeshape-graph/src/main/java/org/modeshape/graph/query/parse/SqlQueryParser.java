@@ -934,9 +934,13 @@ public class SqlQueryParser implements QueryParser {
         if (tokens.matches("SELECT")) {
             // This is a subquery. This object is stateless, so we can reuse this object ...
             QueryCommand subqueryExpression = parseQueryCommand(tokens, typeSystem);
-            return new Subquery(subqueryExpression);
+            return subquery(subqueryExpression);
         }
         return parseLiteral(tokens, typeSystem);
+    }
+
+    protected Subquery subquery( QueryCommand queryCommand ) {
+        return new Subquery(queryCommand);
     }
 
     protected Literal parseLiteral( TokenStream tokens,
