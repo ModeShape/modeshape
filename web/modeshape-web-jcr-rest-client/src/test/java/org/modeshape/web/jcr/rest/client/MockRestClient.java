@@ -27,7 +27,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
-
+import java.util.Map;
 import org.modeshape.web.jcr.rest.client.domain.NodeType;
 import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
@@ -123,26 +123,46 @@ public final class MockRestClient implements IRestClient {
         return null;
     }
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeTypes(org.modeshape.web.jcr.rest.client.domain.Workspace, java.lang.String, java.lang.String)
-	 */
-	@Override
-	public Collection<NodeType> getNodeTypes(Workspace workspace, String relativePath, String nodeDepth)
-			throws Exception {
-		return null;
-	}
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.web.jcr.rest.client.IRestClient#query(org.modeshape.web.jcr.rest.client.domain.Workspace,
+     *      java.lang.String, java.lang.String, int, int, java.util.Map)
+     */
+    @Override
+    public List<QueryRow> query( Workspace workspace,
+                                 String language,
+                                 String statement,
+                                 int offset,
+                                 int limit,
+                                 Map<String, String> variables ) throws Exception {
+        return null;
+    }
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeType(org.modeshape.web.jcr.rest.client.domain.Workspace, java.lang.String, java.lang.String)
-	 */
-	@Override
-	public NodeType getNodeType(Workspace workspace, String relativePath, String nodeDepth)
-			throws Exception {
-		return null;
-	}
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeTypes(org.modeshape.web.jcr.rest.client.domain.Workspace,
+     *      java.lang.String, java.lang.String)
+     */
+    @Override
+    public Collection<NodeType> getNodeTypes( Workspace workspace,
+                                              String relativePath,
+                                              String nodeDepth ) throws Exception {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeType(org.modeshape.web.jcr.rest.client.domain.Workspace,
+     *      java.lang.String, java.lang.String)
+     */
+    @Override
+    public NodeType getNodeType( Workspace workspace,
+                                 String relativePath,
+                                 String nodeDepth ) throws Exception {
+        return null;
+    }
 
 }
