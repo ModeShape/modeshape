@@ -33,6 +33,7 @@ import static org.mockito.Mockito.mock;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.text.TokenStream;
@@ -68,11 +69,13 @@ import org.modeshape.graph.query.model.Order;
 import org.modeshape.graph.query.model.Ordering;
 import org.modeshape.graph.query.model.PropertyExistence;
 import org.modeshape.graph.query.model.PropertyValue;
+import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.ReferenceValue;
 import org.modeshape.graph.query.model.SameNode;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.model.Source;
 import org.modeshape.graph.query.model.StaticOperand;
+import org.modeshape.graph.query.model.Subquery;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.model.UpperCase;
 import org.modeshape.graph.query.model.FullTextSearch.Conjunction;
@@ -115,6 +118,17 @@ public class SqlQueryParserTest {
         parse("SELECT [jcr:column1] FROM [dna:tableA]");
         parse("SELECT 'jcr:column1' FROM 'dna:tableA'");
         parse("SELECT \"jcr:column1\" FROM \"dna:tableA\"");
+    }
+
+    @FixFor( "MODE-869" )
+    @Test
+    public void shouldParseQueriesWithSubqueries() {
+        parse("SELECT * FROM tableA WHERE PATH() LIKE (SELECT path FROM tableB)");
+        parse("SELECT * FROM tableA WHERE PATH() LIKE (SELECT path FROM tableB) AND tableA.propX = 'foo'");
+        parse("SELECT * FROM tableA WHERE PATH() LIKE (((SELECT path FROM tableB)))");
+        parse("SELECT * FROM tableA WHERE PATH() LIKE (SELECT path FROM tableB WHERE prop < 2)");
+        parse("SELECT * FROM tableA WHERE PATH() IN (SELECT path FROM tableB) AND tableA.propX = 'foo'");
+        parse("SELECT * FROM tableA WHERE PATH() NOT IN (SELECT path FROM tableB) AND tableA.propX = 'foo'");
     }
 
     @Test
@@ -781,8 +795,33 @@ public class SqlQueryParserTest {
         assertThat(result.get(2), is((StaticOperand)literal("4")));
     }
 
+    @FixFor( "MODE-869" )
+    @Test
+    public void shouldParseInClauseContainingSubqueryWithNoCriteria() {
+        List<StaticOperand> result = parser.parseInClause(tokens("IN (SELECT * FROM tableA)"), typeSystem);
+        assertThat(result.size(), is(1));
+        assertThat(result.get(0), is((StaticOperand)subquery("SELECT * FROM tableA")));
+    }
+
+    @FixFor( "MODE-869" )
+    @Test
+    public void shouldParseInClauseContainingSubqueryWithNestedCriteriaAndParentheses() {
+        String expression = "SELECT * FROM tableA WHERE (foo < 3 AND (bar = 22))";
+        List<StaticOperand> result = parser.parseInClause(tokens("IN (" + expression + ")"), typeSystem);
+        assertThat(result.size(), is(1));
+        assertThat(result.get(0), is((StaticOperand)subquery(expression)));
+    }
+
     protected Literal literal( Object literalValue ) {
         return new Literal(literalValue);
+    }
+
+    protected QueryCommand query( String subquery ) {
+        return parser.parseQuery(subquery, typeSystem);
+    }
+
+    protected Subquery subquery( String subquery ) {
+        return new Subquery(query(subquery));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -1000,6 +1039,28 @@ public class SqlQueryParserTest {
         assertThat(operand, is(instanceOf(Literal.class)));
         Literal literal = (Literal)operand;
         assertThat((Double)literal.value(), is(typeSystem.getDoubleFactory().create("123")));
+    }
+
+    @FixFor( "MODE-869" )
+    @Test
+    public void shouldParseStaticOperandWithSubquery() {
+        QueryCommand expected = parser.parseQuery(tokens("SELECT * FROM tableA"), typeSystem);
+        StaticOperand operand = parser.parseStaticOperand(tokens("SELECT * FROM tableA"), typeSystem);
+        assertThat(operand, is(instanceOf(Subquery.class)));
+        Subquery subquery = (Subquery)operand;
+        assertThat(subquery.query(), is(expected));
+    }
+
+    @FixFor( "MODE-869" )
+    @Test
+    public void shouldParseStaticOperandWithSubqueryWithoutConsumingExtraTokens() {
+        QueryCommand expected = parser.parseQuery(tokens("SELECT * FROM tableA"), typeSystem);
+        TokenStream tokens = tokens("SELECT * FROM tableA)");
+        StaticOperand operand = parser.parseStaticOperand(tokens, typeSystem);
+        assertThat(operand, is(instanceOf(Subquery.class)));
+        Subquery subquery = (Subquery)operand;
+        assertThat(subquery.query(), is(expected));
+        assertThat(tokens.canConsume(')'), is(true));
     }
 
     // ----------------------------------------------------------------------------------------------------------------

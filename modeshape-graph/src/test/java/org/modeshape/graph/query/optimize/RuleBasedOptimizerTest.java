@@ -31,6 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.GraphI18n;
@@ -38,6 +39,7 @@ import org.modeshape.graph.query.AbstractQueryTest;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.model.ArithmeticOperand;
 import org.modeshape.graph.query.model.ArithmeticOperator;
+import org.modeshape.graph.query.model.BindVariableName;
 import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.model.Comparison;
 import org.modeshape.graph.query.model.DynamicOperand;
@@ -275,6 +277,133 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
         PlanNode source = new PlanNode(Type.SOURCE, select, selector("t1"));
         source.setProperty(Property.SOURCE_NAME, selector("t1"));
         source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+        // Compare the expected and actual plan ...
+        assertPlanMatches(expected);
+    }
+
+    @FixFor( "MODE-869" )
+    @Test
+    public void shouldOptimizePlanForSimpleQueryWithSubqueryInCriteria() {
+        node = optimize("SELECT c11, c12 FROM t1 WHERE c13 IN (SELECT c21 FROM t2 WHERE c22 < CAST('3' AS LONG))");
+        // Create the expected plan ...
+        PlanNode expected = new PlanNode(Type.DEPENDENT_QUERY, selector("t1"), selector("t2"));
+
+        PlanNode subquery = new PlanNode(Type.ACCESS, expected, selector("t2"));
+        subquery.setProperty(Property.VARIABLE_NAME, "__subquery1");
+        PlanNode project2 = new PlanNode(Type.PROJECT, subquery, selector("t2"));
+        project2.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c21")));
+        PlanNode select2 = new PlanNode(Type.SELECT, project2, selector("t2"));
+        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t2"), "c22"),
+                                                                     Operator.LESS_THAN, new Literal(3L)));
+        PlanNode source2 = new PlanNode(Type.SOURCE, select2, selector("t2"));
+        source2.setProperty(Property.SOURCE_NAME, selector("t2"));
+        source2.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t2")).getColumns());
+
+        PlanNode mainQuery = new PlanNode(Type.ACCESS, expected, selector("t1"));
+        PlanNode project = new PlanNode(Type.PROJECT, mainQuery, selector("t1"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12")));
+        PlanNode select = new PlanNode(Type.SELECT, project, selector("t1"));
+        select.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("t1"), "c13"),
+                                                                     new BindVariableName("__subquery1")));
+        PlanNode source = new PlanNode(Type.SOURCE, select, selector("t1"));
+        source.setProperty(Property.SOURCE_NAME, selector("t1"));
+        source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+
+        // Compare the expected and actual plan ...
+        assertPlanMatches(expected);
+    }
+
+    @FixFor( "MODE-869" )
+    @Test
+    public void shouldOptimizePlanForSimpleQueryWithMultipleSubqueriesInCriteria() {
+        node = optimize("SELECT c11, c12 FROM t1 WHERE c13 IN (SELECT c21 FROM t2 WHERE c22 < CAST('3' AS LONG)) AND c12 = (SELECT c22 FROM t2 WHERE c23 = 'extra')");
+        // Create the expected plan ...
+        print = true;
+        PlanNode expected = new PlanNode(Type.DEPENDENT_QUERY, selector("t1"), selector("t2"));
+
+        PlanNode subquery1 = new PlanNode(Type.ACCESS, expected, selector("t2"));
+        subquery1.setProperty(Property.VARIABLE_NAME, "__subquery1");
+        PlanNode project1 = new PlanNode(Type.PROJECT, subquery1, selector("t2"));
+        project1.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c22")));
+        PlanNode select1 = new PlanNode(Type.SELECT, project1, selector("t2"));
+        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t2"), "c23"), Operator.EQUAL_TO,
+                                                                     new Literal("extra")));
+        PlanNode source1 = new PlanNode(Type.SOURCE, select1, selector("t2"));
+        source1.setProperty(Property.SOURCE_NAME, selector("t2"));
+        source1.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t2")).getColumns());
+
+        PlanNode depQuery2 = new PlanNode(Type.DEPENDENT_QUERY, expected, selector("t1"), selector("t2"));
+
+        PlanNode subquery2 = new PlanNode(Type.ACCESS, depQuery2, selector("t2"));
+        subquery2.setProperty(Property.VARIABLE_NAME, "__subquery2");
+        PlanNode project2 = new PlanNode(Type.PROJECT, subquery2, selector("t2"));
+        project2.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c21")));
+        PlanNode select2 = new PlanNode(Type.SELECT, project2, selector("t2"));
+        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t2"), "c22"),
+                                                                     Operator.LESS_THAN, new Literal(3L)));
+        PlanNode source2 = new PlanNode(Type.SOURCE, select2, selector("t2"));
+        source2.setProperty(Property.SOURCE_NAME, selector("t2"));
+        source2.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t2")).getColumns());
+
+        PlanNode mainQuery = new PlanNode(Type.ACCESS, depQuery2, selector("t1"));
+        PlanNode project = new PlanNode(Type.PROJECT, mainQuery, selector("t1"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12")));
+        PlanNode firstSelect = new PlanNode(Type.SELECT, project, selector("t1"));
+        firstSelect.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("t1"), "c13"),
+                                                                          new BindVariableName("__subquery2")));
+        PlanNode secondSelect = new PlanNode(Type.SELECT, firstSelect, selector("t1"));
+        secondSelect.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t1"), "c12"),
+                                                                          Operator.EQUAL_TO, new BindVariableName("__subquery1")));
+        PlanNode source = new PlanNode(Type.SOURCE, secondSelect, selector("t1"));
+        source.setProperty(Property.SOURCE_NAME, selector("t1"));
+        source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+
+        // Compare the expected and actual plan ...
+        assertPlanMatches(expected);
+    }
+
+    @FixFor( "MODE-869" )
+    @Test
+    public void shouldOptimizePlanForSimpleQueryWithNestedSubqueriesInCriteria() {
+        node = optimize("SELECT c11, c12 FROM t1 WHERE c13 IN (SELECT c21 FROM t2 WHERE c22 < (SELECT c22 FROM t2 WHERE c23 = 'extra'))");
+        // Create the expected plan ...
+        print = true;
+        PlanNode expected = new PlanNode(Type.DEPENDENT_QUERY, selector("t1"), selector("t2"));
+
+        PlanNode depQuery2 = new PlanNode(Type.DEPENDENT_QUERY, expected, selector("t2"));
+
+        PlanNode subquery2 = new PlanNode(Type.ACCESS, depQuery2, selector("t2"));
+        subquery2.setProperty(Property.VARIABLE_NAME, "__subquery2");
+        PlanNode project2 = new PlanNode(Type.PROJECT, subquery2, selector("t2"));
+        project2.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c22")));
+        PlanNode select2 = new PlanNode(Type.SELECT, project2, selector("t2"));
+        select2.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t2"), "c23"), Operator.EQUAL_TO,
+                                                                     new Literal("extra")));
+        PlanNode source2 = new PlanNode(Type.SOURCE, select2, selector("t2"));
+        source2.setProperty(Property.SOURCE_NAME, selector("t2"));
+        source2.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t2")).getColumns());
+
+        PlanNode subquery1 = new PlanNode(Type.ACCESS, depQuery2, selector("t2"));
+        subquery1.setProperty(Property.VARIABLE_NAME, "__subquery1");
+        PlanNode project1 = new PlanNode(Type.PROJECT, subquery1, selector("t2"));
+        project1.setProperty(Property.PROJECT_COLUMNS, columns(column("t2", "c21")));
+        PlanNode select1 = new PlanNode(Type.SELECT, project1, selector("t2"));
+        select1.setProperty(Property.SELECT_CRITERIA, new Comparison(new PropertyValue(selector("t2"), "c22"),
+                                                                     Operator.LESS_THAN, new BindVariableName("__subquery2")));
+        PlanNode source1 = new PlanNode(Type.SOURCE, select1, selector("t2"));
+        source1.setProperty(Property.SOURCE_NAME, selector("t2"));
+        source1.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t2")).getColumns());
+
+        PlanNode mainQuery = new PlanNode(Type.ACCESS, expected, selector("t1"));
+        PlanNode project = new PlanNode(Type.PROJECT, mainQuery, selector("t1"));
+        project.setProperty(Property.PROJECT_COLUMNS, columns(column("t1", "c11"), column("t1", "c12")));
+        PlanNode select = new PlanNode(Type.SELECT, project, selector("t1"));
+        select.setProperty(Property.SELECT_CRITERIA, new SetCriteria(new PropertyValue(selector("t1"), "c13"),
+                                                                     new BindVariableName("__subquery1")));
+        PlanNode source = new PlanNode(Type.SOURCE, select, selector("t1"));
+        source.setProperty(Property.SOURCE_NAME, selector("t1"));
+        source.setProperty(Property.SOURCE_COLUMNS, context.getSchemata().getTable(selector("t1")).getColumns());
+
         // Compare the expected and actual plan ...
         assertPlanMatches(expected);
     }
@@ -521,7 +650,6 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
     @Test
     public void shouldOptimizePlanForQueryUsingTableAndOrderByClause() {
-        print = true;
         node = optimize("SELECT t1.c11 AS c1 FROM t1 WHERE t1.c11 = 'x' AND t1.c12 = 'y' ORDER BY t1.c11, t1.c12 DESC");
 
         // Create the expected plan ...
@@ -546,7 +674,6 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
     @Test
     public void shouldOptimizePlanForQueryUsingTableWithAliasAndOrderByClause() {
-        print = true;
         node = optimize("SELECT X.c11 AS c1 FROM t1 AS X WHERE X.c11 = 'x' AND X.c12 = 'y' ORDER BY X.c11, X.c12 DESC");
 
         // Create the expected plan ...
@@ -572,7 +699,6 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
     @Test
     public void shouldOptimizePlanForQueryUsingTableWithAliasAndOrderByClauseUsingAliasedColumn() {
-        print = true;
         node = optimize("SELECT X.c11 AS c1 FROM t1 AS X WHERE X.c11 = 'x' AND X.c12 = 'y' ORDER BY X.c1, X.c12 DESC");
 
         // Create the expected plan ...
@@ -598,7 +724,6 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
     @Test
     public void shouldOptimizePlanForQueryUsingViewAndOrderByClause() {
-        print = true;
         node = optimize("SELECT v2.c11 AS c1 FROM v2 WHERE v2.c11 = 'x' AND v2.c12 = 'y' ORDER BY v2.c11, v2.c12 DESC");
 
         // Create the expected plan ...
@@ -640,7 +765,6 @@ public class RuleBasedOptimizerTest extends AbstractQueryTest {
 
     @Test
     public void shouldOptimizePlanForQueryUsingViewWithAliasAndOrderByClause() {
-        print = true;
         node = optimize("SELECT Q.c11 AS c1 FROM v2 AS Q WHERE Q.c11 = 'x' AND Q.c12 = 'y' ORDER BY Q.c11, Q.c12 DESC");
 
         // Create the expected plan ...

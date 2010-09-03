@@ -59,6 +59,8 @@ public final class PlanHints implements Serializable, Cloneable {
 
     public boolean hasFullTextSearch = false;
 
+    public boolean hasSubqueries = false;
+
     /** Flag indicates that the plan has at least one view somewhere */
     public boolean hasView = false;
 
@@ -82,6 +84,7 @@ public final class PlanHints implements Serializable, Cloneable {
         sb.append(", hasLimit=").append(hasLimit);
         sb.append(", hasOptionalJoin=").append(hasOptionalJoin);
         sb.append(", hasFullTextSearch=").append(hasFullTextSearch);
+        sb.append(", hasSubqueries=").append(hasSubqueries);
         sb.append(", showPlan=").append(showPlan);
         sb.append(", validateColumnExistance=").append(validateColumnExistance);
         sb.append('}');

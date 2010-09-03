@@ -23,6 +23,14 @@
  */
 package org.modeshape.jcr;
 
+import java.io.File;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import javax.jcr.RepositoryException;
+import javax.jcr.query.InvalidQueryException;
 import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
 import org.apache.lucene.util.Version;
 import org.modeshape.common.collection.Problems;
@@ -67,15 +75,6 @@ import org.modeshape.search.lucene.IndexRules;
 import org.modeshape.search.lucene.LuceneConfiguration;
 import org.modeshape.search.lucene.LuceneConfigurations;
 import org.modeshape.search.lucene.LuceneSearchEngine;
-
-import javax.jcr.RepositoryException;
-import javax.jcr.query.InvalidQueryException;
-import java.io.File;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * 
@@ -473,7 +472,6 @@ abstract class RepositoryQueryManager {
                 super(context, columns, accessNode);
                 accessRequest = new AccessQueryRequest(context.getWorkspaceName(), sourceName, getColumns(), andedConstraints,
                                                        limit, context.getSchemata(), context.getVariables());
-                context.getProcessor().process(accessRequest);
             }
 
             /**
@@ -492,6 +490,8 @@ abstract class RepositoryQueryManager {
              */
             @Override
             public List<Object[]> execute() {
+                GraphQueryContext context = (GraphQueryContext)getContext();
+                context.getProcessor().process(accessRequest);
                 if (accessRequest.getError() != null) {
                     I18n msg = GraphI18n.errorWhilePerformingQuery;
                     getContext().getProblems().addError(accessRequest.getError(),

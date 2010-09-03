@@ -569,13 +569,41 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                     int numRightOperands = setCriteria.rightOperands().size();
                     assert numRightOperands > 0;
                     if (numRightOperands == 1) {
-                        return createQuery(left, Operator.EQUAL_TO, setCriteria.rightOperands().iterator().next());
+                        StaticOperand rightOperand = setCriteria.rightOperands().iterator().next();
+                        if (rightOperand instanceof Literal) {
+                            return createQuery(left, Operator.EQUAL_TO, setCriteria.rightOperands().iterator().next());
+                        }
                     }
                     BooleanQuery setQuery = new BooleanQuery();
                     for (StaticOperand right : setCriteria.rightOperands()) {
-                        Query rightQuery = createQuery(left, Operator.EQUAL_TO, right);
-                        if (rightQuery == null) return null;
-                        setQuery.add(rightQuery, Occur.SHOULD);
+                        if (right instanceof BindVariableName) {
+                            // This single value is a variable name, which may evaluate to a single value or multiple values ...
+                            BindVariableName var = (BindVariableName)right;
+                            Object value = variables.get(var.variableName());
+                            if (value instanceof Iterable<?>) {
+                                Iterator<?> iter = ((Iterable<?>)value).iterator();
+                                while (iter.hasNext()) {
+                                    Object resolvedValue = iter.next();
+                                    if (resolvedValue == null) continue;
+                                    StaticOperand elementInRight = null;
+                                    if (resolvedValue instanceof Literal) {
+                                        elementInRight = (Literal)resolvedValue;
+                                    } else {
+                                        elementInRight = new Literal(resolvedValue);
+                                    }
+                                    Query rightQuery = createQuery(left, Operator.EQUAL_TO, elementInRight);
+                                    if (rightQuery == null) continue;
+                                    setQuery.add(rightQuery, Occur.SHOULD);
+                                }
+                            }
+                            if (value == null) {
+                                throw new LuceneException(LuceneI18n.missingVariableValue.text(var.variableName()));
+                            }
+                        } else {
+                            Query rightQuery = createQuery(left, Operator.EQUAL_TO, right);
+                            if (rightQuery == null) return null;
+                            setQuery.add(rightQuery, Occur.SHOULD);
+                        }
                     }
                     return setQuery;
                 }
@@ -683,6 +711,15 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                     BindVariableName variable = (BindVariableName)operand;
                     String variableName = variable.variableName();
                     value = variables.get(variableName);
+                    if (value instanceof Iterable<?>) {
+                        // We can only return one value ...
+                        Iterator<?> iter = ((Iterable<?>)value).iterator();
+                        if (iter.hasNext()) return iter.next();
+                        value = null;
+                    }
+                    if (value == null) {
+                        throw new LuceneException(LuceneI18n.missingVariableValue.text(variableName));
+                    }
                     if (!caseSensitive) value = lowerCase(value);
                 } else {
                     assert false;

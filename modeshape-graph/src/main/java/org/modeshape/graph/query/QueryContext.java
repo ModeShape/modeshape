@@ -23,7 +23,6 @@
  */
 package org.modeshape.graph.query;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
@@ -68,7 +67,7 @@ public class QueryContext {
         this.hints = hints != null ? hints : new PlanHints();
         this.schemata = schemata;
         this.problems = problems != null ? problems : new SimpleProblems();
-        this.variables = variables != null ? Collections.<String, Object>unmodifiableMap(new HashMap<String, Object>(variables)) : Collections.<String, Object>emptyMap();
+        this.variables = variables != null ? new HashMap<String, Object>(variables) : new HashMap<String, Object>();
         assert this.typeSystem != null;
         assert this.hints != null;
         assert this.schemata != null;

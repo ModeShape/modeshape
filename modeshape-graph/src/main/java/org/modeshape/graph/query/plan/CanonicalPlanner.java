@@ -24,6 +24,7 @@
 package org.modeshape.graph.query.plan;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -46,7 +47,10 @@ import org.modeshape.graph.query.model.Selector;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.model.SetQuery;
 import org.modeshape.graph.query.model.Source;
+import org.modeshape.graph.query.model.Subquery;
+import org.modeshape.graph.query.model.Visitable;
 import org.modeshape.graph.query.model.Visitors;
+import org.modeshape.graph.query.model.Visitors.WalkAllVisitor;
 import org.modeshape.graph.query.plan.PlanNode.Property;
 import org.modeshape.graph.query.plan.PlanNode.Type;
 import org.modeshape.graph.query.validate.Schemata;
@@ -125,7 +129,8 @@ public class CanonicalPlanner implements Planner {
         plan = createPlanNode(context, query.source(), usedSources);
 
         // Attach criteria (on top) ...
-        plan = attachCriteria(context, plan, query.constraint());
+        Map<String, Subquery> subqueriesByVariableName = new HashMap<String, Subquery>();
+        plan = attachCriteria(context, plan, query.constraint(), subqueriesByVariableName);
 
         // Attach groupbys (on top) ...
         // plan = attachGrouping(context,plan,query.getGroupBy());
@@ -142,8 +147,17 @@ public class CanonicalPlanner implements Planner {
         plan = attachSorting(context, plan, query.orderings());
         plan = attachLimits(context, plan, query.limits());
 
+        // Now add in the subqueries as dependent joins, in reverse order ...
+        plan = attachSubqueries(context, plan, subqueriesByVariableName);
+
         // Validate that all the parts of the query are resolvable ...
         validate(context, query, usedSources);
+
+        // Now we need to validate all of the subqueries ...
+        for (Subquery subquery : Visitors.subqueries(query, false)) {
+            // Just do it by creating a plan, even though we aren't doing anything with these plans ...
+            createPlan(context, subquery.query());
+        }
 
         return plan;
     }
@@ -158,8 +172,17 @@ public class CanonicalPlanner implements Planner {
     protected void validate( QueryContext context,
                              QueryCommand query,
                              Map<SelectorName, Table> usedSelectors ) {
-        // Resolve everything ...
-        Visitors.visitAll(query, new Validator(context, usedSelectors));
+        // // Resolve everything ...
+        // Visitors.visitAll(query, new Validator(context, usedSelectors));
+        // Resolve everything (except subqueries) ...
+        Validator validator = new Validator(context, usedSelectors);
+        query.accept(new WalkAllVisitor(validator) {
+            @Override
+            protected void enqueue( Visitable objectToBeVisited ) {
+                if (objectToBeVisited instanceof Subquery) return;
+                super.enqueue(objectToBeVisited);
+            }
+        });
     }
 
     /**
@@ -261,11 +284,13 @@ public class CanonicalPlanner implements Planner {
      * @param context the context in which the query is being planned
      * @param plan the existing plan, which joins all source groups
      * @param constraint the criteria or constraint from the query
+     * @param subqueriesByVariableName the subqueries by variable name
      * @return the updated plan, or the existing plan if there were no constraints; never null
      */
     protected PlanNode attachCriteria( final QueryContext context,
                                        PlanNode plan,
-                                       Constraint constraint ) {
+                                       Constraint constraint,
+                                       Map<String, Subquery> subqueriesByVariableName ) {
         if (constraint == null) return plan;
         context.getHints().hasCriteria = true;
 
@@ -278,6 +303,10 @@ public class CanonicalPlanner implements Planner {
         // Do this in reverse order so that the top-most SELECT node corresponds to the first constraint.
         while (!andableConstraints.isEmpty()) {
             Constraint criteria = andableConstraints.removeLast();
+
+            // Replace any subqueries with bind variables ...
+            criteria = PlanUtil.replaceSubqueriesWithBindVariables(context, criteria, subqueriesByVariableName);
+
             // Create the select node ...
             PlanNode criteriaNode = new PlanNode(Type.SELECT);
             criteriaNode.setProperty(Property.SELECT_CRITERIA, criteria);
@@ -285,7 +314,7 @@ public class CanonicalPlanner implements Planner {
             // Add selectors to the criteria node ...
             criteriaNode.addSelectors(Visitors.getSelectorsReferencedBy(criteria));
 
-            // Is a full-text search of some kind included ...
+            // Is there at least one full-text search or subquery ...
             Visitors.visitAll(criteria, new Visitors.AbstractVisitor() {
                 @Override
                 public void visit( FullTextSearch obj ) {
@@ -295,6 +324,11 @@ public class CanonicalPlanner implements Planner {
 
             criteriaNode.addFirstChild(plan);
             plan = criteriaNode;
+        }
+
+        if (!subqueriesByVariableName.isEmpty()) {
+            context.getHints().hasSubqueries = true;
+
         }
         return plan;
     }
@@ -471,4 +505,45 @@ public class CanonicalPlanner implements Planner {
         return dupNode;
     }
 
+    /**
+     * Attach plan nodes for each subquery, resulting with the first subquery at the top of the plan tree.
+     * 
+     * @param context the context in which the query is being planned
+     * @param plan the existing plan
+     * @param subqueriesByVariableName the queries by the variable name used in substitution
+     * @return the updated plan, or the existing plan if there were no limits
+     */
+    protected PlanNode attachSubqueries( QueryContext context,
+                                         PlanNode plan,
+                                         Map<String, Subquery> subqueriesByVariableName ) {
+        // Order the variable names in reverse order ...
+        List<String> varNames = new ArrayList<String>(subqueriesByVariableName.keySet());
+        Collections.sort(varNames);
+        Collections.reverse(varNames);
+
+        for (String varName : varNames) {
+            Subquery subquery = subqueriesByVariableName.get(varName);
+            // Plan out the subquery ...
+            PlanNode subqueryNode = createPlan(context, subquery.query());
+            setSubqueryVariableName(subqueryNode, varName);
+
+            // Create a DEPENDENT_QUERY node, with the subquery on the LHS (so it is executed first) ...
+            PlanNode depQuery = new PlanNode(Type.DEPENDENT_QUERY);
+            depQuery.addChildren(subqueryNode, plan);
+            depQuery.addSelectors(subqueryNode.getSelectors());
+            depQuery.addSelectors(plan.getSelectors());
+            plan = depQuery;
+        }
+        return plan;
+    }
+
+    protected void setSubqueryVariableName( PlanNode subqueryPlan,
+                                            String varName ) {
+        if (subqueryPlan.getType() != Type.DEPENDENT_QUERY) {
+            subqueryPlan.setProperty(Property.VARIABLE_NAME, varName);
+            return;
+        }
+        // Otherwise, this is a dependent query, and our subquery should be on the right (last child) ...
+        setSubqueryVariableName(subqueryPlan.getLastChild(), varName);
+    }
 }

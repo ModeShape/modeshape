@@ -85,6 +85,7 @@ import org.modeshape.graph.query.model.SetCriteria;
 import org.modeshape.graph.query.model.SetQuery;
 import org.modeshape.graph.query.model.Source;
 import org.modeshape.graph.query.model.StaticOperand;
+import org.modeshape.graph.query.model.Subquery;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.model.UpperCase;
 import org.modeshape.graph.query.model.FullTextSearch.Term;
@@ -511,6 +512,9 @@ public class SqlQueryParser implements QueryParser {
             while (tokens.hasNext()) {
                 if (tokens.matchesAnyOf("UNION", "INTERSECT", "EXCEPT")) {
                     command = parseSetQuery(tokens, command, typeSystem);
+                } else if (tokens.matches(')')) {
+                    // There's more in this token stream, but we'll stop reading ...
+                    break;
                 } else {
                     Position pos = tokens.previousPosition();
                     String msg = GraphI18n.unexpectedToken.text(tokens.consume(), pos.getLine(), pos.getColumn());
@@ -920,6 +924,17 @@ public class SqlQueryParser implements QueryParser {
                 throw new ParsingException(pos, msg);
             }
             return bindVariableName(value);
+        }
+        if (tokens.canConsume('(')) {
+            // Sometimes the subqueries are wrapped with parentheses ...
+            StaticOperand result = parseStaticOperand(tokens, typeSystem);
+            tokens.consume(')');
+            return result;
+        }
+        if (tokens.matches("SELECT")) {
+            // This is a subquery. This object is stateless, so we can reuse this object ...
+            QueryCommand subqueryExpression = parseQueryCommand(tokens, typeSystem);
+            return new Subquery(subqueryExpression);
         }
         return parseLiteral(tokens, typeSystem);
     }

@@ -83,7 +83,9 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
         /** A node that limits the number of tuples returned */
         LIMIT("Limit"),
         /** A node the performs set operations on two sets of tuples, including UNION */
-        SET_OPERATION("SetOperation");
+        SET_OPERATION("SetOperation"),
+        /** A node that contains two nodes, where the left side must be done before the right */
+        DEPENDENT_QUERY("DependentQuery");
 
         private static final Map<String, Type> TYPE_BY_SYMBOL;
         static {
@@ -198,7 +200,10 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
          * For ACESS nodes, this signifies that the node will never return results. Value is a {@link Boolean} object, though the
          * mere presence of this property signifies that it is no longer needed.
          */
-        ACCESS_NO_RESULTS
+        ACCESS_NO_RESULTS,
+
+        /** For dependenty queries, defines the variable where the results will be placed. */
+        VARIABLE_NAME
     }
 
     private Type type;
@@ -1152,7 +1157,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     }
 
     /**
-     * Find all of the nodes of the specified type that are at or below this node.
+     * Find all of the nodes of the specified type that are at or below this node, using pre-order traversal.
      * 
      * @param typeToFind the type of node to find; may not be null
      * @return the collection of nodes that are at or below this node that all have the supplied type; never null but possibly

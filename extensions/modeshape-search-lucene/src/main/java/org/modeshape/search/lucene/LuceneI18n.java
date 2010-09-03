@@ -35,6 +35,7 @@ public class LuceneI18n {
     public static I18n locationForIndexesCannotBeWritten;
     public static I18n errorWhileCommittingIndexChanges;
     public static I18n errorWhileRollingBackIndexChanges;
+    public static I18n missingVariableValue;
 
     static {
         try {
