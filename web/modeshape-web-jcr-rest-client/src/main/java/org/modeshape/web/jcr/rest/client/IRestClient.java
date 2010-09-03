@@ -27,6 +27,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import org.modeshape.web.jcr.rest.client.Status.Severity;
 import org.modeshape.web.jcr.rest.client.domain.NodeType;
 import org.modeshape.web.jcr.rest.client.domain.QueryRow;
@@ -47,28 +48,32 @@ public interface IRestClient {
      * @throws Exception if there is a problem obtaining the repositories
      */
     Collection<Repository> getRepositories( Server server ) throws Exception;
-    
+
     /**
      * Obtains the ModeShape node types defined within the specified workspace.
      * 
      * @param workspace whose node types are being requested (never <code>null</code>)
-     * @param relativePath  is the path to find node types and, optionally, at what depth
+     * @param relativePath is the path to find node types and, optionally, at what depth
      * @param nodeDepth , optional, the the depth of the structure of node types to be returned
      * @return the node types defined within the specified workspace (never <code>null</code>)
      * @throws Exception if there is a problem obtaining the node types
      */
-    Collection<NodeType> getNodeTypes(Workspace workspace, String relativePath, String nodeDepth) throws Exception;
-   
+    Collection<NodeType> getNodeTypes( Workspace workspace,
+                                       String relativePath,
+                                       String nodeDepth ) throws Exception;
+
     /**
      * Obtains the ModeShape node type requested by the nodeTypeName within the specified workspace.
      * 
      * @param workspace whose node types are being requested (never <code>null</code>)
-     * @param relativePath  is the path to find node type 
+     * @param relativePath is the path to find node type
      * @param nodeDepth , optional, the the depth of the structure of node types to be returned
      * @return the node type requested by the nodeTypeName (<code>null</code>)
      * @throws Exception if there is a problem obtaining the node type
      */
-	NodeType getNodeType(Workspace workspace, String relativePath, String nodeDepth) throws Exception;
+    NodeType getNodeType( Workspace workspace,
+                          String relativePath,
+                          String nodeDepth ) throws Exception;
 
     /**
      * @param file the file whose URL is being requested (never <code>null</code>)
@@ -144,4 +149,23 @@ public interface IRestClient {
                           String statement,
                           int offset,
                           int limit ) throws Exception;
+
+    /**
+     * Executes the given query in the workspace.
+     * 
+     * @param workspace the workspace where the resource will be unpublished (never <code>null</code>)
+     * @param language the JCR query language to use (never <code>null</code>)
+     * @param statement the query itself (never <code>null</code>)
+     * @param offset the first row to be returned; if this value is negative, rows are returned starting with the first row
+     * @param limit the maximum number of rows to be returned; if this value is negative, all rows are returned
+     * @param variables the query variables; may be null
+     * @return the list of rows returned by the query (never <code>null</code>)
+     * @throws Exception if there is a problem obtaining the workspaces
+     */
+    List<QueryRow> query( Workspace workspace,
+                          String language,
+                          String statement,
+                          int offset,
+                          int limit,
+                          Map<String, String> variables ) throws Exception;
 }
