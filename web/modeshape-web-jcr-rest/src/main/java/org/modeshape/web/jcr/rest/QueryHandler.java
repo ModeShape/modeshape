@@ -1,7 +1,9 @@
 package org.modeshape.web.jcr.rest;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -12,6 +14,7 @@ import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.UriInfo;
 import net.jcip.annotations.Immutable;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -29,7 +32,8 @@ public class QueryHandler extends AbstractHandler {
                             String language,
                             String statement,
                             long offset,
-                            long limit ) throws RepositoryException, JSONException {
+                            long limit,
+                            UriInfo uriInfo ) throws RepositoryException, JSONException {
 
         assert rawRepositoryName != null;
         assert rawWorkspaceName != null;
@@ -40,6 +44,26 @@ public class QueryHandler extends AbstractHandler {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
 
         Query query = queryManager.createQuery(statement, language);
+
+        if (uriInfo != null) {
+            // Extract the query parameters and bind as variables ...
+            for (Map.Entry<String, List<String>> entry : uriInfo.getQueryParameters().entrySet()) {
+                String variableName = entry.getKey();
+                List<String> variableValues = entry.getValue();
+                if (variableValues == null) continue;
+                if (variableValues.isEmpty()) continue;
+                // Grab the first non-null value ...
+                Iterator<String> iter = variableValues.iterator();
+                String variableValue = null;
+                while (iter.hasNext() && variableValue == null) {
+                    variableValue = iter.next();
+                }
+                if (variableValue == null) continue;
+                // Bind the variable value to the variable name ...
+                query.bindValue(variableName, session.getValueFactory().createValue(variableValue));
+            }
+        }
+
         QueryResult result = query.execute();
 
         String[] columnNames = result.getColumnNames();

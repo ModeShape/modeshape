@@ -41,6 +41,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
@@ -317,15 +318,15 @@ public class JcrResources extends AbstractHandler {
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
-     * @param requestContent the JSON-encoded representation of the node or nodes to be added
      * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
      *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
      *        the result set.
      * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
      *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
      *        results are counted from the record specified in the offset parameter.
-     * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestContent}
-     *         in that auto-created and protected properties (e.g., jcr:uuid) will be populated.
+     * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
+     * @param requestContent the query expression
+     * @return the JSON-encoded representation of the query results.
      * @throws JSONException if there is an error encoding the node
      * @throws RepositoryException if any other error occurs
      */
@@ -338,8 +339,16 @@ public class JcrResources extends AbstractHandler {
                                   @PathParam( "workspaceName" ) String rawWorkspaceName,
                                   @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
                                   @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                  @Context UriInfo uriInfo,
                                   String requestContent ) throws RepositoryException, JSONException {
-        return queryHandler.postItem(request, rawRepositoryName, rawWorkspaceName, Query.XPATH, requestContent, offset, limit);
+        return queryHandler.postItem(request,
+                                     rawRepositoryName,
+                                     rawWorkspaceName,
+                                     Query.XPATH,
+                                     requestContent,
+                                     offset,
+                                     limit,
+                                     uriInfo);
     }
 
     /**
@@ -351,15 +360,15 @@ public class JcrResources extends AbstractHandler {
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
-     * @param requestContent the JSON-encoded representation of the node or nodes to be added
      * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
      *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
      *        the result set.
      * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
      *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
      *        results are counted from the record specified in the offset parameter.
-     * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestContent}
-     *         in that auto-created and protected properties (e.g., jcr:uuid) will be populated.
+     * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
+     * @param requestContent the query expression
+     * @return the JSON-encoded representation of the query results.
      * @throws JSONException if there is an error encoding the node
      * @throws RepositoryException if any other error occurs
      */
@@ -372,8 +381,16 @@ public class JcrResources extends AbstractHandler {
                                    @PathParam( "workspaceName" ) String rawWorkspaceName,
                                    @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
                                    @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                   @Context UriInfo uriInfo,
                                    String requestContent ) throws RepositoryException, JSONException {
-        return queryHandler.postItem(request, rawRepositoryName, rawWorkspaceName, Query.SQL, requestContent, offset, limit);
+        return queryHandler.postItem(request,
+                                     rawRepositoryName,
+                                     rawWorkspaceName,
+                                     Query.SQL,
+                                     requestContent,
+                                     offset,
+                                     limit,
+                                     uriInfo);
     }
 
     /**
@@ -385,15 +402,15 @@ public class JcrResources extends AbstractHandler {
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
-     * @param requestContent the JSON-encoded representation of the node or nodes to be added
      * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
      *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
      *        the result set.
      * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
      *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
      *        results are counted from the record specified in the offset parameter.
-     * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestContent}
-     *         in that auto-created and protected properties (e.g., jcr:uuid) will be populated.
+     * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
+     * @param requestContent the query expression
+     * @return the JSON-encoded representation of the query results.
      * @throws JSONException if there is an error encoding the node
      * @throws RepositoryException if any other error occurs
      */
@@ -405,8 +422,16 @@ public class JcrResources extends AbstractHandler {
                                     @PathParam( "workspaceName" ) String rawWorkspaceName,
                                     @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
                                     @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                    @Context UriInfo uriInfo,
                                     String requestContent ) throws RepositoryException, JSONException {
-        return queryHandler.postItem(request, rawRepositoryName, rawWorkspaceName, Query.JCR_SQL2, requestContent, offset, limit);
+        return queryHandler.postItem(request,
+                                     rawRepositoryName,
+                                     rawWorkspaceName,
+                                     Query.JCR_SQL2,
+                                     requestContent,
+                                     offset,
+                                     limit,
+                                     uriInfo);
     }
 
     /**
@@ -418,15 +443,15 @@ public class JcrResources extends AbstractHandler {
      * @param request the servlet request; may not be null or unauthenticated
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
-     * @param requestContent the JSON-encoded representation of the node or nodes to be added
      * @param offset the offset to the first row to be returned. If this value is greater than the size of the result set, no
      *        records will be returned. If this value is less than 0, results will be returned starting from the first record in
      *        the result set.
      * @param limit the maximum number of rows to be returned. If this value is greater than the size of the result set, the
      *        entire result set will be returned. If this value is less than zero, the entire result set will be returned. The
      *        results are counted from the record specified in the offset parameter.
-     * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestContent}
-     *         in that auto-created and protected properties (e.g., jcr:uuid) will be populated.
+     * @param uriInfo the information about the URI (from which the other query parameters will be obtained)
+     * @param requestContent the query expression
+     * @return the JSON-encoded representation of the query results.
      * @throws JSONException if there is an error encoding the node
      * @throws RepositoryException if any other error occurs
      */
@@ -438,8 +463,16 @@ public class JcrResources extends AbstractHandler {
                                       @PathParam( "workspaceName" ) String rawWorkspaceName,
                                       @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
                                       @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
+                                      @Context UriInfo uriInfo,
                                       String requestContent ) throws RepositoryException, JSONException {
-        return queryHandler.postItem(request, rawRepositoryName, rawWorkspaceName, SEARCH_LANGUAGE, requestContent, offset, limit);
+        return queryHandler.postItem(request,
+                                     rawRepositoryName,
+                                     rawWorkspaceName,
+                                     SEARCH_LANGUAGE,
+                                     requestContent,
+                                     offset,
+                                     limit,
+                                     uriInfo);
     }
 
     @Provider

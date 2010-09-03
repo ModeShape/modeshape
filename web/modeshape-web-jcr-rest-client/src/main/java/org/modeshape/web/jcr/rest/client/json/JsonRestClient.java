@@ -202,7 +202,7 @@ public final class JsonRestClient implements IRestClient {
      * @see org.modeshape.web.jcr.rest.client.IRestClient#getRepositories(org.modeshape.web.jcr.rest.client.domain.Server)
      */
     public Collection<Repository> getRepositories( Server server ) throws Exception {
-    	assert server != null;
+        assert server != null;
         LOGGER.trace("getRepositories: server={0}", server);
 
         ServerNode serverNode = new ServerNode(server);
@@ -226,16 +226,18 @@ public final class JsonRestClient implements IRestClient {
             }
         }
     }
- 
+
     /**
-	 * {@inheritDoc}
-	 *
-	 * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeTypes(org.modeshape.web.jcr.rest.client.domain.Workspace, java.lang.String, java.lang.String)
-	 */
-	@Override
-	public Collection<NodeType> getNodeTypes(Workspace workspace, String relativePath, String nodeDepth)
-			throws Exception {
-    	assert workspace != null;
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeTypes(org.modeshape.web.jcr.rest.client.domain.Workspace,
+     *      java.lang.String, java.lang.String)
+     */
+    @Override
+    public Collection<NodeType> getNodeTypes( Workspace workspace,
+                                              String relativePath,
+                                              String nodeDepth ) throws Exception {
+        assert workspace != null;
         LOGGER.trace("getNodeTypes: workspace={0}, relativePath{1}, depth{2}", workspace, relativePath, nodeDepth);
 
         NodeTypeNode nodetypeNode = new NodeTypeNode(workspace, relativePath, nodeDepth);
@@ -250,8 +252,7 @@ public final class JsonRestClient implements IRestClient {
 
             // not a good response code
             LOGGER.error(RestClientI18n.connectionErrorMsg, responseCode, "getNodeTypes");
-            String msg = RestClientI18n.getNodeTypesFailedMsg.text(nodetypeNode.getUrl(),
-                                                                    responseCode);
+            String msg = RestClientI18n.getNodeTypesFailedMsg.text(nodetypeNode.getUrl(), responseCode);
             throw new RuntimeException(msg);
         } finally {
             if (connection != null) {
@@ -259,18 +260,19 @@ public final class JsonRestClient implements IRestClient {
                 connection.disconnect();
             }
         }
-	}
-	
+    }
+
     /**
-	 * {@inheritDoc}
-	 *
-	 * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeType(Workspace, java.lang.String, java.lang.String)
-	 */
-	@Override
-	public NodeType getNodeType(Workspace workspace, String relativePath, String nodeDepth)
-			throws Exception {
-    	assert workspace != null;
-    	assert relativePath != null;
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeType(Workspace, java.lang.String, java.lang.String)
+     */
+    @Override
+    public NodeType getNodeType( Workspace workspace,
+                                 String relativePath,
+                                 String nodeDepth ) throws Exception {
+        assert workspace != null;
+        assert relativePath != null;
         LOGGER.trace("getNodeType: workspace={0}, relativePath={1}", workspace, relativePath);
 
         NodeTypeNode nodetypeNode = new NodeTypeNode(workspace, relativePath, nodeDepth);
@@ -285,8 +287,7 @@ public final class JsonRestClient implements IRestClient {
 
             // not a good response code
             LOGGER.error(RestClientI18n.connectionErrorMsg, responseCode, "getNodeType");
-            String msg = RestClientI18n.getNodeTypeFailedMsg.text(relativePath, nodetypeNode.getUrl(),
-                                                                    responseCode);
+            String msg = RestClientI18n.getNodeTypeFailedMsg.text(relativePath, nodetypeNode.getUrl(), responseCode);
             throw new RuntimeException(msg);
         } finally {
             if (connection != null) {
@@ -294,9 +295,9 @@ public final class JsonRestClient implements IRestClient {
                 connection.disconnect();
             }
         }
-	}
+    }
 
-	/**
+    /**
      * {@inheritDoc}
      * 
      * @see org.modeshape.web.jcr.rest.client.IRestClient#getUrl(java.io.File, java.lang.String,
@@ -305,9 +306,9 @@ public final class JsonRestClient implements IRestClient {
     public URL getUrl( File file,
                        String path,
                        Workspace workspace ) throws Exception {
-    	assert file != null;
-    	assert path != null;
-    	assert workspace != null;
+        assert file != null;
+        assert path != null;
+        assert workspace != null;
 
         // can't be a directory
         if (file.isDirectory()) {
@@ -323,7 +324,7 @@ public final class JsonRestClient implements IRestClient {
      * @see org.modeshape.web.jcr.rest.client.IRestClient#getWorkspaces(org.modeshape.web.jcr.rest.client.domain.Repository)
      */
     public Collection<Workspace> getWorkspaces( Repository repository ) throws Exception {
-    	assert repository != null;
+        assert repository != null;
         LOGGER.trace("getWorkspaces: repository={0}", repository);
 
         RepositoryNode repositoryNode = new RepositoryNode(repository);
@@ -420,9 +421,9 @@ public final class JsonRestClient implements IRestClient {
     public Status publish( Workspace workspace,
                            String path,
                            File file ) {
-    	assert workspace != null;
-    	assert path != null;
-    	assert file != null;
+        assert workspace != null;
+        assert path != null;
+        assert file != null;
         LOGGER.trace("publish: workspace={0}, path={1}, file={2}", workspace.getName(), path, file.getAbsolutePath());
 
         try {
@@ -453,9 +454,9 @@ public final class JsonRestClient implements IRestClient {
     public Status unpublish( Workspace workspace,
                              String path,
                              File file ) {
-    	assert workspace != null;
-    	assert path != null;
-    	assert file != null;
+        assert workspace != null;
+        assert path != null;
+        assert file != null;
         LOGGER.trace("unpublish: workspace={0}, path={1}, file={2}", workspace.getName(), path, file.getAbsolutePath());
 
         HttpClientConnection connection = null;
@@ -495,20 +496,36 @@ public final class JsonRestClient implements IRestClient {
     public List<QueryRow> query( Workspace workspace,
                                  String language,
                                  String statement ) throws Exception {
-        return query(workspace, language, statement, 0, -1);
+        return query(workspace, language, statement, 0, -1, null);
     }
 
-    @SuppressWarnings( "unchecked" )
     @Override
     public List<QueryRow> query( Workspace workspace,
                                  String language,
                                  String statement,
                                  int offset,
                                  int limit ) throws Exception {
-       	assert workspace != null;
-       	assert language != null;
-       	assert statement != null;
-       	
+        return query(workspace, language, statement, 0, -1, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.web.jcr.rest.client.IRestClient#query(org.modeshape.web.jcr.rest.client.domain.Workspace,
+     *      java.lang.String, java.lang.String, int, int, java.util.Map)
+     */
+    @SuppressWarnings( "unchecked" )
+    @Override
+    public List<QueryRow> query( Workspace workspace,
+                                 String language,
+                                 String statement,
+                                 int offset,
+                                 int limit,
+                                 Map<String, String> variables ) throws Exception {
+        assert workspace != null;
+        assert language != null;
+        assert statement != null;
+
         LOGGER.trace("query: workspace={0}, language={1}, file={2}, offset={3}, limit={4}",
                      workspace.getName(),
                      language,
@@ -524,8 +541,10 @@ public final class JsonRestClient implements IRestClient {
             // url.append("/query");
 
             boolean hasOffset = offset > 0;
+            boolean firstQueryParam = true;
             if (hasOffset) {
                 url.append("?offset=").append(offset);
+                firstQueryParam = false;
             }
 
             if (limit >= 0) {
@@ -536,6 +555,25 @@ public final class JsonRestClient implements IRestClient {
                 }
 
                 url.append("limit=").append(limit);
+                firstQueryParam = false;
+            }
+
+            if (variables != null && !variables.isEmpty()) {
+                for (Map.Entry<String, String> varEntry : variables.entrySet()) {
+                    String varName = varEntry.getKey();
+                    String varValue = varEntry.getValue();
+                    if (varName == null || varName.trim().length() == 0) continue;
+                    if (varValue == null || varValue.trim().length() == 0) continue;
+                    if (firstQueryParam) {
+                        firstQueryParam = false;
+                        url.append("?");
+                    } else {
+                        url.append("&");
+                    }
+                    url.append(varName);
+                    url.append('=');
+                    url.append(varValue);
+                }
             }
 
             connection = connect(workspace.getServer(), new URL(url.toString()), RequestMethod.POST);
@@ -637,7 +675,6 @@ public final class JsonRestClient implements IRestClient {
             System.out.println(" 		" + USERNAME_PARM + "(default=admin");
             System.out.println("  	 	" + PWD_PARM + " (default=admin");
             System.out.println("  	 	" + UNPUBLISH + " with no parameter, will remove file(s)");
-           
 
             System.exit(0);
         }
@@ -659,7 +696,7 @@ public final class JsonRestClient implements IRestClient {
             if (arg.equals(SERVER_PARM)) {
                 server_name = args[pos + 1];
             } else if (arg.equals(REPO_PARM)) {
-            	repo_name = args[pos + 1];
+                repo_name = args[pos + 1];
             } else if (arg.equals(WORKSPACENAME_PARM)) {
                 workspace_name = args[pos + 1];
             } else if (arg.equals(WORKSPACEPATH_PARM)) {
@@ -711,7 +748,7 @@ public final class JsonRestClient implements IRestClient {
             e.printStackTrace();
             System.exit(-1);
         }
-        
+
         if (publish) {
 
             if (file_name != null) {
