@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -50,6 +51,7 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
+import net.jcip.annotations.Immutable;
 import org.junit.After;
 import org.junit.Before;
 import org.modeshape.common.util.StringUtil;
@@ -645,7 +647,7 @@ public abstract class AbstractSequencerTest {
      * @throws RepositoryException
      */
     protected QueryResult printQuery( String jcrSql2 ) throws RepositoryException {
-        return printQuery(jcrSql2, Query.JCR_SQL2, null, -1);
+        return printQuery(jcrSql2, Query.JCR_SQL2, -1, null);
     }
 
     /**
@@ -653,33 +655,39 @@ public abstract class AbstractSequencerTest {
      * 
      * @param jcrSql2 the JCR-SQL2 query
      * @param expectedNumberOfResults the expected number of rows in the results, or -1 if this is not to be checked
-     * @return the results
-     * @throws RepositoryException
-     */
-    protected QueryResult printQuery( String jcrSql2,
-                                      long expectedNumberOfResults ) throws RepositoryException {
-        return printQuery(jcrSql2, Query.JCR_SQL2, null, expectedNumberOfResults);
-    }
-
-    /**
-     * Execute the supplied JCR-SQL2 query and, if printing is enabled, print out the results.
-     * 
-     * @param jcrSql2 the JCR-SQL2 query
      * @param variables the variables for the query
-     * @param expectedNumberOfResults the expected number of rows in the results, or -1 if this is not to be checked
      * @return the results
      * @throws RepositoryException
      */
     protected QueryResult printQuery( String jcrSql2,
-                                      Map<String, String> variables,
-                                      long expectedNumberOfResults ) throws RepositoryException {
-        return printQuery(jcrSql2, Query.JCR_SQL2, variables, expectedNumberOfResults);
+                                      long expectedNumberOfResults,
+                                      Variable... variables ) throws RepositoryException {
+        Map<String, String> keyValuePairs = new HashMap<String, String>();
+        for (Variable var : variables) {
+            keyValuePairs.put(var.key, var.value);
+        }
+        return printQuery(jcrSql2, Query.JCR_SQL2, expectedNumberOfResults, keyValuePairs);
+    }
+
+    /**
+     * Execute the supplied JCR-SQL2 query and, if printing is enabled, print out the results.
+     * 
+     * @param jcrSql2 the JCR-SQL2 query
+     * @param expectedNumberOfResults the expected number of rows in the results, or -1 if this is not to be checked
+     * @param variables the array of variable maps for the query; all maps will be combined into a single map
+     * @return the results
+     * @throws RepositoryException
+     */
+    protected QueryResult printQuery( String jcrSql2,
+                                      long expectedNumberOfResults,
+                                      Map<String, String> variables ) throws RepositoryException {
+        return printQuery(jcrSql2, Query.JCR_SQL2, expectedNumberOfResults, variables);
     }
 
     protected QueryResult printQuery( String queryExpression,
                                       String queryLanguage,
-                                      Map<String, String> variables,
-                                      long expectedNumberOfResults ) throws RepositoryException {
+                                      long expectedNumberOfResults,
+                                      Map<String, String> variables ) throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery(queryExpression, queryLanguage);
         if (variables != null && !variables.isEmpty()) {
             for (Map.Entry<String, String> entry : variables.entrySet()) {
@@ -702,4 +710,31 @@ public abstract class AbstractSequencerTest {
         return results;
     }
 
+    protected Variable var( String key,
+                            String value ) {
+        return new Variable(key, value);
+    }
+
+    protected Map<String, String> vars( String... keyValuePairs ) {
+        assertThat(keyValuePairs.length % 2, is(0));
+        Map<String, String> map = new HashMap<String, String>();
+        for (int i = 0; i != keyValuePairs.length; ++i) {
+            String key = keyValuePairs[i];
+            String value = keyValuePairs[++i];
+            map.put(key, value);
+        }
+        return map;
+    }
+
+    @Immutable
+    protected static class Variable {
+        protected final String key;
+        protected final String value;
+
+        protected Variable( String key,
+                            String value ) {
+            this.key = key;
+            this.value = value;
+        }
+    }
 }
