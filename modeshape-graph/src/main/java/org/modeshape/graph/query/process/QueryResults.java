@@ -75,7 +75,9 @@ public class QueryResults implements org.modeshape.graph.query.QueryResults {
         this.statistics = statistics;
         this.plan = plan;
         // Precompute the indexes for each tuple, given the desired columns ...
-        this.tupleIndexesForColumns = new int[this.columns.getColumnCount() + this.columns.getLocationCount()];
+        int numLocations = this.columns.getLocationCount();
+        int numScores = this.columns.hasFullTextSearchScores() ? numLocations : 0;
+        this.tupleIndexesForColumns = new int[this.columns.getColumnCount() + numLocations + numScores];
         int i = 0;
         for (Column column : this.columns) {
             this.tupleIndexesForColumns[i++] = this.columns.getColumnIndexForProperty(column.selectorName().getString(),
@@ -83,6 +85,11 @@ public class QueryResults implements org.modeshape.graph.query.QueryResults {
         }
         for (String selectorName : this.columns.getSelectorNames()) {
             this.tupleIndexesForColumns[i++] = this.columns.getLocationIndex(selectorName);
+        }
+        if (this.columns.hasFullTextSearchScores()) {
+            for (String selectorName : this.columns.getSelectorNames()) {
+                this.tupleIndexesForColumns[i++] = this.columns.getFullTextSearchScoreIndexFor(selectorName);
+            }
         }
     }
 

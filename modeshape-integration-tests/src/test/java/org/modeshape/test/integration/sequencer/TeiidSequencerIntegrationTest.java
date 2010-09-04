@@ -23,10 +23,6 @@
  */
 package org.modeshape.test.integration.sequencer;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-import java.util.HashMap;
-import java.util.Map;
 import javax.jcr.Node;
 import org.junit.After;
 import org.junit.Before;
@@ -184,6 +180,7 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         // Print out the top level of the VDBs ...
         // print = true;
         Node vdbs = assertNode("/sequenced");
+        // print = true;
         printSubgraph(vdbs, 4);
 
         // Query for the VDBs by path glob ...
@@ -197,12 +194,39 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
                    1);
 
         // Query for the VDBs by path glob using variable ...
-        printQuery("SELECT * FROM [nt:file] WHERE PATH() LIKE $path", vars("path", "/files/q*.2.vdb"), 1);
+        printQuery("SELECT * FROM [nt:file] WHERE PATH() LIKE $path", 1, var("path", "/files/q*.2.vdb"));
 
-        // Query for the VDBs by version range ...
+        // Query for the VDBs by version ...
         printQuery("SELECT [jcr:primaryType],[jcr:created],[jcr:createdBy] FROM [nt:file] WHERE PATH() LIKE $path",
-                   vars("path", "/files/q*.2.vdb"),
-                   1);
+                   1,
+                   var("path", "/files/q*.2.vdb"));
+
+        // Query for the VDBs by version range (which is actually on the derived/sequenced information) ...
+        printQuery("SELECT [jcr:primaryType],[jcr:created],[jcr:createdBy] FROM [nt:file] WHERE PATH() IN "
+                   + "( SELECT [vdb:originalFile] FROM [vdb:virtualDatabase] WHERE [vdb:version] BETWEEN $minVersion AND $maxVersion )",
+                   3,
+                   var("minVersion", "2"),
+                   var("maxVersion", "5"));
+
+        // Query for the VDBs by version range and description (which is actually on the derived/sequenced information) ...
+        printQuery("SELECT [jcr:primaryType],[jcr:created],[jcr:createdBy] FROM [nt:file] WHERE PATH() IN "
+                   + "( SELECT [vdb:originalFile] FROM [vdb:virtualDatabase] "
+                   + "WHERE [vdb:version] <= $maxVersion AND CONTAINS([vdb:description],'xml OR maybe'))",
+                   4,
+                   var("description", "*"),
+                   var("maxVersion", "3"));
+        printQuery("SELECT [jcr:primaryType],[jcr:created],[jcr:createdBy] FROM [nt:file] WHERE PATH() IN "
+                   + "( SELECT [vdb:originalFile] FROM [vdb:virtualDatabase] "
+                   + "WHERE [vdb:version] <= $maxVersion AND CONTAINS([vdb:description],'xml maybe'))",
+                   1,
+                   var("description", "*"),
+                   var("maxVersion", "3"));
+        printQuery("SELECT [jcr:primaryType],[jcr:created],[jcr:createdBy] FROM [nt:file] WHERE PATH() IN "
+                   + "( SELECT [vdb:originalFile] FROM [vdb:virtualDatabase] "
+                   + "WHERE [vdb:version] <= $maxVersion AND CONTAINS([vdb:description],'xml OR xml maybe'))",
+                   4,
+                   var("description", "*"),
+                   var("maxVersion", "3"));
     }
 
     protected void uploadFiles( String destinationPath,
@@ -217,17 +241,6 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         for (String resourcePath : resourcePaths) {
             uploadFile("sequencers/teiid/vdb/" + resourcePath, destinationPath);
         }
-    }
-
-    protected Map<String, String> vars( String... keyValuePairs ) {
-        assertThat(keyValuePairs.length % 2, is(0));
-        Map<String, String> map = new HashMap<String, String>();
-        for (int i = 0; i != keyValuePairs.length; ++i) {
-            String key = keyValuePairs[i];
-            String value = keyValuePairs[++i];
-            map.put(key, value);
-        }
-        return map;
     }
 
 }
