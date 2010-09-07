@@ -32,6 +32,7 @@ import javax.jcr.nodetype.NodeType;
 import net.jcip.annotations.Immutable;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.ValueFactory;
 
 /**
  * ModeShape implementation of the {@link NodeDefinition} class.
@@ -303,6 +304,22 @@ class JcrNodeDefinition extends JcrItemDefinition implements NodeDefinition {
      */
     @Override
     public String toString() {
-        return getId().toString();
+        ValueFactory<String> strings = context.getValueFactories().getStringFactory();
+        StringBuilder sb = new StringBuilder();
+        NodeDefinitionId id = getId();
+        sb.append(strings.create(id.getNodeTypeName()));
+        sb.append('/');
+        sb.append(strings.create(id.getChildDefinitionName()));
+        if (id.hasRequiredPrimaryTypes()) {
+            sb.append(" (required primary types = [");
+            boolean first = true;
+            for (Name requiredPrimaryType : id.getRequiredPrimaryTypes()) {
+                if (first) first = false;
+                else sb.append(',');
+                sb.append(requiredPrimaryType.getString());
+            }
+            sb.append("])");
+        }
+        return sb.toString();
     }
 }

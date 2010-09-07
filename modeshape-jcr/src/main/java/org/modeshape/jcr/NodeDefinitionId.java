@@ -123,6 +123,15 @@ final class NodeDefinitionId implements Serializable {
     }
 
     /**
+     * Return whether there is at least one {@link #getRequiredPrimaryTypes() required primary type}
+     * 
+     * @return true if there is at least one required primary type, or false otherewise
+     */
+    public boolean hasRequiredPrimaryTypes() {
+        return requiredPrimaryTypes.length != 0;
+    }
+
+    /**
      * Determine whether this node definition defines any named child.
      * 
      * @return true if this node definition allows children with any name, or false if this definition requires a particular child

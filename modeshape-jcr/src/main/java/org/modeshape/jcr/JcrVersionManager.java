@@ -332,8 +332,8 @@ final class JcrVersionManager implements VersionManager {
                            node.valuesFrom(PropertyType.REFERENCE, EMPTY_OBJECT_ARRAY),
                            PropertyType.REFERENCE,
                            false);
-        editor.setProperty(JcrLexicon.BASE_VERSION, node.valueFrom(newVersion), false);
-        editor.setProperty(JcrLexicon.IS_CHECKED_OUT, node.valueFrom(PropertyType.BOOLEAN, false), false);
+        editor.setProperty(JcrLexicon.BASE_VERSION, node.valueFrom(newVersion), false, false);
+        editor.setProperty(JcrLexicon.IS_CHECKED_OUT, node.valueFrom(PropertyType.BOOLEAN, false), false, false);
         node.save();
 
         return (JcrVersionNode)newVersion;
@@ -634,8 +634,8 @@ final class JcrVersionManager implements VersionManager {
         op.execute();
 
         NodeEditor editor = existingNode.editor();
-        editor.setProperty(JcrLexicon.IS_CHECKED_OUT, existingNode.valueFrom(PropertyType.BOOLEAN, false), false);
-        editor.setProperty(JcrLexicon.BASE_VERSION, existingNode.valueFrom(jcrVersion), false);
+        editor.setProperty(JcrLexicon.IS_CHECKED_OUT, existingNode.valueFrom(PropertyType.BOOLEAN, false), false, false);
+        editor.setProperty(JcrLexicon.BASE_VERSION, existingNode.valueFrom(jcrVersion), false, false);
 
         session().save();
 
@@ -781,7 +781,7 @@ final class JcrVersionManager implements VersionManager {
             editor.setProperty(propName, values, property.getType(), false);
         } else {
             JcrValue value = (JcrValue)property.getValue();
-            editor.setProperty(propName, value, false);
+            editor.setProperty(propName, value, false, false);
         }
     }
 
@@ -1085,8 +1085,8 @@ final class JcrVersionManager implements VersionManager {
                                           AbstractJcrNode targetChildNode ) throws RepositoryException {
 
             NodeEditor editor = targetChildNode.editor();
-            editor.setProperty(JcrLexicon.IS_CHECKED_OUT, targetChildNode.valueFrom(PropertyType.BOOLEAN, false), false);
-            editor.setProperty(JcrLexicon.BASE_VERSION, targetChildNode.valueFrom(sourceChildNode.getParent()), false);
+            editor.setProperty(JcrLexicon.IS_CHECKED_OUT, targetChildNode.valueFrom(PropertyType.BOOLEAN, false), false, false);
+            editor.setProperty(JcrLexicon.BASE_VERSION, targetChildNode.valueFrom(sourceChildNode.getParent()), false, false);
 
         }
 
@@ -1562,7 +1562,7 @@ final class JcrVersionManager implements VersionManager {
                 }
 
             } else {
-                targetEditor.setProperty(JcrLexicon.MERGE_FAILED, targetNode.valueFrom(sourceVersion), false);
+                targetEditor.setProperty(JcrLexicon.MERGE_FAILED, targetNode.valueFrom(sourceVersion), false, false);
             }
             failures.add(targetNode);
 

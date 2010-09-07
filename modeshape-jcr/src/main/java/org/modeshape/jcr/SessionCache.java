@@ -972,7 +972,7 @@ class SessionCache {
         public AbstractJcrProperty setProperty( Name name,
                                                 JcrValue value )
             throws AccessDeniedException, ConstraintViolationException, RepositoryException {
-            return setProperty(name, value, true);
+            return setProperty(name, value, true, false);
         }
 
         /**
@@ -983,6 +983,7 @@ class SessionCache {
          * @param name the property name; may not be null
          * @param value the new property values; may not be null
          * @param skipProtected indicates whether protected property definitions should be ignored
+         * @param skipReferenceValidation indicates whether constraints on REFERENCE properties should be enforced
          * @return the JCR property object for the property; never null
          * @throws ConstraintViolationException if the property could not be set because of a node type constraint or property
          *         definition constraint
@@ -992,7 +993,8 @@ class SessionCache {
          */
         public AbstractJcrProperty setProperty( Name name,
                                                 JcrValue value,
-                                                boolean skipProtected )
+                                                boolean skipProtected,
+                                                boolean skipReferenceValidation )
             throws AccessDeniedException, ConstraintViolationException, VersionException, RepositoryException {
             assert name != null;
             assert value != null;
@@ -1043,7 +1045,7 @@ class SessionCache {
                  * findPropertyDefinition checks constraints for all property types except REFERENCE.  To avoid unnecessary loading of nodes,
                  * REFERENCE constraints are only checked when the property is first set.
                  */
-                boolean referencePropMissedConstraints = definition != null
+                boolean referencePropMissedConstraints = skipReferenceValidation && definition != null
                                                          && definition.getRequiredType() == PropertyType.REFERENCE
                                                          && !definition.canCastToTypeAndSatisfyConstraints(value);
                 if (definition == null || referencePropMissedConstraints) {
@@ -1470,7 +1472,7 @@ class SessionCache {
                     if (uuid == null) uuid = (UUID)node.getLocation().getIdProperty(JcrLexicon.UUID).getFirstValue();
                     if (uuid == null) uuid = UUID.randomUUID();
                     JcrValue value = new JcrValue(factories(), SessionCache.this, PropertyType.STRING, uuid);
-                    setProperty(JcrLexicon.UUID, value, false);
+                    setProperty(JcrLexicon.UUID, value, false, false);
                 }
             } catch (RepositorySourceException e) {
                 throw new RepositoryException(e.getMessage(), e);
@@ -1640,11 +1642,11 @@ class SessionCache {
                 if (isHierarchyNode || isCreatedType) {
                     NodeEditor editor = jcrNode.editor();
                     if (isHierarchyNode) {
-                        editor.setProperty(JcrLexicon.CREATED, now, false);
+                        editor.setProperty(JcrLexicon.CREATED, now, false, false);
                     }
                     if (isCreatedType) {
-                        editor.setProperty(JcrLexicon.CREATED, now, false);
-                        editor.setProperty(JcrLexicon.CREATED_BY, by, false);
+                        editor.setProperty(JcrLexicon.CREATED, now, false, false);
+                        editor.setProperty(JcrLexicon.CREATED_BY, by, false, false);
                     }
                 }
 

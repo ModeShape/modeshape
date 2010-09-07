@@ -197,7 +197,16 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
      */
     @Override
     public String toString() {
-        return getId().toString();
+        ValueFactory<String> strings = context.getValueFactories().getStringFactory();
+        StringBuilder sb = new StringBuilder();
+        PropertyDefinitionId id = getId();
+        sb.append(strings.create(id.getNodeTypeName()));
+        sb.append('/');
+        sb.append(strings.create(id.getPropertyDefinitionName()));
+        sb.append('/');
+        sb.append(PropertyType.nameFromValue(id.getPropertyType()));
+        sb.append(id.allowsMultiple() ? '*' : '1');
+        return sb.toString();
     }
 
     boolean satisfiesConstraints( Value value ) {
