@@ -52,6 +52,7 @@ import javax.jcr.nodetype.NodeTypeTemplate;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.property.Path;
 import org.modeshape.jcr.JcrRepository.Option;
@@ -312,6 +313,48 @@ public class ShareableNodesTest {
         sharedNode = session.getNode(sharedNode.getPath());
         assertSharedSetIncludes(prius, originalPath, sharedPath);
         assertSharedSetIncludes(sharedNode, originalPath, sharedPath);
+    }
+
+    @SuppressWarnings( "unchecked" )
+    @FixFor( "MODE-883" )
+    @Test
+    public void shouldAllowCreatingShareableNodeUnderParentThatDoesNotAllowSameNameSiblings() throws RepositoryException {
+        // Now create a node type that allows only one car ...
+        NodeTypeManager ntManager = session.getWorkspace().getNodeTypeManager();
+        NodeTypeTemplate template = ntManager.createNodeTypeTemplate();
+        template.setName("car:Owner");
+        NodeDefinitionTemplate childDefn = ntManager.createNodeDefinitionTemplate();
+        childDefn.setSameNameSiblings(false);
+        childDefn.setName("*");
+        childDefn.setRequiredPrimaryTypeNames(new String[] {"car:Car"});
+        template.getNodeDefinitionTemplates().add(childDefn);
+
+        // Register the node type ...
+        ntManager.registerNodeType(template, false);
+
+        // Create two nodes with this node type ...
+        Node joe = session.getNode("/NewSecondArea").addNode("Joe", "car:Owner");
+        Node sally = session.getNode("/NewSecondArea").addNode("Sally", "car:Owner");
+        session.save();
+
+        // Create a node under Joe, since he will be the owner ...
+        Node minibus = joe.addNode("Type 2", "car:Car");
+        minibus.setProperty("car:maker", "Volkswagen");
+        minibus.setProperty("car:year", "1952");
+        minibus.addMixin("mix:shareable");
+        session.save();
+
+        // Share the minibus under sally ...
+        String originalPath = minibus.getPath();
+        String sharedPath = sally.getPath() + "/Our Bus";
+        Node sharedNode = makeShare(originalPath, sharedPath);
+
+        assertSharedSetIs(minibus, originalPath, sharedPath);
+        assertSharedSetIs(sharedNode, originalPath, sharedPath);
+
+        // Remove the node from Joe ..
+        minibus.remove();
+        session.save();
     }
 
     /**

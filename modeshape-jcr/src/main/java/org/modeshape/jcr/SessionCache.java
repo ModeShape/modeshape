@@ -906,6 +906,10 @@ class SessionCache {
             this.node = node;
         }
 
+        protected Node<JcrNodePayload, JcrPropertyPayload> node() {
+            return node;
+        }
+
         /**
          * Checks whether there is an existing property with this name that does not match the given cardinality. If such a
          * property exists, a {@code javax.jcr.ValueFormatException} is thrown, as per section 10.4.2.6 of the JCR 2.0
