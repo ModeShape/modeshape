@@ -28,12 +28,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.security.AccessControlException;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -46,6 +44,8 @@ import javax.jcr.NamespaceException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.ReferentialIntegrityException;
 import javax.jcr.Repository;
@@ -1290,7 +1290,7 @@ class JcrSession implements Session {
         // Build one (or several) queries to find the first reference to any 'mix:referenceable' nodes
         // that have been (transiently) removed from the session ...
         int maxBatchSize = 100;
-        List<Object> someUuidsInBranch = new ArrayList<Object>(maxBatchSize);
+        Set<Object> someUuidsInBranch = new HashSet<Object>();
         Iterator<String> uuidIter = removedReferenceableNodeUuids.iterator();
         while (uuidIter.hasNext()) {
             // Accumulate the next 100 UUIDs of referenceable nodes inside this branch ...
@@ -1328,8 +1328,35 @@ class JcrSession implements Session {
             QueryResult result = jcrQuery.execute();
             NodeIterator referencingNodes = result.getNodes();
             while (referencingNodes.hasNext()) {
-                // There is at least one reference to nodes in this branch, so we can stop here ...
-                throw new ReferentialIntegrityException();
+                // The REFERENCE property (or properties) may have been removed in this session,
+                // so check whether they referencing nodes have been loaded into the session ...
+                AbstractJcrNode referencingNode = (AbstractJcrNode)referencingNodes.nextNode();
+                if (!referencingNode.nodeInfo().isChanged(false)) {
+                    // This node has not changed, so there is at least one reference; we can stop here ...
+                    throw new ReferentialIntegrityException();
+                }
+                // This node has changed. This node is okay as long as the node no longer
+                // contains a REFERENCE property to any of the removed nodes...
+                PropertyIterator propIter = referencingNode.getProperties();
+                while (propIter.hasNext()) {
+                    Property property = propIter.nextProperty();
+                    if (property.getType() != PropertyType.REFERENCE) return;
+                    if (property.isMultiple()) {
+                        for (Value value : property.getValues()) {
+                            String referencedUuid = value.getString();
+                            if (removedReferenceableNodeUuids.contains(referencedUuid)) {
+                                // This node still has a reference to a node being removed ...
+                                throw new ReferentialIntegrityException();
+                            }
+                        }
+                    } else {
+                        String referencedUuid = property.getValue().getString();
+                        if (removedReferenceableNodeUuids.contains(referencedUuid)) {
+                            // This node still has a reference to a node being removed ...
+                            throw new ReferentialIntegrityException();
+                        }
+                    }
+                }
             }
             someUuidsInBranch.clear();
         }
