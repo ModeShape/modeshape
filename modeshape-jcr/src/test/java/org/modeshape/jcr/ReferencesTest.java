@@ -134,4 +134,44 @@ public class ReferencesTest extends AbstractJCRTest {
             fail("Should allow removing a node that has a WEAKREFERENCE pointing to it.");
         }
     }
+
+    @FixFor( "MODE-877" )
+    public void testRemovingReferencedNodeIfReferenceIsRemovedBeforeReferencedNodeInSameSessionSaveAction()
+        throws RepositoryException {
+        Node node1 = testRootNode.addNode("test1");
+        Node node2 = testRootNode.addNode("test2");
+        node2.addMixin("mix:referenceable");
+        Value ref = superuser.getValueFactory().createValue(node2.getIdentifier());
+        node1.setProperty("ref", ref, PropertyType.REFERENCE);
+        superuser.save();
+        // Now remove the reference and then the referenced node in the same 'save()' ...
+        try {
+            node1.getProperty("ref").remove();
+            node2.remove();
+            superuser.save();
+        } catch (ReferentialIntegrityException e) {
+            fail("Should allow removing a node that has a REFERENCE pointing to it if REFERENCE is removed in same session save().");
+        }
+
+    }
+
+    @FixFor( "MODE-877" )
+    public void testRemovingReferencedNodeIfReferenceIsRemovedAfterReferencedNodeInSameSessionSaveAction()
+        throws RepositoryException {
+        Node node1 = testRootNode.addNode("test1");
+        Node node2 = testRootNode.addNode("test2");
+        node2.addMixin("mix:referenceable");
+        Value ref = superuser.getValueFactory().createValue(node2.getIdentifier());
+        node1.setProperty("ref", ref, PropertyType.REFERENCE);
+        superuser.save();
+        // Now remove the reference and then the referenced node in the same 'save()' ...
+        try {
+            node2.remove();
+            node1.getProperty("ref").remove();
+            superuser.save();
+        } catch (ReferentialIntegrityException e) {
+            fail("Should allow removing a node that has a REFERENCE pointing to it if REFERENCE is removed in same session save().");
+        }
+
+    }
 }
