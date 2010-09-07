@@ -2757,6 +2757,26 @@ public class GraphSession<Payload, PropertyPayload> {
         }
 
         /**
+         * Get the child node that immediately follows the supplied child.
+         * 
+         * @param child the existing child; must be a child of this node
+         * @return the node that appears directly after the supplied child, or null if the supplied child is the last child
+         */
+        public Node<Payload, PropertyPayload> getChildAfter( Node<Payload, PropertyPayload> child ) {
+            assert child.getParent() == this;
+            if (getChildrenCount() < 2) return null;
+            Iterator<Node<Payload, PropertyPayload>> iter = getChildren().iterator();
+            while (iter.hasNext()) {
+                Node<Payload, PropertyPayload> nextChild = iter.next();
+                if (child.equals(nextChild)) {
+                    return iter.hasNext() ? iter.next() : null;
+                }
+            }
+            assert false;
+            return null;
+        }
+
+        /**
          * Get the number of children.
          * 
          * @return the number of children in the cache
