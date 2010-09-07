@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -100,6 +101,7 @@ class JcrContentHandler extends DefaultHandler {
 
     private AbstractJcrNode currentNode;
     private ContentHandler delegate;
+    protected final List<AbstractJcrProperty> refPropsRequiringConstraintValidation = new LinkedList<AbstractJcrProperty>();
 
     private SessionCache cache;
 
@@ -198,6 +200,31 @@ class JcrContentHandler extends DefaultHandler {
         return cache;
     }
 
+    protected void validateReferenceConstraints() throws SAXException {
+        if (refPropsRequiringConstraintValidation.isEmpty()) return;
+        try {
+            for (AbstractJcrProperty refProp : refPropsRequiringConstraintValidation) {
+                JcrPropertyDefinition defn = refProp.getDefinition();
+                if (refProp.isMultiple()) {
+                    for (Value value : refProp.getValues()) {
+                        if (!defn.canCastToTypeAndSatisfyConstraints(value)) {
+                            String name = stringFor(refProp.name());
+                            throw new ConstraintViolationException(JcrI18n.constraintViolatedOnReference.text(name, defn));
+                        }
+                    }
+                } else {
+                    Value value = refProp.getValue();
+                    if (!defn.canCastToTypeAndSatisfyConstraints(value)) {
+                        String name = stringFor(refProp.name());
+                        throw new ConstraintViolationException(JcrI18n.constraintViolatedOnReference.text(name, defn));
+                    }
+                }
+            }
+        } catch (RepositoryException e) {
+            throw new EnclosingSAXException(e);
+        }
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -218,6 +245,7 @@ class JcrContentHandler extends DefaultHandler {
      */
     @Override
     public void endDocument() throws SAXException {
+        validateReferenceConstraints();
         if (saveMode == SaveMode.WORKSPACE) {
             try {
                 cache.save();
@@ -532,7 +560,7 @@ class JcrContentHandler extends DefaultHandler {
                         child = parent.editor().createChild(nodeName, UUID.randomUUID(), ModeShapeLexicon.SHARE);
                         SessionCache.NodeEditor newNodeEditor = child.editor();
                         JcrValue uuidValue = (JcrValue)valueFor(uuid.toString(), PropertyType.STRING);
-                        newNodeEditor.setProperty(ModeShapeLexicon.SHARED_UUID, uuidValue, false);
+                        newNodeEditor.setProperty(ModeShapeLexicon.SHARED_UUID, uuidValue, false, true);
                         node = child;
                         return;
                     }
@@ -577,7 +605,14 @@ class JcrContentHandler extends DefaultHandler {
                     List<Value> values = entry.getValue();
 
                     if (values.size() == 1) {
-                        newNodeEditor.setProperty(propertyName, (JcrValue)values.get(0), skipProtected);
+                        AbstractJcrProperty prop = newNodeEditor.setProperty(propertyName,
+                                                                             (JcrValue)values.get(0),
+                                                                             skipProtected,
+                                                                             false);
+                        if (prop.getType() == PropertyType.REFERENCE && prop.getDefinition().getValueConstraints().length != 0) {
+                            // This reference needs to be validated after all nodes have been imported ...
+                            refPropsRequiringConstraintValidation.add(prop);
+                        }
                     } else {
                         newNodeEditor.setProperty(propertyName,
                                                   values.toArray(new Value[values.size()]),

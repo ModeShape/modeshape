@@ -35,7 +35,6 @@ import javax.jcr.RepositoryException;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.VersionException;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
@@ -149,7 +148,7 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements Property, 
      * 
      * @see javax.jcr.Property#getDefinition()
      */
-    public final PropertyDefinition getDefinition() throws RepositoryException {
+    public final JcrPropertyDefinition getDefinition() throws RepositoryException {
         checkSession();
         return cache.session().nodeTypeManager().getPropertyDefinition(payload().getPropertyDefinitionId());
     }
