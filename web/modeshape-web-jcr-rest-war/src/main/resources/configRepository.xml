@@ -36,7 +36,7 @@
             <source>repositorySource</source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names-->
             <options jcr:primaryType="options">
-                <projectNodeTypes jcr:primaryType="option" value="false"/>
+                <!--projectNodeTypes jcr:primaryType="option" value="false"/-->
             </options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here.-->
             <nodeTypes jcr:primaryType="nodeTypes"/>
