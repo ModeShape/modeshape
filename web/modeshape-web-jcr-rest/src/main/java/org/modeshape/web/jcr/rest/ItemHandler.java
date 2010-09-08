@@ -200,7 +200,8 @@ class ItemHandler extends AbstractHandler {
             for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
                 Node child = iter.nextNode();
 
-                children.add(child.getName());
+                String name = child.getIndex() == 1 ? child.getName() : child.getName() + "[" + child.getIndex() + "]";
+                children.add(name);
             }
 
             if (children.size() > 0) {
@@ -212,7 +213,8 @@ class ItemHandler extends AbstractHandler {
             for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
                 Node child = iter.nextNode();
 
-                children.put(child.getName(), jsonFor(child, toDepth - 1));
+                String name = child.getIndex() == 1 ? child.getName() : child.getName() + "[" + child.getIndex() + "]";
+                children.put(name, jsonFor(child, toDepth - 1));
             }
 
             if (children.length() > 0) {
