@@ -237,10 +237,11 @@ public class JcrResourcesTest {
         assertThat(properties.getString("jcr:primaryType"), is("mode:system"));
 
         JSONArray namespaces = system.getJSONArray("children");
-        assertThat(namespaces.length(), is(3));
+        assertThat(namespaces.length(), is(4));
         assertThat(namespaces.getString(0), is("jcr:versionStorage"));
         assertThat(namespaces.getString(1), is("mode:namespaces"));
-        assertThat(namespaces.getString(2), is("mode:locks"));
+        assertThat(namespaces.getString(2), is("jcr:nodeTypes"));
+        assertThat(namespaces.getString(3), is("mode:locks"));
 
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         connection.disconnect();
@@ -263,7 +264,7 @@ public class JcrResourcesTest {
         assertThat(properties.getString("jcr:primaryType"), is("mode:system"));
 
         JSONObject children = body.getJSONObject("children");
-        assertThat(children.length(), is(3));
+        assertThat(children.length(), is(4));
 
         JSONObject namespaces = children.getJSONObject("mode:namespaces");
         assertThat(namespaces.length(), is(2));
@@ -291,6 +292,41 @@ public class JcrResourcesTest {
 
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_OK));
         connection.disconnect();
+    }
+
+    @Test
+    public void shouldRetrieveNodeTypeFromJcrSystemBranchIncludingSameNameSiblingChildren() throws Exception {
+        URL postUrl = new URL(SERVER_URL + "/mode%3arepository/default/items/jcr:system/jcr:nodeTypes/nt:base");
+        HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
+        JSONObject body = new JSONObject(getResponseFor(connection));
+        connection.disconnect();
+
+        JSONArray children = body.getJSONArray("children");
+        assertThat(children.length(), is(2));
+        assertThat(children.getString(0), is("jcr:propertyDefinition"));
+        assertThat(children.getString(1), is("jcr:propertyDefinition[2]"));
+    }
+
+    @Test
+    public void shouldRetrieveNodeTypeSubgraphFromJcrSystemBranchIncludingSameNameSiblingChildren() throws Exception {
+        URL postUrl = new URL(SERVER_URL + "/mode%3arepository/default/items/jcr:system/jcr:nodeTypes/nt:base?mode:depth=4");
+        HttpURLConnection connection = (HttpURLConnection)postUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
+        JSONObject body = new JSONObject(getResponseFor(connection));
+        connection.disconnect();
+
+        JSONObject children = body.getJSONObject("children");
+        JSONObject propDefn1 = children.getJSONObject("jcr:propertyDefinition");
+        JSONObject propDefn2 = children.getJSONObject("jcr:propertyDefinition[2]");
+        assertThat(propDefn1, is(notNullValue()));
+        assertThat(propDefn2, is(notNullValue()));
     }
 
     @Test
@@ -1043,7 +1079,7 @@ public class JcrResourcesTest {
         connection.setRequestProperty("Content-Type", "application/jcr+xpath");
 
         String payload = "//element(" + NODE_PATH + ") order by @foo";
-        
+
         connection.getOutputStream().write(payload.getBytes());
         JSONObject queryResult = new JSONObject(getResponseFor(connection));
         JSONArray results = (JSONArray)queryResult.get("rows");
