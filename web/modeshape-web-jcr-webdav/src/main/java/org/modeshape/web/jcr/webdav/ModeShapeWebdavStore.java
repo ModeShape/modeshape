@@ -64,8 +64,6 @@ import org.modeshape.web.jcr.RepositoryFactory;
  */
 public class ModeShapeWebdavStore implements IWebdavStore {
 
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
-
     private static final ThreadLocal<HttpServletRequest> THREAD_LOCAL_REQUEST = new ThreadLocal<HttpServletRequest>();
 
     /** OSX workaround */
@@ -250,10 +248,12 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
             List<String> children = new LinkedList<String>();
             for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
-                children.add(iter.nextNode().getName());
+                Node child = iter.nextNode();
+                String name = child.getIndex() == 1 ? child.getName() : child.getName() + "[" + child.getIndex() + "]";
+                children.add(name);
             }
 
-            return children.toArray(EMPTY_STRING_ARRAY);
+            return children.toArray(new String[children.size()]);
         } catch (RepositoryException re) {
             throw new WebdavException(re);
         }
