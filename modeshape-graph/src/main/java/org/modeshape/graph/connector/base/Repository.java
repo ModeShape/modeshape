@@ -172,6 +172,7 @@ public abstract class Repository<NodeType extends Node, WorkspaceType extends Wo
             WorkspaceType workspace = workspaces.get(name);
             if (workspace == null && getWorkspaceNames().contains(name)) {
                 workspace = txn.getWorkspace(name, null);
+                workspaces.put(name, workspace);
             }
             return workspace;
         } finally {

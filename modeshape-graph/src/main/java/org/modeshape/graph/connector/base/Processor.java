@@ -379,6 +379,8 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
         NodeType node = getTargetNode(workspace, request, request.from());
         if (node == null) return;
         if (request.hasError()) return; // if beforeNode could not be found
+        Location oldLocation = getActualLocation(workspace, request.from(), node);
+
         // Look up the new parent, which must exist ...
 
         NodeType newParent = null;
@@ -402,7 +404,6 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
         }
         assert newParent != null;
 
-        Location oldLocation = getActualLocation(workspace, request.from(), node);
         request.setActualLocations(oldLocation, newLocation);
         recordChange(request);
     }

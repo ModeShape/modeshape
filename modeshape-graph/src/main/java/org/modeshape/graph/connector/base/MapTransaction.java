@@ -152,6 +152,19 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
     }
 
     /**
+     * Find the latest version of the supplied node.
+     * 
+     * @param workspace the workspace
+     * @param node the node
+     * @return the latest version of the node, with or without changes
+     */
+    protected NodeType findLatest( WorkspaceType workspace,
+                                   NodeType node ) {
+        if (node.hasChanges()) return node;
+        return findNode(workspace, node.getUuid());
+    }
+
+    /**
      * Attempt to find the node with the supplied UUID.
      * 
      * @param workspace the workspace; may not be null
@@ -229,13 +242,9 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
         if (uuid == null) {
             uuid = UUID.randomUUID();
         }
+        parent = findLatest(workspace, parent);
+
         WorkspaceChanges changes = getChangesFor(workspace, true);
-
-        // If the parent doesn't already have changes, we need to find the new parent in the newWorkspace's changes
-        if (!parent.hasChanges()) {
-            parent = findNode(workspace, parent.getUuid());
-        }
-
         NodeType newNode = null;
         if (index < 0) {
             // Figure out the SNS of the new node ...
@@ -284,10 +293,7 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
                               NodeType newChild,
                               NodeType beforeOtherChild,
                               Name desiredName ) {
-        // If the parent doesn't already have changes, we need to find the new parent in the newWorkspace's changes
-        if (!parent.hasChanges()) {
-            parent = findNode(workspace, parent.getUuid());
-        }
+        parent = findLatest(workspace, parent);
 
         // Get some information about the child ...
         Segment newChildSegment = newChild.getName();
@@ -411,6 +417,7 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
     public NodeType getChild( WorkspaceType workspace,
                               NodeType parent,
                               Segment childSegment ) {
+        parent = findLatest(workspace, parent);
         List<NodeType> children = new Children(parent.getChildren(), workspace); // don't make a copy
         for (NodeType child : children) {
             if (child.getName().equals(childSegment)) return child;
@@ -426,6 +433,7 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
      */
     public List<NodeType> getChildren( WorkspaceType workspace,
                                        NodeType node ) {
+        node = findLatest(workspace, node);
         List<UUID> children = node.getChildren(); // make a copy
         if (children.isEmpty()) return Collections.emptyList();
         return new Children(children, workspace);
@@ -439,6 +447,7 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
      */
     public NodeType getParent( WorkspaceType workspace,
                                NodeType node ) {
+        node = findLatest(workspace, node);
         UUID parentUuid = node.getParent();
         if (parentUuid == null) return null;
         return getNode(workspace, Location.create(parentUuid));
@@ -453,11 +462,15 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
     @SuppressWarnings( "unchecked" )
     public void removeAllChildren( WorkspaceType workspace,
                                    NodeType node ) {
+        boolean hadChanges = node.hasChanges();
+        node = findLatest(workspace, node);
         for (NodeType child : getChildren(workspace, node)) {
             destroyNode(workspace, child);
         }
         node = (NodeType)node.withoutChildren();
-        getChangesFor(workspace, true).changed(node);
+        if (!hadChanges) {
+            getChangesFor(workspace, true).changed(node);
+        }
     }
 
     /**
@@ -469,6 +482,8 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
     @SuppressWarnings( "unchecked" )
     public Location removeNode( WorkspaceType workspace,
                                 NodeType node ) {
+        node = findLatest(workspace, node);
+
         NodeType parent = getParent(workspace, node);
         if (parent == null) {
             // The root node is being removed, which means we should just delete everything (except the root) ...
@@ -483,9 +498,9 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
         assert index != -1;
         Name name = node.getName().getName();
         int snsIndex = node.getName().getIndex();
-        WorkspaceChanges changes = getChangesFor(workspace, true);
         // Remove the node from the parent ...
         parent = (NodeType)parent.withoutChild(node.getUuid());
+        WorkspaceChanges changes = getChangesFor(workspace, true);
         changes.changed(parent);
 
         // Now find any siblings with the same name that appear after the node in the parent's list of children ...
@@ -514,8 +529,12 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
     public NodeType removeProperty( WorkspaceType workspace,
                                     NodeType node,
                                     Name propertyName ) {
+        node = findLatest(workspace, node);
+
+        // Remove the property ...
         NodeType copy = (NodeType)node.withoutProperty(propertyName);
         if (copy != node) {
+            // These were the first changes on the node, so record the new change ...
             WorkspaceChanges changes = getChangesFor(workspace, true);
             changes.changed(copy);
         }
@@ -534,8 +553,12 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
                                    Iterable<Property> propertiesToSet,
                                    Iterable<Name> propertiesToRemove,
                                    boolean removeAllExisting ) {
+        node = findLatest(workspace, node);
+
+        // Apply the property changes...
         NodeType copy = (NodeType)node.withProperties(propertiesToSet, propertiesToRemove, removeAllExisting);
         if (copy != node) {
+            // These were the first changes on the node, so record the new change ...
             WorkspaceChanges changes = getChangesFor(workspace, true);
             changes.changed(copy);
         }

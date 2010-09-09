@@ -37,7 +37,6 @@
         <mode:source jcr:name="Store" mode:classname="org.modeshape.connector.infinispan.InfinispanSource" 
                      mode:retryLimit="3" mode:defaultWorkspaceName="default">
             <predefinedWorkspaceNames>default</predefinedWorkspaceNames>
-            <predefinedWorkspaceNames>otherWorkspace</predefinedWorkspaceNames>
         </mode:source>    
     </mode:sources>
     <!-- 
