@@ -394,7 +394,7 @@ configuration.save();
 		</para>
 		<para>
 			You should always configure each ModeShape repository with a source for its system workspace by using the
-			<code>SYSTEM_WORKSPACE_NAME</code> repository option with a value that defines the name of source and name of the workspace
+			<code>SYSTEM_SOURCE_NAME</code> repository option with a value that defines the name of source and name of the workspace
 			in that source where the system content should be stored, in the format:
 		</para>
    	<programlisting>  workspaceName@sourceName</programlisting>
@@ -404,7 +404,7 @@ configuration.save();
 		</para>
 		<para>
 			The system content can be stored in any repository source capable of storing any content and, in the case
-			of clustering, is accessible across multiple processes. For most people, this will mean a relational database.
+			of clustering, that is accessible across multiple processes. For most people, this will mean a relational database.
 			Here is an abbreviated example of an XML configuration that defines a source for the system storage (in a MySQL database)
 			and a repository that uses it:
 		</para>
@@ -415,7 +415,7 @@ configuration.save();
     <mode:repository jcr:name="car repository" mode:source="Cars">
       <mode:options jcr:primaryType="mode:options">
         <!-- Explicitly specify the "system" workspace in the "SystemStore" source. -->
-        <systemWorkspaceName jcr:primaryType="mode:option" 
+        <systemSourceName jcr:primaryType="mode:option" 
 	                           mode:value="system@SystemStore"/>
         ...
       </mode:options>
@@ -451,7 +451,7 @@ configuration.save();
 </configuration>
 ]]></programlisting>
 		<para>
-			Of course, you can always use a separate workspace in your main source, too:
+			Of course, you can always use a separate workspace in your primary source, too:
 		</para>
    	<programlisting role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
@@ -459,7 +459,7 @@ configuration.save();
     <mode:repository jcr:name="car repository" mode:source="Cars">
       <mode:options jcr:primaryType="mode:options">
         <!-- Explicitly specify the "system" workspace in the "Cars" source. -->
-        <systemWorkspaceName jcr:primaryType="mode:option" mode:value="system@Cars"/>
+        <systemSourceName jcr:primaryType="mode:option" mode:value="system@Cars"/>
         ...
       </mode:options>
       ...
