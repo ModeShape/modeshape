@@ -27,10 +27,13 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeExistsException;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -77,9 +80,61 @@ public class CndNodeTypeRegistrationTest {
 
     }
 
-    @Ignore
-    @Test( expected = RepositoryException.class )
-    public void shouldNotAllowRedefinitionOfExistingType() throws Exception {
+    @Test( expected = IOException.class )
+    public void shouldFailIfResourceFileCouldNotBeFoundOnClasspath() throws Exception {
+        CndNodeTypeReader cndFactory = new CndNodeTypeReader(context);
+        cndFactory.read("this/resource/file/does/not/exist");
+    }
+
+    @Test( expected = IOException.class )
+    public void shouldFailIfResourceFileCouldNotBeFoundAsRelativeFile() throws Exception {
+        CndNodeTypeReader cndFactory = new CndNodeTypeReader(context);
+        cndFactory.read("/this/resource/file/does/not/exist");
+    }
+
+    @Test( expected = IOException.class )
+    public void shouldFailIfResourceFileCouldNotBeFoundAsUrl() throws Exception {
+        CndNodeTypeReader cndFactory = new CndNodeTypeReader(context);
+        cndFactory.read("file://this/resource/file/does/not/exist");
+    }
+
+    @Test
+    public void shouldLoadNodeTypesFromResourceFileFoundOnClasspath() throws Exception {
+        CndNodeTypeReader cndFactory = new CndNodeTypeReader(context);
+        cndFactory.read("cars.cnd");
+        assertThat(cndFactory.getProblems().isEmpty(), is(true));
+    }
+
+    @Test
+    public void shouldLoadNodeTypesFromResourceFileFoundWithRelativePathOnFileSystem() throws Exception {
+        CndNodeTypeReader cndFactory = new CndNodeTypeReader(context);
+        cndFactory.read("src/test/resources/cars.cnd");
+        assertThat(cndFactory.getProblems().isEmpty(), is(true));
+    }
+
+    @Test
+    public void shouldLoadNodeTypesFromResourceFileFoundWithAbsolutePathOnFileSystem() throws Exception {
+        File file = new File("src/test/resources/cars.cnd");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        CndNodeTypeReader cndFactory = new CndNodeTypeReader(context);
+        cndFactory.read(file.getAbsolutePath());
+        assertThat(cndFactory.getProblems().isEmpty(), is(true));
+    }
+
+    @Test
+    public void shouldLoadNodeTypesFromUrl() throws Exception {
+        File file = new File("src/test/resources/cars.cnd");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        URL url = file.toURI().toURL();
+        CndNodeTypeReader cndFactory = new CndNodeTypeReader(context);
+        cndFactory.read(url.toString());
+        assertThat(cndFactory.getProblems().isEmpty(), is(true));
+    }
+
+    @Test( expected = NodeTypeExistsException.class )
+    public void shouldNotAllowRedefinitionOfExistingTypes() throws Exception {
         CndNodeTypeReader cndFactory = new CndNodeTypeReader(context);
         cndFactory.read(CND_LOCATION + "existingType.cnd");
         repoTypeManager.registerNodeTypes(cndFactory);

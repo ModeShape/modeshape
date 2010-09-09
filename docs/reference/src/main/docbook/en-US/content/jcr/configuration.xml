@@ -104,11 +104,13 @@
             <myDescriptor mode:value="foo" />
           </mode:descriptors>
           <!-- 
-                Import the custom node types defined in the named resource (a file at a 
-                classpath-relative path).  If there was more than one file with custom node 
-                types, we could either list the files as a single comma-delimited string
-                in the mode:resource property, or list them individually using multiple 
-                mode:resource child elements.
+                Import the custom node types defined in the named files. The values
+                can be an absolute path to a classpath resource, an absolute file system
+                path, a relative path on the file system (relative to where the process was
+                started from), or a resolvable URL. If more than one node type definition 
+                file is needed, the files can be listed as a single comma-delimited string
+                in the 'mode:resource' attribute of the 'jcr:nodeTypes' element, or listed 
+                individually using multiple mode:resource child elements (as shown below).
             -->
           <jcr:nodeTypes>
 	           <mode:resource>/org/example/my-node-types.cnd</mode:resource>

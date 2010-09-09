@@ -27,6 +27,7 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,6 +35,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Arrays;
 import net.jcip.annotations.Immutable;
 
@@ -405,6 +408,65 @@ public class IoUtil {
                 if (!error) throw e;
             }
         }
+    }
+
+    /**
+     * Get the {@link InputStream input stream} to the resource given by the supplied path. If a class loader is supplied, the
+     * method attempts to resolve the resource using the {@link ClassLoader#getResourceAsStream(String)} method; if the result is
+     * non-null, it is returned. Otherwise, if a class is supplied, this method attempts to resolve the resource using the
+     * {@link Class#getResourceAsStream(String)} method; if the result is non-null, it is returned. Otherwise, this method then
+     * uses the Class' ClassLoader to load the resource; if non-null, it is returned . Otherwise, this method looks for an
+     * existing and readable {@link File file} at the path; if found, a buffered stream to that file is returned. Otherwise, this
+     * method attempts to parse the resource path into a valid {@link URL}; if this succeeds, the method attempts to open a stream
+     * to that URL. If all of these fail, this method returns null.
+     * 
+     * @param resourcePath the logical path to the classpath, file, or URL resource
+     * @param clazz the class that should be used to load the resource as a stream; may be null
+     * @param classLoader the classloader that should be used to load the resource as a stream; may be null
+     * @return an input stream to the resource; or null if the resource could not be found
+     * @throws IllegalArgumentException if the resource path is null or empty
+     */
+    public static InputStream getResourceAsStream( String resourcePath,
+                                                   ClassLoader classLoader,
+                                                   Class<?> clazz ) {
+        CheckArg.isNotEmpty(resourcePath, "resourcePath");
+        InputStream result = null;
+        if (classLoader != null) {
+            // Try using the class loader first ...
+            result = classLoader.getResourceAsStream(resourcePath);
+        }
+        if (result == null && clazz != null) {
+            // Not yet found, so try the class ...
+            result = clazz.getResourceAsStream(resourcePath);
+            if (result == null) {
+                // Not yet found, so try the class's class loader ...
+                result = clazz.getClassLoader().getResourceAsStream(resourcePath);
+            }
+        }
+        if (result == null) {
+            // Still not found, so see if this is an existing File ...
+            try {
+                File file = new File(resourcePath);
+                if (file.exists() && file.canRead()) {
+                    return new BufferedInputStream(new FileInputStream(file));
+                }
+            } catch (FileNotFoundException e) {
+                // just continue ...
+            }
+        }
+        if (result == null) {
+            // Still not found, so try to construct a URL out of it ...
+            try {
+                URL url = new URL(resourcePath);
+                return url.openStream();
+            } catch (MalformedURLException e) {
+                // just continue ...
+            } catch (IOException err) {
+                // just continue ...
+            }
+        }
+        // Couldn't find it anywhere ...
+        return result;
     }
 
     private IoUtil() {

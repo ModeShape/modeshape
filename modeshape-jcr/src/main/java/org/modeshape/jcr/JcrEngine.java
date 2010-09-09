@@ -47,6 +47,7 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
@@ -313,6 +314,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
             // Expand any references to a CND file
             Property resourceProperty = nodeTypesNode.getProperty(ModeShapeLexicon.RESOURCE);
             if (resourceProperty != null) {
+                ClassLoader classLoader = this.context.getClassLoader();
                 for (Object resourceValue : resourceProperty) {
                     String resources = this.context.getValueFactories().getStringFactory().create(resourceValue);
 
@@ -322,14 +324,16 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
 
                         Path nodeTypesPath = pathFactory.create(repositoryPath, JcrLexicon.NODE_TYPES);
                         CndImporter importer = new CndImporter(destination, nodeTypesPath, true);
-                        InputStream is = getClass().getResourceAsStream(resource);
+                        InputStream is = IoUtil.getResourceAsStream(resource, classLoader, getClass());
                         Problems cndProblems = new SimpleProblems();
+                        if (is == null) {
+                            String msg = JcrI18n.unableToFindNodeTypeDefinitionsOnClasspathOrFileOrUrl.text(resource);
+                            throw new RepositoryException(msg);
+                        }
                         try {
-                            if (is != null) {
-                                importer.importFrom(is, cndProblems, resource);
-                                batch.execute();
-                                needToRefreshSubgraph = true;
-                            }
+                            importer.importFrom(is, cndProblems, resource);
+                            batch.execute();
+                            needToRefreshSubgraph = true;
                         } catch (IOException ioe) {
                             String msg = JcrI18n.errorLoadingNodeTypeDefintions.text(resource, ioe.getMessage());
                             throw new RepositoryException(msg, ioe);

@@ -54,6 +54,9 @@ public final class JcrI18n {
     public static I18n failedToReadPropertiesFromManifest;
     public static I18n failedToReadPropertyFromManifest;
     public static I18n errorLoadingNodeTypeDefintions;
+    public static I18n unableToFindNodeTypeDefinitionsOnClasspathOrFileOrUrl;
+    public static I18n unableToFindResourceOnClasspathOrFileOrUrl;
+    public static I18n fileMustExistAndBeReadable;
 
     public static I18n rootNodeHasNoParent;
     public static I18n rootNodeIsNotProperty;

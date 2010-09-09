@@ -69,8 +69,7 @@
         <mode:repository jcr:name="Test Repository Source">
             <!-- Specify the source that should be used for the repository -->
             <mode:source>Store</mode:source>
-            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names
--->
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
             <mode:options jcr:primaryType="mode:options">
                 <projectNodeTypes jcr:primaryType="mode:option" mode:value="false"/>
             </mode:options>
@@ -80,9 +79,8 @@
             	<jcr:nodeTypes ... /> elements or just add all of the files as a comma-delimited string in the
             	mode:resource property.
              -->
-            <jcr:nodeTypes mode:resource="/tck/tck_test_types.cnd" />
-            <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape
--->
+            <!-- jcr:nodeTypes mode:resource="/tck/tck_test_types.cnd" /-->
+            <!-- Define any namespaces for this repository, other than those already defined by JCR or ModeShape -->
             <namespaces jcr:primaryType="mode:namespaces">
                 <modetest jcr:primaryType="mode:namespace" mode:uri="http://www.modeshape.org/test/1.0"/>
             </namespaces>
