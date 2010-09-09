@@ -357,9 +357,10 @@ public abstract class NetChangeObserver extends ChangeObserver {
 
         // Compute the net changes ...
         List<NetChange> netChanges = changeContext.getNetChanges();
-
-        // Now notify of all of the changes ...
-        notify(new NetChanges(changes, netChanges));
+        if (!netChanges.isEmpty()) {
+            // Now notify of all of the changes ...
+            notify(new NetChanges(changes, netChanges));
+        }
     }
 
     /**
