@@ -80,7 +80,8 @@ public class CndNodeTypeReader extends GraphNodeTypeReader {
     }
 
     /**
-     * Import the node types from the supplied stream and add all of the node type definitions to this factory's list.
+     * Import the node types from the supplied stream and add all of the node type definitions to this factory's list. This method
+     * will close the stream.
      * 
      * @param stream the stream containing the node types
      * @param resourceName a logical name for the resource name to be used when reporting problems; may be null if there is no
@@ -97,6 +98,7 @@ public class CndNodeTypeReader extends GraphNodeTypeReader {
      * Import the node types from the supplied file and add all of the node type definitions to this factory's list.
      * 
      * @param file the file containing the node types
+     * @throws IllegalArgumentException if the supplied file reference is null, or if the file does not exist or is not readable
      * @throws IOException if there is a problem reading from the supplied stream
      */
     @Override
@@ -108,7 +110,8 @@ public class CndNodeTypeReader extends GraphNodeTypeReader {
      * Import the node types from the file at the supplied URL and add all of the node type definitions to this factory's list.
      * 
      * @param url the URL to the file containing the node types
-     * @throws IOException if there is a problem reading from the supplied stream
+     * @throws IllegalArgumentException if the supplied URL is null
+     * @throws IOException if there is a problem opening or reading the stream to the supplied URL
      */
     @Override
     public void read( URL url ) throws IOException {
@@ -116,10 +119,14 @@ public class CndNodeTypeReader extends GraphNodeTypeReader {
     }
 
     /**
-     * Import the node types from the supplied file and add all of the node type definitions to this factory's list.
+     * Import the node types from the file at the supplied path, and add all of the node type definitions to this factory's list.
+     * This method first attempts to resolve the supplied path to a resource on the classpath. If such a resource could not be
+     * found, this method considers the supplied argument as the path to an existing and readable file. If that does not succeed,
+     * this method treats the supplied argument as a valid and resolvable URL.
      * 
      * @param resourceFile the name of the resource file on the classpath containing the node types
-     * @throws IOException if there is a problem reading from the supplied resource
+     * @throws IllegalArgumentException if the supplied string is null or empty
+     * @throws IOException if there is a problem reading from the supplied resource, or if the resource could not be found
      */
     @Override
     public void read( String resourceFile ) throws IOException {

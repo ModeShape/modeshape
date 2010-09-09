@@ -28,7 +28,9 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import javax.jcr.PropertyType;
@@ -465,6 +467,52 @@ public class JackrabbitXmlNodeTypeRegistrationTest {
     public void shouldLoadAllMagnoliaTypes() throws Exception {
         register(XML_LOCATION + "magnolia_forum_nodetypes.xml", XML_LOCATION + "custom_nodetypes.xml", XML_LOCATION
                                                                                                        + "owfe_nodetypes.xml");
+    }
+
+    @Test( expected = IOException.class )
+    public void shouldFailIfResourceFileCouldNotBeFoundOnClasspath() throws Exception {
+        factory.read("this/resource/file/does/not/exist");
+    }
+
+    @Test( expected = IOException.class )
+    public void shouldFailIfResourceFileCouldNotBeFoundAsRelativeFile() throws Exception {
+        factory.read("/this/resource/file/does/not/exist");
+    }
+
+    @Test( expected = IOException.class )
+    public void shouldFailIfResourceFileCouldNotBeFoundAsUrl() throws Exception {
+        factory.read("file://this/resource/file/does/not/exist");
+    }
+
+    @Test
+    public void shouldLoadNodeTypesFromResourceFileFoundOnClasspath() throws Exception {
+        factory.read(XML_LOCATION + "magnolia_forum_nodetypes.xml");
+        assertThat(factory.getProblems().isEmpty(), is(true));
+    }
+
+    @Test
+    public void shouldLoadNodeTypesFromResourceFileFoundWithRelativePathOnFileSystem() throws Exception {
+        factory.read("src/test/resources/" + XML_LOCATION + "magnolia_forum_nodetypes.xml");
+        assertThat(factory.getProblems().isEmpty(), is(true));
+    }
+
+    @Test
+    public void shouldLoadNodeTypesFromResourceFileFoundWithAbsolutePathOnFileSystem() throws Exception {
+        File file = new File("src/test/resources/" + XML_LOCATION + "magnolia_forum_nodetypes.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        factory.read(file.getAbsolutePath());
+        assertThat(factory.getProblems().isEmpty(), is(true));
+    }
+
+    @Test
+    public void shouldLoadNodeTypesFromUrl() throws Exception {
+        File file = new File("src/test/resources/" + XML_LOCATION + "magnolia_forum_nodetypes.xml");
+        assertThat(file.exists(), is(true));
+        assertThat(file.canRead(), is(true));
+        URL url = file.toURI().toURL();
+        factory.read(url.toString());
+        assertThat(factory.getProblems().isEmpty(), is(true));
     }
 
     protected List<JcrNodeType> register( String... resourceNames ) throws Exception {

@@ -168,7 +168,8 @@ class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
     }
 
     /**
-     * Import the node types from the supplied stream and add all of the node type definitions to this factory's list.
+     * Import the node types from the supplied stream and add all of the node type definitions to this factory's list. This method
+     * will close the stream.
      * 
      * @param stream the stream containing the node types
      * @param resourceName a logical name for the resource name to be used when reporting problems; may be null if there is no
@@ -184,9 +185,14 @@ class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
      * Import the node types from the supplied file and add all of the node type definitions to this factory's list.
      * 
      * @param file the file containing the node types
+     * @throws IllegalArgumentException if the supplied file reference is null, or if the file does not exist or is not readable
      * @throws IOException if there is a problem reading from the supplied stream
      */
     public void read( File file ) throws IOException {
+        CheckArg.isNotNull(file, "file");
+        if (!file.exists() || !file.canRead()) {
+            throw new IOException(JcrI18n.fileMustExistAndBeReadable.text(file.getCanonicalPath()));
+        }
         read(IoUtil.read(file), file.getCanonicalPath());
     }
 
@@ -194,30 +200,65 @@ class GraphNodeTypeReader implements Iterable<NodeTypeDefinition> {
      * Import the node types from the file at the supplied URL and add all of the node type definitions to this factory's list.
      * 
      * @param url the URL to the file containing the node types
-     * @throws IOException if there is a problem reading from the supplied stream
+     * @throws IllegalArgumentException if the supplied URL is null
+     * @throws IOException if there is a problem opening or reading the stream to the supplied URL
      */
     public void read( URL url ) throws IOException {
+        CheckArg.isNotNull(url, "url");
         InputStream stream = url.openStream();
+        boolean error = false;
         try {
             read(IoUtil.read(stream), url.toString());
+        } catch (IOException e) {
+            error = true;
+            throw e;
+        } catch (RuntimeException e) {
+            error = true;
+            throw e;
         } finally {
-            stream.close();
+            try {
+                stream.close();
+            } catch (IOException e) {
+                if (!error) throw e;
+            } catch (RuntimeException e) {
+                if (!error) throw e;
+            }
         }
     }
 
     /**
-     * Import the node types from the supplied file and add all of the node type definitions to this factory's list.
+     * Import the node types from the file at the supplied path, and add all of the node type definitions to this factory's list.
+     * This method first attempts to resolve the supplied path to a resource on the classpath. If such a resource could not be
+     * found, this method considers the supplied argument as the path to an existing and readable file. If that does not succeed,
+     * this method treats the supplied argument as a valid and resolvable URL.
      * 
      * @param resourceFile the name of the resource file on the classpath containing the node types
-     * @throws IOException if there is a problem reading from the supplied resource
+     * @throws IllegalArgumentException if the supplied string is null or empty
+     * @throws IOException if there is a problem reading from the supplied resource, or if the resource could not be found
      */
     public void read( String resourceFile ) throws IOException {
-        InputStream stream = getClass().getResourceAsStream(resourceFile);
-        if (stream != null) {
+        CheckArg.isNotEmpty(resourceFile, "resourceFile");
+        ClassLoader classLoader = context.getClassLoader();
+        InputStream stream = IoUtil.getResourceAsStream(resourceFile, classLoader, getClass());
+        if (stream == null) {
+            throw new IOException(JcrI18n.unableToFindResourceOnClasspathOrFileOrUrl.text(resourceFile));
+        }
+        boolean error = false;
+        try {
+            read(IoUtil.read(stream), resourceFile);
+        } catch (IOException e) {
+            error = true;
+            throw e;
+        } catch (RuntimeException e) {
+            error = true;
+            throw e;
+        } finally {
             try {
-                read(IoUtil.read(stream), resourceFile);
-            } finally {
                 stream.close();
+            } catch (IOException e) {
+                if (!error) throw e;
+            } catch (RuntimeException e) {
+                if (!error) throw e;
             }
         }
     }
