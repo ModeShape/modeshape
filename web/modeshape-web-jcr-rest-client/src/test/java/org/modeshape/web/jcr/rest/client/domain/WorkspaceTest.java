@@ -47,11 +47,7 @@ public final class WorkspaceTest {
 
     private static final Server SERVER1 = new Server("file:/tmp/temp.txt/resources", "user", "pswd");
 
- //   private static final Server SERVER2 = new Server("http:www.redhat.com/resources", "user", "pswd");
-
     private static final Repository REPOSITORY1 = new Repository(NAME1, SERVER1);
-
- //   private static final Repository REPOSITORY2 = new Repository(NAME2, SERVER2);
 
     private static final Workspace WORKSPACE1 = new Workspace(NAME1, REPOSITORY1);
     private static final Workspace WORKSPACE2 = new Workspace(NAME2, REPOSITORY1);

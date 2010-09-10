@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 import org.junit.Test;
 
@@ -46,13 +47,15 @@ public final class NodeTypeTest {
 
     private static final Server SERVER1 = new Server("file:/tmp/temp.txt/resources", "user", "pswd");
 
-    private static final Server SERVER2 = new Server("http:www.redhat.com/resources", "user", "pswd");
-
     private static final Repository REPOSITORY1 = new Repository(NAME1, SERVER1);
 
-    private static final Repository REPOSITORY2 = new Repository(NAME2, SERVER2);
-
     private static final Workspace WORKSPACE1 = new Workspace(NAME1, REPOSITORY1);
+    
+    private static final Workspace WORKSPACE2 = new Workspace(NAME2, REPOSITORY1);
+    
+    private static final NodeType NODETYPE1 = new NodeType(NAME1, WORKSPACE1, new Properties());
+
+    
 
     // ===========================================================================================================================
     // Tests
@@ -60,35 +63,35 @@ public final class NodeTypeTest {
 
     @Test
     public void shouldBeEqualIfHavingSameProperies() {
-        assertThat(WORKSPACE1, equalTo(new Workspace(WORKSPACE1.getName(), WORKSPACE1.getRepository())));
+        assertThat(NODETYPE1, equalTo(new NodeType(NODETYPE1.getName(), WORKSPACE1, new Properties())));
     }
 
     @Test
     public void shouldHashToSameValueIfEquals() {
-        Set<Workspace> set = new HashSet<Workspace>();
-        set.add(WORKSPACE1);
-        set.add(new Workspace(WORKSPACE1.getName(), WORKSPACE1.getRepository()));
+        Set<NodeType> set = new HashSet<NodeType>();
+        set.add(NODETYPE1);
+        set.add(new NodeType(NODETYPE1.getName(), WORKSPACE1, null));
         assertThat(set.size(), equalTo(1));
     }
 
     @Test( expected = java.lang.AssertionError.class )
     public void shouldNotAllowNullName() {
-        new Workspace(null, REPOSITORY1);
+        new NodeType(null, WORKSPACE1, null);
     }
 
     @Test( expected = java.lang.AssertionError.class )
-    public void shouldNotAllowNullRepository() {
-        new Workspace(NAME1, null);
+    public void shouldNotAllowNullWorkspace() {
+        new NodeType(NAME1, null, null);
     }
 
     @Test
-    public void shouldNotBeEqualIfSameNameButDifferentRepository() {
-        assertThat(WORKSPACE1, is(not(equalTo(new Workspace(WORKSPACE1.getName(), REPOSITORY2)))));
+    public void shouldNotBeEqualIfSameNameButDifferentWorkspace() {
+        assertThat(NODETYPE1, is(not(equalTo(new NodeType(NODETYPE1.getName(), WORKSPACE2, null)))));
     }
 
     @Test
-    public void shouldNotBeEqualIfSameRepositoryButDifferentName() {
-        assertThat(WORKSPACE1, is(not(equalTo(new Workspace(NAME2, WORKSPACE1.getRepository())))));
+    public void shouldNotBeEqualIfSameWorkspaceButDifferentName() {
+        assertThat(NODETYPE1, is(not(equalTo(new NodeType(NAME2, WORKSPACE1, null)))));
     }
 
 }

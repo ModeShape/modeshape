@@ -62,6 +62,8 @@ public class NodeType implements IModeShapeObject {
     private List<NodeType> propertyDefinitons = null;
     
     private List<NodeType> childNodeDefinitons = null;
+    
+    private List<NodeType> superTypes = null;
 
     // ===========================================================================================================================
     // Constructors
@@ -82,7 +84,7 @@ public class NodeType implements IModeShapeObject {
     	assert workspace != null;
      	this.name = name;
         this.workspace = workspace;
-        this.properties = (properties == null ? new Properties() : properties);  
+        this.properties = properties;  
 
      }
 
@@ -124,7 +126,7 @@ public class NodeType implements IModeShapeObject {
      * @return the node type attributes as a property set.
      */
     public Properties getProperties() {
-    	return this.properties;
+    	return (this.properties != null ? properties : new Properties());
     }
     
     public void setProperties(Properties properties ){
@@ -132,7 +134,7 @@ public class NodeType implements IModeShapeObject {
     }
     
     public String getProperty(String key) {
-    	return this.properties.getProperty(key);
+    	return (this.properties != null ? this.properties.getProperty(key) : null);
     }
     
     @SuppressWarnings("unchecked")
@@ -161,6 +163,11 @@ public class NodeType implements IModeShapeObject {
 		childNodeDefinitionNodeType.setParentNodeType(this);
     }
     
+    public void addSuperNodeType(NodeType superNodeType) {
+		if (this.superTypes == null) this.superTypes = new ArrayList<NodeType>();
+		superTypes.add(superNodeType);
+   }
+    
     @SuppressWarnings("unchecked")
 	public List<NodeType> getPropertyDefinitions() {
     	return (List<NodeType>) (this.propertyDefinitons != null ? this.propertyDefinitons : Collections.emptyList());
@@ -171,6 +178,11 @@ public class NodeType implements IModeShapeObject {
     	return (List<NodeType>) (this.childNodeDefinitons != null ? this.childNodeDefinitons : Collections.emptyList());
     }
     
+    @SuppressWarnings("unchecked")
+	public List<NodeType> getSuperNodeTypes() {
+    	return (List<NodeType>) (this.superTypes != null ? this.superTypes : Collections.emptyList());
+    }
+    
     public NodeType getParentNodeType() {
     	return this.parentNodeType;
     }
@@ -178,7 +190,6 @@ public class NodeType implements IModeShapeObject {
     public void setParentNodeType(NodeType parent) {
     	this.parentNodeType = parent;
     }
-
 
     /**
      * {@inheritDoc}
