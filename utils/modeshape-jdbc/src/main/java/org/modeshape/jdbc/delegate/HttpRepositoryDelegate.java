@@ -473,7 +473,18 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
 		 */
 		@Override
 		public javax.jcr.nodetype.NodeType[] getSupertypes() {
-			return null;
+			
+			List<org.modeshape.web.jcr.rest.client.domain.NodeType>superTypes = restnodetype.getSuperNodeTypes();
+			javax.jcr.nodetype.NodeType[] nodetypes = new javax.jcr.nodetype.NodeType[superTypes.size()];
+			int i = 0;
+			for (Iterator<org.modeshape.web.jcr.rest.client.domain.NodeType> it=superTypes.iterator(); it.hasNext();) {
+				org.modeshape.web.jcr.rest.client.domain.NodeType nt = it.next();
+				HttpNodeType localnodetype = new HttpNodeType(nt);
+				nodetypes[i] = localnodetype;
+				
+			}			
+			
+			return nodetypes;
 		}
 
 		/**
@@ -515,8 +526,6 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
 		 */
 		@Override
 		public String[] getDeclaredSupertypeNames() {
-//			String value = restnodetype.getProperty("jcr:supertypes"); -- array
-//			return new String[] {value};
 			return null;
 		}
 
