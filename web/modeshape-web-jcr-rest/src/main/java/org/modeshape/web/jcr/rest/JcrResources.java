@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.Map;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -328,6 +329,7 @@ public class JcrResources extends AbstractHandler {
      * @param requestContent the query expression
      * @return the JSON-encoded representation of the query results.
      * @throws JSONException if there is an error encoding the node
+     * @throws InvalidQueryException if the query contained an error, was invalid, or could not be executed
      * @throws RepositoryException if any other error occurs
      */
     @SuppressWarnings( "deprecation" )
@@ -340,7 +342,7 @@ public class JcrResources extends AbstractHandler {
                                   @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
                                   @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
                                   @Context UriInfo uriInfo,
-                                  String requestContent ) throws RepositoryException, JSONException {
+                                  String requestContent ) throws InvalidQueryException, RepositoryException, JSONException {
         return queryHandler.postItem(request,
                                      rawRepositoryName,
                                      rawWorkspaceName,
@@ -370,6 +372,7 @@ public class JcrResources extends AbstractHandler {
      * @param requestContent the query expression
      * @return the JSON-encoded representation of the query results.
      * @throws JSONException if there is an error encoding the node
+     * @throws InvalidQueryException if the query contained an error, was invalid, or could not be executed
      * @throws RepositoryException if any other error occurs
      */
     @SuppressWarnings( "deprecation" )
@@ -382,7 +385,7 @@ public class JcrResources extends AbstractHandler {
                                    @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
                                    @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
                                    @Context UriInfo uriInfo,
-                                   String requestContent ) throws RepositoryException, JSONException {
+                                   String requestContent ) throws InvalidQueryException, RepositoryException, JSONException {
         return queryHandler.postItem(request,
                                      rawRepositoryName,
                                      rawWorkspaceName,
@@ -412,6 +415,7 @@ public class JcrResources extends AbstractHandler {
      * @param requestContent the query expression
      * @return the JSON-encoded representation of the query results.
      * @throws JSONException if there is an error encoding the node
+     * @throws InvalidQueryException if the query contained an error, was invalid, or could not be executed
      * @throws RepositoryException if any other error occurs
      */
     @POST
@@ -423,7 +427,7 @@ public class JcrResources extends AbstractHandler {
                                     @QueryParam( "offset" ) @DefaultValue( "-1" ) long offset,
                                     @QueryParam( "limit" ) @DefaultValue( "-1" ) long limit,
                                     @Context UriInfo uriInfo,
-                                    String requestContent ) throws RepositoryException, JSONException {
+                                    String requestContent ) throws InvalidQueryException, RepositoryException, JSONException {
         return queryHandler.postItem(request,
                                      rawRepositoryName,
                                      rawWorkspaceName,
@@ -453,6 +457,7 @@ public class JcrResources extends AbstractHandler {
      * @param requestContent the query expression
      * @return the JSON-encoded representation of the query results.
      * @throws JSONException if there is an error encoding the node
+     * @throws InvalidQueryException if the query contained an error, was invalid, or could not be executed
      * @throws RepositoryException if any other error occurs
      */
     @POST
@@ -497,6 +502,15 @@ public class JcrResources extends AbstractHandler {
     public static class JSONExceptionMapper implements ExceptionMapper<JSONException> {
 
         public Response toResponse( JSONException exception ) {
+            return Response.status(Status.BAD_REQUEST).entity(exception.getMessage()).build();
+        }
+
+    }
+
+    @Provider
+    public static class InvalidQueryExceptionMapper implements ExceptionMapper<InvalidQueryException> {
+
+        public Response toResponse( InvalidQueryException exception ) {
             return Response.status(Status.BAD_REQUEST).entity(exception.getMessage()).build();
         }
 

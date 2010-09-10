@@ -48,6 +48,7 @@ public class JcrApplication extends Application {
             JcrResources.NotFoundExceptionMapper.class,
             JcrResources.NoSuchRepositoryExceptionMapper.class,
             JcrResources.RepositoryExceptionMapper.class,
+            JcrResources.InvalidQueryExceptionMapper.class,
         })); 
     }
 

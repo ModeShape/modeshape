@@ -580,8 +580,16 @@ public final class JsonRestClient implements IRestClient {
             connection.setContentType(contentTypeFor(language));
             connection.write(statement.getBytes());
 
+            // A query only succeeds if the response is 200 ...
             int responseCode = connection.getResponseCode();
             LOGGER.trace("responseCode={0}", responseCode);
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                // Something other than 200, so fail ...
+                String response = connection.read();
+                String msg = "Error while executiong {0} query \"{1}\" with offset {2} and limit {3}: {4}";
+                LOGGER.debug(msg, language, statement, offset, limit, response);
+                throw new RuntimeException(RestClientI18n.invalidQueryMsg.text(response));
+            }
 
             String response = connection.read();
             JSONObject result = new JSONObject(response);
