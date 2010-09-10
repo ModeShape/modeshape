@@ -31,43 +31,26 @@ import org.modeshape.common.i18n.I18n;
 public final class RestClientI18n {
 
     public static I18n nullArgumentMsg;
-
     public static I18n repositoryShortDescription;
-
     public static I18n serverShortDescription;
-    
     public static I18n unknownHttpRequestMethodMsg;
-
     public static I18n workspaceShortDescription;
-    
     public static I18n nodeTypeShortDescription;
 
     // JsonRestClient messages
-
     public static I18n connectionErrorMsg;
-
     public static I18n createFileFailedMsg;
-
     public static I18n createFolderFailedMsg;
-
     public static I18n getRepositoriesFailedMsg;
-
     public static I18n getWorkspacesFailedMsg;
-
     public static I18n publishFailedMsg;
-
     public static I18n unpublishFailedMsg;
-
     public static I18n unpublishNeverPublishedMsg;
-    
     public static I18n publishSucceededMsg;
-    
     public static I18n unpublishSucceededMsg;
-
     public static I18n invalidQueryLanguageMsg;
-    
+    public static I18n invalidQueryMsg;
     public static I18n getNodeTypesFailedMsg;
-    
     public static I18n getNodeTypeFailedMsg;
 
     static {

@@ -8,6 +8,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
+import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
@@ -33,7 +34,7 @@ public class QueryHandler extends AbstractHandler {
                             String statement,
                             long offset,
                             long limit,
-                            UriInfo uriInfo ) throws RepositoryException, JSONException {
+                            UriInfo uriInfo ) throws InvalidQueryException, RepositoryException, JSONException {
 
         assert rawRepositoryName != null;
         assert rawWorkspaceName != null;
