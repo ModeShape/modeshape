@@ -541,26 +541,46 @@ public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
         this.compareColumns = false;
 
         String[] expected = {
-            "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-            "cars    NULL    car:Car    *    12    undefined    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    *    12    undefined    50    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:engine    12    String    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:lengthInInches    6    Double    20    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:maker    12    String    50    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:model    12    String    50    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:mpgCity    -5    Long    20    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:mpgHighway    -5    Long    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:msrp    12    String    50    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:userRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:valueRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:wheelbaseInInches    6    Double    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:year    12    String    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    jcr:mixinTypes    12    Name    20    NULL    0    0    2        NULL    0    0    0    14    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    15    NO    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"};
+        		"TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
+        		"cars    NULL    car:Car    car:engine    12    String    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:lengthInInches    6    Double    20    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:maker    12    String    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:model    12    String    50    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:mpgCity    -5    Long    20    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:mpgHighway    -5    Long    20    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:msrp    12    String    50    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:userRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:valueRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:wheelbaseInInches    6    Double    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:year    12    String    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:mixinTypes    12    Name    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:mixinTypes    12    Name    20    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:mixinTypes    12    Name    20    NULL    0    0    2        NULL    0    0    0    14    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:mixinTypes    12    Name    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    16    NO    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    17    NO    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    18    NO    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    19    NO    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    20    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    21    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    22    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    23    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    24    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    25    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    26    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    27    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    28    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    29    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    30    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    31    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    32    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    33    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    34    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    35    YES    NULL    NULL    NULL    0"
+        		};
 
         ResultSet rs = dbmd.getColumns("%", "%", "car:Car", "%");
+        
         assertResultsSetEquals(rs, expected);
         assertRowCount(17);
 
@@ -571,27 +591,47 @@ public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
         this.compareColumns = false;
 
         String[] expected = {
-            "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-            "cars    NULL    car:Car    *    12    undefined    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    *    12    undefined    50    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:engine    12    String    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:lengthInInches    6    Double    20    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:maker    12    String    50    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:model    12    String    50    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:mpgCity    -5    Long    20    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:mpgHighway    -5    Long    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:msrp    12    String    50    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:userRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:valueRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:wheelbaseInInches    6    Double    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    car:year    12    String    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    jcr:mixinTypes    12    Name    20    NULL    0    0    2        NULL    0    0    0    14    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    15    NO    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"};
+        		"TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
+        		"cars    NULL    car:Car    car:engine    12    String    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:lengthInInches    6    Double    20    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:maker    12    String    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:model    12    String    50    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:mpgCity    -5    Long    20    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:mpgHighway    -5    Long    20    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:msrp    12    String    50    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:userRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:valueRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:wheelbaseInInches    6    Double    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    car:year    12    String    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:mixinTypes    12    Name    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:mixinTypes    12    Name    20    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:mixinTypes    12    Name    20    NULL    0    0    2        NULL    0    0    0    14    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:mixinTypes    12    Name    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    16    NO    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    17    NO    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    18    NO    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    19    NO    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    20    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    21    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    22    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    23    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    24    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    25    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    26    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:multiValuedProperties    12    String    50    NULL    0    0    2        NULL    0    0    0    27    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    28    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    29    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    30    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    31    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    32    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    33    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    34    YES    NULL    NULL    NULL    0",
+        		"cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    35    YES    NULL    NULL    NULL    0"
+        		};
 
         ResultSet rs = dbmd.getColumns("%", "%", "car%", "%");
-        assertResultsSetEquals(rs, expected);
+
+       assertResultsSetEquals(rs, expected);
         assertRowCount(11);
 
     }

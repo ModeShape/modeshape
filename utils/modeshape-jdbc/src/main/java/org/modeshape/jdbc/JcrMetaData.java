@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -552,7 +553,7 @@ public class JcrMetaData implements DatabaseMetaData {
                     throw new SQLException("Program Error:  missing propertydefintions for " + type.getName());
                 }
 
-                List<PropertyDefinition> defns = filterPropertyDefnitions(columnNamePattern, type.getPropertyDefinitions());
+                List<PropertyDefinition> defns = filterPropertyDefnitions(columnNamePattern, type);
 
                 int ordinal = 0;
                 Iterator<PropertyDefinition> defnsIt = defns.iterator();
@@ -2384,11 +2385,18 @@ public class JcrMetaData implements DatabaseMetaData {
         return iface.cast(this);
     }
 
-    private List<NodeType> filterNodeTypes( String tableNamePattern ) throws RepositoryException {
+	private List<NodeType> filterNodeTypes( String tableNamePattern ) throws RepositoryException {
         List<NodeType> nodetypes = null;
 
         if (tableNamePattern.trim().equals(WILDCARD)) {
-            nodetypes = this.connection.getRepositoryDelegate().nodeTypes();
+        	
+        	nodetypes = this.connection.getRepositoryDelegate().nodeTypes();
+            Iterator<NodeType> nodeIt = nodetypes.iterator();
+            while (nodeIt.hasNext()) {
+            	NodeType type = nodeIt.next();
+            	if (!hasColumnedDefined(type)) nodeIt.remove(); 
+            }
+
         } else if (tableNamePattern.contains(WILDCARD)) {
             nodetypes = new ArrayList<NodeType>();
             String partName = null;
@@ -2411,6 +2419,8 @@ public class JcrMetaData implements DatabaseMetaData {
             while (nodeIt.hasNext()) {
 
                 NodeType type = nodeIt.next();
+                
+                if (!hasColumnedDefined(type)) continue;
 
                 if (isLeading) {
                     if (isTrailing) {
@@ -2430,8 +2440,8 @@ public class JcrMetaData implements DatabaseMetaData {
 
         } else {
             NodeType nt = this.connection.getRepositoryDelegate().nodeType(tableNamePattern);
-            if (nt != null) {
-                nodetypes = new ArrayList<NodeType>(1);
+            nodetypes = new ArrayList<NodeType>(1);
+            if (nt != null && hasColumnedDefined(nt))  {               
                 nodetypes.add(nt);
             }
         }
@@ -2449,13 +2459,19 @@ public class JcrMetaData implements DatabaseMetaData {
         return nodetypes;
     }
 
-    private List<PropertyDefinition> filterPropertyDefnitions( String columnNamePattern,
-                                                               PropertyDefinition[] defns ) {
-        List<PropertyDefinition> resultDefns = new ArrayList<PropertyDefinition>(defns.length);
+    private List<PropertyDefinition> filterPropertyDefnitions( String columnNamePattern, NodeType nodeType) {
+    	
+    	List<PropertyDefinition> allDefns = new ArrayList<PropertyDefinition>();
+    	
+    	addPropertyDefinitions(allDefns, nodeType);
+    	addSuperPropertyDefinitions(allDefns, nodeType);
+    	
+        List<PropertyDefinition> resultDefns = null;
 
         if (columnNamePattern.trim().equals(WILDCARD)) {
-            resultDefns = Arrays.asList(defns);
+             resultDefns = allDefns;
         } else if (columnNamePattern.contains(WILDCARD)) {
+        	resultDefns = new ArrayList<PropertyDefinition>();
             String partName = null;
             boolean isLeading = false;
             boolean isTrailing = false;
@@ -2470,9 +2486,9 @@ public class JcrMetaData implements DatabaseMetaData {
                 isTrailing = true;
             }
 
-            for (int i = 0; i < defns.length; i++) {
-
-                PropertyDefinition defn = defns[i];
+            Iterator<PropertyDefinition> defnIt = allDefns.iterator();
+            while (defnIt.hasNext()) {            	
+            	PropertyDefinition defn = defnIt.next();
 
                 if (isLeading) {
                     if (isTrailing) {
@@ -2491,8 +2507,11 @@ public class JcrMetaData implements DatabaseMetaData {
             }
 
         } else {
-            for (int i = 0; i < defns.length; i++) {
-                PropertyDefinition defn = defns[i];
+        	resultDefns = new ArrayList<PropertyDefinition>();
+        	
+            Iterator<PropertyDefinition> defnIt = allDefns.iterator();
+            while (defnIt.hasNext()) {
+                PropertyDefinition defn = defnIt.next();
                 if (defn.getName().equals(columnNamePattern)) {
                     resultDefns.add(defn);
                 }
@@ -2511,6 +2530,58 @@ public class JcrMetaData implements DatabaseMetaData {
         }
 
         return resultDefns;
+    }
+    
+    /**
+     * isTableValid determines if the node type should be exposed as a table.
+     * A table must have at least one column, and the property definitions
+     * and superTypes provide the columns.   As long as one is
+     * defined, then one table is valid for exposure.
+     * 
+     * @param nodeType
+     * @return true if a column is defined for the table
+     */
+    private boolean hasColumnedDefined(NodeType nodeType) {
+    	List<PropertyDefinition> allDefns = new ArrayList<PropertyDefinition>();
+       	addPropertyDefinitions(allDefns, nodeType);
+    	addSuperPropertyDefinitions(allDefns, nodeType);
+   	
+    	return (allDefns.size() > 0 ?  true : false);
+   
+    }
+    
+    /**
+     * search recursively thru the supertypes to find other columns that 
+     * are to be exposed for a single table.
+     * @param allDefns
+     * @param nodetype
+     */
+    private void addSuperPropertyDefinitions(List<PropertyDefinition> allDefns, NodeType nodetype) {   	
+    	NodeType[] superTypes = nodetype.getSupertypes();
+    	if (superTypes != null && superTypes.length > 0) {
+    		for (int i = 0; i <superTypes.length; i++) {
+    			NodeType superType = superTypes[i];
+    			if (superType != null) {
+    				addPropertyDefinitions(allDefns, superType);
+    				addSuperPropertyDefinitions(allDefns, superType);
+    			}    		
+
+    		}
+    	}    	
+    }
+    
+    private static final String IGNORE_RESIDUAL = "*";
+    
+    private void addPropertyDefinitions(List<PropertyDefinition> mapDefns, NodeType nodetype) {
+    	PropertyDefinition[] defns = nodetype.getPropertyDefinitions();
+    	if (defns != null && defns.length > 0) {
+    		for (int i=0; i<defns.length; i++) {
+    			if (!defns[i].getName().equalsIgnoreCase(IGNORE_RESIDUAL)) {
+	    				mapDefns.add(defns[i]);
+    			}
+    			
+    		}
+    	}
     }
 
 }
