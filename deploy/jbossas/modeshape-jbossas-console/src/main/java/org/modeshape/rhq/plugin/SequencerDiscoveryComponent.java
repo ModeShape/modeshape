@@ -148,7 +148,7 @@ public class SequencerDiscoveryComponent implements
 
 			// Add to return values
 			discoveredResources.add(detail);
-			log.info("Discovered ModeShape Sequencer: " + name);
+			log.debug("Discovered ModeShape Sequencer: " + name);
 		}
 
 		return discoveredResources;

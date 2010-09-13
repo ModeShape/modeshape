@@ -144,7 +144,7 @@ public class ConnectorDiscoveryComponent implements
 
 			// Add to return values
 			discoveredResources.add(detail);
-			log.info("Discovered ModeShape repositories: " + mc.getName());
+			log.debug("Discovered ModeShape repositories: " + mc.getName());
 		}
 
 		return discoveredResources;
