@@ -31,6 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.property.Name;
@@ -81,6 +82,22 @@ public class MockSequencerOutput implements SequencerOutput, Iterable<Path> {
                 properties = new HashMap<Name, Property>();
                 propertiesByPath.put(nodePath, properties);
                 if (nodePathsInCreationOrder != null) nodePathsInCreationOrder.add(nodePath);
+            }
+            for (Object value : values) {
+                if (value instanceof Property || value instanceof Iterator<?>) {
+                    RuntimeException t = new SystemFailureException("Value of property is another property object");
+                    t.printStackTrace();
+                    throw t;
+                }
+                if (value instanceof Object[]) {
+                    for (Object nestedValue : (Object[])value) {
+                        if (nestedValue instanceof Property || value instanceof Iterator<?>) {
+                            RuntimeException t = new SystemFailureException("Value of property is another property object");
+                            t.printStackTrace();
+                            throw t;
+                        }
+                    }
+                }
             }
             Property property = context.getPropertyFactory().create(propertyName, values);
             properties.put(propertyName, property);

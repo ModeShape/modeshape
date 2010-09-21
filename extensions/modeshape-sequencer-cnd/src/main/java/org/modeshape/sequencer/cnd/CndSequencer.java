@@ -89,7 +89,7 @@ public class CndSequencer implements StreamSequencer {
         public void create( Path path,
                             List<Property> properties ) {
             for (Property property : properties) {
-                output.setProperty(path, property.getName(), property.getValues());
+                output.setProperty(path, property.getName(), property.getValuesAsArray());
             }
         }
 
@@ -104,7 +104,7 @@ public class CndSequencer implements StreamSequencer {
                             Property... additionalProperties ) {
             output.setProperty(path, firstProperty.getName(), firstProperty.getValues());
             for (Property property : additionalProperties) {
-                output.setProperty(path, property.getName(), property.getValues());
+                output.setProperty(path, property.getName(), property.getValuesAsArray());
             }
         }
 
@@ -117,7 +117,7 @@ public class CndSequencer implements StreamSequencer {
         public void setProperties( Path path,
                                    Property... properties ) {
             for (Property property : properties) {
-                output.setProperty(path, property.getName(), property.getValues());
+                output.setProperty(path, property.getName(), property.getValuesAsArray());
             }
         }
 
