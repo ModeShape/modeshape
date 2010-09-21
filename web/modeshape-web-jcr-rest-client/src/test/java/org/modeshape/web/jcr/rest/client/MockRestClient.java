@@ -28,7 +28,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import org.modeshape.web.jcr.rest.client.domain.NodeType;
+import javax.jcr.nodetype.NodeType;
 import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
@@ -142,27 +142,10 @@ public final class MockRestClient implements IRestClient {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeTypes(org.modeshape.web.jcr.rest.client.domain.Workspace,
-     *      java.lang.String, java.lang.String)
+     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeTypes(org.modeshape.web.jcr.rest.client.domain.Workspace)
      */
     @Override
-    public Collection<NodeType> getNodeTypes( Workspace workspace,
-                                              String relativePath,
-                                              String nodeDepth ) throws Exception {
+    public Map<String, NodeType> getNodeTypes( Workspace workspace ) throws Exception {
         return null;
     }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeType(org.modeshape.web.jcr.rest.client.domain.Workspace,
-     *      java.lang.String, java.lang.String)
-     */
-    @Override
-    public NodeType getNodeType( Workspace workspace,
-                                 String relativePath,
-                                 String nodeDepth ) throws Exception {
-        return null;
-    }
-
 }

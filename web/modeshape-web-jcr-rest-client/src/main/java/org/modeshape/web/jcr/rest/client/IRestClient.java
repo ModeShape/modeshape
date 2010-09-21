@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import org.modeshape.web.jcr.rest.client.Status.Severity;
-import org.modeshape.web.jcr.rest.client.domain.NodeType;
 import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
@@ -53,27 +52,10 @@ public interface IRestClient {
      * Obtains the ModeShape node types defined within the specified workspace.
      * 
      * @param workspace whose node types are being requested (never <code>null</code>)
-     * @param relativePath is the path to find node types and, optionally, at what depth
-     * @param nodeDepth , optional, the the depth of the structure of node types to be returned
      * @return the node types defined within the specified workspace (never <code>null</code>)
      * @throws Exception if there is a problem obtaining the node types
      */
-    Collection<NodeType> getNodeTypes( Workspace workspace,
-                                       String relativePath,
-                                       String nodeDepth ) throws Exception;
-
-    /**
-     * Obtains the ModeShape node type requested by the nodeTypeName within the specified workspace.
-     * 
-     * @param workspace whose node types are being requested (never <code>null</code>)
-     * @param relativePath is the path to find node type
-     * @param nodeDepth , optional, the the depth of the structure of node types to be returned
-     * @return the node type requested by the nodeTypeName (<code>null</code>)
-     * @throws Exception if there is a problem obtaining the node type
-     */
-    NodeType getNodeType( Workspace workspace,
-                          String relativePath,
-                          String nodeDepth ) throws Exception;
+    Map<String, javax.jcr.nodetype.NodeType> getNodeTypes( Workspace workspace ) throws Exception;
 
     /**
      * @param file the file whose URL is being requested (never <code>null</code>)

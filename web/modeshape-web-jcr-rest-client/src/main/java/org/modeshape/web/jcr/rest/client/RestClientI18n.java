@@ -36,6 +36,9 @@ public final class RestClientI18n {
     public static I18n unknownHttpRequestMethodMsg;
     public static I18n workspaceShortDescription;
     public static I18n nodeTypeShortDescription;
+    public static I18n propertyDefinitionShortDescription;
+    public static I18n childNodeDefinitionShortDescription;
+    public static I18n unableToConvertValue;
 
     // JsonRestClient messages
     public static I18n connectionErrorMsg;

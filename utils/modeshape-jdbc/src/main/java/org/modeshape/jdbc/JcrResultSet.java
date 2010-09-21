@@ -48,7 +48,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.PropertyType;
@@ -58,7 +57,6 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
-
 import org.modeshape.jdbc.util.IoUtil;
 
 /**
@@ -82,32 +80,32 @@ public class JcrResultSet implements ResultSet {
 
     protected JcrResultSet( JcrStatement statement,
                             QueryResult jcrResults,
-                            ResultSetMetaData resultSetMetaData) throws SQLException {
+                            ResultSetMetaData resultSetMetaData ) throws SQLException {
         this.statement = statement;
         this.jcrResults = jcrResults;
         assert this.statement != null;
         assert this.jcrResults != null;
-        
+
         if (resultSetMetaData != null) {
-        	this.metadata = resultSetMetaData;
+            this.metadata = resultSetMetaData;
         } else {
-        	this.metadata = new JcrResultSetMetaData(this.statement.connection(), this.jcrResults);
+            this.metadata = new JcrResultSetMetaData(this.statement.connection(), this.jcrResults);
         }
-            int index = 1; // not zero-based
-            int colCnt =  this.metadata.getColumnCount() ;
+        int index = 1; // not zero-based
+        int colCnt = this.metadata.getColumnCount();
 
-            // add 1 because using 1 based location, not zero based, JDBC spec
-            columnIDs = new String[colCnt + 1];
-            columnIndexesByName = new HashMap<String, Integer>(colCnt);
-            while (index <= colCnt) {
-             	String name = this.metadata.getColumnName(index);
-                columnIndexesByName.put(name, index);
-                columnIDs[index] = name;
-                index++;    	
-            }
+        // add 1 because using 1 based location, not zero based, JDBC spec
+        columnIDs = new String[colCnt + 1];
+        columnIndexesByName = new HashMap<String, Integer>(colCnt);
+        while (index <= colCnt) {
+            String name = this.metadata.getColumnName(index);
+            columnIndexesByName.put(name, index);
+            columnIDs[index] = name;
+            index++;
+        }
 
-            assert !columnIndexesByName.isEmpty();
-            this.columnIndexesByName = Collections.unmodifiableMap(columnIndexesByName);
+        assert !columnIndexesByName.isEmpty();
+        this.columnIndexesByName = Collections.unmodifiableMap(columnIndexesByName);
 
         try {
             this.rowIter = this.jcrResults.getRows();
@@ -1208,7 +1206,7 @@ public class JcrResultSet implements ResultSet {
                                    int type ) throws SQLException {
         if (value == null) return null;
 
-       try {
+        try {
             switch (type) {
 
                 case PropertyType.STRING:
@@ -1245,18 +1243,18 @@ public class JcrResultSet implements ResultSet {
     private Object getColumnTranslatedToJDBC( String columnName ) throws SQLException {
         notClosed();
         isRowSet();
-        
-        Value value = null;      
+
+        Value value = null;
         this.currentValue = null;
 
         try {
             value = row.getValue(columnName);
         } catch (javax.jcr.PathNotFoundException pnf) {
-        	// do nothing
+            // do nothing
         } catch (RepositoryException e) {
-        	throw new SQLException(e.getLocalizedMessage(), e);
+            throw new SQLException(e.getLocalizedMessage(), e);
         }
-        
+
         if (value == null) return null;
 
         this.currentValue = JcrType.translateValueToJDBC(value);
@@ -1269,7 +1267,7 @@ public class JcrResultSet implements ResultSet {
      * @see java.sql.ResultSet#getWarnings()
      */
     @Override
-    public SQLWarning getWarnings() throws SQLException {
+    public SQLWarning getWarnings() /*throws SQLException*/{
         return null;
     }
 
@@ -1509,7 +1507,8 @@ public class JcrResultSet implements ResultSet {
      * @see java.sql.ResultSet#setFetchSize(int)
      */
     @Override
-    public void setFetchSize( int rows ) throws SQLException {
+    public void setFetchSize( int rows ) /*throws SQLException*/{
+        // does nothing
     }
 
     /**
