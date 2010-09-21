@@ -95,9 +95,17 @@ public class BasicPropertyFactory implements PropertyFactory {
             // Check whether the sole value was a collection ...
             if (value instanceof Collection<?>) {
                 // The single value is a collection, so create property with the collection's contents ...
-                return create(name, (Collection<?>)value);
+                return create(name, desiredType, (Iterable<?>)value);
             }
-            value = factory.create(values[0]);
+            if (value instanceof Iterator<?>) {
+                // The single value is an iterator over a collection, so create property with the iterator's contents ...
+                return create(name, desiredType, (Iterator<?>)value);
+            }
+            if (value instanceof Object[]) {
+                // The single value is an object array, so create the property with the array as the value(s)...
+                return create(name, desiredType, (Object[])value);
+            }
+            value = factory.create(value);
             return new BasicSingleValueProperty(name, value);
         }
         List<Object> valueList = new ArrayList<Object>(len);
