@@ -26,6 +26,10 @@
             <groupId>javax.jcr</groupId>
             <artifactId>jcr</artifactId>
         </dependency>
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+        </dependency>
 		<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-common</artifactId>

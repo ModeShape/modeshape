@@ -30,13 +30,13 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Binary;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -176,7 +176,31 @@ public class PropertyDefinitionTest {
         defn = createPropertyDefinition();
         assertThat(defn.getDefaultValues()[0].getString(), is("2010-03-22T01:02:03.456Z"));
         assertThat(defn.getDefaultValues()[0].getDate(), is(dateFrom("2010-03-22T01:02:03.456Z")));
-        assertThat(defn.getDefaultValues()[0].getLong(), is(1269237723456L));
+        assertThat(defn.getDefaultValues()[0].getLong(), is(1269219723456L));
+    }
+
+    @Test
+    public void shouldAllowConversionOfDefaultValueFromDateBeforeUtcToCompatibleTypes() throws Exception {
+        defaultValues.add("2010-03-22T01:02:03.456+08:00"); // 8 hours ahead of UTC
+        requiredType = PropertyType.DATE;
+        defn = createPropertyDefinition();
+        assertThat(defn.getDefaultValues()[0].getString(), is("2010-03-22T01:02:03.456+08:00"));
+        assertThat(defn.getDefaultValues()[0].getDate(), is(dateFrom("2010-03-22T01:02:03.456+08:00")));
+        assertThat(defn.getDefaultValues()[0].getLong(), is(1269190923456L));
+        // Verify that the supplied time in millis is 8 hours ahead of the same time in UTC millis ...
+        assertThat(TimeUnit.HOURS.convert(1269219723456L - 1269190923456L, TimeUnit.MILLISECONDS), is(8L));
+    }
+
+    @Test
+    public void shouldAllowConversionOfDefaultValueFromDateAfterUtcToCompatibleTypes() throws Exception {
+        defaultValues.add("2010-03-22T01:02:03.456-08:00"); // 8 hours after of UTC
+        requiredType = PropertyType.DATE;
+        defn = createPropertyDefinition();
+        assertThat(defn.getDefaultValues()[0].getString(), is("2010-03-22T01:02:03.456-08:00"));
+        assertThat(defn.getDefaultValues()[0].getDate(), is(dateFrom("2010-03-22T01:02:03.456-08:00")));
+        assertThat(defn.getDefaultValues()[0].getLong(), is(1269248523456L));
+        // Verify that the supplied time in millis is 8 hours behind the same time in UTC millis ...
+        assertThat(TimeUnit.HOURS.convert(1269219723456L - 1269248523456L, TimeUnit.MILLISECONDS), is(-8L));
     }
 
     @SuppressWarnings( "deprecation" )
@@ -201,25 +225,32 @@ public class PropertyDefinitionTest {
         defn.getDefaultValues()[0].getBoolean();
     }
 
-    @Test( expected = ValueFormatException.class )
-    public void shouldFailToConvertDefaultValueFromDoubleToDate() throws Exception {
+    @Test
+    public void shouldConvertDefaultValueFromDoubleToDate() throws Exception {
         defaultValues.add("8");
         requiredType = PropertyType.DOUBLE;
         defn = createPropertyDefinition();
         defn.getDefaultValues()[0].getDate();
     }
 
+    @Test( expected = ValueFormatException.class )
+    public void shouldConvertDefaultValueFromNameToDate() throws Exception {
+        defaultValues.add("jcr:name");
+        requiredType = PropertyType.NAME;
+        defn = createPropertyDefinition();
+        defn.getDefaultValues()[0].getDate();
+    }
+
     @Test
-    public void shouldParseDate() throws ParseException {
+    public void shouldParseDate() {
         PropertyDefinition.parseDate("2010-03-22T01:02:03.456-0800");
         PropertyDefinition.parseDate("2010-03-22T01:02:03.456-08:00");
         PropertyDefinition.parseDate("2010-03-22T01:02:03.456+0800");
         PropertyDefinition.parseDate("2010-03-22T01:02:03.456+08:00");
         PropertyDefinition.parseDate("2010-03-22T01:02:03.456Z");
-        PropertyDefinition.parseDate("2010-03-22T01:02:03.456UTC");
     }
 
-    protected Calendar dateFrom( String dateStr ) throws ParseException {
+    protected Calendar dateFrom( String dateStr ) {
         return PropertyDefinition.parseDate(dateStr);
     }
 

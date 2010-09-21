@@ -27,14 +27,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 import javax.jcr.Binary;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -42,6 +38,8 @@ import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import javax.jcr.version.OnParentVersionAction;
 import net.jcip.annotations.Immutable;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.modeshape.web.jcr.rest.client.RestClientI18n;
 
 /**
@@ -50,37 +48,9 @@ import org.modeshape.web.jcr.rest.client.RestClientI18n;
 @Immutable
 public class PropertyDefinition extends ItemDefinition implements javax.jcr.nodetype.PropertyDefinition {
 
-    private static final String DATE_PATTERN1 = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
-    private static final String DATE_PATTERN2 = "yyyy-MM-dd'T'HH:mm:ss.SSSz";
-    private static final String DATE_PATTERN3 = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
-
-    public static Calendar parseDate( String dateString ) throws ParseException {
-        try {
-            Date date = new SimpleDateFormat(DATE_PATTERN1).parse(dateString);
-            Calendar result = Calendar.getInstance();
-            result.setTime(date);
-            return result;
-        } catch (ParseException t) {
-            try {
-                // JCR allows the time zone to use ':' between hours and minutes, but this is not handled by SimpleDateFormat,
-                // so remove the ':' in the time zone ...
-                dateString = dateString.replaceAll("([.]\\d{1,3}[+-]?\\d{1,2})[:](\\d{1,2})$", "$1$2");
-                Date date = new SimpleDateFormat(DATE_PATTERN2).parse(dateString);
-                Calendar result = Calendar.getInstance();
-                result.setTime(date);
-                return result;
-            } catch (ParseException t2) {
-                try {
-                    Date date = new SimpleDateFormat(DATE_PATTERN3).parse(dateString);
-                    Calendar result = Calendar.getInstance();
-                    result.setTime(date);
-                    result.setTimeZone(TimeZone.getTimeZone("UTC"));
-                    return result;
-                } catch (ParseException t3) {
-                    throw t;
-                }
-            }
-        }
+    public static Calendar parseDate( String dateString ) throws IllegalArgumentException {
+        DateTime result = new DateTime(dateString);
+        return result.toCalendar(null);
     }
 
     private final Id id;
@@ -320,7 +290,22 @@ public class PropertyDefinition extends ItemDefinition implements javax.jcr.node
         public Calendar getDate() throws ValueFormatException, RepositoryException {
             try {
                 return parseDate(value);
-            } catch (ParseException e) {
+            } catch (IllegalArgumentException e) {
+                String from = PropertyType.nameFromValue(getType());
+                String to = PropertyType.nameFromValue(PropertyType.LONG);
+                throw new ValueFormatException(RestClientI18n.unableToConvertValue.text(value, from, to), e);
+            }
+        }
+
+        public Calendar getDateInUtc() throws ValueFormatException, RepositoryException {
+            try {
+                DateTime result = new DateTime(value);
+                DateTimeZone utc = DateTimeZone.forID("UTC");
+                if (!result.getZone().equals(utc)) {
+                    result = result.withZone(utc);
+                }
+                return result.toCalendar(null);
+            } catch (IllegalArgumentException e) {
                 String from = PropertyType.nameFromValue(getType());
                 String to = PropertyType.nameFromValue(PropertyType.LONG);
                 throw new ValueFormatException(RestClientI18n.unableToConvertValue.text(value, from, to), e);
@@ -336,7 +321,7 @@ public class PropertyDefinition extends ItemDefinition implements javax.jcr.node
         public BigDecimal getDecimal() throws ValueFormatException, RepositoryException {
             try {
                 if (getRequiredType() == PropertyType.DATE) {
-                    return new BigDecimal(getDate().getTime().getTime());
+                    return new BigDecimal(getDateInUtc().getTime().getTime());
                 }
                 return new BigDecimal(value);
             } catch (NumberFormatException t) {
@@ -355,7 +340,7 @@ public class PropertyDefinition extends ItemDefinition implements javax.jcr.node
         public double getDouble() throws ValueFormatException, RepositoryException {
             try {
                 if (getRequiredType() == PropertyType.DATE) {
-                    return getDate().getTime().getTime();
+                    return getDateInUtc().getTime().getTime();
                 }
                 return Double.parseDouble(value);
             } catch (NumberFormatException t) {
@@ -374,7 +359,7 @@ public class PropertyDefinition extends ItemDefinition implements javax.jcr.node
         public long getLong() throws ValueFormatException, RepositoryException {
             try {
                 if (getRequiredType() == PropertyType.DATE) {
-                    return getDate().getTime().getTime();
+                    return getDateInUtc().getTime().getTime();
                 }
                 return Long.parseLong(value);
             } catch (NumberFormatException t) {
