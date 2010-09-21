@@ -24,88 +24,111 @@
 package org.modeshape.web.jcr.rest.client.json;
 
 import java.net.URL;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
-
+import javax.jcr.PropertyType;
+import javax.jcr.version.OnParentVersionAction;
 import net.jcip.annotations.Immutable;
-
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.web.jcr.rest.client.domain.ChildNodeDefinition;
 import org.modeshape.web.jcr.rest.client.domain.NodeType;
+import org.modeshape.web.jcr.rest.client.domain.PropertyDefinition;
 import org.modeshape.web.jcr.rest.client.domain.Workspace;
 
 /**
- * The <code>NodeTypeNode</code> class is responsible for knowing how to obtain a NodeType based 
- * on the Workspace.
- * <br>
- * 
- * An example <code>URL</code> to obtain all the node types would look like:
- * <br>
- * 	<i>{context root}/{repository name}/{workspace name}/items/jcr:system/jcr:nodeTypes"</i>
- * <br>
- * And an example url to obtain a specific node type would look like:
- * <br>
- * 	<i>{context root}/{repository name}/{workspace name}/items/jcr:system/jcr:nodeTypes/{node type name}</i>
- * 
- * <br>
- * A Node Type will not be created if:
- * <li>jcr:isMixin is true</li>
- * <li>jcr:multiple is true</li>
+ * The <code>NodeTypeNode</code> class is responsible for knowing how to obtain a NodeType based on the Workspace. <br>
+ * An example <code>URL</code> to obtain all the node types would look like: <br>
+ * <i>{context root}/{repository name}/{workspace name}/items/jcr:system/jcr:nodeTypes"</i> <br>
+ * And an example url to obtain a specific node type would look like: <br>
+ * <i>{context root}/{repository name}/{workspace name}/items/jcr:system/jcr:nodeTypes/{node type name}</i> <br>
+ * A Node Type will not be created if: <li>jcr:isMixin is true</li> <li>jcr:multiple is true</li>
  */
 @Immutable
 public final class NodeTypeNode extends JsonNode {
-	
+
+    protected static final String NODE_TYPES_PATH = "jcr:system/jcr:nodeTypes";
+    protected static final int NODE_TYPE_DEPTH = 5;
+    private static final Map<String, Integer> PROPERTY_TYPES_BY_LOWERCASE_NAME;
+
+    static {
+        Map<String, Integer> types = new HashMap<String, Integer>();
+        registerType(types, PropertyType.BINARY);
+        registerType(types, PropertyType.BOOLEAN);
+        registerType(types, PropertyType.DATE);
+        registerType(types, PropertyType.DECIMAL);
+        registerType(types, PropertyType.DOUBLE);
+        registerType(types, PropertyType.LONG);
+        registerType(types, PropertyType.NAME);
+        registerType(types, PropertyType.PATH);
+        registerType(types, PropertyType.REFERENCE);
+        registerType(types, PropertyType.STRING);
+        registerType(types, PropertyType.UNDEFINED);
+        registerType(types, PropertyType.URI);
+        registerType(types, PropertyType.WEAKREFERENCE);
+        PROPERTY_TYPES_BY_LOWERCASE_NAME = Collections.unmodifiableMap(types);
+    }
+
+    private static void registerType( Map<String, Integer> typesByLowerCaseName,
+                                      int propertyType ) {
+        String name = PropertyType.nameFromValue(propertyType);
+        typesByLowerCaseName.put(name.toLowerCase(), propertyType);
+    }
+
     // ===========================================================================================================================
     // Fields
     // ===========================================================================================================================
 
-	/**
-	 * EXCLUDE_TYEPS are those node types that are to be excluded from the inclusion
-	 * in the node types returned.
-	 */
-	private static Set<String> EXCLUDE_TYPES = new HashSet<String>() ;
+    /**
+     * EXCLUDE_TYEPS are those node types that are to be excluded from the inclusion in the node types returned.
+     */
+    private static Set<String> EXCLUDE_TYPES = Collections.singleton("mode:defined");
     /**
      * The workspace from where the node type is being obtained.
      */
     private final Workspace workspace;
-    
-    private final String depth;
-        
-    private Map<String, NodeType>nodeTypeMap = new HashMap<String, NodeType>();
-    
-    {
-    	EXCLUDE_TYPES.add("mode:defined");
-    	EXCLUDE_TYPES.add("*");
-    }
-    
+
+    private Map<String, javax.jcr.nodetype.NodeType> nodeTypeMap = new HashMap<String, javax.jcr.nodetype.NodeType>();
+
     // ===========================================================================================================================
     // Constructors
     // ===========================================================================================================================
 
     /**
      * Use this constructor if wanting all node types for a workspace
+     * 
      * @param workspace the workspace being used (never <code>null</code>)
-     * @param relative_path is the relative location after the workspace
-     * @param nodeDepth , nullable, can specify the depth of the node types to be returned
      * @throws Exception if there is a problem creating the folder node
      */
-    public NodeTypeNode( Workspace workspace, String relative_path, String  nodeDepth) throws Exception {
-        super(relative_path);
+    public NodeTypeNode( Workspace workspace ) throws Exception {
+        super(NODE_TYPES_PATH);
 
-       	assert workspace != null;
- 
+        assert workspace != null;
         this.workspace = workspace;
-        this.depth = nodeDepth;
-     }
-    
+    }
+
+    /**
+     * Use this constructor if wanting all node types for a workspace
+     * 
+     * @param workspace the workspace being used (never <code>null</code>)
+     * @param nodeTypeName the node type name; may not be null
+     * @throws Exception if there is a problem creating the folder node
+     */
+    public NodeTypeNode( Workspace workspace,
+                         String nodeTypeName ) throws Exception {
+        super(NODE_TYPES_PATH + "/" + nodeTypeName);
+
+        assert workspace != null;
+        this.workspace = workspace;
+    }
+
     // ===========================================================================================================================
     // Methods
     // ===========================================================================================================================
@@ -128,257 +151,236 @@ public final class NodeTypeNode extends JsonNode {
     public URL getUrl() throws Exception {
         WorkspaceNode workspaceNode = new WorkspaceNode(this.workspace);
         StringBuilder url = new StringBuilder(workspaceNode.getUrl().toString());
-        
+
         // make sure path starts with a '/'
         String path = getPath();
-
-        if (!path.startsWith("/")) {
-            path = '/' + path;
-        }
-
-        // make sure path does NOT end with a '/'
-        if (path.endsWith("/")) {
-            path = path.substring(0, path.length() - 1);
-        }
+        if (!path.startsWith("/")) path = '/' + path;
+        path = path.replaceAll("[/]+$", ""); // path should not end in with '/'
 
         // path needs to be encoded
-        url.append(JsonUtils.encode(path));      	
-        	
-        if (this.depth != null) {
-        	url.append(this.depth);
-        }
+        url.append(JsonUtils.encode(path));
+        url.append("?depth=").append(NODE_TYPE_DEPTH);
 
         return new URL(url.toString());
     }
-    
+
     /**
      * @param jsonResponse the HTTP connection JSON response (never <code>null</code>) containing the NodeTypes
      * @return the node types for this workspace (never <code>null</code>)
      * @throws Exception if there is a problem obtaining the node types
      */
-    public Collection<NodeType> getNodeTypes( String jsonResponse ) throws Exception {
+    public Map<String, javax.jcr.nodetype.NodeType> getNodeTypes( String jsonResponse ) throws Exception {
         CheckArg.isNotNull(jsonResponse, "jsonResponse");
 
+        Map<String, NodeType> nodeTypesByName = new HashMap<String, NodeType>();
         JSONObject body = new JSONObject(jsonResponse);
-        NodeType parent = createNodeType(null, body, null);
 
-    	processBody(body, parent);
-        return nodeTypeMap.values();
-    }
-    
-    @SuppressWarnings("unchecked")
-	protected void processBody(JSONObject body, NodeType parentNodeType) throws Exception {   	        
-        NodeType parent = parentNodeType; 
-     	
-    	if (body.has("children")) {
-    		Object obj = body.get("children");
- 
-    		if (obj instanceof JSONObject) {
-    			
-		    	JSONObject children = (JSONObject) obj;
-		        for (Iterator<String> itr = children.keys(); itr.hasNext();) {
-		            String key = JsonUtils.decode(itr.next());	            
-		            Object child = children.get(key);
-		            if (child != null) {
-		            		
-		            	if (child instanceof JSONObject) {
-		            		JSONObject jsonchild = (JSONObject) child;
-		            		createNodeType(key, jsonchild, parent);		
+        // The response is the node representation of '/jcr:system/jcr:nodeTypes'
+        // We don't care about this node at all, but we do care about it's children (the node types) ...
+        if (body.has("children")) {
+            Object obj = body.get("children");
 
-				   		} else if (child instanceof JSONArray) {
-							JSONArray childarray = (JSONArray) child;
-							for (int idx=0; idx<childarray.length(); idx++) {
-								String cname = childarray.getString(idx);
-								createNodeType(cname, null, parent);	
-							}
-				   		} else {
-				   			throw new Exception("Program Error: didnt handle object type: " + child.getClass().getName());
-				   		}
-
-		            }
-
-		        }
-    		} else if (obj instanceof JSONArray) {
-             	JSONArray childarray = (JSONArray) obj;
-            	for (int i=0; i<childarray.length(); i++) {
-            		String cname = childarray.getString(i);
-            		createNodeType(cname, null, parent);
-            	}
-    		} else {
-	   			throw new Exception("Program Error: didnt handle object type: " + obj.getClass().getName());
-	   		}
-    	}
-    }
-
-     
- 	@SuppressWarnings({ "unchecked", "null" })
-	private NodeType createNodeType(String childkey, JSONObject childNode, NodeType parentNodeType) throws Exception {
- 		JSONObject jsonProperties = null;
-  		if (childNode == null) {
-       		NodeType type =  new NodeType(childkey, this.workspace, null);       		
-       		if (parentNodeType != null)  parentNodeType.addChildNodeType(type);
-       		return type;
- 		} 
-  		if (!childNode.has("properties")) {
-       		NodeType type =  new NodeType(childkey, this.workspace, null);       		
-       		if (parentNodeType != null)  parentNodeType.addChildNodeType(type);
-    		if (childNode != null) {
-    			processBody(childNode, type);
-    		}
-       		return type;
+            // The children are the node types, and they should always be full (with property and child node defns),
+            // so that means 'children' will always contain is a JSONObject ...
+            JSONObject children = (JSONObject)obj;
+            for (Iterator<?> itr = children.keys(); itr.hasNext();) {
+                String key = JsonUtils.decode(itr.next().toString());
+                Object child = children.get(key);
+                if (child != null) {
+                    // and that means that each child is a JSONObject ...
+                    createNodeType(key, (JSONObject)child, nodeTypesByName);
+                }
+            }
         }
-  		
-		Object cobj = childNode.get("properties");
-		assert cobj != null;
-		jsonProperties = (JSONObject) cobj;
-		String nodeName = childkey;
 
-		// determine if the node should be excluded
-		
-		// exclude if its a multi-valued definition
-		if (jsonProperties.has("jcr:multiple")) {
-			String isMultipleValue = jsonProperties.getString("jcr:multiple");
-   			// do not add nodetypes where it represents a multivalue 
-   			if (isMultipleValue!= null && isMultipleValue.equalsIgnoreCase("true")) {
-   				return null;
-   			}
-		}
-		
-		// exclude if the definition is a mixin
-		if (jsonProperties.has("jcr:isMixin")) {
-			String isMixin = jsonProperties.getString("jcr:isMixin");
-   			// do not add mixins 
-   			if (isMixin!= null && isMixin.equalsIgnoreCase("true")) {
-   				return null;
-   			}
-		}
-		
-		boolean propDefn = false;
-    	if (childkey == null) {
-    		if (jsonProperties.has("jcr:nodeTypeName")) {
-    			nodeName = jsonProperties.getString("jcr:nodeTypeName");
-    		} else if (jsonProperties.has("jcr:name")) {
-    			nodeName = jsonProperties.getString("jcr:name");
-    		} else {
-    			return null;
-    		}
-    	} else if (childkey.startsWith("jcr:propertyDefinition")) {
-    		if (jsonProperties.has("jcr:name")) {   		
-    			nodeName = jsonProperties.getString("jcr:name");
-    			propDefn = true;
-    		} else {
-    			// exlude when no jcr:name is present
-    			return null;
-    		}
-    	} else if (childkey.startsWith("jcr:childNodeDefinition")) {
-    		// exclude childNodeDefinitions
-    		return null;
-    		
-    	}  
-    	
-    	CheckArg.isNotNull(nodeName, "nodeName ends up in null state for childkey: " + childkey);
-    	
-        if (EXCLUDE_TYPES.contains(nodeName)) return null;
-
-        Set<NodeType> superTypes = new HashSet<NodeType>(3);
-        
-   		Properties properties = new Properties();
-        for (Iterator<String> itr = jsonProperties.keys(); itr.hasNext();) {
-            String key = JsonUtils.decode(itr.next());
-            Object obj = jsonProperties.get(key);
-            if (obj != null) {
-            	if (obj instanceof JSONObject) {
-		   			throw new Exception("Program Error: didnt handle object type: " + obj.getClass().getName());
-            	} 
-            	
-            	if (key.equalsIgnoreCase("jcr:supertypes")) {
-
-                 	JSONArray superArray = jsonProperties.getJSONArray(key);
-                 	
-                	for (int i=0; i<superArray.length(); i++) {
-                		String cname = superArray.getString(i);
-                		if (!EXCLUDE_TYPES.contains(cname)) {	                		
-	                		NodeType superType = new WeakSuperTypeReference(cname, workspace, null, this.nodeTypeMap);
-	                		superTypes.add(superType);
-                		}                		
-                	}
-            	}
-            	properties.put(key, obj.toString());
-            }           	
-         }
-
-       	NodeType childnodeType = new NodeType(nodeName, this.workspace, properties);
-              	
-       	if (parentNodeType  != null) {
-       		if (propDefn) {
-       			 parentNodeType.addPropertyDefinitionNodeType(childnodeType);           	
-       		} else {
-       			parentNodeType.addChildNodeType(childnodeType);
-       		}
-       	}
-        
-        for (Iterator<NodeType> it=superTypes.iterator(); it.hasNext();) {
-        	childnodeType.addSuperNodeType(it.next());
+        // Convert to a map of JCR node types ...
+        Map<String, javax.jcr.nodetype.NodeType> result = new HashMap<String, javax.jcr.nodetype.NodeType>();
+        for (NodeType nodeType : nodeTypesByName.values()) {
+            result.put(nodeType.getName(), nodeType);
         }
-        
- 		this.nodeTypeMap.put(childnodeType.getName(), childnodeType);
-		
-		if (childNode != null) {
-			processBody(childNode, childnodeType);
-		}
-
-        return childnodeType;
-
-    }
-   
-    /**
-     * @param jsonResponse the HTTP connection JSON response (never <code>null</code>) containing the NodeTypes
-     * @return the node types for this workspace (never <code>null</code>)
-     * @throws Exception if there is a problem obtaining the node types
-     */
-
-    @SuppressWarnings("unchecked")
-	public NodeType getNodeType( String jsonResponse ) throws Exception {
-        CheckArg.isNotNull(jsonResponse, "jsonResponse");
-        JSONObject jsonChild = new JSONObject(jsonResponse);        
-       
-        NodeType nodetype = createNodeType(null, jsonChild, null);
-
-       return nodetype;
-    }
-    
-    /**
-     * The Super Type weak reference is used because there's no guaranteed order for loading
-     * all the node types, therefore, a referenced super type might not have been loaded
-     * at the time of loading its child.   Therefore, the <code>findSuperTypeMap</code>
-     * is used to find the super type after the fact. 
-     *
-     */
-    class WeakSuperTypeReference extends NodeType {
-        private Map<String, NodeType>findSuperTypeMap = null;
-    	
-        public WeakSuperTypeReference( String name,
-        		Workspace workspace,
-        		Properties properties,
-        	    Map<String, NodeType>nodeTypeMap) {
-        	super(name, workspace, properties);
-        		findSuperTypeMap = nodeTypeMap;
-         }
-        
-        @SuppressWarnings("unchecked")
-		@Override
-    	public List<NodeType> getPropertyDefinitions() {
-        	NodeType superType = findSuperTypeMap.get(getName());
-        	return (List<NodeType>) (superType != null ? superType.getPropertyDefinitions() : Collections.emptyList());
-        }
-        
-        @SuppressWarnings("unchecked")
-        @Override
-    	public List<NodeType> getChildNodeDefinitions() {
-        	NodeType superType = findSuperTypeMap.get(getName());
-        	return (List<NodeType>) (superType != null ? superType.getChildNodeDefinitions() : Collections.emptyList());
-        }
-    	
+        nodeTypeMap = result;
+        return nodeTypeMap;
     }
 
+    protected void createNodeType( String name,
+                                   JSONObject body,
+                                   Map<String, NodeType> nodeTypes ) throws Exception {
+        JSONObject props = (JSONObject)body.get("properties");
+
+        // [nt:nodeType]
+        // - jcr:nodeTypeName (name) mandatory protected copy
+        // - jcr:supertypes (name) multiple protected copy
+        // - jcr:isAbstract (boolean) mandatory protected copy
+        // - jcr:isMixin (boolean) mandatory protected copy
+        // - jcr:isQueryable (boolean) mandatory protected copy
+        // - jcr:hasOrderableChildNodes (boolean) mandatory protected copy
+        // - jcr:primaryItemName (name) protected copy
+        // + jcr:propertyDefinition (nt:propertyDefinition) = nt:propertyDefinition sns protected copy
+        // + jcr:childNodeDefinition (nt:childNodeDefinition) = nt:childNodeDefinition sns protected copy
+
+        String nodeTypeName = valueFrom(props, "jcr:nodeTypeName");
+        if (EXCLUDE_TYPES.contains(nodeTypeName)) return;
+        boolean isMixin = valueFrom(props, "jcr:isMixin", false);
+        boolean isAbstract = valueFrom(props, "jcr:isAbstract", false);
+        boolean orderableChildren = valueFrom(props, "jcr:hasOrderableChildNodes", false);
+        boolean queryable = valueFrom(props, "jcr:isQueryable", false);
+        String primaryItemName = valueFrom(props, "jcr:primaryItemName");
+        List<String> superTypeNames = valuesFrom(props, "jcr:supertypes");
+        superTypeNames.removeAll(EXCLUDE_TYPES);
+
+        List<PropertyDefinition> propDefns = new ArrayList<PropertyDefinition>();
+        List<ChildNodeDefinition> childDefns = new ArrayList<ChildNodeDefinition>();
+
+        // Process the children (the property definition and child node definition objects) ...
+        if (body.has("children")) {
+            Object obj = body.get("children");
+            JSONObject children = (JSONObject)obj;
+            for (Iterator<?> itr = children.keys(); itr.hasNext();) {
+                String key = JsonUtils.decode(itr.next().toString());
+                Object child = children.get(key);
+                if (child != null) {
+                    // and that means that each child is a JSONObject ...
+                    if (key.startsWith("jcr:propertyDefinition")) { // may contain a SNS index
+                        PropertyDefinition defn = createPropertyDefinition(key, (JSONObject)child, nodeTypeName, nodeTypes);
+                        if (defn != null) propDefns.add(defn);
+                    } else if (key.startsWith("jcr:childNodeDefinition")) { // may contain a SNS index
+                        ChildNodeDefinition defn = createChildNodeDefinition(key, (JSONObject)child, nodeTypeName, nodeTypes);
+                        if (defn != null) childDefns.add(defn);
+                    }
+                }
+            }
+        }
+
+        // Create the node, which is automatically added to the map ...
+        new NodeType(nodeTypeName, isMixin, isAbstract, superTypeNames, propDefns, childDefns, primaryItemName,
+                     orderableChildren, queryable, nodeTypes);
+    }
+
+    protected PropertyDefinition createPropertyDefinition( String defnName,
+                                                           JSONObject body,
+                                                           String declaringNodeTypeName,
+                                                           Map<String, NodeType> nodeTypes ) throws Exception {
+        JSONObject props = (JSONObject)body.get("properties");
+
+        // [nt:propertyDefinition]
+        // - jcr:name (name) protected
+        // - jcr:autoCreated (boolean) mandatory protected
+        // - jcr:mandatory (boolean) mandatory protected
+        // - jcr:isFullTextSearchable (boolean) mandatory protected
+        // - jcr:isQueryOrderable (boolean) mandatory protected
+        // - jcr:onParentVersion (string) mandatory protected
+        // < 'COPY', 'VERSION', 'INITIALIZE', 'COMPUTE',
+        // 'IGNORE', 'ABORT'
+        // - jcr:protected (boolean) mandatory protected
+        // - jcr:requiredType (string) mandatory protected
+        // < 'STRING', 'BINARY', 'LONG', 'DOUBLE', 'BOOLEAN',
+        // 'DATE', 'NAME', 'PATH', 'REFERENCE', 'UNDEFINED'
+        // - jcr:valueConstraints (string) multiple protected
+        // - jcr:availableQueryOperators (name) mandatory multiple protected
+        // - jcr:defaultValues (undefined) multiple protected
+        // - jcr:multiple (boolean) mandatory protected
+
+        String name = valueFrom(props, "jcr:name", "*");
+        int requiredType = typeValueFrom(props, "jcr:requiredType", PropertyType.UNDEFINED);
+        boolean isAutoCreated = valueFrom(props, "jcr:autoCreated", false);
+        boolean isMandatory = valueFrom(props, "jcr:mandatory", false);
+        boolean isProtected = valueFrom(props, "jcr:protected", false);
+        boolean isFullTextSearchable = valueFrom(props, "jcr:isFullTextSearchable", false);
+        boolean isMultiple = valueFrom(props, "jcr:multiple", false);
+        boolean isQueryOrderable = valueFrom(props, "jcr:isQueryOrderable", false);
+        int onParentVersion = OnParentVersionAction.valueFromName(props.getString("jcr:onParentVersion"));
+        List<String> defaultValues = valuesFrom(props, "jcr:defaultValues");
+        List<String> valueConstraints = valuesFrom(props, "jcr:valueConstraints");
+        List<String> availableQueryOperations = valuesFrom(props, "jcr:availableQueryOperators");
+
+        return new PropertyDefinition(declaringNodeTypeName, name, requiredType, isAutoCreated, isMandatory, isProtected,
+                                      isFullTextSearchable, isMultiple, isQueryOrderable, onParentVersion, defaultValues,
+                                      valueConstraints, availableQueryOperations, nodeTypes);
+    }
+
+    protected ChildNodeDefinition createChildNodeDefinition( String defnName,
+                                                             JSONObject body,
+                                                             String declaringNodeTypeName,
+                                                             Map<String, NodeType> nodeTypes ) throws Exception {
+        JSONObject props = (JSONObject)body.get("properties");
+
+        // [nt:childNodeDefinition]
+        // - jcr:name (name) protected
+        // - jcr:autoCreated (boolean) mandatory protected
+        // - jcr:mandatory (boolean) mandatory protected
+        // - jcr:onParentVersion (string) mandatory protected
+        // < 'COPY', 'VERSION', 'INITIALIZE', 'COMPUTE',
+        // 'IGNORE', 'ABORT'
+        // - jcr:protected (boolean) mandatory protected
+        // - jcr:requiredPrimaryTypes (name) = 'nt:base' mandatory protected multiple
+        // - jcr:defaultPrimaryType (name) protected
+        // - jcr:sameNameSiblings (boolean) mandatory protected
+
+        String name = valueFrom(props, "jcr:name", "*");
+        boolean isAutoCreated = valueFrom(props, "jcr:autoCreated", false);
+        boolean isMandatory = valueFrom(props, "jcr:mandatory", false);
+        boolean isProtected = valueFrom(props, "jcr:protected", false);
+        boolean allowsSns = valueFrom(props, "jcr:sameNameSiblings", false);
+        Set<String> requiredTypes = new HashSet<String>(valuesFrom(props, "jcr:requiredPrimaryTypes"));
+        String defaultPrimaryType = valueFrom(props, "jcr:defaultPrimaryType");
+        int onParentVersion = OnParentVersionAction.valueFromName(props.getString("jcr:onParentVersion"));
+
+        return new ChildNodeDefinition(declaringNodeTypeName, name, requiredTypes, isAutoCreated, isMandatory, isProtected,
+                                       allowsSns, onParentVersion, defaultPrimaryType, nodeTypes);
+    }
+
+    protected List<String> valuesFrom( JSONObject properties,
+                                       String name ) throws Exception {
+        if (!properties.has(name)) {
+            // Just an empty collection ...
+            return Collections.emptyList();
+        }
+        Object prop = properties.get(name);
+        if (prop instanceof JSONArray) {
+            // There are multple values ...
+            JSONArray superArray = (JSONArray)prop;
+            int length = superArray.length();
+            if (length == 0) return Collections.emptyList();
+            List<String> result = new ArrayList<String>(length);
+            for (int i = 0; i < length; i++) {
+                String value = superArray.getString(i);
+                result.add(value);
+            }
+            return result;
+        }
+        // Just a single value ...
+        return Collections.singletonList(prop.toString());
+    }
+
+    protected boolean valueFrom( JSONObject properties,
+                                 String name,
+                                 boolean defaultValue ) throws Exception {
+        if (!properties.has(name)) {
+            return defaultValue;
+        }
+        return properties.getBoolean(name);
+    }
+
+    protected String valueFrom( JSONObject properties,
+                                String name ) throws Exception {
+        return valueFrom(properties, name, (String)null);
+    }
+
+    protected String valueFrom( JSONObject properties,
+                                String name,
+                                String defaultValue ) throws Exception {
+        if (!properties.has(name)) {
+            return defaultValue;
+        }
+        return properties.getString(name);
+    }
+
+    protected int typeValueFrom( JSONObject properties,
+                                 String name,
+                                 int defaultType ) throws Exception {
+        if (!properties.has(name)) return defaultType;
+        String typeName = properties.getString(name);
+        Integer result = PROPERTY_TYPES_BY_LOWERCASE_NAME.get(typeName.toLowerCase());
+        return result != null ? result.intValue() : defaultType;
+    }
 }

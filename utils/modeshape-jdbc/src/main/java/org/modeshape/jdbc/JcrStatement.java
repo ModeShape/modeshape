@@ -28,17 +28,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
-
 import javax.jcr.RepositoryException;
 import javax.jcr.query.QueryResult;
-
 import org.modeshape.jdbc.delegate.RepositoryDelegate;
+
 /**
  * 
  */
 class JcrStatement implements Statement {
 
- 
     private final JcrConnection connection;
     private QueryResult jcrResults;
     private ResultSet results;
@@ -48,10 +46,10 @@ class JcrStatement implements Statement {
     private int fetchDirection = ResultSet.FETCH_FORWARD;
     private boolean poolable;
     private int moreResults = 0;
-     
+
     private String sqlLanguage = JcrConnection.JCR_SQL2;
 
-    JcrStatement( JcrConnection connection) {
+    JcrStatement( JcrConnection connection ) {
         this.connection = connection;
         assert this.connection != null;
     }
@@ -59,9 +57,9 @@ class JcrStatement implements Statement {
     JcrConnection connection() {
         return this.connection;
     }
-    
-    public void setJcrSqlLanguage(String jcrSQL) {
-    	this.sqlLanguage = (jcrSQL != null ? jcrSQL : JcrConnection.JCR_SQL2);
+
+    public void setJcrSqlLanguage( String jcrSQL ) {
+        this.sqlLanguage = (jcrSQL != null ? jcrSQL : JcrConnection.JCR_SQL2);
     }
 
     /**
@@ -155,7 +153,7 @@ class JcrStatement implements Statement {
     public int getMaxRows() throws SQLException {
         notClosed();
         // need to map ModeShapes -1 rowLimit to 0
-        // because the jdbc spec indicate maxRows must be >= 0 
+        // because the jdbc spec indicate maxRows must be >= 0
         // or an exception should be thrown.
         return (rowLimit == -1 ? 0 : rowLimit);
     }
@@ -434,12 +432,10 @@ class JcrStatement implements Statement {
         }
         return true; // always a ResultSet
     }
-    
+
     protected RepositoryDelegate getJcrRepositoryDelegate() {
-    	return this.connection.getRepositoryDelegate();
+        return this.connection.getRepositoryDelegate();
     }
-    
-    
 
     /**
      * {@inheritDoc}
@@ -491,9 +487,9 @@ class JcrStatement implements Statement {
      * @see java.sql.Statement#getGeneratedKeys()
      */
     @Override
-    public ResultSet getGeneratedKeys() throws SQLException {
-    // TODO:  if and when ModeShape supports providing key information
-    //		then a result set containing the metadata will need to be created.
+    public ResultSet getGeneratedKeys() /*throws SQLException*/{
+        // TODO: if and when ModeShape supports providing key information
+        // then a result set containing the metadata will need to be created.
         return new JcrResultSet();
     }
 
@@ -591,7 +587,7 @@ class JcrStatement implements Statement {
      */
     @Override
     public boolean isWrapperFor( Class<?> iface ) /*throws SQLException*/{
-        return iface.isInstance(this) ;
+        return iface.isInstance(this);
     }
 
     /**
@@ -601,12 +597,11 @@ class JcrStatement implements Statement {
      */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
-    	if (!isWrapperFor(iface)) {
-    	       throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text(Statement.class.getSimpleName(),
-                       iface.getName()));
-    	}
-    	
-    	return iface.cast(this);
-     }
+        if (!isWrapperFor(iface)) {
+            throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text(Statement.class.getSimpleName(), iface.getName()));
+        }
+
+        return iface.cast(this);
+    }
 
 }

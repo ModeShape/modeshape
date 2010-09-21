@@ -23,57 +23,52 @@
  */
 package org.modeshape.jdbc.delegate;
 
-import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
-
 import org.modeshape.jdbc.JcrDriver;
 import org.modeshape.jdbc.JdbcI18n;
 import org.modeshape.jdbc.JcrDriver.JcrContextFactory;
 
 /**
- * The RepositoryDelegateFactory is used to create the required type of {@link RepositoryDelegate} based upon the <i>url</i> provided.  
- * The <i>url</i> must be prefixed by either {@value JcrDriver#JNDI_URL_PREFIX} or {@value JcrDriver#HTTP_URL_PREFIX}.
- * 
+ * The RepositoryDelegateFactory is used to create the required type of {@link RepositoryDelegate} based upon the <i>url</i>
+ * provided. The <i>url</i> must be prefixed by either {@value JcrDriver#JNDI_URL_PREFIX} or {@value JcrDriver#HTTP_URL_PREFIX}.
  */
 public class RepositoryDelegateFactory {
- 
-    
+
     private static final int JNDI_URL_OPTION = 1;
-    private static final int HTTP_URL_OPTION = 2; 
+    private static final int HTTP_URL_OPTION = 2;
 
-    public static RepositoryDelegate createRepositoryDelegate(String url, Properties info, JcrContextFactory contextFactory) throws SQLException {
-		if (! acceptUrl(url)) {
-		    throw new SQLException(JdbcI18n.invalidUrlPrefix
-			    .text(JcrDriver.JNDI_URL_PREFIX, JcrDriver.HTTP_URL_PREFIX));
-		}
-		RepositoryDelegate jcri = create(url, info, contextFactory);
-		
-		// TODO:  an exception should be thrown if a property info is not available.
-		//			the getPropertyInfos on the driver should return what the driver
-		//			needs in order to connect
-//		DriverPropertyInfo[] infos = jcri.getConnectionInfo().getPropertyInfos();
-//		if (infos != null && infos.length > 0) {
-//			StringBuilder missing = new StringBuilder();
-//			for (int i = 0; i < infos.length; i++) {
-//				missing.append(infos[i].description);
-//				if (i + 1 < infos.length) {
-//					missing.append(",");
-//				}
-//			}			
-//			
-//			throw new SQLException(JdbcI18n.invalidUrl.text(missing.toString()));
-//		}
-		return jcri;
+    public static RepositoryDelegate createRepositoryDelegate( String url,
+                                                               Properties info,
+                                                               JcrContextFactory contextFactory ) throws SQLException {
+        if (!acceptUrl(url)) {
+            throw new SQLException(JdbcI18n.invalidUrlPrefix.text(JcrDriver.JNDI_URL_PREFIX, JcrDriver.HTTP_URL_PREFIX));
+        }
+        RepositoryDelegate jcri = create(url, info, contextFactory);
+
+        // TODO: an exception should be thrown if a property info is not available.
+        // the getPropertyInfos on the driver should return what the driver
+        // needs in order to connect
+        // DriverPropertyInfo[] infos = jcri.getConnectionInfo().getPropertyInfos();
+        // if (infos != null && infos.length > 0) {
+        // StringBuilder missing = new StringBuilder();
+        // for (int i = 0; i < infos.length; i++) {
+        // missing.append(infos[i].description);
+        // if (i + 1 < infos.length) {
+        // missing.append(",");
+        // }
+        // }
+        //			
+        // throw new SQLException(JdbcI18n.invalidUrl.text(missing.toString()));
+        // }
+        return jcri;
     }
 
-    
-    public static boolean acceptUrl(String url) {
-    	return ( getUrlOption(url) > 0 ? true : false);
+    public static boolean acceptUrl( String url ) {
+        return (getUrlOption(url) > 0 ? true : false);
     }
-    
-    
-    private static int  getUrlOption(String url){
+
+    private static int getUrlOption( String url ) {
         if (url == null || url.trim().length() == 0) return -1;
         String trimmedUrl = url.trim();
         if (trimmedUrl.startsWith(JcrDriver.JNDI_URL_PREFIX) && trimmedUrl.length() > JcrDriver.JNDI_URL_PREFIX.length()) {
@@ -87,18 +82,20 @@ public class RepositoryDelegateFactory {
 
         return -1;
     }
-    
-    private static RepositoryDelegate create(String url, Properties info, JcrContextFactory contextFactory) {
-	
-		switch (getUrlOption(url)) {
-		case JNDI_URL_OPTION:
-		    return new LocalRepositoryDelegate(url, info, contextFactory);
 
-		case HTTP_URL_OPTION:
-		    return new HttpRepositoryDelegate(url, info, contextFactory );
-			
-		default:
-		    return null;
-		}
+    private static RepositoryDelegate create( String url,
+                                              Properties info,
+                                              JcrContextFactory contextFactory ) {
+
+        switch (getUrlOption(url)) {
+            case JNDI_URL_OPTION:
+                return new LocalRepositoryDelegate(url, info, contextFactory);
+
+            case HTTP_URL_OPTION:
+                return new HttpRepositoryDelegate(url, info, contextFactory);
+
+            default:
+                return null;
+        }
     }
 }

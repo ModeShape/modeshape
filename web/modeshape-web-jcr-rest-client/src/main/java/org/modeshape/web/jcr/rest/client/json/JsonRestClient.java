@@ -43,7 +43,6 @@ import org.modeshape.web.jcr.rest.client.IRestClient;
 import org.modeshape.web.jcr.rest.client.RestClientI18n;
 import org.modeshape.web.jcr.rest.client.Status;
 import org.modeshape.web.jcr.rest.client.Status.Severity;
-import org.modeshape.web.jcr.rest.client.domain.NodeType;
 import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
@@ -230,17 +229,14 @@ public final class JsonRestClient implements IRestClient {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeTypes(org.modeshape.web.jcr.rest.client.domain.Workspace,
-     *      java.lang.String, java.lang.String)
+     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeTypes(org.modeshape.web.jcr.rest.client.domain.Workspace)
      */
     @Override
-    public Collection<NodeType> getNodeTypes( Workspace workspace,
-                                              String relativePath,
-                                              String nodeDepth ) throws Exception {
+    public Map<String, javax.jcr.nodetype.NodeType> getNodeTypes( Workspace workspace ) throws Exception {
         assert workspace != null;
-        LOGGER.trace("getNodeTypes: workspace={0}, relativePath{1}, depth{2}", workspace, relativePath, nodeDepth);
+        LOGGER.trace("getNodeTypes: workspace={0}", workspace);
 
-        NodeTypeNode nodetypeNode = new NodeTypeNode(workspace, relativePath, nodeDepth);
+        NodeTypeNode nodetypeNode = new NodeTypeNode(workspace);
         HttpClientConnection connection = connect(workspace.getServer(), nodetypeNode.getUrl(), RequestMethod.GET);
 
         try {
@@ -253,41 +249,6 @@ public final class JsonRestClient implements IRestClient {
             // not a good response code
             LOGGER.error(RestClientI18n.connectionErrorMsg, responseCode, "getNodeTypes");
             String msg = RestClientI18n.getNodeTypesFailedMsg.text(nodetypeNode.getUrl(), responseCode);
-            throw new RuntimeException(msg);
-        } finally {
-            if (connection != null) {
-                LOGGER.trace("getNodeTypes: leaving");
-                connection.disconnect();
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeType(Workspace, java.lang.String, java.lang.String)
-     */
-    @Override
-    public NodeType getNodeType( Workspace workspace,
-                                 String relativePath,
-                                 String nodeDepth ) throws Exception {
-        assert workspace != null;
-        assert relativePath != null;
-        LOGGER.trace("getNodeType: workspace={0}, relativePath={1}", workspace, relativePath);
-
-        NodeTypeNode nodetypeNode = new NodeTypeNode(workspace, relativePath, nodeDepth);
-        HttpClientConnection connection = connect(workspace.getServer(), nodetypeNode.getUrl(), RequestMethod.GET);
-
-        try {
-            int responseCode = connection.getResponseCode();
-
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                return nodetypeNode.getNodeType(connection.read());
-            }
-
-            // not a good response code
-            LOGGER.error(RestClientI18n.connectionErrorMsg, responseCode, "getNodeType");
-            String msg = RestClientI18n.getNodeTypeFailedMsg.text(relativePath, nodetypeNode.getUrl(), responseCode);
             throw new RuntimeException(msg);
         } finally {
             if (connection != null) {

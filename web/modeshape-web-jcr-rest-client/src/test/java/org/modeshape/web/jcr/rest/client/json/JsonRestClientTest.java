@@ -32,13 +32,14 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import javax.jcr.nodetype.NodeType;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.web.jcr.rest.client.IJcrConstants;
 import org.modeshape.web.jcr.rest.client.IRestClient;
 import org.modeshape.web.jcr.rest.client.Status;
-import org.modeshape.web.jcr.rest.client.domain.NodeType;
 import org.modeshape.web.jcr.rest.client.domain.QueryRow;
 import org.modeshape.web.jcr.rest.client.domain.Repository;
 import org.modeshape.web.jcr.rest.client.domain.Server;
@@ -107,34 +108,18 @@ public final class JsonRestClientTest {
     @Test
     public void shouldGetNodeTypes() throws Exception {
         Workspace ws = new Workspace(WORKSPACE_NAME, REPOSITORY1);
-        Collection<NodeType> results = this.restClient.getNodeTypes(ws, "jcr:system", "?depth=5");
+        Map<String, NodeType> nodeTypes = this.restClient.getNodeTypes(ws);
+
         // this is currently the number returned from the default jbossas installation
         // assertThat(results.size(), is(2));
 
-        for (Iterator<NodeType> it = results.iterator(); it.hasNext();) {
+        for (Iterator<NodeType> it = nodeTypes.values().iterator(); it.hasNext();) {
             NodeType nt = it.next();
             System.out.println("NODETYPE: " + nt.getName());
-            List<NodeType> children = nt.getChildren();
-            if (children != null) {
-                for (Iterator<NodeType> itc = children.iterator(); itc.hasNext();) {
-                    NodeType ntc = itc.next();
-                    System.out.println("NODETYPECHILD: " + ntc.getName());
-                }
-            }
-
+            System.out.println("   declared supertypes:             " + nt.getSupertypes());
+            System.out.println("   declared property definitions:   " + nt.getDeclaredPropertyDefinitions());
+            System.out.println("   declared child node definitions: " + nt.getDeclaredPropertyDefinitions());
         }
-    }
-
-    // Test is not currently working as a unit test, cause it throws an exception when using the default cargo setup
-    // but does work when pointed at a local jbossas server
-    // TODO: determine how to add/setup the local cargo server with cnd files
-    @Ignore
-    @Test
-    public void shouldGetNodeType() throws Exception {
-        Workspace ws = new Workspace(WORKSPACE_NAME, REPOSITORY1);
-        NodeType nt = this.restClient.getNodeType(ws, "mode:system/nodeTypes/nt:base", "?depth=2");
-
-        assertThat(nt, is(notNullValue()));
     }
 
     @Test
