@@ -182,9 +182,16 @@ public class JcrRepository implements Repository {
         SYSTEM_SOURCE_NAME,
 
         /**
-         * The depth of the subgraphs that should be loaded the connectors. The default value is 1.
+         * The depth of the subgraphs that should be loaded from the connectors during normal read operations. The default value
+         * is 1.
          */
         READ_DEPTH,
+
+        /**
+         * The depth of the subgraphs that should be loaded from the connectors during indexing operations. The default value is
+         * 10.
+         */
+        INDEX_READ_DEPTH,
 
         /**
          * A comma-delimited list of default roles provided for anonymous access. A null or empty value for this option means that
@@ -312,6 +319,11 @@ public class JcrRepository implements Repository {
         public static final String READ_DEPTH = "1";
 
         /**
+         * The default value for the {@link Option#INDEX_READ_DEPTH} option is {@value} .
+         */
+        public static final String INDEX_READ_DEPTH = "4";
+
+        /**
          * The default value for the {@link Option#ANONYMOUS_USER_ROLES} option is {@value} .
          */
         public static final String ANONYMOUS_USER_ROLES = ModeShapeRoles.ADMIN;
@@ -391,6 +403,7 @@ public class JcrRepository implements Repository {
         defaults.put(Option.PROJECT_NODE_TYPES, DefaultOption.PROJECT_NODE_TYPES);
         defaults.put(Option.JAAS_LOGIN_CONFIG_NAME, DefaultOption.JAAS_LOGIN_CONFIG_NAME);
         defaults.put(Option.READ_DEPTH, DefaultOption.READ_DEPTH);
+        defaults.put(Option.INDEX_READ_DEPTH, DefaultOption.INDEX_READ_DEPTH);
         defaults.put(Option.ANONYMOUS_USER_ROLES, DefaultOption.ANONYMOUS_USER_ROLES);
         defaults.put(Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES,
                      DefaultOption.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES);
@@ -631,10 +644,11 @@ public class JcrRepository implements Repository {
                 // Otherwise create a repository query manager that maintains its own search engine ...
                 String indexDirectory = this.options.get(Option.QUERY_INDEX_DIRECTORY);
                 boolean updateIndexesSynchronously = Boolean.valueOf(this.options.get(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY));
+                int maxDepthToRead = Integer.valueOf(this.options.get(Option.INDEX_READ_DEPTH));
                 this.queryManager = new RepositoryQueryManager.SelfContained(this.executionContext, this.sourceName,
                                                                              connectionFactory, repositoryObservable,
                                                                              repositoryTypeManager, indexDirectory,
-                                                                             updateIndexesSynchronously);
+                                                                             updateIndexesSynchronously, maxDepthToRead);
             }
         } else {
             this.queryManager = new RepositoryQueryManager.Disabled(this.sourceName);

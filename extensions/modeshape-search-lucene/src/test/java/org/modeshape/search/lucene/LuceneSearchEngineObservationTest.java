@@ -96,6 +96,7 @@ public class LuceneSearchEngineObservationTest {
     private SqlQueryParser sql;
     private Map<String, Object> variables;
     private Stopwatch sw;
+    private int depthToRead;
 
     /** Controls whether the results from each test should be printed to System.out */
     private boolean print = false;
@@ -106,6 +107,7 @@ public class LuceneSearchEngineObservationTest {
         typeSystem = context.getValueFactories().getTypeSystem();
         workspaceName1 = "cars";
         workspaceName2 = "aircraft";
+        depthToRead = 10;
         sw = new Stopwatch();
 
         sourceName = "source";
@@ -148,7 +150,7 @@ public class LuceneSearchEngineObservationTest {
         LuceneConfiguration luceneConfig = LuceneConfigurations.inMemory();
         // LuceneConfiguration luceneConfig = LuceneConfigurations.using(new File("target/testIndexes"));
         Analyzer analyzer = null;
-        searchEngine = new LuceneSearchEngine(sourceName, connectionFactory, false, luceneConfig, rules, analyzer);
+        searchEngine = new LuceneSearchEngine(sourceName, connectionFactory, false, depthToRead, luceneConfig, rules, analyzer);
 
         // Initialize the source so that the search engine observes the events ...
         @SuppressWarnings( "synthetic-access" )
@@ -323,7 +325,7 @@ public class LuceneSearchEngineObservationTest {
         // Prime the search engine ...
         sw.reset();
         sw.start();
-        SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory, depthToRead);
         indexer.indexAllWorkspaces();
         indexer.close();
         sw.stop();
@@ -347,7 +349,7 @@ public class LuceneSearchEngineObservationTest {
         // And measure the time required to re-index ...
         sw.reset();
         sw.start();
-        indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory);
+        indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory, 10);
         indexer.indexAllWorkspaces();
         indexer.close();
         sw.stop();

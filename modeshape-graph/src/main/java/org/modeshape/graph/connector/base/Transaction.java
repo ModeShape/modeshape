@@ -167,6 +167,16 @@ public interface Transaction<NodeType extends Node, WorkspaceType extends Worksp
                                 NodeType node );
 
     /**
+     * Get the locations for all children of the supplied node.
+     * 
+     * @param workspace the workspace; may not be null
+     * @param node the node whose children are to be returned; may not be null
+     * @return the locations of all children, never null but possibly empty
+     */
+    List<Location> getChildrenLocations( WorkspaceType workspace,
+                                         NodeType node );
+
+    /**
      * Removes all of the children for this node in a single operation.
      * 
      * @param workspace the workspace; may not be null

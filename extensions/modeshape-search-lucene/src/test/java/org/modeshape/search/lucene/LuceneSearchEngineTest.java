@@ -81,6 +81,7 @@ public class LuceneSearchEngineTest {
     private String workspaceName2;
     private InMemoryRepositorySource source;
     private RepositoryConnectionFactory connectionFactory;
+    private int depthToRead;
     private Graph content;
     private Schemata schemata;
     private SqlQueryParser sql;
@@ -96,6 +97,7 @@ public class LuceneSearchEngineTest {
         sourceName = "sourceA";
         workspaceName1 = "workspace1";
         workspaceName2 = "workspace2";
+        depthToRead = 10;
 
         // Set up the source and graph instance ...
         source = new InMemoryRepositorySource();
@@ -127,7 +129,7 @@ public class LuceneSearchEngineTest {
         LuceneConfiguration luceneConfig = LuceneConfigurations.inMemory();
         // LuceneConfiguration luceneConfig = LuceneConfigurations.using(new File("target/testIndexes"));
         Analyzer analyzer = null;
-        engine = new LuceneSearchEngine(sourceName, connectionFactory, true, luceneConfig, rules, analyzer);
+        engine = new LuceneSearchEngine(sourceName, connectionFactory, true, depthToRead, luceneConfig, rules, analyzer);
         loadContent();
 
         // Load the workspaces into the engine ...
@@ -246,13 +248,13 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldIndexAllContentInRepositorySource() throws Exception {
-        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory, depthToRead);
         indexer.indexAllWorkspaces().close();
     }
 
     @Test
     public void shouldIndexAllContentInWorkspace() throws Exception {
-        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory, depthToRead);
         indexer.index(workspaceName1);
         indexer.index(workspaceName2);
         indexer.close();
@@ -260,7 +262,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldIndexAllContentInWorkspaceBelowPath() throws Exception {
-        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory, depthToRead);
         indexer.index(workspaceName1, path("/Cars/Hybrid"), 3);
         indexer.index(workspaceName2, path("/Aircraft/Commercial"), 5);
         indexer.close();
@@ -268,7 +270,7 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldReIndexAllContentInWorkspaceBelowPath() throws Exception {
-        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory, depthToRead);
         for (int i = 0; i != 0; i++) {
             indexer.index(workspaceName1, path("/Cars/Hybrid"), 3);
             indexer.index(workspaceName2, path("/Aircraft/Commercial"), 5);
@@ -284,49 +286,49 @@ public class LuceneSearchEngineTest {
 
     @Test
     public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfOne() {
-        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory, depthToRead);
         indexer.index(workspaceName1, path("/"), 1);
         indexer.close();
     }
 
     @Test
     public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfTwo() {
-        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory, depthToRead);
         indexer.index(workspaceName1, path("/"), 2);
         indexer.close();
     }
 
     @Test
     public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfThree() {
-        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory, depthToRead);
         indexer.index(workspaceName1, path("/"), 3);
         indexer.close();
     }
 
     @Test
     public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfFour() {
-        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory, depthToRead);
         indexer.index(workspaceName1, path("/"), 4);
         indexer.close();
     }
 
     @Test
     public void shouldIndexRepositoryContentStartingAtRootAndUsingDepthOfTen() {
-        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory, depthToRead);
         indexer.index(workspaceName1, path("/"), 10);
         indexer.close();
     }
 
     @Test
     public void shouldIndexRepositoryContentStartingAtNonRootNode() {
-        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory, depthToRead);
         indexer.index(workspaceName1, path("/Cars"), 10);
         indexer.close();
     }
 
     @Test
     public void shouldReIndexRepositoryContentStartingAtNonRootNode() {
-        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory, depthToRead);
         indexer.index(workspaceName1, path("/Cars"), 10);
         indexer.index(workspaceName1, path("/Cars"), 10);
         indexer.index(workspaceName1, path("/Cars"), 10);
@@ -338,7 +340,7 @@ public class LuceneSearchEngineTest {
     // ----------------------------------------------------------------------------------------------------------------
 
     protected void indexWorkspace( String workspaceName ) {
-        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory);
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, engine, connectionFactory, depthToRead);
         try {
             indexer.index(workspaceName, path("/"));
         } finally {

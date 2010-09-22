@@ -25,10 +25,13 @@ package org.modeshape.connector.filesystem;
 
 import java.io.File;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.UUID;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
+import org.modeshape.graph.Location;
 import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.base.PathNode;
@@ -37,6 +40,8 @@ import org.modeshape.graph.connector.base.Processor;
 import org.modeshape.graph.connector.base.Repository;
 import org.modeshape.graph.connector.base.Transaction;
 import org.modeshape.graph.observe.Observer;
+import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.Path.Segment;
@@ -89,9 +94,10 @@ public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspa
 
         super.initialize();
     }
+
     private void createDirectory( File directory ) {
         File parent = directory.getParentFile();
-        
+
         if (!parent.exists()) {
             createDirectory(parent);
         } else if (parent.isFile()) {
@@ -133,7 +139,7 @@ public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspa
 
     @Override
     public FileSystemTransaction startTransaction( ExecutionContext context,
-                                                                        boolean readonly ) {
+                                                   boolean readonly ) {
         return new FileSystemTransaction(this, source.getRootNodeUuidObject());
     }
 
@@ -190,11 +196,14 @@ public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspa
      */
     class FileSystemProcessor extends Processor<PathNode, FileSystemWorkspace> {
 
+        private final NameFactory nameFactory;
+
         public FileSystemProcessor( Transaction<PathNode, FileSystemWorkspace> txn,
                                     Repository<PathNode, FileSystemWorkspace> repository,
                                     Observer observer,
                                     boolean updatesAllowed ) {
             super(txn, repository, observer, updatesAllowed);
+            this.nameFactory = txn.getContext().getValueFactories().getNameFactory();
         }
 
         @Override
@@ -206,5 +215,37 @@ public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspa
             super.process(request);
         }
 
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.request.processor.RequestProcessor#absoluteMaximumDepthForBranchReads()
+         */
+        @Override
+        protected int absoluteMaximumDepthForBranchReads() {
+            // never read more than two levels from a file system repository, as the file content can get too big
+            return 2;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.request.processor.RequestProcessor#includeChildrenInSubgraph(org.modeshape.graph.Location,
+         *      java.util.Map, boolean)
+         */
+        @Override
+        protected boolean includeChildrenInSubgraph( Location location,
+                                                     Map<Name, Property> properties,
+                                                     boolean topOfSubgraph ) {
+            if (topOfSubgraph) return true;
+            // We never want to include the children of 'nt:file' nodes in a subgraph ...
+            Property prop = properties.get(JcrLexicon.PRIMARY_TYPE);
+            if (prop == null || prop.isEmpty()) return true;
+            Name primaryType = nameFactory.create(prop.getFirstValue());
+            if (JcrNtLexicon.FILE.equals(primaryType)) {
+                // Include no children of an 'nt:file' ...
+                return false;
+            }
+            return true;
+        }
     }
 }

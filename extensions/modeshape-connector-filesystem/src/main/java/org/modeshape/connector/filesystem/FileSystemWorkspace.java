@@ -15,9 +15,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
@@ -38,6 +40,7 @@ import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
+import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.request.Request;
 
@@ -53,6 +56,9 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
     private final FileSystemRepository repository;
     private final ExecutionContext context;
     private final File workspaceRoot;
+    private final boolean eagerLoading;
+    private final boolean contentUsedToDetermineMimeType;
+    private final Logger logger;
 
     public FileSystemWorkspace( String name,
                                 FileSystemWorkspace originalToClone,
@@ -63,6 +69,9 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
         this.context = originalToClone.context;
         this.workspaceRoot = workspaceRoot;
         this.repository = originalToClone.repository;
+        this.eagerLoading = this.source.isEagerFileLoading();
+        this.contentUsedToDetermineMimeType = this.source.isContentUsedToDetermineMimeType();
+        this.logger = Logger.getLogger(getClass());
 
         cloneWorkspace(originalToClone);
     }
@@ -74,6 +83,9 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
         this.repository = repository;
         this.context = repository.getContext();
         this.source = repository.source;
+        this.eagerLoading = this.source.isEagerFileLoading();
+        this.contentUsedToDetermineMimeType = this.source.isContentUsedToDetermineMimeType();
+        this.logger = Logger.getLogger(getClass());
     }
 
     private void cloneWorkspace( FileSystemWorkspace original ) {
@@ -310,103 +322,144 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
     public PathNode getNode( Path path ) {
         Map<Name, Property> properties = new HashMap<Name, Property>();
 
-        PropertyFactory factory = context.getPropertyFactory();
-        PathFactory pathFactory = context.getValueFactories().getPathFactory();
-        DateTimeFactory dateFactory = context.getValueFactories().getDateFactory();
-        MimeTypeDetector mimeTypeDetector = context.getMimeTypeDetector();
-        CustomPropertiesFactory customPropertiesFactory = source.customPropertiesFactory();
-        NamespaceRegistry registry = context.getNamespaceRegistry();
-        Location location = Location.create(path);
+        long startTime = System.nanoTime();
+        Name nodeType = null;
+        try {
 
-        if (!path.isRoot() && JcrLexicon.CONTENT.equals(path.getLastSegment().getName())) {
-            File file = fileFor(path.getParent());
-            if (file == null) return null;
-            // Discover the mime type ...
-            String mimeType = null;
-            InputStream contents = null;
-            try {
-                contents = new BufferedInputStream(new FileInputStream(file));
-                mimeType = mimeTypeDetector.mimeTypeOf(file.getName(), contents);
-                if (mimeType == null) mimeType = DEFAULT_MIME_TYPE;
-                properties.put(JcrLexicon.MIMETYPE, factory.create(JcrLexicon.MIMETYPE, mimeType));
-            } catch (IOException e) {
-                I18n msg = FileSystemI18n.couldNotReadData;
-                throw new RepositorySourceException(source.getName(), msg.text(source.getName(),
-                                                                               getName(),
-                                                                               path.getString(registry)));
-            } finally {
-                if (contents != null) {
-                    try {
-                        contents.close();
-                    } catch (IOException e) {
+            PropertyFactory factory = context.getPropertyFactory();
+            PathFactory pathFactory = context.getValueFactories().getPathFactory();
+            DateTimeFactory dateFactory = context.getValueFactories().getDateFactory();
+            MimeTypeDetector mimeTypeDetector = context.getMimeTypeDetector();
+            CustomPropertiesFactory customPropertiesFactory = source.customPropertiesFactory();
+            NamespaceRegistry registry = context.getNamespaceRegistry();
+            Location location = Location.create(path);
+
+            if (!path.isRoot() && JcrLexicon.CONTENT.equals(path.getLastSegment().getName())) {
+                File file = fileFor(path.getParent());
+                if (file == null) return null;
+                // Discover the mime type ...
+                String mimeType = null;
+                InputStream contents = null;
+                try {
+                    if (contentUsedToDetermineMimeType) {
+                        contents = new BufferedInputStream(new FileInputStream(file));
+                    }
+                    mimeType = mimeTypeDetector.mimeTypeOf(file.getName(), contents);
+                    if (mimeType == null) mimeType = DEFAULT_MIME_TYPE;
+                    properties.put(JcrLexicon.MIMETYPE, factory.create(JcrLexicon.MIMETYPE, mimeType));
+                } catch (IOException e) {
+                    I18n msg = FileSystemI18n.couldNotReadData;
+                    throw new RepositorySourceException(source.getName(), msg.text(source.getName(),
+                                                                                   getName(),
+                                                                                   path.getString(registry)));
+                } finally {
+                    if (contents != null) {
+                        try {
+                            contents.close();
+                        } catch (IOException e) {
+                        }
                     }
                 }
+
+                // First add any custom properties ...
+                Collection<Property> customProps = customPropertiesFactory.getResourceProperties(context,
+                                                                                                 location,
+                                                                                                 file,
+                                                                                                 mimeType);
+                for (Property customProp : customProps) {
+                    properties.put(customProp.getName(), customProp);
+                }
+
+                // The request is to get properties of the "jcr:content" child node ...
+                // ... use the dna:resource node type. This is the same as nt:resource, but is not referenceable
+                // since we cannot assume that we control all access to this file and can track its movements
+                nodeType = JcrNtLexicon.RESOURCE;
+                properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE));
+                properties.put(JcrLexicon.LAST_MODIFIED, factory.create(JcrLexicon.LAST_MODIFIED,
+                                                                        dateFactory.create(file.lastModified())));
+                // Now put the file's content into the "jcr:data" property ...
+                BinaryFactory binaryFactory = context.getValueFactories().getBinaryFactory();
+                Binary binary = binaryFactory.create(file);
+                properties.put(JcrLexicon.DATA, factory.create(JcrLexicon.DATA, binary));
+
+                // Don't really know the encoding, either ...
+                // properties.put(JcrLexicon.ENCODED, factory.create(JcrLexicon.ENCODED, "UTF-8"));
+
+                // return new PathNode(path, null, properties, Collections.<Segment>emptyList());
+                return new PathNode(null, path.getParent(), path.getLastSegment(), properties, Collections.<Segment>emptyList());
             }
 
-            // First add any custom properties ...
-            Collection<Property> customProps = customPropertiesFactory.getResourceProperties(context, location, file, mimeType);
-            for (Property customProp : customProps) {
-                properties.put(customProp.getName(), customProp);
-            }
+            File file = fileFor(path);
+            if (file == null) return null;
 
-            // The request is to get properties of the "jcr:content" child node ...
-            // ... use the dna:resource node type. This is the same as nt:resource, but is not referenceable
-            // since we cannot assume that we control all access to this file and can track its movements
-            properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE));
-            properties.put(JcrLexicon.LAST_MODIFIED, factory.create(JcrLexicon.LAST_MODIFIED,
-                                                                    dateFactory.create(file.lastModified())));
-            // Now put the file's content into the "jcr:data" property ...
-            BinaryFactory binaryFactory = context.getValueFactories().getBinaryFactory();
-            Binary binary = binaryFactory.create(file);
-            properties.put(JcrLexicon.DATA, factory.create(JcrLexicon.DATA, binary));
+            if (file.isDirectory()) {
+                String[] childNames = file.list(source.filenameFilter());
+                Arrays.sort(childNames);
 
-            // Don't really know the encoding, either ...
-            // properties.put(JcrLexicon.ENCODED, factory.create(JcrLexicon.ENCODED, "UTF-8"));
+                List<Segment> childSegments = new ArrayList<Segment>(childNames.length);
+                for (String childName : childNames) {
+                    childSegments.add(pathFactory.createSegment(childName));
+                }
 
-            // return new PathNode(path, null, properties, Collections.<Segment>emptyList());
-            return new PathNode(null, path.getParent(), path.getLastSegment(), properties, Collections.<Segment>emptyList());
-        }
+                Collection<Property> customProps = customPropertiesFactory.getDirectoryProperties(context, location, file);
+                for (Property customProp : customProps) {
+                    properties.put(customProp.getName(), customProp);
+                }
 
-        File file = fileFor(path);
-        if (file == null) return null;
+                if (path.isRoot()) {
+                    nodeType = ModeShapeLexicon.ROOT;
+                    properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT));
+                    // return new DefaultPathNode(path, source.getRootNodeUuidObject(), properties, childSegments);
+                    return new PathNode(source.getRootNodeUuidObject(), path.getParent(), path.getLastSegment(), properties,
+                                        childSegments);
 
-        if (file.isDirectory()) {
-            String[] childNames = file.list(source.filenameFilter());
-            Arrays.sort(childNames);
-
-            List<Segment> childSegments = new ArrayList<Segment>(childNames.length);
-            for (String childName : childNames) {
-                childSegments.add(pathFactory.createSegment(childName));
-            }
-
-            Collection<Property> customProps = customPropertiesFactory.getDirectoryProperties(context, location, file);
-            for (Property customProp : customProps) {
-                properties.put(customProp.getName(), customProp);
-            }
-
-            if (path.isRoot()) {
-                properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT));
+                }
+                nodeType = JcrNtLexicon.FOLDER;
+                properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER));
                 // return new DefaultPathNode(path, source.getRootNodeUuidObject(), properties, childSegments);
-                return new PathNode(source.getRootNodeUuidObject(), path.getParent(), path.getLastSegment(), properties,
-                                    childSegments);
+                return new PathNode(null, path.getParent(), path.getLastSegment(), properties, childSegments);
 
             }
-            properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER));
-            // return new DefaultPathNode(path, source.getRootNodeUuidObject(), properties, childSegments);
-            return new PathNode(null, path.getParent(), path.getLastSegment(), properties, childSegments);
 
-        }
+            Collection<Property> customProps = customPropertiesFactory.getFileProperties(context, location, file);
+            for (Property customProp : customProps) {
+                properties.put(customProp.getName(), customProp);
+            }
+            nodeType = JcrNtLexicon.FILE;
+            properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE));
+            properties.put(JcrLexicon.CREATED, factory.create(JcrLexicon.CREATED, dateFactory.create(file.lastModified())));
+            // node = new DefaultPathNode(path, null, properties,
+            // Collections.singletonList(pathFactory.createSegment(JcrLexicon.CONTENT)));
 
-        Collection<Property> customProps = customPropertiesFactory.getFileProperties(context, location, file);
-        for (Property customProp : customProps) {
-            properties.put(customProp.getName(), customProp);
+            return new PathNode(null, path.getParent(), path.getLastSegment(), properties,
+                                Collections.singletonList(pathFactory.createSegment(JcrLexicon.CONTENT)));
+        } finally {
+            if (nodeType != null && logger.isTraceEnabled()) {
+                long stopTime = System.nanoTime();
+                long ms = TimeUnit.MICROSECONDS.convert(stopTime - startTime, TimeUnit.NANOSECONDS);
+                ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
+                String pathStr = stringFactory.create(path);
+                String typeStr = stringFactory.create(nodeType);
+                logger.trace("Loaded '{0}' node '{1}' in {2}microsec", typeStr, pathStr, ms);
+            }
         }
-        properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE));
-        properties.put(JcrLexicon.CREATED, factory.create(JcrLexicon.CREATED, dateFactory.create(file.lastModified())));
-        // node = new DefaultPathNode(path, null, properties,
-        // Collections.singletonList(pathFactory.createSegment(JcrLexicon.CONTENT)));
-        return new PathNode(null, path.getParent(), path.getLastSegment(), properties,
-                            Collections.singletonList(pathFactory.createSegment(JcrLexicon.CONTENT)));
+    }
+
+    /**
+     * Create the Binary object used as the value for the "jcr:data" property where the file's content is stored on a
+     * "nt:resource" node.
+     * 
+     * @param file the file
+     * @return the binary representation
+     */
+    protected Binary binaryForContent( File file ) {
+        if (file == null) return null;
+        if (eagerLoading) {
+            BinaryFactory binaryFactory = context.getValueFactories().getBinaryFactory();
+            return binaryFactory.create(file);
+        }
+        // Not eager, so use the non-eager binary value implementation ...
+        return new FileSystemBinary(file);
     }
 
     /**

@@ -1,6 +1,7 @@
 package org.modeshape.connector.svn;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,6 +24,7 @@ import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.base.PathNode;
 import org.modeshape.graph.connector.base.PathWorkspace;
+import org.modeshape.graph.mimetype.MimeTypeDetector;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.BinaryFactory;
 import org.modeshape.graph.property.DateTimeFactory;
@@ -252,6 +254,16 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
                         SVNProperties fileProperties = new SVNProperties();
                         workspaceRoot.getFile(contentPath, -1, fileProperties, os);
                         String mimeType = fileProperties.getStringValue(SVNProperty.MIME_TYPE);
+                        if (mimeType == null) {
+                            // Try to determine the MIME type from the file name ...
+                            String fileName = requestedPath.getParent().getLastSegment().getString(registry);
+                            MimeTypeDetector mimeTypeDetector = context.getMimeTypeDetector();
+                            try {
+                                mimeType = mimeTypeDetector.mimeTypeOf(fileName, null);
+                            } catch (IOException e) {
+                                // do nothing ...
+                            }
+                        }
                         if (mimeType == null) mimeType = DEFAULT_MIME_TYPE;
                         properties.add(factory.create(JcrLexicon.MIMETYPE, mimeType));
 

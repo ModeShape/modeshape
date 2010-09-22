@@ -442,6 +442,25 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.graph.connector.base.Transaction#getChildrenLocations(org.modeshape.graph.connector.base.Workspace,
+     *      org.modeshape.graph.connector.base.Node)
+     */
+    public List<Location> getChildrenLocations( WorkspaceType workspace,
+                                                NodeType node ) {
+        node = findLatest(workspace, node);
+        List<UUID> children = node.getChildren(); // make a copy
+        if (children.isEmpty()) return Collections.emptyList();
+        List<Location> locations = new ArrayList<Location>(children.size());
+        for (UUID uuid : children) {
+            NodeType child = findNode(workspace, uuid);
+            locations.add(Location.create(this.pathFor(workspace, child), uuid));
+        }
+        return locations;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.modeshape.graph.connector.base.Transaction#getParent(org.modeshape.graph.connector.base.Workspace,
      *      org.modeshape.graph.connector.base.Node)
      */

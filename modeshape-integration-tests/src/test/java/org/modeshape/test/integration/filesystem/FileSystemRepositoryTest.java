@@ -41,6 +41,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.collection.Problem;
+import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.jcr.JcrConfiguration;
@@ -55,6 +56,7 @@ public class FileSystemRepositoryTest {
     private static JcrEngine engine;
     private static List<Session> sessions = new ArrayList<Session>();
     private boolean print = false;
+    private Stopwatch sw;
 
     @BeforeClass
     public static void beforeAll() throws Exception {
@@ -95,6 +97,7 @@ public class FileSystemRepositoryTest {
 
     @Before
     public void beforeEach() {
+        sw = new Stopwatch();
         print = false;
     }
 
@@ -111,6 +114,36 @@ public class FileSystemRepositoryTest {
         Node node1Content = node1.getNode(stringFrom(JcrLexicon.CONTENT));
         assertThat(node1Content, is(notNullValue()));
         assertThat(node1Content.getPrimaryNodeType().getName(), is(stringFrom(ModeShapeLexicon.RESOURCE)));
+    }
+
+    @Test
+    public void shouldAllowNavigationOfAllContent() throws Exception {
+        Session session = sessionFrom(engine);
+        Node root = session.getRootNode();
+        Node node1 = root.getNode("testroot/node1");
+        Node node2 = root.getNode("testroot/yetAnotherNode");
+        assertThat(node1.getPrimaryNodeType().getName(), is("nt:file"));
+        assertThat(node2.getPrimaryNodeType().getName(), is("nt:file"));
+    }
+
+    @Test
+    public void shouldAllowReadingSingleDirectory() throws Exception {
+        // print = true;
+        Session session = sessionFrom(engine);
+        session.getRootNode();
+        Node testroot = session.getNode("/testroot");
+        sw.start();
+        Node folder1 = testroot.getNode("folder1");
+        sw.stop();
+        if (print) System.out.println(sw);
+        assertThat(folder1.getName(), is("folder1"));
+        assertThat(folder1.getNodes().getSize(), is(3L));
+        sw.reset();
+        sw.start();
+        Node folder1a = testroot.getNode("folder1");
+        sw.stop();
+        if (print) System.out.println(sw);
+        assertThat(folder1a.getName(), is("folder1"));
     }
 
     @Test

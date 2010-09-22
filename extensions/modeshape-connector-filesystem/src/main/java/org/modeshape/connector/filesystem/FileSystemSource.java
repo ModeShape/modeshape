@@ -59,6 +59,7 @@ import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.base.AbstractRepositorySource;
 import org.modeshape.graph.connector.base.Connection;
 import org.modeshape.graph.connector.base.PathNode;
+import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Property;
@@ -97,6 +98,8 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     protected static final String EXCLUSION_PATTERN = "exclusionPattern";
     protected static final String FILENAME_FILTER = "filenameFilter";
     protected static final String CUSTOM_PROPERTY_FACTORY = "customPropertyFactory";
+    protected static final String EAGER_FILE_LOADING = "eagerFileLoading";
+    protected static final String DETERMINE_MIME_TYPE_USING_CONTENT = "determineMimeTypeUsingContent";
 
     /**
      * This source supports events.
@@ -119,6 +122,16 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      * This source supports creating references.
      */
     protected static final boolean SUPPORTS_REFERENCES = false;
+    /**
+     * This source by default does not eagerly read the file content into {@link Binary} values, but instead does it only when
+     * necessary.
+     */
+    public static final boolean DEFAULT_EAGER_FILE_LOADING = false;
+
+    /**
+     * This source by default uses the file content to determine the MIME type.
+     */
+    public static final boolean DEFAULT_DETERMINE_MIME_TYPE_USING_CONTENT = true;
 
     public static final int DEFAULT_MAX_PATH_LENGTH = 255; // 255 for windows users
     public static final String DEFAULT_EXCLUSION_PATTERN = null;
@@ -148,6 +161,17 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     @Label( i18n = FileSystemI18n.class, value = "exclusionPatternPropertyLabel" )
     @Category( i18n = FileSystemI18n.class, value = "exclusionPatternPropertyCategory" )
     private volatile String exclusionPattern = DEFAULT_EXCLUSION_PATTERN;
+
+    @Description( i18n = FileSystemI18n.class, value = "eagerFileLoadingPropertyDescription" )
+    @Label( i18n = FileSystemI18n.class, value = "eagerFileLoadingPropertyLabel" )
+    @Category( i18n = FileSystemI18n.class, value = "eagerFileLoadingPropertyCategory" )
+    private volatile boolean eagerFileLoading = DEFAULT_EAGER_FILE_LOADING;
+
+    @Description( i18n = FileSystemI18n.class, value = "determineMimeTypeUsingContentPropertyDescription" )
+    @Label( i18n = FileSystemI18n.class, value = "determineMimeTypeUsingContentPropertyLabel" )
+    @Category( i18n = FileSystemI18n.class, value = "determineMimeTypeUsingContentPropertyCategory" )
+    private volatile boolean determineMimeTypeUsingContent = DEFAULT_DETERMINE_MIME_TYPE_USING_CONTENT;
+
     private volatile FilenameFilter filenameFilter = DEFAULT_FILENAME_FILTER;
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
                                                                                                   SUPPORTS_SAME_NAME_SIBLINGS,
@@ -426,6 +450,24 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     }
 
     /**
+     * Get whether this source should use file content (and file name) to determine the MIME type.
+     * 
+     * @return true if the file content should be used to determine the MIME type, or false if only the filename should be used
+     */
+    public boolean isContentUsedToDetermineMimeType() {
+        return determineMimeTypeUsingContent;
+    }
+
+    /**
+     * Set whether this source should use file content (and file name) to determine the MIME type.
+     * 
+     * @param contentUsedToDetermineMimeType true if the file content should be used to determine the MIME type
+     */
+    public void setContentUsedToDetermineMimeType( boolean contentUsedToDetermineMimeType ) {
+        determineMimeTypeUsingContent = contentUsedToDetermineMimeType;
+    }
+
+    /**
      * Get the factory that is used to create custom properties on "nt:folder", "nt:file", and "nt:resource" nodes.
      * 
      * @return the factory, or null if no custom properties are to be created
@@ -474,6 +516,25 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     }
 
     /**
+     * Optional flag that defines whether the connector should eagerly read file content even before it is needed, guaranteeing
+     * access to the content. A value of "true" may result in the file content being loaded even when it is not needed, and may
+     * increase the memory footprint; a value of "false" will delay reading the file content until it is needed, but changes to
+     * the underlying files may leak into the JCR sessions. The default value is "false".
+     * 
+     * @return 'true' if the file is to be read eagerly and preemptively, or false if the file content is to be loaded lazily.
+     */
+    public boolean isEagerFileLoading() {
+        return eagerFileLoading;
+    }
+
+    /**
+     * @param eagerFileLoading Sets eagerFileLoading to the specified value.
+     */
+    public void setEagerFileLoading( boolean eagerFileLoading ) {
+        this.eagerFileLoading = eagerFileLoading;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see javax.naming.Referenceable#getReference()
@@ -502,6 +563,9 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
         if (filenameFilter != null) {
             ref.add(new StringRefAddr(FILENAME_FILTER, filenameFilter.getClass().getName()));
         }
+        ref.add(new StringRefAddr(EAGER_FILE_LOADING, Boolean.toString(isEagerFileLoading())));
+        ref.add(new StringRefAddr(DETERMINE_MIME_TYPE_USING_CONTENT, Boolean.toString(isContentUsedToDetermineMimeType())));
+
         return ref;
     }
 
@@ -522,6 +586,8 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
             String filenameFilterClassName = (String)values.get(FILENAME_FILTER);
             String maxPathLength = (String)values.get(DEFAULT_MAX_PATH_LENGTH);
             String customPropertiesFactoryClassName = (String)values.get(CUSTOM_PROPERTY_FACTORY);
+            String eagerFileLoading = (String)values.get(EAGER_FILE_LOADING);
+            String useContentForMimeType = (String)values.get(DETERMINE_MIME_TYPE_USING_CONTENT);
 
             String combinedWorkspaceNames = (String)values.get(PREDEFINED_WORKSPACE_NAMES);
             String[] workspaceNames = null;
@@ -540,6 +606,8 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
             if (filenameFilterClassName != null) source.setFilenameFilter(filenameFilterClassName);
             if (maxPathLength != null) source.setMaxPathLength(Integer.valueOf(maxPathLength));
             if (customPropertiesFactoryClassName != null) source.setCustomPropertiesFactory(customPropertiesFactoryClassName);
+            if (eagerFileLoading != null) source.setEagerFileLoading(Boolean.parseBoolean(eagerFileLoading));
+            if (useContentForMimeType != null) source.setContentUsedToDetermineMimeType(Boolean.parseBoolean(useContentForMimeType));
             return source;
         }
         return null;
