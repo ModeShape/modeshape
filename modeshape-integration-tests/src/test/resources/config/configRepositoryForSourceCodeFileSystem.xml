@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!-- 
+    Define the sources for the content.  These sources are directly accessible using the ModeShape-specific Graph API.
+    In fact, this is how the ModeShape JCR implementation works.  You can think of these as being similar to
+    JDBC DataSource objects, except that they expose graph content via the Graph API instead of records via SQL or JDBC. 
+    -->
+    <mode:sources jcr:primaryType="nt:unstructured">
+        <!-- 
+        The 'JCR' repository is a file system source with a single, default workspace (though others could be created, too).
+        In a production release, the mode:rootNodeUuid would be specified here as well to ensure stability over restarts.  
+        Since we don't specify a rootNodeUuid, a random UUID will be generated each time that the corresponding test is run.
+        -->
+        <mode:source jcr:name="SourceCode" mode:classname="org.modeshape.connector.filesystem.FileSystemSource"
+        	mode:workspaceRootPath="../"
+        	mode:defaultWorkspaceName="modeshape-integration-tests"
+        	mode:creatingWorkspacesAllowed="false"
+        	mode:updatesAllowed="true"
+        	mode:exclusionPattern="\.(svn|git|gitignore)"
+        	/>    
+    </mode:sources>
+    <!-- 
+    Define the JCR repositories 
+    -->
+    <mode:repositories>
+        <!-- 
+        Define a JCR repository that accesses the 'JCR' source directly.
+        This of course is optional, since we could access the same content through 'JCR'.
+        -->
+        <mode:repository jcr:name="Source Code Repository">
+            <!-- Specify the source that should be used for the repository -->
+            <mode:source>SourceCode</mode:source>
+            <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
+            <mode:options jcr:primaryType="mode:options">
+                <!--projectNodeTypes jcr:primaryType="mode:option" mode:value="false"/-->
+            </mode:options>
+        </mode:repository>
+    </mode:repositories>
+</configuration>

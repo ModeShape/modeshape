@@ -99,6 +99,17 @@ public interface Transaction<NodeType extends Node, WorkspaceType extends Worksp
     NodeType getRootNode( WorkspaceType workspace );
 
     /**
+     * Verify that the supplied node exists.
+     * 
+     * @param workspace the workspace; may not be null
+     * @param location of the node; may not be null
+     * @return the actual location of the node; never null
+     * @throws PathNotFoundException if the node at the given location does not exist
+     */
+    Location verifyNodeExists( WorkspaceType workspace,
+                               Location location );
+
+    /**
      * Find the node with the supplied unique identifier.
      * 
      * @param workspace the workspace; may not be null

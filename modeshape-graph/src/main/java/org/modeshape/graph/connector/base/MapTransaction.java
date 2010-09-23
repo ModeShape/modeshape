@@ -152,6 +152,25 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.base.Transaction#verifyNodeExists(org.modeshape.graph.connector.base.Workspace,
+     *      org.modeshape.graph.Location)
+     */
+    public Location verifyNodeExists( WorkspaceType workspace,
+                                      Location location ) {
+        NodeType node = getNode(workspace, location);
+        if (location.hasPath() && location.getUuid() != null) return location;
+        if (location.hasPath()) {
+            if (location.getUuid() != null) return location;
+            // Missing UUID ...
+            return location.with(node.getUuid());
+        }
+        Path path = pathFor(workspace, node);
+        return location.with(path);
+    }
+
+    /**
      * Find the latest version of the supplied node.
      * 
      * @param workspace the workspace

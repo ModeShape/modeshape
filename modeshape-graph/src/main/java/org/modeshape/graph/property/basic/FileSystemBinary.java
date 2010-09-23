@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.connector.filesystem;
+package org.modeshape.graph.property.basic;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -35,7 +35,6 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.IoException;
-import org.modeshape.graph.property.basic.AbstractBinary;
 
 /**
  * An implementation of {@link Binary} that is used to access the content of a file on the file system without holding any content
@@ -76,7 +75,6 @@ public class FileSystemBinary extends AbstractBinary {
     /**
      * {@inheritDoc}
      */
-    @Override
     public long getSize() {
         return this.file.length();
     }

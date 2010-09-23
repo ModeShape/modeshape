@@ -64,6 +64,7 @@ import org.modeshape.graph.request.ReadNodeRequest;
 import org.modeshape.graph.request.Request;
 import org.modeshape.graph.request.UnlockBranchRequest;
 import org.modeshape.graph.request.UpdatePropertiesRequest;
+import org.modeshape.graph.request.VerifyNodeExistsRequest;
 import org.modeshape.graph.request.VerifyWorkspaceRequest;
 import org.modeshape.graph.request.processor.RequestProcessor;
 
@@ -512,6 +513,24 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
             Node root = txn.getRootNode(original);
             request.setActualRootLocation(Location.create(path, root.getUuid()));
             request.setActualWorkspaceName(original.getName());
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.request.processor.RequestProcessor#process(org.modeshape.graph.request.VerifyNodeExistsRequest)
+     */
+    @Override
+    public void process( VerifyNodeExistsRequest request ) {
+        WorkspaceType original = getWorkspace(request, request.inWorkspace());
+        if (original != null) {
+            try {
+                Location actualLoation = txn.verifyNodeExists(original, request.at());
+                request.setActualLocationOfNode(actualLoation);
+            } catch (RuntimeException e) {
+                request.setError(e);
+            }
         }
     }
 

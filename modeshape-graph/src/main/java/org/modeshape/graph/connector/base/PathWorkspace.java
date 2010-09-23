@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.graph.Location;
 import org.modeshape.graph.property.Path;
 
 /**
@@ -104,6 +105,17 @@ public abstract class PathWorkspace<NodeType extends PathNode> implements Worksp
      * @return the node state as known by this workspace, or null if no such node exists in this workspace
      */
     public abstract NodeType getNode( Path path );
+
+    /**
+     * Verify that the supplied node exists.
+     * 
+     * @param path the path of the node; may not be null
+     * @return the location of the node if it exists, or null if it does not
+     */
+    public Location verifyNodeExists( Path path ) {
+        NodeType node = getNode(path);
+        return node != null ? Location.create(path) : null;
+    }
 
     /**
      * Save this node into the workspace, overwriting any previous record of the node. This method should be overridden by
@@ -287,7 +299,7 @@ public abstract class PathWorkspace<NodeType extends PathNode> implements Worksp
         private NodeType newNode;
 
         protected MoveCommand( NodeType node,
-                             NodeType newNode ) {
+                               NodeType newNode ) {
             super();
             this.node = node;
             this.newNode = newNode;
