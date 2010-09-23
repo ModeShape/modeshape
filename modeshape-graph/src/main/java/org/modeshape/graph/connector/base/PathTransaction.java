@@ -151,6 +151,42 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
     }
 
     /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.base.BaseTransaction#verifyNodeExists(org.modeshape.graph.connector.base.Workspace,
+     *      org.modeshape.graph.Location)
+     */
+    public Location verifyNodeExists( WorkspaceType workspace,
+                                      Location location ) {
+        assert location != null;
+        // First look for the UUID ...
+        UUID uuid = location.getUuid();
+        if (getRepository().getRootNodeUuid().equals(uuid)) {
+            // The root node can't be removed
+            return getRootLocation();
+        }
+        // Otherwise, look by path ...
+        if (location.hasPath()) {
+            // First, find the lowest node in the path that has a change (if any)
+            Path path = location.getPath();
+
+            WorkspaceChanges changes = getChangesFor(workspace, false);
+            NodeType lowestNode = changes == null ? null : changes.getLowestChangedNodeFor(path);
+
+            if (lowestNode == null) {
+                // No nodes on the path were change, go straight to the source
+                return workspace.verifyNodeExists(path);
+            }
+            // doesn't exist, so find out by path ...
+            NodeType node = getNode(workspace, location.getPath(), location);
+            return locationFor(node);
+        }
+        // Unable to find by UUID or by path, so fail ...
+        Path lowestExisting = pathFactory.createRootPath();
+        throw new PathNotFoundException(location, lowestExisting, GraphI18n.nodeDoesNotExist.text(readable(location)));
+    }
+
+    /**
      * Attempt to find the node with the supplied path. This method is "Changes-aware". That is, it checks the cache of changes
      * for the workspace before returning the node.
      * 
@@ -735,7 +771,6 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
 
     protected void validateNode( WorkspaceType workspace,
                                  NodeType node ) {
-
     }
 
     /**

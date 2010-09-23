@@ -1,20 +1,14 @@
 package org.modeshape.connector.svn;
 
 import java.util.LinkedList;
-import java.util.Map;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.JcrLexicon;
-import org.modeshape.graph.JcrNtLexicon;
-import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.base.PathNode;
 import org.modeshape.graph.connector.base.PathTransaction;
 import org.modeshape.graph.connector.base.Processor;
 import org.modeshape.graph.connector.base.Repository;
 import org.modeshape.graph.connector.base.Transaction;
 import org.modeshape.graph.observe.Observer;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.Path.Segment;
@@ -120,14 +114,11 @@ public class SvnRepository extends Repository<PathNode, SvnWorkspace> {
      */
     class SvnProcessor extends Processor<PathNode, SvnWorkspace> {
 
-        private final NameFactory nameFactory;
-
         public SvnProcessor( Transaction<PathNode, SvnWorkspace> txn,
                              Repository<PathNode, SvnWorkspace> repository,
                              Observer observer,
                              boolean updatesAllowed ) {
             super(txn, repository, observer, updatesAllowed);
-            this.nameFactory = txn.getContext().getValueFactories().getNameFactory();
         }
 
         @Override
@@ -147,29 +138,7 @@ public class SvnRepository extends Repository<PathNode, SvnWorkspace> {
         @Override
         protected int absoluteMaximumDepthForBranchReads() {
             // never read more than one level from SVN, as the file content can get too big and the costs too expensive ...
-            return 2;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.graph.request.processor.RequestProcessor#includeChildrenInSubgraph(org.modeshape.graph.Location,
-         *      java.util.Map, boolean)
-         */
-        @Override
-        protected boolean includeChildrenInSubgraph( Location location,
-                                                     Map<Name, Property> properties,
-                                                     boolean topOfSubgraph ) {
-            if (topOfSubgraph) return true;
-            // We never want to include the children of 'nt:file' nodes in a subgraph ...
-            Property prop = properties.get(JcrLexicon.PRIMARY_TYPE);
-            if (prop == null || prop.isEmpty()) return true;
-            Name primaryType = nameFactory.create(prop.getFirstValue());
-            if (JcrNtLexicon.FILE.equals(primaryType)) {
-                // Include no children of an 'nt:file' ...
-                return false;
-            }
-            return true;
+            return 1;
         }
     }
 

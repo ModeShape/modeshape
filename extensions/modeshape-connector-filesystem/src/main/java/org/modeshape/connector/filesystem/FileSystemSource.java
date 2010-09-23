@@ -129,7 +129,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     public static final boolean DEFAULT_EAGER_FILE_LOADING = false;
 
     /**
-     * This source by default uses the file content to determine the MIME type.
+     * This source by default does not use the file content to determine the MIME type, but instead just uses the filename.
      */
     public static final boolean DEFAULT_DETERMINE_MIME_TYPE_USING_CONTENT = true;
 

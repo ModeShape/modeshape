@@ -70,7 +70,15 @@ public abstract class BaseTransaction<NodeType extends Node, WorkspaceType exten
         this.pathFactory = valueFactories.getPathFactory();
         this.nameFactory = valueFactories.getNameFactory();
         this.repository = repository;
-        this.rootLocation = Location.create(rootNodeUuid);
+        this.rootLocation = Location.create(pathFactory.createRootPath(), rootNodeUuid);
+    }
+
+    public Location getRootLocation() {
+        return this.rootLocation;
+    }
+
+    public UUID getRootUuid() {
+        return this.rootNodeUuid;
     }
 
     protected String readable( Object obj ) {

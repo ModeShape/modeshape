@@ -42,6 +42,7 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.Path.Segment;
+import org.modeshape.graph.property.basic.FileSystemBinary;
 import org.modeshape.graph.request.Request;
 
 /**
@@ -338,13 +339,18 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
                 File file = fileFor(path.getParent());
                 if (file == null) return null;
                 // Discover the mime type ...
+
                 String mimeType = null;
                 InputStream contents = null;
                 try {
-                    if (contentUsedToDetermineMimeType) {
+                    // First try the file name (so we don't have to create an input stream,
+                    // which may have too much latency if a remote network file) ...
+                    mimeType = mimeTypeDetector.mimeTypeOf(file.getName(), null);
+                    if (mimeType == null && contentUsedToDetermineMimeType) {
+                        // Try to find the mime type using the content ...
                         contents = new BufferedInputStream(new FileInputStream(file));
+                        mimeType = mimeTypeDetector.mimeTypeOf(null, contents);
                     }
-                    mimeType = mimeTypeDetector.mimeTypeOf(file.getName(), contents);
                     if (mimeType == null) mimeType = DEFAULT_MIME_TYPE;
                     properties.put(JcrLexicon.MIMETYPE, factory.create(JcrLexicon.MIMETYPE, mimeType));
                 } catch (IOException e) {
@@ -377,9 +383,9 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
                 properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE));
                 properties.put(JcrLexicon.LAST_MODIFIED, factory.create(JcrLexicon.LAST_MODIFIED,
                                                                         dateFactory.create(file.lastModified())));
+
                 // Now put the file's content into the "jcr:data" property ...
-                BinaryFactory binaryFactory = context.getValueFactories().getBinaryFactory();
-                Binary binary = binaryFactory.create(file);
+                Binary binary = binaryForContent(file);
                 properties.put(JcrLexicon.DATA, factory.create(JcrLexicon.DATA, binary));
 
                 // Don't really know the encoding, either ...
@@ -425,6 +431,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
             for (Property customProp : customProps) {
                 properties.put(customProp.getName(), customProp);
             }
+
             nodeType = JcrNtLexicon.FILE;
             properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE));
             properties.put(JcrLexicon.CREATED, factory.create(JcrLexicon.CREATED, dateFactory.create(file.lastModified())));
@@ -443,6 +450,17 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
                 logger.trace("Loaded '{0}' node '{1}' in {2}microsec", typeStr, pathStr, ms);
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.base.PathWorkspace#verifyNodeExists(org.modeshape.graph.property.Path)
+     */
+    @Override
+    public Location verifyNodeExists( Path path ) {
+        File file = fileFor(path, true);
+        return file != null ? Location.create(path) : null;
     }
 
     /**
