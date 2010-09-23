@@ -142,7 +142,7 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
                 // If the source has no node at this location, default to a slow walk up the path from the root
                 if (node != null) return node;
             }
-            
+
             return getNode(workspace, location.getPath(), location);
         }
         // Unable to find by UUID or by path, so fail ...
@@ -224,6 +224,18 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
             return pathFactory.createRootPath();
         }
         return pathFactory.create(node.getParent(), node.getName());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.base.BaseTransaction#pathFor(org.modeshape.graph.connector.base.Workspace,
+     *      org.modeshape.graph.connector.base.Node)
+     */
+    @Override
+    public Path pathFor( WorkspaceType workspace,
+                         NodeType node ) {
+        return pathTo(node);
     }
 
     /**
@@ -462,6 +474,25 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
             children.add(getNode(workspace, Location.create(pathFactory.create(pathTo(node), childSegment))));
         }
 
+        return children;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.connector.base.Transaction#getChildrenLocations(org.modeshape.graph.connector.base.Workspace,
+     *      org.modeshape.graph.connector.base.Node)
+     */
+    public List<Location> getChildrenLocations( WorkspaceType workspace,
+                                                NodeType node ) {
+        List<Segment> childSegments = node.getChildren(); // make a copy
+        if (childSegments.isEmpty()) return Collections.emptyList();
+
+        List<Location> children = new ArrayList<Location>(childSegments.size());
+        Path nodePath = pathTo(node);
+        for (Segment childSegment : childSegments) {
+            children.add(Location.create(pathFactory.create(nodePath, childSegment)));
+        }
         return children;
     }
 

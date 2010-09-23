@@ -30,6 +30,7 @@ import static org.junit.Assert.assertThat;
 import java.util.List;
 import java.util.UUID;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Node;
@@ -150,6 +151,7 @@ public abstract class ReadableConnectorTest extends AbstractConnectorTest {
         }
     }
 
+    @Ignore
     @Test
     public void shouldReadSubgraphStartingAtRootAndWithMaximumDepthOfThree() {
         Subgraph subgraph = graph.getSubgraphOfDepth(3).at("/");

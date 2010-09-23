@@ -222,6 +222,7 @@ abstract class RepositoryQueryManager {
         private final ExecutorService service;
         private final QueryEngine queryEngine;
         private final RepositoryConnectionFactory connectionFactory;
+        private final int maxDepthPerRead;
 
         SelfContained( ExecutionContext context,
                        String nameOfSourceToBeSearchable,
@@ -229,12 +230,14 @@ abstract class RepositoryQueryManager {
                        Observable observable,
                        RepositoryNodeTypeManager nodeTypeManager,
                        String indexDirectory,
-                       boolean updateIndexesSynchronously ) throws RepositoryException {
+                       boolean updateIndexesSynchronously,
+                       int maxDepthPerRead ) throws RepositoryException {
             super(nameOfSourceToBeSearchable);
 
             this.context = context;
             this.sourceName = nameOfSourceToBeSearchable;
             this.connectionFactory = connectionFactory;
+            this.maxDepthPerRead = maxDepthPerRead;
             // Define the configuration ...
             TextEncoder encoder = new UrlEncoder();
             if (indexDirectory != null) {
@@ -278,8 +281,8 @@ abstract class RepositoryQueryManager {
             // Set up the search engine ...
             org.apache.lucene.analysis.Analyzer analyzer = new SnowballAnalyzer(Version.LUCENE_30, "English");
             boolean verifyWorkspaces = false;
-            searchEngine = new LuceneSearchEngine(nameOfSourceToBeSearchable, connectionFactory, verifyWorkspaces, configuration,
-                                                  indexRules, analyzer);
+            searchEngine = new LuceneSearchEngine(nameOfSourceToBeSearchable, connectionFactory, verifyWorkspaces,
+                                                  maxDepthPerRead, configuration, indexRules, analyzer);
 
             // Set up an original source observer to keep the index up to date ...
             if (updateIndexesSynchronously) {
@@ -388,7 +391,7 @@ abstract class RepositoryQueryManager {
             Set<String> workspaces = Graph.create(sourceName, connectionFactory, context).getWorkspaces();
 
             // Index the existing content (this obtains a connection and possibly locks the source) ...
-            SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory);
+            SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory, maxDepthPerRead);
             try {
                 for (String workspace : workspaces) {
                     indexer.index(workspace);
@@ -406,7 +409,7 @@ abstract class RepositoryQueryManager {
          */
         @Override
         public void reindexContent( JcrWorkspace workspace ) {
-            SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory);
+            SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory, maxDepthPerRead);
             try {
                 indexer.index(workspace.getName());
             } finally {
@@ -424,7 +427,7 @@ abstract class RepositoryQueryManager {
                                     String path,
                                     int depth ) {
             Path at = workspace.context().getValueFactories().getPathFactory().create(path);
-            SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory);
+            SearchEngineIndexer indexer = new SearchEngineIndexer(context, searchEngine, connectionFactory, maxDepthPerRead);
             try {
                 indexer.index(workspace.getName(), at, depth);
             } finally {

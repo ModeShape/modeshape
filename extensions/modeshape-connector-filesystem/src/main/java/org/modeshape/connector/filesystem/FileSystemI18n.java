@@ -67,6 +67,12 @@ public final class FileSystemI18n {
     public static I18n maxPathLengthPropertyDescription;
     public static I18n maxPathLengthPropertyLabel;
     public static I18n maxPathLengthPropertyCategory;
+    public static I18n eagerFileLoadingPropertyDescription;
+    public static I18n eagerFileLoadingPropertyLabel;
+    public static I18n eagerFileLoadingPropertyCategory;
+    public static I18n determineMimeTypeUsingContentPropertyDescription;
+    public static I18n determineMimeTypeUsingContentPropertyLabel;
+    public static I18n determineMimeTypeUsingContentPropertyCategory;
 
     // Writable messages
     public static I18n parentIsReadOnly;

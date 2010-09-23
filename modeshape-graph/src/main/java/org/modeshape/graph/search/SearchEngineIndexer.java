@@ -24,6 +24,7 @@
 package org.modeshape.graph.search;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
@@ -64,16 +65,12 @@ import org.modeshape.graph.request.UpdatePropertiesRequest;
  */
 @NotThreadSafe
 public class SearchEngineIndexer {
-    /**
-     * The default maximum depth of each subgraph read operation is {@value} .
-     */
-    protected static final int DEFAULT_MAX_DEPTH_PER_READ = 100;
 
     private final ExecutionContext context;
     private final RepositoryConnectionFactory connectionFactory;
     private final String sourceName;
     private final SearchEngine searchEngine;
-    private final int maxDepthPerRead = DEFAULT_MAX_DEPTH_PER_READ;
+    private final int maxDepthPerRead;
     private final ExecutorService service;
     private final CompositeRequestChannel channel;
     private final SearchEngineProcessor processor;
@@ -91,14 +88,18 @@ public class SearchEngineIndexer {
      * @param context the context in which the indexing operations are to be performed
      * @param searchEngine the search engine that is to be updated
      * @param connectionFactory the factory for creating connections to the repository containing the content
-     * @throws IllegalArgumentException if the search engine or connection factory references are null
+     * @param maxDepthPerRead the maximum depth for issuing each read requests when indexing
+     * @throws IllegalArgumentException if the search engine or connection factory references are null, or if the maximum depth
+     *         per read is not positive
      */
     public SearchEngineIndexer( ExecutionContext context,
                                 SearchEngine searchEngine,
-                                RepositoryConnectionFactory connectionFactory ) {
+                                RepositoryConnectionFactory connectionFactory,
+                                int maxDepthPerRead ) {
         CheckArg.isNotNull(context, "context");
         CheckArg.isNotNull(searchEngine, "searchEngine");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
+        CheckArg.isPositive(maxDepthPerRead, "maxDepthPerRead");
         this.context = context;
         this.searchEngine = searchEngine;
         this.sourceName = searchEngine.getSourceName();
@@ -108,6 +109,7 @@ public class SearchEngineIndexer {
         // Start the channel and search engine processor right away (this is why this object must be closed)
         this.channel.start(service, this.context, this.connectionFactory);
         this.processor = this.searchEngine.createProcessor(this.context, null, false);
+        this.maxDepthPerRead = maxDepthPerRead;
     }
 
     /**
@@ -299,6 +301,10 @@ public class SearchEngineIndexer {
         process(request);
         checkRequestForErrors(request);
 
+        // Create a map to record the actual locations of the parent nodes of each read request ...
+        Map<Path, Location> locationsByPath = new HashMap<Path, Location>();
+        locationsByPath.put(startingLocation.getPath(), startingLocation);
+
         // Create a queue that we'll use to walk the content ...
         LinkedList<Location> locationsToRead = new LinkedList<Location>();
 
@@ -309,7 +315,11 @@ public class SearchEngineIndexer {
                 // Index the node ...
                 Location location = locationIter.next();
                 Path path = location.getPath();
-                Location parent = readSubgraph.getLocationFor(path.getParent());
+                Path parentPath = path.getParent();
+                Location parent = readSubgraph.getLocationFor(parentPath);
+                if (parent == null) {
+                    parent = locationsByPath.get(parentPath);
+                }
                 Name childName = path.getLastSegment().getName();
                 Collection<Property> nodePoperties = readSubgraph.getPropertiesFor(location).values();
                 CreateNodeRequest create = new CreateNodeRequest(parent, workspaceName, childName, nodePoperties);
@@ -318,9 +328,14 @@ public class SearchEngineIndexer {
                 if (create.isCancelled() || create.hasError()) return;
 
                 // Process the children ...
+                boolean recordedParentLocation = false;
                 for (Location child : readSubgraph.getChildren(location)) {
                     if (!readSubgraph.includes(child)) {
-                        // Record this location as needing to be read ...
+                        if (!recordedParentLocation) {
+                            locationsByPath.put(location.getPath(), location);
+                            recordedParentLocation = true;
+                        }
+                        // The subgraph did not contain the child, so record the location as needing to be read ...
                         locationsToRead.add(child);
                     }
                 }
@@ -331,7 +346,7 @@ public class SearchEngineIndexer {
             assert location != null;
 
             // Recompute the depth per read ...
-            depthPerRead = depth - location.getPath().size();
+            depthPerRead = Math.min(maxDepthPerRead, depth - location.getPath().size());
             if (depthPerRead < 1) continue;
             readSubgraph = new ReadBranchRequest(location, workspaceName, depthPerRead);
             try {
@@ -342,6 +357,7 @@ public class SearchEngineIndexer {
                 return;
             }
             checkRequestForErrors(readSubgraph);
+            locationIter = readSubgraph.iterator();
         }
     }
 

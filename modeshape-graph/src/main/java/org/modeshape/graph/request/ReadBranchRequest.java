@@ -437,4 +437,15 @@ public class ReadBranchRequest extends CacheableRequest implements Iterable<Loca
     public RequestType getType() {
         return RequestType.READ_BRANCH;
     }
+
+    /**
+     * Obtain a copy of this request (without any results) with the new supplied maximum depth.
+     * 
+     * @param maxDepth the maximum depth for the new request
+     * @return the copy of thist request, but with the desired maximum depth
+     * @throws IllegalArgumentException if the maximum depth is not positive
+     */
+    public ReadBranchRequest withMaximumDepth( int maxDepth ) {
+        return new ReadBranchRequest(at, workspaceName, maxDepth);
+    }
 }

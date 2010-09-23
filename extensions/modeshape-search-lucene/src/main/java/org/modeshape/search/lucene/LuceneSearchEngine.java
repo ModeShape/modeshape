@@ -112,6 +112,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
     private final LuceneConfiguration configuration;
     private final IndexRules rules;
     private final Analyzer analyzer;
+    private final int maxDepthPerIndexRead;
 
     /**
      * Create a new instance of a {@link SearchEngine} that uses Lucene and a two-index design, and that stores the indexes using
@@ -121,6 +122,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
      * @param connectionFactory the factory for making connections to the source
      * @param verifyWorkspaceInSource true if the workspaces are to be verified using the source, or false if this engine is used
      *        in a way such that all workspaces are known to exist
+     * @param maxDepthPerIndexRead the maximum depth that any single request is to read when indexing
      * @param configuration the configuration of the Lucene indexes
      * @param rules the index rule, or null if the default index rules should be used
      * @param analyzer the analyzer, or null if the default analyzer should be used
@@ -129,6 +131,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
     public LuceneSearchEngine( String sourceName,
                                RepositoryConnectionFactory connectionFactory,
                                boolean verifyWorkspaceInSource,
+                               int maxDepthPerIndexRead,
                                LuceneConfiguration configuration,
                                IndexRules rules,
                                Analyzer analyzer ) {
@@ -137,6 +140,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
         this.configuration = configuration;
         this.analyzer = analyzer != null ? analyzer : new StandardAnalyzer(configuration.getVersion());
         this.rules = rules != null ? rules : DEFAULT_RULES;
+        this.maxDepthPerIndexRead = maxDepthPerIndexRead;
     }
 
     /**
@@ -159,6 +163,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
      * @param connectionFactory the factory for making connections to the source
      * @param verifyWorkspaceInSource true if the workspaces are to be verified using the source, or false if this engine is used
      *        in a way such that all workspaces are known to exist
+     * @param maxDepthPerIndexRead the maximum depth that any single request is to read when indexing
      * @param indexStorageDirectory the file system directory in which the indexes are to be kept
      * @param rules the index rule, or null if the default index rules should be used
      * @param analyzer the analyzer, or null if the default analyzer should be used
@@ -167,13 +172,12 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
     public LuceneSearchEngine( String sourceName,
                                RepositoryConnectionFactory connectionFactory,
                                boolean verifyWorkspaceInSource,
+                               int maxDepthPerIndexRead,
                                File indexStorageDirectory,
                                IndexRules rules,
                                Analyzer analyzer ) {
-        this(sourceName, connectionFactory, verifyWorkspaceInSource, LuceneConfigurations.using(indexStorageDirectory,
-                                                                                                null,
-                                                                                                DEFAULT_ENCODER,
-                                                                                                DEFAULT_ENCODER), null, null);
+        this(sourceName, connectionFactory, verifyWorkspaceInSource, maxDepthPerIndexRead,
+             LuceneConfigurations.using(indexStorageDirectory, null, DEFAULT_ENCODER, DEFAULT_ENCODER), null, null);
     }
 
     /**
@@ -192,6 +196,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
      * @param connectionFactory the factory for making connections to the source
      * @param verifyWorkspaceInSource true if the workspaces are to be verified using the source, or false if this engine is used
      *        in a way such that all workspaces are known to exist
+     * @param maxDepthPerIndexRead the maximum depth that any single request is to read when indexing
      * @param rules the index rule, or null if the default index rules should be used
      * @param analyzer the analyzer, or null if the default analyzer should be used
      * @throws IllegalArgumentException if any of the source name or connection factory are null
@@ -199,9 +204,11 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
     public LuceneSearchEngine( String sourceName,
                                RepositoryConnectionFactory connectionFactory,
                                boolean verifyWorkspaceInSource,
+                               int maxDepthPerIndexRead,
                                IndexRules rules,
                                Analyzer analyzer ) {
-        this(sourceName, connectionFactory, verifyWorkspaceInSource, LuceneConfigurations.inMemory(), null, null);
+        this(sourceName, connectionFactory, verifyWorkspaceInSource, maxDepthPerIndexRead, LuceneConfigurations.inMemory(), null,
+             null);
     }
 
     /**
@@ -246,7 +253,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
         }
 
         // Now do the work ...
-        SearchEngineIndexer indexer = new SearchEngineIndexer(context, this, getConnectionFactory());
+        SearchEngineIndexer indexer = new SearchEngineIndexer(context, this, getConnectionFactory(), maxDepthPerIndexRead);
         try {
             for (WorkspaceWork workspaceWork : allWork) {
                 if (workspaceWork.indexAllContent) {

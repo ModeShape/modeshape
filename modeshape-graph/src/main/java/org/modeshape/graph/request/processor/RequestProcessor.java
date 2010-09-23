@@ -639,6 +639,7 @@ public abstract class RequestProcessor {
         // Create a queue for locations that need to be read ...
         Queue<LocationWithDepth> locationsToRead = new LinkedList<LocationWithDepth>();
         locationsToRead.add(new LocationWithDepth(request.at(), 1));
+        int maxDepthPerRead = Math.min(request.maximumDepth(), absoluteMaximumDepthForBranchReads());
 
         // Now read the locations ...
         boolean first = true;
@@ -647,7 +648,7 @@ public abstract class RequestProcessor {
             LocationWithDepth read = locationsToRead.poll();
 
             // Check the depth ...
-            if (read.depth > request.maximumDepth()) break;
+            if (read.depth > maxDepthPerRead) break;
 
             // Read the properties ...
             ReadNodeRequest readNode = new ReadNodeRequest(read.location, request.inWorkspace());
@@ -656,23 +657,57 @@ public abstract class RequestProcessor {
                 request.setError(readNode.getError());
                 return;
             }
+
             Location actualLocation = readNode.getActualLocationOfNode();
             if (first) {
                 // Set the actual location on the original request
                 request.setActualLocationOfNode(actualLocation);
-                first = false;
             }
 
             // Record in the request the children and properties that were read on this node ...
             request.setChildren(actualLocation, readNode.getChildren());
             request.setProperties(actualLocation, readNode.getProperties());
 
-            // Add each of the children to the list of locations that we need to read ...
-            for (Location child : readNode.getChildren()) {
-                locationsToRead.add(new LocationWithDepth(child, read.depth + 1));
+            if (includeChildrenInSubgraph(actualLocation, readNode.getPropertiesByName(), first)) {
+
+                // Add each of the children to the list of locations that we need to read ...
+                for (Location child : readNode.getChildren()) {
+                    locationsToRead.add(new LocationWithDepth(child, read.depth + 1));
+                }
             }
+
+            if (first) first = false;
         }
         setCacheableInfo(request);
+    }
+
+    /**
+     * This method is called from {@link #process(ReadBranchRequest)} when determining the maximum depth for the subgraph. By
+     * default, this method returns {@link Integer#MAX_VALUE}, signaling that the ReadBranchRequest's
+     * {@link ReadBranchRequest#maximumDepth() maximum depth} should be honored. However, subclasses can override this method to
+     * return a constant value that will be used if less than the ReadBranchRequest's maximum depth.
+     * 
+     * @return the maximum read depth allowed by the processor; must be positive
+     */
+    protected int absoluteMaximumDepthForBranchReads() {
+        return Integer.MAX_VALUE;
+    }
+
+    /**
+     * This method is called from {@link #process(ReadBranchRequest)} when determining whether particular nodes should be included
+     * in subgraph reads. For example, some processor implementations might want to always exclude nodes with certain names from
+     * all subgraph reads. If this is the case, subclasses should override this method (which always returns true), and determine
+     * whether the node at the supplied location should be included in the subgraph.
+     * 
+     * @param location the location of the parent node; never null
+     * @param properties the properties of the parent node; never null
+     * @param topOfSubgraph true if the parent node (identified by the location) is the root of the subgraph
+     * @return true if the child nodes should be read and included in the subgraph, or false otherwise
+     */
+    protected boolean includeChildrenInSubgraph( Location location,
+                                                 Map<Name, Property> properties,
+                                                 boolean topOfSubgraph ) {
+        return true;
     }
 
     /**

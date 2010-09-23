@@ -108,22 +108,10 @@ public class Processor<NodeType extends Node, WorkspaceType extends Workspace> e
 
         Location actualLocation = getActualLocation(workspace, request.at(), node);
         assert actualLocation != null;
-        Path path = actualLocation.getPath();
-        // Get the names of the children ...
-        List<NodeType> children = txn.getChildren(workspace, node);
-        for (Node child : children) {
-            Segment childName = child.getName();
-            Path childPath = pathFactory.create(path, childName);
-            Location childLocation = null;
 
-            if (child.getUuid() != null) {
-                childLocation = Location.create(childPath, child.getUuid());
-            } else {
-                childLocation = Location.create(childPath);
-            }
-
-            request.addChild(childLocation);
-        }
+        // Get the locations of the children ...
+        List<Location> childLocations = txn.getChildrenLocations(workspace, node);
+        request.addChildren(childLocations);
 
         // Get the properties of the node ...
         request.addProperty(propertyFactory.create(ModeShapeLexicon.UUID, node.getUuid()));
