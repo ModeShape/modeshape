@@ -131,7 +131,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     /**
      * This source by default does not use the file content to determine the MIME type, but instead just uses the filename.
      */
-    public static final boolean DEFAULT_DETERMINE_MIME_TYPE_USING_CONTENT = true;
+    public static final boolean DEFAULT_DETERMINE_MIME_TYPE_USING_CONTENT = false;
 
     public static final int DEFAULT_MAX_PATH_LENGTH = 255; // 255 for windows users
     public static final String DEFAULT_EXCLUSION_PATTERN = null;
