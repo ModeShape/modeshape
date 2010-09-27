@@ -69,6 +69,7 @@ import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.api.Repositories;
 import org.modeshape.repository.ModeShapeConfiguration;
+import org.modeshape.repository.ModeShapeConfigurationException;
 import org.modeshape.repository.ModeShapeEngine;
 
 /**
@@ -162,6 +163,45 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         return super.awaitTermination(timeout, unit);
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.repository.ModeShapeEngine#checkConfiguration(org.modeshape.graph.Subgraph)
+     */
+    @Override
+    protected void checkConfiguration( Subgraph configuration ) {
+        super.checkConfiguration(configuration);
+
+        // Get the list of sources ...
+        Set<String> sourceNames = new HashSet<String>();
+        for (Location child : configuration.getNode(ModeShapeLexicon.SOURCES)) {
+            String name = child.getPath().getLastSegment().getName().getLocalName();
+            sourceNames.add(name);
+        }
+        // Verify all of the repositories reference valid sources ...
+        for (Location child : configuration.getNode(ModeShapeLexicon.REPOSITORIES)) {
+            String repositoryName = readable(child.getPath().getLastSegment().getName());
+            Node repositoryNode = configuration.getNode(child);
+            Property property = repositoryNode.getProperty(ModeShapeLexicon.SOURCE_NAME);
+            if (property == null) {
+                getProblems().addError(JcrI18n.repositoryReferencesNonExistantSource, repositoryName, "null");
+            } else {
+                String sourceName = string(property.getFirstValue());
+                if (!sourceNames.contains(sourceName)) {
+                    getProblems().addError(JcrI18n.repositoryReferencesNonExistantSource, repositoryName, sourceName);
+                }
+            }
+        }
+    }
+
+    /**
+     * Start this engine to make it available for use.
+     * 
+     * @throws IllegalStateException if this method is called when already shut down.
+     * @throws JcrConfigurationException if there is an error in the configuration or any of the services that prevents proper
+     *         startup
+     * @see #shutdown()
+     */
     @Override
     public void start() {
         super.start();
@@ -174,10 +214,30 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
             }
 
         };
-        scheduler.scheduleAtFixedRate(cleanUpTask,
-                                      LOCK_SWEEP_INTERVAL_IN_MILLIS,
-                                      LOCK_SWEEP_INTERVAL_IN_MILLIS,
-                                      TimeUnit.MILLISECONDS);
+        try {
+            scheduler.scheduleAtFixedRate(cleanUpTask,
+                                          LOCK_SWEEP_INTERVAL_IN_MILLIS,
+                                          LOCK_SWEEP_INTERVAL_IN_MILLIS,
+                                          TimeUnit.MILLISECONDS);
+            checkProblemsOnStartup();
+        } catch (RuntimeException e) {
+            try {
+                super.shutdown();
+            } catch (Throwable t) {
+                // Don't care about these ...
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.repository.ModeShapeEngine#newConfigurationException(java.lang.String)
+     */
+    @Override
+    protected ModeShapeConfigurationException newConfigurationException( String msg ) {
+        return new JcrConfigurationException(msg);
     }
 
     /**
@@ -298,9 +358,14 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         }
         String sourceName = context.getValueFactories().getStringFactory().create(property.getFirstValue());
 
-        // Find the capabilities ...
+        // Verify the sourc exists ...
         RepositorySource source = getRepositorySource(sourceName);
-        RepositorySourceCapabilities capabilities = source != null ? source.getCapabilities() : null;
+        if (source == null) {
+            throw new RepositoryException(JcrI18n.repositoryReferencesNonExistantSource.text(repositoryName, sourceName));
+        }
+
+        // Find the capabilities ...
+        RepositorySourceCapabilities capabilities = source.getCapabilities();
         // Create the repository ...
         JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName,
                                                      getRepositoryService().getRepositoryLibrary(), capabilities, descriptors,
@@ -389,6 +454,10 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
 
     protected final String readable( Location location ) {
         return location.getString(context.getNamespaceRegistry());
+    }
+
+    protected final String string( Object value ) {
+        return context.getValueFactories().getStringFactory().create(value);
     }
 
     /**

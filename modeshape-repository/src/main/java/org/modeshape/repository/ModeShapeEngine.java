@@ -39,6 +39,7 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.NamedThreadFactory;
+import org.modeshape.common.util.Logger.Level;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.JcrLexicon;
@@ -258,29 +259,69 @@ public class ModeShapeEngine {
         throw new IllegalStateException(RepositoryI18n.engineIsNotRunning.text());
     }
 
-    /*
-     * Lifecycle methods
+    /**
+     * Check whether there are any problems that would prevent startup. Any warnings or errors will be logged, and this method
+     * will throw a {@link ModeShapeConfigurationException} if there is at least one error.
+     * 
+     * @throws ModeShapeConfigurationException if there is at least one error
      */
+    protected void checkProblemsOnStartup() throws ModeShapeConfigurationException {
+        boolean errors = problems.hasErrors();
+        if (errors && problems.hasWarnings()) {
+            // First log the messages ...
+            LOGGER.error(RepositoryI18n.errorsPreventStarting, problems.size());
+            for (Problem problem : getProblems()) {
+                Throwable t = problem.getThrowable(); // may be null
+                Level logLevel = problem.getStatus().getLogLevel();
+                LOGGER.log(logLevel, t, problem.getMessage(), problem.getParameters());
+            }
+        }
+        if (errors) {
+            // Then throw an exception ...
+            throw newConfigurationException(RepositoryI18n.errorsPreventStarting.text(problems.size()));
+        }
+    }
+
+    /**
+     * Construct a new ModeShapeConfigurationException. This method can be overridden by subclasses when a subclass of
+     * {@link ModeShapeConfigurationException} is to be thrown from {@link #start()}.
+     * 
+     * @param msg the message
+     * @return the exception; may not be null
+     */
+    protected ModeShapeConfigurationException newConfigurationException( String msg ) {
+        throw new ModeShapeConfigurationException(msg);
+    }
+
+    /**
+     * Check the configuration given by the supplied graph.
+     * 
+     * @param configuration the configuration subgraph
+     */
+    protected void checkConfiguration( Subgraph configuration ) {
+    }
+
     /**
      * Start this engine to make it available for use.
      * 
      * @throws IllegalStateException if this method is called when already shut down.
+     * @throws ModeShapeConfigurationException if there is an error in the configuration or any of the services that prevents
+     *         proper startup
      * @see #shutdown()
      */
     public void start() {
-        if (getProblems().hasErrors()) {
-            // First log the messages ...
-            LOGGER.error(RepositoryI18n.errorsPreventStarting);
-            for (Problem problem : getProblems()) {
-                LOGGER.error(problem.getMessage(), problem.getParameters());
-            }
-            // Then throw an exception ...
-            throw new IllegalStateException(RepositoryI18n.errorsPreventStarting.text());
-        }
+        // Check whether there are problems BEFORE startup ...
+        checkProblemsOnStartup();
 
         // Create the RepositoryContext that the configuration repository source should use ...
         RepositoryContext configContext = new SimpleRepositoryContext(context, clusteringService, null);
         configuration.getRepositorySource().initialize(configContext);
+        try {
+            checkConfiguration(configuration.graph().getSubgraphOfDepth(10).at(configuration.getPath()));
+        } catch (RuntimeException e) {
+            problems.addError(e, RepositoryI18n.errorVerifyingConfiguration, e.getLocalizedMessage());
+        }
+        checkProblemsOnStartup();
 
         // Start the various services ...
         clusteringService.getAdministrator().start();
@@ -289,6 +330,9 @@ public class ModeShapeEngine {
 
         // Now register the repository service to be notified of changes to the configuration ...
         clusteringService.register(repositoryService);
+
+        // Check whether there are problems AFTER startup ...
+        checkProblemsOnStartup();
     }
 
     /**
