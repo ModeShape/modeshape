@@ -37,6 +37,7 @@ public final class JcrI18n {
     public static I18n couldNotStartEngine;
     public static I18n engineStopping;
     public static I18n engineStopped;
+    public static I18n repositoryReferencesNonExistantSource;
 
     public static I18n cannotConvertValue;
     public static I18n credentialsMustProvideJaasMethod;

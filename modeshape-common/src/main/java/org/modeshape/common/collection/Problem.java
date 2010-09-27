@@ -27,6 +27,7 @@ import net.jcip.annotations.Immutable;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
+import org.modeshape.common.util.Logger;
 
 /**
  * An immutable representation of a problem, with a status, code, internationalized and parameterized message, values for the
@@ -43,6 +44,18 @@ public class Problem {
         ERROR,
         WARNING,
         INFO;
+
+        public Logger.Level getLogLevel() {
+            switch (this) {
+                case ERROR:
+                    return Logger.Level.ERROR;
+                case WARNING:
+                    return Logger.Level.WARNING;
+                case INFO:
+                default:
+                    return Logger.Level.INFO;
+            }
+        }
     }
 
     private final Status status;

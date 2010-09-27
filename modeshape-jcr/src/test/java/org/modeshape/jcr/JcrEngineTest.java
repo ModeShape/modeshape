@@ -96,6 +96,36 @@ public class JcrEngineTest {
         assertNodeType("car:Car", false, false, true, false, null, 0, 11, "nt:unstructured", "mix:created");
     }
 
+    @Test( expected = JcrConfigurationException.class )
+    public void shouldFailToStartIfAnyRepositorySourceDoesNotDefineClass() throws Exception {
+        configuration = new JcrConfiguration();
+        configuration.repositorySource("car-source")
+        // .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The automobile content");
+        configuration.repository("cars")
+                     .setSource("car-source-non-existant")
+                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                     .addNodeTypes(resourceUrl("cars.cnd"))
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        engine = configuration.build();
+        engine.start();
+    }
+
+    @Test( expected = JcrConfigurationException.class )
+    public void shouldFailToStartIfAnyRepositoryReferencesNonExistantSource() throws Exception {
+        configuration = new JcrConfiguration();
+        configuration.repositorySource("car-source")
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The automobile content");
+        configuration.repository("cars")
+                     .setSource("car-source-non-existant")
+                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                     .addNodeTypes(resourceUrl("cars.cnd"))
+                     .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
+        engine = configuration.build();
+        engine.start();
+    }
+
     // @Test
     // public void shouldCreateRepositoryConfiguredWithOneXmlNodeTypeDefinitionFiles() throws Exception {
     // configuration = new JcrConfiguration();
