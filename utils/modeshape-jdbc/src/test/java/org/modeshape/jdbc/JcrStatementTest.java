@@ -38,7 +38,6 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Set;
 
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.QueryResult;
