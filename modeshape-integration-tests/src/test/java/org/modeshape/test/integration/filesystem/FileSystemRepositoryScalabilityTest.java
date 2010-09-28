@@ -48,7 +48,6 @@ import org.modeshape.jcr.JcrEngine;
 public class FileSystemRepositoryScalabilityTest {
 
     private static final String TEST_REPOSITORY = "Source Code Repository";
-    private static final String TEST_WORKSPACE = "files";
 
     private static JcrConfiguration configuration;
     private static JcrEngine engine;
