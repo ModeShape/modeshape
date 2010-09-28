@@ -426,7 +426,18 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/ma
 			The REST Server currently supports the URIs and HTTP methods described below.  The URI patterns assume
 			that the REST server is deployed at its conventional location of "/resources".  These URI patterns would
 			change if the REST server were deployed under a different web context and URI patterns below would
-			change accordingly.  Currently, only JSON-encoded responses are provided.
+			change accordingly.
+		</para>
+		<note>
+			<para>
+				The <link linkend="deloying_modeshape_to_jbossas">JBoss AS kit</link> by default will deploy the RESTful service 
+				at the "/modeshape-rest" location, which is more descriptive and better	fits with the other deployed applications 
+				and services. To use these examples against this RESTful service, simply replace "/resources" with "/modeshape-rest"
+				in each of the URLs.
+			</para>
+		</note>
+		<para>
+		  Currently, only JSON-encoded responses are provided.
 		</para>
 				<table frame='all'>
 			<title>Supported URIs for the ModeShape REST Server</title>
