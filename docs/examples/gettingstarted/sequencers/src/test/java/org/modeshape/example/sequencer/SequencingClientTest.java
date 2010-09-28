@@ -276,6 +276,8 @@ public class SequencingClientTest {
         for (int i = 0; i != 50; i++) {
             numFound = client.getStatistics().getNumberOfNodesSequenced();
             if (numFound >= totalNumberOfNodesSequenced) {
+                // Wait for the sequenced output to be saved before searching ...
+                Thread.sleep(500);
                 return;
             }
             Thread.sleep(100);
