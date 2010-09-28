@@ -209,7 +209,8 @@ public class NodeType implements IModeShapeObject, javax.jcr.nodetype.NodeType {
                     allSuperTypeNames.addAll(superType.allSuperTypeNames());
                 }
             }
-            if (allSuperTypes.isEmpty()) {
+            if (allSuperTypes.isEmpty() && !isMixin) {
+                // All non-mixin node types ultimately extend 'nt:base' ...
                 NodeType ntBase = nodeTypes.get("nt:base");
                 if (ntBase != null) {
                     allSuperTypes.add(ntBase);
