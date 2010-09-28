@@ -23,14 +23,14 @@
        
         <dependencySet>
           <outputDirectory></outputDirectory>
-					<!-- This doesn't work until Maven 2.2, and we're on Maven 2.0.9 -->
-        	<useTransitiveDependencies>true</useTransitiveDependencies>
+          <!-- This doesn't work until Maven 2.2, and we're on Maven 2.0.9 -->
+          <useTransitiveDependencies>true</useTransitiveDependencies>
 
            <includes>
-						<!-- 
-						We're currently stuck on Maven 2.0.9, but Maven 2.2 introduces wildcards and transitive dependencies.
-						Until we can upgrade, we need to explicitly list all dependencies.
-						-->
+            <!-- 
+            We're currently stuck on Maven 2.0.9, but Maven 2.2 introduces wildcards and transitive dependencies.
+            Until we can upgrade, we need to explicitly list all dependencies.
+            -->
             <include>org.modeshape:modeshape-common</include>
             <include>org.modeshape:modeshape-graph</include>
             <include>org.modeshape:modeshape-cnd</include>
@@ -75,8 +75,35 @@
             <include>org.apache.poi:poi-scratchpad</include>
 
             <include>org.modeshape:modeshape-mimetype-detector-aperture</include>
-     				<include>org.semanticdesktop:aperture</include>
-     				<include>org.semweb4j:rdf2go.api</include>
+            <include>org.semanticdesktop:aperture</include>
+            <include>org.semweb4j:rdf2go.api</include>
+
+            <!-- 
+            Eclipse JDT artifacts declare their dependencies using ranges. (yikes!)
+            So we need to specify exact versions, and we can do that in a dependencyManagement section.
+            Here are the dependencies showing the last combination that we could get working:
+
+            +- org.eclipse.equinox:common:jar:3.3.0-v20070426:compile
+            +- org.eclipse.jdt:core:jar:3.3.0-v_771:compile
+               +- org.eclipse.core:resources:jar:3.3.0-v20070604:compile
+               |  \- org.eclipse.core:expressions:jar:3.3.0-v20070606-0010:compile
+               \- org.eclipse.core:runtime:jar:3.3.100-v20070530:compile
+                  +- org.eclipse:osgi:jar:3.3.0-v20070530:compile
+                  +- org.eclipse.core:jobs:jar:3.3.0-v20070423:compile
+                  +- org.eclipse.equinox:registry:jar:3.3.0-v20070522:compile
+                  +- org.eclipse.equinox:preferences:jar:3.2.100-v20070522:compile
+                  \- org.eclipse.core:contenttype:jar:3.2.100-v20070319:compile
+            -->
+            <include>org.eclipse.equinox:common</include>
+            <include>org.eclipse.jdt:core</include>
+            <include>org.eclipse.core:resources</include>
+            <include>org.eclipse.core:expressions</include>
+            <include>org.eclipse.core:runtime</include>
+            <include>org.eclipse:osgi</include>
+            <include>org.eclipse.core:jobs</include>
+            <include>org.eclipse.equinox:registry</include>
+            <include>org.eclipse.equinox:preferences</include>
+            <include>org.eclipse.core:contenttype</include>
 
           </includes>
     
