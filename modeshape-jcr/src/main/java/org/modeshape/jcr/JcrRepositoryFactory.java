@@ -53,7 +53,7 @@ import org.xml.sax.SAXException;
  * 
  * <pre>
  * String configUrl = ... ; // URL that points to your configuration file
- * Map params = Collections.singletonMap(JcrRepositoryFactory.URL, configUrl);
+ * Map parameters = Collections.singletonMap(JcrRepositoryFactory.URL, configUrl);
  * Repository repository;
  * 
  * for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
