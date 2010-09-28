@@ -24,9 +24,9 @@
 package org.modeshape.graph.connector.base;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -356,7 +356,7 @@ public class MapNode implements Node, Serializable, Cloneable {
         if (getChildren().indexOf(child) != -1) return this;
         if (changes == null) {
             MapNode copy = clone();
-            List<UUID> children = new LinkedList<UUID>(getChildren());
+            List<UUID> children = new ArrayList<UUID>(getChildren());
             assert !children.contains(child);
             children.add(child);
             copy.changes = newChanges();
@@ -385,7 +385,7 @@ public class MapNode implements Node, Serializable, Cloneable {
         }
         if (changes == null) {
             MapNode copy = clone();
-            List<UUID> children = new LinkedList<UUID>(getChildren());
+            List<UUID> children = new ArrayList<UUID>(getChildren());
             if (existingIndex >= 0) {
                 // The child is moving positions, so remove it before we add it ...
                 children.remove(existingIndex);
@@ -416,7 +416,7 @@ public class MapNode implements Node, Serializable, Cloneable {
         assert child != null;
         if (changes == null) {
             MapNode copy = clone();
-            List<UUID> children = new LinkedList<UUID>(getChildren());
+            List<UUID> children = new ArrayList<UUID>(getChildren());
             children.remove(child);
             copy.changes = newChanges();
             copy.changes.setChildren(children);
@@ -436,7 +436,7 @@ public class MapNode implements Node, Serializable, Cloneable {
         if (changes == null) {
             MapNode copy = clone();
             copy.changes = newChanges();
-            copy.changes.setChildren(new LinkedList<UUID>());
+            copy.changes.setChildren(new ArrayList<UUID>());
             return copy;
         }
         changes.getChildren(true).clear();
@@ -586,7 +586,7 @@ public class MapNode implements Node, Serializable, Cloneable {
         public List<UUID> getChildren( boolean createIfMissing ) {
             if (children == null) {
                 if (createIfMissing) {
-                    children = new LinkedList<UUID>();
+                    children = new ArrayList<UUID>();
                     return children;
                 }
                 return MapNode.this.children;
