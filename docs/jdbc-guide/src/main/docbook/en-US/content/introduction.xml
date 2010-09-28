@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % CustomDTD SYSTEM "../custom.dtd">
+%CustomDTD;
+]>
+<chapter id="introduction">
+  <title>Introduction</title>
+
+  <para>ModeShape provides a JDBC driver implementation that allows JDBC
+  clients to query the contents of a JCR repository using JCR-SQL2 defined in
+  <ulink url="http://www.jcp.org/en/jsr/detail?id=283">JSR-283</ulink>. The
+  driver even supports JDBC metadata, so client applications can dynamically
+  discover the tables and columns available for querying (which are determined
+  from the node types). In this initial version, the driver must be used in
+  the same vm as a ModeShape JCR Repository. It can be configured as a data
+  source in JBoss AS, and can leverage the ModeShape service, allowing
+  JDBC-based access to the same repository content available via the RESTful
+  or WebDAV services.</para>
+
+  <para>This document goes into detail about what aspects of the JDBC API
+  ModeShape will and will not support in this version.</para>
+
+  <sect1 id="use_cases">
+    <title>Use cases for ModeShape</title>
+
+    <para>The following are the use cases that the ModeShape jdbc driver
+    currently supports.</para>
+
+    <para></para>
+
+    <orderedlist>
+      <listitem>
+        <para>The abiltiy of applications running in a JBoss AS server to
+        obtain a connection by looking up the datasource via JNDI and issue
+        sql queries to obtain information from a ModeShape JCR repository
+        running in the same VM. This is part of the overall use case of
+        accessing the ModeShape JCR repository from Teiid as part of its data
+        federation capabilities</para>
+      </listitem>
+
+      <listitem>
+        <para>The abiltiy to access the ModeShape Jcr repository using Teiid
+        data services. As part of this use case, the Teiid Designer should be
+        used to build a data access model to query thru Teiid. This would be
+        done by importing the jcr metadata using the ModeShape JDBC
+        driver.</para>
+      </listitem>
+    </orderedlist>
+  </sect1>
+</chapter>
