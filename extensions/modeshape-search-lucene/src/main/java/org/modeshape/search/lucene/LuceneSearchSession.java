@@ -360,6 +360,9 @@ public class LuceneSearchSession implements WorkspaceSession {
         QueryParser parser = new QueryParser(workspace.getVersion(), ContentIndex.FULL_TEXT, workspace.analyzer);
         Query query = parser.parse(fullTextSearchExpression);
         planningNanos = System.nanoTime() - planningNanos;
+        if (logger.isTraceEnabled()) {
+            logger.trace("search \"{0}\" workspace using {1}", workspace.getWorkspaceName(), query);
+        }
 
         // Execute the search and place the results into the supplied list ...
         TopDocs docs = getContentSearcher().search(query, maxRows + offset);

@@ -91,6 +91,10 @@ public class JcrQueryManagerTest {
             "jcr:createdBy"};
     }
 
+    protected static String[] searchColumnNames() {
+        return new String[] {};
+    }
+
     private static JcrConfiguration configuration;
     private static JcrEngine engine;
     private static JcrRepository repository;
@@ -298,7 +302,7 @@ public class JcrQueryManagerTest {
     // ----------------------------------------------------------------------------------------------------------------
 
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllNodes() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllNodes() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
@@ -308,7 +312,7 @@ public class JcrQueryManagerTest {
     }
 
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllCarNodes() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarNodes() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [car:Car]", Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
@@ -318,7 +322,7 @@ public class JcrQueryManagerTest {
     }
 
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllCarNodesOrderedByYear() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarNodesOrderedByYear() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [car:Car] ORDER BY [car:year]",
                                                                            Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
@@ -329,7 +333,7 @@ public class JcrQueryManagerTest {
     }
 
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllCarNodesOrderedByMsrp() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarNodesOrderedByMsrp() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [car:Car] ORDER BY [car:msrp] DESC",
                                                                            Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
@@ -344,7 +348,7 @@ public class JcrQueryManagerTest {
     }
 
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllCarsUnderHybrid() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarsUnderHybrid() throws RepositoryException {
         Query query = session.getWorkspace()
                              .getQueryManager()
                              .createQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car WHERE PATH(car) LIKE '%/Hybrid/%'",
@@ -361,7 +365,7 @@ public class JcrQueryManagerTest {
 
     @Ignore
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryUsingJoinToFindAllCarsUnderHybrid() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryUsingJoinToFindAllCarsUnderHybrid() throws RepositoryException {
         Query query = session.getWorkspace()
                              .getQueryManager()
                              .createQuery("SELECT car.[car:maker], car.[car:model], car.[car:year], car.[car:msrp] FROM [car:Car] AS car JOIN [nt:unstructured] AS hybrid ON ISCHILDNODE(car,hybrid) WHERE NAME(hybrid) = 'Hybrid'",
@@ -374,7 +378,7 @@ public class JcrQueryManagerTest {
     }
 
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryToFindAllUnstructuredNodes() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllUnstructuredNodes() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:unstructured]", Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
@@ -384,7 +388,7 @@ public class JcrQueryManagerTest {
     }
 
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithChildNodeJoin() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithChildNodeJoin() throws RepositoryException {
         String sql = "SELECT car.* from [car:Car] as car JOIN [nt:unstructured] as category ON ISCHILDNODE(car,category) WHERE NAME(category) LIKE 'Utility'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
@@ -395,7 +399,8 @@ public class JcrQueryManagerTest {
     }
 
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithChildNodeJoinAndColumnsFromBothSidesOfJoin() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithChildNodeJoinAndColumnsFromBothSidesOfJoin()
+        throws RepositoryException {
         String sql = "SELECT car.*, category.[jcr:primaryType] from [car:Car] as car JOIN [nt:unstructured] as category ON ISCHILDNODE(car,category) WHERE NAME(category) LIKE 'Utility'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
@@ -409,7 +414,7 @@ public class JcrQueryManagerTest {
     }
 
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithDescendantNodeJoinWithoutCriteria() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithDescendantNodeJoinWithoutCriteria() throws RepositoryException {
         String sql = "SELECT * FROM [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category)";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
@@ -423,7 +428,7 @@ public class JcrQueryManagerTest {
     }
 
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithDescendantNodeJoin() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithDescendantNodeJoin() throws RepositoryException {
         String sql = "SELECT car.* from [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE NAME(category) LIKE 'Utility'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
@@ -434,7 +439,7 @@ public class JcrQueryManagerTest {
     }
 
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithDescendantNodeJoinAndColumnsFromBothSidesOfJoin()
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithDescendantNodeJoinAndColumnsFromBothSidesOfJoin()
         throws RepositoryException {
         String sql = "SELECT car.*, category.[jcr:primaryType] from [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE NAME(category) LIKE 'Utility'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
@@ -450,7 +455,7 @@ public class JcrQueryManagerTest {
 
     @FixFor( "MODE-829" )
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithDescendantNodeJoinUsingNtBase() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithDescendantNodeJoinUsingNtBase() throws RepositoryException {
         String sql = "SELECT * FROM [nt:base] AS category JOIN [nt:base] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars')";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
@@ -462,7 +467,7 @@ public class JcrQueryManagerTest {
 
     @FixFor( "MODE-829" )
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithDescendantNodeJoinUsingNtBaseAndNameConstraint()
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithDescendantNodeJoinUsingNtBaseAndNameConstraint()
         throws RepositoryException {
         String sql = "SELECT * FROM [nt:base] AS category JOIN [nt:base] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars') AND NAME(cars) LIKE 'Toyota%'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
@@ -475,7 +480,7 @@ public class JcrQueryManagerTest {
 
     @FixFor( "MODE-829" )
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithDescendantNodeJoinUsingNonExistantNameColumnOnTypeWithResidualProperties()
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithDescendantNodeJoinUsingNonExistantNameColumnOnTypeWithResidualProperties()
         throws RepositoryException {
         String sql = "SELECT * FROM [nt:unstructured] AS category JOIN [nt:unstructured] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars') AND cars.name = 'd2'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
@@ -488,7 +493,7 @@ public class JcrQueryManagerTest {
 
     @FixFor( "MODE-829" )
     @Test( expected = RepositoryException.class )
-    public void shouldFailToExecuteSqlQueryWithDescendantNodeJoinUsingNonExistantNameColumnOnTypeWithNoResidualProperties()
+    public void shouldFailToExecuteJcrSql2QueryWithDescendantNodeJoinUsingNonExistantNameColumnOnTypeWithNoResidualProperties()
         throws RepositoryException {
         String sql = "SELECT * FROM [nt:base] AS category JOIN [nt:base] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars') AND cars.name = 'd2'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
@@ -498,7 +503,7 @@ public class JcrQueryManagerTest {
 
     @FixFor( "MODE-869" )
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithSubqueryInCriteria() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithSubqueryInCriteria() throws RepositoryException {
         Query query = session.getWorkspace()
                              .getQueryManager()
                              .createQuery("SELECT * FROM [car:Car] WHERE [car:maker] IN (SELECT [car:maker] FROM [car:Car] WHERE [car:year] >= 2008)",
@@ -512,7 +517,7 @@ public class JcrQueryManagerTest {
 
     @FixFor( "MODE-869" )
     @Test
-    public void shouldBeAbleToCreateAndExecuteSqlQueryWithSubqueryInCriteria2() throws RepositoryException {
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithSubqueryInCriteria2() throws RepositoryException {
         Query query = session.getWorkspace()
                              .getQueryManager()
                              .createQuery("SELECT * FROM [car:Car] WHERE [car:maker] IN (SELECT [car:maker] FROM [car:Car] WHERE PATH() LIKE '%/Hybrid/%')",
@@ -522,6 +527,33 @@ public class JcrQueryManagerTest {
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 4); // the 4 types of cars made by makers that make hybrids
         assertResultsHaveColumns(result, carColumnNames());
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // Full-text Search Queries
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @FixFor( "MODE-905" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteFullTextSearchQuery() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("land", JcrRepository.QueryLanguage.SEARCH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        print = true;
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 3);
+        assertResultsHaveColumns(result, searchColumnNames());
+    }
+
+    @FixFor( "MODE-905" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteFullTextSearchQueryWithName() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("highlander", JcrRepository.QueryLanguage.SEARCH);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 1);
+        assertResultsHaveColumns(result, searchColumnNames());
     }
 
     // ----------------------------------------------------------------------------------------------------------------

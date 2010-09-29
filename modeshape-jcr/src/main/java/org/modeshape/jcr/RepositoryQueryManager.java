@@ -66,6 +66,7 @@ import org.modeshape.graph.query.process.QueryProcessor;
 import org.modeshape.graph.query.process.SelectComponent.Analyzer;
 import org.modeshape.graph.query.validate.Schemata;
 import org.modeshape.graph.request.AccessQueryRequest;
+import org.modeshape.graph.request.FullTextSearchRequest;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.processor.RequestProcessor;
 import org.modeshape.graph.search.SearchEngine;
@@ -371,13 +372,11 @@ abstract class RepositoryQueryManager {
                                     String searchExpression,
                                     int maxRowCount,
                                     int offset ) {
-            Graph graph = Graph.create(sourceName, connectionFactory, context);
-
-            if (workspaceName != null) {
-                graph.useWorkspace(workspaceName);
-            }
-
-            return graph.search(searchExpression, maxRowCount, offset);
+            SearchEngineProcessor processor = searchEngine.createProcessor(context, null, true);
+            FullTextSearchRequest request = new FullTextSearchRequest(searchExpression, workspaceName, maxRowCount, offset);
+            processor.process(request);
+            return new org.modeshape.graph.query.process.QueryResults(request.getResultColumns(), request.getStatistics(),
+                                                                      request.getTuples());
         }
 
         /**
