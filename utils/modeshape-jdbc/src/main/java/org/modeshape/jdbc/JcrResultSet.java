@@ -265,10 +265,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public void setFetchDirection( int direction ) throws SQLException {
-        notClosed();
-        if (direction != ResultSet.FETCH_FORWARD) {
-            throw new SQLException(JdbcI18n.resultSetIsForwardOnly.text());
-        }
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1454,9 +1451,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public boolean relative( int rows ) throws SQLException {
-        notClosed();
-        forwardOnly();
-        return false;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1469,8 +1464,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public boolean rowDeleted() throws SQLException {
-        notClosed();
-        return false;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1483,8 +1477,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public boolean rowInserted() throws SQLException {
-        notClosed();
-        return false;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1497,8 +1490,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public boolean rowUpdated() throws SQLException {
-        notClosed();
-        return false;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**

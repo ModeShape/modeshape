@@ -28,6 +28,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -272,7 +273,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                     String schemaPattern,
                                     String typeNamePattern,
                                     String attributeNamePattern ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -286,7 +287,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                            String table,
                                            int scope,
                                            boolean nullable ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -360,7 +361,7 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public ResultSet getClientInfoProperties() throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -373,7 +374,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                           String schema,
                                           String table,
                                           String columnNamePattern ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -623,7 +624,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                         String foreignCatalog,
                                         String foreignSchema,
                                         String foreignTable ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -649,7 +650,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getExportedKeys( String catalog,
                                       String schema,
                                       String table ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -672,7 +673,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                          String schemaPattern,
                                          String functionNamePattern,
                                          String columnNamePattern ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -684,7 +685,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getFunctions( String catalog,
                                    String schemaPattern,
                                    String functionNamePattern ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -714,7 +715,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getImportedKeys( String catalog,
                                       String schema,
                                       String table ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -728,7 +729,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                    String table,
                                    boolean unique,
                                    boolean approximate ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -997,7 +998,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getPrimaryKeys( String catalog,
                                      String schema,
                                      String table ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1010,7 +1011,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                           String schemaPattern,
                                           String procedureNamePattern,
                                           String columnNamePattern ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1032,7 +1033,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getProcedures( String catalog,
                                     String schemaPattern,
                                     String procedureNamePattern ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1158,7 +1159,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getSuperTables( String catalog,
                                      String schemaPattern,
                                      String tableNamePattern ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1170,7 +1171,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getSuperTypes( String catalog,
                                     String schemaPattern,
                                     String typeNamePattern ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1192,7 +1193,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getTablePrivileges( String catalog,
                                          String schemaPattern,
                                          String tableNamePattern ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1375,7 +1376,7 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public ResultSet getTypeInfo() throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1388,7 +1389,7 @@ public class JcrMetaData implements DatabaseMetaData {
                               String schemaPattern,
                               String typeNamePattern,
                               int[] types ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1424,7 +1425,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getVersionColumns( String catalog,
                                         String schema,
                                         String table ) throws SQLException {
-        return null;
+    	throw new SQLFeatureNotSupportedException();
     }
 
     /**

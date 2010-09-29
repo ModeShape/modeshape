@@ -388,11 +388,6 @@ public class JcrResultSetTest {
     }
 
     @Test
-    public void shouldSetFetchDirectionForward() throws SQLException {
-        resultSet.setFetchDirection(ResultSet.FETCH_FORWARD);
-    }
-
-    @Test
     public void shouldReturnDefaultFetchSize() throws SQLException {
         assertThat(resultSet.getFetchSize(), is(0));
     }
@@ -425,21 +420,6 @@ public class JcrResultSetTest {
     @Test
     public void shouldFindColumn() throws SQLException {
         assertThat(resultSet.findColumn(TestUtil.COLUMN_NAME_PROPERTIES.PROP_A), is(1));
-    }
-
-    @Test
-    public void shouldReturnFalseForRowDeleted() throws SQLException {
-        assertThat(resultSet.rowDeleted(), is(false));
-    }
-
-    @Test
-    public void shouldReturnFalseForRowInserted() throws SQLException {
-        assertThat(resultSet.rowInserted(), is(false));
-    }
-
-    @Test
-    public void shouldReturnFalseForRowUpdated() throws SQLException {
-        assertThat(resultSet.rowUpdated(), is(false));
     }
 
     @Test
@@ -1076,5 +1056,38 @@ public class JcrResultSetTest {
     public void featureNotSupportedCallingGetUnicodeStreamColName() throws SQLException {
         resultSet.getUnicodeStream("colname");
     }
+    
+    /**
+     * @throws SQLException
+     */
+    @Test( expected = SQLFeatureNotSupportedException.class )
+    public void featureNotSupportedCallingRowDeleted() throws SQLException {
+        resultSet.rowDeleted();
+    }
+
+    /**
+     * @throws SQLException
+     */
+    @Test( expected = SQLFeatureNotSupportedException.class )
+    public void featureNotSupportedCallingRowInserted() throws SQLException {
+        resultSet.rowInserted();
+    }
+
+    /**
+     * @throws SQLException
+     */
+    @Test( expected = SQLFeatureNotSupportedException.class )
+    public void featureNotSupportedCallingRowUpdated() throws SQLException {
+        resultSet.rowUpdated();
+    }    
+
+    /**
+     * @throws SQLException
+     */
+    @Test( expected = SQLFeatureNotSupportedException.class )
+    public void featureNotSupportedCallingSetFetchDirectionForward() throws SQLException {
+        resultSet.setFetchDirection(ResultSet.FETCH_FORWARD);
+    }
+    
 
 }
