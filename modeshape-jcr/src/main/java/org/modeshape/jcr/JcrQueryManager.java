@@ -146,8 +146,7 @@ class JcrQueryManager implements QueryManager {
             hints.showPlan = true;
             if (Query.SQL.equals(language)) {
                 hints.hasFullTextSearch = true; // requires 'jcr:score' to exist
-            }
-            if (Query.XPATH.equals(language)) {
+            } else if (Query.XPATH.equals(language)) {
                 hints.hasFullTextSearch = true; // requires 'jcr:score' to exist
                 hints.validateColumnExistance = false;
             }
