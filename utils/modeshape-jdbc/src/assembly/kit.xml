@@ -15,6 +15,25 @@
     <dependencySets>
        <dependencySet>
        <unpack>true</unpack>
+	
+		<unpackOptions>
+		  <!-- Excluding duplicates where LICENSE and NOTICE are already included, but don't have the .txt extension 
+			 
+			========================================================================
+			NOTE: this was validated that the current dependencies produce duplicates that are all Apache files.
+					However, if additional dependencies are added, the excludes should be removed, 
+					build the jar, and then verify if there are new LICENSE and/or NOTICE files
+					because all the unique license / notices may need to be kept for legal reasons
+			=====
+		  
+		  -->		  
+			<excludes>
+				<exclude>META-INF/LICENSE.txt</exclude>
+				<exclude>META-INF/NOTICE.txt</exclude>
+			</excludes>
+		</unpackOptions>
+
+
        
        <useTransitiveDependencies>true</useTransitiveDependencies>
 
@@ -22,7 +41,6 @@
             <include>org.modeshape:modeshape-common</include> 
             <include>org.modeshape:modeshape-jcr-api</include>   
               
-             <include>org.modeshape:modeshape-web-jcr-rest-client:*with-dependencies.jar</include>
              <include>javax.jcr:jcr</include>
              <include>log4j:log4j</include>
              <include>org.slf4j:slf4j-log4j12</include>
@@ -40,8 +58,8 @@
         </includes>
 
     </dependencySet>
-    
-    <dependencySet>
+	
+	<dependencySet>
         <unpack>true</unpack>
        
        <useTransitiveDependencies>false</useTransitiveDependencies>
@@ -51,10 +69,8 @@
        </includes>
 
     </dependencySet>
-    
-    
-    
+	    
   </dependencySets>
 
-  
+
 </assembly>
