@@ -102,7 +102,7 @@ public class QueryEngine implements Queryable {
             start = System.nanoTime();
             resultColumns = determineQueryResultColumns(optimizedPlan, context.getHints());
             duration = System.nanoTime() - start;
-            stats = stats.withOptimizationTime(duration);
+            stats = stats.withResultsFormulationTime(duration);
 
             if (!context.getProblems().hasErrors()) {
                 // Execute the plan ...
@@ -111,7 +111,7 @@ public class QueryEngine implements Queryable {
                     return processor.execute(context, query, stats, optimizedPlan);
                 } finally {
                     duration = System.nanoTime() - start;
-                    stats = stats.withOptimizationTime(duration);
+                    stats = stats.withExecutionTime(duration);
                 }
             }
         }
