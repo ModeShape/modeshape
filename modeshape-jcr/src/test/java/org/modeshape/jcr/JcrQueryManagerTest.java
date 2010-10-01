@@ -529,6 +529,28 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, carColumnNames());
     }
 
+    @FixFor( "MODE-909" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderBy() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT [jcr:primaryType] from [nt:base] ORDER BY [jcr:primaryType]", Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 24);
+        assertResultsHaveColumns(result, new String[] {"jcr:primaryType"});
+        RowIterator iter = result.getRows();
+        String primaryType = "";
+        while (iter.hasNext()) {
+            Row row = iter.nextRow();
+            String nextPrimaryType = row.getValues()[0].getString();
+            assertThat(nextPrimaryType.compareTo(primaryType) >= 0, is(true));
+            primaryType = nextPrimaryType;
+        }
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Full-text Search Queries
     // ----------------------------------------------------------------------------------------------------------------

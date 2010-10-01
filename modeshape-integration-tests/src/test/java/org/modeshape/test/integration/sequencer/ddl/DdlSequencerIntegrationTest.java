@@ -24,13 +24,19 @@
 package org.modeshape.test.integration.sequencer.ddl;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryResult;
+import javax.jcr.query.Row;
+import javax.jcr.query.RowIterator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
@@ -63,20 +69,28 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
 
         config = new JcrConfiguration();
         // Set up the in-memory source where we'll upload the content and where the sequenced output will be stored ...
-        config.repositorySource(repositorySource).usingClass(InMemoryRepositorySource.class).setDescription("The repository for our content").setProperty("defaultWorkspaceName",
-                                                                                                                                                          workspaceName);
+        config.repositorySource(repositorySource)
+              .usingClass(InMemoryRepositorySource.class)
+              .setDescription("The repository for our content")
+              .setProperty("defaultWorkspaceName", workspaceName);
         // Set up the JCR repository to use the source ...
-        config.repository(repositoryName).addNodeTypes(getUrl(ddlTestResourceRootFolder + "StandardDdl.cnd")).registerNamespace(StandardDdlLexicon.Namespace.PREFIX,
-                                                                                                                                StandardDdlLexicon.Namespace.URI).setSource(repositorySource);
+        config.repository(repositoryName)
+              .addNodeTypes(getUrl(ddlTestResourceRootFolder + "StandardDdl.cnd"))
+              .registerNamespace(StandardDdlLexicon.Namespace.PREFIX, StandardDdlLexicon.Namespace.URI)
+              .setSource(repositorySource);
         // Set up the DDL sequencer ...
-        config.sequencer("DDL Sequencer").usingClass("org.modeshape.sequencer.ddl.DdlSequencer").loadedFromClasspath().setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values").sequencingFrom("//(*.(ddl)[*])/jcr:content[@jcr:data]").andOutputtingTo("/ddls/$1");
+        config.sequencer("DDL Sequencer")
+              .usingClass("org.modeshape.sequencer.ddl.DdlSequencer")
+              .loadedFromClasspath()
+              .setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values")
+              .sequencingFrom("//(*.(ddl)[*])/jcr:content[@jcr:data]")
+              .andOutputtingTo("/ddls/$1");
         config.save();
         this.engine = config.build();
         this.engine.start();
 
-        this.session = this.engine.getRepository(repositoryName).login(new JcrSecurityContextCredentials(
-                                                                                                         new MyCustomSecurityContext()),
-                                                                       workspaceName);
+        this.session = this.engine.getRepository(repositoryName)
+                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
 
     }
 
@@ -357,9 +371,8 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         this.engine = config.build();
         this.engine.start();
 
-        this.session = this.engine.getRepository(repositoryName).login(new JcrSecurityContextCredentials(
-                                                                                                         new MyCustomSecurityContext()),
-                                                                       workspaceName);
+        this.session = this.engine.getRepository(repositoryName)
+                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
 
         ArgleDdlParser.parsed = 0;
         ArgleDdlParser.scored = 0;
@@ -369,6 +382,37 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         // Scored but not parsed ...
         assertThat(ArgleDdlParser.scored, is(1));
         assertThat(ArgleDdlParser.parsed, is(0));
+    }
+
+    @FixFor( "MODE-909" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderBy() throws Exception {
+        this.engine = config.build();
+        this.engine.start();
+
+        this.session = this.engine.getRepository(repositoryName)
+                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
+        // Upload a file ...
+        uploadFile(ddlTestResourceRootFolder, "create_schema.ddl", "shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderBy");
+        waitUntilSequencedNodesIs(1);
+
+        // Now query for content ...
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT [jcr:primaryType] from [nt:base] ORDER BY [jcr:primaryType]", Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        // System.out.println(result);
+        assertThat(result, is(notNullValue()));
+        assertThat(result.getRows().getSize(), is(14L));
+        RowIterator iter = result.getRows();
+        String primaryType = "";
+        while (iter.hasNext()) {
+            Row row = iter.nextRow();
+            String nextPrimaryType = row.getValues()[0].getString();
+            assertThat(nextPrimaryType.compareTo(primaryType) >= 0, is(true));
+            primaryType = nextPrimaryType;
+        }
     }
 
     public static class ArgleDdlParser extends StandardDdlParser {
