@@ -1108,6 +1108,17 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                 setProperty(configurator, "hibernate.connection.max_fetch_depth", DEFAULT_MAXIMUM_FETCH_DEPTH);
                 setProperty(configurator, "hibernate.connection.pool_size", 0); // don't use the built-in pool
                 setProperty(configurator, "hibernate.show_sql", String.valueOf(this.showSql));
+                if(this.maximumConnectionsInPool > 0) {
+                    // Set the connection pooling properties (to use C3P0) ...
+                    setProperty(configurator, "hibernate.connection.provider_class", "org.hibernate.connection.C3P0ConnectionProvider");
+                    setProperty(configurator, "hibernate.c3p0.max_size", this.maximumConnectionsInPool);
+                    setProperty(configurator, "hibernate.c3p0.min_size", this.minimumConnectionsInPool);
+                    setProperty(configurator, "hibernate.c3p0.timeout", this.maximumConnectionIdleTimeInSeconds);
+                    setProperty(configurator, "hibernate.c3p0.max_statements", this.maximumSizeOfStatementCache);
+                    setProperty(configurator, "hibernate.c3p0.idle_test_period", this.idleTimeInSecondsBeforeTestingConnections);
+                    setProperty(configurator, "hibernate.c3p0.acquire_increment", this.numberOfConnectionsToAcquireAsNeeded);
+                    setProperty(configurator, "hibernate.c3p0.validate", "false");
+                }
             }
 
             Logger logger = getLogger();
@@ -1199,15 +1210,6 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * @param configuration the Hibernate configuration; never null
      */
     protected void configure( Ejb3Configuration configuration ) {
-        // Set the connection pooling properties (to use C3P0) ...
-        setProperty(configuration, "hibernate.connection.provider_class", "org.hibernate.connection.C3P0ConnectionProvider");
-        setProperty(configuration, "hibernate.c3p0.max_size", this.maximumConnectionsInPool);
-        setProperty(configuration, "hibernate.c3p0.min_size", this.minimumConnectionsInPool);
-        setProperty(configuration, "hibernate.c3p0.timeout", this.maximumConnectionIdleTimeInSeconds);
-        setProperty(configuration, "hibernate.c3p0.max_statements", this.maximumSizeOfStatementCache);
-        setProperty(configuration, "hibernate.c3p0.idle_test_period", this.idleTimeInSecondsBeforeTestingConnections);
-        setProperty(configuration, "hibernate.c3p0.acquire_increment", this.numberOfConnectionsToAcquireAsNeeded);
-        setProperty(configuration, "hibernate.c3p0.validate", "false");
 
         // Disable the second-level cache ...
         setProperty(configuration, "hibernate.cache.provider_class", "org.hibernate.cache.NoCacheProvider");
