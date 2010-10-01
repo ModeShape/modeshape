@@ -466,6 +466,19 @@ public class StringUtil {
         }
     }
 
+    public static byte[] fromHexString( String hexadecimal ) {
+        int len = hexadecimal.length();
+        if (len % 2 != 0) {
+            hexadecimal = "0" + hexadecimal;
+        }
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte)((Character.digit(hexadecimal.charAt(i), 16) << 4) + Character.digit(hexadecimal.charAt(i + 1),
+                                                                                                     16));
+        }
+        return data;
+    }
+
     private StringUtil() {
         // Prevent construction
     }

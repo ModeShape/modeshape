@@ -26,15 +26,11 @@ package org.modeshape.connector.filesystem;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 import javax.naming.Context;
 import javax.naming.Reference;
@@ -46,12 +42,10 @@ import org.modeshape.common.annotation.Description;
 import org.modeshape.common.annotation.Label;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.connector.filesystem.FileSystemRepository.FileSystemTransaction;
 import org.modeshape.graph.ExecutionContext;
-import org.modeshape.graph.JcrLexicon;
-import org.modeshape.graph.Location;
-import org.modeshape.graph.ModeShapeIntLexicon;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
@@ -60,9 +54,6 @@ import org.modeshape.graph.connector.base.AbstractRepositorySource;
 import org.modeshape.graph.connector.base.Connection;
 import org.modeshape.graph.connector.base.PathNode;
 import org.modeshape.graph.property.Binary;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.NamespaceRegistry;
-import org.modeshape.graph.property.Property;
 import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 
 /**
@@ -72,12 +63,6 @@ import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior
  */
 @ThreadSafe
 public class FileSystemSource extends AbstractRepositorySource implements ObjectFactory {
-
-    /**
-     * An immutable {@link CustomPropertiesFactory} implementation that is used by default when none is provided. Note that this
-     * implementation does restrict the properties that can be placed on file, folder and resource nodes.
-     */
-    protected static CustomPropertiesFactory DEFAULT_PROPERTIES_FACTORY = new StandardPropertiesFactory();
 
     /**
      * The first serialized version of this source. Version {@value} .
@@ -100,6 +85,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     protected static final String CUSTOM_PROPERTY_FACTORY = "customPropertyFactory";
     protected static final String EAGER_FILE_LOADING = "eagerFileLoading";
     protected static final String DETERMINE_MIME_TYPE_USING_CONTENT = "determineMimeTypeUsingContent";
+    protected static final String EXTRA_PROPERTIES = "extraProperties";
 
     /**
      * This source supports events.
@@ -119,6 +105,11 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     public static final boolean DEFAULT_SUPPORTS_UPDATES = false;
 
     /**
+     * The default behavior for dealing with extra properties on 'nt:file', 'nt:folder' and 'nt:resource' nodes is to log them.
+     */
+    public static final String DEFAULT_EXTRA_PROPERTIES = "log";
+
+    /**
      * This source supports creating references.
      */
     protected static final boolean SUPPORTS_REFERENCES = false;
@@ -136,6 +127,17 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     public static final int DEFAULT_MAX_PATH_LENGTH = 255; // 255 for windows users
     public static final String DEFAULT_EXCLUSION_PATTERN = null;
     public static final FilenameFilter DEFAULT_FILENAME_FILTER = null;
+
+    protected static Map<String, CustomPropertiesFactory> EXTRA_PROPERTIES_CLASSNAME_BY_KEY;
+
+    static {
+        Map<String, CustomPropertiesFactory> byKey = new HashMap<String, CustomPropertiesFactory>();
+        byKey.put(DEFAULT_EXTRA_PROPERTIES, new LogProperties(Logger.getLogger(FileSystemSource.class)));
+        byKey.put("store", new StoreProperties());
+        byKey.put("error", new ThrowProperties());
+        byKey.put("ignore", new IgnoreProperties());
+        EXTRA_PROPERTIES_CLASSNAME_BY_KEY = Collections.unmodifiableMap(byKey);
+    }
 
     @Description( i18n = FileSystemI18n.class, value = "defaultWorkspaceNamePropertyDescription" )
     @Label( i18n = FileSystemI18n.class, value = "defaultWorkspaceNamePropertyLabel" )
@@ -171,6 +173,11 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     @Label( i18n = FileSystemI18n.class, value = "determineMimeTypeUsingContentPropertyLabel" )
     @Category( i18n = FileSystemI18n.class, value = "determineMimeTypeUsingContentPropertyCategory" )
     private volatile boolean determineMimeTypeUsingContent = DEFAULT_DETERMINE_MIME_TYPE_USING_CONTENT;
+
+    @Description( i18n = FileSystemI18n.class, value = "extraPropertiesPropertyDescription" )
+    @Label( i18n = FileSystemI18n.class, value = "extraPropertiesPropertyLabel" )
+    @Category( i18n = FileSystemI18n.class, value = "extraPropertiesPropertyCategory" )
+    private volatile String extraProperties = DEFAULT_EXTRA_PROPERTIES;
 
     private volatile FilenameFilter filenameFilter = DEFAULT_FILENAME_FILTER;
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
@@ -306,9 +313,10 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
         this.exclusionPattern = null;
     }
 
-    FilenameFilter filenameFilter() {
+    FilenameFilter filenameFilter( boolean hideFilesForCustomProperties ) {
         if (this.filenameFilter != null) return this.filenameFilter;
 
+        // Otherwise, create one that take into account the exclusion pattern ...
         FilenameFilter filenameFilter = null;
         final String filterPattern = exclusionPattern;
         if (filterPattern != null) {
@@ -320,6 +328,14 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
                     return !filter.matcher(name).matches();
                 }
             };
+        }
+
+        if (hideFilesForCustomProperties) {
+            // And the properties factory ...
+            CustomPropertiesFactory customPropsFactory = customPropertiesFactory();
+            if (customPropsFactory instanceof BasePropertiesFactory) {
+                filenameFilter = ((BasePropertiesFactory)customPropsFactory).getFilenameFilter(filenameFilter);
+            }
         }
         return filenameFilter;
     }
@@ -468,6 +484,32 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     }
 
     /**
+     * Get the desired behavior for handling extra properties on "nt:foldeR", "nt:file", and "nt:resource" nodes.
+     * 
+     * @return one of "log", "ignore", "error", or "store"
+     * @see #getCustomPropertiesFactory()
+     */
+    public String getExtraPropertiesBehavior() {
+        return extraProperties;
+    }
+
+    /**
+     * Set the desired behavior for handling extra properties on "nt:foldeR", "nt:file", and "nt:resource" nodes.
+     * 
+     * @param behavior "log", "ignore", "error", or "store"
+     * @see #setCustomPropertiesFactory(CustomPropertiesFactory)
+     * @see #setCustomPropertiesFactory(String)
+     */
+    public void setExtraPropertiesBehavior( String behavior ) {
+        if (behavior != null) behavior = behavior.trim().toLowerCase();
+        if (EXTRA_PROPERTIES_CLASSNAME_BY_KEY.containsKey(behavior)) {
+            this.extraProperties = behavior;
+        } else {
+            this.extraProperties = DEFAULT_EXTRA_PROPERTIES;
+        }
+    }
+
+    /**
      * Get the factory that is used to create custom properties on "nt:folder", "nt:file", and "nt:resource" nodes.
      * 
      * @return the factory, or null if no custom properties are to be created
@@ -477,13 +519,21 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     }
 
     CustomPropertiesFactory customPropertiesFactory() {
-        return customPropertiesFactory != null ? customPropertiesFactory : DEFAULT_PROPERTIES_FACTORY;
+        if (customPropertiesFactory == null) {
+            customPropertiesFactory = EXTRA_PROPERTIES_CLASSNAME_BY_KEY.get(extraProperties);
+            if (customPropertiesFactory == null) {
+                customPropertiesFactory = EXTRA_PROPERTIES_CLASSNAME_BY_KEY.get(DEFAULT_EXTRA_PROPERTIES);
+            }
+            assert customPropertiesFactory != null;
+        }
+        return customPropertiesFactory;
     }
 
     /**
      * Set the factory that is used to create custom properties on "nt:folder", "nt:file", and "nt:resource" nodes.
      * 
      * @param customPropertiesFactory the factory reference, or null if no custom properties will be created
+     * @see #setExtraPropertiesBehavior(String)
      */
     public synchronized void setCustomPropertiesFactory( CustomPropertiesFactory customPropertiesFactory ) {
         this.customPropertiesFactory = customPropertiesFactory;
@@ -503,6 +553,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      *         reason.
      * @throws ClassCastException if the class named by {@code customPropertiesFactoryClassName} does not implement the {@code
      *         CustomPropertiesFactory} interface
+     * @see #setExtraPropertiesBehavior(String)
      */
     public synchronized void setCustomPropertiesFactory( String customPropertiesFactoryClassName )
         throws ClassCastException, ClassNotFoundException, IllegalAccessException, InstantiationException {
@@ -550,6 +601,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
         ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDefaultWorkspaceName()));
         ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
         ref.add(new StringRefAddr(MAX_PATH_LENGTH, String.valueOf(maxPathLength)));
+        ref.add(new StringRefAddr(EXTRA_PROPERTIES, String.valueOf(extraProperties)));
         String[] workspaceNames = getPredefinedWorkspaceNames();
         if (workspaceNames != null && workspaceNames.length != 0) {
             ref.add(new StringRefAddr(PREDEFINED_WORKSPACE_NAMES, StringUtil.combineLines(workspaceNames)));
@@ -586,6 +638,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
             String filenameFilterClassName = (String)values.get(FILENAME_FILTER);
             String maxPathLength = (String)values.get(DEFAULT_MAX_PATH_LENGTH);
             String customPropertiesFactoryClassName = (String)values.get(CUSTOM_PROPERTY_FACTORY);
+            String extraPropertiesBehavior = (String)values.get(EXTRA_PROPERTIES);
             String eagerFileLoading = (String)values.get(EAGER_FILE_LOADING);
             String useContentForMimeType = (String)values.get(DETERMINE_MIME_TYPE_USING_CONTENT);
 
@@ -605,6 +658,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
             if (exclusionPattern != null) source.setExclusionPattern(exclusionPattern);
             if (filenameFilterClassName != null) source.setFilenameFilter(filenameFilterClassName);
             if (maxPathLength != null) source.setMaxPathLength(Integer.valueOf(maxPathLength));
+            if (extraPropertiesBehavior != null) source.setExtraPropertiesBehavior(extraPropertiesBehavior);
             if (customPropertiesFactoryClassName != null) source.setCustomPropertiesFactory(customPropertiesFactoryClassName);
             if (eagerFileLoading != null) source.setEagerFileLoading(Boolean.parseBoolean(eagerFileLoading));
             if (useContentForMimeType != null) source.setContentUsedToDetermineMimeType(Boolean.parseBoolean(useContentForMimeType));
@@ -641,131 +695,5 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
 
         }
         return new Connection<PathNode, FileSystemWorkspace>(this, repository);
-    }
-
-    protected static class StandardPropertiesFactory implements CustomPropertiesFactory {
-        private static final long serialVersionUID = 1L;
-        private final Collection<Property> empty = Collections.emptyList();
-
-        /**
-         * Only certain properties are tolerated when writing content (dna:resource or jcr:resource) nodes. These properties are
-         * implicitly stored (primary type, data) or silently ignored (encoded, mimetype, last modified). The silently ignored
-         * properties must be accepted to stay compatible with the JCR specification.
-         */
-        private final Set<Name> ALLOWABLE_PROPERTIES_FOR_CONTENT = Collections.unmodifiableSet(new HashSet<Name>(
-                                                                                                                 Arrays.asList(new Name[] {
-                                                                                                                     JcrLexicon.PRIMARY_TYPE,
-                                                                                                                     JcrLexicon.DATA,
-                                                                                                                     JcrLexicon.ENCODED,
-                                                                                                                     JcrLexicon.MIMETYPE,
-                                                                                                                     JcrLexicon.LAST_MODIFIED,
-                                                                                                                     JcrLexicon.LAST_MODIFIED_BY,
-                                                                                                                     JcrLexicon.UUID,
-                                                                                                                     ModeShapeIntLexicon.NODE_DEFINITON})));
-        /**
-         * Only certain properties are tolerated when writing files (nt:file) or folders (nt:folder) nodes. These properties are
-         * implicitly stored in the file or folder (primary type, created).
-         */
-        private final Set<Name> ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER = Collections.unmodifiableSet(new HashSet<Name>(
-                                                                                                                        Arrays.asList(new Name[] {
-                                                                                                                            JcrLexicon.PRIMARY_TYPE,
-                                                                                                                            JcrLexicon.CREATED,
-                                                                                                                            JcrLexicon.CREATED_BY,
-                                                                                                                            JcrLexicon.UUID,
-                                                                                                                            ModeShapeIntLexicon.NODE_DEFINITON})));
-
-        public Collection<Property> getDirectoryProperties( ExecutionContext context,
-                                                            Location location,
-                                                            File directory ) {
-            return empty;
-        }
-
-        public Collection<Property> getFileProperties( ExecutionContext context,
-                                                       Location location,
-                                                       File file ) {
-            return empty;
-        }
-
-        public Collection<Property> getResourceProperties( ExecutionContext context,
-                                                           Location location,
-                                                           File file,
-                                                           String mimeType ) {
-            return empty;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.connector.filesystem.CustomPropertiesFactory#recordDirectoryProperties(org.modeshape.graph.ExecutionContext,
-         *      java.lang.String, org.modeshape.graph.Location, java.io.File, java.util.Map)
-         */
-        public Set<Name> recordDirectoryProperties( ExecutionContext context,
-                                                    String sourceName,
-                                                    Location location,
-                                                    File file,
-                                                    Map<Name, Property> properties ) throws RepositorySourceException {
-            ensureValidProperties(context, sourceName, properties.values(), ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER);
-            return null;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.connector.filesystem.CustomPropertiesFactory#recordFileProperties(org.modeshape.graph.ExecutionContext,
-         *      java.lang.String, org.modeshape.graph.Location, java.io.File, java.util.Map)
-         */
-        public Set<Name> recordFileProperties( ExecutionContext context,
-                                               String sourceName,
-                                               Location location,
-                                               File file,
-                                               Map<Name, Property> properties ) throws RepositorySourceException {
-            ensureValidProperties(context, sourceName, properties.values(), ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER);
-            return null;
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see org.modeshape.connector.filesystem.CustomPropertiesFactory#recordResourceProperties(org.modeshape.graph.ExecutionContext,
-         *      java.lang.String, org.modeshape.graph.Location, java.io.File, java.util.Map)
-         */
-        public Set<Name> recordResourceProperties( ExecutionContext context,
-                                                   String sourceName,
-                                                   Location location,
-                                                   File file,
-                                                   Map<Name, Property> properties ) throws RepositorySourceException {
-            ensureValidProperties(context, sourceName, properties.values(), ALLOWABLE_PROPERTIES_FOR_CONTENT);
-            return null;
-        }
-
-        /**
-         * Checks that the collection of {@code properties} only contains properties with allowable names.
-         * 
-         * @param context
-         * @param sourceName
-         * @param properties
-         * @param validPropertyNames
-         * @throws RepositorySourceException if {@code properties} contains a
-         * @see #ALLOWABLE_PROPERTIES_FOR_CONTENT
-         * @see #ALLOWABLE_PROPERTIES_FOR_FILE_OR_FOLDER
-         */
-        protected void ensureValidProperties( ExecutionContext context,
-                                              String sourceName,
-                                              Collection<Property> properties,
-                                              Set<Name> validPropertyNames ) {
-            List<String> invalidNames = new LinkedList<String>();
-            NamespaceRegistry registry = context.getNamespaceRegistry();
-
-            for (Property property : properties) {
-                if (!validPropertyNames.contains(property.getName())) {
-                    invalidNames.add(property.getName().getString(registry));
-                }
-            }
-
-            if (!invalidNames.isEmpty()) {
-                throw new RepositorySourceException(sourceName, FileSystemI18n.invalidPropertyNames.text(invalidNames.toString()));
-            }
-        }
-
     }
 }

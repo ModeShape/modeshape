@@ -29,9 +29,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.jcip.annotations.Immutable;
@@ -85,12 +87,16 @@ public enum PropertyType {
     }
 
     private static final List<PropertyType> ALL_PROPERTY_TYPES;
+    private static final Map<String, PropertyType> PROPERTY_TYPE_BY_LOWERCASE_NAME;
     static {
         List<PropertyType> types = new ArrayList<PropertyType>();
+        Map<String, PropertyType> byLowerCaseName = new HashMap<String, PropertyType>();
         for (PropertyType type : PropertyType.values()) {
             types.add(type);
+            byLowerCaseName.put(type.getName().toLowerCase(), type);
         }
         ALL_PROPERTY_TYPES = Collections.unmodifiableList(types);
+        PROPERTY_TYPE_BY_LOWERCASE_NAME = Collections.unmodifiableMap(byLowerCaseName);
     }
 
     private final String name;
@@ -226,5 +232,10 @@ public enum PropertyType {
      */
     public static Iterator<PropertyType> iterator() {
         return ALL_PROPERTY_TYPES.iterator();
+    }
+
+    public static PropertyType valueFor( String typeNameInAnyCase ) {
+        PropertyType type = PROPERTY_TYPE_BY_LOWERCASE_NAME.get(typeNameInAnyCase);
+        return type != null ? type : PropertyType.STRING;
     }
 }

@@ -66,7 +66,7 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
                                                                                                              Arrays.asList(new Name[] {
                                                                                                                  JcrLexicon.PRIMARY_TYPE,
                                                                                                                  JcrLexicon.DATA,
-                                                                                                                 JcrLexicon.ENCODED,
+                                                                                                                 JcrLexicon.ENCODING,
                                                                                                                  JcrLexicon.MIMETYPE,
                                                                                                                  JcrLexicon.LAST_MODIFIED,
                                                                                                                  JcrLexicon.LAST_MODIFIED_BY,

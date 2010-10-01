@@ -45,7 +45,7 @@ public class JcrLexicon {
     public static final Name CONTENT = new BasicName(Namespace.URI, "content");
     public static final Name CREATED = new BasicName(Namespace.URI, "created");
     public static final Name CREATED_BY = new BasicName(Namespace.URI, "createdBy");
-    public static final Name ENCODED = new BasicName(Namespace.URI, "encoded");
+    public static final Name ENCODING = new BasicName(Namespace.URI, "encoding");
     public static final Name MIMETYPE = new BasicName(Namespace.URI, "mimeType");
     public static final Name DATA = new BasicName(Namespace.URI, "data");
     public static final Name LAST_MODIFIED = new BasicName(Namespace.URI, "lastModified");
