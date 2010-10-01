@@ -73,6 +73,12 @@ public final class FileSystemI18n {
     public static I18n determineMimeTypeUsingContentPropertyDescription;
     public static I18n determineMimeTypeUsingContentPropertyLabel;
     public static I18n determineMimeTypeUsingContentPropertyCategory;
+    public static I18n extraPropertiesPropertyDescription;
+    public static I18n extraPropertiesPropertyLabel;
+    public static I18n extraPropertiesPropertyCategory;
+    public static I18n customPropertiesFactoryPropertyDescription;
+    public static I18n customPropertiesFactoryPropertyLabel;
+    public static I18n customPropertiesFactoryPropertyCategory;
 
     // Writable messages
     public static I18n parentIsReadOnly;
@@ -89,6 +95,8 @@ public final class FileSystemI18n {
     public static I18n deleteFailed;
     public static I18n getCanonicalPathFailed;
     public static I18n maxPathLengthExceeded;
+    public static I18n couldNotStoreProperty;
+    public static I18n couldNotStoreProperties;
 
     static {
         try {

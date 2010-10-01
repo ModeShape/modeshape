@@ -36,19 +36,33 @@
 		workspace <emphasis>or</emphasis> the name of subdirectory within a root directory (see the <code>workspaceRootPath</code> property below). Each 
 		connector can define whether it allows new workspaces to be created.  <emphasis>If the directory for a workspace does not exist, this connector
 		will attempt to create the directory (and any missing parent directories).</emphasis>
-		<note>
-			<para>
-			The file nodes returned by this connector will have a primary type of <code>nt:file</code> and a child node named <code>jcr:content</code>.
-			The <code>jcr:content</code> node will have a primary type of <code>mode:resource</code>.  The <code>mode:resource</code> node type is equivalent
-			to the built-in <code>nt:resource</code> node type in all ways except one: it does not extend <code>mix:referenceable</code>.  This is because
-			ModeShape cannot assign a persistent UUID to the files in the file system or guarantee that no other process will move or delete the files outside of ModeShape.
-			The <code>mix:referenceable</code> node type cannot be implemented if either of these conditions cannot be met.   
-
-			Additional properties (including mixin types) can be added by setting the <code>customPropertiesFactory</code> property to point to an implementation of 
-			the &CustomPropertiesFactory; interface.
-			</para>
-		</note>
 	</para>
+	<para>
+		By default, this connector is not capable of storing extra properties other than those defined on the <code>nt:file</code>, <code>nt:folder</code>
+		and <code>nt:resource</code> node types. This is because such properties cannot be represented natively on the file system. 
+		When the connector is asked to store such properties, the default behavior is to log warnings and then to ignore these extra properties.
+		Obviously this is probably not sufficient for production (unless only the standard properties are to be used). To explicitly turn on this
+		behavior, set the "extraPropertiesBehavior" to "log".
+	</para>
+	<para>
+		However, the connector can be configured differently. If the "extraPropertiesBehavior" is set to "ignore", then these extra properties will
+		simply be silently ignored and lost: none will be stored, none will be loaded, and no warnings will be logged. If the "extraPropertiesBehavior"
+		is set to "error", the connector will throw an exception if any extra properties are used.
+	</para>
+	<para>
+		Perhaps the best setting for general use, however, is to set the "extraPropertiesBehavior" to "store". In this mode, any extra properties
+		are written to files on the file system that are adjacent to the actual file or folder. For example, given a "nt:folder" node that represents
+		the "folder1" directory, all extra properties will be stored in a text file named "folder1.modeshape" in the same parent 
+		directory as the "folder1" directory.  Similarly, given a "nt:file" node that represents the "file1" file on the file system, all
+		extra properties will be stored in a text file named "file1.modeshape" located next to the "file1" file. Note that the "nt:resource" node for
+		our "nt:file" node also is stored in the same location, so we can't use the "file1.modeshape" file (it's already used for the "nt:file" node),
+		so the connector uses the "file1.content.modeshape" file instead.
+	</para>
+	<note>
+		<para>
+			The "store" behavior may result in the creation of many "*.modeshape" files, and because of this the "store" behavior is not the default.
+		</para>
+	</note>
 	<para>
 		The &FileSystemSource; class provides a number of JavaBean properties that control its behavior:
 	</para>
@@ -81,6 +95,17 @@
 						available on each node.  This property can be set either from an object that implements the &CustomPropertiesFactory;
 						interface or from the name of a class with a public, no-argument constructor that implements the &CustomPropertiesFactory;
 						interface.  In the latter case, a the named class will be instantiated and used as the custom properties factory implementation.
+						See also the "extraPropertiesBehavior" setting.
+					</entry>
+				</row>
+				<row>
+					<entry>extraPropertiesBehavior</entry>
+					<entry>
+						Optional setting that specifies how to handle the extra properties on "nt:file", "nt:folder", and "nt:resource" nodes that
+						cannot be represented on the native files themselves. Set this to "log" if warnings are to be sent to the log 
+						(the default), or "error" if setting such properties should cause an error, or "store" if they should be stored in ancillary 
+						files next to the files and folders, or "ignore" if they should be silently ignored. The "log" value will be used by default 
+						or an invalid value is specified. This setting will be ignored if a "customPropertiesFactory" class name is specified.
 					</entry>
 				</row>
 				<row>

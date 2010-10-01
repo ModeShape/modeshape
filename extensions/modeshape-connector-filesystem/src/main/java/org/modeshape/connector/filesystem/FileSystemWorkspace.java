@@ -49,6 +49,7 @@ import org.modeshape.graph.request.Request;
  * Workspace implementation for the file system connector.
  */
 class FileSystemWorkspace extends PathWorkspace<PathNode> {
+    private static final Map<Name, Property> NO_PROPERTIES = Collections.emptyMap();
     private static final String DEFAULT_MIME_TYPE = "application/octet";
     private static final Set<Name> VALID_PRIMARY_TYPES = new HashSet<Name>(Arrays.asList(new Name[] {JcrNtLexicon.FOLDER,
         JcrNtLexicon.FILE, JcrNtLexicon.RESOURCE, ModeShapeLexicon.RESOURCE}));
@@ -60,6 +61,8 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
     private final boolean eagerLoading;
     private final boolean contentUsedToDetermineMimeType;
     private final Logger logger;
+    private final ValueFactory<String> stringFactory;
+    private final NameFactory nameFactory;
 
     public FileSystemWorkspace( String name,
                                 FileSystemWorkspace originalToClone,
@@ -73,6 +76,8 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
         this.eagerLoading = this.source.isEagerFileLoading();
         this.contentUsedToDetermineMimeType = this.source.isContentUsedToDetermineMimeType();
         this.logger = Logger.getLogger(getClass());
+        this.stringFactory = context.getValueFactories().getStringFactory();
+        this.nameFactory = context.getValueFactories().getNameFactory();
 
         cloneWorkspace(originalToClone);
     }
@@ -87,6 +92,8 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
         this.eagerLoading = this.source.isEagerFileLoading();
         this.contentUsedToDetermineMimeType = this.source.isContentUsedToDetermineMimeType();
         this.logger = Logger.getLogger(getClass());
+        this.stringFactory = context.getValueFactories().getStringFactory();
+        this.nameFactory = context.getValueFactories().getNameFactory();
     }
 
     private void cloneWorkspace( FileSystemWorkspace original ) {
@@ -94,7 +101,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
         File newRoot = repository.getWorkspaceDirectory(this.getName());
 
         try {
-            FileUtil.copy(originalRoot, newRoot, source.filenameFilter());
+            FileUtil.copy(originalRoot, newRoot, source.filenameFilter(false));
         } catch (IOException ioe) {
             throw new IllegalStateException(ioe);
         }
@@ -105,22 +112,78 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
                               PathNode newNode ) {
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         Path newPath = pathFactory.create(newNode.getParent(), newNode.getName());
-
-        File originalFile = fileFor(pathFactory.create(node.getParent(), node.getName()));
+        Path oldPath = pathFactory.create(node.getParent(), node.getName());
+        File originalFile = fileFor(oldPath);
         File newFile = fileFor(newPath, false);
 
         if (newFile.exists()) {
             newFile.delete();
         }
 
+        // Read the custom properties ...
+        CustomPropertiesFactory customPropertiesFactory = source.customPropertiesFactory();
+        Collection<Property> existingProps = null;
+        Collection<Property> existingResourceProps = null;
+        String sourceName = source.getName();
+        Location originalLocation = Location.create(oldPath);
+        if (originalFile.isDirectory()) {
+            existingProps = customPropertiesFactory.getDirectoryProperties(context, originalLocation, originalFile);
+            customPropertiesFactory.recordDirectoryProperties(context, sourceName, originalLocation, originalFile, NO_PROPERTIES);
+        } else {
+            Path resourcePath = pathFactory.create(oldPath, JcrLexicon.CONTENT);
+            Location originalResourceLocation = Location.create(resourcePath);
+            existingProps = customPropertiesFactory.getFileProperties(context, originalLocation, originalFile);
+            existingResourceProps = customPropertiesFactory.getResourceProperties(context,
+                                                                                  originalResourceLocation,
+                                                                                  originalFile,
+                                                                                  null);
+            customPropertiesFactory.recordFileProperties(context, sourceName, originalLocation, originalFile, NO_PROPERTIES);
+            customPropertiesFactory.recordResourceProperties(context,
+                                                             sourceName,
+                                                             originalResourceLocation,
+                                                             originalFile,
+                                                             NO_PROPERTIES);
+        }
+
         originalFile.renameTo(newFile);
+
+        // Set the custom properties on the new location ...
+        Location newLocation = Location.create(newPath);
+        if (originalFile.isDirectory()) {
+            customPropertiesFactory.recordDirectoryProperties(context,
+                                                              sourceName,
+                                                              newLocation,
+                                                              newFile,
+                                                              extraFolder(mapOf(existingProps)));
+        } else {
+            Path resourcePath = pathFactory.create(newPath, JcrLexicon.CONTENT);
+            Location resourceLocation = Location.create(resourcePath);
+            customPropertiesFactory.recordFileProperties(context,
+                                                         sourceName,
+                                                         newLocation,
+                                                         newFile,
+                                                         extraFile(mapOf(existingProps)));
+            customPropertiesFactory.recordResourceProperties(context,
+                                                             sourceName,
+                                                             resourceLocation,
+                                                             newFile,
+                                                             extraResource(mapOf(existingResourceProps)));
+        }
 
         return getNode(newPath);
     }
 
+    protected Map<Name, Property> mapOf( Collection<Property> properties ) {
+        if (properties == null || properties.isEmpty()) return Collections.emptyMap();
+        Map<Name, Property> result = new HashMap<Name, Property>();
+        for (Property property : properties) {
+            result.put(property.getName(), property);
+        }
+        return result;
+    }
+
     @Override
     public PathNode putNode( PathNode node ) {
-        NameFactory nameFactory = context.getValueFactories().getNameFactory();
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         NamespaceRegistry registry = context.getNamespaceRegistry();
         CustomPropertiesFactory customPropertiesFactory = source.customPropertiesFactory();
@@ -135,7 +198,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
                                                               source.getName(),
                                                               rootLocation,
                                                               workspaceRoot,
-                                                              node.getProperties());
+                                                              extraFolder(node.getProperties()));
             return getNode(rootPath);
         }
 
@@ -183,7 +246,11 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
                                                                                ioe.getMessage()), ioe);
             }
 
-            customPropertiesFactory.recordFileProperties(context, source.getName(), Location.create(newPath), newFile, properties);
+            customPropertiesFactory.recordFileProperties(context,
+                                                         source.getName(),
+                                                         Location.create(newPath),
+                                                         newFile,
+                                                         extraFile(properties));
         } else if (JcrNtLexicon.RESOURCE.equals(primaryType) || ModeShapeLexicon.RESOURCE.equals(primaryType)) {
             assert parentFile != null;
 
@@ -206,7 +273,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
             // Copy over data into a temp file, then move it to the correct location
             FileOutputStream fos = null;
             try {
-                File temp = File.createTempFile("dna", null);
+                File temp = File.createTempFile("modeshape", null);
                 fos = new FileOutputStream(temp);
 
                 Property dataProp = properties.get(JcrLexicon.DATA);
@@ -248,8 +315,8 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
             customPropertiesFactory.recordResourceProperties(context,
                                                              source.getName(),
                                                              Location.create(parentPath),
-                                                             newFile,
-                                                             properties);
+                                                             parentFile,
+                                                             extraResource(properties));
 
         } else if (JcrNtLexicon.FOLDER.equals(primaryType) || primaryType == null) {
             ensureValidPathLength(newFile);
@@ -266,7 +333,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
                                                               source.getName(),
                                                               Location.create(newPath),
                                                               newFile,
-                                                              properties);
+                                                              extraFolder(properties));
 
         } else {
             // Set error and return
@@ -286,8 +353,17 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
     public PathNode removeNode( Path nodePath ) {
         File nodeFile;
 
+        CustomPropertiesFactory customPropertiesFactory = source.customPropertiesFactory();
+
         if (!nodePath.isRoot() && JcrLexicon.CONTENT.equals(nodePath.getLastSegment().getName())) {
             nodeFile = fileFor(nodePath.getParent());
+
+            // Have the custom property factory remote all properties ...
+            customPropertiesFactory.recordResourceProperties(context,
+                                                             source.getName(),
+                                                             Location.create(nodePath),
+                                                             nodeFile,
+                                                             NO_PROPERTIES);
             if (!nodeFile.exists()) return null;
 
             FileOutputStream fos = null;
@@ -306,6 +382,12 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
             }
         } else {
             nodeFile = fileFor(nodePath);
+            // Have the custom property factory remote all properties ...
+            customPropertiesFactory.recordResourceProperties(context,
+                                                             source.getName(),
+                                                             Location.create(nodePath),
+                                                             nodeFile,
+                                                             NO_PROPERTIES);
             if (!nodeFile.exists()) return null;
 
             FileUtil.delete(nodeFile);
@@ -338,49 +420,53 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
             if (!path.isRoot() && JcrLexicon.CONTENT.equals(path.getLastSegment().getName())) {
                 File file = fileFor(path.getParent());
                 if (file == null) return null;
-                // Discover the mime type ...
-
-                String mimeType = null;
-                InputStream contents = null;
-                try {
-                    // First try the file name (so we don't have to create an input stream,
-                    // which may have too much latency if a remote network file) ...
-                    mimeType = mimeTypeDetector.mimeTypeOf(file.getName(), null);
-                    if (mimeType == null && contentUsedToDetermineMimeType) {
-                        // Try to find the mime type using the content ...
-                        contents = new BufferedInputStream(new FileInputStream(file));
-                        mimeType = mimeTypeDetector.mimeTypeOf(null, contents);
-                    }
-                    if (mimeType == null) mimeType = DEFAULT_MIME_TYPE;
-                    properties.put(JcrLexicon.MIMETYPE, factory.create(JcrLexicon.MIMETYPE, mimeType));
-                } catch (IOException e) {
-                    I18n msg = FileSystemI18n.couldNotReadData;
-                    throw new RepositorySourceException(source.getName(), msg.text(source.getName(),
-                                                                                   getName(),
-                                                                                   path.getString(registry)));
-                } finally {
-                    if (contents != null) {
-                        try {
-                            contents.close();
-                        } catch (IOException e) {
-                        }
-                    }
-                }
 
                 // First add any custom properties ...
-                Collection<Property> customProps = customPropertiesFactory.getResourceProperties(context,
-                                                                                                 location,
-                                                                                                 file,
-                                                                                                 mimeType);
+                Collection<Property> customProps = customPropertiesFactory.getResourceProperties(context, location, file, null);
                 for (Property customProp : customProps) {
                     properties.put(customProp.getName(), customProp);
+                }
+
+                if (!properties.containsKey(JcrLexicon.MIMETYPE)) {
+                    // Discover the mime type ...
+                    String mimeType = null;
+                    InputStream contents = null;
+                    try {
+                        // First try the file name (so we don't have to create an input stream,
+                        // which may have too much latency if a remote network file) ...
+                        mimeType = mimeTypeDetector.mimeTypeOf(file.getName(), null);
+                        if (mimeType == null && contentUsedToDetermineMimeType) {
+                            // Try to find the mime type using the content ...
+                            contents = new BufferedInputStream(new FileInputStream(file));
+                            mimeType = mimeTypeDetector.mimeTypeOf(null, contents);
+                        }
+                        if (mimeType == null) mimeType = DEFAULT_MIME_TYPE;
+                        properties.put(JcrLexicon.MIMETYPE, factory.create(JcrLexicon.MIMETYPE, mimeType));
+                    } catch (IOException e) {
+                        I18n msg = FileSystemI18n.couldNotReadData;
+                        throw new RepositorySourceException(source.getName(), msg.text(source.getName(),
+                                                                                       getName(),
+                                                                                       path.getString(registry)));
+                    } finally {
+                        if (contents != null) {
+                            try {
+                                contents.close();
+                            } catch (IOException e) {
+                            }
+                        }
+                    }
                 }
 
                 // The request is to get properties of the "jcr:content" child node ...
                 // ... use the dna:resource node type. This is the same as nt:resource, but is not referenceable
                 // since we cannot assume that we control all access to this file and can track its movements
-                nodeType = JcrNtLexicon.RESOURCE;
-                properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE));
+                Property primaryType = properties.get(JcrLexicon.PRIMARY_TYPE);
+                if (primaryType == null) {
+                    nodeType = JcrNtLexicon.RESOURCE;
+                    properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE));
+                } else {
+                    nodeType = nameValueFor(primaryType);
+                }
                 properties.put(JcrLexicon.LAST_MODIFIED, factory.create(JcrLexicon.LAST_MODIFIED,
                                                                         dateFactory.create(file.lastModified())));
 
@@ -399,7 +485,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
             if (file == null) return null;
 
             if (file.isDirectory()) {
-                String[] childNames = file.list(source.filenameFilter());
+                String[] childNames = file.list(source.filenameFilter(true));
                 Arrays.sort(childNames);
 
                 List<Segment> childSegments = new ArrayList<Segment>(childNames.length);
@@ -420,8 +506,13 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
                                         childSegments);
 
                 }
-                nodeType = JcrNtLexicon.FOLDER;
-                properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER));
+                Property primaryType = properties.get(JcrLexicon.PRIMARY_TYPE);
+                if (primaryType == null) {
+                    nodeType = JcrNtLexicon.FOLDER;
+                    properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FOLDER));
+                } else {
+                    nodeType = nameValueFor(primaryType);
+                }
                 // return new DefaultPathNode(path, source.getRootNodeUuidObject(), properties, childSegments);
                 return new PathNode(null, path.getParent(), path.getLastSegment(), properties, childSegments);
 
@@ -432,9 +523,17 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
                 properties.put(customProp.getName(), customProp);
             }
 
-            nodeType = JcrNtLexicon.FILE;
-            properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE));
-            properties.put(JcrLexicon.CREATED, factory.create(JcrLexicon.CREATED, dateFactory.create(file.lastModified())));
+            Property primaryType = properties.get(JcrLexicon.PRIMARY_TYPE);
+            if (primaryType == null) {
+                nodeType = JcrNtLexicon.FILE;
+                properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE));
+            } else {
+                nodeType = nameValueFor(primaryType);
+            }
+            if (!properties.containsKey(JcrLexicon.CREATED)) {
+                properties.put(JcrLexicon.CREATED, factory.create(JcrLexicon.CREATED, dateFactory.create(file.lastModified())));
+            }
+
             // node = new DefaultPathNode(path, null, properties,
             // Collections.singletonList(pathFactory.createSegment(JcrLexicon.CONTENT)));
 
@@ -444,7 +543,6 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
             if (nodeType != null && logger.isTraceEnabled()) {
                 long stopTime = System.nanoTime();
                 long ms = TimeUnit.MICROSECONDS.convert(stopTime - startTime, TimeUnit.NANOSECONDS);
-                ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
                 String pathStr = stringFactory.create(path);
                 String typeStr = stringFactory.create(nodeType);
                 logger.trace("Loaded '{0}' node '{1}' in {2}microsec", typeStr, pathStr, ms);
@@ -563,7 +661,6 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
         // Don't validate the root node
         if (node.getParent() == null) return;
 
-        NameFactory nameFactory = context.getValueFactories().getNameFactory();
         Map<Name, Property> properties = node.getProperties();
         Property primaryTypeProp = properties.get(JcrLexicon.PRIMARY_TYPE);
         Name primaryType = primaryTypeProp == null ? JcrNtLexicon.FOLDER : nameFactory.create(primaryTypeProp.getFirstValue());
@@ -612,7 +709,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
             }
 
             if (root.isDirectory()) {
-                for (File child : root.listFiles(source.filenameFilter())) {
+                for (File child : root.listFiles(source.filenameFilter(false))) {
                     ensureValidPathLength(child, delta);
                 }
 
@@ -622,4 +719,68 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
         }
     }
 
+    /**
+     * Determine the 'extra' properties for a folder that should be stored by the CustomPropertiesFactory.
+     * 
+     * @param properties
+     * @return the extra properties, or null if the supplied properties reference is null
+     */
+    protected Map<Name, Property> extraFolder( Map<Name, Property> properties ) {
+        if (properties == null) return null;
+        if (properties.isEmpty()) return properties;
+        Map<Name, Property> extra = new HashMap<Name, Property>();
+        for (Property property : properties.values()) {
+            Name name = property.getName();
+            if (name.equals(JcrLexicon.PRIMARY_TYPE) && primaryTypeIs(property, JcrNtLexicon.FOLDER)) continue;
+            extra.put(name, property);
+        }
+        return extra;
+    }
+
+    /**
+     * Determine the 'extra' properties for a file node that should be stored by the CustomPropertiesFactory.
+     * 
+     * @param properties
+     * @return the extra properties, or null if the supplied properties reference is null
+     */
+    protected Map<Name, Property> extraFile( Map<Name, Property> properties ) {
+        if (properties == null) return null;
+        if (properties.isEmpty()) return properties;
+        Map<Name, Property> extra = new HashMap<Name, Property>();
+        for (Property property : properties.values()) {
+            Name name = property.getName();
+            if (name.equals(JcrLexicon.PRIMARY_TYPE) && primaryTypeIs(property, JcrNtLexicon.FILE)) continue;
+            extra.put(name, property);
+        }
+        return extra;
+    }
+
+    /**
+     * Determine the 'extra' properties for a resource node that should be stored by the CustomPropertiesFactory.
+     * 
+     * @param properties
+     * @return the extra properties, or null if the supplied properties reference is null
+     */
+    protected Map<Name, Property> extraResource( Map<Name, Property> properties ) {
+        if (properties == null) return null;
+        if (properties.isEmpty()) return properties;
+        Map<Name, Property> extra = new HashMap<Name, Property>();
+        for (Property property : properties.values()) {
+            Name name = property.getName();
+            if (name.equals(JcrLexicon.PRIMARY_TYPE) && primaryTypeIs(property, JcrNtLexicon.RESOURCE)) continue;
+            else if (name.equals(JcrLexicon.DATA)) continue;
+            extra.put(name, property);
+        }
+        return extra;
+    }
+
+    protected boolean primaryTypeIs( Property property,
+                                     Name primaryType ) {
+        Name actualPrimaryType = nameValueFor(property);
+        return actualPrimaryType.equals(primaryType);
+    }
+
+    protected Name nameValueFor( Property property ) {
+        return nameFactory.create(property.getFirstValue());
+    }
 }
