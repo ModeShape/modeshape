@@ -616,8 +616,8 @@
           <para>
             <emphasis role="strong">modeshape-jpa-ddl-gen</emphasis> provides a standalone utility that can generate the DDL
 						for the database schema used by the JPA connector. Because it uses Hibernate, it can generate DDL for any
-						of the databases that the connector can use. This is likely used during development and not during runtime
-						in client applications.
+						of the databases that the connector can use.  This is also useful for users who prefer not to give DDL privileges 
+						to the ModeShape database user.
           </para>
         </listitem>
         <listitem>

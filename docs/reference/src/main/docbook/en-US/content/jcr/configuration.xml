@@ -1291,12 +1291,6 @@ try {
 							after the <code>modeshape-jcr-&versionNumber;-jar-with-dependencies.jar</code> file;
 	          </para>
 	        </listitem>
-	        <listitem>
-	          <para>
-	            <emphasis role="strong"><code>modeshape-jpa-ddl-gen-&versionNumber;-jar-with-dependencies.jar</code></emphasis> 
-							contains all of the classes required to run the DDL generation utility as a standalone application.
-	          </para>
-	        </listitem>
 	      </itemizedlist>
 				Note that the core engine is required in all configurations. The <code>jcr-2.0.jar</code> file is not included and must be provided by you. 
 				And, as mentioned in the <link linkend="adding_logging_dependencies">previous section</link>, ModeShape uses SLF4J for logging and you must provide 
