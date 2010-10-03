@@ -699,7 +699,7 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public String getIdentifierQuoteString() {
-        return "'";
+        return "\"";
     }
 
     /**
