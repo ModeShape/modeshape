@@ -464,7 +464,7 @@ public class JcrMetaDataTest extends ResultsComparator {
         expected.put("getDriverName", JdbcI18n.driverName.text()); //$NON-NLS-1$ //$NON-NLS-2$
         expected.put("getDriverVersion", JdbcI18n.driverVersion.text()); //$NON-NLS-1$ //$NON-NLS-2$
  //       expected.put("getExtraNameCharacters", ".@"); //$NON-NLS-1$ //$NON-NLS-2$
-        expected.put("getIdentifierQuoteString", "'"); //$NON-NLS-1$ //$NON-NLS-2$
+        expected.put("getIdentifierQuoteString", "\""); //$NON-NLS-1$ //$NON-NLS-2$
 //        expected.put("getNumericFunctions", DatabaseMetaDataImpl.NUMERIC_FUNCTIONS); //$NON-NLS-1$
  //       expected.put("getSearchStringEscape", "\\"); //$NON-NLS-1$ //$NON-NLS-2$
 //        expected.put("getSQLKeywords", DatabaseMetaDataImpl.KEY_WORDS); //$NON-NLS-1$
