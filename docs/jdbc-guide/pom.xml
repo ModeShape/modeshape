@@ -35,12 +35,6 @@
         </dependencies>
         <configuration>
           <sourceDocumentName>master.xml</sourceDocumentName>
-           <imageResource>
-               <directory>${basedir}/src/main/docbook/en-US/images/</directory>
-               <includes>
-                 <include>*.png</include>
-               </includes>
-           </imageResource>
           <targetDirectory>${basedir}/target/docbook/en-US</targetDirectory>
           <formats>
             <format>
