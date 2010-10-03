@@ -35,6 +35,9 @@ public class SchemaGen {
 
         this.dialect = dialectFor(dialect);
         this.model = JpaSource.Models.getModel(model);
+		if (this.model == null) {
+			throw new RuntimeException("Model " + model + " is not a valid model defined in JpaSource");
+		}
         this.outputPath = outputPath;
     }
 
@@ -77,6 +80,7 @@ public class SchemaGen {
     void generate() throws IOException {
         Ejb3Configuration configurator = new Ejb3Configuration();
         configurator.setProperty(Environment.DIALECT, dialect.toString());
+		if (model == null) System.out.println("NULL MODEL");
         model.configure(configurator);
         configurator.addAnnotatedClass(StoreOptionEntity.class);
 
@@ -89,8 +93,8 @@ public class SchemaGen {
         export.drop(false, false);
     }
 
-    public static final String USAGE = "java -jar <jar_name> -dialect <dialect name> -model <model_name> [-out <path to output directory>]\n"
-                                       + "\tExample: java -jar modeshape-jpa-ddl-gen-1.2-jar-with-dependencies.jar -dialect HSQL -model Basic -out /tmp";
+    public static final String USAGE = "./ddl-gen.sh -dialect <dialect name> -model <model_name> [-out <path to output directory>]\n"
+                                       + "\tExample: ./ddl-gen.sh -dialect HSQL -model Simple -out /tmp";
 
     public static void main( String[] args ) throws IOException {
         String modelName = null;
