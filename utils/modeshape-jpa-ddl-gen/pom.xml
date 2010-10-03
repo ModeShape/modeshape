@@ -24,9 +24,10 @@
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
+					<descriptors>
+						<descriptor>src/assembly/kit.xml</descriptor>
+					</descriptors>
+					<outputDirectory>target/distribution</outputDirectory>
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
@@ -36,7 +37,7 @@
 				</configuration>
 				<executions>
 					<execution>
-						<id>make-my-jar-with-dependencies</id>
+						<id>make-gen-tool-kit</id>
 						<phase>package</phase>
 						<goals>
 							<goal>single</goal>
