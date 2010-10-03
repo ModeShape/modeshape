@@ -294,11 +294,11 @@ JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml
  ]]></programlisting>
 	<para>
 	ModeShape users who prefer not to give DDL privileges to the ModeShape database user for this connector can use the ModeShape JPA DDL generation 
-	tool to create the proper DDL files for their database dialect.  This tool is packaged as an executable jar in the 
-	utils/modeshape-jpa-ddl-gen subproject and can be executed with the following syntax:
+	tool to create the proper DDL files for their database dialect.  This tool is packaged as a zip in  
+	utils/modeshape-jpa-ddl-gen/target/distribution when the maven assemply profile -Passembly is run.   Unzip the contents and run the ddl-gen script with the following syntax:
 	</para>
 <programlisting>
-java -jar &lt;jar_name> -dialect &lt;dialect name&gt; -model &lt;model_name&gt; [-out &lt;path to output directory&gt;]
+ddl-gen.sh(.bat) -dialect &lt;dialect name&gt; -model &lt;model_name&gt; [-out &lt;path to output directory&gt;]
 </programlisting>
 	<para>
 	The dialect and model parameters should match the value of the <code>dialect</code> and <code>model</code> properties specified for the
