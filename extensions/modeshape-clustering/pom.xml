@@ -29,9 +29,9 @@
     JGroups
     -->
     <dependency>
-      <groupId>jgroups</groupId>
+      <groupId>org.jgroups</groupId>
       <artifactId>jgroups</artifactId>
-      <version>2.9.0.GA</version>
+      <version>2.10.0.GA</version>
     </dependency>
     <!-- 
     Testing (note the scope)
