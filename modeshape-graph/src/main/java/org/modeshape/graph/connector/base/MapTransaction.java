@@ -23,7 +23,6 @@
  */
 package org.modeshape.graph.connector.base;
 
-import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.RandomAccess;
 import java.util.Set;
 import java.util.UUID;
 import net.jcip.annotations.NotThreadSafe;
@@ -1011,10 +1011,10 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
 
         protected Children( List<UUID> uuids,
                             WorkspaceType workspace ) {
-            // If the UUIDs list is an AbstractList (e.g., ArrayList) or is small enough,
-            // we can simply just use the list. However, in other cases (e.g., LinkedList or other SequentialList
-            // implementations), random access will be inefficient, so it'd be better to copy into an ArrayList ...
-            this.uuids = (uuids instanceof AbstractList<?> || uuids.size() < 10) ? uuids : new ArrayList<UUID>(uuids);
+            // If the UUIDs list is small enough (e.g., say a size less than '10') or a RandomAccess list, we can
+            // simply just use the list. However, if the list of UUIDs is a larger LinkedLists, then random
+            // access will be inefficient, so we need to copy to an ArrayList ...
+            this.uuids = (uuids instanceof RandomAccess || uuids.size() < 10) ? uuids : new ArrayList<UUID>(uuids);
             this.workspace = workspace;
             this.cache = new ArrayList<NodeType>(uuids.size());
         }
