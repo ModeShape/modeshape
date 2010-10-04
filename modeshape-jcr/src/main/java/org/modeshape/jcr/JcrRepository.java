@@ -1333,6 +1333,16 @@ public class JcrRepository implements Repository {
     }
 
     /**
+     * Get the component that exposes the metrics of a repository, which is for internal use only. This mechanism will almost
+     * certainly change or be replaced in an upcoming release.
+     * 
+     * @return the metrics interface; never null
+     */
+    public Metrics getMetrics() {
+        return new Metrics();
+    }
+
+    /**
      * Terminate all active sessions.
      */
     void terminateAllSessions() {
@@ -1729,6 +1739,23 @@ public class JcrRepository implements Repository {
         public boolean unregister( Observer observer ) {
             if (observer == null) return false;
             return this.observers.remove(observer);
+        }
+    }
+
+    /**
+     * This component is used internally to expose the metrics of a repository, and should not be used outside of the ModeShape
+     * codebase, as it will almost certainly change or be replaced in upcoming releases.
+     */
+    public class Metrics {
+        /**
+         * Get the number of currently-active sessions in this repository.
+         * 
+         * @return the number of current, active sessions; always non-negative.
+         */
+        public int getActiveSessionCount() {
+            synchronized (activeSessions) {
+                return activeSessions.size();
+            }
         }
     }
 
