@@ -30,7 +30,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.ThreadSafe;
-import org.infinispan.manager.CacheManager;
+import org.infinispan.manager.CacheContainer;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.base.Repository;
 
@@ -40,15 +40,15 @@ import org.modeshape.graph.connector.base.Repository;
 @ThreadSafe
 public class InfinispanRepository extends Repository<InfinispanNode, InfinispanWorkspace> {
 
-    private final CacheManager cacheManager;
+    private final CacheContainer cacheContainer;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Set<String> predefinedWorkspaceNames;
 
     public InfinispanRepository( InfinispanSource source,
-                                 CacheManager cacheManager ) {
+                                 CacheContainer cacheContainer ) {
         super(source);
-        this.cacheManager = cacheManager;
-        assert this.cacheManager != null;
+        this.cacheContainer = cacheContainer;
+        assert this.cacheContainer != null;
         Set<String> workspaceNames = new HashSet<String>();
         for (String workspaceName : source.getPredefinedWorkspaceNames()) {
             workspaceNames.add(workspaceName);
@@ -74,15 +74,15 @@ public class InfinispanRepository extends Repository<InfinispanNode, InfinispanW
      * 
      * @return the cacheManager; never null
      */
-    protected CacheManager getCacheManager() {
-        return cacheManager;
+    protected CacheContainer getCacheContainer() {
+        return cacheContainer;
     }
 
     /**
      * This method shuts down the workspace and makes it no longer usable. This method should also only be called once.
      */
     public void shutdown() {
-        this.cacheManager.stop();
+        this.cacheContainer.stop();
     }
 
     /**

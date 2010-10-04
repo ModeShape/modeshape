@@ -40,7 +40,7 @@ import javax.naming.Name;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
-import org.infinispan.manager.CacheManager;
+import org.infinispan.manager.CacheContainer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,7 +65,7 @@ public class InfinispanSourceTest {
     @Mock
     private Context jndiContext;
     @Mock
-    private CacheManager cacheManager;
+    private CacheContainer cacheContainer;
     @Mock
     private RepositoryContext repositoryContext;
 
@@ -82,7 +82,7 @@ public class InfinispanSourceTest {
 
         // Set up the fake JNDI context ...
         source.setContext(jndiContext);
-        when(jndiContext.lookup(validCacheManagerJndiName)).thenReturn(cacheManager);
+        when(jndiContext.lookup(validCacheManagerJndiName)).thenReturn(cacheContainer);
     }
 
     @After
@@ -180,7 +180,7 @@ public class InfinispanSourceTest {
         source.setRetryLimit(retryLimit);
         source.setName(sourceName);
         source.setCacheConfigurationName(cacheConfigName);
-        source.setCacheManagerJndiName(cacheManagerJndiName);
+        source.setCacheContainerJndiName(cacheManagerJndiName);
         source.setDefaultCachePolicy(cachePolicy);
         source.setRootNodeUuid(rootNodeUuid != null ? rootNodeUuid.toString() : null);
 
@@ -206,7 +206,7 @@ public class InfinispanSourceTest {
         assertThat(recoveredSource.getName(), is(source.getName()));
         assertThat(recoveredSource.getRootNodeUuid(), is(source.getRootNodeUuid()));
         assertThat(recoveredSource.getRetryLimit(), is(source.getRetryLimit()));
-        assertThat(recoveredSource.getCacheManagerJndiName(), is(source.getCacheManagerJndiName()));
+        assertThat(recoveredSource.getCacheContainerJndiName(), is(source.getCacheContainerJndiName()));
         assertThat(recoveredSource.getCacheConfigurationName(), is(source.getCacheConfigurationName()));
         assertThat(recoveredSource.getDefaultCachePolicy(), is(source.getDefaultCachePolicy()));
 

@@ -31,7 +31,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.io.File;
 import javax.naming.Context;
-import org.infinispan.manager.CacheManager;
+import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.DefaultCacheManager;
 import org.junit.After;
 import org.junit.Before;
@@ -93,14 +93,14 @@ public class PersistentInfinispanConnectorTest {
 
     private void setupCacheThroughJndi() throws Exception {
         // Create the cache manager ...
-        CacheManager cacheManager = new DefaultCacheManager("infinispan_persistent_config.xml"); // looks on classpath first
+        CacheContainer cacheContainer = new DefaultCacheManager("infinispan_persistent_config.xml"); // looks on classpath first
         // Set up the mock JNDI ...
         Context mockJndi = mock(Context.class);
         when(mockJndi.lookup(anyString())).thenReturn(null);
-        when(mockJndi.lookup(JNDI_NAME)).thenReturn(cacheManager);
+        when(mockJndi.lookup(JNDI_NAME)).thenReturn(cacheContainer);
 
         source.setContext(mockJndi);
-        source.setCacheManagerJndiName(JNDI_NAME);
+        source.setCacheContainerJndiName(JNDI_NAME);
     }
 
     private void setupCacheThroughClasspath() throws Exception {

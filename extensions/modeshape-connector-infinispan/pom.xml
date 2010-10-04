@@ -50,7 +50,12 @@
     <dependency>
       <groupId>org.infinispan</groupId>
       <artifactId>infinispan-core</artifactId>
-      <version>4.0.0.FINAL</version>
+      <version>4.1.0.FINAL</version>
+    </dependency>
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-client-hotrod</artifactId>
+      <version>4.1.0.FINAL</version>
     </dependency>
     <!-- 
     Testing (note the scope)

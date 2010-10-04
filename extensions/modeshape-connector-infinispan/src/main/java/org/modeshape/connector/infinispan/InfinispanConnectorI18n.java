@@ -12,7 +12,7 @@ public final class InfinispanConnectorI18n {
     public static I18n connectorName;
     public static I18n propertyIsRequired;
     public static I18n errorSerializingCachePolicyInSource;
-    public static I18n objectFoundInJndiWasNotCacheManager;
+    public static I18n objectFoundInJndiWasNotCacheContainer;
     public static I18n unableToCreateWorkspace;
     public static I18n configFileNotFound;
     public static I18n configFileNotValid;
@@ -20,9 +20,9 @@ public final class InfinispanConnectorI18n {
     public static I18n namePropertyDescription;
     public static I18n namePropertyLabel;
     public static I18n namePropertyCategory;
-    public static I18n cacheManagerJndiNamePropertyDescription;
-    public static I18n cacheManagerJndiNamePropertyLabel;
-    public static I18n cacheManagerJndiNamePropertyCategory;
+    public static I18n cacheContainerJndiNamePropertyDescription;
+    public static I18n cacheContainerJndiNamePropertyLabel;
+    public static I18n cacheContainerJndiNamePropertyCategory;
     public static I18n cacheConfigurationNamePropertyDescription;
     public static I18n cacheConfigurationNamePropertyLabel;
     public static I18n cacheConfigurationNamePropertyCategory;

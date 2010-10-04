@@ -70,7 +70,7 @@ public class InfinispanTransaction extends MapTransaction<InfinispanNode, Infini
      */
     public InfinispanWorkspace getWorkspace( String name,
                                              InfinispanWorkspace originalToClone ) {
-        Cache<UUID, InfinispanNode> workspaceCache = repository.getCacheManager().getCache(name);
+        Cache<UUID, InfinispanNode> workspaceCache = repository.getCacheContainer().getCache(name);
         if (workspaceCache == null) {
             String msg = InfinispanConnectorI18n.unableToCreateWorkspace.text(name, repository.getSourceName());
             throw new InvalidWorkspaceException(msg);
