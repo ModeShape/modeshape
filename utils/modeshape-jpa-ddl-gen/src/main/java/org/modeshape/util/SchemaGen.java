@@ -3,6 +3,9 @@ package org.modeshape.util;
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.hibernate.cfg.Environment;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.ejb.Ejb3Configuration;
@@ -13,17 +16,19 @@ import org.modeshape.connector.store.jpa.util.StoreOptionEntity;
 
 /**
  * Main class to generate DDL that can be used to build the schema for the {@link JpaSource JPA connector}. The class is intended
- * to be bundled into an executable jar file and invoked with the following syntax:
+ * to be bundled with scripts that are to be invoked with the following syntax:
  * 
  * <pre>
- * java -jar &lt;jar_name&gt; -dialect &lt;dialect name&gt; -model &lt;model_name&gt; [-out &lt;path to output directory&gt;]
- *     Example: java -jar dna-jpa-ddl-gen-0.7-jar-with-dependencies.jar -dialect HSQL -model Basic -out /tmp
+ * ddl-gen.sh -dialect &lt;dialect name&gt; -model &lt;model_name&gt; [-out &lt;path to output directory&gt;]
+ *     Example: ddl-gen.sh -dialect HSQL -model Simple -out /tmp
  * </pre>
  */
 public class SchemaGen {
 
-    public static final String CREATE_FILE_NAME = "create.dna-jpa-connector.ddl";
-    public static final String DROP_FILE_NAME = "drop.dna-jpa-connector.ddl";
+	protected static Logger logger = Logger.getLogger("org.modeshape.util"); //$NON-NLS-1$
+	
+    public static final String CREATE_FILE_NAME = "create.modeshape-jpa-connector.ddl";
+    public static final String DROP_FILE_NAME = "drop.modeshape-jpa-connector.ddl";
 
     private final Dialect dialect;
     private final Model model;
@@ -36,9 +41,17 @@ public class SchemaGen {
         this.dialect = dialectFor(dialect);
         this.model = JpaSource.Models.getModel(model);
 		if (this.model == null) {
-			throw new RuntimeException("Model " + model + " is not a valid model defined in JpaSource");
+			throw new RuntimeException(JpaDdlGenI18n.invalidModel.text());
 		}
         this.outputPath = outputPath;
+
+        if (this.outputPath != null && !this.outputPath.exists()) {
+        	this.outputPath.mkdirs();
+        	
+            String logMsg = JpaDdlGenI18n.directoryLocationCreated.text(this.outputPath.getAbsolutePath()); //$NON-NLS-1$
+            logger.log(Level.INFO, logMsg);
+
+        }
     }
 
     /**
