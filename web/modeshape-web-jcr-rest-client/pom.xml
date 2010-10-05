@@ -194,7 +194,6 @@
 						<configuration>
 							<container>
 								<containerId>${cargo.container}</containerId>
-								<home>${cargo.container.home}</home>
 							</container>
 							<configuration>
 								<properties>
@@ -203,6 +202,7 @@
 										dnauser:password:connect,readwrite|unauthorized:password:bogus
 									</cargo.servlet.users>
 									<cargo.servlet.port>8090</cargo.servlet.port>
+									<home>target/cargo</home>
 								</properties>
 
 								<deployables>
@@ -325,7 +325,6 @@
 						<configuration>
 							<container>
 								<containerId>${cargo.container}</containerId>
-								<home>${cargo.container.home}</home>
 							</container>
 							<configuration>
 								<properties>
@@ -334,6 +333,7 @@
 										dnauser2:password2:connect,readwrite|unauthorized:password:bogus
 									</cargo.servlet.users>
 									<cargo.servlet.port>8180</cargo.servlet.port>
+									<home>target/cargo</home>
 								</properties>
 
 								<deployables>

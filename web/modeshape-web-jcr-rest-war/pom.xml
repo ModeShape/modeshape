@@ -74,13 +74,17 @@
 					</execution>
 				</executions>
 				<configuration>
+					<container>
+						<containerId>${cargo.container}</containerId>
+					</container>
 					<configuration>
 						<properties>
-                            <cargo.jvmargs>-XX:PermSize=128m -XX:MaxPermSize=512 -XX:+UseConcMarkSweepGC -XX:+CMSPermGenSweepingEnabled -XX:+CMSClassUnloadingEnabled</cargo.jvmargs>
+							<cargo.jvmargs>-XX:PermSize=128m -XX:MaxPermSize=512 -XX:+UseConcMarkSweepGC -XX:+CMSPermGenSweepingEnabled -XX:+CMSClassUnloadingEnabled</cargo.jvmargs>
 							<cargo.logging>low</cargo.logging>
 							<cargo.servlet.users>dnauser:password:connect,readwrite|unauthorized:password:bogus</cargo.servlet.users>
                                                         <cargo.servlet.port>8090</cargo.servlet.port>
 						</properties>
+						<home>target/cargo</home>
 					</configuration>
 					<wait>false</wait>
 				</configuration>
