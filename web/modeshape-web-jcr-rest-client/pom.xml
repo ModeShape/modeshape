@@ -194,7 +194,6 @@
 						<configuration>
 							<container>
 								<containerId>${cargo.container}</containerId>
-								<home>${cargo.container.home}</home>
 							</container>
 							<configuration>
 								<properties>
@@ -204,7 +203,7 @@
 									</cargo.servlet.users>
 									<cargo.servlet.port>8090</cargo.servlet.port>
 								</properties>
-
+								<home>target/cargo</home>
 								<deployables>
 									<!-- application to deploy -->
 									<deployable>
@@ -325,7 +324,6 @@
 						<configuration>
 							<container>
 								<containerId>${cargo.container}</containerId>
-								<home>${cargo.container.home}</home>
 							</container>
 							<configuration>
 								<properties>
@@ -335,7 +333,7 @@
 									</cargo.servlet.users>
 									<cargo.servlet.port>8180</cargo.servlet.port>
 								</properties>
-
+								<home>target/cargo</home>
 								<deployables>
 									<!-- application to deploy -->
 									<deployable>
