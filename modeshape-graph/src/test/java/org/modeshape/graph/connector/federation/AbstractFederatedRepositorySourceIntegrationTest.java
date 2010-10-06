@@ -33,12 +33,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.Results;
 import org.modeshape.graph.Subgraph;
@@ -52,12 +58,6 @@ import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 /**
  * 
@@ -153,8 +153,8 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
 
     @AfterClass
     public static void afterAll() {
-        System.out.println("Results for federated reads:  " + FEDERATED_TIMER.getSimpleStatistics());
-        System.out.println("Results for source reads:     " + FEDERATED_TIMER.getSimpleStatistics());
+        // System.out.println("Results for federated reads:  " + FEDERATED_TIMER.getSimpleStatistics());
+        // System.out.println("Results for source reads:     " + FEDERATED_TIMER.getSimpleStatistics());
     }
 
     /**
@@ -266,6 +266,32 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
     }
 
     /**
+     * Assert that the node does not exist in the federated repository given by the supplied path but does exist in the underlying
+     * source given by the path, source name, and workspace name.
+     * 
+     * @param pathInFederated
+     * @param pathInSource
+     * @param sourceName
+     * @param workspaceName
+     */
+    protected void assertNotFederated( String pathInFederated,
+                                       String pathInSource,
+                                       String sourceName,
+                                       String workspaceName ) {
+        try {
+            FEDERATED_TIMER.start();
+            federated.getNodeAt(pathInFederated);
+            FEDERATED_TIMER.stop();
+            fail("Did not expect to find federated node \"" + pathInFederated + "\"");
+        } catch (PathNotFoundException e) {
+            // expected
+        }
+        SOURCE_TIMER.start();
+        graphFor(sourceName, workspaceName).getNodeAt(pathInSource);
+        SOURCE_TIMER.stop();
+    }
+
+    /**
      * Assert that the node in the federated repository given by the supplied path represents the same node in the underlying
      * source given by the path, source name, and workspace name.
      * 
@@ -286,20 +312,26 @@ public abstract class AbstractFederatedRepositorySourceIntegrationTest {
         SOURCE_TIMER.start();
         Node sourceNode = graphFor(sourceName, workspaceName).getNodeAt(pathInSource);
         SOURCE_TIMER.stop();
-        // The name should match ...
+
         Path fedPath = fedNode.getLocation().getPath();
         Path sourcePath = sourceNode.getLocation().getPath();
-        if (!fedPath.isRoot() && !sourcePath.isRoot()) {
-            assertThat(fedNode.getLocation().getPath().getLastSegment().getName(), is(sourceNode.getLocation()
-                                                                                                .getPath()
-                                                                                                .getLastSegment()
-                                                                                                .getName()));
-        }
+        if (fedPath.isRoot() || sourcePath.isRoot()) {
+            UUID fedUuid = fedNode.getLocation().getUuid();
+            UUID sourceUuid = sourceNode.getLocation().getUuid();
+            assertThat(fedUuid, is(sourceUuid));
+        } else {
+            Name fedName = fedPath.getLastSegment().getName();
+            Name sourceNodeName = sourcePath.getLastSegment().getName();
 
-        // The UUID should match ...
-        UUID fedUuid = fedNode.getLocation().getUuid();
-        UUID sourceUuid = sourceNode.getLocation().getUuid();
-        assertThat(fedUuid, is(sourceUuid));
+            // If the node names match, then the nodes should be projected and the UUIDs should match.
+            // Otherwise, the federated node is likely a placeholder node, and thus will have a different UUID.
+            if (fedName.equals(sourceNodeName)) {
+                // The UUID should match ...
+                UUID fedUuid = fedNode.getLocation().getUuid();
+                UUID sourceUuid = sourceNode.getLocation().getUuid();
+                assertThat(fedUuid, is(sourceUuid));
+            }
+        }
 
         // The children should match ...
         List<Path.Segment> fedChildren = new ArrayList<Path.Segment>();
