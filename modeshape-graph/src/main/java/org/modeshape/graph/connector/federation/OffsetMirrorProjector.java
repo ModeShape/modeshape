@@ -32,8 +32,9 @@ import org.modeshape.graph.property.PathFactory;
 
 /**
  * A Projector for federated repository configurations that are an offset, direct one-for-one mirror against a single source
- * repository that is projected below the federated root. In other words, the federated repository has a single projection with a
- * single "/something/below/root => /" rule.
+ * repository with a subgraph projected below the federated root. In other words, the federated repository has a single projection
+ * with a single "/something/below/root => /source/node" rule. Note that this project works even when the path in source is the
+ * root node, such as "/something/below/root => /".
  */
 @Immutable
 final class OffsetMirrorProjector extends ProjectorWithPlaceholders {
@@ -50,30 +51,42 @@ final class OffsetMirrorProjector extends ProjectorWithPlaceholders {
                                        List<Projection> projections ) {
         assert projections != null;
         assert context != null;
+        // There must be a single projection ...
         if (projections.size() != 1) return null;
         Projection projection = projections.get(0);
         assert projection != null;
+        // That projection may only have one rule ...
         if (projection.getRules().size() != 1) return null;
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
+
+        // The # of paths in repository must be 1 ...
         List<Path> topLevelPaths = projection.getRules().get(0).getTopLevelPathsInRepository(pathFactory);
         if (topLevelPaths.size() != 1) return null;
         Path topLevelPath = topLevelPaths.get(0);
         assert topLevelPath != null;
+        // The federated path may not be the root ...
         if (topLevelPath.isRoot()) return null;
-        return new OffsetMirrorProjector(context, projections, topLevelPath);
+
+        // The corresponding source path may or may not be the root ...
+        Path sourcePath = projection.getRules().get(0).getPathInSource(topLevelPath, pathFactory);
+
+        return new OffsetMirrorProjector(context, projections, topLevelPath, sourcePath);
     }
 
     private final Projection projection;
     private final Path offset;
     private final int offsetSize;
+    private final Path sourcePath;
 
     private OffsetMirrorProjector( ExecutionContext context,
                                    List<Projection> projections,
-                                   Path offset ) {
+                                   Path offset,
+                                   Path sourcePath ) {
         super(context, projections);
         this.projection = projections.get(0);
         this.offset = offset;
         this.offsetSize = offset.size();
+        this.sourcePath = sourcePath;
     }
 
     /**
@@ -94,14 +107,17 @@ final class OffsetMirrorProjector extends ProjectorWithPlaceholders {
             if (path.size() == offsetSize) {
                 // Make sure the path is the same ...
                 if (path.equals(offset)) {
-                    locationInSource = location.with(context.getValueFactories().getPathFactory().createRootPath());
+                    locationInSource = location.with(sourcePath);
                 } else {
                     return null; // not in the path
                 }
             } else {
                 // Make sure the path begins with the offset ...
-                if (path.isAtOrBelow(offset)) {
-                    locationInSource = location.with(path.subpath(offsetSize));
+                if (path.isDecendantOf(offset)) {
+                    Path pathBelowOffset = path.relativeTo(offset);
+                    PathFactory pathFactory = context.getValueFactories().getPathFactory();
+                    Path pathInSource = pathFactory.create(sourcePath, pathBelowOffset);
+                    locationInSource = location.with(pathInSource);
                 } else {
                     // Not in the path
                     return null;

@@ -32,7 +32,7 @@ import org.modeshape.graph.Location;
 /**
  * 
  */
-public class OffsetMirrorProjectorTest extends AbstractProjectorTest<OffsetMirrorProjector> {
+public class OffsetFullMirrorProjectorTest extends AbstractProjectorTest<OffsetMirrorProjector> {
 
     private String mirrorSourceName;
     private String mirrorWorkspaceName;
@@ -43,7 +43,7 @@ public class OffsetMirrorProjectorTest extends AbstractProjectorTest<OffsetMirro
         super.beforeEach();
         this.mirrorSourceName = "source1";
         this.mirrorWorkspaceName = "workspace1";
-        addProjection(mirrorSourceName, mirrorWorkspaceName, "/a/b/c => /d/e");
+        addProjection(mirrorSourceName, mirrorWorkspaceName, "/a/b/c => /");
         this.projector = OffsetMirrorProjector.with(context, projections);
     }
 
@@ -64,14 +64,14 @@ public class OffsetMirrorProjectorTest extends AbstractProjectorTest<OffsetMirro
         assertPlacholderHasChildren("/", "a");
         assertPlacholderHasChildren("/a", "b");
         assertPlacholderHasChildren("/a/b", "c");
-        assertProjectedIntoMirror("/a/b/c", "/d/e");
+        assertProjectedIntoMirror("/a/b/c", "/");
     }
 
     @Test
     public void shouldAlwaysReturnProxyNodeForLocationWithinMirror() {
-        assertProjectedIntoMirror("/a/b/c", "/d/e");
-        assertProjectedIntoMirror("/a/b/c/f", "/d/e/f");
-        assertProjectedIntoMirror("/a/b/c/f/g", "/d/e/f/g");
+        assertProjectedIntoMirror("/a/b/c", "/");
+        assertProjectedIntoMirror("/a/b/c/d", "/d");
+        assertProjectedIntoMirror("/a/b/c/d/e", "/d/e");
     }
 
     @Test
@@ -80,5 +80,4 @@ public class OffsetMirrorProjectorTest extends AbstractProjectorTest<OffsetMirro
         assertNoProjectedNodeAt("/a/b[2]");
         assertNoProjectedNodeAt("/a/b/c[2]");
     }
-
 }

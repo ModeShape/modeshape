@@ -755,7 +755,8 @@ public class Projection implements Comparable<Projection>, Serializable {
          */
         protected Path projectPathInSourceToPathInRepository( Path pathInSource,
                                                               PathFactory factory ) {
-            if (!this.sourcePath.isAtOrAbove(pathInSource)) return null;
+            if (this.sourcePath.equals(pathInSource)) return this.repositoryPath;
+            if (!this.sourcePath.isAncestorOf(pathInSource)) return null;
             // Remove the leading source path ...
             Path relativeSourcePath = pathInSource.relativeTo(this.sourcePath);
             // Prepend the region's root path ...
@@ -773,7 +774,8 @@ public class Projection implements Comparable<Projection>, Serializable {
          */
         protected Path projectPathInRepositoryToPathInSource( Path pathInRepository,
                                                               PathFactory factory ) {
-            if (!this.repositoryPath.isAtOrAbove(pathInRepository)) return null;
+            if (this.repositoryPath.equals(pathInRepository)) return this.sourcePath;
+            if (!this.repositoryPath.isAncestorOf(pathInRepository)) return null;
             // Find the relative path from the root of this region ...
             Path pathInRegion = pathInRepository.relativeTo(this.repositoryPath);
             // Prepend the path in source ...

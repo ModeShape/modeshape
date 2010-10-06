@@ -30,11 +30,11 @@ import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.junit.Before;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.federation.Projection.Rule;
 import org.modeshape.graph.property.Path;
-import org.junit.Before;
 
 /**
  * @param <ProjectorType>
@@ -80,6 +80,10 @@ public abstract class AbstractProjectorTest<ProjectorType extends Projector> {
                                   String workspaceName,
                                   String... rules ) {
         projections.add(new Projection(sourceName, workspaceName, false, rule(rules)));
+    }
+
+    protected void clearProjections() {
+        projections.clear();
     }
 
     protected Path.Segment segment( String segment ) {
