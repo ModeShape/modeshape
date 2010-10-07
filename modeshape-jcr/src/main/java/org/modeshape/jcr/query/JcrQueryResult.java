@@ -50,7 +50,6 @@ import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.validate.Schemata;
 import org.modeshape.graph.query.validate.Schemata.Table;
 import org.modeshape.jcr.JcrI18n;
-import org.modeshape.jcr.query.JcrSqlQueryResult.JcrSqlQueryResultRowIterator;
 
 /**
  * The results of a query. This is not thread-safe because it relies upon JcrSession, which is not thread-safe. Also, although the
@@ -548,13 +547,13 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
                 if (JCR_NAME_COLUMN_NAME.equals(columnName)) {
                     Location location = (Location)tuple[iterator.locationIndex];
                     Path path = location.getPath();
-                    if (path.isRoot()) return ((JcrSqlQueryResultRowIterator)iterator).jcrName();
+                    if (path.isRoot()) return iterator.jcrName();
                     return iterator.jcrName(path.getLastSegment().getName());
                 }
                 if (MODE_LOCALNAME_COLUMN_NAME.equals(columnName)) {
                     Location location = (Location)tuple[iterator.locationIndex];
                     Path path = location.getPath();
-                    if (path.isRoot()) return ((JcrSqlQueryResultRowIterator)iterator).jcrString("");
+                    if (path.isRoot()) return iterator.jcrString("");
                     return iterator.jcrString(path.getLastSegment().getName().getLocalName());
                 }
                 if (MODE_DEPTH_COLUMN_NAME.equals(columnName)) {
@@ -675,13 +674,13 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
                 if (JCR_NAME_COLUMN_NAME.equals(columnName)) {
                     Location location = (Location)tuple[locationIndex];
                     Path path = location.getPath();
-                    if (path.isRoot()) return ((JcrSqlQueryResultRowIterator)iterator).jcrName();
+                    if (path.isRoot()) return iterator.jcrName();
                     return iterator.jcrName(path.getLastSegment().getName());
                 }
                 if (MODE_LOCALNAME_COLUMN_NAME.equals(columnName)) {
                     Location location = (Location)tuple[locationIndex];
                     Path path = location.getPath();
-                    if (path.isRoot()) return ((JcrSqlQueryResultRowIterator)iterator).jcrString("");
+                    if (path.isRoot()) return iterator.jcrString("");
                     return iterator.jcrString(path.getLastSegment().getName().getLocalName());
                 }
                 if (MODE_DEPTH_COLUMN_NAME.equals(columnName)) {

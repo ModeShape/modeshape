@@ -24,17 +24,10 @@
 package org.modeshape.jcr.query;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import javax.jcr.ItemNotFoundException;
-import javax.jcr.Node;
 import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
-import javax.jcr.Value;
-import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
-import org.modeshape.graph.Location;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.validate.Schemata;
 
@@ -100,49 +93,6 @@ public class JcrSqlQueryResult extends JcrQueryResult {
     public RowIterator getRows() {
         final int numRows = results.getRowCount();
         final List<Object[]> tuples = results.getTuples();
-        return new JcrSqlQueryResultRowIterator(context, queryStatement, results, tuples.iterator(), numRows);
-    }
-
-    protected static class JcrSqlQueryResultRowIterator extends SingleSelectorQueryResultRowIterator {
-
-        protected JcrSqlQueryResultRowIterator( JcrQueryContext context,
-                                                String query,
-                                                QueryResults results,
-                                                Iterator<Object[]> tuples,
-                                                long numRows ) {
-            super(context, query, results, tuples, numRows);
-        }
-
-        @Override
-        protected Row createRow( Node node,
-                                 Object[] tuple ) {
-            return new JcrSqlQueryResultRow(this, node, tuple);
-        }
-    }
-
-    protected static class JcrSqlQueryResultRow extends SingleSelectorQueryResultRow {
-        protected JcrSqlQueryResultRow( SingleSelectorQueryResultRowIterator iterator,
-                                        Node node,
-                                        Object[] tuple ) {
-            super(iterator, node, tuple);
-        }
-
-        /**
-         * {@inheritDoc}
-         * 
-         * @see javax.jcr.query.Row#getValue(java.lang.String)
-         */
-        @Override
-        public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
-            if (JCR_PATH_COLUMN_NAME.equals(columnName)) {
-                Location location = (Location)tuple[iterator.locationIndex];
-                return iterator.jcrPath(location.getPath());
-            }
-            if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {
-                Float score = (Float)tuple[iterator.scoreIndex];
-                return iterator.jcrDouble(score);
-            }
-            return super.getValue(columnName);
-        }
+        return new SingleSelectorQueryResultRowIterator(context, queryStatement, results, tuples.iterator(), numRows);
     }
 }
