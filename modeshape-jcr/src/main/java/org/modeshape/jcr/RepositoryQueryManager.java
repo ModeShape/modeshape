@@ -24,6 +24,7 @@
 package org.modeshape.jcr;
 
 import java.io.File;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,6 +55,7 @@ import org.modeshape.graph.query.QueryResults.Columns;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.optimize.Optimizer;
+import org.modeshape.graph.query.optimize.OptimizerRule;
 import org.modeshape.graph.query.optimize.RuleBasedOptimizer;
 import org.modeshape.graph.query.plan.CanonicalPlanner;
 import org.modeshape.graph.query.plan.PlanHints;
@@ -72,6 +74,7 @@ import org.modeshape.graph.request.processor.RequestProcessor;
 import org.modeshape.graph.search.SearchEngine;
 import org.modeshape.graph.search.SearchEngineIndexer;
 import org.modeshape.graph.search.SearchEngineProcessor;
+import org.modeshape.jcr.query.RewritePseudoColumns;
 import org.modeshape.search.lucene.IndexRules;
 import org.modeshape.search.lucene.LuceneConfiguration;
 import org.modeshape.search.lucene.LuceneConfigurations;
@@ -316,7 +319,24 @@ abstract class RepositoryQueryManager {
 
             // Set up the query engine ...
             Planner planner = new CanonicalPlanner();
-            Optimizer optimizer = new RuleBasedOptimizer();
+
+            // Create a custom optimizer that has our rules first ...
+            Optimizer optimizer = new RuleBasedOptimizer() {
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.modeshape.graph.query.optimize.RuleBasedOptimizer#populateRuleStack(java.util.LinkedList,
+                 *      org.modeshape.graph.query.plan.PlanHints)
+                 */
+                @Override
+                protected void populateRuleStack( LinkedList<OptimizerRule> ruleStack,
+                                                  PlanHints hints ) {
+                    super.populateRuleStack(ruleStack, hints);
+                    ruleStack.addFirst(RewritePseudoColumns.INSTANCE);
+                }
+            };
+
+            // Create a custom processor that knows how to submit the access query requests ...
             Processor processor = new QueryProcessor() {
 
                 /**

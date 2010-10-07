@@ -1558,20 +1558,49 @@ public class LuceneSearchSession implements WorkspaceSession {
             int docId = doc + docOffset;
             Object[] tuple = new Object[numValues];
             Document document = currentReader.document(docId, fieldSelector);
+            // Read the location ...
+            Location location = session.readLocation(document);
+            tuple[locationIndex] = location;
+
+            // Set the score column if required ...
+            Float score = null;
+            if (recordScore) {
+                assert scorer != null;
+                score = new Float(scorer.score());
+                tuple[scoreIndex] = score;
+            }
+
+            // Read the column values ...
             for (String columnName : columns.getColumnNames()) {
                 int index = columns.getColumnIndexForName(columnName);
                 // We just need to retrieve the first value if there is more than one ...
-                tuple[index] = document.get(columnName);
+                Object value = document.get(columnName);
+                if (value == null) {
+                    if (columnName.equals("jcr:path")) {
+                        value = session.processor.stringFactory.create(location.getPath());
+                    } else if (columnName.equals("mode:depth")) {
+                        value = new Long(location.getPath().size());
+                    } else if (columnName.equals("jcr:score")) {
+                        value = score == null ? new Double(scorer.score()) : new Double(score.doubleValue());
+                    } else if (columnName.equals("jcr:name")) {
+                        Path path = location.getPath();
+                        if (path.isRoot()) {
+                            value = "";
+                        } else {
+                            value = session.processor.stringFactory.create(path.getLastSegment().getName());
+                        }
+                    } else if (columnName.equals("mode:localName")) {
+                        Path path = location.getPath();
+                        if (path.isRoot()) {
+                            value = "";
+                        } else {
+                            value = path.getLastSegment().getName().getLocalName();
+                        }
+                    }
+                }
+                tuple[index] = value;
             }
 
-            // Set the score column if required ...
-            if (recordScore) {
-                assert scorer != null;
-                tuple[scoreIndex] = scorer.score();
-            }
-
-            // Read the location ...
-            tuple[locationIndex] = session.readLocation(document);
             tuples.add(tuple);
         }
     }

@@ -36,6 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.text.TokenStream;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Name;
@@ -315,6 +316,126 @@ public class JcrSql2QueryParserTest {
         DescendantNodeJoinCondition joinCondition = isDescendantNodeJoinCondition(join.joinCondition());
         assertThat(joinCondition.ancestorSelectorName(), is(selectorName("lom")));
         assertThat(joinCondition.descendantSelectorName(), is(selectorName("lang")));
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedPathInSelect() {
+        query = parse("select [jcr:primaryType], [jcr:path] FROM [nt:base]");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedNodeNameInSelect() {
+        query = parse("select [jcr:primaryType], [jcr:name] FROM [nt:base]");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedNodeLocalNameInSelect() {
+        query = parse("select [jcr:primaryType], [jcr:localName] FROM [nt:base]");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedNodeDepthInSelect() {
+        query = parse("select [jcr:primaryType], [jcr:depth] FROM [nt:base]");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedNodeScoreInSelect() {
+        query = parse("select [jcr:primaryType], [jcr:score] FROM [nt:base]");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithQualifiedPathInSelect() {
+        query = parse("select [nt:base].[jcr:primaryType], [nt:base].[jcr:path] FROM [nt:base]");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithQualifiedNodeNameInSelect() {
+        query = parse("select [nt:base].[jcr:primaryType], [nt:base].[jcr:name] FROM [nt:base]");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithQualifiedNodeLocalNameInSelect() {
+        query = parse("select [nt:base].[jcr:primaryType], [nt:base].[jcr:localName] FROM [nt:base]");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithQualifiedNodeDepthInSelect() {
+        query = parse("select [nt:base].[jcr:primaryType], [nt:base].[jcr:depth] FROM [nt:base]");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithQualifiedNodeScoreInSelect() {
+        query = parse("select [nt:base].[jcr:primaryType], [nt:base].[jcr:score] FROM [nt:base]");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedPathInCriteria() {
+        query = parse("select [jcr:primaryType] FROM [nt:base] WHERE [jcr:path] = '/some/path'");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedNodeNameInCriteria() {
+        query = parse("select [jcr:primaryType] FROM [nt:base] WHERE [jcr:path] = 'mode:nodeName'");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedNodeLocalNameInCriteria() {
+        query = parse("select [jcr:primaryType] FROM [nt:base] WHERE [jcr:localName] = 'nodeName'");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedNodeDepthInCriteria() {
+        query = parse("select [jcr:primaryType] FROM [nt:base] WHERE [jcr:depth] = 2");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedNodeScoreInCriteria() {
+        query = parse("select [jcr:primaryType] FROM [nt:base] WHERE [jcr:score] <= 2.0");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithQualifiedPathInCriteria() {
+        query = parse("select [nt:base].[jcr:primaryType] FROM [nt:base] WHERE [nt:base].[jcr:path] = '/some/path'");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithQualifiedNodeNameInCriteria() {
+        query = parse("select [nt:base].[jcr:primaryType] FROM [nt:base] WHERE [nt:base].[jcr:name] = 'mode:nodeName'");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithQualifiedNodeLocalNameInCriteria() {
+        query = parse("select [nt:base].[jcr:primaryType] FROM [nt:base] WHERE [nt:base].[jcr:localName] = 'nodeName'");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithQualifiedNodeDepthInCriteria() {
+        query = parse("select [nt:base].[jcr:primaryType] FROM [nt:base] WHERE [nt:base].[jcr:depth] = 3");
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithQualifiedNodeScoreInCriteria() {
+        query = parse("select [nt:base].[jcr:primaryType] FROM [nt:base] WHERE [nt:base].[jcr:score] <= 1.3");
     }
 
     protected Join isJoin( Source source ) {

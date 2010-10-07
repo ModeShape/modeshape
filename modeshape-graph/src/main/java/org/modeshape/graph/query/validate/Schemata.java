@@ -85,6 +85,20 @@ public interface Schemata {
         List<Column> getColumns();
 
         /**
+         * Get the queryable columns in this table that should be used in case of "SELECT *".
+         * 
+         * @return the immutable, ordered list of immutable column objects; never null
+         */
+        List<Column> getSelectAllColumns();
+
+        /**
+         * Get the queryable columns in this table that should be used in case of "SELECT *".
+         * 
+         * @return the immutable map of immutable column objects by their name; never null
+         */
+        Map<String, Column> getSelectAllColumnsByName();
+
+        /**
          * Get the collection of keys for this table.
          * 
          * @return the immutable collection of immutable keys; never null, but possibly empty

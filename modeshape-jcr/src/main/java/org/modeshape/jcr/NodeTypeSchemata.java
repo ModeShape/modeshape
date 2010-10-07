@@ -23,14 +23,18 @@
  */
 package org.modeshape.jcr;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.PropertyType;
+import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
+import javax.jcr.version.OnParentVersionAction;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.lucene.document.Field;
@@ -67,14 +71,15 @@ class NodeTypeSchemata implements Schemata {
     private final Map<Integer, String> types;
     private final Map<String, String> prefixesByUris = new HashMap<String, String>();
     private final boolean includeColumnsForInheritedProperties;
-    private final Iterable<JcrPropertyDefinition> propertyDefinitions;
+    private final Collection<JcrPropertyDefinition> propertyDefinitions;
     private final Map<Name, JcrNodeType> nodeTypesByName;
     private final Multimap<JcrNodeType, JcrNodeType> subtypesByName = LinkedHashMultimap.create();
     private final IndexRules indexRules;
+    private final List<JcrPropertyDefinition> pseudoProperties = new ArrayList<JcrPropertyDefinition>();
 
     NodeTypeSchemata( ExecutionContext context,
                       Map<Name, JcrNodeType> nodeTypes,
-                      Iterable<JcrPropertyDefinition> propertyDefinitions,
+                      Collection<JcrPropertyDefinition> propertyDefinitions,
                       boolean includeColumnsForInheritedProperties ) {
         this.includeColumnsForInheritedProperties = includeColumnsForInheritedProperties;
         this.propertyDefinitions = propertyDefinitions;
@@ -112,13 +117,19 @@ class NodeTypeSchemata implements Schemata {
         types.put(PropertyType.NAME, typeSystem.getStringFactory().getTypeName());
         types.put(PropertyType.URI, typeSystem.getStringFactory().getTypeName());
 
+        pseudoProperties.add(pseudoProperty(context, JcrLexicon.PATH, PropertyType.PATH));
+        pseudoProperties.add(pseudoProperty(context, JcrLexicon.NAME, PropertyType.NAME));
+        pseudoProperties.add(pseudoProperty(context, JcrLexicon.SCORE, PropertyType.DOUBLE));
+        pseudoProperties.add(pseudoProperty(context, ModeShapeLexicon.LOCALNAME, PropertyType.STRING));
+        pseudoProperties.add(pseudoProperty(context, ModeShapeLexicon.DEPTH, PropertyType.LONG));
+
         // Create the "ALLNODES" table, which will contain all possible properties ...
         IndexRules.Builder indexRulesBuilder = IndexRules.createBuilder(LuceneSearchEngine.DEFAULT_RULES);
         indexRulesBuilder.defaultTo(Field.Store.YES,
                                     Field.Index.ANALYZED,
                                     DEFAULT_CAN_CONTAIN_REFERENCES,
                                     DEFAULT_FULL_TEXT_SEARCHABLE);
-        addAllNodesTable(builder, indexRulesBuilder, context);
+        addAllNodesTable(builder, indexRulesBuilder, context, pseudoProperties);
 
         // Define a view for each node type ...
         for (JcrNodeType nodeType : nodeTypesByName.values()) {
@@ -127,6 +138,24 @@ class NodeTypeSchemata implements Schemata {
 
         schemata = builder.build();
         indexRules = indexRulesBuilder.build();
+    }
+
+    protected JcrPropertyDefinition pseudoProperty( ExecutionContext context,
+                                                    Name name,
+                                                    int propertyType ) {
+        int opv = OnParentVersionAction.IGNORE;
+        boolean autoCreated = true;
+        boolean mandatory = true;
+        boolean isProtected = true;
+        boolean multiple = false;
+        boolean fullTextSearchable = false;
+        boolean queryOrderable = true;
+        Value[] defaultValues = null;
+        String[] valueConstraints = new String[] {};
+        String[] queryOperators = null;
+        return new JcrPropertyDefinition(context, null, name, opv, autoCreated, mandatory, isProtected, defaultValues,
+                                         propertyType, valueConstraints, multiple, fullTextSearchable, queryOrderable,
+                                         queryOperators);
     }
 
     /**
@@ -144,7 +173,8 @@ class NodeTypeSchemata implements Schemata {
 
     protected final void addAllNodesTable( ImmutableSchemata.Builder builder,
                                            IndexRules.Builder indexRuleBuilder,
-                                           ExecutionContext context ) {
+                                           ExecutionContext context,
+                                           List<JcrPropertyDefinition> additionalProperties ) {
         NamespaceRegistry registry = context.getNamespaceRegistry();
         TypeSystem typeSystem = context.getValueFactories().getTypeSystem();
 
@@ -197,6 +227,36 @@ class NodeTypeSchemata implements Schemata {
                                                        typeSystem,
                                                        canBeReference,
                                                        isStrongReference);
+        }
+        if (additionalProperties != null) {
+            boolean canBeReference = false;
+            boolean isStrongReference = false;
+            boolean fullTextSearchable = false;
+            assert !first;
+            for (JcrPropertyDefinition defn : additionalProperties) {
+                Name name = defn.getInternalName();
+                String columnName = name.getString(registry);
+                assert defn.getRequiredType() != PropertyType.UNDEFINED;
+                String type = types.get(defn.getRequiredType());
+                assert type != null;
+                String previousType = typesForNames.put(columnName, type);
+                if (previousType != null && !previousType.equals(type)) {
+                    // There are two property definitions with the same name but different types, so we need to find a common type
+                    // ...
+                    type = typeSystem.getCompatibleType(previousType, type);
+                }
+                // Add (or overwrite) the column ...
+                builder.addColumn(tableName, columnName, type, fullTextSearchable);
+                builder.excludeFromSelectStar(tableName, columnName);
+
+                // And build an indexing rule for this type ...
+                if (indexRuleBuilder != null) addIndexRule(indexRuleBuilder,
+                                                           defn,
+                                                           type,
+                                                           typeSystem,
+                                                           canBeReference,
+                                                           isStrongReference);
+            }
         }
     }
 
@@ -270,8 +330,8 @@ class NodeTypeSchemata implements Schemata {
         }
         // Create the SQL statement ...
         StringBuilder viewDefinition = new StringBuilder("SELECT ");
-        boolean first = true;
         boolean hasResidualProperties = false;
+        boolean first = true;
         for (JcrPropertyDefinition defn : defns) {
             if (defn.isResidual()) {
                 hasResidualProperties = true;
@@ -281,6 +341,14 @@ class NodeTypeSchemata implements Schemata {
             if (defn.isPrivate()) continue;
             Name name = defn.getInternalName();
 
+            String columnName = name.getString(registry);
+            if (first) first = false;
+            else viewDefinition.append(',');
+            viewDefinition.append('[').append(columnName).append(']');
+        }
+        // Add the pseudo-properties ...
+        for (JcrPropertyDefinition defn : pseudoProperties) {
+            Name name = defn.getInternalName();
             String columnName = name.getString(registry);
             if (first) first = false;
             else viewDefinition.append(',');
@@ -423,7 +491,7 @@ class NodeTypeSchemata implements Schemata {
             this.nameFactory = context.getValueFactories().getNameFactory();
             this.builder = ImmutableSchemata.createBuilder(context.getValueFactories().getTypeSystem());
             // Add the "AllNodes" table ...
-            addAllNodesTable(builder, null, context);
+            addAllNodesTable(builder, null, context, null);
             this.schemata = builder.build();
         }
 
