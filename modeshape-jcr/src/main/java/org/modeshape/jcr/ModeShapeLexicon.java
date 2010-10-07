@@ -63,4 +63,7 @@ public class ModeShapeLexicon extends org.modeshape.repository.ModeShapeLexicon 
      * proxy.
      */
     public static final Name SHARED_UUID = new BasicName(Namespace.URI, "sharedUuid");
+
+    public static final Name DEPTH = new BasicName(Namespace.URI, "depth");
+    public static final Name LOCALNAME = new BasicName(Namespace.URI, "localName");
 }

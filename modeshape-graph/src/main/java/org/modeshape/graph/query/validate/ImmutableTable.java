@@ -46,6 +46,8 @@ class ImmutableTable implements Table {
     private final List<Column> columns;
     private final Set<Key> keys;
     private final boolean extraColumns;
+    private final List<Column> selectStarColumns;
+    private final Map<String, Column> selectStarColumnsByName;
 
     protected ImmutableTable( SelectorName name,
                               Iterable<Column> columns,
@@ -85,18 +87,27 @@ class ImmutableTable implements Table {
             this.keys = Collections.emptySet();
         }
         this.extraColumns = extraColumns;
+        this.selectStarColumns = this.columns;
+        this.selectStarColumnsByName = this.columnsByName;
     }
 
     protected ImmutableTable( SelectorName name,
                               Map<String, Column> columnsByName,
                               List<Column> columns,
                               Set<Key> keys,
-                              boolean extraColumns ) {
+                              boolean extraColumns,
+                              Map<String, Column> selectStarColumnsByName,
+                              List<Column> selectStarColumns ) {
         this.name = name;
         this.columns = columns;
         this.columnsByName = columnsByName;
         this.keys = keys;
         this.extraColumns = extraColumns;
+        assert selectStarColumns != null;
+        assert selectStarColumnsByName != null;
+        assert selectStarColumns.size() == selectStarColumnsByName.size();
+        this.selectStarColumns = selectStarColumns;
+        this.selectStarColumnsByName = selectStarColumnsByName;
     }
 
     /**
@@ -129,6 +140,24 @@ class ImmutableTable implements Table {
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.graph.query.validate.Schemata.Table#getSelectAllColumns()
+     */
+    public List<Column> getSelectAllColumns() {
+        return selectStarColumns;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.validate.Schemata.Table#getSelectAllColumnsByName()
+     */
+    public Map<String, Column> getSelectAllColumnsByName() {
+        return selectStarColumnsByName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.modeshape.graph.query.validate.Schemata.Table#getColumnsByName()
      */
     public Map<String, Column> getColumnsByName() {
@@ -141,6 +170,10 @@ class ImmutableTable implements Table {
      * @see org.modeshape.graph.query.validate.Schemata.Table#getKeys()
      */
     public Collection<Key> getKeys() {
+        return keys;
+    }
+
+    protected Set<Key> getKeySet() {
         return keys;
     }
 
@@ -197,29 +230,56 @@ class ImmutableTable implements Table {
 
     public ImmutableTable withColumn( String name,
                                       String type ) {
-        List<Column> newColumns = new LinkedList<Column>(columns);
-        newColumns.add(new ImmutableColumn(name, type));
-        return new ImmutableTable(getName(), newColumns, extraColumns);
+        return withColumn(name, type, ImmutableColumn.DEFAULT_FULL_TEXT_SEARCHABLE);
     }
 
     public ImmutableTable withColumn( String name,
                                       String type,
                                       boolean fullTextSearchable ) {
+        // Create the new column ...
+        Column newColumn = new ImmutableColumn(name, type, fullTextSearchable);
+        // Add to the list and map ...
         List<Column> newColumns = new LinkedList<Column>(columns);
-        newColumns.add(new ImmutableColumn(name, type, fullTextSearchable));
-        return new ImmutableTable(getName(), newColumns, extraColumns);
+        newColumns.add(newColumn);
+        List<Column> selectStarColumns = new LinkedList<Column>(this.selectStarColumns);
+        Map<String, Column> selectStarColumnMap = new HashMap<String, Column>(this.selectStarColumnsByName);
+        Map<String, Column> columnMap = new HashMap<String, Column>(columnsByName);
+        Column existing = columnMap.put(newColumn.getName(), newColumn);
+        if (existing != null) {
+            newColumns.remove(existing);
+            if (selectStarColumnMap.containsKey(existing.getName())) {
+                // The old column was in the SELECT * list, so the new one should be, too...
+                selectStarColumnMap.put(newColumn.getName(), newColumn);
+                selectStarColumns.add(newColumn);
+            }
+        }
+        return new ImmutableTable(getName(), columnMap, newColumns, keys, extraColumns, selectStarColumnMap, selectStarColumns);
     }
 
     public ImmutableTable withColumns( Iterable<Column> columns ) {
+        // Add to the list and map ...
         List<Column> newColumns = new LinkedList<Column>(this.getColumns());
+        List<Column> selectStarColumns = new LinkedList<Column>(this.selectStarColumns);
+        Map<String, Column> selectStarColumnMap = new HashMap<String, Column>(this.selectStarColumnsByName);
+        Map<String, Column> columnMap = new HashMap<String, Column>(columnsByName);
         for (Column column : columns) {
-            newColumns.add(new ImmutableColumn(column.getName(), column.getPropertyType(), column.isFullTextSearchable()));
+            Column newColumn = new ImmutableColumn(column.getName(), column.getPropertyType(), column.isFullTextSearchable());
+            newColumns.add(newColumn);
+            Column existing = columnMap.put(newColumn.getName(), newColumn);
+            if (existing != null) {
+                newColumns.remove(existing);
+                if (selectStarColumnMap.containsKey(existing.getName())) {
+                    // The old column was in the SELECT * list, so the new one should be, too...
+                    selectStarColumnMap.put(newColumn.getName(), newColumn);
+                    selectStarColumns.add(newColumn);
+                }
+            }
         }
-        return new ImmutableTable(getName(), newColumns, extraColumns);
+        return new ImmutableTable(getName(), columnMap, newColumns, keys, extraColumns, selectStarColumnMap, selectStarColumns);
     }
 
     public ImmutableTable with( SelectorName name ) {
-        return new ImmutableTable(name, columnsByName, columns, keys, extraColumns);
+        return new ImmutableTable(name, columnsByName, columns, keys, extraColumns, selectStarColumnsByName, selectStarColumns);
     }
 
     public ImmutableTable withKey( Iterable<Column> keyColumns ) {
@@ -228,7 +288,7 @@ class ImmutableTable implements Table {
             assert columns.contains(keyColumn);
         }
         if (!keys.add(new ImmutableKey(keyColumns))) return this;
-        return new ImmutableTable(name, columnsByName, columns, keys, extraColumns);
+        return new ImmutableTable(name, columnsByName, columns, keys, extraColumns, selectStarColumnsByName, selectStarColumns);
     }
 
     public ImmutableTable withKey( Column... keyColumns ) {
@@ -236,11 +296,27 @@ class ImmutableTable implements Table {
     }
 
     public ImmutableTable withExtraColumns() {
-        return extraColumns ? this : new ImmutableTable(name, columnsByName, columns, keys, true);
+        return extraColumns ? this : new ImmutableTable(name, columnsByName, columns, keys, true, selectStarColumnsByName,
+                                                        selectStarColumns);
     }
 
     public ImmutableTable withoutExtraColumns() {
-        return !extraColumns ? this : new ImmutableTable(name, columnsByName, columns, keys, false);
+        return !extraColumns ? this : new ImmutableTable(name, columnsByName, columns, keys, false, selectStarColumnsByName,
+                                                         selectStarColumns);
+    }
+
+    public ImmutableTable withColumnNotInSelectStar( String name ) {
+        Column column = columnsByName.get(name);
+        if (column == null) return this;
+        if (!getSelectAllColumnsByName().containsKey(name)) {
+            return this; // already not in select *
+        }
+        List<Column> selectStarColumns = new LinkedList<Column>(this.selectStarColumns);
+        Map<String, Column> selectStarColumnsByName = new HashMap<String, Column>(this.selectStarColumnsByName);
+        selectStarColumns.remove(column);
+        selectStarColumnsByName.remove(name);
+        return new ImmutableTable(this.name, columnsByName, columns, keys, extraColumns, selectStarColumnsByName,
+                                  selectStarColumns);
     }
 
     /**

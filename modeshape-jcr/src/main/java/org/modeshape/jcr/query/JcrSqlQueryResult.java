@@ -35,7 +35,6 @@ import javax.jcr.Value;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import org.modeshape.graph.Location;
-import org.modeshape.graph.property.Path;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.validate.Schemata;
 
@@ -119,14 +118,6 @@ public class JcrSqlQueryResult extends JcrQueryResult {
                                  Object[] tuple ) {
             return new JcrSqlQueryResultRow(this, node, tuple);
         }
-
-        protected Value jcrPath( Path path ) {
-            return context.createValue(PropertyType.PATH, path);
-        }
-
-        protected Value jcrScore( Float score ) {
-            return context.createValue(PropertyType.DOUBLE, score);
-        }
     }
 
     protected static class JcrSqlQueryResultRow extends SingleSelectorQueryResultRow {
@@ -145,11 +136,11 @@ public class JcrSqlQueryResult extends JcrQueryResult {
         public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
             if (JCR_PATH_COLUMN_NAME.equals(columnName)) {
                 Location location = (Location)tuple[iterator.locationIndex];
-                return ((JcrSqlQueryResultRowIterator)iterator).jcrPath(location.getPath());
+                return iterator.jcrPath(location.getPath());
             }
             if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {
                 Float score = (Float)tuple[iterator.scoreIndex];
-                return ((JcrSqlQueryResultRowIterator)iterator).jcrScore(score);
+                return iterator.jcrDouble(score);
             }
             return super.getValue(columnName);
         }

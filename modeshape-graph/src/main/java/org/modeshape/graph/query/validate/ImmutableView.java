@@ -65,7 +65,19 @@ class ImmutableView extends ImmutableTable implements View {
                              boolean extraColumns,
                              QueryCommand definition,
                              Set<Key> keys ) {
-        super(name, columnsByName, columns, keys, extraColumns);
+        super(name, columnsByName, columns, keys, extraColumns, columnsByName, columns);
+        this.definition = definition;
+    }
+
+    protected ImmutableView( SelectorName name,
+                             Map<String, Column> columnsByName,
+                             List<Column> columns,
+                             boolean extraColumns,
+                             QueryCommand definition,
+                             Set<Key> keys,
+                             Map<String, Column> selectStarColumnsByName,
+                             List<Column> selectStarColumns ) {
+        super(name, columnsByName, columns, keys, extraColumns, selectStarColumnsByName, selectStarColumns);
         this.definition = definition;
     }
 
@@ -76,6 +88,19 @@ class ImmutableView extends ImmutableTable implements View {
      */
     public QueryCommand getDefinition() {
         return definition;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.validate.ImmutableTable#withColumnNotInSelectStar(java.lang.String)
+     */
+    @Override
+    public ImmutableView withColumnNotInSelectStar( String name ) {
+        ImmutableTable result = super.withColumnNotInSelectStar(name);
+        if (result == this) return this;
+        return new ImmutableView(result.getName(), result.getColumnsByName(), result.getColumns(), result.hasExtraColumns(),
+                                 definition, result.getKeySet(), result.getSelectAllColumnsByName(), result.getSelectAllColumns());
     }
 
     /**

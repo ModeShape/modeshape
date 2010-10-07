@@ -32,8 +32,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.modeshape.graph.GraphI18n;
-import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.model.And;
 import org.modeshape.graph.query.model.ArithmeticOperand;
@@ -230,12 +228,6 @@ public class PlanUtil {
                 // The column could not be found in the source, but it may be referring to a residual property.
                 // Therefore, we'll use the default type ...
                 types.add(context.getTypeSystem().getDefaultType());
-                if (JcrLexicon.NAME.getLocalName().equals(column.propertyName())) {
-                    // Someone is using the "name" column, so record a warning ...
-                    context.getProblems().addWarning(GraphI18n.columnDoesNotExistOnTable,
-                                                     column.propertyName(),
-                                                     column.selectorName().name());
-                }
             }
         }
         return types;

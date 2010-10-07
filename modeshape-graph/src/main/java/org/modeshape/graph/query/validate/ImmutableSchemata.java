@@ -24,9 +24,11 @@
 package org.modeshape.graph.query.validate;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -73,7 +75,7 @@ public class ImmutableSchemata implements Schemata {
     public static class Builder {
 
         private final TypeSystem typeSystem;
-        private final Map<SelectorName, ImmutableTable> tables = new HashMap<SelectorName, ImmutableTable>();
+        private final Map<String, MutableTable> tables = new HashMap<String, MutableTable>();
         private final Map<SelectorName, QueryCommand> viewDefinitions = new HashMap<SelectorName, QueryCommand>();
         private final Set<SelectorName> tablesOrViewsWithExtraColumns = new HashSet<SelectorName>();
 
@@ -101,8 +103,8 @@ public class ImmutableSchemata implements Schemata {
                 CheckArg.isNotEmpty(columnName, "columnName[" + (i++) + "]");
                 columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType()));
             }
-            ImmutableTable table = new ImmutableTable(new SelectorName(name), columns, false);
-            tables.put(table.getName(), table);
+            MutableTable table = new MutableTable(name, columns, false);
+            tables.put(name, table);
             return this;
         }
 
@@ -131,8 +133,8 @@ public class ImmutableSchemata implements Schemata {
                 CheckArg.isNotEmpty(columnName, "columnName[" + i + "]");
                 columns.add(new ImmutableColumn(columnName, types[i]));
             }
-            ImmutableTable table = new ImmutableTable(new SelectorName(name), columns, false);
-            tables.put(table.getName(), table);
+            MutableTable table = new MutableTable(name, columns, false);
+            tables.put(name, table);
             return this;
         }
 
@@ -212,17 +214,16 @@ public class ImmutableSchemata implements Schemata {
             CheckArg.isNotEmpty(tableName, "tableName");
             CheckArg.isNotEmpty(columnName, "columnName");
             CheckArg.isNotNull(type, "type");
-            SelectorName selector = new SelectorName(tableName);
-            ImmutableTable existing = tables.get(selector);
-            ImmutableTable table = null;
+            MutableTable existing = tables.get(tableName);
+            Column column = new ImmutableColumn(columnName, type, fullTextSearchable);
             if (existing == null) {
                 List<Column> columns = new ArrayList<Column>();
-                columns.add(new ImmutableColumn(columnName, type, fullTextSearchable));
-                table = new ImmutableTable(selector, columns, false);
+                columns.add(column);
+                existing = new MutableTable(tableName, columns, false);
+                tables.put(tableName, existing);
             } else {
-                table = existing.withColumn(columnName, type, fullTextSearchable);
+                existing.addColumn(column);
             }
-            tables.put(table.getName(), table);
             return this;
         }
 
@@ -238,22 +239,19 @@ public class ImmutableSchemata implements Schemata {
                                        String columnName ) {
             CheckArg.isNotEmpty(tableName, "tableName");
             CheckArg.isNotEmpty(columnName, "columnName");
-            SelectorName selector = new SelectorName(tableName);
-            ImmutableTable existing = tables.get(selector);
-            ImmutableTable table = null;
+            MutableTable existing = tables.get(tableName);
             if (existing == null) {
                 List<Column> columns = new ArrayList<Column>();
                 columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType(), true));
-                table = new ImmutableTable(selector, columns, false);
+                existing = new MutableTable(tableName, columns, false);
+                tables.put(tableName, existing);
             } else {
                 Column column = existing.getColumn(columnName);
-                String type = typeSystem.getDefaultType();
-                if (column != null) {
-                    type = column.getPropertyType();
+                if (column != null && !column.isFullTextSearchable()) {
+                    column = new ImmutableColumn(columnName, column.getPropertyType(), true);
                 }
-                table = existing.withColumn(columnName, type, true);
+                existing.addColumn(column);
             }
-            tables.put(table.getName(), table);
             return this;
         }
 
@@ -262,12 +260,34 @@ public class ImmutableSchemata implements Schemata {
          * 
          * @param tableName the name of the table
          * @return this builder, for convenience in method chaining; never null
-         * @throws IllegalArgumentException if the table name does is null or empty
+         * @throws IllegalArgumentException if the table name is null or empty, or the table does not exist
          */
         public Builder markExtraColumns( String tableName ) {
             CheckArg.isNotEmpty(tableName, "tableName");
-            SelectorName selector = new SelectorName(tableName);
-            tablesOrViewsWithExtraColumns.add(selector);
+            tablesOrViewsWithExtraColumns.add(new SelectorName(tableName));
+            return this;
+        }
+
+        /**
+         * Specify that the named column in the given table should be excluded from the selected columns when "SELECT *" is used.
+         * 
+         * @param tableName the name of the new table
+         * @param columnName the names of the column
+         * @return this builder, for convenience in method chaining; never null
+         * @throws IllegalArgumentException if the table name is null or empty or if the column name is null or empty
+         */
+        public Builder excludeFromSelectStar( String tableName,
+                                              String columnName ) {
+            CheckArg.isNotEmpty(tableName, "tableName");
+            CheckArg.isNotEmpty(columnName, "columnName");
+            MutableTable existing = tables.get(tableName);
+            if (existing == null) {
+                List<Column> columns = new ArrayList<Column>();
+                columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType(), true));
+                existing = new MutableTable(tableName, columns, false);
+                tables.put(tableName, existing);
+            }
+            existing.excludeFromSelectStar(columnName);
             return this;
         }
 
@@ -284,21 +304,20 @@ public class ImmutableSchemata implements Schemata {
                                String... columnNames ) {
             CheckArg.isNotEmpty(tableName, "tableName");
             CheckArg.isNotEmpty(columnNames, "columnNames");
-            ImmutableTable existing = tables.get(new SelectorName(tableName));
+            MutableTable existing = tables.get(tableName);
             if (existing == null) {
                 throw new IllegalArgumentException(GraphI18n.tableDoesNotExist.text(tableName));
             }
             Set<Column> keyColumns = new HashSet<Column>();
             for (String columnName : columnNames) {
-                Column existingColumn = existing.getColumnsByName().get(columnName);
+                Column existingColumn = existing.getColumn(columnName);
                 if (existingColumn == null) {
                     String msg = GraphI18n.schemataKeyReferencesNonExistingColumn.text(tableName, columnName);
                     throw new IllegalArgumentException(msg);
                 }
                 keyColumns.add(existingColumn);
             }
-            ImmutableTable table = existing.withKey(keyColumns);
-            tables.put(table.getName(), table);
+            existing.addKey(keyColumns);
             return this;
         }
 
@@ -310,15 +329,16 @@ public class ImmutableSchemata implements Schemata {
          * @throws InvalidQueryException if any of the view definitions is invalid and cannot be resolved
          */
         public Schemata build() {
-            // Go through the tables and mark those that have extra columns ...
-            for (SelectorName tableName : tablesOrViewsWithExtraColumns) {
-                ImmutableTable table = tables.get(tableName);
-                if (table != null) {
-                    tables.put(table.getName(), table.withExtraColumns());
+            Map<SelectorName, Table> tablesByName = new HashMap<SelectorName, Table>();
+            // Add all the tables ...
+            for (MutableTable mutableTable : tables.values()) {
+                if (tablesOrViewsWithExtraColumns.contains(mutableTable.getName())) {
+                    mutableTable.setExtraColumns(true);
                 }
+                Table table = mutableTable.asImmutable();
+                tablesByName.put(table.getName(), table);
             }
-
-            ImmutableSchemata schemata = new ImmutableSchemata(new HashMap<SelectorName, Table>(tables));
+            ImmutableSchemata schemata = new ImmutableSchemata(tablesByName);
 
             // Make a copy of the view definitions, and create the views ...
             Map<SelectorName, QueryCommand> definitions = new HashMap<SelectorName, QueryCommand>(viewDefinitions);
@@ -348,6 +368,7 @@ public class ImmutableSchemata implements Schemata {
                     // Go through all the columns and look up the types ...
                     Map<SelectorName, SelectorName> tableNameByAlias = null;
                     List<Column> viewColumns = new ArrayList<Column>(columns.size());
+                    List<Column> viewColumnsInSelectStar = new ArrayList<Column>(columns.size());
                     for (org.modeshape.graph.query.model.Column column : columns) {
                         // Find the table that the column came from ...
                         Table source = schemata.getTable(column.selectorName());
@@ -370,8 +391,12 @@ public class ImmutableSchemata implements Schemata {
                                                             "The view references a non-existant column '" + column.columnName()
                                                             + "' in '" + source.getName() + "'");
                         }
-                        viewColumns.add(new ImmutableColumn(viewColumnName, sourceColumn.getPropertyType(),
-                                                            sourceColumn.isFullTextSearchable()));
+                        Column newColumn = new ImmutableColumn(viewColumnName, sourceColumn.getPropertyType(),
+                                                               sourceColumn.isFullTextSearchable());
+                        viewColumns.add(newColumn);
+                        if (source.getSelectAllColumnsByName().containsKey(sourceColumnName)) {
+                            viewColumnsInSelectStar.add(newColumn);
+                        }
                     }
                     if (viewColumns.size() != columns.size()) {
                         // We weren't able to resolve all of the columns,
@@ -380,10 +405,22 @@ public class ImmutableSchemata implements Schemata {
                     }
 
                     // If we could resolve the definition ...
+                    Map<String, Column> viewColumnsByName = new HashMap<String, Column>();
+                    Map<String, Column> viewSelectStarColumnsByName = new HashMap<String, Column>();
+                    for (Column column : viewColumns) {
+                        viewColumnsByName.put(column.getName(), column);
+                    }
+                    for (Column column : viewColumnsInSelectStar) {
+                        viewSelectStarColumnsByName.put(column.getName(), column);
+                    }
+                    Set<Key> keys = Collections.emptySet();
                     boolean hasExtraColumns = tablesOrViewsWithExtraColumns.contains(name);
-                    ImmutableView view = new ImmutableView(name, viewColumns, hasExtraColumns, command);
+                    ImmutableView view = new ImmutableView(name, viewColumnsByName, viewColumns, hasExtraColumns, command, keys,
+                                                           viewSelectStarColumnsByName, viewColumnsInSelectStar);
                     definitions.remove(name);
-                    schemata = schemata.with(view);
+
+                    tablesByName.put(view.getName(), view);
+                    schemata = new ImmutableSchemata(tablesByName);
                     added = true;
                 }
             } while (added && !definitions.isEmpty());
@@ -434,6 +471,76 @@ public class ImmutableSchemata implements Schemata {
             sb.append(table);
         }
         return sb.toString();
+    }
+
+    protected static class MutableTable {
+        private final SelectorName name;
+        private final Map<String, Column> columnsByName = new HashMap<String, Column>();
+        private final List<Column> columns = new LinkedList<Column>();
+        private final Set<Key> keys = new HashSet<Key>();
+        private boolean extraColumns = false;
+        private final Set<String> columnNamesNotInSelectStar = new HashSet<String>();
+
+        protected MutableTable( String name,
+                                List<Column> columns,
+                                boolean extraColumns ) {
+            this.name = new SelectorName(name);
+            this.columns.addAll(columns);
+            for (Column column : columns) {
+                Column existing = this.columnsByName.put(column.getName(), column);
+                assert existing == null;
+            }
+        }
+
+        public SelectorName getName() {
+            return name;
+        }
+
+        protected void addColumn( Column column ) {
+            Column existing = this.columnsByName.put(column.getName(), column);
+            if (existing != null) {
+                this.columns.remove(existing);
+            }
+            this.columns.add(column);
+        }
+
+        protected Column getColumn( String name ) {
+            return columnsByName.get(name);
+        }
+
+        protected Set<String> getColumnNamesInSelectStar() {
+            return columnNamesNotInSelectStar;
+        }
+
+        protected boolean addKey( Collection<Column> keyColumns ) {
+            return keys.add(new ImmutableKey(keyColumns));
+        }
+
+        protected void setExtraColumns( boolean extraColumns ) {
+            this.extraColumns = extraColumns;
+        }
+
+        protected void excludeFromSelectStar( String columnName ) {
+            columnNamesNotInSelectStar.add(columnName);
+        }
+
+        protected Table asImmutable() {
+            Map<String, Column> columnsByName = Collections.unmodifiableMap(this.columnsByName);
+            List<Column> columns = Collections.unmodifiableList(this.columns);
+            Set<Key> keys = Collections.unmodifiableSet(this.keys);
+            List<Column> columnsInSelectStar = new ArrayList<Column>();
+            Map<String, Column> columnsInSelectStarByName = new HashMap<String, Column>();
+            for (Column column : columns) {
+                if (!columnNamesNotInSelectStar.contains(column.getName())) {
+                    columnsInSelectStar.add(column);
+                    columnsInSelectStarByName.put(column.getName(), column);
+                }
+            }
+            columnsInSelectStar = Collections.unmodifiableList(columnsInSelectStar);
+            columnsInSelectStarByName = Collections.unmodifiableMap(columnsInSelectStarByName);
+            return new ImmutableTable(name, columnsByName, columns, keys, extraColumns, columnsInSelectStarByName,
+                                      columnsInSelectStar);
+        }
     }
 
 }

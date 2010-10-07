@@ -131,7 +131,15 @@ public class JcrQueryManagerTest {
         }
 
         // Start the repository ...
-        repository = engine.getRepository("cars");
+        try {
+            repository = engine.getRepository("cars");
+        } catch (RuntimeException t) {
+            t.printStackTrace();
+            throw t;
+        } catch (Exception t) {
+            t.printStackTrace();
+            throw t;
+        }
 
         // Use a session to load the contents ...
         Session session = repository.login();
@@ -551,6 +559,122 @@ public class JcrQueryManagerTest {
         }
     }
 
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedPathInSelect() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("select [jcr:primaryType], [jcr:path] FROM [nt:base]",
+                                                                           Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 24);
+        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path"});
+        RowIterator iter = result.getRows();
+        while (iter.hasNext()) {
+            Row row = iter.nextRow();
+            assertThat(row, is(notNullValue()));
+        }
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedPathInSelectAndCriteria() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("select [jcr:primaryType], [jcr:path] FROM [nt:base] WHERE [jcr:path] LIKE '/Cars/%'",
+                                          Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 17);
+        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path"});
+        RowIterator iter = result.getRows();
+        while (iter.hasNext()) {
+            Row row = iter.nextRow();
+            assertThat(row, is(notNullValue()));
+        }
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedPathInSelectAndUnqualifiedNameInCriteria() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("select [jcr:primaryType], [jcr:path] FROM [nt:base] WHERE [jcr:name] LIKE '%3%'",
+                                          Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 4);
+        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path"});
+        RowIterator iter = result.getRows();
+        while (iter.hasNext()) {
+            Row row = iter.nextRow();
+            assertThat(row, is(notNullValue()));
+        }
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithUnqualifiedPathInSelectAndUnqualifiedLocalNameInCriteria() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("select [jcr:primaryType], [jcr:path] FROM [nt:base] WHERE [mode:localName] LIKE '%3%'",
+                                          Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 4);
+        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path"});
+        RowIterator iter = result.getRows();
+        while (iter.hasNext()) {
+            Row row = iter.nextRow();
+            assertThat(row, is(notNullValue()));
+        }
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldParseQueryWithJcrPathInJoinCriteria() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("select base.[jcr:primaryType], base.[jcr:path], car.[car:year] "
+                                          + "FROM [nt:base] AS base JOIN [car:Car] AS car ON car.[jcr:path] = base.[jcr:path]",
+                                          Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13);
+        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path", "car:year"});
+        RowIterator iter = result.getRows();
+        while (iter.hasNext()) {
+            Row row = iter.nextRow();
+            assertThat(row, is(notNullValue()));
+        }
+    }
+
+    @FixFor( "MODE-934" )
+    @Test
+    public void shouldNotIncludePseudoColumnsInSelectStar() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("select * FROM [nt:base]", Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 24);
+        assertResultsHaveColumns(result, new String[] {"jcr:primaryType"});
+        RowIterator iter = result.getRows();
+        while (iter.hasNext()) {
+            Row row = iter.nextRow();
+            assertThat(row, is(notNullValue()));
+        }
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Full-text Search Queries
     // ----------------------------------------------------------------------------------------------------------------
@@ -561,7 +685,7 @@ public class JcrQueryManagerTest {
         Query query = session.getWorkspace().getQueryManager().createQuery("land", JcrRepository.QueryLanguage.SEARCH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
-        print = true;
+        // print = true;
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 3);
         assertResultsHaveColumns(result, searchColumnNames());

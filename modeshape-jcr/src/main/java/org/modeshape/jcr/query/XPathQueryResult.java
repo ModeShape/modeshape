@@ -36,7 +36,6 @@ import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import org.modeshape.graph.Location;
-import org.modeshape.graph.property.Path;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.validate.Schemata;
 
@@ -118,14 +117,6 @@ public class XPathQueryResult extends JcrQueryResult {
                                  Object[] tuple ) {
             return new XPathQueryResultRow(this, node, tuple);
         }
-
-        protected Value jcrPath( Path path ) {
-            return context.createValue(PropertyType.PATH, path);
-        }
-
-        protected Value jcrScore( Float score ) {
-            return context.createValue(PropertyType.DOUBLE, score);
-        }
     }
 
     protected static class XPathQueryResultRow extends SingleSelectorQueryResultRow {
@@ -148,7 +139,7 @@ public class XPathQueryResult extends JcrQueryResult {
             }
             if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {
                 Float score = (Float)tuple[iterator.scoreIndex];
-                return ((XPathQueryResultRowIterator)iterator).jcrScore(score);
+                return ((XPathQueryResultRowIterator)iterator).jcrDouble(score);
             }
             return super.getValue(columnName);
         }

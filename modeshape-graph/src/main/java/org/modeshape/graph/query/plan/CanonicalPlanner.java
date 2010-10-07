@@ -481,7 +481,7 @@ public class CanonicalPlanner implements Planner {
                                   List<Column> columns,
                                   List<String> columnTypes ) {
         // Compute the columns from this selector ...
-        for (Schemata.Column column : table.getColumns()) {
+        for (Schemata.Column column : table.getSelectAllColumns()) {
             String columnName = column.getName();
             String propertyName = columnName;
             Column newColumn = new Column(tableName, propertyName, columnName);

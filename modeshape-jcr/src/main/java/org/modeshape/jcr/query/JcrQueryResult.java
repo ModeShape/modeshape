@@ -33,19 +33,24 @@ import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import net.jcip.annotations.NotThreadSafe;
+import org.modeshape.common.collection.Collections;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.Path;
 import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.QueryResults.Columns;
 import org.modeshape.graph.query.model.Column;
 import org.modeshape.graph.query.validate.Schemata;
 import org.modeshape.graph.query.validate.Schemata.Table;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.query.JcrSqlQueryResult.JcrSqlQueryResultRowIterator;
 
 /**
  * The results of a query. This is not thread-safe because it relies upon JcrSession, which is not thread-safe. Also, although the
@@ -56,6 +61,17 @@ import org.modeshape.jcr.JcrI18n;
  */
 @NotThreadSafe
 public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.QueryResult {
+    public static final String JCR_SCORE_COLUMN_NAME = "jcr:score";
+    public static final String JCR_PATH_COLUMN_NAME = "jcr:path";
+    public static final String JCR_NAME_COLUMN_NAME = "jcr:name";
+    public static final String MODE_LOCALNAME_COLUMN_NAME = "mode:localName";
+    public static final String MODE_DEPTH_COLUMN_NAME = "mode:depth";
+    protected static final Set<String> PSEUDO_COLUMNS = Collections.unmodifiableSet(JCR_SCORE_COLUMN_NAME,
+                                                                                    JCR_PATH_COLUMN_NAME,
+                                                                                    JCR_NAME_COLUMN_NAME,
+                                                                                    MODE_LOCALNAME_COLUMN_NAME,
+                                                                                    MODE_DEPTH_COLUMN_NAME);
+
     protected final JcrQueryContext context;
     protected final QueryResults results;
     protected final Schemata schemata;
@@ -423,6 +439,30 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
         public void remove() {
             throw new UnsupportedOperationException();
         }
+
+        protected Value jcrPath( Path path ) {
+            return context.createValue(PropertyType.PATH, path);
+        }
+
+        protected Value jcrName( Name name ) {
+            return context.createValue(PropertyType.NAME, name);
+        }
+
+        protected Value jcrName() {
+            return context.createValue(PropertyType.NAME, "");
+        }
+
+        protected Value jcrString( String name ) {
+            return context.createValue(PropertyType.STRING, name);
+        }
+
+        protected Value jcrLong( Long value ) {
+            return context.createValue(PropertyType.LONG, value);
+        }
+
+        protected Value jcrDouble( Float score ) {
+            return context.createValue(PropertyType.DOUBLE, score);
+        }
     }
 
     /**
@@ -500,6 +540,34 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
          * @see javax.jcr.query.Row#getValue(java.lang.String)
          */
         public Value getValue( String columnName ) throws ItemNotFoundException, RepositoryException {
+            if (PSEUDO_COLUMNS.contains(columnName)) {
+                if (JCR_PATH_COLUMN_NAME.equals(columnName)) {
+                    Location location = (Location)tuple[iterator.locationIndex];
+                    return iterator.jcrPath(location.getPath());
+                }
+                if (JCR_NAME_COLUMN_NAME.equals(columnName)) {
+                    Location location = (Location)tuple[iterator.locationIndex];
+                    Path path = location.getPath();
+                    if (path.isRoot()) return ((JcrSqlQueryResultRowIterator)iterator).jcrName();
+                    return iterator.jcrName(path.getLastSegment().getName());
+                }
+                if (MODE_LOCALNAME_COLUMN_NAME.equals(columnName)) {
+                    Location location = (Location)tuple[iterator.locationIndex];
+                    Path path = location.getPath();
+                    if (path.isRoot()) return ((JcrSqlQueryResultRowIterator)iterator).jcrString("");
+                    return iterator.jcrString(path.getLastSegment().getName().getLocalName());
+                }
+                if (MODE_DEPTH_COLUMN_NAME.equals(columnName)) {
+                    Location location = (Location)tuple[iterator.locationIndex];
+                    Path path = location.getPath();
+                    Long depth = new Long(path.size());
+                    return iterator.jcrLong(depth);
+                }
+                if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {
+                    Float score = (Float)tuple[iterator.scoreIndex];
+                    return iterator.jcrDouble(score);
+                }
+            }
             return node.getProperty(columnName).getValue();
         }
 
@@ -598,7 +666,37 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
                 throw new RepositoryException(JcrI18n.queryResultsDoNotIncludeColumn.text(columnName, iterator.query));
             }
             Node node = nodes[locationIndex];
-            return node != null ? node.getProperty(columnName).getValue() : null;
+            if (node == null) return null;
+            if (PSEUDO_COLUMNS.contains(columnName)) {
+                if (JCR_PATH_COLUMN_NAME.equals(columnName)) {
+                    Location location = (Location)tuple[locationIndex];
+                    return iterator.jcrPath(location.getPath());
+                }
+                if (JCR_NAME_COLUMN_NAME.equals(columnName)) {
+                    Location location = (Location)tuple[locationIndex];
+                    Path path = location.getPath();
+                    if (path.isRoot()) return ((JcrSqlQueryResultRowIterator)iterator).jcrName();
+                    return iterator.jcrName(path.getLastSegment().getName());
+                }
+                if (MODE_LOCALNAME_COLUMN_NAME.equals(columnName)) {
+                    Location location = (Location)tuple[locationIndex];
+                    Path path = location.getPath();
+                    if (path.isRoot()) return ((JcrSqlQueryResultRowIterator)iterator).jcrString("");
+                    return iterator.jcrString(path.getLastSegment().getName().getLocalName());
+                }
+                if (MODE_DEPTH_COLUMN_NAME.equals(columnName)) {
+                    Location location = (Location)tuple[locationIndex];
+                    Path path = location.getPath();
+                    Long depth = new Long(path.size());
+                    return iterator.jcrLong(depth);
+                }
+                if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {
+                    int scoreIndex = iterator.columns.getFullTextSearchScoreIndexFor(columnName);
+                    Float score = scoreIndex == -1 ? 0.0f : (Float)tuple[scoreIndex];
+                    return iterator.jcrDouble(score);
+                }
+            }
+            return node.getProperty(columnName).getValue();
         }
 
         /**
