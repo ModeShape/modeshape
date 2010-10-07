@@ -37,11 +37,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.query.QueryResult;
+import javax.jcr.version.OnParentVersionAction;
 import org.modeshape.jdbc.metadata.JDBCColumnNames;
 import org.modeshape.jdbc.metadata.JDBCColumnPositions;
 import org.modeshape.jdbc.metadata.MetaDataQueryResult;
@@ -53,6 +56,24 @@ import org.modeshape.jdbc.metadata.ResultsMetadataConstants;
  * This driver's implementation of JDBC {@link DatabaseMetaData}.
  */
 public class JcrMetaData implements DatabaseMetaData {
+
+    protected static final List<PropertyDefinition> PSEUDO_COLUMN_DEFNS;
+
+    static {
+        List<PropertyDefinition> defns = new ArrayList<PropertyDefinition>();
+        boolean auto = true;
+        boolean mand = false;
+        boolean prot = true;
+        boolean mult = false;
+        boolean search = true;
+        boolean order = true;
+        defns.add(new PseudoPropertyDefinition(null, "jcr:path", PropertyType.PATH, auto, mand, prot, mult, search, order));
+        defns.add(new PseudoPropertyDefinition(null, "jcr:name", PropertyType.NAME, auto, mand, prot, mult, search, order));
+        defns.add(new PseudoPropertyDefinition(null, "jcr:score", PropertyType.DOUBLE, auto, mand, prot, mult, search, order));
+        defns.add(new PseudoPropertyDefinition(null, "mode:localName", PropertyType.STRING, auto, mand, prot, mult, search, order));
+        defns.add(new PseudoPropertyDefinition(null, "mode:depth", PropertyType.LONG, auto, mand, prot, mult, search, order));
+        PSEUDO_COLUMN_DEFNS = Collections.unmodifiableList(defns);
+    }
 
     /** CONSTANTS */
     protected static final String WILDCARD = "%"; //$NON-NLS-1$
@@ -273,7 +294,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                     String schemaPattern,
                                     String typeNamePattern,
                                     String attributeNamePattern ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -287,7 +308,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                            String table,
                                            int scope,
                                            boolean nullable ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -361,7 +382,7 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public ResultSet getClientInfoProperties() throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -374,7 +395,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                           String schema,
                                           String table,
                                           String columnNamePattern ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -608,7 +629,6 @@ public class JcrMetaData implements DatabaseMetaData {
         } catch (RepositoryException e) {
             throw new SQLException(e.getLocalizedMessage());
         }
-
     }
 
     /**
@@ -624,7 +644,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                         String foreignCatalog,
                                         String foreignSchema,
                                         String foreignTable ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -650,7 +670,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getExportedKeys( String catalog,
                                       String schema,
                                       String table ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -673,7 +693,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                          String schemaPattern,
                                          String functionNamePattern,
                                          String columnNamePattern ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -685,7 +705,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getFunctions( String catalog,
                                    String schemaPattern,
                                    String functionNamePattern ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -715,7 +735,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getImportedKeys( String catalog,
                                       String schema,
                                       String table ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -729,7 +749,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                    String table,
                                    boolean unique,
                                    boolean approximate ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -998,7 +1018,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getPrimaryKeys( String catalog,
                                      String schema,
                                      String table ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1011,7 +1031,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                           String schemaPattern,
                                           String procedureNamePattern,
                                           String columnNamePattern ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1033,7 +1053,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getProcedures( String catalog,
                                     String schemaPattern,
                                     String procedureNamePattern ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1159,7 +1179,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getSuperTables( String catalog,
                                      String schemaPattern,
                                      String tableNamePattern ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1171,7 +1191,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getSuperTypes( String catalog,
                                     String schemaPattern,
                                     String typeNamePattern ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1193,7 +1213,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getTablePrivileges( String catalog,
                                          String schemaPattern,
                                          String tableNamePattern ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1376,7 +1396,7 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public ResultSet getTypeInfo() throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1389,7 +1409,7 @@ public class JcrMetaData implements DatabaseMetaData {
                               String schemaPattern,
                               String typeNamePattern,
                               int[] types ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -1425,7 +1445,7 @@ public class JcrMetaData implements DatabaseMetaData {
     public ResultSet getVersionColumns( String catalog,
                                         String schema,
                                         String table ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -2552,8 +2572,204 @@ public class JcrMetaData implements DatabaseMetaData {
             if (defn.getName().equalsIgnoreCase("*")) continue;
             // Don't include multi-valued properties as columns ...
             if (defn.isMultiple()) continue;
+            // Don't include any properties defined in the "modeint" internal namespace ...
+            if (defn.getName().startsWith("modeint:")) continue;
             mapDefns.add(defn);
         }
+        // All tables have these pseudo-columns ...
+        mapDefns.addAll(PSEUDO_COLUMN_DEFNS);
+    }
+
+    protected static class PseudoPropertyDefinition implements PropertyDefinition {
+
+        private static final String[] NO_STRINGS = new String[] {};
+        private static final Value[] NO_VALUES = new Value[] {};
+
+        private final String[] queryOps;
+        private final Value[] defaultValues;
+        private final int requiredType;
+        private final String[] constraints;
+        private final boolean isFullTextSearchable;
+        private final boolean isMultiple;
+        private final boolean isQueryOrderable;
+        private final boolean isAutoCreated;
+        private final boolean isMandatory;
+        private final boolean isProtected;
+        private final String name;
+        private final NodeType declaringNodeType;
+        private final int onParentVersioning;
+
+        protected PseudoPropertyDefinition( NodeType declaringNodeType,
+                                            String name,
+                                            int requiredType,
+                                            boolean autoCreated,
+                                            boolean mandatory,
+                                            boolean isProtected,
+                                            boolean multiple,
+                                            boolean fullTextSearchable,
+                                            boolean queryOrderable,
+                                            Value[] defaultValues,
+                                            String[] constraints,
+                                            int onParentVersioning,
+                                            String[] queryOps ) {
+            this.declaringNodeType = declaringNodeType;
+            this.name = name;
+            this.queryOps = queryOps != null ? queryOps : NO_STRINGS;
+            this.defaultValues = defaultValues != null ? defaultValues : NO_VALUES;
+            this.requiredType = requiredType;
+            this.constraints = constraints != null ? constraints : NO_STRINGS;
+            this.isFullTextSearchable = fullTextSearchable;
+            this.isAutoCreated = autoCreated;
+            this.isMultiple = multiple;
+            this.isQueryOrderable = queryOrderable;
+            this.isMandatory = mandatory;
+            this.isProtected = isProtected;
+            this.onParentVersioning = onParentVersioning;
+        }
+
+        protected PseudoPropertyDefinition( NodeType declaringNodeType,
+                                            String name,
+                                            int requiredType,
+                                            boolean autoCreated,
+                                            boolean mandatory,
+                                            boolean isProtected,
+                                            boolean multiple,
+                                            boolean fullTextSearchable,
+                                            boolean queryOrderable ) {
+            this(declaringNodeType, name, requiredType, autoCreated, mandatory, isProtected, multiple, fullTextSearchable,
+                 queryOrderable, null, null, OnParentVersionAction.COPY, null);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.nodetype.PropertyDefinition#getAvailableQueryOperators()
+         */
+        @Override
+        public String[] getAvailableQueryOperators() {
+            return queryOps;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.nodetype.PropertyDefinition#getDefaultValues()
+         */
+        @Override
+        public Value[] getDefaultValues() {
+            return defaultValues;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.nodetype.PropertyDefinition#getRequiredType()
+         */
+        @Override
+        public int getRequiredType() {
+            return requiredType;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.nodetype.PropertyDefinition#getValueConstraints()
+         */
+        @Override
+        public String[] getValueConstraints() {
+            return constraints;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.nodetype.PropertyDefinition#isFullTextSearchable()
+         */
+        @Override
+        public boolean isFullTextSearchable() {
+            return isFullTextSearchable;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.nodetype.PropertyDefinition#isMultiple()
+         */
+        @Override
+        public boolean isMultiple() {
+            return isMultiple;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.nodetype.PropertyDefinition#isQueryOrderable()
+         */
+        @Override
+        public boolean isQueryOrderable() {
+            return isQueryOrderable;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.nodetype.ItemDefinition#getDeclaringNodeType()
+         */
+        @Override
+        public NodeType getDeclaringNodeType() {
+            return declaringNodeType;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.nodetype.ItemDefinition#getName()
+         */
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.nodetype.ItemDefinition#getOnParentVersion()
+         */
+        @Override
+        public int getOnParentVersion() {
+            return onParentVersioning;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.nodetype.ItemDefinition#isAutoCreated()
+         */
+        @Override
+        public boolean isAutoCreated() {
+            return isAutoCreated;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.nodetype.ItemDefinition#isMandatory()
+         */
+        @Override
+        public boolean isMandatory() {
+            return isMandatory;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see javax.jcr.nodetype.ItemDefinition#isProtected()
+         */
+        @Override
+        public boolean isProtected() {
+            return isProtected;
+        }
+
     }
 
 }

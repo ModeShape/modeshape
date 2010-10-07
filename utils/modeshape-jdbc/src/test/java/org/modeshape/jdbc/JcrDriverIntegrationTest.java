@@ -553,8 +553,12 @@ public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
             "cars    NULL    car:Car    car:valueRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
             "cars    NULL    car:Car    car:wheelbaseInInches    6    Double    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
             "cars    NULL    car:Car    car:year    12    String    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    12    NO    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0"};
+            "cars    NULL    car:Car    jcr:name    12    Name    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
+            "cars    NULL    car:Car    jcr:path    12    Path    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
+            "cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
+            "cars    NULL    car:Car    jcr:score    6    Double    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
+            "cars    NULL    car:Car    mode:depth    -5    Long    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
+            "cars    NULL    car:Car    mode:localName    12    String    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"};
 
         ResultSet rs = dbmd.getColumns("%", "%", "car:Car", "%");
 
@@ -580,8 +584,12 @@ public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
             "cars    NULL    car:Car    car:valueRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
             "cars    NULL    car:Car    car:wheelbaseInInches    6    Double    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
             "cars    NULL    car:Car    car:year    12    String    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    12    NO    NULL    NULL    NULL    0",
-            "cars    NULL    car:Car    modeint:nodeDefinition    12    String    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0"};
+            "cars    NULL    car:Car    jcr:name    12    Name    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
+            "cars    NULL    car:Car    jcr:path    12    Path    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
+            "cars    NULL    car:Car    jcr:primaryType    12    Name    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
+            "cars    NULL    car:Car    jcr:score    6    Double    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
+            "cars    NULL    car:Car    mode:depth    -5    Long    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
+            "cars    NULL    car:Car    mode:localName    12    String    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"};
 
         ResultSet rs = dbmd.getColumns("%", "%", "car%", "%");
 
