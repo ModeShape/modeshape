@@ -34,6 +34,7 @@ public final class JBossManagedI18n {
 
     public static I18n errorDeterminingIfConnectionIsAlive;
     public static I18n errorDeterminingTotalInUseConnections;
+    public static I18n errorDeterminingTotalActiveSessions;
     public static I18n errorGettingRepositoryFromEngine;
     public static I18n errorGettingPropertiesFromManagedObject;
     public static I18n errorBindingToJNDI;

@@ -232,12 +232,12 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 	}
 
 	/**
-	 * Tests to see if a connector isRunning.
+	 * Get the number of connections currently in use
 	 * 
 	 * @param connectorName
 	 * @return boolean
 	 */
-	@ManagementOperation(description = "Pings a connector by name", impact = Impact.ReadOnly)
+	@ManagementOperation(description = "Get the number of connections currently in use", impact = Impact.ReadOnly)
 	public long getInUseConnections(String connectorName) {
 		if (!isRunning())
 			return 0;
@@ -260,6 +260,33 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 		return totalConnectionsInUse;
 	}
 
+	/**
+	 * Get the number of sessions currently active
+	 * 
+	 * @param repositoryName
+	 * @return boolean
+	 */
+	@ManagementOperation(description = "Get the number of sessions currently active", impact = Impact.ReadOnly)
+	public long getActiveSessions(String repositoryName) {
+		if (!isRunning())
+			return 0;
+
+		// Get engine to use for the rest of the method (this is synchronized)
+		final JcrEngine engine = getEngine();
+		assert engine != null;
+
+		int totalActiveSessions = 0;
+		try {
+			totalActiveSessions = getRepository(repositoryName).getMetrics().getActiveSessionCount(); 
+		} catch (Exception e) {
+			Logger.getLogger(getClass()).error(e,
+					JBossManagedI18n.errorDeterminingTotalInUseConnections,
+					repositoryName);
+		}
+
+		return totalActiveSessions;
+	}
+	
 	/**
 	 * Obtains the properties for the passed in object. This is a JBoss managed
 	 * operation.

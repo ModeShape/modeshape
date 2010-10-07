@@ -23,14 +23,24 @@
  */
 package org.modeshape.rhq.plugin;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import org.mc4j.ems.connection.EmsConnection;
+import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
+import org.modeshape.rhq.plugin.util.PluginConstants;
+import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType;
+import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Connector;
 import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Engine;
+import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Repository;
 import org.rhq.core.domain.configuration.Configuration;
+import org.rhq.core.domain.measurement.AvailabilityType;
+import org.rhq.core.domain.measurement.MeasurementDataTrait;
 import org.rhq.core.domain.measurement.MeasurementReport;
 import org.rhq.core.domain.measurement.MeasurementScheduleRequest;
+import org.rhq.core.pluginapi.inventory.CreateResourceReport;
+import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
 import org.rhq.core.pluginapi.inventory.CreateResourceReport;
 import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
 
@@ -43,7 +53,7 @@ public class RepositoryComponent extends Facet {
 	 */
 	@Override
 	String getComponentType() {
-		return null;
+		return ComponentType.Repository.NAME;
 	}
 	
 	/**
@@ -68,8 +78,37 @@ public class RepositoryComponent extends Facet {
 	 * @see org.modeshape.rhq.plugin.Facet#getValues(org.rhq.core.domain.measurement.MeasurementReport, java.util.Set)
 	 */
 	@Override
-	public void getValues(MeasurementReport arg0,
-			Set<MeasurementScheduleRequest> arg1) throws Exception {
+	public void getValues(MeasurementReport report,
+			Set<MeasurementScheduleRequest> requests) throws Exception {
+		
+		ModeShapeManagementView view = new ModeShapeManagementView();
+
+		Map<String, Object> valueMap = new HashMap<String, Object>();
+		valueMap.put(Repository.Operations.Parameters.REPOSITORY_NAME,
+				this.resourceContext.getResourceKey());
+
+		for (MeasurementScheduleRequest request : requests) {
+			String name = request.getName();
+			LOG.debug("Measurement name = " + name); //$NON-NLS-1$
+
+			Object metricReturnObject = view.getMetric(getConnection(),
+					getComponentType(), this.getComponentIdentifier(), name,
+					valueMap);
+
+			try {
+				if (request
+						.getName()
+						.equals(
+								PluginConstants.ComponentType.Repository.Metrics.ACTIVESESSIONS)) {
+					report.addData(new MeasurementDataTrait(request,
+							(String) metricReturnObject));
+				}
+			} catch (Exception e) {
+				LOG.error("Failed to obtain measurement [" + name //$NON-NLS-1$
+						+ "]. Cause: " + e); //$NON-NLS-1$
+				// throw(e);
+			}
+		}
 	}
 
 	/**
