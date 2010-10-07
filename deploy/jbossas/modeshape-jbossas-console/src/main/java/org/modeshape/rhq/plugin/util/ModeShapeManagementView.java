@@ -50,6 +50,9 @@ public class ModeShapeManagementView implements PluginConstants {
 		} else if (componentType.equals(ComponentType.Connector.NAME)) {
 			resultObject = getConnectorMetric(connection, componentType,
 					metric, valueMap);
+		} else if (componentType.equals(ComponentType.Repository.NAME)) {
+			resultObject = getRepositoryMetric(connection, componentType,
+					metric, valueMap);
 		}
 
 		return resultObject;
@@ -75,6 +78,27 @@ public class ModeShapeManagementView implements PluginConstants {
 		}
 		return resultObject;
 	}
+	
+	private Object getRepositoryMetric(ProfileServiceConnection connection,
+			String componentType, String metric, Map<String, Object> valueMap)
+			throws Exception {
+
+		Object resultObject = new Object();
+		MetaValue value = null;
+
+	   if (metric.equals(ComponentType.Repository.Metrics.ACTIVESESSIONS)) {
+				value = executeManagedOperation(
+						ProfileServiceUtil.getManagedEngine(connection),
+						metric,
+						new MetaValue[] { MetaValueFactory
+								.getInstance()
+								.create(
+										valueMap
+												.get(ComponentType.Repository.Operations.Parameters.REPOSITORY_NAME)) });
+				resultObject = ProfileServiceUtil.stringValue(value);
+		}
+		return resultObject;
+	}
 
 	private Object getConnectorMetric(ProfileServiceConnection connection,
 			String componentType, String metric, Map<String, Object> valueMap)
@@ -93,6 +117,16 @@ public class ModeShapeManagementView implements PluginConstants {
 									valueMap
 											.get(ComponentType.Connector.Operations.Parameters.CONNECTOR_NAME)) });
 			resultObject = ProfileServiceUtil.stringValue(value);
+		} else if (metric.equals(ComponentType.Repository.Metrics.ACTIVESESSIONS)) {
+				value = executeManagedOperation(
+						ProfileServiceUtil.getManagedEngine(connection),
+						metric,
+						new MetaValue[] { MetaValueFactory
+								.getInstance()
+								.create(
+										valueMap
+												.get(ComponentType.Connector.Operations.Parameters.CONNECTOR_NAME)) });
+				resultObject = ProfileServiceUtil.stringValue(value);
 		}
 		return resultObject;
 	}

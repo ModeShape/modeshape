@@ -70,11 +70,14 @@ public interface PluginConstants {
 			public final static String MODESHAPE_REPOSITORY_DESC = "An information store with hierarchical organization, versioning, events, search, query, and automated content extraction"; //$NON-NLS-1$
 
 			public static interface Operations {
-
+				
+				public static interface Parameters {
+					public final static String REPOSITORY_NAME = "repositoryName"; //$NON-NLS-1$
+				}
 			}
-
+	
 			public static interface Metrics {
-
+				public final static String ACTIVESESSIONS = "getActiveSessions"; //$NON-NLS-1$
 			}
 		}
 		
@@ -94,7 +97,6 @@ public interface PluginConstants {
 				public static interface Parameters {
 					public final static String CONNECTOR_NAME = "connectorName"; //$NON-NLS-1$
 				}
-
 			}
 
 			public static interface Metrics {
