@@ -47,7 +47,6 @@ import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.ThreadSafe;
 import org.infinispan.Cache;
-import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.DefaultCacheManager;
 import org.modeshape.common.annotation.Category;
@@ -68,10 +67,10 @@ import org.modeshape.graph.observe.Observer;
 
 /**
  * A repository source that uses an Infinispan instance to manage the content. This source is capable of using an existing
- * {@link cacheContainer} or creating a new cache manager. This process is controlled entirely by the JavaBean properties of the
+ * {@link CacheContainer} or creating a new cache manager. This process is controlled entirely by the JavaBean properties of the
  * InfinispanSource instance.
  * <p>
- * This source first attempts to find an existing cache manager found in {@link #getcacheContainerJndiName() JNDI} (or the
+ * This source first attempts to find an existing cache manager found in {@link #getCacheContainerJndiName() JNDI} (or the
  * {@link DefaultCacheManager} if no such manager is available) and the {@link #getCacheConfigurationName() cache configuration
  * name} if supplied or the default configuration if not set.
  * </p>
@@ -239,16 +238,16 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
     }
 
     /**
-     * Get the name in JNDI of a {@link cacheContainer} instance that should be used to create the cache for this source.
+     * Get the name in JNDI of a {@link CacheContainer} instance that should be used to create the cache for this source.
      * <p>
-     * This source first attempts to find a cache instance using the {@link cacheContainer} found in
+     * This source first attempts to find a cache instance using the {@link CacheContainer} found in
      * {@link #getCacheContainerJndiName() JNDI} (or the {@link DefaultCacheManager} if no such manager is available) and the
      * {@link #getCacheConfigurationName() cache configuration name} if supplied or the default configuration if not set.
      * </p>
      * 
-     * @return the JNDI name of the {@link cacheContainer} instance that should be used, or null if the {@link DefaultCacheManager}
-     *         should be used if a cache is to be created
-     * @see #setcacheContainerJndiName(String)
+     * @return the JNDI name of the {@link CacheContainer} instance that should be used, or null if the
+     *         {@link DefaultCacheManager} should be used if a cache is to be created
+     * @see #setCacheContainerJndiName(String)
      * @see #getCacheConfigurationName()
      */
     public String getCacheContainerJndiName() {
@@ -256,17 +255,17 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
     }
 
     /**
-     * Set the name in JNDI of a {@link cacheContainer} instance that should be used to obtain the {@link Cache} instance used by
+     * Set the name in JNDI of a {@link CacheContainer} instance that should be used to obtain the {@link Cache} instance used by
      * this source.
      * <p>
-     * This source first attempts to find a cache instance using the {@link cacheContainer} found in
+     * This source first attempts to find a cache instance using the {@link CacheContainer} found in
      * {@link #getCacheContainerJndiName() JNDI} (or the {@link DefaultCacheManager} if no such manager is available) and the
      * {@link #getCacheConfigurationName() cache configuration name} if supplied or the default configuration if not set.
      * </p>
      * 
-     * @param jndiName the JNDI name of the {@link cacheContainer} instance that should be used, or null if the
+     * @param jndiName the JNDI name of the {@link CacheContainer} instance that should be used, or null if the
      *        {@link DefaultCacheManager} should be used if a cache is to be created
-     * @see #setcacheContainerJndiName(String)
+     * @see #setCacheContainerJndiName(String)
      * @see #getCacheConfigurationName()
      */
     public synchronized void setCacheContainerJndiName( String jndiName ) {
@@ -295,17 +294,17 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
 
     /**
      * Get the name of the configuration that should be used if a {@link Cache cache} is to be created using the
-     * {@link cacheContainer} found in JNDI or the {@link DefaultCacheManager} if needed.
+     * {@link CacheContainer} found in JNDI or the {@link DefaultCacheManager} if needed.
      * <p>
-     * This source first attempts to find a cache instance using the {@link cacheContainer} found in
+     * This source first attempts to find a cache instance using the {@link CacheContainer} found in
      * {@link #getCacheContainerJndiName() JNDI} (or the {@link DefaultCacheManager} if no such manager is available) and the
      * {@link #getCacheConfigurationName() cache configuration name} if supplied or the default configuration if not set.
      * </p>
      * 
-     * @return the name of the configuration that should be passed to the {@link cacheContainer}, or null if the default
+     * @return the name of the configuration that should be passed to the {@link CacheContainer}, or null if the default
      *         configuration should be used
      * @see #setCacheConfigurationName(String)
-     * @see #getcacheContainerJndiName()
+     * @see #getCacheContainerJndiName()
      */
     public String getCacheConfigurationName() {
         return cacheConfigurationName;
@@ -313,17 +312,17 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
 
     /**
      * Get the name of the configuration that should be used if a {@link Cache cache} is to be created using the
-     * {@link cacheContainer} found in JNDI or the {@link DefaultCacheManager} if needed.
+     * {@link CacheContainer} found in JNDI or the {@link DefaultCacheManager} if needed.
      * <p>
-     * This source first attempts to find a cache instance using the {@link cacheContainer} found in
-     * {@link #getcacheContainerJndiName() JNDI} (or the {@link DefaultCacheManager} if no such manager is available) and the
+     * This source first attempts to find a cache instance using the {@link CacheContainer} found in
+     * {@link #getCacheContainerJndiName() JNDI} (or the {@link DefaultCacheManager} if no such manager is available) and the
      * {@link #getCacheConfigurationName() cache configuration name} if supplied or the default configuration if not set.
      * </p>
      * 
-     * @param cacheConfigurationName the name of the configuration that should be passed to the {@link cacheContainer}, or null if
+     * @param cacheConfigurationName the name of the configuration that should be passed to the {@link CacheContainer}, or null if
      *        the default configuration should be used
      * @see #getCacheConfigurationName()
-     * @see #getcacheContainerJndiName()
+     * @see #getCacheContainerJndiName()
      */
     public synchronized void setCacheConfigurationName( String cacheConfigurationName ) {
         if (this.cacheConfigurationName == cacheConfigurationName || this.cacheConfigurationName != null

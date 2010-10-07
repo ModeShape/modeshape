@@ -1,7 +1,5 @@
 package org.modeshape.connector.infinispan;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -59,12 +57,15 @@ public class InfinispanClusterTest {
         Cache<UUID, InfinispanNode> cache2 = source2.cacheContainer().getCache("");
         assertThat(cache1.size(), is(2));
         assertThat(cache2.size(), is(2));
-        //assertThat(cache2.containsKey(this))
+        // assertThat(cache2.containsKey(this))
 
         graph2.getNodeAt("/foo");
 
         graph2.delete("/foo");
-        try{ Thread.sleep(5000); } catch (Exception e) { }
+        try {
+            Thread.sleep(5000);
+        } catch (Exception e) {
+        }
         try {
             graph1.getNodeAt("/foo");
             fail("/foo was deleted by the other source and should no longer exist");
