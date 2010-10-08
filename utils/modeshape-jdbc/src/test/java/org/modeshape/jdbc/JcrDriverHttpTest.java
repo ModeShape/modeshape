@@ -24,16 +24,11 @@
 package org.modeshape.jdbc;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-
-import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,16 +46,17 @@ public class JcrDriverHttpTest {
     private String validWorkspaceName;
     private String validUrl;
     private Properties validProperties;
-    
+
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
         validRepositoryName = "MyRepository";
         validServerName = "serverName:8080";
         validWorkspaceName = "default";
-        validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + validRepositoryName + "/" + validWorkspaceName + "?user=jsmith&password=secret";
+        validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + validRepositoryName + "/"
+                   + validWorkspaceName + "?user=jsmith&password=secret";
         validProperties = new Properties();
-        
+
         driver = new JcrDriver();
     }
 
@@ -69,7 +65,7 @@ public class JcrDriverHttpTest {
         try {
             DriverManager.deregisterDriver(driver);
         } finally {
-             driver = null;
+            driver = null;
         }
     }
 
@@ -104,13 +100,13 @@ public class JcrDriverHttpTest {
     }
 
     @Test
-    public void shouldReturnEmptyPropertyInfosWhenSuppliedValidAndCompleteUrlAndNoProperties() throws SQLException{
+    public void shouldReturnEmptyPropertyInfosWhenSuppliedValidAndCompleteUrlAndNoProperties() throws SQLException {
         DriverPropertyInfo[] infos = driver.getPropertyInfo(validUrl, validProperties);
         assertThat(infos.length, is(0));
     }
 
     @Test
-    public void shouldReturnEmptyPropertyInfosWhenSuppliedValidUrlAndAllPropertiesWithRepositoryInHttp() throws SQLException{
+    public void shouldReturnEmptyPropertyInfosWhenSuppliedValidUrlAndAllPropertiesWithRepositoryInHttp() throws SQLException {
         validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest";
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
@@ -121,7 +117,7 @@ public class JcrDriverHttpTest {
     }
 
     @Test
-    public void shouldReturnRepositoryPropertyInfoWhenMissingRequiredRepositoryName() throws SQLException{
+    public void shouldReturnRepositoryPropertyInfoWhenMissingRequiredRepositoryName() throws SQLException {
         validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest";
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
@@ -135,7 +131,7 @@ public class JcrDriverHttpTest {
     }
 
     @Test
-    public void shouldReturnRepositoryPropertyInfoWhenMissingWorkspaceName() throws SQLException{
+    public void shouldReturnRepositoryPropertyInfoWhenMissingWorkspaceName() throws SQLException {
         validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest";
         // validProperties.put(JdbcDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
@@ -149,7 +145,7 @@ public class JcrDriverHttpTest {
     }
 
     @Test
-    public void shouldReturnRepositoryPropertyInfoWhenMissingUsername() throws SQLException{
+    public void shouldReturnRepositoryPropertyInfoWhenMissingUsername() throws SQLException {
         validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest";
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         // validProperties.put(JdbcDriver.USERNAME_PROPERTY_NAME, "jsmith");
@@ -163,7 +159,7 @@ public class JcrDriverHttpTest {
     }
 
     @Test
-    public void shouldReturnRepositoryPropertyInfoWhenMissingPassword() throws SQLException{
+    public void shouldReturnRepositoryPropertyInfoWhenMissingPassword() throws SQLException {
         validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest";
         validProperties.put(JcrDriver.WORKSPACE_PROPERTY_NAME, "MyWorkspace");
         validProperties.put(JcrDriver.USERNAME_PROPERTY_NAME, "jsmith");
@@ -178,10 +174,12 @@ public class JcrDriverHttpTest {
 
     @Test
     public void shouldAcceptValidUrls() {
-        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + this.validRepositoryName + "/MyWorkspace" + "&user=jsmith&password=secret"),
-                   is(true));
-        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + this.validRepositoryName + "&user=jsmith&password=secret"), is(true));
-        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + "&user=jsmith&password=secret"), is(true));
+        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + this.validRepositoryName
+                                     + "/MyWorkspace" + "&user=jsmith&password=secret"), is(true));
+        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/" + this.validRepositoryName
+                                     + "&user=jsmith&password=secret"), is(true));
+        assertThat(driver.acceptsURL(JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape-rest/"
+                                     + "&user=jsmith&password=secret"), is(true));
     }
 
     @Test
@@ -194,8 +192,9 @@ public class JcrDriverHttpTest {
     }
 
     @Test
-    public void shouldCreateConnectionInfoForUrlWithEscapedCharacters() throws SQLException{
-        validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape%20rest" + "?repositoryName=My%20Repository&workspace=My%20Workspace&user=j%20smith&password=secret";
+    public void shouldCreateConnectionInfoForUrlWithEscapedCharacters() throws SQLException {
+        validUrl = JcrDriver.HTTP_URL_PREFIX + validServerName + "/modeshape%20rest"
+                   + "?repositoryName=My%20Repository&workspace=My%20Workspace&user=j%20smith&password=secret";
         ConnectionInfo info = driver.createConnectionInfo(validUrl, validProperties);
         assertThat(info.getWorkspaceName(), is("My Workspace"));
         assertThat(info.getUsername(), is("j smith"));
@@ -203,14 +202,14 @@ public class JcrDriverHttpTest {
         assertThat(info.getRepositoryName(), is("My Repository"));
     }
 
-//    @Test
-//    public void shouldCreateConnectionWithDriverManagerAfterRegisteringDriver() throws SQLException {
-//        DriverManager.registerDriver(driver);
-//        Connection connection = DriverManager.getConnection(validUrl, validProperties);
-//        assertThat(connection, is(notNullValue()));
-//        assertThat(connection, is(instanceOf(JcrConnection.class)));
-//        assertThat(connection.isWrapperFor(JcrConnection.class), is(true));
-//        assertThat(connection.unwrap(JcrConnection.class), is(instanceOf(JcrConnection.class)));
-//    }
+    // @Test
+    // public void shouldCreateConnectionWithDriverManagerAfterRegisteringDriver() throws SQLException {
+    // DriverManager.registerDriver(driver);
+    // Connection connection = DriverManager.getConnection(validUrl, validProperties);
+    // assertThat(connection, is(notNullValue()));
+    // assertThat(connection, is(instanceOf(JcrConnection.class)));
+    // assertThat(connection.isWrapperFor(JcrConnection.class), is(true));
+    // assertThat(connection.unwrap(JcrConnection.class), is(instanceOf(JcrConnection.class)));
+    // }
 
 }

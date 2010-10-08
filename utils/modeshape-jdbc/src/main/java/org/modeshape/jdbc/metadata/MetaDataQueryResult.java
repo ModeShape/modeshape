@@ -343,12 +343,12 @@ class QueryResultRow implements Row {
      * @see javax.jcr.query.Row#getNode()
      */
     @Override
-    public Node getNode() throws RepositoryException {
+    public Node getNode() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Node getNode( String selectorName ) throws RepositoryException {
+    public Node getNode( String selectorName ) {
         throw new UnsupportedOperationException();
     }
 
@@ -358,7 +358,7 @@ class QueryResultRow implements Row {
      * @see javax.jcr.query.Row#getPath()
      */
     @Override
-    public String getPath() throws RepositoryException {
+    public String getPath() {
         throw new UnsupportedOperationException();
     }
 
@@ -368,7 +368,7 @@ class QueryResultRow implements Row {
      * @see javax.jcr.query.Row#getPath(java.lang.String)
      */
     @Override
-    public String getPath( String selectorName ) throws RepositoryException {
+    public String getPath( String selectorName ) {
         throw new UnsupportedOperationException();
     }
 
