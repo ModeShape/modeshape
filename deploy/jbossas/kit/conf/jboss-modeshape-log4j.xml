@@ -1,0 +1,11 @@
+<!--
+	This file contains log4j.xml snippets that can be used in your main jboss-log4j.xml to control
+	ModeShape logging in more depth.  By default all messages will go to the org.teiid category and 
+	will not produce many messages above the detail level.
+-->
+
+   <!-- ModeShape root category snippet.  Use this to control all of ModeShape logging from a single category -->
+	<category name="org.modeshape">
+		<priority value="INFO"/>
+	</category>
+   
