@@ -39,6 +39,7 @@ import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.HashCode;
+import org.modeshape.common.util.Logger;
 import org.modeshape.graph.search.SearchEngineException;
 
 /**
@@ -331,6 +332,9 @@ public class LuceneConfigurations {
             if (indexName != null) {
                 File indexFile = new File(workspaceFile, indexNameEncoder.encode(indexName));
                 if (!indexFile.exists()) {
+                    Logger.getLogger(LuceneConfigurations.class).debug("Creating index folders for the '{0}' workspace at '{1}'",
+                                                                       workspaceName,
+                                                                       workspaceFile);
                     indexFile.mkdirs();
                 } else {
                     if (!indexFile.isDirectory()) {
@@ -349,6 +353,8 @@ public class LuceneConfigurations {
                 directory = indexFile;
             }
             try {
+                Logger.getLogger(LuceneConfigurations.class)
+                      .debug("Initializing index files for the '{0}' workspace indexes under '{1}'", workspaceName, workspaceFile);
                 return create(directory, lockFactory);
             } catch (IOException e) {
                 throw new SearchEngineException(e);
