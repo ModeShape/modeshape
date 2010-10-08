@@ -490,7 +490,45 @@ configuration.save();
 </configuration>
 ]]></programlisting>
 	</sect1>
- <sect1 id="clustering">
+  <sect1 id="query_index_directory">
+	  <title>Query index directory</title>
+	  <para>
+		  ModeShape maintains a set of index files that are used to process <link linkend="jcr-query-and-search">queries and searches</link>,
+		  using the Lucene search engine. By default, these indexes are kept in memory (primarily because it's easy to configure).
+		  But most production configurations should not store them in-memory but should instead store these index files on the local
+		  file system.
+		</para>
+	  <para>
+	    Each ModeShape repository can be configured where the indexes should be stored, using the "QUERY_INDEX_DIRECTORY" repository
+      option (see &JcrRepositoryOption;) when using the programmatic API or the "queryIndexDirectory" repository option in a
+      ModeShape configuration file. The value of this setting should be the absolute or relative path to the folder where the 
+      indexes should be stored. In this directory, ModeShape will store the index files for each workspace in a folder
+      named similarly to the workspace. Note that ModeShape will dynamically create these workspace folders as required.
+	  </para>
+		<para>
+			For example, here is part of a ModeShape configuration file that specifies these index files should be stored in the 
+			"<code>data/car_repository/indexes</code>" folder, relative to the folder where the JVM process was started:
+		</para>
+   	<programlisting role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:mode="http://www.modeshape.org/1.0" 
+	             xmlns:jcr="http://www.jcp.org/jcr/1.0">
+  <mode:repositories>
+    <mode:repository jcr:name="car repository" mode:source="Cars">
+      <mode:options jcr:primaryType="mode:options">
+        <!-- Explicitly specify the directory where the index files should be stored. -->
+        <queryIndexDirectory jcr:primaryType="mode:option" 
+	                           mode:value="data/car_repository/indexes"/>
+        ...
+      </mode:options>
+      ...
+    </mode:repository>
+    ...
+  </mode:repositories>
+  ...
+</configuration>
+]]></programlisting>
+  </sect1>
+  <sect1 id="clustering">
 	  <title>Clustering</title>
 	  <para>
 	    ModeShape 2.1 introduced the ability to have a cluster of &JcrEngine; instances distributed across multiple processes while
