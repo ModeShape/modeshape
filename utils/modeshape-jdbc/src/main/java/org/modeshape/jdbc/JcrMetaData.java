@@ -220,7 +220,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#allProceduresAreCallable()
      */
     @Override
-    public boolean allProceduresAreCallable() throws SQLException {
+    public boolean allProceduresAreCallable() {
         return false;
     }
 
@@ -230,7 +230,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#allTablesAreSelectable()
      */
     @Override
-    public boolean allTablesAreSelectable() throws SQLException {
+    public boolean allTablesAreSelectable() {
         return false;
     }
 
@@ -240,7 +240,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#autoCommitFailureClosesAllResultSets()
      */
     @Override
-    public boolean autoCommitFailureClosesAllResultSets() throws SQLException {
+    public boolean autoCommitFailureClosesAllResultSets() {
         return false;
     }
 
@@ -250,7 +250,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#dataDefinitionCausesTransactionCommit()
      */
     @Override
-    public boolean dataDefinitionCausesTransactionCommit() throws SQLException {
+    public boolean dataDefinitionCausesTransactionCommit() {
         return false;
     }
 
@@ -260,7 +260,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#dataDefinitionIgnoredInTransactions()
      */
     @Override
-    public boolean dataDefinitionIgnoredInTransactions() throws SQLException {
+    public boolean dataDefinitionIgnoredInTransactions() {
         return false;
     }
 
@@ -270,7 +270,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#deletesAreDetected(int)
      */
     @Override
-    public boolean deletesAreDetected( int type ) throws SQLException {
+    public boolean deletesAreDetected( int type ) {
         return false;
     }
 
@@ -280,7 +280,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#doesMaxRowSizeIncludeBlobs()
      */
     @Override
-    public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
+    public boolean doesMaxRowSizeIncludeBlobs() {
         return false;
     }
 
@@ -317,7 +317,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#getCatalogSeparator()
      */
     @Override
-    public String getCatalogSeparator() throws SQLException {
+    public String getCatalogSeparator() {
         return null;
     }
 
@@ -344,6 +344,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * 
      * @see java.sql.DatabaseMetaData#getCatalogs()
      */
+    @SuppressWarnings( "unchecked" )
     @Override
     public ResultSet getCatalogs() throws SQLException {
         List<List<?>> records = new ArrayList<List<?>>(1);
@@ -413,9 +414,7 @@ public class JcrMetaData implements DatabaseMetaData {
                                          + columnNamePattern);
 
         // Get all tables if tableNamePattern is null
-        if (tableNamePattern == null) {
-            tableNamePattern = WILDCARD;
-        }
+        if (tableNamePattern == null) tableNamePattern = WILDCARD;
 
         Map<?, Object>[] metadataList = new Map[JDBCColumnPositions.COLUMNS.MAX_COLUMNS];
 
@@ -653,7 +652,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#getDefaultTransactionIsolation()
      */
     @Override
-    public int getDefaultTransactionIsolation() throws SQLException {
+    public int getDefaultTransactionIsolation() {
         return Connection.TRANSACTION_NONE;
     }
 
@@ -679,7 +678,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#getExtraNameCharacters()
      */
     @Override
-    public String getExtraNameCharacters() throws SQLException {
+    public String getExtraNameCharacters() {
         return null;
     }
 
@@ -743,20 +742,18 @@ public class JcrMetaData implements DatabaseMetaData {
      * 
      * @see java.sql.DatabaseMetaData#getIndexInfo(java.lang.String, java.lang.String, java.lang.String, boolean, boolean)
      */
+    @SuppressWarnings( "unchecked" )
     @Override
     public ResultSet getIndexInfo( String catalog,
                                    String schema,
                                    String tableNamePattern,
                                    boolean unique,
                                    boolean approximate ) throws SQLException {
-        
-        // Get all tables if tableNamePattern is null
-        if (tableNamePattern == null) {
-            tableNamePattern = WILDCARD;
-        }
-        
-        Map<?, Object>[] metadataList = new Map[JDBCColumnPositions.INDEX_INFO.MAX_COLUMNS];
 
+        // Get index information for all tables if tableNamePattern is null
+        if (tableNamePattern == null) tableNamePattern = WILDCARD;
+
+        Map<?, Object>[] metadataList = new Map[JDBCColumnPositions.INDEX_INFO.MAX_COLUMNS];
         metadataList[0] = MetadataProvider.getColumnMetadata(catalogName,
                                                              null,
                                                              JDBCColumnNames.INDEX_INFO.TABLE_CAT,
@@ -836,20 +833,43 @@ public class JcrMetaData implements DatabaseMetaData {
                                                               JcrType.DefaultDataTypes.STRING,
                                                               ResultsMetadataConstants.NULL_TYPES.NULLABLE,
                                                               this.connection);
- 
-        List<List<?>> records = new ArrayList<List<?>>(1);
-        
-        //TODO:   load the records
 
-        MetadataProvider provider = new MetadataProvider(metadataList);
+        try {
+            Boolean nonUnique = Boolean.FALSE;
+            List<List<?>> records = new ArrayList<List<?>>();
+            for (NodeType type : filterNodeTypes(tableNamePattern)) {
+                // Create a unique key for each "jcr:uuid" property, so do this only for those node types
+                // that somehow extend "mix:referenceable" ...
+                if (!type.isNodeType("mix:referenceable")) continue;
 
-        ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
+                // Every table has a "jcr:path" pseudo-column that is the primary key ...
+                List<Object> currentRow = new ArrayList<Object>(JDBCColumnPositions.INDEX_INFO.MAX_COLUMNS);
+                currentRow.add(catalogName); // TABLE_CAT
+                currentRow.add("NULL"); // TABLE_SCHEM
+                currentRow.add(type.getName()); // TABLE_NAME
+                currentRow.add(nonUnique); // NON_UNIQUE
+                currentRow.add(catalogName); // INDEX_QUALIFIER
+                currentRow.add(type.getName() + "_UK"); // INDEX_NAME
+                currentRow.add(DatabaseMetaData.tableIndexHashed); // TYPE
+                currentRow.add(new Short((short)1)); // ORDINAL_POSITION
+                currentRow.add(type.getName()); // COLUMN_NAME
+                currentRow.add("A"); // ASC_OR_DESC
+                currentRow.add(0); // CARDINALITY
+                currentRow.add(1); // PAGES
+                currentRow.add(null); // FILTER_CONDITION
 
-        JcrStatement stmt = new JcrStatement(this.connection);
-        QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
-        ResultSet rs = new JcrResultSet(stmt, queryresult, resultSetMetaData);
-        return rs;
+                // add the current row to the list of records.
+                records.add(currentRow);
+            }
 
+            JcrStatement jcrstmt = new JcrStatement(this.connection);
+            MetadataProvider provider = new MetadataProvider(metadataList);
+            ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
+            QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
+            return new JcrResultSet(jcrstmt, queryresult, resultSetMetaData);
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage());
+        }
     }
 
     /**
@@ -1105,7 +1125,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#getNumericFunctions()
      */
     @Override
-    public String getNumericFunctions() throws SQLException {
+    public String getNumericFunctions() {
         return null;
     }
 
@@ -1114,17 +1134,15 @@ public class JcrMetaData implements DatabaseMetaData {
      * 
      * @see java.sql.DatabaseMetaData#getPrimaryKeys(java.lang.String, java.lang.String, java.lang.String)
      */
+    @SuppressWarnings( "unchecked" )
     @Override
     public ResultSet getPrimaryKeys( String catalog,
                                      String schema,
                                      String tableNamePattern ) throws SQLException {
-        // Get all tables if tableNamePattern is null
-        if (tableNamePattern == null) {
-            tableNamePattern = WILDCARD;
-        }
-        
-        Map<?, Object>[] metadataList = new Map[JDBCColumnPositions.PRIMARY_KEYS.MAX_COLUMNS];
+        // Get primary keys for all tables if tableNamePattern is null
+        if (tableNamePattern == null) tableNamePattern = WILDCARD;
 
+        Map<?, Object>[] metadataList = new Map[JDBCColumnPositions.PRIMARY_KEYS.MAX_COLUMNS];
         metadataList[0] = MetadataProvider.getColumnMetadata(catalogName,
                                                              null,
                                                              JDBCColumnNames.PRIMARY_KEYS.TABLE_CAT,
@@ -1161,20 +1179,31 @@ public class JcrMetaData implements DatabaseMetaData {
                                                              JcrType.DefaultDataTypes.STRING,
                                                              ResultsMetadataConstants.NULL_TYPES.NULLABLE,
                                                              this.connection);
-  
-        List<List<?>> records = new ArrayList<List<?>>(1);
-        
-        //TODO:   load the records
 
-        MetadataProvider provider = new MetadataProvider(metadataList);
+        try {
+            List<List<?>> records = new ArrayList<List<?>>();
+            for (NodeType type : filterNodeTypes(tableNamePattern)) {
+                // Every table has a "jcr:path" pseudo-column that is the primary key ...
+                List<Object> currentRow = new ArrayList<Object>(JDBCColumnPositions.PRIMARY_KEYS.MAX_COLUMNS);
+                currentRow.add(catalogName); // TABLE_CAT
+                currentRow.add("NULL"); // TABLE_SCHEM
+                currentRow.add(type.getName()); // TABLE_NAME
+                currentRow.add("jcr:path"); // COLUMN_NAME
+                currentRow.add(1); // KEY_SEQ
+                currentRow.add(type.getName() + "_PK"); // PK_NAME
 
-        ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
+                // add the current row to the list of records.
+                records.add(currentRow);
+            }
 
-        JcrStatement stmt = new JcrStatement(this.connection);
-        QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
-        ResultSet rs = new JcrResultSet(stmt, queryresult, resultSetMetaData);
-        return rs;
-
+            JcrStatement jcrstmt = new JcrStatement(this.connection);
+            MetadataProvider provider = new MetadataProvider(metadataList);
+            ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
+            QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
+            return new JcrResultSet(jcrstmt, queryresult, resultSetMetaData);
+        } catch (RepositoryException e) {
+            throw new SQLException(e.getLocalizedMessage());
+        }
     }
 
     /**
@@ -1196,7 +1225,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#getProcedureTerm()
      */
     @Override
-    public String getProcedureTerm() throws SQLException {
+    public String getProcedureTerm() {
         return null;
     }
 
@@ -1218,7 +1247,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#getResultSetHoldability()
      */
     @Override
-    public int getResultSetHoldability() throws SQLException {
+    public int getResultSetHoldability() {
         return 0;
     }
 
@@ -1238,7 +1267,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#getSQLKeywords()
      */
     @Override
-    public String getSQLKeywords() throws SQLException {
+    public String getSQLKeywords() {
         return null;
     }
 
@@ -1248,7 +1277,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#getSQLStateType()
      */
     @Override
-    public int getSQLStateType() throws SQLException {
+    public int getSQLStateType() {
         return 0;
     }
 
@@ -1258,7 +1287,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#getSchemaTerm()
      */
     @Override
-    public String getSchemaTerm() throws SQLException {
+    public String getSchemaTerm() {
         return " ";
     }
 
@@ -1267,6 +1296,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * 
      * @see java.sql.DatabaseMetaData#getSchemas()
      */
+    @SuppressWarnings( "unchecked" )
     @Override
     public ResultSet getSchemas() throws SQLException {
         List<List<?>> records = new ArrayList<List<?>>(1);
@@ -1312,7 +1342,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#getSearchStringEscape()
      */
     @Override
-    public String getSearchStringEscape() throws SQLException {
+    public String getSearchStringEscape() {
         return null;
     }
 
@@ -1322,7 +1352,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#getStringFunctions()
      */
     @Override
-    public String getStringFunctions() throws SQLException {
+    public String getStringFunctions() {
         return null;
     }
 
@@ -1356,7 +1386,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#getSystemFunctions()
      */
     @Override
-    public String getSystemFunctions() throws SQLException {
+    public String getSystemFunctions() {
         return null;
     }
 
@@ -1413,6 +1443,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * 
      * @see java.sql.DatabaseMetaData#getTables(java.lang.String, java.lang.String, java.lang.String, java.lang.String[])
      */
+    @SuppressWarnings( "unchecked" )
     @Override
     public ResultSet getTables( String catalog,
                                 String schemaPattern,
@@ -1541,7 +1572,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#getTimeDateFunctions()
      */
     @Override
-    public String getTimeDateFunctions() throws SQLException {
+    public String getTimeDateFunctions() {
         return null;
     }
 
@@ -1620,7 +1651,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#isCatalogAtStart()
      */
     @Override
-    public boolean isCatalogAtStart() throws SQLException {
+    public boolean isCatalogAtStart() {
         return true;
     }
 
@@ -1955,7 +1986,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsConvert()
      */
     @Override
-    public boolean supportsConvert() throws SQLException {
+    public boolean supportsConvert() {
         return false;
     }
 
@@ -1966,7 +1997,7 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public boolean supportsConvert( int fromType,
-                                    int toType ) throws SQLException {
+                                    int toType ) {
         return false;
     }
 
@@ -1976,7 +2007,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsCoreSQLGrammar()
      */
     @Override
-    public boolean supportsCoreSQLGrammar() throws SQLException {
+    public boolean supportsCoreSQLGrammar() {
         return false;
     }
 
@@ -1986,7 +2017,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsCorrelatedSubqueries()
      */
     @Override
-    public boolean supportsCorrelatedSubqueries() throws SQLException {
+    public boolean supportsCorrelatedSubqueries() {
         return false;
     }
 
@@ -1996,7 +2027,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsDataDefinitionAndDataManipulationTransactions()
      */
     @Override
-    public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
+    public boolean supportsDataDefinitionAndDataManipulationTransactions() {
         return false;
     }
 
@@ -2006,7 +2037,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsDataManipulationTransactionsOnly()
      */
     @Override
-    public boolean supportsDataManipulationTransactionsOnly() throws SQLException {
+    public boolean supportsDataManipulationTransactionsOnly() {
         return false;
     }
 
@@ -2016,7 +2047,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsDifferentTableCorrelationNames()
      */
     @Override
-    public boolean supportsDifferentTableCorrelationNames() throws SQLException {
+    public boolean supportsDifferentTableCorrelationNames() {
         return false;
     }
 
@@ -2026,7 +2057,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsExpressionsInOrderBy()
      */
     @Override
-    public boolean supportsExpressionsInOrderBy() throws SQLException {
+    public boolean supportsExpressionsInOrderBy() {
         return false;
     }
 
@@ -2036,7 +2067,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsExtendedSQLGrammar()
      */
     @Override
-    public boolean supportsExtendedSQLGrammar() throws SQLException {
+    public boolean supportsExtendedSQLGrammar() {
         return false;
     }
 
@@ -2057,7 +2088,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsGetGeneratedKeys()
      */
     @Override
-    public boolean supportsGetGeneratedKeys() throws SQLException {
+    public boolean supportsGetGeneratedKeys() {
         return false;
     }
 
@@ -2067,7 +2098,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsGroupBy()
      */
     @Override
-    public boolean supportsGroupBy() throws SQLException {
+    public boolean supportsGroupBy() {
         return false; // not in JCR-SQL2;
     }
 
@@ -2077,7 +2108,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsGroupByBeyondSelect()
      */
     @Override
-    public boolean supportsGroupByBeyondSelect() throws SQLException {
+    public boolean supportsGroupByBeyondSelect() {
         return false; // not in JCR-SQL2;
     }
 
@@ -2087,7 +2118,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsGroupByUnrelated()
      */
     @Override
-    public boolean supportsGroupByUnrelated() throws SQLException {
+    public boolean supportsGroupByUnrelated() {
         return false; // not in JCR-SQL2;
     }
 
@@ -2097,7 +2128,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsIntegrityEnhancementFacility()
      */
     @Override
-    public boolean supportsIntegrityEnhancementFacility() throws SQLException {
+    public boolean supportsIntegrityEnhancementFacility() {
         return false;
     }
 
@@ -2107,7 +2138,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsLikeEscapeClause()
      */
     @Override
-    public boolean supportsLikeEscapeClause() throws SQLException {
+    public boolean supportsLikeEscapeClause() {
         return false;
     }
 
@@ -2117,7 +2148,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsLimitedOuterJoins()
      */
     @Override
-    public boolean supportsLimitedOuterJoins() throws SQLException {
+    public boolean supportsLimitedOuterJoins() {
         return false;
     }
 
@@ -2127,7 +2158,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsMinimumSQLGrammar()
      */
     @Override
-    public boolean supportsMinimumSQLGrammar() throws SQLException {
+    public boolean supportsMinimumSQLGrammar() {
         return false;
     }
 
@@ -2137,7 +2168,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsMixedCaseIdentifiers()
      */
     @Override
-    public boolean supportsMixedCaseIdentifiers() throws SQLException {
+    public boolean supportsMixedCaseIdentifiers() {
         return false;
     }
 
@@ -2147,7 +2178,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsMixedCaseQuotedIdentifiers()
      */
     @Override
-    public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
+    public boolean supportsMixedCaseQuotedIdentifiers() {
         return false;
     }
 
@@ -2157,7 +2188,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsMultipleOpenResults()
      */
     @Override
-    public boolean supportsMultipleOpenResults() throws SQLException {
+    public boolean supportsMultipleOpenResults() {
         return false;
     }
 
@@ -2167,7 +2198,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsMultipleResultSets()
      */
     @Override
-    public boolean supportsMultipleResultSets() throws SQLException {
+    public boolean supportsMultipleResultSets() {
         return false;
     }
 
@@ -2177,7 +2208,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsMultipleTransactions()
      */
     @Override
-    public boolean supportsMultipleTransactions() throws SQLException {
+    public boolean supportsMultipleTransactions() {
         return false;
     }
 
@@ -2187,7 +2218,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsNamedParameters()
      */
     @Override
-    public boolean supportsNamedParameters() throws SQLException {
+    public boolean supportsNamedParameters() {
         return false;
     }
 
@@ -2197,7 +2228,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsNonNullableColumns()
      */
     @Override
-    public boolean supportsNonNullableColumns() throws SQLException {
+    public boolean supportsNonNullableColumns() {
         return false;
     }
 
@@ -2207,7 +2238,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsOpenCursorsAcrossCommit()
      */
     @Override
-    public boolean supportsOpenCursorsAcrossCommit() throws SQLException {
+    public boolean supportsOpenCursorsAcrossCommit() {
         return false;
     }
 
@@ -2217,7 +2248,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsOpenCursorsAcrossRollback()
      */
     @Override
-    public boolean supportsOpenCursorsAcrossRollback() throws SQLException {
+    public boolean supportsOpenCursorsAcrossRollback() {
         return false;
     }
 
@@ -2227,7 +2258,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsOpenStatementsAcrossCommit()
      */
     @Override
-    public boolean supportsOpenStatementsAcrossCommit() throws SQLException {
+    public boolean supportsOpenStatementsAcrossCommit() {
         return false;
     }
 
@@ -2237,7 +2268,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsOpenStatementsAcrossRollback()
      */
     @Override
-    public boolean supportsOpenStatementsAcrossRollback() throws SQLException {
+    public boolean supportsOpenStatementsAcrossRollback() {
         return false;
     }
 
@@ -2247,7 +2278,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsOrderByUnrelated()
      */
     @Override
-    public boolean supportsOrderByUnrelated() throws SQLException {
+    public boolean supportsOrderByUnrelated() {
         return false;
     }
 
@@ -2288,7 +2319,7 @@ public class JcrMetaData implements DatabaseMetaData {
      */
     @Override
     public boolean supportsResultSetConcurrency( int type,
-                                                 int concurrency ) throws SQLException {
+                                                 int concurrency ) {
         return false;
     }
 
@@ -2298,7 +2329,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsResultSetHoldability(int)
      */
     @Override
-    public boolean supportsResultSetHoldability( int holdability ) throws SQLException {
+    public boolean supportsResultSetHoldability( int holdability ) {
         return false;
     }
 
@@ -2308,7 +2339,7 @@ public class JcrMetaData implements DatabaseMetaData {
      * @see java.sql.DatabaseMetaData#supportsResultSetType(int)
      */
     @Override
-    public boolean supportsResultSetType( int type ) throws SQLException {
+    public boolean supportsResultSetType( int type ) {
         return false;
     }
 
