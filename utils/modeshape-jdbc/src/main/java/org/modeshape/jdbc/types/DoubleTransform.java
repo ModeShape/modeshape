@@ -26,25 +26,23 @@ package org.modeshape.jdbc.types;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-
 import org.modeshape.jdbc.Transform;
 
 /**
  *
  */
-public class FloatTransform  implements Transform {
+public class DoubleTransform implements Transform {
 
-
-	/**
-	 * {@inheritDoc}
-	 * @throws RepositoryException 
-	 * @throws ValueFormatException 
-	 *
-	 * @see org.modeshape.jdbc.Transform#transform(javax.jcr.Value)
-	 */
-	@Override
-	public Object transform(Value value) throws ValueFormatException, RepositoryException {
-		return new Float(value.getDouble());
-	}
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws RepositoryException
+     * @throws ValueFormatException
+     * @see org.modeshape.jdbc.Transform#transform(javax.jcr.Value)
+     */
+    @Override
+    public Object transform( Value value ) throws ValueFormatException, RepositoryException {
+        return value.getDouble();
+    }
 
 }

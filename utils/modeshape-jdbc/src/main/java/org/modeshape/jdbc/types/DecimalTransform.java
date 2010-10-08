@@ -23,7 +23,6 @@
  */
 package org.modeshape.jdbc.types;
 
-import java.sql.Timestamp;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
@@ -32,7 +31,7 @@ import org.modeshape.jdbc.Transform;
 /**
  *
  */
-public class DateTransform implements Transform {
+public class DecimalTransform implements Transform {
 
     /**
      * {@inheritDoc}
@@ -43,7 +42,7 @@ public class DateTransform implements Transform {
      */
     @Override
     public Object transform( Value value ) throws ValueFormatException, RepositoryException {
-        return new Timestamp(value.getDate().getTime().getTime());
+        return value.getDecimal();
     }
 
 }
