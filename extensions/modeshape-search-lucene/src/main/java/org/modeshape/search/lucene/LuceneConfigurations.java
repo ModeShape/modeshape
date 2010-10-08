@@ -313,9 +313,6 @@ public class LuceneConfigurations {
                                                String indexName ) {
             File workspaceFile = new File(parentFile, workspaceNameEncoder.encode(workspaceName));
             if (!workspaceFile.exists()) {
-                Logger.getLogger(LuceneConfigurations.class).debug("Creating folders for the '{0}' workspace indexes at '{1}'",
-                                                                   workspaceName,
-                                                                   workspaceFile);
                 workspaceFile.mkdirs();
             } else {
                 if (!workspaceFile.isDirectory()) {
@@ -335,7 +332,7 @@ public class LuceneConfigurations {
             if (indexName != null) {
                 File indexFile = new File(workspaceFile, indexNameEncoder.encode(indexName));
                 if (!indexFile.exists()) {
-                    Logger.getLogger(LuceneConfigurations.class).debug("Creating index file for the '{0}' workspace at '{1}'",
+                    Logger.getLogger(LuceneConfigurations.class).debug("Creating index folders for the '{0}' workspace at '{1}'",
                                                                        workspaceName,
                                                                        workspaceFile);
                     indexFile.mkdirs();
@@ -356,6 +353,8 @@ public class LuceneConfigurations {
                 directory = indexFile;
             }
             try {
+                Logger.getLogger(LuceneConfigurations.class)
+                      .debug("Initializing index files for the '{0}' workspace indexes under '{1}'", workspaceName, workspaceFile);
                 return create(directory, lockFactory);
             } catch (IOException e) {
                 throw new SearchEngineException(e);
