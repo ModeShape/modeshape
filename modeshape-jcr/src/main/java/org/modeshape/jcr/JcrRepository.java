@@ -349,7 +349,7 @@ public class JcrRepository implements Repository {
         public static final String QUERY_INDEX_DIRECTORY = null;
 
         /**
-         * The default value for the {@link Option#QUERY_INDEX_DIRECTORY} option is {@value} .
+         * The default value for the {@link Option#PERFORM_REFERENTIAL_INTEGRITY_CHECKS} option is {@value} .
          */
         public static final String PERFORM_REFERENTIAL_INTEGRITY_CHECKS = Boolean.TRUE.toString();
 
