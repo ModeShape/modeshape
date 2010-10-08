@@ -746,10 +746,110 @@ public class JcrMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getIndexInfo( String catalog,
                                    String schema,
-                                   String table,
+                                   String tableNamePattern,
                                    boolean unique,
                                    boolean approximate ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        
+        // Get all tables if tableNamePattern is null
+        if (tableNamePattern == null) {
+            tableNamePattern = WILDCARD;
+        }
+        
+        Map<?, Object>[] metadataList = new Map[JDBCColumnPositions.INDEX_INFO.MAX_COLUMNS];
+
+        metadataList[0] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.INDEX_INFO.TABLE_CAT,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[1] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.INDEX_INFO.TABLE_SCHEM,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[2] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.INDEX_INFO.TABLE_NAME,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
+        metadataList[3] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.INDEX_INFO.NON_UNIQUE,
+                                                             JcrType.DefaultDataTypes.BOOLEAN,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
+        metadataList[4] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.INDEX_INFO.INDEX_QUALIFIER,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[5] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.INDEX_INFO.INDEX_NAME,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[6] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.INDEX_INFO.TYPE,
+                                                             JcrType.DefaultDataTypes.LONG,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
+        metadataList[7] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.INDEX_INFO.ORDINAL_POSITION,
+                                                             JcrType.DefaultDataTypes.LONG,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[8] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.INDEX_INFO.COLUMN_NAME,
+                                                             JcrType.DefaultDataTypes.LONG,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[9] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.INDEX_INFO.ASC_OR_DESC,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+
+        metadataList[10] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.INDEX_INFO.CARDINALITY,
+                                                              JcrType.DefaultDataTypes.LONG,
+                                                              ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                              this.connection);
+        metadataList[11] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.INDEX_INFO.PAGES,
+                                                              JcrType.DefaultDataTypes.LONG,
+                                                              ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                              this.connection);
+        metadataList[12] = MetadataProvider.getColumnMetadata(catalogName,
+                                                              null,
+                                                              JDBCColumnNames.INDEX_INFO.FILTER_CONDITION,
+                                                              JcrType.DefaultDataTypes.STRING,
+                                                              ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                              this.connection);
+ 
+        List<List<?>> records = new ArrayList<List<?>>(1);
+        
+        //TODO:   load the records
+
+        MetadataProvider provider = new MetadataProvider(metadataList);
+
+        ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
+
+        JcrStatement stmt = new JcrStatement(this.connection);
+        QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
+        ResultSet rs = new JcrResultSet(stmt, queryresult, resultSetMetaData);
+        return rs;
+
     }
 
     /**
@@ -1017,8 +1117,64 @@ public class JcrMetaData implements DatabaseMetaData {
     @Override
     public ResultSet getPrimaryKeys( String catalog,
                                      String schema,
-                                     String table ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+                                     String tableNamePattern ) throws SQLException {
+        // Get all tables if tableNamePattern is null
+        if (tableNamePattern == null) {
+            tableNamePattern = WILDCARD;
+        }
+        
+        Map<?, Object>[] metadataList = new Map[JDBCColumnPositions.PRIMARY_KEYS.MAX_COLUMNS];
+
+        metadataList[0] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.PRIMARY_KEYS.TABLE_CAT,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[1] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.PRIMARY_KEYS.TABLE_SCHEM,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+        metadataList[2] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.PRIMARY_KEYS.TABLE_NAME,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
+        metadataList[3] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.PRIMARY_KEYS.COLUMN_NAME,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
+        metadataList[4] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.PRIMARY_KEYS.KEY_SEQ,
+                                                             JcrType.DefaultDataTypes.LONG,
+                                                             ResultsMetadataConstants.NULL_TYPES.NOT_NULL,
+                                                             this.connection);
+        metadataList[5] = MetadataProvider.getColumnMetadata(catalogName,
+                                                             null,
+                                                             JDBCColumnNames.PRIMARY_KEYS.PK_NAME,
+                                                             JcrType.DefaultDataTypes.STRING,
+                                                             ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                                                             this.connection);
+  
+        List<List<?>> records = new ArrayList<List<?>>(1);
+        
+        //TODO:   load the records
+
+        MetadataProvider provider = new MetadataProvider(metadataList);
+
+        ResultSetMetaDataImpl resultSetMetaData = new ResultSetMetaDataImpl(provider);
+
+        JcrStatement stmt = new JcrStatement(this.connection);
+        QueryResult queryresult = MetaDataQueryResult.createResultSet(records, resultSetMetaData);
+        ResultSet rs = new JcrResultSet(stmt, queryresult, resultSetMetaData);
+        return rs;
+
     }
 
     /**
