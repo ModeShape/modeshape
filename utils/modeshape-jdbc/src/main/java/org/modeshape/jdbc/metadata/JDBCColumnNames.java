@@ -189,7 +189,7 @@ public interface JDBCColumnNames {
     /**
      * This class contains constants representing column names on ResultSet
      * returned by getTypeInfo method on DatabaseMetaData. These constant values
-     * are be used to hardcode the column names used in constructin the ResultSet obj.
+     * are be used to hard code the column names used in construction of the ResultSet obj.
      */
     interface TYPE_INFO {
 
@@ -247,5 +247,134 @@ public interface JDBCColumnNames {
         // constant indiacting column's Radix.
         static final String NUM_PREC_RADIX = "NUM_PREC_RADIX"; //$NON-NLS-1$
     }
+    
+    /**
+     * This class contains constants representing column names on ResultSet
+     * returned by getCrossReference, getExportedKeys, and getImportedKeys methods
+     * on DatabaseMetaData. These constant values are be used to hard code the
+     * column names used in construction the ResultSet obj.
+     */
+    interface REFERENCE_KEYS {
+
+        //  name of the column containing catalog or Virtual database name for primary key's table.
+        static final String PKTABLE_CAT = "PKTABLE_CAT"; //$NON-NLS-1$
+
+        //  name of the column containing schema or Virtual database version for primary key's table.
+        static final String PKTABLE_SCHEM = "PKTABLE_SCHEM"; //$NON-NLS-1$
+
+        //  name of the column containing table or group name for primary key's table.
+        static final String PKTABLE_NAME = "PKTABLE_NAME"; //$NON-NLS-1$
+
+        // name of the column containing column or element name of the primary key.
+        static final String PKCOLUMN_NAME = "PKCOLUMN_NAME"; //$NON-NLS-1$
+
+        // name of the column containing catalog or Virtual database name for foreign key's table.
+        static final String FKTABLE_CAT = "FKTABLE_CAT"; //$NON-NLS-1$
+
+        // name of the column containing schema or Virtual database version for foreign key's table.
+        static final String FKTABLE_SCHEM = "FKTABLE_SCHEM"; //$NON-NLS-1$
+
+        // name of the column containing table or group name for foreign key's table.
+        static final String FKTABLE_NAME = "FKTABLE_NAME"; //$NON-NLS-1$
+
+        // name of the column containing column or element name of the foreign key.
+        static final String FKCOLUMN_NAME = "FKCOLUMN_NAME"; //$NON-NLS-1$
+
+        // name of the column containing sequence number within the foreign key
+        static final String KEY_SEQ = "KEY_SEQ"; //$NON-NLS-1$
+
+        // name of the column containing effect on foreign key when PK is updated.
+        static final String UPDATE_RULE = "UPDATE_RULE"; //$NON-NLS-1$
+
+        // name of the column containing effect on foreign key when PK is deleted.
+        static final String DELETE_RULE = "DELETE_RULE"; //$NON-NLS-1$
+
+        // name of the column containing name of the foreign key.
+        static final String FK_NAME = "FK_NAME"; //$NON-NLS-1$
+
+        // name of the column containing name of the primary key.
+        static final String PK_NAME = "PK_NAME"; //$NON-NLS-1$
+
+        // name of the column containing deferability of foreign key constraStrings.
+        static final String DEFERRABILITY = "DEFERRABILITY"; //$NON-NLS-1$
+        static final String FKPOSITION = "FKPOSITION"; //$NON-NLS-1$
+    }
+
+
+    /**
+     * This class contains constants representing column names on ResultSet
+     * returned by getPrimaryKeys method on DatabaseMetaData. These constant values
+     * are be used to hard code the column names used in construction the ResultSet obj.
+     */
+    interface PRIMARY_KEYS {
+
+        // name of the column containing catalog or Virtual database name.
+        static final String TABLE_CAT = "TABLE_CAT"; //$NON-NLS-1$
+
+        // name of the column containing schema or Virtual database version.
+        static final String TABLE_SCHEM = "TABLE_SCHEM"; //$NON-NLS-1$
+
+        // name of the column containing table or group name.
+        static final String TABLE_NAME = "TABLE_NAME"; //$NON-NLS-1$
+
+        // name of the column containing column or element name.
+        static final String COLUMN_NAME = "COLUMN_NAME"; //$NON-NLS-1$
+
+        // name of the column containing sequence number within the primary key
+        static final String KEY_SEQ = "KEY_SEQ"; //$NON-NLS-1$
+
+        // name of the column containing name of the primary key.
+        static final String PK_NAME = "PK_NAME"; //$NON-NLS-1$
+        static final String POSITION = "POSITION"; //$NON-NLS-1$
+    }
+
+    /**
+     * This class contains constants representing column names on ResultSet
+     * returned by getIndexInfo method on DatabaseMetaData. These constant values
+     * are be used to hard code the column names used in construction the ResultSet obj.
+     */
+    interface INDEX_INFO {
+
+        // name of the column containing tables catalog name on which the index is present
+        static final String TABLE_CAT = "TABLE_CAT"; //$NON-NLS-1$
+
+        // name of the column containing tables schema name on which the index is present
+        static final String TABLE_SCHEM = "TABLE_SCHEM"; //$NON-NLS-1$
+
+        // name of the column containing table or group name.
+        static final String TABLE_NAME = "TABLE_NAME"; //$NON-NLS-1$
+
+        // name of the column containing name of column showing if an index in non-unique
+        static final String NON_UNIQUE = "NON_UNIQUE"; //$NON-NLS-1$
+
+        // name of the column containing name of column containing index_qualifier string
+        static final String INDEX_QUALIFIER = "INDEX_QUALIFIER"; //$NON-NLS-1$
+
+        // name of the column containing name of column containing index names
+        static final String INDEX_NAME = "INDEX_NAME"; //$NON-NLS-1$
+
+        // name of the column containing name of column containing index types
+        static final String TYPE = "TYPE"; //$NON-NLS-1$
+
+        // name of the column containing name of the column containing column position.
+        static final String ORDINAL_POSITION = "ORDINAL_POSITION"; //$NON-NLS-1$
+
+        // name of the column containing name of the column containing column names.
+        static final String COLUMN_NAME = "COLUMN_NAME"; //$NON-NLS-1$
+
+        // name of the column containing name of column containing info if the index is asc or desc.
+        static final String ASC_OR_DESC = "ASC_OR_DESC"; //$NON-NLS-1$
+
+        // name of the column containing name of the column containing number of unique values in index.
+        static final String CARDINALITY = "CARDINALITY"; //$NON-NLS-1$
+
+        // name of the column containing name of the column giving number od pages used for the current index.
+        static final String PAGES = "PAGES"; //$NON-NLS-1$
+
+        // name of the column containing name of the column giving filter condition.
+        static final String FILTER_CONDITION = "FILTER_CONDITION"; //$NON-NLS-1$
+    }
+
+    
 
 }
