@@ -26,14 +26,11 @@ package org.modeshape.jdbc;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
-
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.query.QueryResult;
-
 import org.hsqldb.Types;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -95,7 +92,7 @@ public class JcrResultSetMetaDataTest {
     }
 
     @Test
-    public void shouldReturnRepositoryNameAsCatalogName() throws SQLException {
+    public void shouldReturnRepositoryNameAsCatalogName() {
         for (int i = 0; i != columnNames.length; ++i) {
             assertThat(metadata.getCatalogName(i), is(info.getRepositoryName()));
         }
@@ -106,7 +103,7 @@ public class JcrResultSetMetaDataTest {
     }
 
     @Test
-    public void shouldReturnWorkspaceNameAsSchemaName() throws SQLException {
+    public void shouldReturnWorkspaceNameAsSchemaName() {
         for (int i = 0; i != columnNames.length; ++i) {
             assertThat(metadata.getSchemaName(i), is(info.getWorkspaceName()));
         }
@@ -136,7 +133,7 @@ public class JcrResultSetMetaDataTest {
     }
 
     @Test
-    public void shouldReturnStringForColumnTypeWhenResultIsNotExtendedJcrQueryResult()  {
+    public void shouldReturnStringForColumnTypeWhenResultIsNotExtendedJcrQueryResult() {
         assertThat(results instanceof org.modeshape.jcr.api.query.QueryResult, is(false));
         for (int i = 0; i != columnNames.length; ++i) {
             assertThat(metadata.getColumnTypeName(i + 1), is(STRING));
@@ -146,7 +143,7 @@ public class JcrResultSetMetaDataTest {
     }
 
     @Test
-    public void shouldReturnActualTypeForColumnTypeWhenResultIsExtendedJcrQueryResult()  {
+    public void shouldReturnActualTypeForColumnTypeWhenResultIsExtendedJcrQueryResult() {
         for (int i = 0; i != columnNames.length; ++i) {
             assertThat(extMetadata.getColumnTypeName(i + 1), is(typeNames[i]));
             JcrType expectedType = JcrType.typeInfo(typeNames[i]);
@@ -156,14 +153,14 @@ public class JcrResultSetMetaDataTest {
     }
 
     @Test
-    public void shouldReturnZeroForPrecisionWhenResultIsNotExtendedJcrQueryResult()  {
+    public void shouldReturnZeroForPrecisionWhenResultIsNotExtendedJcrQueryResult() {
         for (int i = 0; i != columnNames.length; ++i) {
             assertThat(metadata.getPrecision(i + 1), is(JcrType.typeInfo(STRING).getNominalDisplaySize()));
         }
     }
 
     @Test
-    public void shouldReturnPrecisionBasedUponPropertyTypeWhenResultIsNotExtendedJcrQueryResult()  {
+    public void shouldReturnPrecisionBasedUponPropertyTypeWhenResultIsNotExtendedJcrQueryResult() {
         assertThat(extMetadata.getPrecision(1), is(JcrType.typeInfo(STRING).getNominalDisplaySize())); // STRING
         assertThat(extMetadata.getPrecision(2), is(JcrType.typeInfo(LONG).getNominalDisplaySize())); // LONG
         assertThat(extMetadata.getPrecision(3), is(JcrType.typeInfo(PATH).getNominalDisplaySize())); // PATH
@@ -172,7 +169,7 @@ public class JcrResultSetMetaDataTest {
     }
 
     @Test
-    public void shouldReturnZeroForScaleWhenResultIsNotExtendedJcrQueryResult()  {
+    public void shouldReturnZeroForScaleWhenResultIsNotExtendedJcrQueryResult() {
         for (int i = 0; i != columnNames.length; ++i) {
             assertThat(metadata.getScale(i + 1), is(0));
         }
@@ -221,14 +218,14 @@ public class JcrResultSetMetaDataTest {
     }
 
     @Test
-    public void shouldReturnCaseSensitiveWhenResultIsNotExtendedJcrQueryResult() throws SQLException {
+    public void shouldReturnCaseSensitiveWhenResultIsNotExtendedJcrQueryResult() {
         for (int i = 0; i != columnNames.length; ++i) {
             assertThat(metadata.isCaseSensitive(i + 1), is(true));
         }
     }
 
     @Test
-    public void shouldReturnCaseSensitiveBasedUponNodeTypeWhenResultIsExtendedJcrQueryResult() throws SQLException {
+    public void shouldReturnCaseSensitiveBasedUponNodeTypeWhenResultIsExtendedJcrQueryResult() {
         assertThat(extMetadata.isCaseSensitive(1), is(true)); // STRING
         assertThat(extMetadata.isCaseSensitive(2), is(false)); // LONG
         assertThat(extMetadata.isCaseSensitive(3), is(true)); // PATH
@@ -237,7 +234,7 @@ public class JcrResultSetMetaDataTest {
     }
 
     @Test
-    public void shouldReturnFalseFromSignedWhenResultIsNotExtendedJcrQueryResult() throws SQLException {
+    public void shouldReturnFalseFromSignedWhenResultIsNotExtendedJcrQueryResult() {
         assertThat(metadata.isCaseSensitive(1), is(true));
         assertThat(metadata.isCaseSensitive(2), is(true));
         assertThat(metadata.isCaseSensitive(3), is(true));
@@ -246,7 +243,7 @@ public class JcrResultSetMetaDataTest {
     }
 
     @Test
-    public void shouldReturnSignedBasedUponNodeTypeWhenResultIsExtendedJcrQueryResult() throws SQLException {
+    public void shouldReturnSignedBasedUponNodeTypeWhenResultIsExtendedJcrQueryResult() {
         assertThat(extMetadata.isSigned(1), is(false)); // STRING
         assertThat(extMetadata.isSigned(2), is(true)); // LONG
         assertThat(extMetadata.isSigned(3), is(false)); // PATH
@@ -255,7 +252,7 @@ public class JcrResultSetMetaDataTest {
     }
 
     @Test
-    public void shouldAlwaysReturnFalseForIsAutoincrement() throws SQLException {
+    public void shouldAlwaysReturnFalseForIsAutoincrement() {
         for (int i = 0; i != columnNames.length; ++i) {
             assertThat(metadata.isAutoIncrement(i + 1), is(false));
             assertThat(extMetadata.isAutoIncrement(i + 1), is(false));
@@ -271,7 +268,7 @@ public class JcrResultSetMetaDataTest {
     }
 
     @Test
-    public void shouldAlwaysReturnFalseForIsCurrency() throws SQLException {
+    public void shouldAlwaysReturnFalseForIsCurrency() {
         for (int i = 0; i != columnNames.length; ++i) {
             assertThat(metadata.isCurrency(i + 1), is(false));
             assertThat(extMetadata.isCurrency(i + 1), is(false));
@@ -279,7 +276,7 @@ public class JcrResultSetMetaDataTest {
     }
 
     @Test
-    public void shouldAlwaysReturnFalseForIsDefinitelyWritable() throws SQLException {
+    public void shouldAlwaysReturnFalseForIsDefinitelyWritable() {
         for (int i = 0; i != columnNames.length; ++i) {
             assertThat(metadata.isDefinitelyWritable(i + 1), is(false));
             assertThat(extMetadata.isDefinitelyWritable(i + 1), is(false));

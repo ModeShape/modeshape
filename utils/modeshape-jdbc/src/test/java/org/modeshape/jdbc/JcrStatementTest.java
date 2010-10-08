@@ -30,18 +30,14 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Set;
-
-import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.QueryResult;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,9 +50,9 @@ import org.modeshape.jdbc.delegate.RepositoryDelegate;
  * 
  */
 public class JcrStatementTest {
-   
+
     private JcrStatement stmt;
-    
+
     @Mock
     private JcrConnection connection;
     @Mock
@@ -64,349 +60,342 @@ public class JcrStatementTest {
 
     @After
     public void afterEach() {
-	if (stmt != null) {
-	    stmt.close();
-	    stmt = null;
-	}
+        if (stmt != null) {
+            stmt.close();
+            stmt = null;
+        }
     }
 
     @Before
-    public void beforeEach() throws Exception  {
-	MockitoAnnotations.initMocks(this);
-	
-        stmt =  new JcrStatement(connection);
-        
+    public void beforeEach() throws Exception {
+        MockitoAnnotations.initMocks(this);
+
+        stmt = new JcrStatement(connection);
+
         when(connection.getRepositoryDelegate()).thenReturn(new TestJcrCommRepositoryInterface());
-        
+
         when(queryResult.getColumnNames()).thenReturn(TestUtil.COLUMN_NAMES);
     }
-    
+
     @Test
     public void shouldHaveStatement() {
         assertThat(stmt, is(notNullValue()));
     }
-    
+
     @Test
     public void shouldBeAbleToClearWarnings() throws SQLException {
-	stmt.clearWarnings();
+        stmt.clearWarnings();
     }
-    
+
     @Test
     public void shouldHaveConnection() throws SQLException {
-	assertThat(stmt.getConnection(), is(notNullValue()));
+        assertThat(stmt.getConnection(), is(notNullValue()));
     }
-    
+
     @Test
     public void shouldReturnDefaultForFetchDirection() throws SQLException {
-	assertThat(stmt.getFetchDirection(), is(ResultSet.FETCH_FORWARD));
+        assertThat(stmt.getFetchDirection(), is(ResultSet.FETCH_FORWARD));
     }
-    
+
     @Test
     public void shouldHaveFetchSize() throws SQLException {
-	assertThat(stmt.getFetchSize(), is(0));
+        assertThat(stmt.getFetchSize(), is(0));
     }
-    
+
     @Test
     public void shouldReturnDefaultForMaxRows() throws SQLException {
-	assertThat(stmt.getMaxRows(), is(0));
-    } 
-    
+        assertThat(stmt.getMaxRows(), is(0));
+    }
+
     @Test
     public void shouldHaveMoreResults() throws SQLException {
-	assertThat(stmt.getMoreResults(), is(false));
+        assertThat(stmt.getMoreResults(), is(false));
     }
-    
+
     @Test
     public void shouldHaveMoreResultsAtPostion() throws SQLException {
-	assertThat(stmt.getMoreResults(Statement.CLOSE_CURRENT_RESULT), is(false));
+        assertThat(stmt.getMoreResults(Statement.CLOSE_CURRENT_RESULT), is(false));
     }
-    
+
     @Test
     public void shouldReturnDefaultForMaxFieldSize() throws SQLException {
-	assertThat(stmt.getMaxFieldSize(), is(0));
+        assertThat(stmt.getMaxFieldSize(), is(0));
     }
-    
+
     @Test
     public void shouldReturnDefaultForQueryTimeout() throws SQLException {
-	assertThat(stmt.getQueryTimeout(), is(0));
+        assertThat(stmt.getQueryTimeout(), is(0));
     }
-    
+
     @Test
     public void shouldReturnDefaultForUpdateCount() throws SQLException {
-	assertThat(stmt.getUpdateCount(), is(-1));
+        assertThat(stmt.getUpdateCount(), is(-1));
     }
-      
+
     @Test
     public void shouldExcute() throws SQLException {
-	stmt.execute(TestUtil.SQL_SELECT);
+        stmt.execute(TestUtil.SQL_SELECT);
 
     }
-    
+
     public void shouldExcuteQuery() throws SQLException {
-	stmt.executeQuery(TestUtil.SQL_SELECT);
+        stmt.executeQuery(TestUtil.SQL_SELECT);
     }
-    
+
     /**
-     * Because updates are not supported, this test should throw an
-     * exception.
-     * @throws SQLException 
+     * Because updates are not supported, this test should throw an exception.
+     * 
+     * @throws SQLException
      */
-    @Test(expected= SQLException.class)
-    public void shouldThrowExceptionForAddBatch() throws SQLException  {
-	stmt.addBatch("Update sql");
+    @Test( expected = SQLException.class )
+    public void shouldThrowExceptionForAddBatch() throws SQLException {
+        stmt.addBatch("Update sql");
 
     }
-    
+
     /**
-     * Because updates are not supported, this test should throw an
-     * exception.
-     * @throws SQLException 
+     * Because updates are not supported, this test should throw an exception.
+     * 
+     * @throws SQLException
      */
-    @Test(expected= SQLException.class)
+    @Test( expected = SQLException.class )
     public void shouldThrowExceptionForExcuteBatch() throws SQLException {
-	stmt.executeBatch();
+        stmt.executeBatch();
     }
-    
-    
-    /**
-     * Because updates are not supported, this test should throw an
-     * exception.
-     * @throws SQLException 
-     */
-    @Test(expected= SQLException.class)
-    public void shouldThrowExceptionForUpdate() throws SQLException  {
-	stmt.executeUpdate("Update sql");
-    }
-    
 
     /**
-     * Because updates are not supported, this test should throw an
-     * exception.
-     * @throws SQLException 
+     * Because updates are not supported, this test should throw an exception.
+     * 
+     * @throws SQLException
      */
-    @Test(expected= SQLException.class)
-    public void shouldThrowExceptionForClearBatch() throws SQLException  {
-	stmt.clearBatch();
+    @Test( expected = SQLException.class )
+    public void shouldThrowExceptionForUpdate() throws SQLException {
+        stmt.executeUpdate("Update sql");
     }
-    
-    
+
+    /**
+     * Because updates are not supported, this test should throw an exception.
+     * 
+     * @throws SQLException
+     */
+    @Test( expected = SQLException.class )
+    public void shouldThrowExceptionForClearBatch() throws SQLException {
+        stmt.clearBatch();
+    }
+
     @Test
     public void shouldReturnResultSetConcurreny() throws SQLException {
-	assertThat(stmt.getResultSetConcurrency(), is(ResultSet.CONCUR_READ_ONLY));
+        assertThat(stmt.getResultSetConcurrency(), is(ResultSet.CONCUR_READ_ONLY));
     }
-    
+
     @Test
     public void shouldReturnResultSetHoldability() throws SQLException {
-	assertThat(stmt.getResultSetHoldability(), is(ResultSet.CLOSE_CURSORS_AT_COMMIT));
+        assertThat(stmt.getResultSetHoldability(), is(ResultSet.CLOSE_CURSORS_AT_COMMIT));
     }
-    
+
     @Test
     public void shouldReturnResultSetType() throws SQLException {
-	assertThat(stmt.getResultSetType(), is(ResultSet.TYPE_SCROLL_INSENSITIVE));
-    }    
-    
-    @Test
-    public void shouldReturnDefaultForGeneratedKeys() throws SQLException {
-	assertThat(stmt.getGeneratedKeys(), is(ResultSet.class));
+        assertThat(stmt.getResultSetType(), is(ResultSet.TYPE_SCROLL_INSENSITIVE));
     }
-    
+
+    @Test
+    public void shouldReturnDefaultForGeneratedKeys() {
+        assertThat(stmt.getGeneratedKeys(), is(ResultSet.class));
+    }
+
     @Test
     public void shouldReturnDefaultResultSet() throws SQLException {
-	assertNull(stmt.getResultSet());
+        assertNull(stmt.getResultSet());
     }
-    
+
     @Test
     public void shouldReturnDefaultForWarnings() throws SQLException {
-	assertNull(stmt.getWarnings());
+        assertNull(stmt.getWarnings());
     }
-     
+
     /**
-     * Because updates are not supported, this test should throw an
-     * exception.
+     * Because updates are not supported, this test should throw an exception.
+     * 
      * @throws SQLException
      */
     @Test
-    public void shouldSupportCancel() throws SQLException  {
-	    stmt.cancel();	    
+    public void shouldSupportCancel() throws SQLException {
+        stmt.cancel();
     }
-    
+
     @Test
     public void shouldSupportEquals() {
-	assertTrue(stmt.equals(stmt));
-	
-	JcrStatement stmt2 = null;
-	try {
-	    stmt2 =  new JcrStatement(connection);
-	       	
-	    assertFalse(stmt.equals(stmt2));
+        assertTrue(stmt.equals(stmt));
 
-	} finally {
-	    if (stmt2 != null) {
-		stmt2.close();
-	    }
-	}
+        JcrStatement stmt2 = null;
+        try {
+            stmt2 = new JcrStatement(connection);
+
+            assertFalse(stmt.equals(stmt2));
+
+        } finally {
+            if (stmt2 != null) {
+                stmt2.close();
+            }
+        }
     }
-       
+
     @Test
     public void shouldBeAbleToClose() {
-	stmt.close();
+        stmt.close();
     }
-    
+
     @Test
     public void shouldSetFetchSize() throws SQLException {
-	stmt.setFetchSize(100);
+        stmt.setFetchSize(100);
     }
-    
+
     /**
-     * Because updates are not supported, this test should throw an
-     * exception.
-     * @throws SQLException 
+     * Because updates are not supported, this test should throw an exception.
+     * 
+     * @throws SQLException
      */
-    @Test(expected= SQLException.class)
+    @Test( expected = SQLException.class )
     public void shouldSetCursorName() throws SQLException {
-	stmt.setCursorName("CursorName");
+        stmt.setCursorName("CursorName");
     }
-    
+
     @Test
     public void shouldSetEscapeProcessingTrue() throws SQLException {
-	stmt.setEscapeProcessing(true);
+        stmt.setEscapeProcessing(true);
     }
-    
+
     @Test
     public void shouldSetEscapeProcessingFalse() throws SQLException {
-	stmt.setEscapeProcessing(false);
+        stmt.setEscapeProcessing(false);
     }
-    
+
     @Test
     public void shouldSetFetchDirectionReverse() throws SQLException {
-	stmt.setFetchDirection(ResultSet.FETCH_REVERSE);
+        stmt.setFetchDirection(ResultSet.FETCH_REVERSE);
     }
-    
+
     @Test
     public void shouldSetFetchDirectionUnknown() throws SQLException {
-	stmt.setFetchDirection(ResultSet.FETCH_UNKNOWN);
+        stmt.setFetchDirection(ResultSet.FETCH_UNKNOWN);
     }
-    
+
     @Test
     public void shouldSetFetchDirectionForward() throws SQLException {
-	stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+        stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
     }
-    
+
     @Test
     public void shouldSetMaxFieldSize() throws SQLException {
-	stmt.setMaxFieldSize(30);
+        stmt.setMaxFieldSize(30);
     }
-    
+
     @Test
     public void shouldSetMaxRows() throws SQLException {
-	stmt.setMaxRows(200);
+        stmt.setMaxRows(200);
     }
-    
+
     @Test
     public void shouldSetPoolableTrue() throws SQLException {
-	stmt.setPoolable(true);
+        stmt.setPoolable(true);
     }
-    
+
     @Test
     public void shouldSetPoolableFalse() throws SQLException {
-	stmt.setPoolable(false);
+        stmt.setPoolable(false);
     }
-    
+
     @Test
     public void shouldSetQueryTimeout() throws SQLException {
-	stmt.setQueryTimeout(60);
+        stmt.setQueryTimeout(60);
     }
-    
+
     public class TestJcrCommRepositoryInterface implements RepositoryDelegate {
 
-	@Override
-	public Connection createConnection()  {
-	    return null;
-	}
+        @Override
+        public Connection createConnection() {
+            return null;
+        }
 
-	@SuppressWarnings("synthetic-access")
-	@Override
-	public QueryResult execute(String query, String language)  {
-	    return queryResult;
-	}
+        @SuppressWarnings( "synthetic-access" )
+        @Override
+        public QueryResult execute( String query,
+                                    String language ) {
+            return queryResult;
+        }
 
-	@Override
-	public ConnectionInfo getConnectionInfo() {
-	    return null;
-	}
+        @Override
+        public ConnectionInfo getConnectionInfo() {
+            return null;
+        }
 
-	@Override
-	public void close() {
-	}
+        @Override
+        public void close() {
+        }
 
-	@Override
-	public void commit()  {
-	}
+        @Override
+        public void commit() {
+        }
 
-	@Override
-	public JcrMetaData createMetaData(JcrConnection connection) {
-	    return null;
-	}
+        @Override
+        public JcrMetaData createMetaData( JcrConnection connection ) {
+            return null;
+        }
 
-	@Override
-	public boolean isValid(int timeout)  {
-	    return false;
-	}
+        @Override
+        public boolean isValid( int timeout ) {
+            return false;
+        }
 
-	@Override
-	public NodeType nodeType(String name) {
-	    return null;
-	}
-	
-	@Override
-    public List<NodeType> nodeTypes( ) throws RepositoryException {
-    	return null;
-    }
+        @Override
+        public NodeType nodeType( String name ) {
+            return null;
+        }
 
-	@Override
-	public void rollback()  {
-	}
+        @Override
+        public List<NodeType> nodeTypes() {
+            return null;
+        }
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @see org.modeshape.jdbc.delegate.RepositoryDelegate#isWrapperFor(java.lang.Class)
-	 */
-	@Override
-	public boolean isWrapperFor(Class<?> iface) {
-	    return false;
-	}
+        @Override
+        public void rollback() {
+        }
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @see org.modeshape.jdbc.delegate.RepositoryDelegate#unwrap(java.lang.Class)
-	 */
-	@Override
-	public <T> T unwrap(Class<T> iface)  {
-	    return null;
-	}
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jdbc.delegate.RepositoryDelegate#isWrapperFor(java.lang.Class)
+         */
+        @Override
+        public boolean isWrapperFor( Class<?> iface ) {
+            return false;
+        }
 
-	@Override
-	public Set<String> getRepositoryNames() throws RepositoryException {
-	    return null;
-	}
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jdbc.delegate.RepositoryDelegate#unwrap(java.lang.Class)
+         */
+        @Override
+        public <T> T unwrap( Class<T> iface ) {
+            return null;
+        }
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @see org.modeshape.jdbc.delegate.RepositoryDelegate#getDescriptor(java.lang.String)
-	 */
-	@Override
-	public String getDescriptor(String descriptorKey) {
-		return null;
-	}
+        @Override
+        public Set<String> getRepositoryNames() {
+            return null;
+        }
 
-
-	
-	
-
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.jdbc.delegate.RepositoryDelegate#getDescriptor(java.lang.String)
+         */
+        @Override
+        public String getDescriptor( String descriptorKey ) {
+            return null;
+        }
 
     }
-    
+
 }
