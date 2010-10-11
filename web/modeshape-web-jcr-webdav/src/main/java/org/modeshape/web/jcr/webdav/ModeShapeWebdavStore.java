@@ -330,7 +330,13 @@ public class ModeShapeWebdavStore implements IWebdavStore {
 
             if (!isFile(node)) {
                 ob.setFolder(true);
-                ob.setCreationDate(new Date());
+                Date createDate = null;
+                if (node.hasProperty(CREATED_PROP_NAME)) {
+                    createDate = node.getProperty(CREATED_PROP_NAME).getDate().getTime();
+                } else {
+                    createDate = new Date();
+                }
+                ob.setCreationDate(createDate);
                 ob.setLastModified(new Date());
                 ob.setResourceLength(0);
 
@@ -338,7 +344,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
                 Node content = node.getNode(CONTENT_NODE_NAME);
 
                 ob.setFolder(false);
-                Date createDate;
+                Date createDate = null;
                 if (node.hasProperty(CREATED_PROP_NAME)) {
                     createDate = node.getProperty(CREATED_PROP_NAME).getDate().getTime();
                 } else {
