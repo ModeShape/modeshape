@@ -948,10 +948,11 @@ final class JcrObservationManager implements ObservationManager {
                         Path parentPath = changedPath.getParent();
                         changedLocations.add(Location.create(parentPath));
                     }
-
-                    // more efficient to get all of the locations at once then it is one at a time using the NetChange
-                    Graph graph = getGraph();
-                    this.propertiesByLocation = graph.getProperties(PRIMARY_TYPE, MIXIN_TYPES).on(changedLocations);
+                    if (!changedLocations.isEmpty()) {
+                        // more efficient to get all of the locations at once then it is one at a time using the NetChange
+                        Graph graph = getGraph();
+                        this.propertiesByLocation = graph.getProperties(PRIMARY_TYPE, MIXIN_TYPES).on(changedLocations);
+                    }
                 }
 
                 // handle events
