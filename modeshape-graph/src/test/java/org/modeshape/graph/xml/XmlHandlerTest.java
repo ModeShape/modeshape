@@ -146,11 +146,11 @@ public class XmlHandlerTest {
 
     @Test
     public void shouldParseXmlDocumentWithoutNamespaces() throws IOException, SAXException {
-        System.out.println("\n");
-        System.out.flush();
+        // System.out.println("\n");
+        // System.out.flush();
         parse("xmlHandler/docWithoutNamespaces.xml");
-        System.out.println("\n");
-        System.out.flush();
+        // System.out.println("\n");
+        // System.out.flush();
         // Check the generated content; note that the attribute name doesn't match, so the nodes don't get special names
         assertNode("Cars");
         assertNode("Cars/Hybrid");
@@ -460,7 +460,7 @@ public class XmlHandlerTest {
                     msg.append(expected.getName());
                 }
                 msg.append(" on node ").append(request.under());
-                System.out.println("Found properties: " + request.properties());
+                // System.out.println("Found properties: " + request.properties());
                 assertThat(msg.toString(), expectedProperties.isEmpty(), is(true));
             }
         }
@@ -504,7 +504,7 @@ public class XmlHandlerTest {
                 msg.append(expected.getName());
             }
             msg.append(" on node ").append(propertyRequest.under());
-            System.out.println("Found properties: " + propertyRequest.properties());
+            // System.out.println("Found properties: " + propertyRequest.properties());
             assertThat(msg.toString(), expectedProperties.isEmpty(), is(true));
         }
     }

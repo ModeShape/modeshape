@@ -29,6 +29,8 @@ import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.LinkedList;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.query.AbstractQueryTest;
 import org.modeshape.graph.query.QueryContext;
@@ -41,8 +43,6 @@ import org.modeshape.graph.query.plan.PlanNode;
 import org.modeshape.graph.query.plan.PlanNode.Property;
 import org.modeshape.graph.query.plan.PlanNode.Type;
 import org.modeshape.graph.query.validate.Schemata;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 
@@ -52,7 +52,7 @@ public class RewriteAsRangeCriteriaTest extends AbstractQueryTest {
     private RewriteAsRangeCriteria rule;
     private LinkedList<OptimizerRule> rules;
     private QueryContext context;
-    private boolean print = true;
+    private boolean print = false;
 
     @Before
     public void beforeEach() {
@@ -60,6 +60,7 @@ public class RewriteAsRangeCriteriaTest extends AbstractQueryTest {
         rules = new LinkedList<OptimizerRule>();
         rules.add(rule);
         context = new QueryContext(mock(Schemata.class), new ExecutionContext().getValueFactories().getTypeSystem());
+        print = false;
     }
 
     protected void print( PlanNode node ) {

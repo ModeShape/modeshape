@@ -30,6 +30,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.util.List;
 import java.util.Set;
+import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
@@ -39,7 +40,6 @@ import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.request.InvalidRequestException;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.ReadNodeRequest;
-import org.junit.Test;
 
 /**
  * A class that provides standard workspace operations tests for connectors. This class is designed to be extended for each
@@ -83,7 +83,7 @@ public abstract class WorkspaceConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 7;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
     }
 
     @Test

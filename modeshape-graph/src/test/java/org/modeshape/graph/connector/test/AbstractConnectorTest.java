@@ -38,12 +38,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
 import org.modeshape.common.statistic.Stopwatch;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.SubgraphNode;
@@ -63,9 +66,6 @@ import org.modeshape.graph.request.ReadAllChildrenRequest;
 import org.modeshape.graph.request.ReadAllPropertiesRequest;
 import org.modeshape.graph.request.ReadNodeRequest;
 import org.modeshape.graph.request.Request;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
 
 /**
  * A class that provides standard reading verification tests for connectors. This class is designed to be extended for each
@@ -91,6 +91,8 @@ public abstract class AbstractConnectorTest {
     private UUID rootUuid;
     protected Observer observer;
     protected LinkedList<Changes> allChanges;
+    protected boolean print = false;
+    protected PrintStream output = null;
 
     public void startRepository() throws Exception {
         if (!running) {
@@ -203,6 +205,7 @@ public abstract class AbstractConnectorTest {
      */
     @Before
     public void beforeEach() throws Exception {
+        print = false;
         startRepository();
     }
 
@@ -588,11 +591,17 @@ public abstract class AbstractConnectorTest {
             sw.start();
             batch.execute();
             sw.stop();
-            System.out.println("     final " + getTotalAndAverageDuration(sw, totalNumberCreated));
+            print("     final " + getTotalAndAverageDuration(sw, totalNumberCreated));
             assertThat(totalNumberCreated, is(totalNumber + calculateTotalNumberOfNodesInTree(2, 2, false)));
         }
         return (int)totalNumberCreated;
 
+    }
+
+    protected void print( String msg ) {
+        if (print) {
+            System.out.println(msg);
+        }
     }
 
     protected String getTotalAndAverageDuration( Stopwatch stopwatch,

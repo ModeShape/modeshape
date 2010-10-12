@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.graph.GraphI18n;
 
 /**
  * A request that wraps multiple other requests, allowing multiple requests to be treated as a single request.
@@ -261,42 +260,31 @@ public class CompositeRequest extends Request implements Iterable<Request> {
      * being reset to a new error or null if there are no errors.
      */
     public void checkForErrors() {
-        Throwable firstError = null;
-        LinkedList<Throwable> additionalErrors = null;
+        Request firstRequestWithError = null;
+        LinkedList<Request> requestsWithErrors = null;
         for (Request request : requests) {
             if (request.hasError()) {
-                if (firstError == null) {
-                    firstError = request.getError();
+                if (firstRequestWithError == null) {
+                    firstRequestWithError = request;
                 } else {
-                    if (additionalErrors == null) additionalErrors = new LinkedList<Throwable>();
-                    additionalErrors.add(request.getError());
+                    // This is not the first ...
+                    if (requestsWithErrors == null) {
+                        requestsWithErrors = new LinkedList<Request>();
+                        requestsWithErrors.add(firstRequestWithError);
+                    }
+                    requestsWithErrors.add(request);
                 }
             }
         }
-        if (firstError != null) {
+        if (firstRequestWithError != null) {
             // There is at least one error ...
-            if (additionalErrors == null) {
+            if (requestsWithErrors == null) {
                 // but only one ...
-                setError(firstError);
-                return;
-            }
-            // More than one ...
-            additionalErrors.addFirst(firstError);
-            // Now build a single composite error message ...
-            StringBuilder str = new StringBuilder();
-            for (Throwable error : additionalErrors) {
-                str.append("\n");
-                str.append("\t" + error.getMessage());
-            }
-            String msg = null;
-            int numberOfErrors = additionalErrors.size();
-            int numberOfRequests = size();
-            if (numberOfRequests == CompositeRequest.UNKNOWN_NUMBER_OF_REQUESTS) {
-                msg = GraphI18n.multipleErrorsWhileExecutingManyRequests.text(numberOfErrors, str.toString());
+                setError(firstRequestWithError.getError());
             } else {
-                msg = GraphI18n.multipleErrorsWhileExecutingRequests.text(numberOfErrors, numberOfRequests, str.toString());
+                // More than one error ...
+                setError(new MultipleRequestFailuresException(requestsWithErrors, size()));
             }
-            setError(new RequestException(msg));
         }
     }
 

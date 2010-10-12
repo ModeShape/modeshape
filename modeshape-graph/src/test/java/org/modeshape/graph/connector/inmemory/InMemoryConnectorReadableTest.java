@@ -29,7 +29,6 @@ import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.connector.test.ReadableConnectorTest;
 
 public class InMemoryConnectorReadableTest extends ReadableConnectorTest {
@@ -59,7 +58,7 @@ public class InMemoryConnectorReadableTest extends ReadableConnectorTest {
         int numPropertiesPerNode = 7;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
     }
 
     @Test
@@ -71,7 +70,7 @@ public class InMemoryConnectorReadableTest extends ReadableConnectorTest {
         int numPropertiesPerNode = 7;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         // Verify that the content doesn't change
         Location root = graph.getCurrentWorkspace().getRoot();

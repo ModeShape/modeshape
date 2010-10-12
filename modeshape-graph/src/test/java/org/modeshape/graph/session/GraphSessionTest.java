@@ -120,7 +120,7 @@ public class GraphSessionTest {
 
     @AfterClass
     public static void afterAll() {
-        System.out.println(LOADING_STOPWATCH);
+        // System.out.println(LOADING_STOPWATCH);
     }
 
     @Test
@@ -365,7 +365,7 @@ public class GraphSessionTest {
 
         // Now there should be no changes ...
         assertNoChanges();
-        System.out.println(cache.root.getSnapshot(false));
+        // System.out.println(cache.root.getSnapshot(false));
     }
 
     @Test
@@ -434,7 +434,7 @@ public class GraphSessionTest {
         // Now there should be no changes ...
         assertNoChanges();
 
-        System.out.println(cache.root.getSnapshot(false));
+        // System.out.println(cache.root.getSnapshot(false));
     }
 
     @Test
@@ -529,7 +529,7 @@ public class GraphSessionTest {
         // Now there should be no changes ...
         assertNoChanges();
 
-        System.out.println(cache.root.getSnapshot(false));
+        // System.out.println(cache.root.getSnapshot(false));
     }
 
     @Test
@@ -567,7 +567,7 @@ public class GraphSessionTest {
         // Now there should be no changes ...
         assertNoChanges();
 
-        System.out.println(cache.root.getSnapshot(false));
+        // System.out.println(cache.root.getSnapshot(false));
     }
 
     @Test

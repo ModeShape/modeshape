@@ -29,7 +29,7 @@ import net.jcip.annotations.Immutable;
  * Specifies that the request was invalid and could not be completed.
  */
 @Immutable
-public class RequestException extends RuntimeException {
+public abstract class RequestException extends RuntimeException {
 
     /**
      */
@@ -38,13 +38,13 @@ public class RequestException extends RuntimeException {
     /**
      * 
      */
-    public RequestException() {
+    protected RequestException() {
     }
 
     /**
      * @param message
      */
-    public RequestException( String message ) {
+    protected RequestException( String message ) {
         super(message);
 
     }
@@ -52,7 +52,7 @@ public class RequestException extends RuntimeException {
     /**
      * @param cause
      */
-    public RequestException( Throwable cause ) {
+    protected RequestException( Throwable cause ) {
         super(cause);
 
     }
@@ -61,8 +61,8 @@ public class RequestException extends RuntimeException {
      * @param message
      * @param cause
      */
-    public RequestException( String message,
-                             Throwable cause ) {
+    protected RequestException( String message,
+                                Throwable cause ) {
         super(message, cause);
 
     }
