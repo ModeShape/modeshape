@@ -281,7 +281,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         Stopwatch sw = new Stopwatch();
         boolean batch = false;
         String description = "deep and narrow tree, 1x50";
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, description);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, description);
     }
 
     @Test
@@ -293,7 +293,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
         String description = "deep and narrow tree, 1x50";
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, description);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, description);
     }
 
     @Test
@@ -304,7 +304,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 7;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
     }
 
     @Test
@@ -316,7 +316,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
         String description = "binary tree, 2x8";
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, description);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, description);
     }
 
     @Test
@@ -327,7 +327,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 7;
         Stopwatch sw = new Stopwatch();
         boolean batch = false;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
     }
 
     @Test
@@ -338,7 +338,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 7;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
     }
 
     @Test
@@ -349,7 +349,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 7;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
     }
 
     @Test
@@ -408,7 +408,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 3;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         assertThat(graph.getChildren().of("/node1"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
         assertThat(graph.getChildren().of("/node1/node1"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
@@ -523,7 +523,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 3;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         // Delete two branches ...
         graph.delete("/node2/node2").and().delete("/node3/node1");
@@ -632,7 +632,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 3;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         if (source.getCapabilities().supportsReferences()) {
             // Create some references between nodes that aren't involved with the copy ...
@@ -840,7 +840,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 3;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         Subgraph source = graph.getSubgraphOfDepth(3).at("/node1");
 
@@ -879,7 +879,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 3;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         graph.useWorkspace(defaultWorkspaceName);
 
@@ -922,7 +922,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 3;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         Subgraph source = graph.getSubgraphOfDepth(3).at("/node1");
 
@@ -991,7 +991,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 3;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         Subgraph source = graph.getSubgraphOfDepth(3).at("/node1");
 
@@ -1079,7 +1079,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 3;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         // Check starting point ...
         assertThat(graph.getChildren().of("/"), hasChildren(segment("node1"), segment("node2"), segment("node3")));
@@ -1105,7 +1105,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 3;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         // Move node before itself (trivial change) ...
         graph.move("/node2").before("/node2");
@@ -1169,7 +1169,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 3;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         // Delete two branches ...
         graph.move("/node2").into("/node3");
@@ -1360,7 +1360,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 3;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         // Delete two branches ...
         graph.move("/node2").as("node3").into("/node3");
@@ -1552,7 +1552,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 3;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         // Delete two branches ...
         graph.move("/node2").as("nodeX").into("/node3");
@@ -1732,7 +1732,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 3;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         // Delete two branches ...
         graph.move("/node2").before("/node3/node2");
@@ -1877,7 +1877,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 1;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
         Subgraph subgraph = graph.getSubgraphOfDepth(2).at("/");
@@ -1906,7 +1906,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 1;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
 
@@ -1930,7 +1930,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 1;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
 
@@ -1952,7 +1952,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         int numPropertiesPerNode = 1;
         Stopwatch sw = new Stopwatch();
         boolean batch = true;
-        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, output, null);
 
         assertThat(graph.getChildren().of("/"), hasChildren(segment("node1")));
 

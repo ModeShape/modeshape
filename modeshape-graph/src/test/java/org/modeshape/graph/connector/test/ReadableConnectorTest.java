@@ -207,7 +207,7 @@ public abstract class ReadableConnectorTest extends AbstractConnectorTest {
         // Look up the child that should not exist, and this should throw an exception ...
         Path nonExistantChildName = findPathToNonExistentNodeUnder("/");
         Object node = graph.getNodeAt(nonExistantChildName);
-        System.out.println(node);
+        print(node.toString());
     }
 
     @Test( expected = PathNotFoundException.class )

@@ -26,9 +26,6 @@ package org.modeshape.graph.property;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.ValueComparators;
-import org.modeshape.graph.property.ValueFactory;
 import org.junit.Test;
 
 /**
@@ -64,8 +61,8 @@ public class NameValueComparatorTest extends AbstractValueComparatorsTest<Name> 
 
     @Test
     public void shouldConsiderNamesWithSameNamespaceUriAndLocalPartToBeComparable() {
-        System.out.println(NAME2);
-        System.out.println(NAME4);
+        // System.out.println(NAME2);
+        // System.out.println(NAME4);
         assertThat(comparator.compare(NAME2, NAME4), is(0));
     }
 

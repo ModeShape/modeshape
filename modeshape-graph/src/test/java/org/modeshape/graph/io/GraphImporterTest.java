@@ -37,10 +37,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.transaction.xa.XAResource;
-import org.modeshape.graph.ModeShapeLexicon;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
@@ -55,10 +59,6 @@ import org.modeshape.graph.request.Request;
 import org.modeshape.graph.request.SetPropertyRequest;
 import org.modeshape.graph.request.UpdatePropertiesRequest;
 import org.modeshape.graph.request.VerifyWorkspaceRequest;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Mock;
 
 /**
  * @author Randall Hauch
@@ -94,7 +94,7 @@ public class GraphImporterTest {
 
     @Test
     public void shouldImportXmlContentAndGenerateTheCorrectCommands() throws Exception {
-        System.out.println(xmlContent);
+        // System.out.println(xmlContent);
         Graph.Batch batch = importer.importXml(xmlContent, Location.create(destinationPath));
         batch.execute();
         // 'lastExecutedCommand'
@@ -144,9 +144,9 @@ public class GraphImporterTest {
                 }
                 Matcher matcher = Pattern.compile("([^=]+)=(.*)").matcher(propertyStr);
                 if (!matcher.matches()) continue;
-                System.out.println("Property: " + propertyStr + " ==> " + matcher);
+                // System.out.println("Property: " + propertyStr + " ==> " + matcher);
                 Name propertyName = context.getValueFactories().getNameFactory().create(matcher.group(1));
-                System.out.println("Property name: " + matcher.group(1));
+                // System.out.println("Property name: " + matcher.group(1));
                 String value = matcher.group(2); // doesn't handle multiple values!!
                 if (value.trim().length() == 0) value = null;
                 Property actual = propertiesByName.remove(propertyName);
@@ -154,7 +154,7 @@ public class GraphImporterTest {
                 assertThat("missing property " + propertyName, actual, is(expectedProperty));
             }
             if (!propertiesByName.isEmpty()) {
-                System.out.println("Properties for " + path + "\n" + propertiesByName);
+                // System.out.println("Properties for " + path + "\n" + propertiesByName);
             }
             assertThat(propertiesByName.isEmpty(), is(true));
         }
@@ -193,9 +193,9 @@ public class GraphImporterTest {
             }
             Matcher matcher = Pattern.compile("([^=]+)=(.*)").matcher(propertyStr);
             if (!matcher.matches()) continue;
-            System.out.println("Property: " + propertyStr + " ==> " + matcher);
+            // System.out.println("Property: " + propertyStr + " ==> " + matcher);
             Name propertyName = context.getValueFactories().getNameFactory().create(matcher.group(1));
-            System.out.println("Property name: " + matcher.group(1));
+            // System.out.println("Property name: " + matcher.group(1));
             String value = matcher.group(2); // doesn't handle multiple values!!
             if (value.trim().length() == 0) value = null;
             Property actual = propertiesByName.remove(propertyName);
@@ -203,7 +203,7 @@ public class GraphImporterTest {
             assertThat("missing property " + propertyName, actual, is(expectedProperty));
         }
         if (!propertiesByName.isEmpty()) {
-            System.out.println("Properties for " + path + "\n" + propertiesByName);
+            // System.out.println("Properties for " + path + "\n" + propertiesByName);
         }
         assertThat(propertiesByName.isEmpty(), is(true));
     }
@@ -226,9 +226,9 @@ public class GraphImporterTest {
             }
             Matcher matcher = Pattern.compile("([^=]+)=(.*)").matcher(propertyStr);
             if (!matcher.matches()) continue;
-            System.out.println("Property: " + propertyStr + " ==> " + matcher);
+            // System.out.println("Property: " + propertyStr + " ==> " + matcher);
             Name propertyName = context.getValueFactories().getNameFactory().create(matcher.group(1));
-            System.out.println("Property name: " + matcher.group(1));
+            // System.out.println("Property name: " + matcher.group(1));
             String value = matcher.group(2); // doesn't handle multiple values!!
             if (value.trim().length() == 0) value = null;
             Property actual = propertiesByName.remove(propertyName);
@@ -236,7 +236,7 @@ public class GraphImporterTest {
             assertThat("missing property " + propertyName, actual, is(expectedProperty));
         }
         if (!propertiesByName.isEmpty()) {
-            System.out.println("Properties for " + path + "\n" + propertiesByName);
+            // System.out.println("Properties for " + path + "\n" + propertiesByName);
         }
         assertThat(propertiesByName.isEmpty(), is(true));
     }
