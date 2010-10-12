@@ -480,7 +480,14 @@ class JcrContentHandler extends DefaultHandler {
                         properties.put(name, values);
                     }
                     if (propertyType == PropertyType.BINARY) {
-                        ByteArrayInputStream is = new ByteArrayInputStream(Base64.decode(value, Base64.URL_SAFE));
+                        byte[] binary = null;
+                        try {
+                            binary = Base64.decode(value.getBytes("UTF-8"));
+                        } catch (IOException e) {
+                            // try re-reading, in case this was an export from a prior ModeShape version that used URL_SAFE ...
+                            binary = Base64.decode(value, Base64.URL_SAFE);
+                        }
+                        ByteArrayInputStream is = new ByteArrayInputStream(binary);
                         values.add(valueFor(is));
                     } else {
                         if (decoder != null) value = decoder.decode(value);

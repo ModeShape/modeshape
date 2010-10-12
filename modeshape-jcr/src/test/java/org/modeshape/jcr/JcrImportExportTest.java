@@ -26,6 +26,7 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -422,6 +423,67 @@ public class JcrImportExportTest {
         // Set up the repository ...
         assertImport("io/full-workspace-system-view.xml", "/", ImportBehavior.THROW); // no matching UUIDs expected
         assertNode("/page1");
+    }
+
+    @Test
+    public void shouldImportFileExportedFromJackrabbitContainingBinaryData() throws Exception {
+        // Load the Magnolia CND file ...
+        CndNodeTypeReader cndReader = new CndNodeTypeReader(session);
+        cndReader.read("magnolia.cnd");
+        session.getWorkspace().getNodeTypeManager().registerNodeTypes(cndReader.getNodeTypeDefinitions(), false);
+        assertThat(session.getWorkspace().getNodeTypeManager().getNodeType("mgnl:content"), is(notNullValue()));
+
+        // Now import the file ...
+        String filename = "io/system-export-with-binary-data-and-uuids.xml";
+        assertImport(filename, "/a", ImportBehavior.THROW); // no matching UUIDs expected
+    }
+
+    @Test
+    public void shouldDecodeBase64() throws Exception {
+        String base64Str = "R0lGODlhEAAQAMZpAGxZMW1bNW9bMm9cNnJdNXJdNnNfN3tnPX5oQIBqQYJrO4FrQoVtQIZuQohxQopyRopzQYtzRo10Qo51SI12SJB3SZN5Q5N5RpV7TJZ8TJd9SJh+TpyAT52CUJ+FUaOGU6OHUaSIUqGKUqaJVaiKVaGMV6mLVqWOXqyOVayOWLCSWa2VWrSVW7aXXbSbXbqaXrqaX7uaX7ubXsCfYrigcMKgY8OhY8SiZMWjZMWjZcelZsimZsqnZ8unZ8uoaMypaM2pac6qacOtbc+ratCsatKta8uwbdGvctOvbtSvbNWwbciyhdaxbdm2dda7ddq5gd26fN28gNe/ed6+htvCeuHAhd3EfOLCidrDmd7GfuLEj9/HfubKlufLmOjLmOnMmOnNmujNne3UpuzUqe3Vp+7VqO/VqO/Wqe7YsP///////////////////////////////////////////////////////////////////////////////////////////yH+EUNyZWF0ZWQgd2l0aCBHSU1QACH5BAEKAH8ALAAAAAAQABAAAAeJgH+Cg4SFhoeIiYqLhSciiR40S1hoY0JZVE5GK4MOZWdmZGJhJVumW1aDFGBfXl1cWiRSp1sufxYXV1VQUVNPMSAYDwgHEINNTEpJSEcwKR0VCwWERURDQUA9LSYcEwkDhD8+PDs6OCwjGxEIAYQyOTc2NTMqHxkNBgCFChIaKC8hGBBgJIARo0AAOw==";
+        boolean print = false;
+
+        // Try apache ...
+        byte[] apacheBytes = org.apache.util.Base64.decode(base64Str.getBytes("UTF-8"));
+        if (print) {
+            System.out.println("Apache:     " + toString(apacheBytes));
+            System.out.println("   length:  " + apacheBytes.length);
+        }
+
+        // Try jboss ...
+        byte[] jbossBytes = org.jboss.util.Base64.decode(base64Str);
+        if (print) {
+            System.out.println("JBoss:      " + toString(jbossBytes));
+            System.out.println("   length:  " + jbossBytes.length);
+        }
+
+        // Try jackrabbit ...
+        ByteArrayOutputStream jrOutput = new ByteArrayOutputStream();
+        org.apache.jackrabbit.test.api.Base64.decode(base64Str, jrOutput);
+        byte[] jrBytes = jrOutput.toByteArray();
+        if (print) {
+            System.out.println("Jackrabbit: " + toString(jrBytes));
+            System.out.println("   length:  " + jrBytes.length);
+        }
+
+        // Try modeshape ...
+        byte[] msBytes = org.modeshape.common.util.Base64.decode(base64Str);
+        if (print) {
+            System.out.println("ModeShape:  " + toString(msBytes));
+            System.out.println("   length:  " + msBytes.length);
+        }
+
+        // assertThat(apacheBytes, is(jbossBytes)); // apache pads 3 0s at the end
+        assertThat(jrBytes, is(jbossBytes));
+        assertThat(msBytes, is(jbossBytes));
+
+    }
+
+    String toString( byte[] bytes ) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes)
+            sb.append(b);
+        return sb.toString();
     }
 
     // ----------------------------------------------------------------------------------------------------------------
