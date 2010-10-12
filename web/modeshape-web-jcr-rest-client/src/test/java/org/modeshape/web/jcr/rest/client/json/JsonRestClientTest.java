@@ -37,6 +37,7 @@ import javax.jcr.nodetype.NodeType;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.web.jcr.rest.client.IJcrConstants;
 import org.modeshape.web.jcr.rest.client.IRestClient;
 import org.modeshape.web.jcr.rest.client.Status;
@@ -71,6 +72,7 @@ public final class JsonRestClientTest {
     private static final String WORKSPACE_PATH = "/myproject/myfolder/";
     private static final String FILE_PATH = WORKSPACE_PATH + "document.txt";
     private static final String BINARY_FILE_PATH = WORKSPACE_PATH + "picture.jpg";
+    private static final String DDL_FILE_PATH = WORKSPACE_PATH + "oracle_test_create.ddl";
 
     private static final String WORKSPACE_UNUSUALPATH = "/myproject/My.Test - Folder/";
     private static final String FILE_UNUSUALPATH = WORKSPACE_UNUSUALPATH + "Test File_.a-().txt";
@@ -174,6 +176,33 @@ public final class JsonRestClientTest {
 
         // publish
         File file = new File(textFile.toURI());
+        Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file);
+
+        if (status.isError()) {
+            System.err.println(status.getMessage());
+            status.getException().printStackTrace(System.err);
+        }
+
+        assertThat(status.getMessage(), status.isOk(), is(true));
+
+        // confirm it exists in repository
+        assertThat(((JsonRestClient)this.restClient).pathExists(WORKSPACE1, WORKSPACE_PATH, file), is(true));
+
+        // compare file contents to the contents that have been published
+        String expected = new FileNode(WORKSPACE1, WORKSPACE_PATH, file).readFile();
+        String actual = ((JsonRestClient)this.restClient).getFileContents(WORKSPACE1, WORKSPACE_PATH, file);
+        assertThat(actual, is(expected));
+    }
+
+    @Ignore
+    @FixFor( "MODE-919" )
+    @Test
+    public void shouldPublishDdlResource() throws Exception {
+        URL ddlFile = getClass().getResource(DDL_FILE_PATH);
+        assertThat(ddlFile, is(notNullValue()));
+
+        // publish
+        File file = new File(ddlFile.toURI());
         Status status = this.restClient.publish(WORKSPACE1, WORKSPACE_PATH, file);
 
         if (status.isError()) {
