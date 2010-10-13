@@ -140,7 +140,7 @@ public abstract class WritableConnectorTest extends AbstractConnectorTest {
         assertThat(root, hasProperty(ModeShapeLexicon.UUID, getRootNodeUuid()));
         assertThat(root, hasProperty("propA", "valueA"));
         assertThat(root.getChildren(), hasChildren(segment("a"), segment("b")));
-
+        
         // Now look up node A ...
         Node nodeA = graph.getNodeAt("/a");
         assertThat(nodeA, is(notNullValue()));

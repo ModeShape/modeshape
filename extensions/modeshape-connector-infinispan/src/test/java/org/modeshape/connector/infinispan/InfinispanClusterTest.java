@@ -31,12 +31,12 @@ public class InfinispanClusterTest {
 
     @Test
     public void shouldDistributeGraphNodes() {
-        DefaultInfinispanSource source1 = new DefaultInfinispanSource();
+        InfinispanSource source1 = new InfinispanSource();
         source1.setName("source1");
         source1.setCacheConfigurationName(CONFIG_FILE);
         source1.initialize(repositoryContextFor(source1));
 
-        DefaultInfinispanSource source2 = new DefaultInfinispanSource();
+        InfinispanSource source2 = new InfinispanSource();
         source2.setName("source2");
         source2.setCacheConfigurationName(CONFIG_FILE);
         source2.initialize(repositoryContextFor(source2));

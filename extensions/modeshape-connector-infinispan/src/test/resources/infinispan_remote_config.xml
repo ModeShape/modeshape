@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns="urn:infinispan:config:4.0">
+  <global />
+  <default>
+    <loaders shared="false" preload="true">
+      <loader class="org.infinispan.loaders.file.FileCacheStore" 
+              fetchPersistentState="true" 
+              ignoreModifications="false"
+              purgeOnStartup="false">
+        <properties>
+          <property name="location" value="target/infinispan-remote/jcr"/>
+        </properties>
+      </loader>
+    </loaders>
+  </default>
+  <namedCache name="cars">
+    <loaders shared="false" preload="true">
+      <loader class="org.infinispan.loaders.file.FileCacheStore"
+              fetchPersistentState="true"
+              ignoreModifications="false"
+              purgeOnStartup="false">
+        <properties>
+          <property name="location" value="target/infinispan-remote-cars/jcr"/>
+        </properties>
+      </loader>
+    </loaders>
+  </namedCache>
+    <namedCache name="aircraft">
+    <loaders shared="false" preload="true">
+      <loader class="org.infinispan.loaders.file.FileCacheStore"
+              fetchPersistentState="true"
+              ignoreModifications="false"
+              purgeOnStartup="false">
+        <properties>
+          <property name="location" value="target/infinispan-remote-aircraft/jcr"/>
+        </properties>
+      </loader>
+    </loaders>
+  </namedCache>
+
+  <namedCache name="remowritable">
+    <loaders shared="true" preload="false">
+      <loader class="org.infinispan.loaders.file.FileCacheStore"
+              fetchPersistentState="true"
+              ignoreModifications="false"
+              purgeOnStartup="false">
+        <properties>
+          <property name="location" value="target/infinispan-remote-remowritable/jcr"/>
+        </properties>
+      </loader>
+    </loaders>
+  </namedCache>
+
+      <namedCache name="default">
+    <loaders shared="false" preload="true">
+      <loader class="org.infinispan.loaders.file.FileCacheStore"
+              fetchPersistentState="true"
+              ignoreModifications="false"
+              purgeOnStartup="false">
+        <properties>
+          <property name="location" value="target/infinispan-remote-def/jcr"/>
+        </properties>
+      </loader>
+    </loaders>
+  </namedCache>
+      <namedCache name="copyChildrenSource">
+    <loaders shared="false" preload="true">
+      <loader class="org.infinispan.loaders.file.FileCacheStore"
+              fetchPersistentState="true"
+              ignoreModifications="false"
+              purgeOnStartup="false">
+        <properties>
+          <property name="location" value="target/infinispan-remote-copyChildrenSource/jcr"/>
+        </properties>
+      </loader>
+    </loaders>
+  </namedCache>
+</infinispan>

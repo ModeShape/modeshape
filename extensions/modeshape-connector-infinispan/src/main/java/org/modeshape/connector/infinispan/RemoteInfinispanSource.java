@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
 import javax.naming.RefAddr;
@@ -44,6 +45,7 @@ import org.infinispan.manager.DefaultCacheManager;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
 import org.modeshape.common.annotation.Label;
+import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositorySource;
@@ -103,12 +105,14 @@ public class RemoteInfinispanSource extends BaseInfinispanSource implements Base
 
     @Override
     protected CacheContainer createCacheContainer() {
-        if(this.getRemoteInfinispanServerList() == null || this.getRemoteInfinispanServerList() == "")
-            throw new IllegalArgumentException("Infinispan Server List cannot be null.");
-        CacheContainer container = new RemoteCacheManager(this.getRemoteInfinispanServerList());
-        return container;
+        Properties p = new Properties();
+        if(this.getRemoteInfinispanServerList() == null || this.getRemoteInfinispanServerList().equals("")) {
+            return new RemoteCacheManager();
+        } else {
+            return new RemoteCacheManager(this.getRemoteInfinispanServerList());
+        }
     }
-/**
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -121,6 +125,7 @@ public class RemoteInfinispanSource extends BaseInfinispanSource implements Base
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object getObjectInstance( Object obj,
                                      javax.naming.Name name,
                                      Context nameCtx,
@@ -167,7 +172,7 @@ public class RemoteInfinispanSource extends BaseInfinispanSource implements Base
             RemoteInfinispanSource source = new RemoteInfinispanSource();
             if (sourceName != null) source.setName(sourceName);
             if (rootNodeUuidString != null) source.setRootNodeUuid(rootNodeUuidString);
-            if (remoteServerList != null) source.setRemoteInfinispanServerList(remoteInfinispanServerList);
+            if (remoteServerList != null) source.setRemoteInfinispanServerList(remoteServerList);
             if (defaultCachePolicy instanceof CachePolicy) {
                 source.setDefaultCachePolicy((CachePolicy)defaultCachePolicy);
             }
@@ -181,4 +186,27 @@ public class RemoteInfinispanSource extends BaseInfinispanSource implements Base
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals( Object obj ) {
+        if (obj == this) return true;
+        if (obj instanceof RemoteInfinispanSource) {
+            RemoteInfinispanSource that = (RemoteInfinispanSource)obj;
+            if (this.getName() == null) {
+                if (that.getName() != null) return false;
+            } else {
+                if (!this.getName().equals(that.getName())) return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return HashCode.compute(getName());
+    }
+    
 }

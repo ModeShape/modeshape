@@ -3,8 +3,8 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
@@ -27,22 +27,20 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import javax.naming.Context;
-import javax.naming.Name;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
-import org.infinispan.manager.CacheContainer;
+import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.server.hotrod.HotRodServer;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -50,39 +48,40 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.cache.BasicCachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
+import org.infinispan.server.hotrod.test.HotRodTestingUtil;
+import org.junit.AfterClass;
 
 /**
+ *
+ * @author johnament
  */
-public class InfinispanSourceTest {
+public class RemoteInfinispanSourceTest {
 
     private ExecutionContext context;
-    private InfinispanSource source;
+    private RemoteInfinispanSource source;
     private RepositoryConnection connection;
     private String validName;
-    private String validCacheConfigurationName;
-    private String validCacheManagerJndiName;
     private UUID validRootNodeUuid;
-    @Mock
-    private Context jndiContext;
-    @Mock
-    private CacheContainer cacheContainer;
     @Mock
     private RepositoryContext repositoryContext;
 
+    @BeforeClass
+    public static void createContainer() throws Exception {
+        RemoteInfinispanTestHelper.createServer();
+    }
+
+    @AfterClass
+    public static void closeConnection() throws Exception {
+        RemoteInfinispanTestHelper.releaseServer();
+    }
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
         context = new ExecutionContext();
         when(repositoryContext.getExecutionContext()).thenReturn(context);
         validName = "cache source";
-        validCacheConfigurationName = "cache config name";
-        validCacheManagerJndiName = "cache factory jndi name";
         validRootNodeUuid = UUID.randomUUID();
-        source = new InfinispanSource();
-
-        // Set up the fake JNDI context ...
-        source.setContext(jndiContext);
-        when(jndiContext.lookup(validCacheManagerJndiName)).thenReturn(cacheContainer);
+        source = new RemoteInfinispanSource();
     }
 
     @After
@@ -109,7 +108,7 @@ public class InfinispanSourceTest {
 
     @Test
     public void shouldHaveNullSourceNameUponConstruction() {
-        source = new InfinispanSource();
+        source = new RemoteInfinispanSource();
         assertThat(source.getName(), is(nullValue()));
     }
 
@@ -130,7 +129,7 @@ public class InfinispanSourceTest {
 
     @Test
     public void shouldHaveDefaultRetryLimit() {
-        assertThat(source.getRetryLimit(), is(InfinispanSource.DEFAULT_RETRY_LIMIT));
+        assertThat(source.getRetryLimit(), is(RemoteInfinispanSource.DEFAULT_RETRY_LIMIT));
     }
 
     @Test
@@ -157,8 +156,6 @@ public class InfinispanSourceTest {
         cachePolicy.setTimeToLive(1000L, TimeUnit.MILLISECONDS);
         convertToAndFromJndiReference(validName,
                                       validRootNodeUuid,
-                                      validCacheConfigurationName,
-                                      validCacheManagerJndiName,
                                       cachePolicy,
                                       100);
     }
@@ -167,26 +164,23 @@ public class InfinispanSourceTest {
     public void shouldCreateJndiReferenceAndRecreatedObjectFromReferenceWithNullProperties() throws Exception {
         BasicCachePolicy cachePolicy = new BasicCachePolicy();
         cachePolicy.setTimeToLive(1000L, TimeUnit.MILLISECONDS);
-        convertToAndFromJndiReference("some source", null, null, null, null, 100);
-        convertToAndFromJndiReference(null, null, null, null, null, 100);
+        convertToAndFromJndiReference("some source", null, null, 100);
+        convertToAndFromJndiReference(null, null, null, 100);
     }
 
     private void convertToAndFromJndiReference( String sourceName,
                                                 UUID rootNodeUuid,
-                                                String cacheConfigName,
-                                                String cacheManagerJndiName,
                                                 BasicCachePolicy cachePolicy,
                                                 int retryLimit ) throws Exception {
         source.setRetryLimit(retryLimit);
         source.setName(sourceName);
-        source.setCacheConfigurationName(cacheConfigName);
-        source.setCacheContainerJndiName(cacheManagerJndiName);
+        source.setRemoteInfinispanServerList("localhost:11311");
         source.setDefaultCachePolicy(cachePolicy);
         source.setRootNodeUuid(rootNodeUuid != null ? rootNodeUuid.toString() : null);
 
         Reference ref = source.getReference();
-        assertThat(ref.getClassName(), is(InfinispanSource.class.getName()));
-        assertThat(ref.getFactoryClassName(), is(InfinispanSource.class.getName()));
+        assertThat(ref.getClassName(), is(RemoteInfinispanSource.class.getName()));
+        assertThat(ref.getFactoryClassName(), is(RemoteInfinispanSource.class.getName()));
 
         Map<String, Object> refAttributes = new HashMap<String, Object>();
         Enumeration<RefAddr> enumeration = ref.getAll();
@@ -196,18 +190,14 @@ public class InfinispanSourceTest {
         }
 
         // Recreate the object, use a newly constructed source ...
-        ObjectFactory factory = new InfinispanSource();
-        Name name = mock(Name.class);
-        Context context = mock(Context.class);
-        Hashtable<?, ?> env = new Hashtable<Object, Object>();
-        InfinispanSource recoveredSource = (InfinispanSource)factory.getObjectInstance(ref, name, context, env);
+        ObjectFactory factory = new RemoteInfinispanSource();
+        RemoteInfinispanSource recoveredSource = (RemoteInfinispanSource)factory.getObjectInstance(ref, null, null, null);
         assertThat(recoveredSource, is(notNullValue()));
 
         assertThat(recoveredSource.getName(), is(source.getName()));
         assertThat(recoveredSource.getRootNodeUuid(), is(source.getRootNodeUuid()));
         assertThat(recoveredSource.getRetryLimit(), is(source.getRetryLimit()));
-        assertThat(recoveredSource.getCacheContainerJndiName(), is(source.getCacheContainerJndiName()));
-        assertThat(recoveredSource.getCacheConfigurationName(), is(source.getCacheConfigurationName()));
+        assertThat(recoveredSource.getRemoteInfinispanServerList(), is(source.getRemoteInfinispanServerList()));
         assertThat(recoveredSource.getDefaultCachePolicy(), is(source.getDefaultCachePolicy()));
 
         assertThat(recoveredSource.equals(source), is(true));
@@ -223,4 +213,5 @@ public class InfinispanSourceTest {
         assertThat(connection, is(notNullValue()));
         // assertThat(connection.getCache(), is(notNullValue()));
     }
+
 }

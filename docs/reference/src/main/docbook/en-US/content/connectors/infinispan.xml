@@ -52,7 +52,7 @@
 			</thead>
 			<tbody>
 				<row>
-					<entry>cacheManagerJndiName</entry>
+					<entry>cacheContainerJndiName</entry>
 					<entry>Optional property that, if used, specifies the name in JNDI where an existing Infinispan Cache Manager instance can be found.
 						That factory would then be used if needed to create an Infinispan Cache instance.  If no value is provided, then the
 						Infinispan <code>DefaultCacheManager</code> class is used.</entry>
@@ -108,6 +108,65 @@
 			</tbody>
 		</tgroup>
 	</table>
+	<para>
+		The &RemoteInfinispanSource; class provides a number of JavaBean properties that control its behavior:
+	</para>
+	<table frame='all'>
+		<title>&RemoteInfinispanSource; properties</title>
+		<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+      <colspec colname='c1' colwidth="1*"/>
+      <colspec colname='c2' colwidth="1*"/>
+			<thead>
+				<row>
+		  		<entry>Property</entry>
+		  		<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>remoteInfinispanServerList</entry>
+					<entry>Optional property that defines the list of servers.  The servers must be Infinispan HotRod servers.  The list must be in
+					       the appropriate format of host:port[;host:port...] that would be used when defining an Infinispan <code>RemoteCacheManager</code> 
+					       instance.  If the value is missing, localhost:11311 is assumed.</entry>
+				</row>
+				<row>
+					<entry>defaultCachePolicy</entry>
+					<entry>Optional property that, if used, defines the default for how long this information provided by this source may to be 
+						cached by other, higher-level components.  The default value of null implies that this source does not define a specific
+						duration for caching information provided by this repository source.</entry>
+				</row>
+				<row>
+					<entry>defaultWorkspaceName</entry>
+					<entry>Optional property that is initialized to an empty string and which defines the name for the workspace that will be used by default
+						if none is specified.</entry>
+				</row>
+				<row>
+					<entry>name</entry>
+					<entry>The name of the repository source, which is used by the &RepositoryService; when obtaining a &RepositoryConnection; by name.</entry>
+				</row>
+				<row>
+					<entry>predefinedWorkspaceNames</entry>
+					<entry>Optional property that defines the names of the workspaces that exist and that are available for use without having to create them.</entry>
+				</row>
+				<row>
+					<entry>retryLimit</entry>
+					<entry>Optional property that, if used, defines the number of times that any single operation on a &RepositoryConnection; to this source should be retried
+						following a communication failure. The default value is '0'.</entry>
+				</row>	
+				<row>
+					<entry>rootNodeUuid</entry>
+					<entry>Optional property that, if used, specifies the UUID that should be used for the root node of each workspace.  If no value is
+					specified, a pre-defined UUID constant is used. A custom value need only be supplied for Infinispan sources created prior to ModeShape 2.0,
+					or if a specific UUID is desired or needed.</entry>
+				</row>	
+				<row>
+					<entry>updatesAllowed</entry>
+					<entry>Determines whether the content in the connector is can be updated ("true"), or if the content may only be read ("false").
+						The default value is "true".</entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
  	<para>
 		One way to configure the Infinispan connector is to create &JcrConfiguration; instance with a repository source that uses the &InfinispanSource; class.
 		For example:
@@ -115,7 +174,7 @@
   <programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 config.repositorySource("Infinispan Store")
-      .usingClass(InfinispanSource.class)
+      .usingClass(DefaultInfinispanSource.class)
       .setDescription("The repository for our content")
       .setProperty("defaultWorkspaceName", "prod")
       .setProperty("predefinedWorkspaceNames", new String[] { "staging", "dev"});
@@ -141,7 +200,7 @@ config.repositorySource("Infinispan Store")
         workspace (though others could be created, too).
         -->
         <mode:source jcr:name="Infinispan Store" 
-                    mode:classname="org.modeshape.connector.infinispan.InfinispanSource" 
+                    mode:classname="org.modeshape.connector.infinispan.DefaultInfinispanSource" 
                     mode:description="The repository for our content"
                     mode:defaultworkspaceName="prod">
            <mode:predefinedWorkspaceNames>staging</mode:predefinedWorkspaceNames>
@@ -163,7 +222,8 @@ JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml
  		<title>Considerations for Distributed Sources</title>
  		<para>
 		The &InfinispanSource; can be used to provide access to an Infinispan cluster, but be sure to use the DIST_SYNC
-		cache mode.  Using other modes will likely lead to data inconsistency.
+		cache mode.  Using other modes will likely lead to data inconsistency.  The &RemoteInfinispanSource; can be used to connect
+		to an Infinispan HotRod cache server.
  		</para>
  		<para>
  		Additionally, some operating systems (e.g., OS X) require you to set either the <code>java.net.preferIPv4Stack</code>
@@ -174,6 +234,22 @@ JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml
 	 		<para>The <code>rootNodeUuid</code> property <emphasis>must</emphasis> be set to the same value for all Infinispan sources in the cluster.</para>
  		</note>
  	</sect1>
+	<sect2>
+		<title>Considerations for using the HotRod Server</title>
+		<para>
+		The Infinispan HotRod Server must be made aware of the ModeShape classes that will be stored in it, since it will be running
+		in a separate JVM.  The following jar files should be added to the classpath of the HotRod Server:
+		google-collections
+		joda-time
+		lucene-analyzers
+		lucene-core
+		lucene-regex
+		lucene-snowball
+		modeshape-common
+		modeshape-connector-infinispan
+		modeshape-graph
+		</para>
+	</sect2>
  </chapter>
 
  
