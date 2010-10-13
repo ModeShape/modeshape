@@ -648,9 +648,10 @@ class JcrWorkspace implements Workspace {
                     Path nodeSourcePath = nodeDestPath.resolveAgainst(srcPath);
 
                     AbstractJcrNode fromNode = cache.findJcrNode(Location.create(nodeSourcePath));
-                    UUID originalVersion = fromNode.getBaseVersion().uuid();
-
-                    versionManager.initializeVersionHistoryFor(node, originalVersion);
+                    if (!(fromNode instanceof JcrSharedNode)) {
+                        UUID originalVersion = fromNode.getBaseVersion().uuid();
+                        versionManager.initializeVersionHistoryFor(node, originalVersion);
+                    }
                 }
 
                 for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
