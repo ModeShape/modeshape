@@ -44,7 +44,7 @@ public class InfinispanRepository extends Repository<InfinispanNode, InfinispanW
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Set<String> predefinedWorkspaceNames;
 
-    public InfinispanRepository( InfinispanSource source,
+    public InfinispanRepository( BaseInfinispanSource source,
                                  CacheContainer cacheContainer ) {
         super(source);
         this.cacheContainer = cacheContainer;

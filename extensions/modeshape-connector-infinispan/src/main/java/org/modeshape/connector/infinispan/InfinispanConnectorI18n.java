@@ -41,6 +41,9 @@ public final class InfinispanConnectorI18n {
     public static I18n updatesAllowedPropertyDescription;
     public static I18n updatesAllowedPropertyLabel;
     public static I18n updatesAllowedPropertyCategory;
+    public static I18n remoteInfinispanServerListPropertyDescription;
+    public static I18n remoteInfinispanServerListPropertyLabel;
+    public static I18n remoteInfinispanServerListPropertyCategory;
 
     static {
         try {

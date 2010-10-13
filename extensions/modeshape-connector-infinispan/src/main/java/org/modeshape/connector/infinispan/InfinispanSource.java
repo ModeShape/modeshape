@@ -67,7 +67,11 @@ import org.modeshape.graph.observe.Observer;
 
 /**
  * A repository source that uses an Infinispan instance to manage the content. This source is capable of using an existing
+<<<<<<< HEAD
  * {@link CacheContainer} or creating a new cache manager. This process is controlled entirely by the JavaBean properties of the
+=======
+ * {@link CacheContainer} or creating a new cache container. This process is controlled entirely by the JavaBean properties of the
+>>>>>>> Added new Base and Remote sources, updated dependent files.
  * InfinispanSource instance.
  * <p>
  * This source first attempts to find an existing cache manager found in {@link #getCacheContainerJndiName() JNDI} (or the
@@ -80,49 +84,12 @@ import org.modeshape.graph.observe.Observer;
  * </p>
  */
 @ThreadSafe
-public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
+public class InfinispanSource extends BaseInfinispanSource implements BaseRepositorySource, ObjectFactory {
 
     private static final long serialVersionUID = 2L;
-    /**
-     * The default limit is {@value} for retrying {@link RepositoryConnection connection} calls to the underlying source.
-     */
-    public static final int DEFAULT_RETRY_LIMIT = 0;
 
-    /**
-     * The default limit is {@value} for the root node's UUID.
-     */
-    public static final String DEFAULT_ROOT_NODE_UUID = "cafebabe-cafe-babe-cafe-babecafebabe";
-
-    /**
-     * The initial {@link #getDefaultWorkspaceName() name of the default workspace} is "{@value} ", unless otherwise specified.
-     */
-    public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
-
-    /**
-     * The initial value for whether updates are allowed is "{@value} ", unless otherwise specified.
-     */
-    public static final boolean DEFAULT_UPDATES_ALLOWED = true;
-
-    protected static final String ROOT_NODE_UUID = "rootNodeUuid";
-    protected static final String SOURCE_NAME = "sourceName";
-    protected static final String DEFAULT_CACHE_POLICY = "defaultCachePolicy";
     protected static final String CACHE_CONFIGURATION_NAME = "cacheConfigurationName";
     protected static final String CACHE_FACTORY_JNDI_NAME = "cacheContainerJndiName";
-    protected static final String RETRY_LIMIT = "retryLimit";
-    protected static final String DEFAULT_WORKSPACE = "defaultWorkspace";
-    protected static final String PREDEFINED_WORKSPACE_NAMES = "predefinedWorkspaceNames";
-    protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
-    protected static final String UPDATES_ALLOWED = "updatesAllowed";
-
-    @Description( i18n = InfinispanConnectorI18n.class, value = "namePropertyDescription" )
-    @Label( i18n = InfinispanConnectorI18n.class, value = "namePropertyLabel" )
-    @Category( i18n = InfinispanConnectorI18n.class, value = "namePropertyCategory" )
-    private volatile String name;
-
-    @Description( i18n = InfinispanConnectorI18n.class, value = "rootNodeUuidPropertyDescription" )
-    @Label( i18n = InfinispanConnectorI18n.class, value = "rootNodeUuidPropertyLabel" )
-    @Category( i18n = InfinispanConnectorI18n.class, value = "rootNodeUuidPropertyCategory" )
-    private volatile UUID rootNodeUuid = UUID.fromString(DEFAULT_ROOT_NODE_UUID);
 
     @Description( i18n = InfinispanConnectorI18n.class, value = "cacheConfigurationNamePropertyDescription" )
     @Label( i18n = InfinispanConnectorI18n.class, value = "cacheConfigurationNamePropertyLabel" )
@@ -134,108 +101,12 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
     @Category( i18n = InfinispanConnectorI18n.class, value = "cacheContainerJndiNamePropertyCategory" )
     private volatile String cacheContainerJndiName;
 
-    @Description( i18n = InfinispanConnectorI18n.class, value = "retryLimitPropertyDescription" )
-    @Label( i18n = InfinispanConnectorI18n.class, value = "retryLimitPropertyLabel" )
-    @Category( i18n = InfinispanConnectorI18n.class, value = "retryLimitPropertyCategory" )
-    private volatile int retryLimit = DEFAULT_RETRY_LIMIT;
-
-    @Description( i18n = InfinispanConnectorI18n.class, value = "defaultWorkspaceNamePropertyDescription" )
-    @Label( i18n = InfinispanConnectorI18n.class, value = "defaultWorkspaceNamePropertyLabel" )
-    @Category( i18n = InfinispanConnectorI18n.class, value = "defaultWorkspaceNamePropertyCategory" )
-    private volatile String defaultWorkspace;
-
-    @Description( i18n = InfinispanConnectorI18n.class, value = "predefinedWorkspacesPropertyDescription" )
-    @Label( i18n = InfinispanConnectorI18n.class, value = "predefinedWorkspacesPropertyLabel" )
-    @Category( i18n = InfinispanConnectorI18n.class, value = "predefinedWorkspacesPropertyCategory" )
-    private volatile String[] predefinedWorkspaces = new String[] {};
-
-    @Description( i18n = InfinispanConnectorI18n.class, value = "updatesAllowedPropertyDescription" )
-    @Label( i18n = InfinispanConnectorI18n.class, value = "updatesAllowedPropertyLabel" )
-    @Category( i18n = InfinispanConnectorI18n.class, value = "updatesAllowedPropertyCategory" )
-    private volatile boolean updatesAllowed = DEFAULT_UPDATES_ALLOWED;
-
-    private volatile CachePolicy defaultCachePolicy;
-    private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(true, true, false, true, false);
-    private transient InfinispanRepository repository;
-    private transient Context jndiContext;
-    private transient RepositoryContext repositoryContext;
-
     /**
      * Create a repository source instance.
      */
     public InfinispanSource() {
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.RepositorySource#initialize(org.modeshape.graph.connector.RepositoryContext)
-     */
-    public void initialize( RepositoryContext context ) throws RepositorySourceException {
-        this.repositoryContext = context;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String getName() {
-        return this.name;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.RepositorySource#getCapabilities()
-     */
-    public RepositorySourceCapabilities getCapabilities() {
-        return capabilities;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.RepositorySource#getRetryLimit()
-     */
-    public int getRetryLimit() {
-        return retryLimit;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.RepositorySource#setRetryLimit(int)
-     */
-    public synchronized void setRetryLimit( int limit ) {
-        retryLimit = limit < 0 ? 0 : limit;
-    }
-
-    /**
-     * Set the name of this source
-     * 
-     * @param name the name for this source
-     */
-    public synchronized void setName( String name ) {
-        if (this.name == name || this.name != null && this.name.equals(name)) return; // unchanged
-        this.name = name;
-    }
-
-    /**
-     * Get the default cache policy for this source, or null if the global default cache policy should be used
-     * 
-     * @return the default cache policy, or null if this source has no explicit default cache policy
-     */
-    public CachePolicy getDefaultCachePolicy() {
-        return defaultCachePolicy;
-    }
-
-    /**
-     * @param defaultCachePolicy Sets defaultCachePolicy to the specified value.
-     */
-    public synchronized void setDefaultCachePolicy( CachePolicy defaultCachePolicy ) {
-        if (this.defaultCachePolicy == defaultCachePolicy || this.defaultCachePolicy != null
-            && this.defaultCachePolicy.equals(defaultCachePolicy)) return; // unchanged
-        this.defaultCachePolicy = defaultCachePolicy;
-    }
 
     /**
      * Get the name in JNDI of a {@link CacheContainer} instance that should be used to create the cache for this source.
@@ -330,143 +201,52 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
         this.cacheConfigurationName = cacheConfigurationName;
     }
 
-    /**
-     * Get the UUID of the root node for the cache. If the cache exists, this UUID is not used but is instead set to the UUID of
-     * the existing root node.
-     * 
-     * @return the UUID of the root node for the cache.
-     */
-    public String getRootNodeUuid() {
-        return this.rootNodeUuid.toString();
-    }
 
-    /**
-     * Get the UUID of the root node for the cache. If the cache exists, this UUID is not used but is instead set to the UUID of
-     * the existing root node.
-     * 
-     * @return the UUID of the root node for the cache.
-     */
-    public UUID getRootNodeUuidObject() {
-        return this.rootNodeUuid;
-    }
-
-    /**
-     * Set the UUID of the root node in this repository. If the cache exists, this UUID is not used but is instead set to the UUID
-     * of the existing root node.
-     * 
-     * @param rootNodeUuid the UUID of the root node for the cache, or null if the UUID should be randomly generated
-     */
-    public synchronized void setRootNodeUuid( String rootNodeUuid ) {
-        UUID uuid = null;
-        if (rootNodeUuid == null) uuid = UUID.randomUUID();
-        else uuid = UUID.fromString(rootNodeUuid);
-        if (this.rootNodeUuid.equals(uuid)) return; // unchanged
-        this.rootNodeUuid = uuid;
-    }
-
-    /**
-     * Get the name of the default workspace.
-     * 
-     * @return the name of the workspace that should be used by default; never null
-     */
-    public String getDefaultWorkspaceName() {
-        return defaultWorkspace;
-    }
-
-    /**
-     * Set the name of the workspace that should be used when clients don't specify a workspace.
-     * 
-     * @param nameOfDefaultWorkspace the name of the workspace that should be used by default, or null if the
-     *        {@link #DEFAULT_NAME_OF_DEFAULT_WORKSPACE default name} should be used
-     */
-    public synchronized void setDefaultWorkspaceName( String nameOfDefaultWorkspace ) {
-        this.defaultWorkspace = nameOfDefaultWorkspace != null ? nameOfDefaultWorkspace : DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
-    }
-
-    /**
-     * Gets the names of the workspaces that are available when this source is created.
-     * 
-     * @return the names of the workspaces that this source starts with, or null if there are no such workspaces
-     * @see #setPredefinedWorkspaceNames(String[])
-     * @see #setCreatingWorkspacesAllowed(boolean)
-     */
-    public synchronized String[] getPredefinedWorkspaceNames() {
-        String[] copy = new String[predefinedWorkspaces.length];
-        System.arraycopy(predefinedWorkspaces, 0, copy, 0, predefinedWorkspaces.length);
-        return copy;
-    }
-
-    /**
-     * Sets the names of the workspaces that are available when this source is created.
-     * 
-     * @param predefinedWorkspaceNames the names of the workspaces that this source should start with, or null if there are no
-     *        such workspaces
-     * @see #setCreatingWorkspacesAllowed(boolean)
-     * @see #getPredefinedWorkspaceNames()
-     */
-    public synchronized void setPredefinedWorkspaceNames( String[] predefinedWorkspaceNames ) {
-        if (predefinedWorkspaceNames != null && predefinedWorkspaceNames.length == 1) {
-            predefinedWorkspaceNames = predefinedWorkspaceNames[0].split("\\s*,\\s*");
-        }
-        this.predefinedWorkspaces = predefinedWorkspaceNames;
-    }
-
-    /**
-     * Get whether this source allows workspaces to be created dynamically.
-     * 
-     * @return true if this source allows workspaces to be created by clients, or false if the
-     *         {@link #getPredefinedWorkspaceNames() set of workspaces} is fixed
-     * @see #setPredefinedWorkspaceNames(String[])
-     * @see #getPredefinedWorkspaceNames()
-     * @see #setCreatingWorkspacesAllowed(boolean)
-     */
-    public boolean isCreatingWorkspacesAllowed() {
-        return capabilities.supportsCreatingWorkspaces();
-    }
-
-    /**
-     * Set whether this source allows workspaces to be created dynamically.
-     * 
-     * @param allowWorkspaceCreation true if this source allows workspaces to be created by clients, or false if the
-     *        {@link #getPredefinedWorkspaceNames() set of workspaces} is fixed
-     * @see #setPredefinedWorkspaceNames(String[])
-     * @see #getPredefinedWorkspaceNames()
-     * @see #isCreatingWorkspacesAllowed()
-     */
-    public synchronized void setCreatingWorkspacesAllowed( boolean allowWorkspaceCreation ) {
-        capabilities = new RepositorySourceCapabilities(true, capabilities.supportsUpdates(), false, allowWorkspaceCreation,
-                                                        capabilities.supportsReferences());
-    }
-
-    private CacheContainer createcacheContainer() {
-        CacheContainer cacheContainer;
-
-        String configName = getCacheConfigurationName();
-        if (configName == null) {
-            cacheContainer = new DefaultCacheManager();
-        } else {
-            /*
-            * First try treating the config name as a classpath resource, then as a file name.
-            */
-            InputStream configStream = getClass().getResourceAsStream(configName);
+    @Override
+    protected CacheContainer createCacheContainer() {
+        CacheContainer cacheContainer = null;
+        String jndiName = getCacheContainerJndiName();
+        if (jndiName != null && jndiName.trim().length() != 0) {
+            Object object = null;
             try {
-                if (configStream == null) {
-                    configStream = new FileInputStream(configName);
-                }
-            } catch (IOException ioe) {
-                I18n msg = InfinispanConnectorI18n.configFileNotFound;
-                throw new RepositorySourceException(this.name, msg.text(configName), ioe);
+                object = super.getContext().lookup(jndiName);
+                if (object != null) cacheContainer = (CacheContainer)object;
+            } catch (ClassCastException err) {
+                I18n msg = InfinispanConnectorI18n.objectFoundInJndiWasNotCacheContainer;
+                String className = object != null ? object.getClass().getName() : "null";
+                throw new RepositorySourceException(getName(), msg.text(jndiName, this.getName(), className), err);
+            } catch (Throwable err) {
+                if (err instanceof RuntimeException) throw (RuntimeException)err;
+                throw new RepositorySourceException(getName(), err);
             }
-
-            try {
-                cacheContainer = new DefaultCacheManager(configStream);
-            } catch (IOException ioe) {
-                I18n msg = InfinispanConnectorI18n.configFileNotValid;
-                throw new RepositorySourceException(this.name, msg.text(configName), ioe);
-            } finally {
+        } else {
+            String configName = getCacheConfigurationName();
+            if (configName == null) {
+                cacheContainer = new DefaultCacheManager();
+            } else {
+                /*
+                * First try treating the config name as a classpath resource, then as a file name.
+                */
+                InputStream configStream = getClass().getResourceAsStream(configName);
                 try {
-                    configStream.close();
+                    if (configStream == null) {
+                        configStream = new FileInputStream(configName);
+                    }
                 } catch (IOException ioe) {
+                    I18n msg = InfinispanConnectorI18n.configFileNotFound;
+                    throw new RepositorySourceException(super.getName(), msg.text(configName), ioe);
+                }
+
+                try {
+                    cacheContainer = new DefaultCacheManager(configStream);
+                } catch (IOException ioe) {
+                    I18n msg = InfinispanConnectorI18n.configFileNotValid;
+                    throw new RepositorySourceException(super.getName(), msg.text(configName), ioe);
+                } finally {
+                    try {
+                        configStream.close();
+                    } catch (IOException ioe) {
+                    }
                 }
             }
         }
@@ -474,99 +254,6 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
         return cacheContainer;
     }
 
-    final CacheContainer cacheContainer() {
-        return repository.getCacheContainer();
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.RepositorySource#getConnection()
-     */
-    public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
-        if (getName() == null) {
-            I18n msg = InfinispanConnectorI18n.propertyIsRequired;
-            throw new RepositorySourceException(getName(), msg.text("name"));
-        }
-        if (this.repository == null) {
-            Context context = getContext();
-            if (context == null) {
-                try {
-                    context = new InitialContext();
-                } catch (NamingException err) {
-                    throw new RepositorySourceException(name, err);
-                }
-            }
-
-            // Look for a cache manager in JNDI ...
-            CacheContainer cacheContainer = null;
-            String jndiName = getCacheContainerJndiName();
-            if (jndiName != null && jndiName.trim().length() != 0) {
-                Object object = null;
-                try {
-                    object = context.lookup(jndiName);
-                    if (object != null) cacheContainer = (CacheContainer)object;
-                } catch (ClassCastException err) {
-                    I18n msg = InfinispanConnectorI18n.objectFoundInJndiWasNotCacheContainer;
-                    String className = object != null ? object.getClass().getName() : "null";
-                    throw new RepositorySourceException(getName(), msg.text(jndiName, this.getName(), className), err);
-                } catch (Throwable err) {
-                    if (err instanceof RuntimeException) throw (RuntimeException)err;
-                    throw new RepositorySourceException(getName(), err);
-                }
-            }
-            if (cacheContainer == null) {
-                cacheContainer = createcacheContainer();
-            }
-
-            // Now create the repository ...
-            this.repository = new InfinispanRepository(this, cacheContainer);
-        }
-
-        return new Connection<InfinispanNode, InfinispanWorkspace>(this, repository);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.graph.connector.RepositorySource#close()
-     */
-    public synchronized void close() {
-        if (this.repository != null) {
-            try {
-                this.repository.shutdown();
-            } finally {
-                this.repository = null;
-            }
-        }
-    }
-
-    /**
-     * @return repositoryContext
-     */
-    public RepositoryContext getRepositoryContext() {
-        return repositoryContext;
-    }
-
-    protected Observer getObserver() {
-        return repositoryContext != null ? repositoryContext.getObserver() : null;
-    }
-
-    protected synchronized Context getContext() {
-        return this.jndiContext;
-    }
-
-    protected synchronized void setContext( Context context ) {
-        this.jndiContext = context;
-    }
-
-    public boolean areUpdatesAllowed() {
-        return this.updatesAllowed;
-    }
-
-    public void setUpdatesAllowed( boolean updatesAllowed ) {
-        this.updatesAllowed = updatesAllowed;
-    }
 
     /**
      * {@inheritDoc}
@@ -594,35 +281,11 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
     /**
      * {@inheritDoc}
      */
+    @Override
     public synchronized Reference getReference() {
-        String className = getClass().getName();
-        String managerClassName = this.getClass().getName();
-        Reference ref = new Reference(className, managerClassName, null);
-
-        ref.add(new StringRefAddr(SOURCE_NAME, getName()));
-        ref.add(new StringRefAddr(ROOT_NODE_UUID, getRootNodeUuid().toString()));
+        Reference ref = super.getReference();
         ref.add(new StringRefAddr(CACHE_FACTORY_JNDI_NAME, getCacheContainerJndiName()));
         ref.add(new StringRefAddr(CACHE_CONFIGURATION_NAME, getCacheConfigurationName()));
-        ref.add(new StringRefAddr(RETRY_LIMIT, Integer.toString(getRetryLimit())));
-        ref.add(new StringRefAddr(DEFAULT_WORKSPACE, getDefaultWorkspaceName()));
-        ref.add(new StringRefAddr(UPDATES_ALLOWED, String.valueOf(areUpdatesAllowed())));
-        ref.add(new StringRefAddr(ALLOW_CREATING_WORKSPACES, Boolean.toString(isCreatingWorkspacesAllowed())));
-        String[] workspaceNames = getPredefinedWorkspaceNames();
-        if (workspaceNames != null && workspaceNames.length != 0) {
-            ref.add(new StringRefAddr(PREDEFINED_WORKSPACE_NAMES, StringUtil.combineLines(workspaceNames)));
-        }
-        if (getDefaultCachePolicy() != null) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            CachePolicy policy = getDefaultCachePolicy();
-            try {
-                ObjectOutputStream oos = new ObjectOutputStream(baos);
-                oos.writeObject(policy);
-                ref.add(new BinaryRefAddr(DEFAULT_CACHE_POLICY, baos.toByteArray()));
-            } catch (IOException e) {
-                I18n msg = InfinispanConnectorI18n.errorSerializingCachePolicyInSource;
-                throw new RepositorySourceException(getName(), msg.text(policy.getClass().getName(), getName()), e);
-            }
-        }
         return ref;
     }
 
@@ -691,3 +354,4 @@ public class InfinispanSource implements BaseRepositorySource, ObjectFactory {
         return null;
     }
 }
+
