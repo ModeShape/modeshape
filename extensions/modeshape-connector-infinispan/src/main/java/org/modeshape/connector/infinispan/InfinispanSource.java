@@ -41,10 +41,6 @@ import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.ThreadSafe;
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> MODE-758 Add support for Remote Inifinispan Connector to HotRod
 import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.DefaultCacheManager;
@@ -55,7 +51,6 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.cache.CachePolicy;
-<<<<<<< HEAD
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySource;
@@ -67,34 +62,6 @@ import org.modeshape.graph.observe.Observer;
 
 /**
  * A repository source that uses an Infinispan instance to manage the content. This source is capable of using an existing
-<<<<<<< HEAD
- * {@link CacheContainer} or creating a new cache manager. This process is controlled entirely by the JavaBean properties of the
-=======
- * {@link CacheContainer} or creating a new cache container. This process is controlled entirely by the JavaBean properties of the
->>>>>>> Added new Base and Remote sources, updated dependent files.
- * InfinispanSource instance.
- * <p>
- * This source first attempts to find an existing cache manager found in {@link #getCacheContainerJndiName() JNDI} (or the
- * {@link DefaultCacheManager} if no such manager is available) and the {@link #getCacheConfigurationName() cache configuration
- * name} if supplied or the default configuration if not set.
- * </p>
- * <p>
- * Like other {@link RepositorySource} classes, instances of JBossCacheSource can be placed into JNDI and do support the creation
- * of {@link Referenceable JNDI referenceable} objects and resolution of references into JBossCacheSource.
- * </p>
-=======
-
-/**
- * This class remains for backwards compatibility only.
- * All code and configuration should be migrated to {@link DefaultInfinispanSource}
->>>>>>> Moved InifinispanSource to DefaultInfinispanSource, replaced
-=======
-import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.connector.base.BaseRepositorySource;
-
-/**
- * A repository source that uses an Infinispan instance to manage the content. This source is capable of using an existing
  * {@link CacheContainer} or creating a new cache container. This process is controlled entirely by the JavaBean properties of the
  * InfinispanSource instance.
  * <p>
@@ -106,18 +73,11 @@ import org.modeshape.graph.connector.base.BaseRepositorySource;
  * Like other {@link RepositorySource} classes, instances of JBossCacheSource can be placed into JNDI and do support the creation
  * of {@link Referenceable JNDI referenceable} objects and resolution of references into JBossCacheSource.
  * </p>
->>>>>>> MODE-758 Add support for Remote Inifinispan Connector to HotRod
  */
 @ThreadSafe
 public class InfinispanSource  extends BaseInfinispanSource implements BaseRepositorySource, ObjectFactory {
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     private static final long serialVersionUID = 2L;
-=======
-    private static final long serialVersionUID = 1L;
->>>>>>> MODE-758 Add support for Remote Inifinispan Connector to HotRod
-
     protected static final String CACHE_CONFIGURATION_NAME = "cacheConfigurationName";
     protected static final String CACHE_FACTORY_JNDI_NAME = "cacheContainerJndiName";
 
@@ -139,7 +99,6 @@ public class InfinispanSource  extends BaseInfinispanSource implements BaseRepos
 
 
     /**
-<<<<<<< HEAD
      * Get the name in JNDI of a {@link CacheContainer} instance that should be used to create the cache for this source.
      * <p>
      * This source first attempts to find a cache instance using the {@link CacheContainer} found in
@@ -150,18 +109,6 @@ public class InfinispanSource  extends BaseInfinispanSource implements BaseRepos
      * @return the JNDI name of the {@link CacheContainer} instance that should be used, or null if the
      *         {@link DefaultCacheManager} should be used if a cache is to be created
      * @see #setCacheContainerJndiName(String)
-=======
-     * Get the name in JNDI of a {@link cacheContainer} instance that should be used to create the cache for this source.
-     * <p>
-     * This source first attempts to find a cache instance using the {@link cacheContainer} found in
-     * {@link #getCacheContainerJndiName() JNDI} (or the {@link DefaultCacheManager} if no such manager is available) and the
-     * {@link #getCacheConfigurationName() cache configuration name} if supplied or the default configuration if not set.
-     * </p>
-     *
-     * @return the JNDI name of the {@link cacheContainer} instance that should be used, or null if the {@link DefaultCacheManager}
-     *         should be used if a cache is to be created
-     * @see #setcacheContainerJndiName(String)
->>>>>>> MODE-758 Add support for Remote Inifinispan Connector to HotRod
      * @see #getCacheConfigurationName()
      */
     public String getCacheContainerJndiName() {
@@ -169,7 +116,6 @@ public class InfinispanSource  extends BaseInfinispanSource implements BaseRepos
     }
 
     /**
-<<<<<<< HEAD
      * Set the name in JNDI of a {@link CacheContainer} instance that should be used to obtain the {@link Cache} instance used by
      * this source.
      * <p>
@@ -181,19 +127,6 @@ public class InfinispanSource  extends BaseInfinispanSource implements BaseRepos
      * @param jndiName the JNDI name of the {@link CacheContainer} instance that should be used, or null if the
      *        {@link DefaultCacheManager} should be used if a cache is to be created
      * @see #setCacheContainerJndiName(String)
-=======
-     * Set the name in JNDI of a {@link cacheContainer} instance that should be used to obtain the {@link Cache} instance used by
-     * this source.
-     * <p>
-     * This source first attempts to find a cache instance using the {@link cacheContainer} found in
-     * {@link #getCacheContainerJndiName() JNDI} (or the {@link DefaultCacheManager} if no such manager is available) and the
-     * {@link #getCacheConfigurationName() cache configuration name} if supplied or the default configuration if not set.
-     * </p>
-     *
-     * @param jndiName the JNDI name of the {@link cacheContainer} instance that should be used, or null if the
-     *        {@link DefaultCacheManager} should be used if a cache is to be created
-     * @see #setcacheContainerJndiName(String)
->>>>>>> MODE-758 Add support for Remote Inifinispan Connector to HotRod
      * @see #getCacheConfigurationName()
      */
     public synchronized void setCacheContainerJndiName( String jndiName ) {
@@ -222,7 +155,6 @@ public class InfinispanSource  extends BaseInfinispanSource implements BaseRepos
 
     /**
      * Get the name of the configuration that should be used if a {@link Cache cache} is to be created using the
-<<<<<<< HEAD
      * {@link CacheContainer} found in JNDI or the {@link DefaultCacheManager} if needed.
      * <p>
      * This source first attempts to find a cache instance using the {@link CacheContainer} found in
@@ -234,19 +166,6 @@ public class InfinispanSource  extends BaseInfinispanSource implements BaseRepos
      *         configuration should be used
      * @see #setCacheConfigurationName(String)
      * @see #getCacheContainerJndiName()
-=======
-     * {@link cacheContainer} found in JNDI or the {@link DefaultCacheManager} if needed.
-     * <p>
-     * This source first attempts to find a cache instance using the {@link cacheContainer} found in
-     * {@link #getCacheContainerJndiName() JNDI} (or the {@link DefaultCacheManager} if no such manager is available) and the
-     * {@link #getCacheConfigurationName() cache configuration name} if supplied or the default configuration if not set.
-     * </p>
-     *
-     * @return the name of the configuration that should be passed to the {@link cacheContainer}, or null if the default
-     *         configuration should be used
-     * @see #setCacheConfigurationName(String)
-     * @see #getcacheContainerJndiName()
->>>>>>> MODE-758 Add support for Remote Inifinispan Connector to HotRod
      */
     public String getCacheConfigurationName() {
         return cacheConfigurationName;
@@ -254,7 +173,6 @@ public class InfinispanSource  extends BaseInfinispanSource implements BaseRepos
 
     /**
      * Get the name of the configuration that should be used if a {@link Cache cache} is to be created using the
-<<<<<<< HEAD
      * {@link CacheContainer} found in JNDI or the {@link DefaultCacheManager} if needed.
      * <p>
      * This source first attempts to find a cache instance using the {@link CacheContainer} found in
@@ -266,19 +184,6 @@ public class InfinispanSource  extends BaseInfinispanSource implements BaseRepos
      *        the default configuration should be used
      * @see #getCacheConfigurationName()
      * @see #getCacheContainerJndiName()
-=======
-     * {@link cacheContainer} found in JNDI or the {@link DefaultCacheManager} if needed.
-     * <p>
-     * This source first attempts to find a cache instance using the {@link cacheContainer} found in
-     * {@link #getcacheContainerJndiName() JNDI} (or the {@link DefaultCacheManager} if no such manager is available) and the
-     * {@link #getCacheConfigurationName() cache configuration name} if supplied or the default configuration if not set.
-     * </p>
-     *
-     * @param cacheConfigurationName the name of the configuration that should be passed to the {@link cacheContainer}, or null if
-     *        the default configuration should be used
-     * @see #getCacheConfigurationName()
-     * @see #getcacheContainerJndiName()
->>>>>>> MODE-758 Add support for Remote Inifinispan Connector to HotRod
      */
     public synchronized void setCacheConfigurationName( String cacheConfigurationName ) {
         if (this.cacheConfigurationName == cacheConfigurationName || this.cacheConfigurationName != null
@@ -439,14 +344,4 @@ public class InfinispanSource  extends BaseInfinispanSource implements BaseRepos
         return null;
     }
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
-}
->>>>>>> Moved InifinispanSource to DefaultInfinispanSource, replaced
-=======
->>>>>>> MODE-758 Add support for Remote Inifinispan Connector to HotRod
-=======
-
->>>>>>> Fixed EOL issue
