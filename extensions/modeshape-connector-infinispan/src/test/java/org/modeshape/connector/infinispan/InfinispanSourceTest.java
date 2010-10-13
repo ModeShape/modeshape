@@ -56,7 +56,7 @@ import org.modeshape.graph.connector.RepositoryContext;
 public class InfinispanSourceTest {
 
     private ExecutionContext context;
-    private InfinispanSource source;
+    private DefaultInfinispanSource source;
     private RepositoryConnection connection;
     private String validName;
     private String validCacheConfigurationName;
@@ -78,7 +78,7 @@ public class InfinispanSourceTest {
         validCacheConfigurationName = "cache config name";
         validCacheManagerJndiName = "cache factory jndi name";
         validRootNodeUuid = UUID.randomUUID();
-        source = new InfinispanSource();
+        source = new DefaultInfinispanSource();
 
         // Set up the fake JNDI context ...
         source.setContext(jndiContext);
@@ -109,7 +109,7 @@ public class InfinispanSourceTest {
 
     @Test
     public void shouldHaveNullSourceNameUponConstruction() {
-        source = new InfinispanSource();
+        source = new DefaultInfinispanSource();
         assertThat(source.getName(), is(nullValue()));
     }
 
@@ -130,7 +130,7 @@ public class InfinispanSourceTest {
 
     @Test
     public void shouldHaveDefaultRetryLimit() {
-        assertThat(source.getRetryLimit(), is(InfinispanSource.DEFAULT_RETRY_LIMIT));
+        assertThat(source.getRetryLimit(), is(DefaultInfinispanSource.DEFAULT_RETRY_LIMIT));
     }
 
     @Test
@@ -185,8 +185,8 @@ public class InfinispanSourceTest {
         source.setRootNodeUuid(rootNodeUuid != null ? rootNodeUuid.toString() : null);
 
         Reference ref = source.getReference();
-        assertThat(ref.getClassName(), is(InfinispanSource.class.getName()));
-        assertThat(ref.getFactoryClassName(), is(InfinispanSource.class.getName()));
+        assertThat(ref.getClassName(), is(DefaultInfinispanSource.class.getName()));
+        assertThat(ref.getFactoryClassName(), is(DefaultInfinispanSource.class.getName()));
 
         Map<String, Object> refAttributes = new HashMap<String, Object>();
         Enumeration<RefAddr> enumeration = ref.getAll();
@@ -196,11 +196,11 @@ public class InfinispanSourceTest {
         }
 
         // Recreate the object, use a newly constructed source ...
-        ObjectFactory factory = new InfinispanSource();
+        ObjectFactory factory = new DefaultInfinispanSource();
         Name name = mock(Name.class);
         Context context = mock(Context.class);
         Hashtable<?, ?> env = new Hashtable<Object, Object>();
-        InfinispanSource recoveredSource = (InfinispanSource)factory.getObjectInstance(ref, name, context, env);
+        DefaultInfinispanSource recoveredSource = (DefaultInfinispanSource)factory.getObjectInstance(ref, name, context, env);
         assertThat(recoveredSource, is(notNullValue()));
 
         assertThat(recoveredSource.getName(), is(source.getName()));

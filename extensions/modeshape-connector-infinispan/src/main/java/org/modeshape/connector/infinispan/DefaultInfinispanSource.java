@@ -3,8 +3,8 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * See the AUTHORS.txt file in the distribution for a full listing of
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
@@ -23,8 +23,24 @@
  */
 package org.modeshape.connector.infinispan;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import javax.naming.BinaryRefAddr;
+import javax.naming.Context;
+import javax.naming.RefAddr;
+import javax.naming.Reference;
+import javax.naming.Referenceable;
+import javax.naming.StringRefAddr;
+import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.ThreadSafe;
-<<<<<<< HEAD
 import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.DefaultCacheManager;
@@ -35,22 +51,13 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.cache.CachePolicy;
-import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.base.BaseRepositorySource;
-import org.modeshape.graph.connector.base.Connection;
-import org.modeshape.graph.observe.Observer;
 
 /**
  * A repository source that uses an Infinispan instance to manage the content. This source is capable of using an existing
-<<<<<<< HEAD
- * {@link CacheContainer} or creating a new cache manager. This process is controlled entirely by the JavaBean properties of the
-=======
  * {@link CacheContainer} or creating a new cache container. This process is controlled entirely by the JavaBean properties of the
->>>>>>> Added new Base and Remote sources, updated dependent files.
  * InfinispanSource instance.
  * <p>
  * This source first attempts to find an existing cache manager found in {@link #getCacheContainerJndiName() JNDI} (or the
@@ -61,19 +68,11 @@ import org.modeshape.graph.observe.Observer;
  * Like other {@link RepositorySource} classes, instances of JBossCacheSource can be placed into JNDI and do support the creation
  * of {@link Referenceable JNDI referenceable} objects and resolution of references into JBossCacheSource.
  * </p>
-=======
-
-/**
- * This class remains for backwards compatibility only.
- * All code and configuration should be migrated to {@link DefaultInfinispanSource}
->>>>>>> Moved InifinispanSource to DefaultInfinispanSource, replaced
  */
 @ThreadSafe
-@Deprecated
-public class InfinispanSource extends DefaultInfinispanSource {
+public class DefaultInfinispanSource  extends BaseInfinispanSource implements BaseRepositorySource, ObjectFactory {
 
-<<<<<<< HEAD
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 1L;
 
     protected static final String CACHE_CONFIGURATION_NAME = "cacheConfigurationName";
     protected static final String CACHE_FACTORY_JNDI_NAME = "cacheContainerJndiName";
@@ -91,21 +90,21 @@ public class InfinispanSource extends DefaultInfinispanSource {
     /**
      * Create a repository source instance.
      */
-    public InfinispanSource() {
+    public DefaultInfinispanSource() {
     }
 
 
     /**
-     * Get the name in JNDI of a {@link CacheContainer} instance that should be used to create the cache for this source.
+     * Get the name in JNDI of a {@link cacheContainer} instance that should be used to create the cache for this source.
      * <p>
-     * This source first attempts to find a cache instance using the {@link CacheContainer} found in
+     * This source first attempts to find a cache instance using the {@link cacheContainer} found in
      * {@link #getCacheContainerJndiName() JNDI} (or the {@link DefaultCacheManager} if no such manager is available) and the
      * {@link #getCacheConfigurationName() cache configuration name} if supplied or the default configuration if not set.
      * </p>
-     * 
-     * @return the JNDI name of the {@link CacheContainer} instance that should be used, or null if the
-     *         {@link DefaultCacheManager} should be used if a cache is to be created
-     * @see #setCacheContainerJndiName(String)
+     *
+     * @return the JNDI name of the {@link cacheContainer} instance that should be used, or null if the {@link DefaultCacheManager}
+     *         should be used if a cache is to be created
+     * @see #setcacheContainerJndiName(String)
      * @see #getCacheConfigurationName()
      */
     public String getCacheContainerJndiName() {
@@ -113,17 +112,17 @@ public class InfinispanSource extends DefaultInfinispanSource {
     }
 
     /**
-     * Set the name in JNDI of a {@link CacheContainer} instance that should be used to obtain the {@link Cache} instance used by
+     * Set the name in JNDI of a {@link cacheContainer} instance that should be used to obtain the {@link Cache} instance used by
      * this source.
      * <p>
-     * This source first attempts to find a cache instance using the {@link CacheContainer} found in
+     * This source first attempts to find a cache instance using the {@link cacheContainer} found in
      * {@link #getCacheContainerJndiName() JNDI} (or the {@link DefaultCacheManager} if no such manager is available) and the
      * {@link #getCacheConfigurationName() cache configuration name} if supplied or the default configuration if not set.
      * </p>
-     * 
-     * @param jndiName the JNDI name of the {@link CacheContainer} instance that should be used, or null if the
+     *
+     * @param jndiName the JNDI name of the {@link cacheContainer} instance that should be used, or null if the
      *        {@link DefaultCacheManager} should be used if a cache is to be created
-     * @see #setCacheContainerJndiName(String)
+     * @see #setcacheContainerJndiName(String)
      * @see #getCacheConfigurationName()
      */
     public synchronized void setCacheContainerJndiName( String jndiName ) {
@@ -152,17 +151,17 @@ public class InfinispanSource extends DefaultInfinispanSource {
 
     /**
      * Get the name of the configuration that should be used if a {@link Cache cache} is to be created using the
-     * {@link CacheContainer} found in JNDI or the {@link DefaultCacheManager} if needed.
+     * {@link cacheContainer} found in JNDI or the {@link DefaultCacheManager} if needed.
      * <p>
-     * This source first attempts to find a cache instance using the {@link CacheContainer} found in
+     * This source first attempts to find a cache instance using the {@link cacheContainer} found in
      * {@link #getCacheContainerJndiName() JNDI} (or the {@link DefaultCacheManager} if no such manager is available) and the
      * {@link #getCacheConfigurationName() cache configuration name} if supplied or the default configuration if not set.
      * </p>
-     * 
-     * @return the name of the configuration that should be passed to the {@link CacheContainer}, or null if the default
+     *
+     * @return the name of the configuration that should be passed to the {@link cacheContainer}, or null if the default
      *         configuration should be used
      * @see #setCacheConfigurationName(String)
-     * @see #getCacheContainerJndiName()
+     * @see #getcacheContainerJndiName()
      */
     public String getCacheConfigurationName() {
         return cacheConfigurationName;
@@ -170,17 +169,17 @@ public class InfinispanSource extends DefaultInfinispanSource {
 
     /**
      * Get the name of the configuration that should be used if a {@link Cache cache} is to be created using the
-     * {@link CacheContainer} found in JNDI or the {@link DefaultCacheManager} if needed.
+     * {@link cacheContainer} found in JNDI or the {@link DefaultCacheManager} if needed.
      * <p>
-     * This source first attempts to find a cache instance using the {@link CacheContainer} found in
-     * {@link #getCacheContainerJndiName() JNDI} (or the {@link DefaultCacheManager} if no such manager is available) and the
+     * This source first attempts to find a cache instance using the {@link cacheContainer} found in
+     * {@link #getcacheContainerJndiName() JNDI} (or the {@link DefaultCacheManager} if no such manager is available) and the
      * {@link #getCacheConfigurationName() cache configuration name} if supplied or the default configuration if not set.
      * </p>
-     * 
-     * @param cacheConfigurationName the name of the configuration that should be passed to the {@link CacheContainer}, or null if
+     *
+     * @param cacheConfigurationName the name of the configuration that should be passed to the {@link cacheContainer}, or null if
      *        the default configuration should be used
      * @see #getCacheConfigurationName()
-     * @see #getCacheContainerJndiName()
+     * @see #getcacheContainerJndiName()
      */
     public synchronized void setCacheConfigurationName( String cacheConfigurationName ) {
         if (this.cacheConfigurationName == cacheConfigurationName || this.cacheConfigurationName != null
@@ -248,8 +247,8 @@ public class InfinispanSource extends DefaultInfinispanSource {
     @Override
     public boolean equals( Object obj ) {
         if (obj == this) return true;
-        if (obj instanceof InfinispanSource) {
-            InfinispanSource that = (InfinispanSource)obj;
+        if (obj instanceof DefaultInfinispanSource) {
+            DefaultInfinispanSource that = (DefaultInfinispanSource)obj;
             if (this.getName() == null) {
                 if (that.getName() != null) return false;
             } else {
@@ -323,7 +322,7 @@ public class InfinispanSource extends DefaultInfinispanSource {
             }
 
             // Create the source instance ...
-            InfinispanSource source = new InfinispanSource();
+            DefaultInfinispanSource source = new DefaultInfinispanSource();
             if (sourceName != null) source.setName(sourceName);
             if (rootNodeUuidString != null) source.setRootNodeUuid(rootNodeUuidString);
             if (cacheContainerJndiName != null) source.setCacheContainerJndiName(cacheContainerJndiName);
@@ -341,7 +340,3 @@ public class InfinispanSource extends DefaultInfinispanSource {
         return null;
     }
 }
-
-=======
-}
->>>>>>> Moved InifinispanSource to DefaultInfinispanSource, replaced

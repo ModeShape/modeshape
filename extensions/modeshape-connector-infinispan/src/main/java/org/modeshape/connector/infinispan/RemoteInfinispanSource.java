@@ -24,48 +24,30 @@
 package org.modeshape.connector.infinispan;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import javax.naming.BinaryRefAddr;
 import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.Name;
-import javax.naming.NamingException;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.ThreadSafe;
-import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.DefaultCacheManager;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
 import org.modeshape.common.annotation.Label;
-import org.modeshape.common.i18n.I18n;
-import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.cache.CachePolicy;
-import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.graph.connector.RepositorySourceCapabilities;
-import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.base.BaseRepositorySource;
-import org.modeshape.graph.connector.base.Connection;
-import org.modeshape.graph.observe.Observer;
 
 /**
  * A repository source that uses an Infinispan instance to manage the content. This source is capable of using an existing
@@ -85,7 +67,7 @@ import org.modeshape.graph.observe.Observer;
 public class RemoteInfinispanSource extends BaseInfinispanSource implements BaseRepositorySource, ObjectFactory {
     private static final long serialVersionUID = 1L;
 
-    protected static final String CACHE_FACTORY_JNDI_NAME = "remoteInfinispanServerList";
+    protected static final String INFINISPAN_SERVER_LIST = "remoteInfinispanServerList";
 
     @Description( i18n = InfinispanConnectorI18n.class, value = "remoteInfinispanServerListPropertyDescription" )
     @Label( i18n = InfinispanConnectorI18n.class, value = "remoteInfinispanServerListPropertyLabel" )
@@ -121,12 +103,82 @@ public class RemoteInfinispanSource extends BaseInfinispanSource implements Base
 
     @Override
     protected CacheContainer createCacheContainer() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if(this.getRemoteInfinispanServerList() == null || this.getRemoteInfinispanServerList() == "")
+            throw new IllegalArgumentException("Infinispan Server List cannot be null.");
+        CacheContainer container = new RemoteCacheManager(this.getRemoteInfinispanServerList());
+        return container;
+    }
+/**
+     * {@inheritDoc}
+     */
+    @Override
+    public synchronized Reference getReference() {
+        Reference ref = super.getReference();
+        ref.add(new StringRefAddr(INFINISPAN_SERVER_LIST, getRemoteInfinispanServerList()));
+        return ref;
     }
 
-    @Override
-    public Object getObjectInstance(Object obj, Name name, Context nameCtx, Hashtable<?, ?> environment) throws Exception {
-        throw new UnsupportedOperationException("Not supported yet.");
+    /**
+     * {@inheritDoc}
+     */
+    public Object getObjectInstance( Object obj,
+                                     javax.naming.Name name,
+                                     Context nameCtx,
+                                     Hashtable<?, ?> environment ) throws Exception {
+        if (obj instanceof Reference) {
+            Map<String, Object> values = new HashMap<String, Object>();
+            Reference ref = (Reference)obj;
+            Enumeration<?> en = ref.getAll();
+            while (en.hasMoreElements()) {
+                RefAddr subref = (RefAddr)en.nextElement();
+                if (subref instanceof StringRefAddr) {
+                    String key = subref.getType();
+                    Object value = subref.getContent();
+                    if (value != null) values.put(key, value.toString());
+                } else if (subref instanceof BinaryRefAddr) {
+                    String key = subref.getType();
+                    Object value = subref.getContent();
+                    if (value instanceof byte[]) {
+                        // Deserialize ...
+                        ByteArrayInputStream bais = new ByteArrayInputStream((byte[])value);
+                        ObjectInputStream ois = new ObjectInputStream(bais);
+                        value = ois.readObject();
+                        values.put(key, value);
+                    }
+                }
+            }
+            String sourceName = (String)values.get(SOURCE_NAME);
+            String rootNodeUuidString = (String)values.get(ROOT_NODE_UUID);
+            String remoteServerList = (String)values.get(INFINISPAN_SERVER_LIST);
+            Object defaultCachePolicy = values.get(DEFAULT_CACHE_POLICY);
+            String retryLimit = (String)values.get(RETRY_LIMIT);
+            String defaultWorkspace = (String)values.get(DEFAULT_WORKSPACE);
+            String createWorkspaces = (String)values.get(ALLOW_CREATING_WORKSPACES);
+            String updatesAllowed = (String)values.get(UPDATES_ALLOWED);
+
+            String combinedWorkspaceNames = (String)values.get(PREDEFINED_WORKSPACE_NAMES);
+            String[] workspaceNames = null;
+            if (combinedWorkspaceNames != null) {
+                List<String> paths = StringUtil.splitLines(combinedWorkspaceNames);
+                workspaceNames = paths.toArray(new String[paths.size()]);
+            }
+
+            // Create the source instance ...
+            RemoteInfinispanSource source = new RemoteInfinispanSource();
+            if (sourceName != null) source.setName(sourceName);
+            if (rootNodeUuidString != null) source.setRootNodeUuid(rootNodeUuidString);
+            if (remoteServerList != null) source.setRemoteInfinispanServerList(remoteInfinispanServerList);
+            if (defaultCachePolicy instanceof CachePolicy) {
+                source.setDefaultCachePolicy((CachePolicy)defaultCachePolicy);
+            }
+            if (retryLimit != null) source.setRetryLimit(Integer.parseInt(retryLimit));
+            if (defaultWorkspace != null) source.setDefaultWorkspaceName(defaultWorkspace);
+            if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
+            if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
+            if (updatesAllowed != null) source.setUpdatesAllowed(Boolean.valueOf(updatesAllowed));
+            return source;
+        }
+        return null;
     }
 
 }

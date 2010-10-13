@@ -24,7 +24,7 @@ public class InfinispanConnectorReadableTest extends ReadableConnectorTest {
     @Override
     protected RepositorySource setUpSource() throws NamingException {
         String[] predefinedWorkspaceNames = new String[] {"aircraft", "cars"};
-        InfinispanSource source = new InfinispanSource();
+        DefaultInfinispanSource source = new DefaultInfinispanSource();
         source.setName("Test Repository");
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);

@@ -52,7 +52,7 @@ public class PersistentInfinispanConnectorTest {
     protected static final String JNDI_NAME = "java/MyCacheManager";
 
     private ExecutionContext context;
-    private InfinispanSource source;
+    private DefaultInfinispanSource source;
     private RepositoryContext mockRepositoryContext;
     private Graph graph;
 
@@ -64,7 +64,7 @@ public class PersistentInfinispanConnectorTest {
         when(mockRepositoryContext.getExecutionContext()).thenReturn(context);
 
         String[] predefinedWorkspaceNames = new String[] {"default"};
-        source = new InfinispanSource();
+        source = new DefaultInfinispanSource();
         source.setName("Test Repository");
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);

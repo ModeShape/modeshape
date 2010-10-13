@@ -23,7 +23,7 @@ public class InfinispanConnectorWritableTest extends WritableConnectorTest {
     @Override
     protected RepositorySource setUpSource() throws NamingException {
         String[] predefinedWorkspaceNames = new String[] {"default"};
-        InfinispanSource source = new InfinispanSource();
+        DefaultInfinispanSource source = new DefaultInfinispanSource();
         source.setName("Test Repository");
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
