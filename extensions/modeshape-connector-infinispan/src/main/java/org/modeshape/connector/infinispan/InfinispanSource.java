@@ -440,9 +440,13 @@ public class InfinispanSource  extends BaseInfinispanSource implements BaseRepos
     }
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 }
 >>>>>>> Moved InifinispanSource to DefaultInfinispanSource, replaced
 =======
 >>>>>>> MODE-758 Add support for Remote Inifinispan Connector to HotRod
+=======
+
+>>>>>>> Fixed EOL issue
