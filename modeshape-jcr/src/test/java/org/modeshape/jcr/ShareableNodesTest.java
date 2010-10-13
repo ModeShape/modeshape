@@ -49,6 +49,7 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinitionTemplate;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
+import javax.jcr.version.Version;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,6 +66,8 @@ public class ShareableNodesTest {
     protected static final String CAR_CARRIER_TYPENAME = "car:Carrier";
     protected static final String CAR_TYPENAME = "car:Car";
     protected static final String MIX_SHAREABLE = "mix:shareable";
+    protected static final String MIX_VERSIONABLE = "mix:versionable";
+    protected static final String JCR_BASEVERSION = "jcr:baseVersion";
 
     protected static URI resourceUri( String name ) throws URISyntaxException {
         return resourceUrl(name).toURI();
@@ -411,6 +414,39 @@ public class ShareableNodesTest {
         checkImportedContent(session2);
     }
 
+    @Test
+    public void shouldAllowingCreatingShareOfVersionedNode() throws RepositoryException {
+        String originalPath = "/Cars/Utility";
+        // Make the original versionable ...
+        Node original = makeVersionable(originalPath);
+        session.save();
+        Version version1 = checkin(originalPath);
+        Node baseVersion = findBaseVersion(originalPath);
+        System.out.println("original     => " + original);
+        System.out.println("baseVersion  => " + baseVersion);
+
+        // Make the original a shareable node ...
+        checkout(originalPath);
+        String sharedPath = "/NewArea/SharedUtility";
+        Node original2 = makeShareable(originalPath);
+        session.save();
+        Version version2 = checkin(originalPath);
+        Node baseVersion2 = findBaseVersion(original2);
+        System.out.println("original2    => " + original2);
+        System.out.println("baseVersion2 => " + baseVersion2);
+
+        // Now create the share ...
+        Node sharedNode = makeShare(originalPath, sharedPath);
+        assertSharedSetIs(original2, originalPath, sharedPath);
+        assertSharedSetIs(sharedNode, originalPath, sharedPath);
+        System.out.println("sharedNode => " + sharedNode);
+
+        // Now copy a subgraph that contains the shared area ...
+        session.getWorkspace().copy("/NewArea", "/OtherNewArea");
+        Node baseVersion3 = findBaseVersion(originalPath);
+        System.out.println("baseVersion3 => " + baseVersion3);
+    }
+
     protected void createExportableContent() throws RepositoryException {
         String originalPath = "/Cars/Utility";
         String sharedPath = "/NewArea/SharedUtility";
@@ -493,6 +529,22 @@ public class ShareableNodesTest {
         return node;
     }
 
+    protected Node makeVersionable( String absPath ) throws RepositoryException {
+        Node node = session.getNode(absPath);
+        if (!node.isNodeType(MIX_VERSIONABLE)) {
+            node.addMixin(MIX_VERSIONABLE);
+        }
+        return node;
+    }
+
+    protected Version checkin( String absPath ) throws RepositoryException {
+        return session.getWorkspace().getVersionManager().checkin(absPath);
+    }
+
+    protected void checkout( String absPath ) throws RepositoryException {
+        session.getWorkspace().getVersionManager().checkout(absPath);
+    }
+
     protected void verifyShare( Node original,
                                 Node sharedNode ) throws RepositoryException {
         // The identity, properties and children match the original node ...
@@ -505,6 +557,16 @@ public class ShareableNodesTest {
         assertThat(sharedNode.isNodeType(MIX_SHAREABLE), is(true));
         assertSharedSetIncludes(original, original.getPath(), sharedNode.getPath());
         assertSharedSetIncludes(sharedNode, original.getPath(), sharedNode.getPath());
+    }
+
+    protected Node findBaseVersion( Node node ) throws RepositoryException {
+        String baseVersionUuid = node.getProperty(JCR_BASEVERSION).getString();
+        return session.getNodeByIdentifier(baseVersionUuid);
+    }
+
+    protected Node findBaseVersion( String path ) throws RepositoryException {
+        Node node = session.getNode(path);
+        return findBaseVersion(node);
     }
 
     protected void assertSharedSetIs( Node node,
