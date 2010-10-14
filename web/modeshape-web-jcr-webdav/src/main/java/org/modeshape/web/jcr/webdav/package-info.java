@@ -29,6 +29,9 @@
  * <li>{@link ModeShapeWebdavServlet} - the servlet class that handles requests for WebDAV URIs</li>
  * <li>{@link ModeShapeWebdavStore} - the implementation class that maps WebDAV operations to JCR operations</li>
  * <li>{@link RequestResolver} - the contract for mapping an incoming URI to a repository, workspace, and path within the workspace</li>
+ * <li>{@link SingleRepositoryRequestResolver} - the {@link RequestResolver} that maps URIs into a path within a single, hard-coded repository and workspace (defined by the configuration)</li>
+ * <li>{@link MultiRepositoryRequestResolver} - the {@link RequestResolver} that maps URIs into a repository name, workspace name, and path</li>
+ * <li>{@link ResolvedRequest} - the representation of a repository name, workspace name, and path as output by the {@link RequestResolver}</li>
  * </ul>
  * </p>
  */
