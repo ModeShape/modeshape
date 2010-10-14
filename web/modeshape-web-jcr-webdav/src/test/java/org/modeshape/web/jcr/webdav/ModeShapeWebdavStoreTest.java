@@ -1,7 +1,6 @@
 package org.modeshape.web.jcr.webdav;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
@@ -18,7 +17,6 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpServletRequest;
-import net.sf.webdav.ITransaction;
 import net.sf.webdav.IWebdavStore;
 import net.sf.webdav.StoredObject;
 import org.junit.After;
@@ -37,7 +35,7 @@ public class ModeShapeWebdavStoreTest {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     private IWebdavStore store;
-    private ITransaction tx;
+    private JcrSessionTransaction tx;
     private ServletContextListener contextListener = new ModeShapeJcrDeployer();
     private Session session;
     private String repositoryName = "mode:repository";
@@ -61,11 +59,11 @@ public class ModeShapeWebdavStoreTest {
         when(request.isUserInRole("readwrite")).thenReturn(true);
         when(context.getInitParameter(RepositoryFactory.PROVIDER_KEY)).thenReturn(FactoryRepositoryProvider.class.getName());
         when(context.getInitParameter(FactoryRepositoryProvider.JCR_URL)).thenReturn("file:///configRepository.xml");
-        when(context.getInitParameter(DefaultRequestResolver.INIT_REPOSITORY_NAME)).thenReturn("mode:repository");
-        when(context.getInitParameter(DefaultRequestResolver.INIT_WORKSPACE_NAME)).thenReturn("default");
+        when(context.getInitParameter(SingleRepositoryRequestResolver.INIT_REPOSITORY_NAME)).thenReturn("mode:repository");
+        when(context.getInitParameter(SingleRepositoryRequestResolver.INIT_WORKSPACE_NAME)).thenReturn("default");
         when(event.getServletContext()).thenReturn(context);
 
-        RequestResolver uriResolver = new DefaultRequestResolver();
+        RequestResolver uriResolver = new SingleRepositoryRequestResolver();
         uriResolver.initialize(context);
         store = new ModeShapeWebdavStore(uriResolver);
 
@@ -75,10 +73,9 @@ public class ModeShapeWebdavStoreTest {
 
         session = RepositoryFactory.getSession(request, repositoryName, workspaceName);
 
-        tx = store.begin(principal);
-        
-        Session otherSession = ((JcrSessionTransaction)tx).session();
-        assertThat(session, not(otherSession));
+        tx = (JcrSessionTransaction)store.begin(principal);
+
+        assertThat(tx.owns(session), is(false));
     }
 
     @After
@@ -110,7 +107,7 @@ public class ModeShapeWebdavStoreTest {
         for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
             sessChildren.add(iter.nextNode().getName());
         }
-        
+
         assertThat(children, is(sessChildren.toArray(EMPTY_STRING_ARRAY)));
 
     }
@@ -168,6 +165,7 @@ public class ModeShapeWebdavStoreTest {
         contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
         session.save();
 
+        when(request.getPathInfo()).thenReturn("/newFile");
         assertThat((int)store.getResourceLength(tx, "/newFile"), is(TEST_STRING.length()));
 
         InputStream is = store.getResourceContent(tx, "/newFile");
@@ -187,6 +185,7 @@ public class ModeShapeWebdavStoreTest {
         contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
         session.save();
 
+        when(request.getPathInfo()).thenReturn("/newFile");
         store.removeObject(tx, "/newFile");
         store.commit(tx);
 
@@ -199,9 +198,16 @@ public class ModeShapeWebdavStoreTest {
         final String TEST_STRING = "This is my miraculous test string!";
         final String TEST_URI = "/TestFile.rtf";
 
+        when(request.getPathInfo()).thenReturn("");
         store.getStoredObject(tx, "");
+
+        when(request.getPathInfo()).thenReturn(TEST_URI);
         store.getStoredObject(tx, TEST_URI);
+
+        when(request.getPathInfo()).thenReturn("/"); // will ask for parent during resolution ...
         store.createResource(tx, TEST_URI);
+
+        when(request.getPathInfo()).thenReturn(TEST_URI);
         long length = store.setResourceContent(tx,
                                                TEST_URI,
                                                new ByteArrayInputStream(TEST_STRING.getBytes()),

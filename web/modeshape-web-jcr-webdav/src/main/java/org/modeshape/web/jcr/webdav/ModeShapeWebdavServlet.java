@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.sf.webdav.IWebdavStore;
 import net.sf.webdav.WebdavServlet;
+import org.modeshape.common.util.Logger;
 
 /**
  * Custom servlet implementation that provides WebDAV access to a JCR repository. Nodes in the repository with a specified primary
@@ -56,11 +57,14 @@ public class ModeShapeWebdavServlet extends WebdavServlet {
     @Override
     protected IWebdavStore constructStore( String clazzName,
                                            File root ) {
-        return new ModeShapeWebdavStore(getInitParameter(INIT_CONTENT_PRIMARY_TYPE_NAMES),
-                                        getInitParameter(INIT_RESOURCE_PRIMARY_TYPES_NAMES),
-                                        getInitParameter(INIT_NEW_FOLDER_PRIMARY_TYPE_NAME),
-                                        getInitParameter(INIT_NEW_RESOURCE_PRIMARY_TYPE_NAME),
-                                        getInitParameter(INIT_NEW_CONTENT_PRIMARY_TYPE_NAME), requestResolver);
+        return new ModeShapeWebdavStore(getParam(INIT_CONTENT_PRIMARY_TYPE_NAMES), getParam(INIT_RESOURCE_PRIMARY_TYPES_NAMES),
+                                        getParam(INIT_NEW_FOLDER_PRIMARY_TYPE_NAME),
+                                        getParam(INIT_NEW_RESOURCE_PRIMARY_TYPE_NAME),
+                                        getParam(INIT_NEW_CONTENT_PRIMARY_TYPE_NAME), requestResolver);
+    }
+
+    protected String getParam( String name ) {
+        return getServletContext().getInitParameter(name);
     }
 
     /**
@@ -68,18 +72,20 @@ public class ModeShapeWebdavServlet extends WebdavServlet {
      */
     private void constructRequestResolver() {
         // Initialize the request resolver
-        String requestResolverClassName = getInitParameter(INIT_REQUEST_RESOLVER_CLASS_NAME);
+        String requestResolverClassName = getParam(INIT_REQUEST_RESOLVER_CLASS_NAME);
+        Logger.getLogger(getClass()).debug("WebDAV Servlet resolver class name = " + requestResolverClassName);
         if (requestResolverClassName == null) {
-            this.requestResolver = new DefaultRequestResolver();
+            this.requestResolver = new SingleRepositoryRequestResolver();
         } else {
             try {
-                Class<? extends RequestResolver> clazz = Class.forName(requestResolverClassName).asSubclass(RequestResolver.class);
+                Class<? extends RequestResolver> clazz = Class.forName(requestResolverClassName)
+                                                              .asSubclass(RequestResolver.class);
                 this.requestResolver = clazz.newInstance();
             } catch (Exception ex) {
                 throw new IllegalStateException(ex);
             }
         }
-
+        Logger.getLogger(getClass()).debug("WebDAV Servlet using resolver class = " + requestResolver.getClass().getName());
         this.requestResolver.initialize(getServletContext());
     }
 

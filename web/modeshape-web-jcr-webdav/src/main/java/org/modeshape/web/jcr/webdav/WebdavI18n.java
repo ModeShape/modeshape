@@ -37,6 +37,8 @@ public final class WebdavI18n {
 
     // DefaultRequestResolver messages
     public static I18n requiredParameterMissing;
+    public static I18n cannotCreateRepository;
+    public static I18n cannotCreateWorkspaceInRepository;
 
     static {
         try {

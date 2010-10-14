@@ -23,17 +23,19 @@
  */
 package org.modeshape.web.jcr.webdav;
 
-import javax.jcr.RepositoryException;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import net.sf.webdav.exceptions.WebdavException;
 
 /**
- * Interface for a method of resolving a request into a repository name, workspace name, and {@link UriResolver} within the
- * workspace. Implementations can use additional information in the request (such as the
- * {@link HttpServletRequest#getUserPrincipal() principal} to resolve the URI.
+ * Interface for a method of resolving a request into a repository name, workspace name, and node path. Implementations can use
+ * additional information in the request (such as the {@link HttpServletRequest#getUserPrincipal() principal} to resolve the URI.
  * <p>
  * Implementations of this class must be thread-safe and must provide a public, nilary (no-argument) constructor.
  * </p>
+ * 
+ * @see SingleRepositoryRequestResolver
+ * @see MultiRepositoryRequestResolver
  */
 public interface RequestResolver {
 
@@ -45,12 +47,14 @@ public interface RequestResolver {
     void initialize( ServletContext context );
 
     /**
-     * Resolve the given request to the repository, workspace, and URI resolver for the request
+     * Resolve the given request to the repository, workspace, and path of the node
      * 
      * @param request the request to be resolved
-     * @return the repository, workspace, and URI resolver that correspond to that request
-     * @throws RepositoryException if the URI cannot be resolved to a repository, workspace, and path
+     * @param path the requested relative path; never null or empty
+     * @return the repository, workspace, and path to a node
+     * @throws WebdavException if the URI cannot be resolved to a repository, workspace, and path
      */
-    ResolvedRequest resolve( HttpServletRequest request ) throws RepositoryException;
+    ResolvedRequest resolve( HttpServletRequest request,
+                             String path ) throws WebdavException;
 
 }
