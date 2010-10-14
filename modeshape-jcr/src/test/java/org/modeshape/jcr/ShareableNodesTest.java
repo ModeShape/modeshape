@@ -24,6 +24,7 @@
 package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -421,6 +422,7 @@ public class ShareableNodesTest {
         Node original = makeVersionable(originalPath);
         session.save();
         Version version1 = checkin(originalPath);
+        assertThat(version1, is(notNullValue()));
         Node baseVersion = findBaseVersion(originalPath);
         System.out.println("original     => " + original);
         System.out.println("baseVersion  => " + baseVersion);
@@ -431,6 +433,7 @@ public class ShareableNodesTest {
         Node original2 = makeShareable(originalPath);
         session.save();
         Version version2 = checkin(originalPath);
+        assertThat(version2, is(notNullValue()));
         Node baseVersion2 = findBaseVersion(original2);
         System.out.println("original2    => " + original2);
         System.out.println("baseVersion2 => " + baseVersion2);
