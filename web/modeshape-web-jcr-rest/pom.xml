@@ -44,6 +44,19 @@
             <artifactId>resteasy-jettison-provider</artifactId>
             <version>1.2.1.GA</version>
         </dependency>
+        <dependency>
+            <groupId>org.codehaus.jettison</groupId>
+            <artifactId>jettison</artifactId>
+            <version>1.1</version>
+            <exclusions>
+                <!-- This results in duplicate stax-api jars. This is the older
+                     one. A newer is brought in by com.sun.xml.bind:jaxb-impl -->
+                <exclusion>
+                    <groupId>stax</groupId>
+                    <artifactId>stax-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
