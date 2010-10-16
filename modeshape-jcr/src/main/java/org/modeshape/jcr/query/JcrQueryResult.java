@@ -472,7 +472,7 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
     @NotThreadSafe
     protected static class SingleSelectorQueryResultRowIterator extends QueryResultRowIterator {
         protected final int locationIndex;
-        protected final int scoreIndex;
+        protected int scoreIndex;
 
         protected SingleSelectorQueryResultRowIterator( JcrQueryContext context,
                                                         String query,
@@ -482,7 +482,6 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
             super(context, query, results, tuples, numRows);
             String selectorName = columns.getSelectorNames().get(0);
             locationIndex = columns.getLocationIndex(selectorName);
-            scoreIndex = columns.getFullTextSearchScoreIndexFor(selectorName);
         }
 
         /**
@@ -519,7 +518,7 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
             assert this.node != null;
             assert this.tuple != null;
         }
-
+        
         /**
          * {@inheritDoc}
          * 
@@ -562,8 +561,9 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
                     Long depth = new Long(path.size());
                     return iterator.jcrLong(depth);
                 }
-                if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {
-                    Float score = (Float)tuple[iterator.scoreIndex];
+                if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {   
+                    iterator.scoreIndex = iterator.columns.getFullTextSearchScoreIndexFor(columnName);
+                    Float score = iterator.scoreIndex == -1 ? 0.0f : (Float)tuple[iterator.scoreIndex];
                     return iterator.jcrDouble(score);
                 }
             }

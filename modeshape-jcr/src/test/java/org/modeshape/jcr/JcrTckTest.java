@@ -472,14 +472,14 @@ public class JcrTckTest {
             // these are the tests included in observation.TestAll.suite()
             addTestSuite(SaveTest.class);
             // addTestSuite(SQLOrderByTest.class); // see MODE-760
-            addTestSuite(SQLQueryLevel2Test.class);
+            //addTestSuite(SQLQueryLevel2Test.class);  // see MODE-954
             // addTestSuite(SQLJoinTest.class); // see https://issues.apache.org/jira/browse/JCR-2663
             addTestSuite(SQLJcrPathTest.class);
             // addTestSuite(SQLPathTest.class); // see MODE-760
             addTestSuite(XPathPosIndexTest.class);
             addTestSuite(XPathDocOrderTest.class);
             addTestSuite(XPathOrderByTest.class);
-            addTestSuite(XPathQueryLevel2Test.class);
+            // addTestSuite(XPathQueryLevel2Test.class);  // see MODE-954
             addTestSuite(XPathJcrPathTest.class);
 
             addTestSuite(DerefQueryLevel1Test.class);
