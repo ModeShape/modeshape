@@ -23,18 +23,41 @@
  */
 package org.modeshape.web.jcr.webdav;
 
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import org.modeshape.common.i18n.I18n;
+
 /**
  * {@link RequestResolver} implementation that exists for backward compatibility.
  * 
  * @deprecated use {@link SingleRepositoryRequestResolver} instead for the same functionality
  */
 @Deprecated
-public class DefaultRequestResolver extends SingleRepositoryRequestResolver {
+public class DefaultRequestResolver implements RequestResolver {
+    public static final String INIT_REPOSITORY_NAME = "org.modeshape.web.jcr.webdav.DEFAULT_RESOLVER_REPOSITORY_NAME";
+    public static final String INIT_WORKSPACE_NAME = "org.modeshape.web.jcr.webdav.DEFAULT_RESOLVER_WORKSPACE_NAME";
 
-    /**
-     * 
-     */
-    public DefaultRequestResolver() {
+    private String repositoryName;
+    private String workspaceName;
+
+    @Override
+    public void initialize( ServletContext context ) {
+        repositoryName = context.getInitParameter(INIT_REPOSITORY_NAME);
+        if (repositoryName == null) {
+            I18n msg = WebdavI18n.requiredParameterMissing;
+            throw new IllegalStateException(msg.text(INIT_REPOSITORY_NAME));
+        }
+
+        workspaceName = context.getInitParameter(INIT_WORKSPACE_NAME);
+        if (workspaceName == null) {
+            I18n msg = WebdavI18n.requiredParameterMissing;
+            throw new IllegalStateException(msg.text(INIT_WORKSPACE_NAME));
+        }
     }
 
+    @Override
+    public ResolvedRequest resolve( HttpServletRequest request,
+                                    String relativePath ) {
+        return new ResolvedRequest(request, repositoryName, workspaceName, relativePath);
+    }
 }

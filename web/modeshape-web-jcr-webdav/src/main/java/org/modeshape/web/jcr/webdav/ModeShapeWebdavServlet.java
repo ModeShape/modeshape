@@ -75,7 +75,7 @@ public class ModeShapeWebdavServlet extends WebdavServlet {
         String requestResolverClassName = getParam(INIT_REQUEST_RESOLVER_CLASS_NAME);
         Logger.getLogger(getClass()).debug("WebDAV Servlet resolver class name = " + requestResolverClassName);
         if (requestResolverClassName == null) {
-            this.requestResolver = new SingleRepositoryRequestResolver();
+            this.requestResolver = new MultiRepositoryRequestResolver();
         } else {
             try {
                 Class<? extends RequestResolver> clazz = Class.forName(requestResolverClassName)
