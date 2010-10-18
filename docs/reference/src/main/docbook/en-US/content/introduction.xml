@@ -670,9 +670,9 @@
   <sect1 id="whats_new">
     <title>What's new?</title>
 	  <para>
-			With version &versionNumber;, ModeShape improved the JDBC driver, the JBoss AS deployment, and the JOPR/RHQ monitoring
-			plugin. There are also two new sequencers for Teiid relational models and virtual database definitions.
-			Of course, the release also comes with quite a few <ulink url="&ReleaseNotes;">bug fixes and improvements</ulink>.
+			Although ModeShape &versionNumber; includes several improvements and minor features, this release is primarily 
+			a bug-fix release, with numerous fixes for issues reported against 2.1 and 2.2. For details,
+			see the <ulink url="&ReleaseNotes;">release notes</ulink>.
 		</para>
 		<para><emphasis role="strong">ModeShape implements all of the required JCR 2.0 features</emphasis>: 
 			repository acquisition, authentication, reading/navigating, query, export, node type discovery, and permissions and 
