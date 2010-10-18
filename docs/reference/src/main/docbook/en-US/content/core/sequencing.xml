@@ -322,7 +322,7 @@ public interface &SequencerOutput; {
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-graph</artifactId>
-  <version>2.2.0.Final</version>
+  <version>2.3.0.Final</version>
 </dependency>
 	 ]]></programlisting>
 			<para>These are minimum dependencies required for compiling a sequencer.  Of course, you'll have to add
@@ -333,14 +333,14 @@ public interface &SequencerOutput; {
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-graph</artifactId>
-  <version>2.2.0.Final</version>
+  <version>2.3.0.Final</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-common</artifactId>
-  <version>2.2.0.Final</version>
+  <version>2.3.0.Final</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
@@ -384,7 +384,7 @@ public interface &SequencerOutput; {
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-jcr</artifactId>
-  <version>2.2.0.Final</version>
+  <version>2.3.0.Final</version>
   <scope>test</scope>
 </dependency>
 <!-- Java Content Repository API -->
