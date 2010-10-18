@@ -184,49 +184,99 @@
 		</para>
 		<para>
 			Next, the &RequestResolver; must be configured.  The &RequestResolver; converts the incoming 
-			URI into a repository name, workspace name, and path within the repository.  It is possible 
-			(and easy) to develop a custom implementation of this interface, but a default resolver is 
-			provided that maps all URIs directly into a repository and workspace.
+			URI into a repository name, workspace name, and path within the repository. ModeShape provides several
+			implementations:
+      <itemizedlist>
+        <listitem>
+            <para>
+							<code>&MultiRepositoryRequestResolver;</code> - supports multiple repositories
+							and workspaces, by using a URI format with repository name and workspace name
+							as the first two levels of the URI. This was added in ModeShape 2.3.0.Final,
+							and is now the resolver that is configured by default.
+						</para>
+        </listitem>
+        <listitem>
+            <para>
+							<code>&SingleRepositoryRequestResolver;</code> - maps URIs onto a single repository
+  						and workspace that are configured in the web.xml. This is useful if you want to limit
+							which repository and workspace is exposed via WebDAV.
+						</para>
+        </listitem>
+        <listitem>
+            <para>
+							<code>&DefaultRequestResolver;</code> - maps URIs onto a single repository
+  						and workspace that are configured in the web.xml. This used to be the default resolver,
+							and is identical to <code>SingleRepositoryRequestResolver</code>. However, it is now
+							deprecated and will be removed in a future version.
+						</para>
+        </listitem>
+      </itemizedlist>
+			If none of these fit your needs, it is easy to develop a custom implementation of this interface.
+		</para>
+		<para>
+			To specify the resolver, set the <code>org.modeshape.web.jcr.webdav.REQUEST_RESOLVER_CLASS_NAME</code> property
+			to the name of the &RepositoryResolver; implementation class. For example, here is how the
+			&MultiRepositoryRequestResolver; class is specified:
 		</para>
 <programlisting role="XML"><![CDATA[
 <!--
 	This optional parameter provides the name of the o.m.w.j.webdav.RequestResolver
 	implementation class.  The provided value must be the name of a class that 
 	implements the RequestResolver interface and has a public, no-arg constructor.
-	If no value is provided, o.m.w.j.webdav.DefaultRequestResolver will be used.
+	If no value is provided, o.m.w.j.webdav.MultiRepositoryRequestResolver will be used.
 -->
 <context-param>
 	<param-name>org.modeshape.web.jcr.webdav.REQUEST_RESOLVER_CLASS_NAME</param-name>
-	<param-value>org.modeshape.web.jcr.webdav.DefaultRequestResolver</param-value>
+	<param-value>org.modeshape.web.jcr.webdav.MultiRepositoryRequestResolver</param-value>
+</context-param>
+]]></programlisting>
+			<para>
+				Alternatively, if the &SingleRepositoryRequestResolver; class is to be used, then two additional properties must define
+				the repository name and workspace name:
+			</para>
+<programlisting role="XML"><![CDATA[
+<!--
+	This optional parameter provides the name of the o.m.w.j.webdav.RequestResolver
+	implementation class.  The provided value must be the name of a class that 
+	implements the RequestResolver interface and has a public, no-arg constructor.
+-->
+<context-param>
+	<param-name>org.modeshape.web.jcr.webdav.REQUEST_RESOLVER_CLASS_NAME</param-name>
+	<param-value>org.modeshape.web.jcr.webdav.SingleRepositoryRequestResolver</param-value>
 </context-param>
 
 <!--
-	This parameter is required if (and only if) the DefaultRequestResolver is used.
+	This parameter is required if (and only if) the SingleRequestResolver is used.
 	It provides the name of the JCR repository that will be accessed.  An exception
 	will be thrown if no value is provided for this parameter.
 -->
 <context-param>
 	<param-name>
-		org.modeshape.web.jcr.webdav.DEFAULT_RESOLVER_REPOSITORY_NAME
+		org.modeshape.web.jcr.webdav.SINGLE_REPOSITORY_RESOLVER_REPOSITORY_NAME
 	</param-name>
 	<param-value>repository</param-value>
 </context-param>
 
 <!--
-	This parameter is required if (and only if) the DefaultRequestResolver is used.
+	This parameter is required if (and only if) the SingleRequestResolver is used.
 	It provides the name of the JCR workspace that will be accessed.  An exception
 	will be thrown if no value is provided for this parameter.
 -->
 <context-param>
 	<param-name>
-		org.modeshape.web.jcr.webdav.DEFAULT_RESOLVER_WORKSPACE_NAME
+		org.modeshape.web.jcr.webdav.SINGLE_REPOSITORY_RESOLVER_WORKSPACE_NAME
 	</param-name>
 	<param-value>default</param-value>
 </context-param>
 
 ]]></programlisting>			 
 		<para>
-			Another brief section of boilerplate ensues.
+			ModeShape also provides the older &DefaultRequestResolver; class is to be used, which is now
+			deprecated. Please switch use the &SingleRepositoryRequestResolver; or &MultiRepositoryRequestResolver; classes.
+			This class is provided for backward compatibility.
+		</para>
+		<para>
+			Once the &RequestResolver; has been specified, then more brief boilerplate ensues defines additional configuration information:
 		</para>
 <programlisting role="XML"><![CDATA[
 <!-- Required parameter for ModeShape WebDAV - should not be modified -->

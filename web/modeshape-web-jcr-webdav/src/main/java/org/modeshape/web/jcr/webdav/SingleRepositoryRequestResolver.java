@@ -34,8 +34,8 @@ import org.modeshape.common.i18n.I18n;
  * @see MultiRepositoryRequestResolver
  */
 public class SingleRepositoryRequestResolver implements RequestResolver {
-    public static final String INIT_REPOSITORY_NAME = "org.modeshape.web.jcr.webdav.DEFAULT_RESOLVER_REPOSITORY_NAME";
-    public static final String INIT_WORKSPACE_NAME = "org.modeshape.web.jcr.webdav.DEFAULT_RESOLVER_WORKSPACE_NAME";
+    public static final String INIT_REPOSITORY_NAME = "org.modeshape.web.jcr.webdav.SINGLE_REPOSITORY_RESOLVER_REPOSITORY_NAME";
+    public static final String INIT_WORKSPACE_NAME = "org.modeshape.web.jcr.webdav.SINGLE_REPOSITORY_RESOLVER_WORKSPACE_NAME";
 
     private String repositoryName;
     private String workspaceName;
