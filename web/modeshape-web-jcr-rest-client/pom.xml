@@ -215,8 +215,8 @@
 										dnauser:password:connect,readwrite|unauthorized:password:bogus
 									</cargo.servlet.users>
 									<cargo.servlet.port>8090</cargo.servlet.port>
-									<home>target/cargo</home>
 								</properties>
+								<home>target/cargo</home>
 
 								<deployables>
 									<!-- application to deploy -->
@@ -346,8 +346,8 @@
 										dnauser2:password2:connect,readwrite|unauthorized:password:bogus
 									</cargo.servlet.users>
 									<cargo.servlet.port>8180</cargo.servlet.port>
-									<home>target/cargo</home>
 								</properties>
+								<home>target/cargo</home>
 
 								<deployables>
 									<!-- application to deploy -->
