@@ -563,7 +563,7 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
                     return iterator.jcrLong(depth);
                 }
                 if (JCR_SCORE_COLUMN_NAME.equals(columnName)) {
-                    Float score = (Float)tuple[iterator.scoreIndex];
+                    Float score = iterator.scoreIndex == -1 ? 0.0f : (Float)tuple[iterator.scoreIndex];
                     return iterator.jcrDouble(score);
                 }
             }
