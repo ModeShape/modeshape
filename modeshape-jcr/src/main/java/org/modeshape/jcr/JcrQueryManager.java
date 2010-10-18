@@ -144,10 +144,8 @@ class JcrQueryManager implements QueryManager {
             }
             PlanHints hints = new PlanHints();
             hints.showPlan = true;
-            if (Query.SQL.equals(language)) {
-                hints.hasFullTextSearch = true; // requires 'jcr:score' to exist
-            } else if (Query.XPATH.equals(language)) {
-                hints.hasFullTextSearch = true; // requires 'jcr:score' to exist
+            hints.hasFullTextSearch = true; // always include the score
+            if (Query.XPATH.equals(language)) {
                 hints.validateColumnExistance = false;
             }
             return resultWith(expression, parser.getLanguage(), command, hints, storedAtPath);
@@ -184,6 +182,7 @@ class JcrQueryManager implements QueryManager {
             // Parsing must be done now ...
             PlanHints hints = new PlanHints();
             hints.showPlan = true;
+            hints.hasFullTextSearch = true; // always include the score
             return resultWith(expression, QueryLanguage.JCR_SQL2, command, hints, null);
         } catch (org.modeshape.graph.query.parse.InvalidQueryException e) {
             // The query was parsed, but there is an error in the query
