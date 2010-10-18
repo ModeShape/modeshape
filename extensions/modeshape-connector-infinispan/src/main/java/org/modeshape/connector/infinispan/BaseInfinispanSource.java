@@ -32,12 +32,10 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.Reference;
-import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.ThreadSafe;
 import org.infinispan.manager.CacheContainer;
-import org.infinispan.manager.DefaultCacheManager;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
 import org.modeshape.common.annotation.Label;
@@ -46,7 +44,6 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.cache.CachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
-import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.base.BaseRepositorySource;
@@ -57,15 +54,6 @@ import org.modeshape.graph.observe.Observer;
  * A repository source that uses an Infinispan instance to manage the content. This source is capable of using an existing
  * {@link CacheContainer} or creating a new cache container. This process is controlled entirely by the JavaBean properties of the
  * InfinispanSource instance.
- * <p>
- * This source first attempts to find an existing cache manager found in {@link #getCacheContainerJndiName() JNDI} (or the
- * {@link DefaultCacheManager} if no such manager is available) and the {@link #getCacheConfigurationName() cache configuration
- * name} if supplied or the default configuration if not set.
- * </p>
- * <p>
- * Like other {@link RepositorySource} classes, instances of JBossCacheSource can be placed into JNDI and do support the creation
- * of {@link Referenceable JNDI referenceable} objects and resolution of references into JBossCacheSource.
- * </p>
  */
 @ThreadSafe
 public abstract class BaseInfinispanSource implements BaseRepositorySource, ObjectFactory {
@@ -144,13 +132,12 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.graph.connector.RepositorySource#initialize(org.modeshape.graph.connector.RepositoryContext)
      */
     public void initialize( RepositoryContext context ) throws RepositorySourceException {
         this.repositoryContext = context;
     }
-
 
     /**
      * {@inheritDoc}
@@ -161,7 +148,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.graph.connector.RepositorySource#getCapabilities()
      */
     public RepositorySourceCapabilities getCapabilities() {
@@ -170,7 +157,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.graph.connector.RepositorySource#getRetryLimit()
      */
     public int getRetryLimit() {
@@ -179,7 +166,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.graph.connector.RepositorySource#setRetryLimit(int)
      */
     public synchronized void setRetryLimit( int limit ) {
@@ -188,7 +175,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
 
     /**
      * Set the name of this source
-     *
+     * 
      * @param name the name for this source
      */
     public synchronized void setName( String name ) {
@@ -198,7 +185,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
 
     /**
      * Get the default cache policy for this source, or null if the global default cache policy should be used
-     *
+     * 
      * @return the default cache policy, or null if this source has no explicit default cache policy
      */
     public CachePolicy getDefaultCachePolicy() {
@@ -214,10 +201,10 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
         this.defaultCachePolicy = defaultCachePolicy;
     }
 
-        /**
+    /**
      * Get the UUID of the root node for the cache. If the cache exists, this UUID is not used but is instead set to the UUID of
      * the existing root node.
-     *
+     * 
      * @return the UUID of the root node for the cache.
      */
     public String getRootNodeUuid() {
@@ -227,7 +214,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
     /**
      * Get the UUID of the root node for the cache. If the cache exists, this UUID is not used but is instead set to the UUID of
      * the existing root node.
-     *
+     * 
      * @return the UUID of the root node for the cache.
      */
     public UUID getRootNodeUuidObject() {
@@ -237,7 +224,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
     /**
      * Set the UUID of the root node in this repository. If the cache exists, this UUID is not used but is instead set to the UUID
      * of the existing root node.
-     *
+     * 
      * @param rootNodeUuid the UUID of the root node for the cache, or null if the UUID should be randomly generated
      */
     public synchronized void setRootNodeUuid( String rootNodeUuid ) {
@@ -250,7 +237,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
 
     /**
      * Get the name of the default workspace.
-     *
+     * 
      * @return the name of the workspace that should be used by default; never null
      */
     public String getDefaultWorkspaceName() {
@@ -259,7 +246,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
 
     /**
      * Set the name of the workspace that should be used when clients don't specify a workspace.
-     *
+     * 
      * @param nameOfDefaultWorkspace the name of the workspace that should be used by default, or null if the
      *        {@link #DEFAULT_NAME_OF_DEFAULT_WORKSPACE default name} should be used
      */
@@ -269,7 +256,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
 
     /**
      * Gets the names of the workspaces that are available when this source is created.
-     *
+     * 
      * @return the names of the workspaces that this source starts with, or null if there are no such workspaces
      * @see #setPredefinedWorkspaceNames(String[])
      * @see #setCreatingWorkspacesAllowed(boolean)
@@ -282,7 +269,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
 
     /**
      * Sets the names of the workspaces that are available when this source is created.
-     *
+     * 
      * @param predefinedWorkspaceNames the names of the workspaces that this source should start with, or null if there are no
      *        such workspaces
      * @see #setCreatingWorkspacesAllowed(boolean)
@@ -297,7 +284,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
 
     /**
      * Get whether this source allows workspaces to be created dynamically.
-     *
+     * 
      * @return true if this source allows workspaces to be created by clients, or false if the
      *         {@link #getPredefinedWorkspaceNames() set of workspaces} is fixed
      * @see #setPredefinedWorkspaceNames(String[])
@@ -310,7 +297,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
 
     /**
      * Set whether this source allows workspaces to be created dynamically.
-     *
+     * 
      * @param allowWorkspaceCreation true if this source allows workspaces to be created by clients, or false if the
      *        {@link #getPredefinedWorkspaceNames() set of workspaces} is fixed
      * @see #setPredefinedWorkspaceNames(String[])
@@ -322,8 +309,9 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
                                                         capabilities.supportsReferences());
     }
 
-    /**Method controls how a cache container gets created.
-     *
+    /**
+     * Method controls how a cache container gets created.
+     * 
      * @return an appropriate CacheContainer per implementation.
      */
     protected abstract CacheContainer createCacheContainer();
@@ -332,10 +320,9 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
         return repository.getCacheContainer();
     }
 
-
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.graph.connector.RepositorySource#close()
      */
     public synchronized void close() {
@@ -375,9 +362,9 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
         this.updatesAllowed = updatesAllowed;
     }
 
-        /**
+    /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.graph.connector.RepositorySource#getConnection()
      */
     public synchronized RepositoryConnection getConnection() throws RepositorySourceException {
@@ -396,11 +383,7 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
             }
 
             // Look for a cache manager in JNDI ...
-            CacheContainer cacheContainer = null;
-            
-            if (cacheContainer == null) {
-                cacheContainer = createCacheContainer();
-            }
+            CacheContainer cacheContainer = createCacheContainer();
 
             // Now create the repository ...
             this.repository = new InfinispanRepository(this, cacheContainer);
@@ -442,4 +425,3 @@ public abstract class BaseInfinispanSource implements BaseRepositorySource, Obje
         return ref;
     }
 }
-

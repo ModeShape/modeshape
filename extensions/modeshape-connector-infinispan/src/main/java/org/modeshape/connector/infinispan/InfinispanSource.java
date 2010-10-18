@@ -39,7 +39,6 @@ import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
-import javax.naming.spi.ObjectFactory;
 import net.jcip.annotations.ThreadSafe;
 import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
@@ -51,14 +50,8 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.cache.CachePolicy;
-import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.RepositorySource;
-import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.connector.RepositorySourceException;
-import org.modeshape.graph.connector.base.BaseRepositorySource;
-import org.modeshape.graph.connector.base.Connection;
-import org.modeshape.graph.observe.Observer;
 
 /**
  * A repository source that uses an Infinispan instance to manage the content. This source is capable of using an existing
@@ -70,12 +63,12 @@ import org.modeshape.graph.observe.Observer;
  * name} if supplied or the default configuration if not set.
  * </p>
  * <p>
- * Like other {@link RepositorySource} classes, instances of JBossCacheSource can be placed into JNDI and do support the creation
- * of {@link Referenceable JNDI referenceable} objects and resolution of references into JBossCacheSource.
+ * Like other {@link RepositorySource} classes, instances of InfinispanCacheSource can be placed into JNDI and do support the
+ * creation of {@link Referenceable JNDI referenceable} objects and resolution of references into JBossCacheSource.
  * </p>
  */
 @ThreadSafe
-public class InfinispanSource  extends BaseInfinispanSource implements BaseRepositorySource, ObjectFactory {
+public class InfinispanSource extends BaseInfinispanSource {
 
     private static final long serialVersionUID = 2L;
     protected static final String CACHE_CONFIGURATION_NAME = "cacheConfigurationName";
@@ -96,7 +89,6 @@ public class InfinispanSource  extends BaseInfinispanSource implements BaseRepos
      */
     public InfinispanSource() {
     }
-
 
     /**
      * Get the name in JNDI of a {@link CacheContainer} instance that should be used to create the cache for this source.
@@ -191,7 +183,6 @@ public class InfinispanSource  extends BaseInfinispanSource implements BaseRepos
         this.cacheConfigurationName = cacheConfigurationName;
     }
 
-
     @Override
     protected CacheContainer createCacheContainer() {
         CacheContainer cacheContainer = null;
@@ -243,7 +234,6 @@ public class InfinispanSource  extends BaseInfinispanSource implements BaseRepos
 
         return cacheContainer;
     }
-
 
     /**
      * {@inheritDoc}
@@ -344,4 +334,3 @@ public class InfinispanSource  extends BaseInfinispanSource implements BaseRepos
         return null;
     }
 }
-

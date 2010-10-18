@@ -36,6 +36,13 @@
 		effective, scalable, and distributed data grid,
 		and can be <link linkend="federation-connector">federated</link> with other repository sources to provide a distributed repository.
   </para>
+  <para>
+	  There are two connectors that can be used. The &InfinispanSource; class, which was introduced in ModeShape 1.x, stores the content
+	  in an Infinispan data grid that is running, at least in part, within the same process. The &RemoteInfinispanSource; class,
+	  which was introduced in ModeShape 2.3.0.Final, is capable of storing content in a remote Infinispan data grid (where Infinispan
+	  is running in remote processes). Because these two connectors communicate with Infinispan in different ways, they are configured
+	  differently.
+  </para>
 	<para>
 		The &InfinispanSource; class provides a number of JavaBean properties that control its behavior:
 	</para>
@@ -174,7 +181,7 @@
   <programlisting role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 config.repositorySource("Infinispan Store")
-      .usingClass(DefaultInfinispanSource.class)
+      .usingClass(InfinispanSource.class)
       .setDescription("The repository for our content")
       .setProperty("defaultWorkspaceName", "prod")
       .setProperty("predefinedWorkspaceNames", new String[] { "staging", "dev"});
@@ -200,7 +207,7 @@ config.repositorySource("Infinispan Store")
         workspace (though others could be created, too).
         -->
         <mode:source jcr:name="Infinispan Store" 
-                    mode:classname="org.modeshape.connector.infinispan.DefaultInfinispanSource" 
+                    mode:classname="org.modeshape.connector.infinispan.InfinispanSource" 
                     mode:description="The repository for our content"
                     mode:defaultworkspaceName="prod">
            <mode:predefinedWorkspaceNames>staging</mode:predefinedWorkspaceNames>
@@ -239,15 +246,14 @@ JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml
 		<para>
 		The Infinispan HotRod Server must be made aware of the ModeShape classes that will be stored in it, since it will be running
 		in a separate JVM.  The following jar files should be added to the classpath of the HotRod Server:
-		google-collections
-		joda-time
-		lucene-analyzers
-		lucene-core
-		lucene-regex
-		lucene-snowball
-		modeshape-common
-		modeshape-connector-infinispan
-		modeshape-graph
+    <itemizedlist>
+      <listitem><para>modeshape-common</para></listitem>
+      <listitem><para>modeshape-graph</para></listitem>
+      <listitem><para>modeshape-connector-infinispan</para></listitem>
+      <listitem><para>google-collections</para></listitem>
+      <listitem><para>joda-time</para></listitem>
+    </listitem>
+    Only these libraries contain the classes that are used to store content within Infinispan.
 		</para>
 	</sect2>
  </chapter>

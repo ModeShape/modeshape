@@ -36,9 +36,8 @@ import java.util.concurrent.TimeUnit;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.ObjectFactory;
-import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.server.hotrod.HotRodServer;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -48,8 +47,6 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.cache.BasicCachePolicy;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryContext;
-import org.infinispan.server.hotrod.test.HotRodTestingUtil;
-import org.junit.AfterClass;
 
 /**
  *

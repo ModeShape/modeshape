@@ -25,7 +25,6 @@ package org.modeshape.connector.infinispan;
 
 import java.io.File;
 import java.io.IOException;
-import javax.naming.NamingException;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.RepositorySource;
@@ -33,22 +32,21 @@ import org.modeshape.graph.connector.test.WritableConnectorTest;
 import org.xml.sax.SAXException;
 
 /**
- *
  * @author johnament
  */
 public class RemoteInfinispanConnectorWritableTest extends WritableConnectorTest {
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.graph.connector.test.AbstractConnectorTest#setUpSource()
      */
     @Override
-    protected RepositorySource setUpSource() throws NamingException {
+    protected RepositorySource setUpSource() {
         try {
             RemoteInfinispanTestHelper.createServer();
         } catch (IOException ex) {
-            throw new RuntimeException("IOException ",ex);
+            throw new RuntimeException("IOException ", ex);
         }
         String[] predefinedWorkspaceNames = new String[] {"remowritable"};
         RemoteInfinispanSource source = new RemoteInfinispanSource();
@@ -56,9 +54,12 @@ public class RemoteInfinispanConnectorWritableTest extends WritableConnectorTest
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
         source.setDefaultWorkspaceName(predefinedWorkspaceNames[0]);
         source.setCreatingWorkspacesAllowed(true);
-        source.setRemoteInfinispanServerList(String.format("%s:%s",RemoteInfinispanTestHelper.HOST,RemoteInfinispanTestHelper.PORT));
+        source.setRemoteInfinispanServerList(String.format("%s:%s",
+                                                           RemoteInfinispanTestHelper.HOST,
+                                                           RemoteInfinispanTestHelper.PORT));
         return source;
     }
+
     @Override
     protected void cleanUpSourceResources() throws Exception {
         RemoteInfinispanTestHelper.releaseServer();
@@ -68,7 +69,7 @@ public class RemoteInfinispanConnectorWritableTest extends WritableConnectorTest
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @throws SAXException
      * @throws IOException
      * @see org.modeshape.graph.connector.test.AbstractConnectorTest#initializeContent(org.modeshape.graph.Graph)
