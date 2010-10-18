@@ -88,7 +88,7 @@ public class EngineDiscoveryComponent implements
 
 		// Add to return values
 		discoveredResources.add(detail);
-		log.info("Discovered ModeShape Engine");
+		log.debug("Discovered ModeShape Engine");
 		return discoveredResources;
 
 	}

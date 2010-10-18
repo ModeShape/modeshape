@@ -115,7 +115,7 @@ public class SequencingServiceDiscoveryComponent implements
 
 		// Add to return values
 		discoveredResources.add(detail);
-		log.info("Discovered ModeShape Sequencing Service: " + mc.getName());
+		log.debug("Discovered ModeShape Sequencing Service: " + mc.getName());
 
 		return discoveredResources;
 

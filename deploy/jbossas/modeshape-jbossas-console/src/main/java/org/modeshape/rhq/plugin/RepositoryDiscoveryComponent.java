@@ -145,7 +145,7 @@ public class RepositoryDiscoveryComponent implements
 
 			// Add to return values
 			discoveredResources.add(detail);
-			log.info("Discovered ModeShape Repository: " + name);
+			log.debug("Discovered ModeShape Repository: " + name);
 		}
 
 		return discoveredResources;

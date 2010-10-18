@@ -220,11 +220,8 @@ public final class ManagedEngine implements ModeShapeManagedObject {
 		assert engine != null;
 
 		Collection<ManagedConnector> connectors = new ArrayList<ManagedConnector>();
-		for (String repositoryName : engine.getRepositoryNames()) {
-			RepositorySource repositorySource = engine
-					.getRepositorySource(repositoryName);
-			assert repositorySource != null : "Repository '" + repositoryName
-					+ "' does not exist";
+		for (RepositorySource repositorySource : engine.getRepositoryService().getRepositoryLibrary().getSources()) {
+			assert repositorySource != null;
 			connectors.add(new ManagedConnector(repositorySource));
 		}
 
