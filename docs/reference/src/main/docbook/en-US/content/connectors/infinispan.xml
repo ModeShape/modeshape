@@ -252,7 +252,7 @@ JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml
       <listitem><para>modeshape-connector-infinispan</para></listitem>
       <listitem><para>google-collections</para></listitem>
       <listitem><para>joda-time</para></listitem>
-    </listitem>
+    </itemizedlist>
     Only these libraries contain the classes that are used to store content within Infinispan.
 		</para>
 	</sect2>
