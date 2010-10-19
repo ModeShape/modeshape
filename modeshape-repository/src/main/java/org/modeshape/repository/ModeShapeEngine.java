@@ -77,7 +77,6 @@ import org.modeshape.repository.sequencer.SequencingService;
 public class ModeShapeEngine {
 
     public static final String CONFIGURATION_REPOSITORY_NAME = "dna:configuration";
-    protected static final Logger LOGGER = Logger.getLogger(ModeShapeEngine.class);
 
     protected final ModeShapeConfiguration.ConfigurationDefinition configuration;
     private final ConfigurationScanner scanner;
@@ -90,10 +89,12 @@ public class ModeShapeEngine {
     private final ClusteringService clusteringService;
     private final MimeTypeDetectors detectors;
     private final String engineId = UUID.randomUUID().toString();
+    private final Logger logger;
 
     protected ModeShapeEngine( ExecutionContext context,
                                ModeShapeConfiguration.ConfigurationDefinition configuration ) {
         this.problems = new SimpleProblems();
+        this.logger = Logger.getLogger(getClass());
 
         // Use the configuration's context ...
         this.detectors = new MimeTypeDetectors();
@@ -138,6 +139,10 @@ public class ModeShapeEngine {
         }
 
         // The rest of the instantiation/configuration will be done in start()
+    }
+
+    protected Logger logger() {
+        return logger;
     }
 
     /**
@@ -267,13 +272,14 @@ public class ModeShapeEngine {
      */
     protected void checkProblemsOnStartup() throws ModeShapeConfigurationException {
         boolean errors = problems.hasErrors();
-        if (errors && problems.hasWarnings()) {
+        if (errors || problems.hasWarnings()) {
             // First log the messages ...
-            LOGGER.error(RepositoryI18n.errorsPreventStarting, problems.size());
+            Level level = errors ? Level.ERROR : Level.WARNING;
+            logger().log(level, RepositoryI18n.warningsWhileStarting, problems.size());
             for (Problem problem : getProblems()) {
                 Throwable t = problem.getThrowable(); // may be null
                 Level logLevel = problem.getStatus().getLogLevel();
-                LOGGER.log(logLevel, t, problem.getMessage(), problem.getParameters());
+                logger().log(logLevel, t, problem.getMessage(), problem.getParameters());
             }
         }
         if (errors) {
@@ -490,7 +496,7 @@ public class ModeShapeEngine {
                     classname = CLUSTERED_OBSERVATION_BUS_CLASSNAME;
                 }
                 if (clusterName == null || clusterName.trim().length() == 0) {
-                    LOGGER.warn(RepositoryI18n.clusteringConfigurationRequiresClusterName);
+                    logger().warn(RepositoryI18n.clusteringConfigurationRequiresClusterName);
                     problems.addWarning(RepositoryI18n.clusteringConfigurationRequiresClusterName);
                     return null; // Signifies no clustering
                 }
