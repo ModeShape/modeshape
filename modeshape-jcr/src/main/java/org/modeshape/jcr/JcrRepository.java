@@ -1428,7 +1428,6 @@ public class JcrRepository implements Repository {
         repoDescriptors.put(Repository.OPTION_JOURNALED_OBSERVATION_SUPPORTED, valueFor(factories, false));
         repoDescriptors.put(Repository.OPTION_RETENTION_SUPPORTED, valueFor(factories, false));
         repoDescriptors.put(Repository.OPTION_LIFECYCLE_SUPPORTED, valueFor(factories, false));
-        repoDescriptors.put(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED, valueFor(factories, false));
         repoDescriptors.put(Repository.OPTION_NODE_AND_PROPERTY_WITH_SAME_NAME_SUPPORTED, valueFor(factories, true));
         repoDescriptors.put(Repository.OPTION_UPDATE_PRIMARY_NODE_TYPE_SUPPORTED, valueFor(factories, false));
         repoDescriptors.put(Repository.OPTION_UPDATE_MIXIN_NODE_TYPES_SUPPORTED, valueFor(factories, true));
@@ -1472,6 +1471,14 @@ public class JcrRepository implements Repository {
         if (!repoDescriptors.containsKey(Repository.REP_VERSION_DESC)) {
             repoDescriptors.put(Repository.REP_VERSION_DESC,
                                 valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VERSION_DESC, true)));
+        }
+
+        if (!repoDescriptors.containsKey(Repository.REP_VERSION_DESC)) {
+            repoDescriptors.put(Repository.REP_VERSION_DESC,
+                                valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VERSION_DESC, true)));
+        }
+        if (!repoDescriptors.containsKey(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED)) {
+            repoDescriptors.put(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED, valueFor(factories, true));
         }
 
         return Collections.unmodifiableMap(repoDescriptors);
