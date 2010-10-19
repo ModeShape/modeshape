@@ -33,7 +33,6 @@ import org.modeshape.graph.Graph;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrMixLexicon;
 import org.modeshape.graph.JcrNtLexicon;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceException;
@@ -115,8 +114,11 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
 
         // LEVEL 0
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                     TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
         kind = remoteRepos.checkPath("testFile", -1);
         assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
         fileProperties = new SVNProperties();
@@ -125,8 +127,11 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
         assertContents(baos, TEST_CONTENT);
 
         graph.create("/testFile1").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile1/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                      TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFile1/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
         kind = remoteRepos.checkPath("testFile1", -1);
         assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
         fileProperties = new SVNProperties();
@@ -136,8 +141,11 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
 
         // LEVEL 1
         graph.create("/root/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/root/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                          TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/root/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
         kind = remoteRepos.checkPath("root/testFile", -1);
         assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
         fileProperties = new SVNProperties();
@@ -147,8 +155,11 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
 
         // LEVEL 2
         graph.create("/root/a/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/root/a/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                            TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/root/a/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
         kind = remoteRepos.checkPath("root/a/testFile", -1);
         assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
         fileProperties = new SVNProperties();
@@ -160,11 +171,17 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
     @Test
     public void shouldRespectConflictBehaviorOnCreate() throws Exception {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                     TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                     "Should not overwrite".getBytes()).ifAbsent().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, "Should not overwrite".getBytes())
+             .ifAbsent()
+             .and();
 
         kind = remoteRepos.checkPath("testFile", -1);
         assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
@@ -212,8 +229,11 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
         assertThat(kind == SVNNodeKind.DIR, is(Boolean.TRUE));
 
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         kind = remoteRepos.checkPath("testFolder/testFile", -1);
         assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
@@ -228,8 +248,11 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
         assertThat(kind == SVNNodeKind.DIR, is(Boolean.TRUE));
 
         graph.create("/root/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/root/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                     TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/root/testFolder/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         kind = remoteRepos.checkPath("root/testFolder/testFile", -1);
         assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
@@ -242,8 +265,11 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
     @Test
     public void shouldBeAbleToCopyFile() throws Exception {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                     TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         kind = remoteRepos.checkPath("testFile", -1);
         assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
@@ -265,8 +291,11 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToCopyFolder() throws Exception {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         kind = remoteRepos.checkPath("testFolder/testFile", -1);
         assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
@@ -287,8 +316,11 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
     @Test
     public void shouldBeAbleToMoveFile() throws Exception {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                           TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         kind = remoteRepos.checkPath("testFile", -1);
         assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
@@ -317,8 +349,11 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToMoveFolder() throws Exception {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                      TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
 
         kind = remoteRepos.checkPath("testFolder/testFile", -1);
         assertThat(kind == SVNNodeKind.FILE, is(Boolean.TRUE));
@@ -347,8 +382,11 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToDeleteFolder() throws Exception {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
         kind = remoteRepos.checkPath("testFolder/testFile", -1);
         assertThat(kind, is(SVNNodeKind.FILE));
         fileProperties = new SVNProperties();
@@ -371,8 +409,11 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToDeleteFile() throws Exception {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFolder/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                                TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFolder/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
         kind = remoteRepos.checkPath("testFolder/testFile", -1);
         assertThat(kind, is(SVNNodeKind.FILE));
         fileProperties = new SVNProperties();
@@ -394,8 +435,11 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
     @Test
     public void shouldBeAbleToClearFileByRemovingDataProperty() throws Exception {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        graph.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                     TEST_CONTENT.getBytes()).orReplace().and();
+        graph.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
         kind = remoteRepos.checkPath("testFile", -1);
         assertThat(kind, is(SVNNodeKind.FILE));
         fileProperties = new SVNProperties();
@@ -420,8 +464,11 @@ public class SvnRepositoryConnectorWritableTest extends AbstractConnectorTest {
         Batch batch = graph.batch();
 
         batch.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
-        batch.create("/testFile/jcr:content").with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE).and(JcrLexicon.DATA,
-                                                                                                           TEST_CONTENT.getBytes()).orReplace().and();
+        batch.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
         batch.create(badTestFileName).and();
 
         try {

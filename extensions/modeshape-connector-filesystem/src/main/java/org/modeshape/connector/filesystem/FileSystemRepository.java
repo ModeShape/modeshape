@@ -29,7 +29,6 @@ import java.util.UUID;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrNtLexicon;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.base.PathNode;
 import org.modeshape.graph.connector.base.PathTransaction;
@@ -49,7 +48,7 @@ import org.modeshape.graph.request.processor.RequestProcessor;
 /**
  * Implementation of {@code Repository} that provides access to an underlying file system. This repository only natively supports
  * nodes of primary types {@link JcrNtLexicon#FOLDER nt:folder}, {@link JcrNtLexicon#FILE nt:file}, and
- * {@link ModeShapeLexicon#RESOURCE mode:resource}, although the {@link CustomPropertiesFactory} allows for the addition of mixin
+ * {@link JcrNtLexicon#RESOURCE mode:resource}, although the {@link CustomPropertiesFactory} allows for the addition of mixin
  * types to any and all primary types.
  */
 public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspace> {

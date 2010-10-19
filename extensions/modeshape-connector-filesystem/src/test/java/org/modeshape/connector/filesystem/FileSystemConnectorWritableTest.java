@@ -38,7 +38,6 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceException;
@@ -106,7 +105,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToCreateFileWithContentAndNotRequiringOrReplace() {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).and();
         graph.create("/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .and();
 
@@ -118,7 +117,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToCreateFileWithContent() {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -131,13 +130,13 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldRespectConflictBehaviorOnCreate() {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
 
         graph.create("/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, "Should not overwrite".getBytes())
              .ifAbsent()
              .and();
@@ -174,7 +173,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
 
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFolder/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -193,7 +192,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToCopyFile() {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -211,7 +210,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFolder/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -232,7 +231,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToMoveFile() {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -254,7 +253,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFolder/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -280,7 +279,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFolder/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -302,7 +301,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFolder/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -330,7 +329,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFolder/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -357,7 +356,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         graph.useWorkspace("otherWorkspace");
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -392,13 +391,13 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFolder/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
         graph.create("/testFolder/testFile2").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFolder/testFile2/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -420,7 +419,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         graph.create("/testFolder").orReplace().and();
         graph.create("/testFolder/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFolder/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -443,7 +442,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToRenameFile() {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -466,7 +465,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
 
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -479,7 +478,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     public void shouldBeAbleToCloneWorkspace() {
         graph.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         graph.create("/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
@@ -522,7 +521,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
 
         batch.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
         batch.create("/testFile/jcr:content")
-             .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE)
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
              .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
              .orReplace()
              .and();
