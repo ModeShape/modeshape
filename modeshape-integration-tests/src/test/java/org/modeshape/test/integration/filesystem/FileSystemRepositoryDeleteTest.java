@@ -23,32 +23,22 @@
  */
 package org.modeshape.test.integration.filesystem;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import javax.jcr.Binary;
-import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problem;
-import org.modeshape.common.util.FileUtil;
-import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrTools;
-/**
- *
- * @author johnament
- */
+
+@Ignore
 public class FileSystemRepositoryDeleteTest {
 
     private static final String TEST_REPOSITORY = "Test Repository Source";
@@ -71,7 +61,9 @@ public class FileSystemRepositoryDeleteTest {
     @Before
     public void beforeAll() throws Exception {
         print = false;
-        FileSystemRepositoryWriteTest.setupFileSystem("target/test/repository/deletefilesystem", "defaultWorkspace", "otherWorkspace");
+        FileSystemRepositoryWriteTest.setupFileSystem("target/test/repository/deletefilesystem",
+                                                      "defaultWorkspace",
+                                                      "otherWorkspace");
 
         configuration = new JcrConfiguration();
         configuration.loadFrom("src/test/resources/config/configRepositoryForPropertyStoreModifiable.xml");
@@ -115,7 +107,7 @@ public class FileSystemRepositoryDeleteTest {
         Session session = sessionFrom(engine);
         session.getRootNode().addNode("folderA", "nt:folder");
         session.save();
-        //Node file = session.getRootNode().getNode("folderA").addNode("log4j.properties","nt:file");
+        // Node file = session.getRootNode().getNode("folderA").addNode("log4j.properties","nt:file");
         tools.uploadFile(session, "folderA/log4J.properties", FileSystemRepositoryWriteTest.resourceUrl("log4j.properties"));
         session.save();
         session.getNode("/folderA/log4J.properties").remove();
