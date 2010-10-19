@@ -882,8 +882,18 @@ public class SimpleJpaRepository extends MapRepository {
                         try {
                             binary.acquire();
                             stream = binary.getStream();
-                            if (compressData) stream = new GZIPInputStream(stream);
-                            bytes = IoUtil.readBytes(stream);
+                            if (compressData) {
+                                ByteArrayOutputStream bs = new ByteArrayOutputStream();
+                                OutputStream compressedStream = new GZIPOutputStream(bs);
+                                try {
+                                    IoUtil.write(stream, compressedStream);
+                                } finally {
+                                    compressedStream.close();
+                                }
+                                bytes = bs.toByteArray();
+                            } else {
+                                bytes = IoUtil.readBytes(stream);
+                            }
                         } finally {
                             try {
                                 if (stream != null) stream.close();

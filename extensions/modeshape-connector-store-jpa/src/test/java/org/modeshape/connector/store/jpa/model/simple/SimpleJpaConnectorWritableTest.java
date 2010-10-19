@@ -23,11 +23,19 @@
  */
 package org.modeshape.connector.store.jpa.model.simple;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import java.io.File;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.connector.store.jpa.JpaSource;
 import org.modeshape.connector.store.jpa.TestEnvironment;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.test.WritableConnectorTest;
+import org.modeshape.graph.property.Binary;
+import org.modeshape.graph.property.BinaryFactory;
+import org.modeshape.graph.property.Property;
 
 public class SimpleJpaConnectorWritableTest extends WritableConnectorTest {
 
@@ -55,6 +63,32 @@ public class SimpleJpaConnectorWritableTest extends WritableConnectorTest {
      */
     @Override
     protected void initializeContent( Graph graph ) {
+    }
+
+    @FixFor( "MODE-966" )
+    @Test
+    public void shouldStoreLargeBinaryValue() throws Exception {
+        File file = new File("src/test/resources/testdata/test1.xmi");
+        assertThat(file.exists(), is(true));
+        BinaryFactory binaryFactory = context.getValueFactories().getBinaryFactory();
+        Binary binaryValue = binaryFactory.create(file);
+        graph.batch()
+             .create("/someFile.xmi")
+             .with("jcr:primaryType", "nt:file")
+             .and()
+             .create("/someFile.xmi/jcr:content")
+             .with("jcr:priamryType", "nt:resource")
+             .and("jcr:data", binaryValue)
+             .and()
+             .execute();
+
+        // Now read the content back out ...
+        Property data = graph.getProperty("jcr:data").on("/someFile.xmi/jcr:content");
+        Binary readValue = binaryFactory.create(data.getFirstValue());
+
+        // and verify the content matches ...
+        assertThat(binaryValue.getHash(), is(readValue.getHash()));
+        assertThat(binaryValue.getBytes(), is(readValue.getBytes()));
     }
 
 }
