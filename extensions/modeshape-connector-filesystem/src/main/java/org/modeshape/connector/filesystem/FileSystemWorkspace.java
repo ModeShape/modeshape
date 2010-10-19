@@ -463,7 +463,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
                 Property primaryType = properties.get(JcrLexicon.PRIMARY_TYPE);
                 if (primaryType == null) {
                     nodeType = JcrNtLexicon.RESOURCE;
-                    properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE));
+                    properties.put(JcrLexicon.PRIMARY_TYPE, factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE));
                 } else {
                     nodeType = nameValueFor(primaryType);
                 }

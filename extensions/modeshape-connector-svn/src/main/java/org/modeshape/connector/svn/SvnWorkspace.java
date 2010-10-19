@@ -242,11 +242,7 @@ public class SvnWorkspace extends PathWorkspace<PathNode> {
                         SVNDirEntry entry = workspaceRoot.info(contentPath, -1);
                         if (entry != null) {
                             // The request is to get properties of the "jcr:content" child node ...
-                            // Do NOT use "nt:resource", since it extends "mix:referenceable". The JCR spec
-                            // does not require that "jcr:content" is of type "nt:resource", but rather just
-                            // suggests it. Therefore, we can use "dna:resource", which is identical to
-                            // "nt:resource" except it does not extend "mix:referenceable"
-                            properties.add(factory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE));
+                            properties.add(factory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE));
                             properties.add(factory.create(JcrLexicon.LAST_MODIFIED, dateFactory.create(entry.getDate())));
                         }
 

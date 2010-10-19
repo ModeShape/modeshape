@@ -31,7 +31,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.property.BinaryFactory;
 import org.modeshape.graph.property.DateTimeFactory;
 import org.modeshape.graph.property.Name;
@@ -95,7 +94,7 @@ public class ZipSequencer implements StreamSequencer {
                     output.setProperty(entryPath, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE);
 
                     Path contentPath = pathFactory.create(entryPath, JcrLexicon.CONTENT);
-                    output.setProperty(contentPath, JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.RESOURCE);
+                    output.setProperty(contentPath, JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE);
                     int n;
                     ByteArrayOutputStream baout = new ByteArrayOutputStream();
                     while ((n = in.read(buf, 0, 1024)) > -1) {

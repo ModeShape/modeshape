@@ -40,7 +40,7 @@ import org.junit.Test;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.graph.JcrLexicon;
-import org.modeshape.graph.ModeShapeLexicon;
+import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.property.basic.FileSystemBinary;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
@@ -112,7 +112,7 @@ public class FileSystemRepositoryScalabilityTest {
         assertThat(node1.getPrimaryNodeType().getName(), is("nt:file"));
         Node node1Content = node1.getNode(stringFrom(JcrLexicon.CONTENT));
         assertThat(node1Content, is(notNullValue()));
-        assertThat(node1Content.getPrimaryNodeType().getName(), is(stringFrom(ModeShapeLexicon.RESOURCE)));
+        assertThat(node1Content.getPrimaryNodeType().getName(), is(stringFrom(JcrNtLexicon.RESOURCE)));
     }
 
     @Test
