@@ -53,7 +53,7 @@ import org.modeshape.graph.property.Property;
  * is possible for a property to have no values.
  * </p>
  */
-public class UpdatePropertiesRequest extends ChangeRequest {
+public class UpdatePropertiesRequest extends ChangeRequest implements PropertyChangeRequest {
 
     private static final long serialVersionUID = 1L;
 

@@ -35,7 +35,7 @@ import org.modeshape.graph.property.Property;
  * Instruction to set a particular property on the node at the specified location. This request <i>never</i> removes the node,
  * even if the property is empty.
  */
-public class SetPropertyRequest extends ChangeRequest {
+public class SetPropertyRequest extends ChangeRequest implements PropertyChangeRequest {
 
     private static final long serialVersionUID = 1L;
 
