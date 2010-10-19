@@ -126,6 +126,14 @@
           <groupId>apache-xalan</groupId>
           <artifactId>serializer</artifactId>
         </exclusion>
+        <exclusion>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate</artifactId>
+			</exclusion>
+        <exclusion>
+			<groupId>org.jboss.security</groupId>
+			<artifactId>jboss-xacml</artifactId>
+		</exclusion>
       </exclusions>
     </dependency>
         <dependency>
