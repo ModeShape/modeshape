@@ -49,7 +49,7 @@
   - jcr:lastModified (date) 
   - jcr:lastModifiedBy (string)
   
-[nt:resource] > mix:referenceable, mix:mimeType, mix:lastModified 
+[nt:resource] > mix:mimeType, mix:lastModified 
   - jcr:data (binary) primary mandatory
 
 [nt:nodeType] 
