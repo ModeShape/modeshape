@@ -1067,6 +1067,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             // Configure the entity classes ...
             configurator.addAnnotatedClass(StoreOptionEntity.class);
 
+            // Set the Hibernate properties used in all situations ...
+            setProperty(configurator, "hibernate.dialect", this.dialect);
+
             // Configure additional properties, which may be overridden by subclasses ...
             configure(configurator);
 
@@ -1100,17 +1103,17 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                     }
                 }
                 // Set the connection properties ...
-                setProperty(configurator, "hibernate.dialect", this.dialect);
                 setProperty(configurator, "hibernate.connection.driver_class", this.driverClassName);
                 setProperty(configurator, "hibernate.connection.username", this.username);
                 setProperty(configurator, "hibernate.connection.password", this.password);
                 setProperty(configurator, "hibernate.connection.url", this.url);
                 setProperty(configurator, "hibernate.connection.max_fetch_depth", DEFAULT_MAXIMUM_FETCH_DEPTH);
                 setProperty(configurator, "hibernate.connection.pool_size", 0); // don't use the built-in pool
-                setProperty(configurator, "hibernate.show_sql", String.valueOf(this.showSql));
-                if(this.maximumConnectionsInPool > 0) {
+                if (this.maximumConnectionsInPool > 0) {
                     // Set the connection pooling properties (to use C3P0) ...
-                    setProperty(configurator, "hibernate.connection.provider_class", "org.hibernate.connection.C3P0ConnectionProvider");
+                    setProperty(configurator,
+                                "hibernate.connection.provider_class",
+                                "org.hibernate.connection.C3P0ConnectionProvider");
                     setProperty(configurator, "hibernate.c3p0.max_size", this.maximumConnectionsInPool);
                     setProperty(configurator, "hibernate.c3p0.min_size", this.minimumConnectionsInPool);
                     setProperty(configurator, "hibernate.c3p0.timeout", this.maximumConnectionIdleTimeInSeconds);
@@ -1215,7 +1218,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         setProperty(configuration, "hibernate.cache.provider_class", "org.hibernate.cache.NoCacheProvider");
 
         // Set up the schema and DDL options ...
-        // setProperty(configuration, "hibernate.show_sql", "true"); // writes all SQL statements to console
+        setProperty(configuration, "hibernate.show_sql", String.valueOf(this.showSql)); // writes all SQL statements to console
         setProperty(configuration, "hibernate.format_sql", "true");
         setProperty(configuration, "hibernate.use_sql_comments", "true");
         setProperty(configuration, "hibernate.hbm2ddl.auto", this.autoGenerateSchema);
