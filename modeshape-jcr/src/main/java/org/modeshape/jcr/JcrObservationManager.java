@@ -63,6 +63,7 @@ import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.graph.request.ChangeRequest;
+import org.modeshape.graph.request.PropertyChangeRequest;
 
 /**
  * The implementation of JCR {@link ObservationManager}.
@@ -805,7 +806,14 @@ final class JcrObservationManager implements ObservationManager {
 
             if (shouldCheckNodeType()) {
                 ValueFactory<String> stringFactory = getValueFactories().getStringFactory();
-                Location parentLocation = Location.create(change.getLocation().getPath().getParent());
+                Path changePath = null;
+                if (change.includes(ChangeType.NODE_ADDED, ChangeType.NODE_REMOVED)) {
+                    changePath = change.getPath().getParent();
+                } else {
+                    changePath = change.getPath();
+                }
+
+                Location parentLocation = Location.create(changePath);
                 Map<Name, Property> propMap = this.propertiesByLocation.get(parentLocation);
                 assert (propMap != null);
 
@@ -933,6 +941,7 @@ final class JcrObservationManager implements ObservationManager {
                     List<Location> changedLocations = new ArrayList<Location>();
 
                     // loop through changes saving the parent locations of the changed locations
+                    Location root = null;
                     for (ChangeRequest request : changes.getChangeRequests()) {
                         String changedWorkspaceName = request.changedWorkspace();
                         // If this event is not from this session's workspace ...
@@ -945,13 +954,26 @@ final class JcrObservationManager implements ObservationManager {
                             }
                         }
                         Path changedPath = request.changedLocation().getPath();
-                        Path parentPath = changedPath.getParent();
-                        changedLocations.add(Location.create(parentPath));
+                        if (!(request instanceof PropertyChangeRequest)) {
+                            // We want the primary type and mixin types of the parent node ...
+                            changedPath = changedPath.getParent();
+                        }
+                        Location location = Location.create(changedPath);
+                        if (root == null && changedPath.isRoot()) root = location;
+                        changedLocations.add(location);
                     }
                     if (!changedLocations.isEmpty()) {
                         // more efficient to get all of the locations at once then it is one at a time using the NetChange
                         Graph graph = getGraph();
                         this.propertiesByLocation = graph.getProperties(PRIMARY_TYPE, MIXIN_TYPES).on(changedLocations);
+                        if (root != null && !propertiesByLocation.containsKey(root)) {
+                            // The connector doesn't actually have any properties for the root node, so assume 'mode:root' ...
+                            // For details, see MODE-959.
+                            Property primaryType = graph.getContext().getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE,
+                                                                                                  ModeShapeLexicon.ROOT);
+                            Map<Name, Property> props = Collections.singletonMap(primaryType.getName(), primaryType);
+                            this.propertiesByLocation.put(root, props);
+                        }
                     }
                 }
 

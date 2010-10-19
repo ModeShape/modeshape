@@ -458,6 +458,27 @@ public final class JcrObservationManagerTest extends TestSuite {
                    + propPath, containsPath(listener, propPath));
     }
 
+    @Test
+    public void shouldReceivePropertyAddedEventWhenRegisteredToReceiveEventsBasedUponNodeTypeName() throws Exception {
+        // register listener
+        String[] nodeTypeNames = {"mode:root"};
+        TestListener listener = addListener(1, ALL_EVENTS, null, true, null, nodeTypeNames, false);
+
+        // add the property
+        this.session.getRootNode().setProperty("fooProp", "bar");
+        save();
+
+        // event handling
+        listener.waitForEvents();
+        removeListener(listener);
+
+        // tests
+        checkResults(listener);
+        String propPath = "/fooProp";
+        assertTrue("Path for added property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected=" + propPath,
+                   containsPath(listener, propPath));
+    }
+
     // ===========================================================================================================================
     // @see org.apache.jackrabbit.test.api.observation.EventIteratorTest
     // ===========================================================================================================================
