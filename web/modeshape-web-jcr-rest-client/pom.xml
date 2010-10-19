@@ -217,7 +217,6 @@
 									<cargo.servlet.port>8090</cargo.servlet.port>
 								</properties>
 								<home>target/cargo</home>
-
 								<deployables>
 									<!-- application to deploy -->
 									<deployable>
@@ -348,7 +347,6 @@
 									<cargo.servlet.port>8180</cargo.servlet.port>
 								</properties>
 								<home>target/cargo</home>
-
 								<deployables>
 									<!-- application to deploy -->
 									<deployable>
