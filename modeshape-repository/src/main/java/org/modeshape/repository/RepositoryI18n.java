@@ -114,6 +114,7 @@ public final class RepositoryI18n {
     // Engine
     public static I18n engineIsNotRunning;
     public static I18n errorsPreventStarting;
+    public static I18n warningsWhileStarting;
     public static I18n errorVerifyingConfiguration;
 
     static {
