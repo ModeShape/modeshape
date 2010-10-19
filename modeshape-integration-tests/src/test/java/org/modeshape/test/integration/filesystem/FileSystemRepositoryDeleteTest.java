@@ -38,7 +38,6 @@ import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrTools;
 
-@Ignore
 public class FileSystemRepositoryDeleteTest {
 
     private static final String TEST_REPOSITORY = "Test Repository Source";
