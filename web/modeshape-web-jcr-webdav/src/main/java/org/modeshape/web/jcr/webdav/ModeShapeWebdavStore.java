@@ -84,7 +84,7 @@ public class ModeShapeWebdavStore implements IWebdavStore {
     private static final String DEFAULT_RESOURCE_PRIMARY_TYPES = "nt:file";
     private static final String DEFAULT_NEW_FOLDER_PRIMARY_TYPE = "nt:folder";
     private static final String DEFAULT_NEW_RESOURCE_PRIMARY_TYPE = "nt:file";
-    private static final String DEFAULT_NEW_CONTENT_PRIMARY_TYPE = "mode:resource";
+    private static final String DEFAULT_NEW_CONTENT_PRIMARY_TYPE = "nt:resource";
 
     private final Collection<String> contentPrimaryTypes;
     private final Collection<String> filePrimaryTypes;

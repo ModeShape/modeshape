@@ -175,7 +175,7 @@
 	<param-name>
 		org.modeshape.web.jcr.webdav.NEW_CONTENT_PRIMARY_TYPE_NAME
 	</param-name>
-	<param-value>mode:resource</param-value>
+	<param-value>nt:resource</param-value>
 </context-param>
 
 ]]></programlisting>			 
