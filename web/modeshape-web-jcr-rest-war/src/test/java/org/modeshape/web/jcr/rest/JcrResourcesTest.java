@@ -1094,4 +1094,33 @@ public class JcrResourcesTest {
         assertThat(result, is(notNullValue()));
         assertThat((String)result.get("jcr:path"), is("/" + NODE_PATH + "[3]"));
     }
+
+    // @FixFor( "MODE-886" )
+    @Test
+    public void shouldAllowJcrSql2Query() throws Exception {
+        final String NODE_PATH = "nodeForJcrSql2QueryTest";
+
+        createNode("/" + NODE_PATH, 1);
+
+        createNode("/" + NODE_PATH + "/child", 1);
+        createNode("/" + NODE_PATH + "/child", 2);
+        createNode("/" + NODE_PATH + "/child", 3);
+        createNode("/" + NODE_PATH + "/child", 4);
+
+        URL queryUrl = new URL(SERVER_URL + "/mode%3arepository/default/query");
+        HttpURLConnection connection = (HttpURLConnection)queryUrl.openConnection();
+
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/jcr+sql2");
+
+        String payload = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/" + NODE_PATH + "')";
+
+        connection.getOutputStream().write(payload.getBytes());
+        JSONObject queryResult = new JSONObject(getResponseFor(connection));
+        JSONArray results = (JSONArray)queryResult.get("rows");
+
+        assertThat(results.length(), is(4));
+    }
+
 }
