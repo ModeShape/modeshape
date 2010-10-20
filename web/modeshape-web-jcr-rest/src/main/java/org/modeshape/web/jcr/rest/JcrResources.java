@@ -420,7 +420,7 @@ public class JcrResources extends AbstractHandler {
      */
     @POST
     @Path( "/{repositoryName}/{workspaceName}/query" )
-    @Consumes( "application/jcr+sql" )
+    @Consumes( "application/jcr+sql2" )
     public String postJcrSql2Query( @Context HttpServletRequest request,
                                     @PathParam( "repositoryName" ) String rawRepositoryName,
                                     @PathParam( "workspaceName" ) String rawWorkspaceName,
