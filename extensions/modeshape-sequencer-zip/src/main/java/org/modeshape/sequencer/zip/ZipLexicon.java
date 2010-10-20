@@ -15,5 +15,6 @@ public class ZipLexicon {
     }
 
     public static final Name CONTENT = new BasicName(Namespace.URI, "content");
+    public static final Name FILE = new BasicName(Namespace.URI, "file");
 
 }

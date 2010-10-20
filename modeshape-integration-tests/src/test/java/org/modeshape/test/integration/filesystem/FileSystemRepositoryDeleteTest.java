@@ -30,7 +30,6 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problem;

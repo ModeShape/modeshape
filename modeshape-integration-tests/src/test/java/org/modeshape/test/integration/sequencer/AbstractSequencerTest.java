@@ -205,6 +205,7 @@ public abstract class AbstractSequencerTest {
             Thread.sleep(100);
             actualMillis += 100;
         }
+        Thread.sleep(100);
         fail("Expected to find " + totalNumberOfNodesSequenced + " nodes sequenced, but found " + numFound);
     }
 
