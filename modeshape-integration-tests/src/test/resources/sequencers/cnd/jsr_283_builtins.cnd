@@ -1,0 +1,189 @@
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<mode = "http://www.modeshape.org/1.0">
+<modeint = "http://www.modeshape.org/internal/1.0">
+
+// ------------------------------------------------------------------------
+//                             Pre-defined Node Types
+// ------------------------------------------------------------------------
+
+[mode:defined] mixin
+- modeint:nodeDefinition (string) protected ignore
+- modeint:multiValuedProperties (string) multiple protected ignore
+
+[nt:base] > mode:defined abstract
+  - jcr:primaryType (name) mandatory autocreated 
+      protected compute 
+  - jcr:mixinTypes (name) protected multiple compute
+  
+[nt:unstructured] 
+  orderable 
+  - * (undefined) multiple 
+  - * (undefined) 
+  + * (nt:base) = nt:unstructured sns version 
+
+[mix:created] mixin 
+  - jcr:created (date) protected  
+  - jcr:createdBy (string) protected
+
+[nt:hierarchyNode] > mix:created abstract 
+
+[nt:file] > nt:hierarchyNode 
+  + jcr:content (nt:base) primary mandatory
+
+[nt:linkedFile] > nt:hierarchyNode 
+  - jcr:content (reference) primary mandatory
+
+[nt:folder] > nt:hierarchyNode 
+  + * (nt:hierarchyNode) version
+
+[mix:referenceable] mixin 
+  - jcr:uuid (string) mandatory autocreated protected initialize 
+
+[mix:mimeType] mixin 
+  - jcr:mimeType (string)  
+  - jcr:encoding (string)
+
+[mix:lastModified] mixin 
+  - jcr:lastModified (date) 
+  - jcr:lastModifiedBy (string)
+  
+[nt:resource] > mix:mimeType, mix:lastModified 
+  - jcr:data (binary) primary mandatory
+
+[nt:nodeType] 
+  - jcr:nodeTypeName (name) mandatory protected copy 
+  - jcr:supertypes (name) multiple protected copy
+  - jcr:isAbstract (boolean) mandatory protected copy 
+  - jcr:isMixin (boolean) mandatory protected copy
+  - jcr:isQueryable (boolean) mandatory protected copy
+  - jcr:hasOrderableChildNodes (boolean) mandatory protected copy 
+  - jcr:primaryItemName (name) protected copy
+  + jcr:propertyDefinition (nt:propertyDefinition)  = nt:propertyDefinition sns protected copy 
+  + jcr:childNodeDefinition (nt:childNodeDefinition) = nt:childNodeDefinition sns protected copy
+
+[nt:propertyDefinition] 
+  - jcr:name (name) protected
+  - jcr:autoCreated (boolean) mandatory protected 
+  - jcr:mandatory (boolean) mandatory protected
+  - jcr:isFullTextSearchable (boolean) mandatory protected
+  - jcr:isQueryOrderable (boolean) mandatory protected
+  - jcr:onParentVersion (string) mandatory protected
+      < 'COPY', 'VERSION', 'INITIALIZE', 'COMPUTE', 
+        'IGNORE', 'ABORT' 
+  - jcr:protected (boolean) mandatory protected 
+  - jcr:requiredType (string) mandatory protected
+    < 'STRING', 'BINARY', 'LONG', 'DOUBLE', 'BOOLEAN', 
+      'DATE', 'NAME', 'PATH', 'REFERENCE', 'UNDEFINED' 
+  - jcr:valueConstraints (string) multiple protected 
+  - jcr:availableQueryOperators (name) mandatory multiple protected 
+  - jcr:defaultValues (undefined) multiple protected
+  - jcr:multiple (boolean) mandatory protected
+
+[nt:childNodeDefinition] 
+  - jcr:name (name) protected
+  - jcr:autoCreated (boolean) mandatory protected 
+  - jcr:mandatory (boolean) mandatory protected
+  - jcr:onParentVersion (string) mandatory protected 
+      < 'COPY', 'VERSION', 'INITIALIZE', 'COMPUTE', 
+        'IGNORE', 'ABORT' 
+  - jcr:protected (boolean) mandatory protected
+  - jcr:requiredPrimaryTypes (name) = 'nt:base' mandatory protected multiple 
+  - jcr:defaultPrimaryType (name) protected
+  - jcr:sameNameSiblings (boolean) mandatory protected 
+
+[nt:versionHistory] > mix:referenceable 
+  - jcr:versionableUuid (string) mandatory autocreated protected abort 
+  - jcr:copiedFrom (weakreference) protected abort < 'nt:version' 
+  + jcr:rootVersion (nt:version) = nt:version mandatory autocreated protected abort 
+  + jcr:versionLabels (nt:versionLabels) = nt:versionLabels mandatory autocreated protected abort 
+  + * (nt:version) = nt:version protected abort
+
+
+[nt:versionLabels] 
+  - * (reference) protected abort < 'nt:version'
+
+[nt:version] > mix:referenceable 
+  - jcr:created (date) mandatory autocreated protected abort 
+  - jcr:predecessors (reference) protected multiple abort < 'nt:version' 
+  - jcr:successors (reference) protected multiple abort < 'nt:version' 
+  - jcr:activity (reference) protected abort < 'nt:activity' 
+  + jcr:frozenNode (nt:frozenNode) protected abort
+
+[nt:frozenNode] > mix:referenceable 
+  orderable 
+  - jcr:frozenPrimaryType (name) mandatory autocreated protected abort 
+  - jcr:frozenMixinTypes (name) protected multiple abort 
+  - jcr:frozenUuid (string) mandatory autocreated protected abort 
+  - * (undefined) protected abort 
+  - * (undefined) protected multiple abort 
+  + * (nt:base) protected sns abort
+
+[nt:versionedChild] 
+  - jcr:childVersionHistory (reference) mandatory autocreated protected abort < 'nt:versionHistory'
+
+[nt:query] 
+  - jcr:statement (string) 
+  - jcr:language (string)
+
+[nt:activity] > mix:referenceable 
+  - jcr:activityTitle (string) mandatory autocreated protected
+
+
+[mix:simpleVersionable] mixin 
+  - jcr:isCheckedOut (boolean) = 'true' mandatory autocreated protected ignore 
+
+[mix:versionable] > mix:simpleVersionable, mix:referenceable mixin 
+  - jcr:versionHistory (reference) mandatory protected ignore < 'nt:versionHistory' 
+  - jcr:baseVersion (reference) mandatory protected ignore < 'nt:version' 
+  - jcr:predecessors (reference) mandatory protected multiple ignore < 'nt:version' 
+  - jcr:mergeFailed (reference) protected multiple abort 
+  - jcr:activity (reference) protected < 'nt:version' 
+  - jcr:configuration (reference) protected ignore < 'nt:configuration'
+
+[nt:configuration] > mix:versionable 
+  - jcr:root (reference) mandatory autocreated protected
+
+[nt:address] 
+  - jcr:protocol (string) 
+  - jcr:host (string)  
+  - jcr:port (string) 
+  - jcr:repository (string) 
+  - jcr:workspace (string) 
+  - jcr:path (path) 
+  - jcr:id (weakreference)
+
+[nt:naturalText] 
+  - jcr:text (string) 
+  - jcr:messageId (string)
+
+
+// ------------------------------------------------------------------------
+//                             Pre-defined Mixins
+// ------------------------------------------------------------------------
+
+[mix:etag] mixin
+  - jcr:etag (string) protected autocreated
+
+[mix:lockable] mixin 
+  - jcr:lockOwner (string) protected ignore 
+  - jcr:lockIsDeep (boolean) protected ignore 
+
+[mix:lifecycle] mixin 
+  - jcr:lifecyclePolicy (reference) protected initialize 
+  - jcr:currentLifecycleState (string) protected initialize
+
+[mix:managedRetention] > mix:referenceable mixin 
+  - jcr:hold (string) protected multiple 
+  - jcr:isDeep (boolean) protected multiple 
+  - jcr:retentionPolicy (reference) protected
+
+[mix:shareable] > mix:referenceable mixin
+
+[mix:title] mixin 
+  - jcr:title (string) 
+  - jcr:description (string)  
+
+[mix:language] mixin 
+  - jcr:language (string) 

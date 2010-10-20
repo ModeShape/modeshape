@@ -57,22 +57,30 @@ public class OracleDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
 
         JcrConfiguration config = new JcrConfiguration();
         // Set up the in-memory source where we'll upload the content and where the sequenced output will be stored ...
-        config.repositorySource(repositorySource).usingClass(InMemoryRepositorySource.class).setDescription("The repository for our content").setProperty("defaultWorkspaceName",
-                                                                                                                                                          workspaceName);
+        config.repositorySource(repositorySource)
+              .usingClass(InMemoryRepositorySource.class)
+              .setDescription("The repository for our content")
+              .setProperty("defaultWorkspaceName", workspaceName);
         // Set up the JCR repository to use the source ...
-        config.repository(repositoryName).addNodeTypes(getUrl(ddlTestResourceRootFolder + "StandardDdl.cnd")).addNodeTypes(getUrl(resourceFolder
-                                                                                                                                  + "OracleDdl.cnd")).registerNamespace(StandardDdlLexicon.Namespace.PREFIX,
-                                                                                                                                                                        StandardDdlLexicon.Namespace.URI).registerNamespace(OracleDdlLexicon.Namespace.PREFIX,
-                                                                                                                                                                                                                            OracleDdlLexicon.Namespace.URI).setSource(repositorySource);
+        config.repository(repositoryName)
+              .addNodeTypes(getUrl("org/modeshape/sequencer/ddl/StandardDdl.cnd"))
+              .addNodeTypes(getUrl(resourceFolder + "OracleDdl.cnd"))
+              .registerNamespace(StandardDdlLexicon.Namespace.PREFIX, StandardDdlLexicon.Namespace.URI)
+              .registerNamespace(OracleDdlLexicon.Namespace.PREFIX, OracleDdlLexicon.Namespace.URI)
+              .setSource(repositorySource);
         // Set up the DDL sequencer ...
-        config.sequencer("DDL Sequencer").usingClass("org.modeshape.sequencer.ddl.DdlSequencer").loadedFromClasspath().setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values").sequencingFrom("//(*.(ddl)[*])/jcr:content[@jcr:data]").andOutputtingTo("/ddls/$1");
+        config.sequencer("DDL Sequencer")
+              .usingClass("org.modeshape.sequencer.ddl.DdlSequencer")
+              .loadedFromClasspath()
+              .setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values")
+              .sequencingFrom("(//(*.(ddl)[*]))/jcr:content[@jcr:data]")
+              .andOutputtingTo("/ddls/$1");
         config.save();
         this.engine = config.build();
         this.engine.start();
 
-        this.session = this.engine.getRepository(repositoryName).login(new JcrSecurityContextCredentials(
-                                                                                                         new MyCustomSecurityContext()),
-                                                                       workspaceName);
+        this.session = this.engine.getRepository(repositoryName)
+                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
 
     }
 
@@ -97,25 +105,23 @@ public class OracleDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         Node root = session.getRootNode();
 
         if (root.hasNode("ddls")) {
-            if (root.hasNode("ddls")) {
-                Node ddlsNode = root.getNode("ddls");
-                // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
-                for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
-                    Node ddlNode = iter.nextNode();
+            Node ddlsNode = root.getNode("ddls/a/b");
+            // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
+            for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
+                Node ddlNode = iter.nextNode();
 
-                    long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
-                    assertEquals(numStatements, 50);
+                long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
+                assertEquals(numStatements, 50);
 
-                    // printNodeProperties(ddlNode);
+                // printNodeProperties(ddlNode);
 
-                    verifyNode(ddlNode, "address", "ddl:startLineNumber");
-                    verifyNode(ddlNode, "cust_orders", "ddl:expression");
-                    verifyMixin(ddlNode, "cust_orders", "oracleddl:createIndexStatement");
-                    verifyNodeType(ddlNode, "cust_orders", "oracleddl:createIndexStatement");
-                    verifyNodeType(ddlNode, "cust_orders", "ddl:creatable");
-                    verifyNode(ddlNode, "cust_orders", "ddl:startCharIndex", 1698);
-                    verifyNode(ddlNode, "customers_dim", "ddl:startColumnNumber");
-                }
+                verifyNode(ddlNode, "address", "ddl:startLineNumber");
+                verifyNode(ddlNode, "cust_orders", "ddl:expression");
+                verifyMixin(ddlNode, "cust_orders", "oracleddl:createIndexStatement");
+                verifyNodeType(ddlNode, "cust_orders", "oracleddl:createIndexStatement");
+                verifyNodeType(ddlNode, "cust_orders", "ddl:creatable");
+                verifyNode(ddlNode, "cust_orders", "ddl:startCharIndex", 1698);
+                verifyNode(ddlNode, "customers_dim", "ddl:startColumnNumber");
             }
         }
     }
@@ -131,67 +137,65 @@ public class OracleDdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         Node root = session.getRootNode();
 
         if (root.hasNode("ddls")) {
-            if (root.hasNode("ddls")) {
-                Node ddlsNode = root.getNode("ddls");
-                // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
-                for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
-                    Node ddlNode = iter.nextNode();
+            Node ddlsNode = root.getNode("ddls/a/b");
+            // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
+            for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
+                Node ddlNode = iter.nextNode();
 
-                    long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
-                    assertEquals(4, numStatements);
+                long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
+                assertEquals(4, numStatements);
 
-                    // printNodeProperties(ddlNode);
-                    // remove_emp <ns001:startLineNumber = 1, jcr:primaryType = nt:unstructured, ns001:startColumnNumber = 1,
-                    // jcr:mixinTypes = ns002:createProcedureStatement, ns001:expression =
-                    // CREATE PROCEDURE remove_emp (employee_id NUMBER) AS tot_emps NUMBER;
-                    // BEGIN
-                    // DELETE FROM employees
-                    // WHERE employees.employee_id = remove_emp.employee_id;
-                    // tot_emps := tot_emps - 1;
-                    // END;
-                    // /, ns001:startCharIndex = 0>
-                    // employee_id <ns001:datatypeName = NUMBER, jcr:primaryType = nt:unstructured, ns001:datatypePrecision = 0,
-                    // jcr:mixinTypes = ns002:functionParameter, ns001:datatypeScale = 0>
+                // printNodeProperties(ddlNode);
+                // remove_emp <ns001:startLineNumber = 1, jcr:primaryType = nt:unstructured, ns001:startColumnNumber = 1,
+                // jcr:mixinTypes = ns002:createProcedureStatement, ns001:expression =
+                // CREATE PROCEDURE remove_emp (employee_id NUMBER) AS tot_emps NUMBER;
+                // BEGIN
+                // DELETE FROM employees
+                // WHERE employees.employee_id = remove_emp.employee_id;
+                // tot_emps := tot_emps - 1;
+                // END;
+                // /, ns001:startCharIndex = 0>
+                // employee_id <ns001:datatypeName = NUMBER, jcr:primaryType = nt:unstructured, ns001:datatypePrecision = 0,
+                // jcr:mixinTypes = ns002:functionParameter, ns001:datatypeScale = 0>
 
-                    Node node = assertNode(ddlNode, "remove_emp", "oracleddl:createProcedureStatement");
-                    assertEquals(1, node.getNodes().getSize());
-                    Node paramNode = assertNode(node, "employee_id", "oracleddl:functionParameter");
-                    verifySimpleStringProperty(paramNode, "ddl:datatypeName", "NUMBER");
+                Node node = assertNode(ddlNode, "remove_emp", "oracleddl:createProcedureStatement");
+                assertEquals(1, node.getNodes().getSize());
+                Node paramNode = assertNode(node, "employee_id", "oracleddl:functionParameter");
+                verifySimpleStringProperty(paramNode, "ddl:datatypeName", "NUMBER");
 
-                    // find_root <ns001:startLineNumber = 9, jcr:primaryType = nt:unstructured, ns001:startColumnNumber = 1,
-                    // jcr:mixinTypes = ns002:createProcedureStatement, ns001:expression =
-                    // CREATE PROCEDURE find_root ( x IN REAL )
-                    // IS LANGUAGE C
-                    // NAME c_find_root
-                    // LIBRARY c_utils
-                    // PARAMETERS ( x BY REFERENCE );, ns001:startCharIndex = 211>
-                    // x <ns001:datatypeName = REAL, jcr:primaryType = nt:unstructured, ns002:inOutNoCopy = IN, jcr:mixinTypes =
-                    // ns002:functionParameter>
-                    node = assertNode(ddlNode, "find_root", "oracleddl:createProcedureStatement");
-                    assertEquals(1, node.getNodes().getSize());
-                    paramNode = assertNode(node, "x", "oracleddl:functionParameter");
-                    verifySimpleStringProperty(paramNode, "ddl:datatypeName", "REAL");
-                    verifySimpleStringProperty(paramNode, "oracleddl:inOutNoCopy", "IN");
+                // find_root <ns001:startLineNumber = 9, jcr:primaryType = nt:unstructured, ns001:startColumnNumber = 1,
+                // jcr:mixinTypes = ns002:createProcedureStatement, ns001:expression =
+                // CREATE PROCEDURE find_root ( x IN REAL )
+                // IS LANGUAGE C
+                // NAME c_find_root
+                // LIBRARY c_utils
+                // PARAMETERS ( x BY REFERENCE );, ns001:startCharIndex = 211>
+                // x <ns001:datatypeName = REAL, jcr:primaryType = nt:unstructured, ns002:inOutNoCopy = IN, jcr:mixinTypes =
+                // ns002:functionParameter>
+                node = assertNode(ddlNode, "find_root", "oracleddl:createProcedureStatement");
+                assertEquals(1, node.getNodes().getSize());
+                paramNode = assertNode(node, "x", "oracleddl:functionParameter");
+                verifySimpleStringProperty(paramNode, "ddl:datatypeName", "REAL");
+                verifySimpleStringProperty(paramNode, "oracleddl:inOutNoCopy", "IN");
 
-                    // CREATE FUNCTION SecondMax (input NUMBER) RETURN NUMBER
-                    // PARALLEL_ENABLE AGGREGATE USING SecondMaxImpl;
-                    node = assertNode(ddlNode, "SecondMax", "oracleddl:createFunctionStatement");
-                    assertEquals(1, node.getNodes().getSize());
-                    paramNode = assertNode(node, "input", "oracleddl:functionParameter");
-                    verifySimpleStringProperty(paramNode, "ddl:datatypeName", "NUMBER");
+                // CREATE FUNCTION SecondMax (input NUMBER) RETURN NUMBER
+                // PARALLEL_ENABLE AGGREGATE USING SecondMaxImpl;
+                node = assertNode(ddlNode, "SecondMax", "oracleddl:createFunctionStatement");
+                assertEquals(1, node.getNodes().getSize());
+                paramNode = assertNode(node, "input", "oracleddl:functionParameter");
+                verifySimpleStringProperty(paramNode, "ddl:datatypeName", "NUMBER");
 
-                    // CREATE OR REPLACE FUNCTION text_length(a CLOB)
-                    // RETURN NUMBER DETERMINISTIC IS
-                    // BEGIN
-                    // RETURN DBMS_LOB.GETLENGTH(a);
-                    // END;
-                    // /
-                    node = assertNode(ddlNode, "text_length", "oracleddl:createFunctionStatement");
-                    assertEquals(1, node.getNodes().getSize());
-                    verifySimpleStringProperty(node, "ddl:datatypeName", "NUMBER");
-                    paramNode = assertNode(node, "a", "oracleddl:functionParameter");
-                    verifySimpleStringProperty(paramNode, "ddl:datatypeName", "CLOB");
-                }
+                // CREATE OR REPLACE FUNCTION text_length(a CLOB)
+                // RETURN NUMBER DETERMINISTIC IS
+                // BEGIN
+                // RETURN DBMS_LOB.GETLENGTH(a);
+                // END;
+                // /
+                node = assertNode(ddlNode, "text_length", "oracleddl:createFunctionStatement");
+                assertEquals(1, node.getNodes().getSize());
+                verifySimpleStringProperty(node, "ddl:datatypeName", "NUMBER");
+                paramNode = assertNode(node, "a", "oracleddl:functionParameter");
+                verifySimpleStringProperty(paramNode, "ddl:datatypeName", "CLOB");
             }
         }
     }

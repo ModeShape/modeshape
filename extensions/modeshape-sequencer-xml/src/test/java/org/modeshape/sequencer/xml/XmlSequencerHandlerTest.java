@@ -111,14 +111,14 @@ public class XmlSequencerHandlerTest {
         parse("docWithoutNamespaces.xml");
         // Check the generated content; note that the attribute name doesn't match, so the nodes don't get special names
         assertDocumentNode();
-        assertNode("Cars");
-        assertNode("Cars/Hybrid");
-        assertNode("Cars/Hybrid/car[1]", "name=Toyota Prius", "maker=Toyota", "model=Prius");
-        assertNode("Cars/Hybrid/car[2]", "name=Toyota Highlander", "maker=Toyota", "model=Highlander");
-        assertNode("Cars/Hybrid/car[3]", "name=Nissan Altima", "maker=Nissan", "model=Altima");
-        assertNode("Cars/Sports");
-        assertNode("Cars/Sports/car[1]", "name=Aston Martin DB9", "maker=Aston Martin", "model=DB9");
-        assertNode("Cars/Sports/car[2]", "name=Infiniti G37", "maker=Infiniti", "model=G37");
+        assertElement("Cars");
+        assertElement("Cars/Hybrid");
+        assertElement("Cars/Hybrid/car[1]", "name=Toyota Prius", "maker=Toyota", "model=Prius");
+        assertElement("Cars/Hybrid/car[2]", "name=Toyota Highlander", "maker=Toyota", "model=Highlander");
+        assertElement("Cars/Hybrid/car[3]", "name=Nissan Altima", "maker=Nissan", "model=Altima");
+        assertElement("Cars/Sports");
+        assertElement("Cars/Sports/car[1]", "name=Aston Martin DB9", "maker=Aston Martin", "model=DB9");
+        assertElement("Cars/Sports/car[2]", "name=Infiniti G37", "maker=Infiniti", "model=G37");
         assertNoMoreNodes();
     }
 
@@ -130,14 +130,14 @@ public class XmlSequencerHandlerTest {
         // Note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         // Also, the "jcr:name" attribute values use the default namespace, which is "c" in the registry
         assertDocumentNode();
-        assertNode("c:Cars");
-        assertNode("c:Cars/c:Hybrid");
-        assertNode("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
-        assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
-        assertNode("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
-        assertNode("c:Cars/c:Sports");
-        assertNode("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
-        assertNode("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
+        assertElement("c:Cars");
+        assertElement("c:Cars/c:Hybrid");
+        assertElement("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
+        assertElement("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
+        assertElement("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
+        assertElement("c:Cars/c:Sports");
+        assertElement("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
+        assertElement("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
         assertNoMoreNodes();
     }
 
@@ -148,14 +148,14 @@ public class XmlSequencerHandlerTest {
         parse("docWithNestedNamespaces.xml");
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertDocumentNode();
-        assertNode("Cars");
-        assertNode("Cars/c:Hybrid");
-        assertNode("Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
-        assertNode("Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
-        assertNode("Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
-        assertNode("Cars/Sports");
-        assertNode("Cars/Sports/Aston Martin DB9", "i:maker=Aston Martin", "model=DB9");
-        assertNode("Cars/Sports/Infiniti G37", "i:maker=Infiniti", "model=G37");
+        assertElement("Cars");
+        assertElement("Cars/c:Hybrid");
+        assertElement("Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
+        assertElement("Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
+        assertElement("Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
+        assertElement("Cars/Sports");
+        assertElement("Cars/Sports/Aston Martin DB9", "i:maker=Aston Martin", "model=DB9");
+        assertElement("Cars/Sports/Infiniti G37", "i:maker=Infiniti", "model=G37");
         assertNoMoreNodes();
     }
 
@@ -165,14 +165,14 @@ public class XmlSequencerHandlerTest {
         parse("docWithNamespaces.xml");
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertDocumentNode();
-        assertNode("c:Cars");
-        assertNode("c:Cars/c:Hybrid");
-        assertNode("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
-        assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
-        assertNode("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
-        assertNode("c:Cars/c:Sports");
-        assertNode("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
-        assertNode("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
+        assertElement("c:Cars");
+        assertElement("c:Cars/c:Hybrid");
+        assertElement("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
+        assertElement("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
+        assertElement("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
+        assertElement("c:Cars/c:Sports");
+        assertElement("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
+        assertElement("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
         assertNoMoreNodes();
     }
 
@@ -199,14 +199,14 @@ public class XmlSequencerHandlerTest {
         if (i.length() != 0) i = i + ":";
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertDocumentNode();
-        assertNode(d + "Cars");
-        assertNode(d + "Cars/" + c + "Hybrid");
-        assertNode(d + "Cars/" + c + "Hybrid/" + c + "Toyota Prius", c + "maker=Toyota", c + "model=Prius");
-        assertNode(d + "Cars/" + c + "Hybrid/" + c + "Toyota Highlander", c + "maker=Toyota", c + "model=Highlander");
-        assertNode(d + "Cars/" + c + "Hybrid/" + c + "Nissan Altima", c + "maker=Nissan", c + "model=Altima");
-        assertNode(d + "Cars/" + d + "Sports");
-        assertNode(d + "Cars/" + d + "Sports/Aston Martin DB9", i + "maker=Aston Martin", "model=DB9");
-        assertNode(d + "Cars/" + d + "Sports/Infiniti G37", i + "maker=Infiniti", "model=G37");
+        assertElement(d + "Cars");
+        assertElement(d + "Cars/" + c + "Hybrid");
+        assertElement(d + "Cars/" + c + "Hybrid/" + c + "Toyota Prius", c + "maker=Toyota", c + "model=Prius");
+        assertElement(d + "Cars/" + c + "Hybrid/" + c + "Toyota Highlander", c + "maker=Toyota", c + "model=Highlander");
+        assertElement(d + "Cars/" + c + "Hybrid/" + c + "Nissan Altima", c + "maker=Nissan", c + "model=Altima");
+        assertElement(d + "Cars/" + d + "Sports");
+        assertElement(d + "Cars/" + d + "Sports/Aston Martin DB9", i + "maker=Aston Martin", "model=DB9");
+        assertElement(d + "Cars/" + d + "Sports/Infiniti G37", i + "maker=Infiniti", "model=G37");
         assertNoMoreNodes();
     }
 
@@ -216,14 +216,14 @@ public class XmlSequencerHandlerTest {
         parse("docWithNamespaces.xml");
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertDocumentNode();
-        assertNode("c:Cars");
-        assertNode("c:Cars/c:Hybrid");
-        assertNode("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
-        assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
-        assertNode("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
-        assertNode("c:Cars/c:Sports");
-        assertNode("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
-        assertNode("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
+        assertElement("c:Cars");
+        assertElement("c:Cars/c:Hybrid");
+        assertElement("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
+        assertElement("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
+        assertElement("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
+        assertElement("c:Cars/c:Sports");
+        assertElement("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
+        assertElement("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
         assertNoMoreNodes();
     }
 
@@ -232,14 +232,14 @@ public class XmlSequencerHandlerTest {
         parse("docWithNamespacesWithoutDefault.xml");
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertDocumentNode();
-        assertNode("Cars");
-        assertNode("Cars/Hybrid");
-        assertNode("Cars/Hybrid/Toyota Prius", "maker=Toyota", "model=Prius");
-        assertNode("Cars/Hybrid/Toyota Highlander", "maker=Toyota", "model=Highlander");
-        assertNode("Cars/Hybrid/Nissan Altima", "maker=Nissan", "model=Altima");
-        assertNode("Cars/Sports");
-        assertNode("Cars/Sports/Aston Martin DB9", "maker=Aston Martin", "model=DB9");
-        assertNode("Cars/Sports/Infiniti G37", "maker=Infiniti", "model=G37");
+        assertElement("Cars");
+        assertElement("Cars/Hybrid");
+        assertElement("Cars/Hybrid/Toyota Prius", "maker=Toyota", "model=Prius");
+        assertElement("Cars/Hybrid/Toyota Highlander", "maker=Toyota", "model=Highlander");
+        assertElement("Cars/Hybrid/Nissan Altima", "maker=Nissan", "model=Altima");
+        assertElement("Cars/Sports");
+        assertElement("Cars/Sports/Aston Martin DB9", "maker=Aston Martin", "model=DB9");
+        assertElement("Cars/Sports/Infiniti G37", "maker=Infiniti", "model=G37");
         assertNoMoreNodes();
     }
 
@@ -250,22 +250,22 @@ public class XmlSequencerHandlerTest {
         parse("docWithNamespacesWithoutDefault.xml");
         // Check the generated content; note that the attribute name DOES match, so the nodes names come from "jcr:name" attribute
         assertDocumentNode();
-        assertNode("Cars");
-        assertNode("Cars/Hybrid");
-        assertNode("Cars/Hybrid/car[1]", "maker=Toyota", "model=Prius");
-        assertNode("Cars/Hybrid/car[2]", "maker=Toyota", "model=Highlander");
-        assertNode("Cars/Hybrid/car[3]", "maker=Nissan", "model=Altima");
-        assertNode("Cars/Sports");
-        assertNode("Cars/Sports/car[1]", "maker=Aston Martin", "model=DB9");
-        assertNode("Cars/Sports/car[2]", "maker=Infiniti", "model=G37");
+        assertElement("Cars");
+        assertElement("Cars/Hybrid");
+        assertElement("Cars/Hybrid/car[1]", "maker=Toyota", "model=Prius");
+        assertElement("Cars/Hybrid/car[2]", "maker=Toyota", "model=Highlander");
+        assertElement("Cars/Hybrid/car[3]", "maker=Nissan", "model=Altima");
+        assertElement("Cars/Sports");
+        assertElement("Cars/Sports/car[1]", "maker=Aston Martin", "model=DB9");
+        assertElement("Cars/Sports/car[2]", "maker=Infiniti", "model=G37");
         assertNoMoreNodes();
     }
 
     @Test
     public void shouldParseXmlDocumentThatContainsNoContent() throws IOException, SAXException {
         parse("docWithOnlyRootElement.xml");
-        assertNode("", "jcr:primaryType={http://www.modeshape.org/xml/1.0}document");
-        assertNode("Cars");
+        assertElement("", "jcr:primaryType={http://www.modeshape.org/xml/1.0}document");
+        assertElement("Cars");
         assertNoMoreNodes();
     }
 
@@ -274,16 +274,87 @@ public class XmlSequencerHandlerTest {
         context.getNamespaceRegistry().register("c", "http://default.namespace.com");
         parse("docWithComments.xml");
         assertDocumentNode();
-        assertNode("c:Cars");
+        assertElement("c:Cars");
         assertComment("c:Cars/modexml:comment[1]", "This is a comment");
-        assertNode("c:Cars/c:Hybrid");
-        assertNode("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
-        assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
-        assertNode("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
+        assertElement("c:Cars/c:Hybrid");
+        assertElement("c:Cars/c:Hybrid/c:Toyota Prius", "c:maker=Toyota", "c:model=Prius");
+        assertElement("c:Cars/c:Hybrid/c:Toyota Highlander", "c:maker=Toyota", "c:model=Highlander");
+        assertElement("c:Cars/c:Hybrid/c:Nissan Altima", "c:maker=Nissan", "c:model=Altima");
         assertComment("c:Cars/modexml:comment[2]", "This is another comment");
-        assertNode("c:Cars/c:Sports");
-        assertNode("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
-        assertNode("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
+        assertElement("c:Cars/c:Sports");
+        assertElement("c:Cars/c:Sports/c:Aston Martin DB9", "c:maker=Aston Martin", "c:model=DB9");
+        assertElement("c:Cars/c:Sports/c:Infiniti G37", "c:maker=Infiniti", "c:model=G37");
+        assertNoMoreNodes();
+    }
+
+    @Test
+    public void shouldParseXmlDocumentWithXmlElementsContainingOnlyChildElements() throws IOException, SAXException {
+        context.getNamespaceRegistry().register("xhtml", "http://www.w3.org/1999/xhtml");
+        context.getNamespaceRegistry().register("mathml", "http://www.w3.org/1998/Math/MathML");
+        context.getNamespaceRegistry().register("svg", "http://www.w3.org/2000/svg");
+        context.getNamespaceRegistry().register("dnaxml", "http://www.modeshape.org/xml/1.0");
+        context.getNamespaceRegistry().register("dnadtd", "http://www.modeshape.org/dtd/1.0");
+        parse("docWithElementsContainingElements.xml");
+        assertDocumentNode();
+        assertElement("xhtml:html");
+        assertElement("xhtml:html/xhtml:head");
+        assertElement("xhtml:html/xhtml:head/xhtml:title");
+        assertContent("xhtml:html/xhtml:head/xhtml:title/dnaxml:elementContent", "Three Namespaces");
+        assertElement("xhtml:html/xhtml:body");
+        assertElement("xhtml:html/xhtml:body/xhtml:h1", "{}align=center");
+        assertContent("xhtml:html/xhtml:body/xhtml:h1/dnaxml:elementContent", "An Ellipse and a Rectangle");
+        assertElement("xhtml:html/xhtml:body/svg:svg", "{}width=12cm", "{}height=10cm");
+        assertElement("xhtml:html/xhtml:body/svg:svg/svg:ellipse", "{}rx=110", "{}ry=130");
+        assertElement("xhtml:html/xhtml:body/svg:svg/svg:rect", "{}x=4cm", "{}y=1cm", "{}width=3cm", "{}height=6cm");
+        assertElement("xhtml:html/xhtml:body/xhtml:p");
+        assertContent("xhtml:html/xhtml:body/xhtml:p/dnaxml:elementContent", "The equation for ellipses");
+        assertElement("xhtml:html/xhtml:body/mathml:math");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:eq");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:cn");
+        assertContent("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:cn/dnaxml:elementContent", "1");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:plus");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply/mathml:divide");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply/mathml:apply");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply/mathml:apply/mathml:power");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply/mathml:apply/mathml:ci");
+        assertContent("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply/mathml:apply/mathml:ci/dnaxml:elementContent",
+                      "x");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply/mathml:apply/mathml:cn");
+        assertContent("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply/mathml:apply/mathml:cn/dnaxml:elementContent",
+                      "2");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply/mathml:apply[2]");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply/mathml:apply[2]/mathml:power");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply/mathml:apply[2]/mathml:ci");
+        assertContent("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply/mathml:apply[2]/mathml:ci/dnaxml:elementContent",
+                      "a");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply/mathml:apply[2]/mathml:cn");
+        assertContent("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply/mathml:apply[2]/mathml:cn/dnaxml:elementContent",
+                      "2");
+
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply[2]");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply[2]/mathml:divide");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply[2]/mathml:apply");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply[2]/mathml:apply/mathml:power");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply[2]/mathml:apply/mathml:ci");
+        assertContent("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply[2]/mathml:apply/mathml:ci/dnaxml:elementContent",
+                      "y");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply[2]/mathml:apply/mathml:cn");
+        assertContent("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply[2]/mathml:apply/mathml:cn/dnaxml:elementContent",
+                      "2");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply[2]/mathml:apply[2]");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply[2]/mathml:apply[2]/mathml:power");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply[2]/mathml:apply[2]/mathml:ci");
+        assertContent("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply[2]/mathml:apply[2]/mathml:ci/dnaxml:elementContent",
+                      "b");
+        assertElement("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply[2]/mathml:apply[2]/mathml:cn");
+        assertContent("xhtml:html/xhtml:body/mathml:math/mathml:apply/mathml:apply/mathml:apply[2]/mathml:apply[2]/mathml:cn/dnaxml:elementContent",
+                      "2");
+        assertElement("xhtml:html/xhtml:body/xhtml:hr");
+        assertElement("xhtml:html/xhtml:body/xhtml:p[2]");
+        assertContent("xhtml:html/xhtml:body/xhtml:p[2]/dnaxml:elementContent", "Last Modified January 10, 2002");
         assertNoMoreNodes();
     }
 
@@ -307,42 +378,26 @@ public class XmlSequencerHandlerTest {
         assertEntity(2, "versionNumber", "0.1");
         assertEntity(3, "copyrightYear", "2008");
         assertEntity(4, "copyrightHolder", "Red Hat Middleware, LLC.");
-        assertNode("book");
-        assertNode("book/bookinfo");
-        assertNode("book/bookinfo/title");
-        assertNode("book/bookinfo/title/modexml:elementContent",
-                   "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "modexml:elementContent=ModeShape");
-        assertNode("book/bookinfo/releaseinfo");
-        assertNode("book/bookinfo/releaseinfo/modexml:elementContent",
-                   "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "modexml:elementContent=&versionNumber;");
-        assertNode("book/bookinfo/productnumber");
-        assertNode("book/bookinfo/productnumber/modexml:elementContent",
-                   "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "modexml:elementContent=some text with &versionNumber;inside");
-        assertNode("book/bookinfo/abstract");
-        assertNode("book/bookinfo/abstract/modexml:elementContent",
-                   "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "modexml:elementContent=" + longContent);
-        assertNode("book/programlisting1");
-        assertNode("book/programlisting1/modexml:elementContent",
-                   "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "modexml:elementContent=&lt;dependency&gt; &lt;/dependency&gt;");
-        assertNode("book/programlisting2");
-        assertNode("book/programlisting2/modexml:cData", "modexml:cDataContent=\n&lt;dependency&gt;\n&lt;/dependency&gt;\n");
-        assertNode("book/programlisting3");
-        assertNode("book/programlisting3/modexml:elementContent[1]",
-                   "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "modexml:elementContent=mixture of text and");
-        assertNode("book/programlisting3/modexml:cData", "modexml:cDataContent=\n&lt;dependency&gt;\n&lt;/dependency&gt;\n");
-        assertNode("book/programlisting3/modexml:elementContent[2]",
-                   "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "modexml:elementContent=and some text");
+        assertElement("book");
+        assertElement("book/bookinfo");
+        assertElement("book/bookinfo/title");
+        assertContent("book/bookinfo/title/modexml:elementContent", "ModeShape");
+        assertElement("book/bookinfo/releaseinfo");
+        assertContent("book/bookinfo/releaseinfo/modexml:elementContent", "&versionNumber;");
+        assertElement("book/bookinfo/productnumber");
+        assertContent("book/bookinfo/productnumber/modexml:elementContent", "some text with &versionNumber;inside");
+        assertElement("book/bookinfo/abstract");
+        assertContent("book/bookinfo/abstract/modexml:elementContent", longContent);
+        assertElement("book/programlisting1");
+        assertContent("book/programlisting1/modexml:elementContent", "&lt;dependency&gt; &lt;/dependency&gt;");
+        assertElement("book/programlisting2");
+        assertCData("book/programlisting2/modexml:cData", "modexml:cDataContent=\n&lt;dependency&gt;\n&lt;/dependency&gt;\n");
+        assertElement("book/programlisting3");
+        assertContent("book/programlisting3/modexml:elementContent[1]", "mixture of text and");
+        assertCData("book/programlisting3/modexml:cData", "modexml:cDataContent=\n&lt;dependency&gt;\n&lt;/dependency&gt;\n");
+        assertContent("book/programlisting3/modexml:elementContent[2]", "and some text");
         assertComment("book/programlisting3/modexml:comment", "comment in content");
-        assertNode("book/programlisting3/modexml:elementContent[3]",
-                   "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "modexml:elementContent=after.");
+        assertContent("book/programlisting3/modexml:elementContent[3]", "after.");
         assertNoMoreNodes();
     }
 
@@ -352,11 +407,11 @@ public class XmlSequencerHandlerTest {
         assertDocumentNode();
         assertPI(1, "target", "content");
         assertPI(2, "target2", "other stuff in the processing instruction");
-        assertNode("Cars");
+        assertElement("Cars");
         assertComment("Cars/modexml:comment", "This is a comment");
-        assertNode("Cars/Hybrid");
-        assertNode("Cars/Hybrid/Toyota Prius");
-        assertNode("Cars/Sports");
+        assertElement("Cars/Hybrid");
+        assertElement("Cars/Hybrid/Toyota Prius");
+        assertElement("Cars/Sports");
         assertNoMoreNodes();
     }
 
@@ -376,30 +431,24 @@ public class XmlSequencerHandlerTest {
         parse("docWithCDATA.xml");
         assertDocumentNode();
         assertComment("modexml:comment", "Simple example to demonstrate the CurrencyFormatter.");
-        assertNode("mx:Application");
-        assertNode("mx:Application/mx:Script");
+        assertElement("mx:Application");
+        assertElement("mx:Application/mx:Script");
         assertCdata("mx:Application/mx:Script/modexml:cData", cdata);
         // Now there's an element that contains a mixture of regular element content, CDATA content, and comments
-        assertNode("mx:Application/programlisting3");
-        assertNode("mx:Application/programlisting3/modexml:elementContent[1]",
-                   "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "modexml:elementContent=mixture of text and");
-        assertNode("mx:Application/programlisting3/modexml:cData",
-                   "modexml:cDataContent=\n<dependency>entities like &gt; are not replaced in a CDATA\n</dependency>\n");
-        assertNode("mx:Application/programlisting3/modexml:elementContent[2]",
-                   "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "modexml:elementContent=and some text");
+        assertElement("mx:Application/programlisting3");
+        assertContent("mx:Application/programlisting3/modexml:elementContent[1]", "mixture of text and");
+        assertCdata("mx:Application/programlisting3/modexml:cData",
+                    "\n<dependency>entities like &gt; are not replaced in a CDATA\n</dependency>\n");
+        assertContent("mx:Application/programlisting3/modexml:elementContent[2]", "and some text");
         assertComment("mx:Application/programlisting3/modexml:comment", "comment in content");
-        assertNode("mx:Application/programlisting3/modexml:elementContent[3]",
-                   "jcr:primaryType={http://www.modeshape.org/xml/1.0}elementContent",
-                   "modexml:elementContent=after.");
+        assertContent("mx:Application/programlisting3/modexml:elementContent[3]", "after.");
         // Now the final element
-        assertNode("mx:Application/mx:NumberValidator",
-                   "id=numVal",
-                   "source={priceUS}",
-                   "property=text",
-                   "allowNegative=true",
-                   "domain=real");
+        assertElement("mx:Application/mx:NumberValidator",
+                      "id=numVal",
+                      "source={priceUS}",
+                      "property=text",
+                      "allowNegative=true",
+                      "domain=real");
         assertNoMoreNodes();
     }
 
@@ -413,6 +462,38 @@ public class XmlSequencerHandlerTest {
         if (!pathsInCreationOrder.isEmpty()) {
             fail("Extra nodes were not expected:" + pathsInCreationOrder);
         }
+    }
+
+    protected void assertElement( String path,
+                                  String... properties ) {
+        assertNodeWithType(path, "{http://www.modeshape.org/xml/1.0}element", properties);
+    }
+
+    protected void assertCData( String path,
+                                String... properties ) {
+        assertNodeWithType(path, "{http://www.modeshape.org/xml/1.0}cData", properties);
+    }
+
+    protected void assertContent( String path,
+                                  String content,
+                                  String... properties ) {
+        String[] props = add("{http://www.modeshape.org/xml/1.0}elementContent=" + content, properties);
+        assertNodeWithType(path, "{http://www.modeshape.org/xml/1.0}elementContent", props);
+    }
+
+    protected void assertNodeWithType( String path,
+                                       String type,
+                                       String... properties ) {
+        String[] props = add("jcr:primaryType=" + type, properties);
+        assertNode(path, props);
+    }
+
+    protected String[] add( String str,
+                            String[] array ) {
+        String[] props = new String[array.length + 1];
+        props[0] = str;
+        System.arraycopy(array, 0, props, 1, array.length);
+        return props;
     }
 
     protected void assertNode( String path,
@@ -494,7 +575,7 @@ public class XmlSequencerHandlerTest {
 
         // There should be a single property ...
         Property actualPrimaryType = output.getProperty(expectedPath, JcrLexicon.PRIMARY_TYPE);
-        assertThat(actualPrimaryType.getValues().next(), is((Object)JcrNtLexicon.UNSTRUCTURED));
+        assertThat(actualPrimaryType.getValues().next(), is((Object)ModeShapeXmlLexicon.CDATA));
         Property actual = output.getProperty(expectedPath, ModeShapeXmlLexicon.CDATA_CONTENT);
         assertThat("expected one CDATA property", actual, is(notNullValue()));
         Property expected = context.getPropertyFactory().create(ModeShapeXmlLexicon.CDATA_CONTENT, content);

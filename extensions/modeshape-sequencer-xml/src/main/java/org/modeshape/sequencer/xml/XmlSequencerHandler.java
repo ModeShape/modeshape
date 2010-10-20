@@ -432,7 +432,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
     public void endCDATA() {
         // Output CDATA built in characters() method
         startNode(ModeShapeXmlLexicon.CDATA);
-        output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, defaultPrimaryType);
+        output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, ModeShapeXmlLexicon.CDATA);
         output.setProperty(currentPath, ModeShapeXmlLexicon.CDATA_CONTENT, cDataContent.toString());
         endNode();
         // Null-out builder to free memory
@@ -528,7 +528,7 @@ public class XmlSequencerHandler extends DefaultHandler2 {
 
         // Set the type of the node ...
         if (defaultPrimaryType != null) {
-            output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, defaultPrimaryType);
+            output.setProperty(currentPath, JcrLexicon.PRIMARY_TYPE, ModeShapeXmlLexicon.ELEMENT);
         }
 
         // Now, set each attribute as a property ...

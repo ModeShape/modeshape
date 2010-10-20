@@ -58,22 +58,30 @@ public class PostgresDdlSequencerIntegrationTest extends DdlIntegrationTestUtil 
 
         JcrConfiguration config = new JcrConfiguration();
         // Set up the in-memory source where we'll upload the content and where the sequenced output will be stored ...
-        config.repositorySource(repositorySource).usingClass(InMemoryRepositorySource.class).setDescription("The repository for our content").setProperty("defaultWorkspaceName",
-                                                                                                                                                          workspaceName);
+        config.repositorySource(repositorySource)
+              .usingClass(InMemoryRepositorySource.class)
+              .setDescription("The repository for our content")
+              .setProperty("defaultWorkspaceName", workspaceName);
         // Set up the JCR repository to use the source ...
-        config.repository(repositoryName).addNodeTypes(getUrl(ddlTestResourceRootFolder + "StandardDdl.cnd")).addNodeTypes(getUrl(resourceFolder
-                                                                                                                                  + "PostgresDdl.cnd")).registerNamespace(StandardDdlLexicon.Namespace.PREFIX,
-                                                                                                                                                                          StandardDdlLexicon.Namespace.URI).registerNamespace(PostgresDdlLexicon.Namespace.PREFIX,
-                                                                                                                                                                                                                              PostgresDdlLexicon.Namespace.URI).setSource(repositorySource);
+        config.repository(repositoryName)
+              .addNodeTypes(getUrl("org/modeshape/sequencer/ddl/StandardDdl.cnd"))
+              .addNodeTypes(getUrl(resourceFolder + "PostgresDdl.cnd"))
+              .registerNamespace(StandardDdlLexicon.Namespace.PREFIX, StandardDdlLexicon.Namespace.URI)
+              .registerNamespace(PostgresDdlLexicon.Namespace.PREFIX, PostgresDdlLexicon.Namespace.URI)
+              .setSource(repositorySource);
         // Set up the DDL sequencer ...
-        config.sequencer("DDL Sequencer").usingClass("org.modeshape.sequencer.ddl.DdlSequencer").loadedFromClasspath().setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values").sequencingFrom("//(*.(ddl)[*])/jcr:content[@jcr:data]").andOutputtingTo("/ddls/$1");
+        config.sequencer("DDL Sequencer")
+              .usingClass("org.modeshape.sequencer.ddl.DdlSequencer")
+              .loadedFromClasspath()
+              .setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values")
+              .sequencingFrom("(//(*.(ddl)[*]))/jcr:content[@jcr:data]")
+              .andOutputtingTo("/ddls/$1");
         config.save();
         this.engine = config.build();
         this.engine.start();
 
-        this.session = this.engine.getRepository(repositoryName).login(new JcrSecurityContextCredentials(
-                                                                                                         new MyCustomSecurityContext()),
-                                                                       workspaceName);
+        this.session = this.engine.getRepository(repositoryName)
+                                  .login(new JcrSecurityContextCredentials(new MyCustomSecurityContext()), workspaceName);
 
     }
 
@@ -98,46 +106,44 @@ public class PostgresDdlSequencerIntegrationTest extends DdlIntegrationTestUtil 
         Node root = session.getRootNode();
 
         if (root.hasNode("ddls")) {
-            if (root.hasNode("ddls")) {
-                Node ddlsNode = root.getNode("ddls");
-                // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
-                for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
-                    Node ddlNode = iter.nextNode();
+            Node ddlsNode = root.getNode("ddls/a/b");
+            // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
+            for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
+                Node ddlNode = iter.nextNode();
 
-                    long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
-                    assertEquals(numStatements, 106);
+                long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
+                assertEquals(numStatements, 106);
 
-                    // printNodeProperties(ddlNode);
+                // printNodeProperties(ddlNode);
 
-                    verifyNodeType(ddlNode, "increment", "postgresddl:createFunctionStatement");
-                    verifyNode(ddlNode, "increment", "ddl:expression");
-                    verifyNodeType(ddlNode, "increment", "ddl:creatable");
-                    verifyNodeType(ddlNode, "increment", "postgresddl:functionOperand");
-                    verifyNode(ddlNode, "increment", "ddl:startLineNumber", 214);
-                    verifyNode(ddlNode, "increment", "ddl:startCharIndex", 7604);
+                verifyNodeType(ddlNode, "increment", "postgresddl:createFunctionStatement");
+                verifyNode(ddlNode, "increment", "ddl:expression");
+                verifyNodeType(ddlNode, "increment", "ddl:creatable");
+                verifyNodeType(ddlNode, "increment", "postgresddl:functionOperand");
+                verifyNode(ddlNode, "increment", "ddl:startLineNumber", 214);
+                verifyNode(ddlNode, "increment", "ddl:startCharIndex", 7604);
 
-                    // COMMENT ON FUNCTION my_function (timestamp) IS ’Returns Roman Numeral’;
-                    verifyNodeType(ddlNode, "my_function", "postgresddl:commentOnStatement");
-                    verifyNode(ddlNode, "my_function", "ddl:expression");
-                    verifyNodeType(ddlNode, "my_function", "postgresddl:commentOperand");
-                    verifyNode(ddlNode, "my_function", "ddl:startLineNumber", 44);
-                    verifyNode(ddlNode, "my_function", "ddl:startCharIndex", 1573);
-                    verifyNode(ddlNode, "my_function", "postgresddl:comment", "'Returns Roman Numeral'");
+                // COMMENT ON FUNCTION my_function (timestamp) IS ’Returns Roman Numeral’;
+                verifyNodeType(ddlNode, "my_function", "postgresddl:commentOnStatement");
+                verifyNode(ddlNode, "my_function", "ddl:expression");
+                verifyNodeType(ddlNode, "my_function", "postgresddl:commentOperand");
+                verifyNode(ddlNode, "my_function", "ddl:startLineNumber", 44);
+                verifyNode(ddlNode, "my_function", "ddl:startCharIndex", 1573);
+                verifyNode(ddlNode, "my_function", "postgresddl:comment", "'Returns Roman Numeral'");
 
-                    // ALTER TABLE foreign_companies RENAME COLUMN address TO city;
-                    Node alterTableNode = findNode(ddlNode, "foreign_companies", "postgresddl:alterTableStatement");
-                    assertNotNull(alterTableNode);
-                    Node renameColNode = findNode(alterTableNode, "address", "postgresddl:renamedColumn");
-                    assertNotNull(renameColNode);
-                    verifySingleValueProperty(renameColNode, "ddl:newName", "city");
+                // ALTER TABLE foreign_companies RENAME COLUMN address TO city;
+                Node alterTableNode = findNode(ddlNode, "foreign_companies", "postgresddl:alterTableStatement");
+                assertNotNull(alterTableNode);
+                Node renameColNode = findNode(alterTableNode, "address", "postgresddl:renamedColumn");
+                assertNotNull(renameColNode);
+                verifySingleValueProperty(renameColNode, "ddl:newName", "city");
 
-                    // GRANT EXECUTE ON FUNCTION divideByTwo(numerator int, IN demoninator int) TO george;
-                    Node grantNode = findNode(ddlNode, "divideByTwo", "postgresddl:grantOnFunctionStatement");
-                    assertNotNull(grantNode);
-                    Node parameter_1 = findNode(grantNode, "numerator", "postgresddl:functionParameter");
-                    assertNotNull(parameter_1);
-                    verifySingleValueProperty(parameter_1, "ddl:datatypeName", "int");
-                }
+                // GRANT EXECUTE ON FUNCTION divideByTwo(numerator int, IN demoninator int) TO george;
+                Node grantNode = findNode(ddlNode, "divideByTwo", "postgresddl:grantOnFunctionStatement");
+                assertNotNull(grantNode);
+                Node parameter_1 = findNode(grantNode, "numerator", "postgresddl:functionParameter");
+                assertNotNull(parameter_1);
+                verifySingleValueProperty(parameter_1, "ddl:datatypeName", "int");
             }
         }
     }

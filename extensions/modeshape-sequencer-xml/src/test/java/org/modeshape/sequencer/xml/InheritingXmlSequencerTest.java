@@ -75,10 +75,10 @@ public class InheritingXmlSequencerTest {
     public void shouldSequenceXsds() throws IOException {
         assertThat(sequencer.getAttributeScoping(), is(XmlSequencer.AttributeScoping.INHERIT_ELEMENT_NAMESPACE));
         verifyDocument(xsd);
-        verifyName("xs:schema", "jcr:primaryType", "nt:unstructured");
+        verifyName("xs:schema", "jcr:primaryType", "modexml:element");
         verifyString("xs:schema", "xs:targetNamespace", "http://ns.adobe.com/air/application/1.0");
         verifyString("xs:schema", "xs:elementFormDefault", "qualified");
-        verifyName("xs:schema/xs:element", "jcr:primaryType", "nt:unstructured");
+        verifyName("xs:schema/xs:element", "jcr:primaryType", "modexml:element");
         verifyString("xs:schema/xs:element", "xs:name", "application");
     }
 

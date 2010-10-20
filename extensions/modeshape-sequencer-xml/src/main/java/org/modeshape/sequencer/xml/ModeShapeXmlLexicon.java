@@ -41,6 +41,7 @@ public class ModeShapeXmlLexicon {
     public static final Name COMMENT = new BasicName(Namespace.URI, "comment");
     public static final Name COMMENT_CONTENT = new BasicName(Namespace.URI, "commentContent");
     public static final Name DOCUMENT = new BasicName(Namespace.URI, "document");
+    public static final Name ELEMENT = new BasicName(Namespace.URI, "element");
     public static final Name ELEMENT_CONTENT = new BasicName(Namespace.URI, "elementContent");
     public static final Name PROCESSING_INSTRUCTION = new BasicName(Namespace.URI, "processingInstruction");
     public static final Name PROCESSING_INSTRUCTION_CONTENT = new BasicName(Namespace.URI, "processingInstructionContent");

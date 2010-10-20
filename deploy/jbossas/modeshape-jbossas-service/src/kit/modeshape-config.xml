@@ -35,24 +35,24 @@
         <mode:sequencer jcr:name="Delimited Text File Sequencer" mode:classname="org.modeshape.sequencer.text.DelimitedTextSequencer">
             <mode:description>Sequences *.csv text files loaded into the repository under '/files', extracting comma-separated and delimited files into columnar information.</mode:description>        
             <mode:pathExpression>/files//(*.csv[*])/jcr:content[@jcr:data] => /sequenced/text/delimited/$1 </mode:pathExpression>
-						<!-- The split pattern is a regular expression used to split each row into columns. -->
-						<mode:splitPattern>,</mode:splitPattern>
+			<!-- The split pattern is a regular expression used to split each row into columns. -->
+			<mode:splitPattern>,</mode:splitPattern>
         </mode:sequencer>
         <mode:sequencer jcr:name="Fixed Width Text File Sequencer" mode:classname="org.modeshape.sequencer.text.FixedWidthTextSequencer">
             <mode:description>Sequences *.txt fixed-width text files loaded into the repository under '/files', extracting splitting rows into columns based on predefined positions.</mode:description>        
             <mode:pathExpression>/files//(*.txt[*])/jcr:content[@jcr:data] => /sequenced/text/fixedWidth/$1 </mode:pathExpression>
-						<!-- The 'columnStartPositions' define the 0-based column start positions. Everything before the 
-						     first start position is treated as the first column. The default value is the empty string 
-						     (implying that each row should be treated as a single column). There is an implicit column 
-						     start position of 0 that never needs to be specified. -->
-						<mode:columnStartPositions></mode:columnStartPositions>
+			<!-- The 'columnStartPositions' define the 0-based column start positions. Everything before the 
+			     first start position is treated as the first column. The default value is the empty string 
+			     (implying that each row should be treated as a single column). There is an implicit column 
+			     start position of 0 that never needs to be specified. -->
+			<mode:columnStartPositions></mode:columnStartPositions>
         </mode:sequencer>
         <mode:sequencer jcr:name="Teiid Model Sequencer" mode:classname="org.modeshape.sequencer.teiid.ModelSequencer">
             <mode:description>Sequences Teiid relational models (e.g., *.xmi) loaded into the repository under '/files', extracting the structure defined in the models.</mode:description>
             <!-- Note this path expression captures the path below '/files' but excludes the filename, and places the sequenced
                  content under the same relative path below '/sequenced/teiid/models'. For example, if an XMI model is uploaded
                  to '/files/my/favorites/CustomerDetails.xmi', then the sequenced output will be placed at
-                 the '/sequenced/teiid/models/CustomerDetails' node, which will have a primary type of 'xmi:model' and will
+                 the '/sequenced/teiid/models/my/favorites/CustomerDetails' node, which will have a primary type of 'xmi:model' and will
                  contain under it the nodes representing the catalogs, schemas, tables, views, columns, etc. Of course, the 
                  path expression can be modified as needed; for example, to include the filename of the XMI model in the 
                  sequenced output path. -->
@@ -63,7 +63,7 @@
             <!-- Note this path expression captures the path below '/files' but excludes the filename, and places the sequenced
                  content under the same relative path below '/sequenced/teiid/models'. For example, if a VDB file is uploaded
                  to '/files/my/favorites/Customers.vdb', then the sequenced output will be placed at
-                 the '/sequenced/teiid/models/Customer' node, which will have a primary type of 'vdb:virtualDatabase' and will
+                 the '/sequenced/teiid/models/my/favorites/Customer' node, which will have a primary type of 'vdb:virtualDatabase' and will
                  contain under it the nodes representing the models (which will each contain the nodes representing that
                  model's catalogs, schemas, tables, views, columns, etc.).  Of course, the path expression
                  can be modified as needed; for example, to include the filename of the XMI model in the sequenced output path. -->
@@ -79,11 +79,25 @@
         </mode:sequencer>
         <mode:sequencer jcr:name="CND File Sequencer" mode:classname="org.modeshape.sequencer.cnd.CndSequencer">
             <mode:description>Sequences CND files loaded into the repository under '/files', extracting the contained node type definitions.</mode:description>        
-            <mode:pathExpression>/files//(*.cnd[*])/jcr:content[@jcr:data] => /sequenced/cnd/$1 </mode:pathExpression>
+            <!-- Note this path expression captures the path below '/files', including the filename, and places the sequenced
+                 content under the same relative path below '/sequenced/cnd'. For example, if a CND file is uploaded
+                 to '/files/my/favorites/Customers.cnd', then the sequenced output will be placed at
+                 the '/sequenced/ddl/my/favorites/Customer.cnd' node, which will have a primary type of 'nt:unstructured' and will
+                 contain under it the 'nt:nodeType', 'nt:propertyDefinition' and 'nt:childNodeDefinition' nodes representing 
+                 the node types, property definitions, and child node definitions contained within the CND file.
+                 Of course, the path expression can be modified as needed; for example, to exclude the filename extension, 
+                 or to exclude the relative path. -->
+            <mode:pathExpression>/files(//(*.cnd[*]))/jcr:content[@jcr:data] => /sequenced/cnd/$1 </mode:pathExpression>
         </mode:sequencer>
         <mode:sequencer jcr:name="DDL File Sequencer" mode:classname="org.modeshape.sequencer.ddl.DdlSequencer">
             <mode:description>Sequences DDL files loaded into the repository under '/files', extracting the structured abstract syntax tree of the DDL commands and expressions.</mode:description>        
-            <mode:pathExpression>/files//(*.ddl[*])/jcr:content[@jcr:data] => /sequenced/ddl/$1 </mode:pathExpression>
+            <!-- Note this path expression captures the path below '/files', including the filename, and places the sequenced
+                 content under the same relative path below '/sequenced/ddl'. For example, if a DDL file is uploaded
+                 to '/files/my/favorites/Customers.ddl', then the sequenced output will be placed at
+                 the '/sequenced/ddl/my/favorites/Customer.ddl' node, which will have a primary type of 'nt:unstructured' and will
+                 contain under it the nodes representing the DDL statements. Of course, the path expression
+                 can be modified as needed; for example, to exclude the filename extension, or to exclude the relative path. -->
+            <mode:pathExpression>/files(//(*.ddl[*]))/jcr:content[@jcr:data] => /sequenced/ddl/$1 </mode:pathExpression>
         </mode:sequencer>     
         <mode:sequencer jcr:name="MS Office File Sequencer" mode:classname="org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer">
             <mode:description>Sequences Microsoft Office documents and presentations under '/files', extracting summary information and structure.</mode:description>        
@@ -91,18 +105,25 @@
         </mode:sequencer>
         <mode:sequencer jcr:name="XML File Sequencer" mode:classname="org.modeshape.sequencer.xml.XmlSequencer">
             <mode:description>Sequences XML files loaded into the repository under '/files', extracting the contents into the equivalent JCR graph structure.</mode:description>        
-            <mode:pathExpression>/files//(*.xml[*])/jcr:content[@jcr:data] => /sequenced/xml/$1 </mode:pathExpression>
+            <!-- Note this path expression captures the path below '/files', including the filename, and places the sequenced
+                 content under the same relative path below '/sequenced/xml'. For example, if an XML file is uploaded
+                 to '/files/my/favorites/Customers.xml', then the sequenced output will be placed at
+                 the '/sequenced/xml/my/favorites/Customer.xml' node, which will have a primary type of 'modexml:document' and will
+                 contain under it the nodes representing the XML elements, attributes, and content nodes. Of course, the path expression
+                 can be modified as needed; for example, to exclude the filename extension, or to exclude the relative path. -->
+            <mode:pathExpression>/files(//(*.xml[*]))/jcr:content[@jcr:data] => /sequenced/xml/$1 </mode:pathExpression>
         </mode:sequencer>  
         <mode:sequencer jcr:name="ZIP File Sequencer" mode:classname="org.modeshape.sequencer.zip.ZipSequencer">
             <mode:description>Sequences ZIP files loaded into the repository under '/files', extracting the archive file contents into the equivalent JCR graph structure of 'nt:file' and 'nt:folder' nodes.</mode:description>        
-            <mode:pathExpression>/files//(*.zip[*])/jcr:content[@jcr:data] => /sequenced/zip/$1 </mode:pathExpression>
+            <!-- Note this path expression captures the path below '/files', including the filename, and places the sequenced
+                 content under the same relative path below '/sequenced/zip'. For example, if a ZIP file is uploaded
+                 to '/files/my/favorites/Customers.zip', then the sequenced output will be placed at
+                 the '/sequenced/xml/my/favorites/Customer.zip' node, which will have a primary type of 'zip:file'
+                 (a subtype of 'nt:folder') and will contain 'nt:file' and 'nt:folder' nodes for each file and folder (respectively)
+                 in the archive file. Of course, the path expression can be modified as needed; for example, to exclude the 
+                 filename extension, or to exclude the relative path. -->
+            <mode:pathExpression>/files(//)(*.zip[*])/jcr:content[@jcr:data] => /sequenced/zip/$1 </mode:pathExpression>
         </mode:sequencer>                          
-        <!--
-        <mode:sequencer jcr:name="JBPM-JPDL File Sequencer" mode:classname="org.modeshape.sequencer.jpdl3.xxSequencer">
-            <mode:description>JBPM-JPDL File sequencer</mode:description>        
-            <mode:pathExpression>/files/jbpm-jpdlfile/(*.jpbm[*])/jcr:content[@jcr:data] => /sequenced/jbpm/$1 </mode:pathExpression>
-        </mode:sequencer>    
-        -->
     </mode:sequencers>
     
     <!-- Define the JCR repositories -->

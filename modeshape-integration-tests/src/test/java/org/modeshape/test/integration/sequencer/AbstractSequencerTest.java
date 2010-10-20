@@ -151,6 +151,13 @@ public abstract class AbstractSequencerTest {
 
     }
 
+    protected void uploadFiles( String destinationPath,
+                                String... resourcePaths ) throws Exception {
+        for (String resourcePath : resourcePaths) {
+            uploadFile(resourcePath, destinationPath);
+        }
+    }
+
     /**
      * Get the sequencing statistics.
      * 
@@ -550,6 +557,9 @@ public abstract class AbstractSequencerTest {
             sb.append("/");
         } else {
             sb.append(node.getName());
+            if (node.getIndex() != 1) {
+                sb.append('[').append(node.getIndex()).append(']');
+            }
         }
         sb.append(" jcr:primaryType=" + node.getPrimaryNodeType().getName());
         boolean referenceable = false;

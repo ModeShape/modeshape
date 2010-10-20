@@ -225,6 +225,7 @@ public class CndImporter {
         Path nodeTypePath = pathFactory.create(path, name);
         List<Property> properties = new ArrayList<Property>();
         properties.add(propertyFactory.create(JcrLexicon.NODE_TYPE_NAME, name));
+        properties.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.NODE_TYPE));
 
         // Read the (optional) supertypes ...
         List<Name> supertypes = parseSupertypes(tokens);
@@ -403,6 +404,7 @@ public class CndImporter {
         Path path = pathFactory.create(nodeTypePath, JcrLexicon.PROPERTY_DEFINITION);
         List<Property> properties = new ArrayList<Property>();
         properties.add(propertyFactory.create(JcrLexicon.NAME, name));
+        properties.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.PROPERTY_DEFINITION));
 
         // Parse the (optional) required type ...
         parsePropertyType(tokens, properties, PropertyType.STRING.getName());
@@ -593,6 +595,7 @@ public class CndImporter {
         Path path = pathFactory.create(nodeTypePath, JcrLexicon.CHILD_NODE_DEFINITION);
         List<Property> properties = new ArrayList<Property>();
         properties.add(propertyFactory.create(JcrLexicon.NAME, name));
+        properties.add(propertyFactory.create(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.CHILD_NODE_DEFINITION));
 
         parseRequiredPrimaryTypes(tokens, properties);
         parseDefaultType(tokens, properties);

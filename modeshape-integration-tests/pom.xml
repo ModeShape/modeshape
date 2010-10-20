@@ -119,6 +119,12 @@
 		</dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-sequencer-cnd</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-classfile</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
