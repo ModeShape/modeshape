@@ -347,7 +347,7 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
     @SuppressWarnings( "unchecked" )
     public Location addChild( WorkspaceType workspace,
                               NodeType parent,
-                              NodeType newChild,
+                              NodeType originalChild,
                               NodeType beforeOtherChild,
                               Name desiredName ) {
         // If the parent doesn't already have changes, we need to find the new parent in the newWorkspace's changes
@@ -356,19 +356,17 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
         }
 
         // Get some information about the child ...
-        Segment newChildSegment = newChild.getName();
+        Segment newChildSegment = originalChild.getName();
         Name newChildName = newChildSegment.getName();
         int snsIndex = newChildSegment.getIndex();
 
         // Find the existing parent of the new child ...
-        NodeType oldParent = getParent(workspace, newChild);
+        NodeType oldParent = getParent(workspace, originalChild);
 
         // Find the changes for this workspace ...
         WorkspaceChanges changes = getChangesFor(workspace, true);
-        NodeType newChildWithOldParent = null;
 
         if (oldParent != null) {
-            newChildWithOldParent = newChild;
             // Remove the node from it's parent ...
             int oldIndex = oldParent.getChildren().indexOf(newChildSegment);
             NodeType priorParent = (NodeType)oldParent.clone();
@@ -440,10 +438,19 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
             childName = pathFactory.createSegment(newChildName, snsIndex);
         }
 
+        /*
+         * We need to clone the original child here.  Otherwise, the call to withName(childName) below
+         * will modify the name of originalChild as a side effect if the originalChild already has pending changes 
+         * during this transaction (q.v., MODE-944).  If that were to happen, the changes.moved() call further
+         * below would essentially move the node onto itself, instead of moving the node from the old location
+         * to the new location.
+         */
+        NodeType copyOfOriginalChild = (NodeType)originalChild.clone();
+
         // Change the name of the new node ...
-        newChild = (NodeType)newChild.withName(childName).withParent(pathTo(parent));
-        parent = (NodeType)parent.withChild(index, newChild.getName());
-        changes.moved(newChildWithOldParent, newChild, parent);
+        NodeType newChild = (NodeType)copyOfOriginalChild.withName(childName).withParent(pathTo(parent));
+        parent = (NodeType)parent.withChild(index, originalChild.getName());
+        changes.moved(originalChild, newChild, parent);
 
         return locationFor(newChild);
     }
