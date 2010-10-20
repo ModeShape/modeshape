@@ -67,19 +67,18 @@ public class ZipSequencerIntegrationTest extends AbstractSequencerTest {
         waitUntilSequencedNodesIs(1);
 
         // Find the sequenced node ...
-        Node zipped = assertNode("/sequenced/zip/test-files.zip", "zip:file");
-        Node file1 = assertNode("/sequenced/zip/test-files.zip/MODE-966-fix.patch", "nt:file");
-        Node data1 = assertNode("/sequenced/zip/test-files.zip/MODE-966-fix.patch/jcr:content", "nt:resource");
-        Node fold1 = assertNode("/sequenced/zip/test-files.zip/testFolder", "nt:folder");
-        Node file2 = assertNode("/sequenced/zip/test-files.zip/testFolder/MODE-962-fix.patch", "nt:file");
-        Node data2 = assertNode("/sequenced/zip/test-files.zip/testFolder/MODE-962-fix.patch/jcr:content", "nt:resource");
-        Node fold3 = assertNode("/sequenced/zip/test-files.zip/testFolder/testInnerFolder", "nt:folder");
-        Node file4 = assertNode("/sequenced/zip/test-files.zip/testFolder/testInnerFolder/MODE-960-fix.patch", "nt:file");
-        Node data4 = assertNode("/sequenced/zip/test-files.zip/testFolder/testInnerFolder/MODE-960-fix.patch/jcr:content",
-                                "nt:resource");
-        Node file5 = assertNode("/sequenced/zip/test-files.zip/testFolder/testInnerFolder/MODE-960-fix2.patch", "nt:file");
-        Node data5 = assertNode("/sequenced/zip/test-files.zip/testFolder/testInnerFolder/MODE-960-fix2.patch/jcr:content",
-                                "nt:resource");
+        String path = "/sequenced/zip/test-files.zip";
+        Node zipped = assertNode(path, "zip:file");
+        Node file1 = assertNode(path + "/MODE-966-fix.patch", "nt:file");
+        Node data1 = assertNode(path + "/MODE-966-fix.patch/jcr:content", "nt:resource");
+        Node fold1 = assertNode(path + "/testFolder", "nt:folder");
+        Node file2 = assertNode(path + "/testFolder/MODE-962-fix.patch", "nt:file");
+        Node data2 = assertNode(path + "/testFolder/MODE-962-fix.patch/jcr:content", "nt:resource");
+        Node fold3 = assertNode(path + "/testFolder/testInnerFolder", "nt:folder");
+        Node file4 = assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix.patch", "nt:file");
+        Node data4 = assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix.patch/jcr:content", "nt:resource");
+        Node file5 = assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix2.patch", "nt:file");
+        Node data5 = assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix2.patch/jcr:content", "nt:resource");
         assertThat(file1, is(notNullValue()));
         assertThat(data1, is(notNullValue()));
         assertThat(file2, is(notNullValue()));
@@ -97,10 +96,40 @@ public class ZipSequencerIntegrationTest extends AbstractSequencerTest {
         printQuery("SELECT * FROM [zip:file]", 1);
     }
 
-    protected void uploadFiles( String destinationPath,
-                                String... resourcePaths ) throws Exception {
-        for (String resourcePath : resourcePaths) {
-            uploadFile(resourcePath, destinationPath);
-        }
+    @Test
+    public void shouldSequenceZipFileBelowSequencedPath() throws Exception {
+        // print = true;
+        uploadFile("sequencers/zip/test-files.zip", "/files/a/b");
+        waitUntilSequencedNodesIs(1);
+
+        // Find the sequenced node ...
+        String path = "/sequenced/zip/a/b/test-files.zip";
+        Node zipped = assertNode(path, "zip:file");
+        Node file1 = assertNode(path + "/MODE-966-fix.patch", "nt:file");
+        Node data1 = assertNode(path + "/MODE-966-fix.patch/jcr:content", "nt:resource");
+        Node fold1 = assertNode(path + "/testFolder", "nt:folder");
+        Node file2 = assertNode(path + "/testFolder/MODE-962-fix.patch", "nt:file");
+        Node data2 = assertNode(path + "/testFolder/MODE-962-fix.patch/jcr:content", "nt:resource");
+        Node fold3 = assertNode(path + "/testFolder/testInnerFolder", "nt:folder");
+        Node file4 = assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix.patch", "nt:file");
+        Node data4 = assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix.patch/jcr:content", "nt:resource");
+        Node file5 = assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix2.patch", "nt:file");
+        Node data5 = assertNode(path + "/testFolder/testInnerFolder/MODE-960-fix2.patch/jcr:content", "nt:resource");
+        assertThat(file1, is(notNullValue()));
+        assertThat(data1, is(notNullValue()));
+        assertThat(file2, is(notNullValue()));
+        assertThat(data2, is(notNullValue()));
+        assertThat(fold1, is(notNullValue()));
+        assertThat(fold3, is(notNullValue()));
+        assertThat(file4, is(notNullValue()));
+        assertThat(data4, is(notNullValue()));
+        assertThat(file5, is(notNullValue()));
+        assertThat(data5, is(notNullValue()));
+        printSubgraph(zipped);
+        printSubgraph(assertNode("/sequenced/zip"));
+
+        printQuery("SELECT * FROM [nt:file]", 5);
+        printQuery("SELECT * FROM [nt:folder]", 6); // 2 extra folders
+        printQuery("SELECT * FROM [zip:file]", 1);
     }
 }

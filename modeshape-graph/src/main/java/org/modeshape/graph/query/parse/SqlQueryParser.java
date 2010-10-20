@@ -1096,7 +1096,7 @@ public class SqlQueryParser implements QueryParser {
         } else if (tokens.canConsume("NAME", "(")) {
             if (tokens.canConsume(")")) {
                 if (source instanceof Selector) {
-                    return new NodeName(((Selector)source).name());
+                    return nodeName(((Selector)source).name());
                 }
                 String msg = GraphI18n.functionIsAmbiguous.text("NAME()", pos.getLine(), pos.getColumn());
                 throw new ParsingException(pos, msg);

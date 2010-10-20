@@ -25,11 +25,16 @@ package org.modeshape.sequencer.cnd;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.modeshape.cnd.CndImporter;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.io.Destination;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.sequencer.SequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencer;
@@ -54,7 +59,11 @@ public class CndSequencer implements StreamSequencer {
         // Use the CND importer ...
         Path root = context.getValueFactories().getPathFactory().createRootPath();
         CndImporter importer = new CndImporter(destination, root);
-        String resourceName = context.getInputPath().getString(context.getNamespaceRegistry());
+        Path inputPath = context.getInputPath();
+        if (inputPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
+            inputPath = inputPath.getParent();
+        }
+        String resourceName = inputPath.getLastSegment().getString(context.getNamespaceRegistry());
         try {
             importer.importFrom(stream, context.getProblems(), resourceName);
         } catch (IOException e) {
@@ -65,11 +74,14 @@ public class CndSequencer implements StreamSequencer {
     protected class OutputDestination implements Destination {
         private final SequencerOutput output;
         private final StreamSequencerContext context;
+        private final Map<Path, AtomicInteger> paths = new HashMap<Path, AtomicInteger>();
+        private final PathFactory pathFactory;
 
         protected OutputDestination( SequencerOutput output,
                                      StreamSequencerContext context ) {
             this.output = output;
             this.context = context;
+            this.pathFactory = context.getValueFactories().getPathFactory();
         }
 
         /**
@@ -81,6 +93,24 @@ public class CndSequencer implements StreamSequencer {
             return context;
         }
 
+        protected Path checkPath( Path path ) {
+            path = path.relativeToRoot();
+            AtomicInteger count = paths.get(path);
+            if (count == null) {
+                count = new AtomicInteger(1);
+                paths.put(path, count);
+                return path;
+            }
+            int snsIndex = count.incrementAndGet();
+            Path parent = path.getParent();
+            if (parent == null) {
+                // We've actually seen this node type name before (an artifact of the way the CndImporter works),
+                // so just use it ...
+                return path;
+            }
+            return pathFactory.create(parent, path.getLastSegment().getName(), snsIndex);
+        }
+
         /**
          * {@inheritDoc}
          * 
@@ -88,6 +118,7 @@ public class CndSequencer implements StreamSequencer {
          */
         public void create( Path path,
                             List<Property> properties ) {
+            path = checkPath(path);
             for (Property property : properties) {
                 output.setProperty(path, property.getName(), property.getValuesAsArray());
             }
@@ -102,6 +133,7 @@ public class CndSequencer implements StreamSequencer {
         public void create( Path path,
                             Property firstProperty,
                             Property... additionalProperties ) {
+            path = checkPath(path);
             output.setProperty(path, firstProperty.getName(), firstProperty.getValues());
             for (Property property : additionalProperties) {
                 output.setProperty(path, property.getName(), property.getValuesAsArray());
@@ -116,6 +148,7 @@ public class CndSequencer implements StreamSequencer {
          */
         public void setProperties( Path path,
                                    Property... properties ) {
+            path = checkPath(path);
             for (Property property : properties) {
                 output.setProperty(path, property.getName(), property.getValuesAsArray());
             }

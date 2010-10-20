@@ -49,6 +49,7 @@ public class XmlSequencerTest {
     private static final String DTD_NAME = "modedtd:name";
     private static final String DTD_SYSTEM_ID = "modedtd:systemId";
     private static final String DTD_VALUE = "modedtd:value";
+    private static final String ELEMENT = "modexml:element";
     private static final String ELEMENT_CONTENT = "modexml:elementContent";
     private static final String ENTITY = "modedtd:entity";
     private static final String PI = "modexml:processingInstruction";
@@ -93,9 +94,9 @@ public class XmlSequencerTest {
     @Test
     public void shouldHandleNamespaces() throws IOException {
         verifyDocument(xml2);
-        verifyName("book[1]/bookinfo[1]/xi:include[1]", "jcr:primaryType", "nt:unstructured");
+        verifyName("book[1]/bookinfo[1]/xi:include[1]", "jcr:primaryType", ELEMENT);
         verifyString("book[1]/bookinfo[1]/xi:include[1]", "href", "Author_Group.xml");
-        verifyName("book[1]/bookinfo[1]/xi:include[2]", "jcr:primaryType", "nt:unstructured");
+        verifyName("book[1]/bookinfo[1]/xi:include[2]", "jcr:primaryType", ELEMENT);
         verifyString("book[1]/bookinfo[1]/xi:include[2]", "href", "Legal_Notice.xml");
     }
 
@@ -154,10 +155,10 @@ public class XmlSequencerTest {
     public void shouldSequenceXsds() throws IOException {
         sequencer.setAttributeScoping(XmlSequencer.AttributeScoping.INHERIT_ELEMENT_NAMESPACE);
         verifyDocument(xsd);
-        verifyName("xs:schema", "jcr:primaryType", "nt:unstructured");
+        verifyName("xs:schema", "jcr:primaryType", ELEMENT);
         verifyString("xs:schema", "xs:targetNamespace", "http://ns.adobe.com/air/application/1.0");
         verifyString("xs:schema", "xs:elementFormDefault", "qualified");
-        verifyName("xs:schema/xs:element", "jcr:primaryType", "nt:unstructured");
+        verifyName("xs:schema/xs:element", "jcr:primaryType", ELEMENT);
         verifyString("xs:schema/xs:element", "xs:name", "application");
     }
 

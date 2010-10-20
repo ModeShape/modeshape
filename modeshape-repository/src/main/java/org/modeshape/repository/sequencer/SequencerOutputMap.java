@@ -25,9 +25,8 @@ package org.modeshape.repository.sequencer;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.jcip.annotations.Immutable;
@@ -53,7 +52,7 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
 
     public SequencerOutputMap( ValueFactories factories ) {
         CheckArg.isNotNull(factories, "factories");
-        this.data = new HashMap<Path, List<PropertyValue>>();
+        this.data = new LinkedHashMap<Path, List<PropertyValue>>();
         this.factories = factories;
     }
 
@@ -170,10 +169,11 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
      * {@inheritDoc}
      */
     public Iterator<Entry> iterator() {
-        LinkedList<Path> paths = new LinkedList<Path>(data.keySet());
-        Collections.sort(paths);
-        sortValues();
-        return new EntryIterator(paths.iterator());
+        // LinkedList<Path> paths = new LinkedList<Path>(data.keySet());
+        // Collections.sort(paths);
+        // sortValues();
+        // return new EntryIterator(paths.iterator());
+        return new EntryIterator(data.keySet().iterator());
     }
 
     protected void sortValues() {

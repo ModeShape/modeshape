@@ -57,11 +57,12 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
 
     @Before
     public void beforeEach() throws Exception {
+        print = false;
+        tools = new JcrTools();
+
         // Configure the ModeShape configuration. This could be done by loading a configuration from a file, or by
         // using a (local or remote) configuration repository, or by setting up the configuration programmatically.
         // This test uses the programmatic approach...
-
-        tools = new JcrTools();
 
         repositoryName = "ddlRepository";
         workspaceName = "default";
@@ -75,7 +76,7 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
               .setProperty("defaultWorkspaceName", workspaceName);
         // Set up the JCR repository to use the source ...
         config.repository(repositoryName)
-              .addNodeTypes(getUrl(ddlTestResourceRootFolder + "StandardDdl.cnd"))
+              .addNodeTypes(getUrl("org/modeshape/sequencer/ddl/StandardDdl.cnd"))
               .registerNamespace(StandardDdlLexicon.Namespace.PREFIX, StandardDdlLexicon.Namespace.URI)
               .setSource(repositorySource);
         // Set up the DDL sequencer ...
@@ -83,7 +84,7 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
               .usingClass("org.modeshape.sequencer.ddl.DdlSequencer")
               .loadedFromClasspath()
               .setDescription("Sequences DDL files to extract individual statements and accompanying statement properties and values")
-              .sequencingFrom("//(*.(ddl)[*])/jcr:content[@jcr:data]")
+              .sequencingFrom("(//(*.(ddl)[*]))/jcr:content[@jcr:data]")
               .andOutputtingTo("/ddls/$1");
         config.save();
         this.engine = config.build();
@@ -110,6 +111,7 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         uploadFile(ddlTestResourceRootFolder, "create_schema.ddl", "shouldSequenceCreateSchemaDdlFile");
 
         waitUntilSequencedNodesIs(1);
+        // print = true;
 
         // Find the node ...
         Node root = session.getRootNode();
@@ -117,6 +119,7 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         if (root.hasNode("ddls")) {
             if (root.hasNode("ddls")) {
                 Node ddlsNode = root.getNode("ddls");
+                printSubgraph(ddlsNode);
                 // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
                 for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
                     Node ddlNode = iter.nextNode();
@@ -142,7 +145,7 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         Node root = session.getRootNode();
 
         if (root.hasNode("ddls")) {
-            Node ddlsNode = root.getNode("ddls");
+            Node ddlsNode = root.getNode("ddls/a/b");
             // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
             for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
                 Node ddlNode = iter.nextNode();
@@ -231,32 +234,29 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         Node root = session.getRootNode();
 
         if (root.hasNode("ddls")) {
-            if (root.hasNode("ddls")) {
-                Node ddlsNode = root.getNode("ddls");
-                // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
-                for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
-                    Node ddlNode = iter.nextNode();
+            Node ddlsNode = root.getNode("ddls/a/b");
+            // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
+            for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
+                Node ddlNode = iter.nextNode();
 
-                    // printNodeProperties(ddlNode);
+                // printNodeProperties(ddlNode);
 
-                    long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
-                    assertEquals(numStatements, 4);
+                long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
+                assertEquals(numStatements, 4);
 
-                    // GRANT SELECT ON TABLE purchaseOrders TO maria,harry;
-                    Node grantNode = assertNode(ddlNode, "purchaseOrders", "ddl:grantOnTableStatement");
-                    assertNode(grantNode, "maria", "ddl:grantee");
-                    Node privNode = assertNode(grantNode, "privilege", "ddl:grantPrivilege");
-                    verifySingleValueProperty(privNode, "ddl:type", "SELECT");
+                // GRANT SELECT ON TABLE purchaseOrders TO maria,harry;
+                Node grantNode = assertNode(ddlNode, "purchaseOrders", "ddl:grantOnTableStatement");
+                assertNode(grantNode, "maria", "ddl:grantee");
+                Node privNode = assertNode(grantNode, "privilege", "ddl:grantPrivilege");
+                verifySingleValueProperty(privNode, "ddl:type", "SELECT");
 
-                    // GRANT UPDATE, USAGE ON TABLE purchaseOrders FROM anita,zhi;
-                    grantNode = assertNode(ddlNode, "billedOrders", "ddl:grantOnTableStatement");
-                    privNode = assertNode(grantNode, "privilege", "ddl:grantPrivilege");
-                    verifySingleValueProperty(privNode, "ddl:type", "UPDATE");
-                    assertNode(grantNode, "anita", "ddl:grantee");
-                }
+                // GRANT UPDATE, USAGE ON TABLE purchaseOrders FROM anita,zhi;
+                grantNode = assertNode(ddlNode, "billedOrders", "ddl:grantOnTableStatement");
+                privNode = assertNode(grantNode, "privilege", "ddl:grantPrivilege");
+                verifySingleValueProperty(privNode, "ddl:type", "UPDATE");
+                assertNode(grantNode, "anita", "ddl:grantee");
             }
         }
-
     }
 
     @Test
@@ -270,29 +270,27 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         Node root = session.getRootNode();
 
         if (root.hasNode("ddls")) {
-            if (root.hasNode("ddls")) {
-                Node ddlsNode = root.getNode("ddls");
-                // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
-                for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
-                    Node ddlNode = iter.nextNode();
+            Node ddlsNode = root.getNode("ddls/a/b");
+            // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
+            for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
+                Node ddlNode = iter.nextNode();
 
-                    // printNodeProperties(ddlNode);
+                // printNodeProperties(ddlNode);
 
-                    long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
-                    assertEquals(numStatements, 4);
+                long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
+                assertEquals(numStatements, 4);
 
-                    // REVOKE SELECT ON TABLE purchaseOrders FROM maria,harry;
-                    Node revokeNode = assertNode(ddlNode, "purchaseOrders", "ddl:revokeOnTableStatement");
-                    assertNode(revokeNode, "maria", "ddl:grantee");
-                    Node privNode = assertNode(revokeNode, "privilege", "ddl:grantPrivilege");
-                    verifySingleValueProperty(privNode, "ddl:type", "SELECT");
+                // REVOKE SELECT ON TABLE purchaseOrders FROM maria,harry;
+                Node revokeNode = assertNode(ddlNode, "purchaseOrders", "ddl:revokeOnTableStatement");
+                assertNode(revokeNode, "maria", "ddl:grantee");
+                Node privNode = assertNode(revokeNode, "privilege", "ddl:grantPrivilege");
+                verifySingleValueProperty(privNode, "ddl:type", "SELECT");
 
-                    // REVOKE UPDATE, USAGE ON TABLE purchaseOrders FROM anita,zhi CASCADE;
-                    revokeNode = assertNode(ddlNode, "orderDetails", "ddl:revokeOnTableStatement");
-                    privNode = assertNode(revokeNode, "privilege", "ddl:grantPrivilege");
-                    verifySingleValueProperty(privNode, "ddl:type", "UPDATE");
-                    assertNode(revokeNode, "anita", "ddl:grantee");
-                }
+                // REVOKE UPDATE, USAGE ON TABLE purchaseOrders FROM anita,zhi CASCADE;
+                revokeNode = assertNode(ddlNode, "orderDetails", "ddl:revokeOnTableStatement");
+                privNode = assertNode(revokeNode, "privilege", "ddl:grantPrivilege");
+                verifySingleValueProperty(privNode, "ddl:type", "UPDATE");
+                assertNode(revokeNode, "anita", "ddl:grantee");
             }
         }
     }
@@ -308,58 +306,56 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         Node root = session.getRootNode();
 
         if (root.hasNode("ddls")) {
-            if (root.hasNode("ddls")) {
-                Node ddlsNode = root.getNode("ddls");
-                // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
-                for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
-                    Node ddlNode = iter.nextNode();
+            Node ddlsNode = root.getNode("ddls/a/b");
+            // System.out.println("   | NAME: " + ddlsNode.getName() + "  PATH: " + ddlsNode.getPath());
+            for (NodeIterator iter = ddlsNode.getNodes(); iter.hasNext();) {
+                Node ddlNode = iter.nextNode();
 
-                    // printNodeProperties(ddlNode);
+                // printNodeProperties(ddlNode);
 
-                    long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
-                    assertEquals(numStatements, 14);
+                long numStatements = ddlNode.getNodes().nextNode().getNodes().getSize();
+                assertEquals(numStatements, 14);
 
-                    // ALTER TABLE table_name_1 ADD COLUMN column_name VARCHAR(25) NOT NULL;
-                    Node alterNode = assertNode(ddlNode, "table_name_1", "ddl:alterTableStatement");
-                    assertEquals(alterNode.getNodes().getSize(), 1);
-                    Node addColumnNode = assertNode(alterNode, "column_name", "ddl:columnDefinition");
-                    verifySingleValueProperty(addColumnNode, "ddl:datatypeName", "VARCHAR");
-                    verifySingleValueProperty(addColumnNode, "ddl:datatypeLength", 25);
-                    verifySingleValueProperty(addColumnNode, "ddl:nullable", "NOT NULL");
+                // ALTER TABLE table_name_1 ADD COLUMN column_name VARCHAR(25) NOT NULL;
+                Node alterNode = assertNode(ddlNode, "table_name_1", "ddl:alterTableStatement");
+                assertEquals(alterNode.getNodes().getSize(), 1);
+                Node addColumnNode = assertNode(alterNode, "column_name", "ddl:columnDefinition");
+                verifySingleValueProperty(addColumnNode, "ddl:datatypeName", "VARCHAR");
+                verifySingleValueProperty(addColumnNode, "ddl:datatypeLength", 25);
+                verifySingleValueProperty(addColumnNode, "ddl:nullable", "NOT NULL");
 
-                    // ALTER TABLE schema_2.table_name_2 ADD schema_2.table_name_2.column_name INTEGER NOT NULL DEFAULT (25);
-                    alterNode = assertNode(ddlNode, "schema_2.table_name_2", "ddl:alterTableStatement");
-                    assertEquals(alterNode.getNodes().getSize(), 1);
-                    addColumnNode = assertNode(alterNode, "schema_2.table_name_2.column_name", "ddl:columnDefinition");
-                    verifySingleValueProperty(addColumnNode, "ddl:datatypeName", "INTEGER");
-                    verifySingleValueProperty(addColumnNode, "ddl:nullable", "NOT NULL");
-                    verifySingleValueProperty(addColumnNode, "ddl:defaultValue", "25");
+                // ALTER TABLE schema_2.table_name_2 ADD schema_2.table_name_2.column_name INTEGER NOT NULL DEFAULT (25);
+                alterNode = assertNode(ddlNode, "schema_2.table_name_2", "ddl:alterTableStatement");
+                assertEquals(alterNode.getNodes().getSize(), 1);
+                addColumnNode = assertNode(alterNode, "schema_2.table_name_2.column_name", "ddl:columnDefinition");
+                verifySingleValueProperty(addColumnNode, "ddl:datatypeName", "INTEGER");
+                verifySingleValueProperty(addColumnNode, "ddl:nullable", "NOT NULL");
+                verifySingleValueProperty(addColumnNode, "ddl:defaultValue", "25");
 
-                    // ALTER TABLE table_name_4 ALTER COLUMN column_name SET DEFAULT (0);
-                    alterNode = assertNode(ddlNode, "table_name_4", "ddl:alterTableStatement");
-                    assertEquals(alterNode.getNodes().getSize(), 1);
-                    addColumnNode = assertNode(alterNode, "column_name", "ddl:alterColumnDefinition");
-                    verifySingleValueProperty(addColumnNode, "ddl:defaultValue", "0");
+                // ALTER TABLE table_name_4 ALTER COLUMN column_name SET DEFAULT (0);
+                alterNode = assertNode(ddlNode, "table_name_4", "ddl:alterTableStatement");
+                assertEquals(alterNode.getNodes().getSize(), 1);
+                addColumnNode = assertNode(alterNode, "column_name", "ddl:alterColumnDefinition");
+                verifySingleValueProperty(addColumnNode, "ddl:defaultValue", "0");
 
-                    // ALTER TABLE table_name_7 DROP COLUMN column_name RESTRICT;
-                    alterNode = assertNode(ddlNode, "table_name_7", "ddl:alterTableStatement");
-                    assertEquals(alterNode.getNodes().getSize(), 1);
-                    Node dropColumnNode = assertNode(alterNode, "column_name", "ddl:dropColumnDefinition");
-                    verifySingleValueProperty(dropColumnNode, "ddl:dropBehavior", "RESTRICT");
+                // ALTER TABLE table_name_7 DROP COLUMN column_name RESTRICT;
+                alterNode = assertNode(ddlNode, "table_name_7", "ddl:alterTableStatement");
+                assertEquals(alterNode.getNodes().getSize(), 1);
+                Node dropColumnNode = assertNode(alterNode, "column_name", "ddl:dropColumnDefinition");
+                verifySingleValueProperty(dropColumnNode, "ddl:dropBehavior", "RESTRICT");
 
-                    // ALTER TABLE table_name_10 ADD CONSTRAINT pk_name PRIMARY KEY (column_name);
-                    alterNode = assertNode(ddlNode, "table_name_10", "ddl:alterTableStatement");
-                    assertEquals(alterNode.getNodes().getSize(), 1);
-                    Node constraintNode = assertNode(alterNode, "pk_name", "ddl:addTableConstraintDefinition");
-                    verifySingleValueProperty(constraintNode, "ddl:constraintType", "PRIMARY KEY");
-                    assertNode(constraintNode, "column_name", "ddl:columnReference");
+                // ALTER TABLE table_name_10 ADD CONSTRAINT pk_name PRIMARY KEY (column_name);
+                alterNode = assertNode(ddlNode, "table_name_10", "ddl:alterTableStatement");
+                assertEquals(alterNode.getNodes().getSize(), 1);
+                Node constraintNode = assertNode(alterNode, "pk_name", "ddl:addTableConstraintDefinition");
+                verifySingleValueProperty(constraintNode, "ddl:constraintType", "PRIMARY KEY");
+                assertNode(constraintNode, "column_name", "ddl:columnReference");
 
-                    // ALTER TABLE table_name_14 DROP CONSTRAINT fk_name RESTRICT;
-                    alterNode = assertNode(ddlNode, "table_name_14", "ddl:alterTableStatement");
-                    assertEquals(alterNode.getNodes().getSize(), 1);
-                    Node dropConstraintNode = assertNode(alterNode, "fk_name", "ddl:dropTableConstraintDefinition");
-                    verifySingleValueProperty(dropConstraintNode, "ddl:dropBehavior", "RESTRICT");
-                }
+                // ALTER TABLE table_name_14 DROP CONSTRAINT fk_name RESTRICT;
+                alterNode = assertNode(ddlNode, "table_name_14", "ddl:alterTableStatement");
+                assertEquals(alterNode.getNodes().getSize(), 1);
+                Node dropConstraintNode = assertNode(alterNode, "fk_name", "ddl:dropTableConstraintDefinition");
+                verifySingleValueProperty(dropConstraintNode, "ddl:dropBehavior", "RESTRICT");
             }
         }
     }
@@ -404,7 +400,7 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         QueryResult result = query.execute();
         // System.out.println(result);
         assertThat(result, is(notNullValue()));
-        assertThat(result.getRows().getSize(), is(14L));
+        assertThat(result.getRows().getSize(), is(16L));
         RowIterator iter = result.getRows();
         String primaryType = "";
         while (iter.hasNext()) {

@@ -229,13 +229,6 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
                    var("maxVersion", "3"));
     }
 
-    protected void uploadFiles( String destinationPath,
-                                String... resourcePaths ) throws Exception {
-        for (String resourcePath : resourcePaths) {
-            uploadFile(resourcePath, destinationPath);
-        }
-    }
-
     protected void uploadVdbs( String destinationPath,
                                String... resourcePaths ) throws Exception {
         for (String resourcePath : resourcePaths) {

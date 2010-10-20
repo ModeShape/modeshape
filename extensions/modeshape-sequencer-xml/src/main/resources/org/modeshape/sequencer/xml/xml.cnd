@@ -28,34 +28,35 @@
 <jcr='http://www.jcp.org/jcr/1.0'>
 <nt='http://www.jcp.org/jcr/nt/1.0'>
 <mix='http://www.jcp.org/jcr/mix/1.0'>
-<dnaxml='http://www.modeshape.org/xml/1.0'>
-<dnadtd='http://www.modeshape.org/dtd/1.0'>
+<modexml='http://www.modeshape.org/xml/1.0'>
+<modedtd='http://www.modeshape.org/dtd/1.0'>
 
 //------------------------------------------------------------------------------
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
 
-[dnaxml:document] > nt:unstructured, mix:mimeType
-  - dnaxml:cDataContent (string)
+[modexml:document] > nt:unstructured, mix:mimeType
+  - modexml:cDataContent (string)
 
-[dnaxml:comment] > nt:unstructured, mix:mimeType
-  - dnaxml:commentContent (string)
+[modexml:comment] > nt:unstructured
+  - modexml:commentContent (string)
  
-[dnaxml:element] > nt:unstructured, mix:mimeType
-  - dnaxml:elementContent (string)
+[modexml:element] > nt:unstructured
  
-[dnaxml:cData] > nt:unstructured, mix:mimeType
-  - dnaxml:cDataContent (string)
+[modexml:elementContent] > nt:unstructured
+  - modexml:elementContent (string)
  
-[dnaxml:processingInstruction] > nt:unstructured, mix:mimeType
-  - dnaxml:processingInstruction (string)
-  - dnaxml:target (string)
-
+[modexml:cData] > nt:unstructured
+  - modexml:cDataContent (string)
  
-[dnadtd:entity] > nt:unstructured, mix:mimeType
-  - dnaxml:name (string)
-  - dnaxml:value (string)
-  - dnaxml:publicId (string)
-  - dnaxml:systemId (string)
+[modexml:processingInstruction] > nt:unstructured
+  - modexml:processingInstruction (string)
+  - modexml:target (string)
+ 
+[modedtd:entity] > nt:unstructured
+  - modexml:name (string)
+  - modexml:value (string)
+  - modexml:publicId (string)
+  - modexml:systemId (string)
  
  
