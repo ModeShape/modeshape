@@ -457,6 +457,27 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         assertContents(copiedFile, TEST_CONTENT);
     }
 
+    @FixFor("MODE-944")
+    @Test
+    public void shouldBeAbleToRenameFileInBatch() {
+        Batch batch = graph.batch();
+        batch.create("/testFile").with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.FILE).orReplace().and();
+        batch.create("/testFile/jcr:content")
+             .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.RESOURCE)
+             .and(JcrLexicon.DATA, TEST_CONTENT.getBytes())
+             .orReplace()
+             .and();
+
+        batch.move("/testFile").as("copiedFile").into("/");
+        batch.execute();
+        
+        File newFile = new File(testWorkspaceRoot, "testFile");
+        assertThat(newFile.exists(), is(false));
+
+        File copiedFile = new File(testWorkspaceRoot, "copiedFile");
+        assertContents(copiedFile, TEST_CONTENT);
+    }
+
     @Test
     public void shouldBeAbleToCreateWorkspace() {
         graph.createWorkspace().named("newWorkspace");
