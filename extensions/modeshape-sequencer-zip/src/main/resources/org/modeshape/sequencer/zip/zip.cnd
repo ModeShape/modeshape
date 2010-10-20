@@ -34,6 +34,9 @@
 // N O D E T Y P E S
 //------------------------------------------------------------------------------
 
+[zip:file] > nt:folder, mix:mimeType
+
+/* Deprecated */
 [zip:content] > nt:unstructured, mix:mimeType
   + * (nt:folder)
   + * (nt:file)

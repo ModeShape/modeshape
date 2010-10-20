@@ -75,7 +75,7 @@ public class ZipSequencerTest {
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         NameFactory nameFactory = context.getValueFactories().getNameFactory();
         ValueFactory<String> stringFactory = context.getValueFactories().getStringFactory();
-        
+
         Name folderName = nameFactory.create("test subfolder");
         Name fileName = nameFactory.create("test2.txt");
 
