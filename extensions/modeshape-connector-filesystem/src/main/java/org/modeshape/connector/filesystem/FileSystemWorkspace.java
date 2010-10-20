@@ -107,6 +107,26 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
         }
     }
 
+    private void moveFile( File originalFileOrDirectory,
+                           File newFileOrDirectory ) {
+        if (originalFileOrDirectory.renameTo(newFileOrDirectory)) return;
+
+        /*
+         * This could fail if the originalFile and newFile are on different file systems.  See
+         * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4073756.  Try to do a copy and delete to
+         * work around this potential issue. 
+         */
+        try {
+            FileUtil.copy(originalFileOrDirectory, newFileOrDirectory);
+            FileUtil.delete(originalFileOrDirectory);
+        } catch (IOException ioe) {
+            throw new RepositorySourceException(FileSystemI18n.couldNotCopyData.text(source.getName(),
+                                                                                 originalFileOrDirectory.getAbsolutePath(),
+                                                                                 newFileOrDirectory.getAbsolutePath()), ioe);
+        }
+
+    }
+
     @Override
     public PathNode moveNode( PathNode node,
                               PathNode newNode ) {
@@ -145,7 +165,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
                                                              NO_PROPERTIES);
         }
 
-        originalFile.renameTo(newFile);
+        moveFile(originalFile, newFile);
 
         // Set the custom properties on the new location ...
         Location newLocation = Location.create(newPath);
@@ -295,10 +315,7 @@ class FileSystemWorkspace extends PathWorkspace<PathNode> {
                     throw new RepositorySourceException(source.getName(), msg.text(parentPath, getName(), source.getName()));
                 }
 
-                if (!temp.renameTo(parentFile)) {
-                    I18n msg = FileSystemI18n.couldNotUpdateData;
-                    throw new RepositorySourceException(source.getName(), msg.text(parentPath, getName(), source.getName()));
-                }
+                moveFile(temp, parentFile);
             } catch (IOException ioe) {
                 I18n msg = FileSystemI18n.couldNotWriteData;
                 throw new RepositorySourceException(source.getName(), msg.text(parentPath,
