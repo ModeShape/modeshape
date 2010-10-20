@@ -90,7 +90,7 @@ public final class FileSystemI18n {
     public static I18n invalidPropertyNames;
     public static I18n couldNotReadData;
     public static I18n couldNotWriteData;
-    public static I18n couldNotUpdateData;
+    public static I18n couldNotCopyData;
     public static I18n missingRequiredProperty;
     public static I18n deleteFailed;
     public static I18n getCanonicalPathFailed;
