@@ -34,6 +34,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.TimeZone;
+
 import javax.jcr.Binary;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
@@ -63,6 +65,9 @@ public class TestUtil {
     public static final String REFERENCE = PropertyType.nameFromValue(PropertyType.REFERENCE);
 
     public static String[] COLUMN_NAMES;
+    
+    public static Calendar CAL_INSTANCE = Calendar.getInstance(TimeZone.getTimeZone("GMT-00:00"));
+    public static Date DATE_INSTANCE = CAL_INSTANCE.getTime();
 
     public static interface COLUMN_NAME_PROPERTIES {
         public static final String PROP_A = "propA";
@@ -103,13 +108,14 @@ public class TestUtil {
         /*
          *  the tuples data types for each column correspond to @see TYPE_NAMES
          */
-        TUPLES.add(new Object[] {"r1c1", new Long(1), null, null, new Double(1), new Boolean(true), new Date(),
+         
+        TUPLES.add(new Object[] {"r1c1", new Long(1), null, null, new Double(1), new Boolean(true), DATE_INSTANCE,
             new String("Heres my data at r1").getBytes()});
-        TUPLES.add(new Object[] {"r2c1", new Long(2), null, null, new Double(2), new Boolean(false), new Date(),
+        TUPLES.add(new Object[] {"r2c1", new Long(2), null, null, new Double(2), new Boolean(false), DATE_INSTANCE,
             new String("Heres my data r2   ").getBytes()});
-        TUPLES.add(new Object[] {"r3c1", new Long(3), null, null, new Double(3), new Boolean(true), new Date(),
+        TUPLES.add(new Object[] {"r3c1", new Long(3), null, null, new Double(3), new Boolean(true), DATE_INSTANCE,
             new String("Heres my data at r3  ").getBytes()});
-        TUPLES.add(new Object[] {"r4c1", 4L, null, null, 4D, new Boolean(true).booleanValue(), new Date(),
+        TUPLES.add(new Object[] {"r4c1", 4L, null, null, 4D, new Boolean(true).booleanValue(), DATE_INSTANCE,
             new String("Heres  my  data    r4  ").getBytes()});
 
     }

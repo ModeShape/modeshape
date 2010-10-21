@@ -58,6 +58,7 @@ import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import org.modeshape.jdbc.util.IoUtil;
+import org.modeshape.jdbc.util.TimestampWithTimezone;
 
 /**
  * 
@@ -69,8 +70,8 @@ public class JcrResultSet implements ResultSet {
     private QueryResult jcrResults;
     private ResultSetMetaData metadata;
     private RowIterator rowIter;
-    private Row row;
-
+    private Row row;    
+    
     // the object which was last read from Results
     private Object currentValue = null;
 
@@ -112,7 +113,7 @@ public class JcrResultSet implements ResultSet {
         } catch (RepositoryException e) {
             throw new SQLException(e.getLocalizedMessage(), e);
         }
-    }
+    }  
 
     /**
      * no-arg CTOR is used to create an empty result set
@@ -123,7 +124,7 @@ public class JcrResultSet implements ResultSet {
         closed = true;
         columnIndexesByName = Collections.emptyMap();
     }
-
+    
     /**
      * {@inheritDoc}
      * 
@@ -711,7 +712,9 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Date getDate( String columnLabel ) throws SQLException {
-        return (Date)getValueReturn(columnLabel, PropertyType.DATE);
+    	Calendar calv = (Calendar)getValueReturn(columnLabel, PropertyType.DATE); 	
+    	
+    	return TimestampWithTimezone.createDate(calv.getTime());
     }
 
     /**
@@ -722,7 +725,7 @@ public class JcrResultSet implements ResultSet {
     @Override
     public Date getDate( int columnIndex,
                          Calendar cal ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+    	 return getDate(findColumn(columnIndex), cal);
     }
 
     /**
@@ -733,7 +736,16 @@ public class JcrResultSet implements ResultSet {
     @Override
     public Date getDate( String columnLabel,
                          Calendar cal ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+    	
+        Calendar actual = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
+
+        if (actual == null) return null; 
+        
+        java.util.Date actualDate = actual.getTime();
+        java.util.TimeZone actualTz = actual.getTimeZone();
+
+        // if cal is null, it will be supplied in TimestampWithTimezone
+        return TimestampWithTimezone.createDate(actualDate,actualTz,cal);    	
     }
 
     /**
@@ -1033,9 +1045,9 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Time getTime( String columnLabel ) throws SQLException {
-        Date d = (Date)getValueReturn(columnLabel, PropertyType.DATE);
-        if (d == null) return null;
-        return new Time(d.getTime());
+    	Calendar calv = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
+    	if (calv == null) return null;
+    	return TimestampWithTimezone.createTime(calv.getTime());
     }
 
     /**
@@ -1046,7 +1058,7 @@ public class JcrResultSet implements ResultSet {
     @Override
     public Time getTime( int columnIndex,
                          Calendar cal ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getTime(findColumn(columnIndex), cal);
     }
 
     /**
@@ -1057,7 +1069,16 @@ public class JcrResultSet implements ResultSet {
     @Override
     public Time getTime( String columnLabel,
                          Calendar cal ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+    	
+        Calendar actual = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
+
+        if (actual == null) return null; 
+        
+        java.util.Date actualDate = actual.getTime();
+        java.util.TimeZone actualTz = actual.getTimeZone();
+
+        // if cal is null, it will be supplied in TimestampWithTimezone
+        return TimestampWithTimezone.createTime(actualDate,actualTz,cal);    	
     }
 
     /**
@@ -1067,7 +1088,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Timestamp getTimestamp( int columnIndex ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return getTimestamp(findColumn(columnIndex));
     }
 
     /**
@@ -1077,7 +1098,10 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Timestamp getTimestamp( String columnLabel ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+    	Calendar calv = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
+    	if (calv == null) return null;
+    	return TimestampWithTimezone.createTimestamp(calv.getTime());
+
     }
 
     /**
@@ -1087,8 +1111,8 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Timestamp getTimestamp( int columnIndex,
-                                   Calendar cal ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+                                   Calendar cal ) throws SQLException {  	
+    	 return getTimestamp(findColumn(columnIndex), cal);
     }
 
     /**
@@ -1099,7 +1123,16 @@ public class JcrResultSet implements ResultSet {
     @Override
     public Timestamp getTimestamp( String columnLabel,
                                    Calendar cal ) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+    	
+        Calendar actual = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
+
+        if (actual == null) return null; 
+        
+        java.util.Date actualDate = actual.getTime();
+        java.util.TimeZone actualTz = actual.getTimeZone();
+        
+        // if cal is null, it will be supplied in TimestampWithTimezone
+        return TimestampWithTimezone.createTimestamp(actualDate,actualTz,cal);    	
     }
 
     /**
@@ -1211,7 +1244,8 @@ public class JcrResultSet implements ResultSet {
                 case PropertyType.BOOLEAN:
                     return value.getBoolean();
                 case PropertyType.DATE:
-                    return new java.sql.Date(value.getDate().getTime().getTime());
+                   // return new java.sql.Date(value.getDate().getTime().getTime());
+                	return value.getDate();
                 case PropertyType.DOUBLE:
                     return value.getDouble();
                 case PropertyType.LONG:
