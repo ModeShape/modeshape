@@ -23,16 +23,22 @@
  */
 package org.modeshape.jdbc;
 
+import static org.junit.Assert.assertEquals;
+
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.IOException;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.text.DateFormat;
 import java.util.Calendar;
+import java.util.TimeZone;
+
 import javax.jcr.query.QueryResult;
 import org.junit.After;
 import org.junit.Before;
@@ -258,10 +264,49 @@ public class JcrResultSetTest {
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
             Object[] tuple = TestUtil.TUPLES.get(i);
-            assertThat(resultSet.getDate(TestUtil.COLUMN_NAMES[col]), is(tuple[col]));
+            
+            java.sql.Date resultDate = resultSet.getDate(TestUtil.COLUMN_NAMES[col]);
+            
+            String expected = DateFormat.getDateInstance().format(tuple[col]);
+            String resultis = DateFormat.getDateInstance().format(resultDate);
+            assertEquals(expected,  resultis);
 
         }
     }
+    
+    @Test
+    public void shouldCallGetDateUsingColumnNameAndCalendar() throws SQLException {
+       	Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-06:00"));
+        int col = getColumnTypeLoc(TestUtil.DATE);
+        for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
+            assertThat(resultSet.next(), is(true));
+            java.sql.Date resultDate = resultSet.getDate(TestUtil.COLUMN_NAMES[col], cal);
+
+            // take the tuple date and turn it into the java.sql.Date that should be returned 
+            Object[] tuple = TestUtil.TUPLES.get(i);          
+            java.util.Date d = (java.util.Date) tuple[col];  
+
+            cal.setTimeInMillis(d.getTime());
+
+            java.sql.Date expectedDate = new java.sql.Date(cal.getTime().getTime());            
+            
+            String expected = DateFormat.getDateInstance().format(expectedDate);
+            String resultis = DateFormat.getDateInstance().format(resultDate);
+            assertEquals(expected,  resultis);
+        }
+    }    
+    
+    @Test( expected = java.lang.AssertionError.class )
+    public void shouldThrowExceptionGetDateUsingColumnNameAndCalendar() throws SQLException {
+    	Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-06:00"));
+        int col = getColumnTypeLoc(TestUtil.DATE);
+        for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
+            assertThat(resultSet.next(), is(true));
+            Object[] tuple = TestUtil.TUPLES.get(i);
+            assertThat(resultSet.getDate(TestUtil.COLUMN_NAMES[col], cal), is(tuple[col]));
+        }  	
+    }
+
 
     @Test
     public void shouldCallGetDateUsingColmnIndex() throws SQLException {
@@ -270,10 +315,36 @@ public class JcrResultSetTest {
             assertThat(resultSet.next(), is(true));
             Object[] tuple = TestUtil.TUPLES.get(i);
             // need to increment because ResultSet is 1 based.
-            assertThat(resultSet.getDate(col + 1), is(tuple[col]));
+            
+            String expected = DateFormat.getDateInstance().format(tuple[col]);
+            String resultis = DateFormat.getDateInstance().format(resultSet.getDate(col + 1));
+            assertEquals(expected,  resultis);
 
         }
     }
+    
+    @Test
+    public void shouldCallGetDateUsingColmnIndexAndCalendar() throws SQLException {
+      	Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-06:00"));
+
+        int col = getColumnTypeLoc(TestUtil.DATE);
+        for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
+            assertThat(resultSet.next(), is(true));
+            
+            java.sql.Date resultDate = resultSet.getDate(col + 1, cal);
+
+            Object[] tuple = TestUtil.TUPLES.get(i);
+            java.util.Date d = (java.util.Date) tuple[col];  
+            cal.setTimeInMillis(d.getTime());
+
+            java.sql.Date expectedDate = new java.sql.Date(cal.getTime().getTime());            
+            
+            String expected = DateFormat.getDateInstance().format(expectedDate);
+            String resultis = DateFormat.getDateInstance().format(resultDate);
+            assertEquals(expected,  resultis);
+ 
+        }
+    }    
 
     @Test
     public void shouldCallGetTimeUsingColumnName() throws SQLException {
@@ -283,10 +354,36 @@ public class JcrResultSetTest {
             Object[] tuple = TestUtil.TUPLES.get(i);
             long lt = ((java.util.Date)tuple[col]).getTime();
             java.sql.Time t = new java.sql.Time(lt);
-            assertThat(resultSet.getTime(TestUtil.COLUMN_NAMES[col]), is(t));
+            
+            String expected = DateFormat.getDateInstance().format(t);
+            String resultis = DateFormat.getDateInstance().format(resultSet.getTime(TestUtil.COLUMN_NAMES[col]));
+            assertEquals(expected,  resultis);
 
         }
     }
+    
+    
+    @Test
+    public void shouldCallGetTimeUsingColumnNameAndCalendar() throws SQLException { 
+       	Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-06:00"));
+        int col = getColumnTypeLoc(TestUtil.DATE);
+        for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
+            assertThat(resultSet.next(), is(true));
+            java.sql.Time resultTime = resultSet.getTime(TestUtil.COLUMN_NAMES[col], cal);
+
+            // take the tuple date and turn it into the java.sql.Date that should be returned 
+            Object[] tuple = TestUtil.TUPLES.get(i);          
+            java.util.Date d = (java.util.Date) tuple[col];  
+
+            cal.setTimeInMillis(d.getTime());
+
+            java.sql.Time expectedTime = new java.sql.Time(cal.getTime().getTime());            
+            
+            String expected = DateFormat.getDateInstance().format(expectedTime);
+            String resultis = DateFormat.getDateInstance().format(resultTime);
+            assertEquals(expected,  resultis);
+        }
+    }    
 
     @Test
     public void shouldCallGetTimeUsingColmnIndex() throws SQLException {
@@ -296,13 +393,105 @@ public class JcrResultSetTest {
             Object[] tuple = TestUtil.TUPLES.get(i);
             long lt = ((java.util.Date)tuple[col]).getTime();
             java.sql.Time t = new java.sql.Time(lt);
-
-            // need to increment because ResultSet is 1 based.
-            assertThat(resultSet.getTime(col + 1), is(t));
+            
+            String expected = DateFormat.getDateInstance().format(t);
+            String resultis = DateFormat.getDateInstance().format(resultSet.getTime(col + 1));
+            assertEquals(expected,  resultis);
 
         }
     }
+    
+    @Test
+    public void shouldCallGetTimeUsingColmnIndexAndCalendar() throws SQLException {
+       	Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-06:00"));
 
+        int col = getColumnTypeLoc(TestUtil.DATE);
+        for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
+            assertThat(resultSet.next(), is(true));
+            
+            java.sql.Time resultTime = resultSet.getTime(col + 1, cal);
+
+            Object[] tuple = TestUtil.TUPLES.get(i);
+            java.util.Date d = (java.util.Date) tuple[col];  
+            cal.setTimeInMillis(d.getTime());
+
+            java.sql.Time expectedTime = new java.sql.Time(cal.getTime().getTime());            
+            
+            assertEquals(DateFormat.getDateInstance().format(expectedTime),  DateFormat.getDateInstance().format(resultTime));
+         }
+    }    
+
+    
+    @Test
+    public void shouldCallGetTimeStampUsingColumnName() throws SQLException {
+        int col = getColumnTypeLoc(TestUtil.DATE);
+        for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
+            assertThat(resultSet.next(), is(true));
+            Object[] tuple = TestUtil.TUPLES.get(i);
+            long lt = ((java.util.Date)tuple[col]).getTime();
+            java.sql.Timestamp t = new java.sql.Timestamp(lt);
+            assertThat(resultSet.getTimestamp(TestUtil.COLUMN_NAMES[col]), is(t));
+
+        }
+    }
+    
+    @Test
+    public void shouldCallGetTimeStampUsingColumnNameAndCalendar() throws SQLException { 
+       	Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-06:00"));
+        int col = getColumnTypeLoc(TestUtil.DATE);
+        for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
+            assertThat(resultSet.next(), is(true));
+            java.sql.Timestamp resultTimestamp = resultSet.getTimestamp(TestUtil.COLUMN_NAMES[col], cal);
+
+            // take the tuple date and turn it into the java.sql.Date that should be returned 
+            Object[] tuple = TestUtil.TUPLES.get(i);          
+            java.util.Date d = (java.util.Date) tuple[col];  
+
+            cal.setTimeInMillis(d.getTime());
+
+            java.sql.Timestamp expectedTimestamp = new java.sql.Timestamp(cal.getTime().getTime());            
+            
+            String expected = DateFormat.getDateInstance().format(expectedTimestamp);
+            String resultis = DateFormat.getDateInstance().format(resultTimestamp);
+            assertEquals(expected,  resultis);
+        }
+    }
+
+    @Test
+    public void shouldCallGetTimeStampUsingColmnIndex() throws SQLException {
+        int col = getColumnTypeLoc(TestUtil.DATE);
+        for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
+            assertThat(resultSet.next(), is(true));
+            Object[] tuple = TestUtil.TUPLES.get(i);
+            long lt = ((java.util.Date)tuple[col]).getTime();
+            java.sql.Timestamp t = new java.sql.Timestamp(lt);
+
+            // need to increment because ResultSet is 1 based.
+            assertThat(resultSet.getTimestamp(col + 1), is(t));
+
+        }
+    }
+    
+    @Test
+    public void shouldCallGetTimeStampUsingColmnIndexAndCalendar() throws SQLException {
+       	Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-06:00"));
+
+        int col = getColumnTypeLoc(TestUtil.DATE);
+        for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
+            assertThat(resultSet.next(), is(true));
+            
+            java.sql.Timestamp resultTime = resultSet.getTimestamp(col + 1, cal);
+
+            Object[] tuple = TestUtil.TUPLES.get(i);
+            java.util.Date d = (java.util.Date) tuple[col];  
+            cal.setTimeInMillis(d.getTime());
+
+            java.sql.Timestamp expectedTime = new java.sql.Timestamp(cal.getTime().getTime());            
+            
+            assertEquals(DateFormat.getDateInstance().format(expectedTime),  DateFormat.getDateInstance().format(resultTime));
+         }
+    }    
+    
     @Test
     public void shouldCallGetBytesUsingColmnIndex() throws SQLException {
         int numCols = TestUtil.COLUMN_NAMES.length;
@@ -837,22 +1026,6 @@ public class JcrResultSetTest {
      * @throws SQLException
      */
     @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetDateIdxCal() throws SQLException {
-        resultSet.getDate(1, Calendar.getInstance());
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetDateColNameCal() throws SQLException {
-        resultSet.getDate("colname", Calendar.getInstance());
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
     public void featureNotSupportedCallingGetFloatIdx() throws SQLException {
         resultSet.getFloat(1);
     }
@@ -975,54 +1148,6 @@ public class JcrResultSetTest {
     @Test( expected = SQLFeatureNotSupportedException.class )
     public void featureNotSupportedCallingGetShortColName() throws SQLException {
         resultSet.getShort("colname");
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetTimeIdxCal() throws SQLException {
-        resultSet.getTime(1, null);
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetTimeColNameCal() throws SQLException {
-        resultSet.getTime("colname", null);
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetTimestampIdx() throws SQLException {
-        resultSet.getTimestamp(1);
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetTimestampColName() throws SQLException {
-        resultSet.getTimestamp("colname");
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetTimestampIdxCal() throws SQLException {
-        resultSet.getTimestamp(1, null);
-    }
-
-    /**
-     * @throws SQLException
-     */
-    @Test( expected = SQLFeatureNotSupportedException.class )
-    public void featureNotSupportedCallingGetTimestampColNameCal() throws SQLException {
-        resultSet.getTimestamp("colname", null);
     }
 
     /**
