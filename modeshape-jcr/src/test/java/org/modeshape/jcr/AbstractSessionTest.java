@@ -145,7 +145,7 @@ public abstract class AbstractSessionTest {
         when(repository.getRepositoryLockManager()).thenReturn(repoLockManager);
 
         // Stub out the repository, since we only need a few methods ...
-        repoTypeManager = new RepositoryNodeTypeManager(repository, null, true);
+        repoTypeManager = new RepositoryNodeTypeManager(repository, null, true, true);
         when(repository.getRepositoryTypeManager()).thenReturn(repoTypeManager);
 
         try {

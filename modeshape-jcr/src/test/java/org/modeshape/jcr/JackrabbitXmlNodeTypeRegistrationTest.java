@@ -69,7 +69,7 @@ public class JackrabbitXmlNodeTypeRegistrationTest {
 
         when(repository.getExecutionContext()).thenReturn(context);
 
-        repoTypeManager = new RepositoryNodeTypeManager(repository, null, true);
+        repoTypeManager = new RepositoryNodeTypeManager(repository, null, true, true);
         try {
             CndNodeTypeReader cndFactory = new CndNodeTypeReader(context);
             cndFactory.readBuiltInTypes();

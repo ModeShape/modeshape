@@ -113,6 +113,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
     private final NameFactory nameFactory;
     private final ReadWriteLock nodeTypeManagerLock = new ReentrantReadWriteLock();
     private final boolean includeColumnsForInheritedProperties;
+    private final boolean includePseudoColumnsInSelectStar;
 
     /**
      * List of ways to filter the returned property definitions
@@ -138,11 +139,13 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
 
     RepositoryNodeTypeManager( JcrRepository repository,
                                Path nodeTypesPath,
-                               boolean includeColumnsForInheritedProperties ) {
+                               boolean includeColumnsForInheritedProperties,
+                               boolean includePseudoColumnsInSelectStar ) {
         this.repository = repository;
         this.nodeTypesPath = nodeTypesPath;
         this.context = repository.getExecutionContext();
         this.includeColumnsForInheritedProperties = includeColumnsForInheritedProperties;
+        this.includePseudoColumnsInSelectStar = includePseudoColumnsInSelectStar;
         this.propertyFactory = context.getPropertyFactory();
         this.pathFactory = context.getValueFactories().getPathFactory();
         this.nameFactory = context.getValueFactories().getNameFactory();
@@ -242,7 +245,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
             nodeTypeManagerLock.writeLock().lock();
             if (schemata == null) {
                 schemata = new NodeTypeSchemata(context, nodeTypes, propertyDefinitions.values(),
-                                                includeColumnsForInheritedProperties);
+                                                includeColumnsForInheritedProperties, includePseudoColumnsInSelectStar);
             }
             return schemata;
         } finally {
@@ -1209,8 +1212,8 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
         propsList.add(propertyFactory.create(JcrLexicon.PROTECTED, jcrPropDef.isProtected()));
         propsList.add(propertyFactory.create(JcrLexicon.ON_PARENT_VERSION,
                                              OnParentVersionAction.nameFromValue(jcrPropDef.getOnParentVersion())));
-        propsList.add(propertyFactory.create(JcrLexicon.REQUIRED_TYPE,
-                                             PropertyType.nameFromValue(jcrPropDef.getRequiredType()).toUpperCase()));
+        propsList.add(propertyFactory.create(JcrLexicon.REQUIRED_TYPE, PropertyType.nameFromValue(jcrPropDef.getRequiredType())
+                                                                                   .toUpperCase()));
 
         Value[] defaultValues = jcrPropDef.getDefaultValues();
         if (defaultValues.length > 0) {
@@ -2279,7 +2282,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                         createdNodeTypeNames.add(changedNodeTypeName);
                     }
                     break;
-                    
+
                 case DELETE_BRANCH:
                     deletedNodeTypeNames.add(changedNodeTypeName);
 
@@ -2307,7 +2310,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
 
                 LOGGER.warn(JcrI18n.problemReadingNodeTypesFromRemote, reader.getProblems());
             }
-            
+
             Map<Name, JcrNodeType> newNodeTypeMap = new HashMap<Name, JcrNodeType>();
             try {
                 for (NodeTypeDefinition nodeTypeDefn : reader.getNodeTypeDefinitions()) {

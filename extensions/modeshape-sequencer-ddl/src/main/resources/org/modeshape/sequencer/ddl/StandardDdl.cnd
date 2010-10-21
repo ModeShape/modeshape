@@ -36,6 +36,7 @@
 //------------------------------------------------------------------------------
 
 [ddl:operation] mixin abstract
+
 [ddl:operand] mixin abstract
   - ddl:name (STRING) mandatory
 

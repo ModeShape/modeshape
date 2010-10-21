@@ -103,7 +103,7 @@ public class WorkspaceLockManagerTest {
         // Stub out the repository, since we only need a few methods ...
         Path nodeTypesPath = context.getValueFactories().getPathFactory().createAbsolutePath(JcrLexicon.SYSTEM,
                                                                                              JcrLexicon.NODE_TYPES);
-        repoTypeManager = new RepositoryNodeTypeManager(repository, nodeTypesPath, true);
+        repoTypeManager = new RepositoryNodeTypeManager(repository, nodeTypesPath, true, true);
 
         when(repository.getRepositoryTypeManager()).thenReturn(repoTypeManager);
 
