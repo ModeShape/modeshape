@@ -37,6 +37,7 @@ import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.ValueFactories;
+import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.sequencer.SequencerOutput;
 
 /**
@@ -190,7 +191,26 @@ public class SequencerOutputMap implements SequencerOutput, Iterable<SequencerOu
      */
     @Override
     public String toString() {
-        return this.data.toString();
+        StringBuilder sb = new StringBuilder();
+        ValueFactory<String> strings = factories.getStringFactory();
+        for (Map.Entry<Path, List<PropertyValue>> entry : this.data.entrySet()) {
+            sb.append(strings.create(entry.getKey())).append(" = ");
+            List<PropertyValue> values = entry.getValue();
+            if (values.size() == 1) {
+                sb.append(strings.create(values.get(0)));
+            } else {
+                boolean first = true;
+                sb.append('[');
+                for (PropertyValue value : values) {
+                    if (first) first = false;
+                    else sb.append(", ");
+                    sb.append(strings.create(value));
+                }
+                sb.append(']');
+            }
+            sb.append('\n');
+        }
+        return sb.toString();
     }
 
     /**

@@ -180,7 +180,7 @@ public class ClassSourceFileRecorder implements SourceFileRecorder {
         output.setProperty(annotationsPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.ANNOTATIONS);
 
         for (AnnotationMetadata annotation : annotations) {
-            Path annotationPath = pathFactory.create(parentPath, annotation.getName());
+            Path annotationPath = pathFactory.create(annotationsPath, annotation.getName());
             output.setProperty(annotationPath, JcrLexicon.PRIMARY_TYPE, ClassFileSequencerLexicon.ANNOTATION);
 
             for (Map.Entry<String, String> entry : annotation.getMemberValues().entrySet()) {
