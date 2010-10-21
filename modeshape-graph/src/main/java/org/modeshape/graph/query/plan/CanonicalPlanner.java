@@ -455,12 +455,14 @@ public class CanonicalPlanner implements Planner {
                         allColumnsFor(table, tableName, newColumns, newTypes);
                     } else {
                         // This is a particular column, so add it ...
-                        newColumns.add(column);
-                        org.modeshape.graph.query.validate.Schemata.Column schemaColumn = table.getColumn(columnName);
-                        if (schemaColumn != null) {
-                            newTypes.add(schemaColumn.getPropertyType());
-                        } else {
-                            newTypes.add(context.getTypeSystem().getStringFactory().getTypeName());
+                        if (!newColumns.contains(column)) {
+                            newColumns.add(column);
+                            org.modeshape.graph.query.validate.Schemata.Column schemaColumn = table.getColumn(columnName);
+                            if (schemaColumn != null) {
+                                newTypes.add(schemaColumn.getPropertyType());
+                            } else {
+                                newTypes.add(context.getTypeSystem().getStringFactory().getTypeName());
+                            }
                         }
                     }
                     boolean validateColumnExistance = context.getHints().validateColumnExistance && !table.hasExtraColumns();
@@ -485,8 +487,10 @@ public class CanonicalPlanner implements Planner {
             String columnName = column.getName();
             String propertyName = columnName;
             Column newColumn = new Column(tableName, propertyName, columnName);
-            columns.add(newColumn);
-            columnTypes.add(column.getPropertyType());
+            if (!columns.contains(column)) {
+                columns.add(newColumn);
+                columnTypes.add(column.getPropertyType());
+            }
         }
     }
 

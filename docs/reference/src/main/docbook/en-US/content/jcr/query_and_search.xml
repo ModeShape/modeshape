@@ -1333,11 +1333,13 @@ offset ::= /* Non-negative integer value */
 			</para>
 			<para>
 				All of these pseudo-columns can be used in the <code>SELECT</code> clause of any JCR-SQL2 query, and their
-				use defines whether such columns appear in the result set. However, none of these pseudo-columns will be included
-				when "<code>SELECT *</code>" is used; instead, they <emphasis>must</emphasis> be explicitly named.
+				use defines whether such columns appear in the result set. In fact, all of these pseudo-columns will be included
+				when "<code>SELECT *</code>" clauses in JCR-SQL2 queries are expanded by the query engine. 
+				This means that every node type (even mixin node types that have no properties and are essentially markers) 
+				are represented by a queryable table.
 			</para>
 			<para>
-				All of these pseudo-columns can be also be used in the <code>WHERE</code> clause of any JCR-SQL2 query, even
+				Like any other column, all of these pseudo-columns can be also be used in the <code>WHERE</code> clause of any JCR-SQL2 query, even
 				if they are not included in the <code>SELECT</code> clause. They can be used anywhere that a regular column
 				can be used, including within <link linkend="jcr-sql2-constraints">constraints</link> and 
 				<link linkend="jcr-sql2-dynamic-operands">dynamic operands</link>. ModeShape will automatically rewrite
@@ -1364,7 +1366,8 @@ offset ::= /* Non-negative integer value */
 					Note that the <code>jcr:path</code> and <code>jcr:score</code> pseudo-columns are consistent with
 					the pseudo-columns of the same names used in <link linkend="jcr-sql-query-language">JCR-SQL</link>
 					query language. However, unlike in JCR-SQL, in JCR-SQL2 these columns are not automatically included
-					in the results.
+					in the results unless explicitly included in the <code>SELECT</code> clause or implicitly included 
+					via "<code>SELECT *</code>"
 				</para>
 			</note>
 		</sect2>
@@ -1385,9 +1388,8 @@ offset ::= /* Non-negative integer value */
       </para>
 			<programlisting><![CDATA[ SELECT [jcr:primaryType] FROM [nt:base] ]]></programlisting>
       <para>
-			  Even though the "<code>SELECT *</code>" does not expand to include pseudo-columns, they can be explicitly included.
-			  The following query will return the same rows as in the previous queries, but will have two additional columns
-			  with values computed from the nodes' locations:
+			  The following query will return the same rows as in the previous queries, but the SELECT clause includes two pseudo-columns
+			  containing the values computed from the nodes' locations:
       </para>
 			<programlisting><![CDATA[ SELECT [jcr:primaryType], [jcr:path], [mode:depth] FROM [nt:base] ]]></programlisting>
       <para>
@@ -1415,18 +1417,21 @@ offset ::= /* Non-negative integer value */
 			<para>
 				is equivalent to this query:
 			</para>
-			<programlisting><![CDATA[ SELECT [jcr:primaryType], [jcr:created], [jcr:createdBy] FROM [nt:file] ]]></programlisting>
+			<programlisting><![CDATA[
+SELECT [jcr:primaryType], [jcr:created], [jcr:createdBy], 
+       [jcr:path], [jcr:name], [jcr:score], [mode:localName], [mode:depth] 
+FROM [nt:file] ]]></programlisting>
 			<para>
-				Additionally, ModeShape's pseudo-columns can be used to also include the path of the resulting <code>nt:file</code> nodes and
-				to apply constraints based upon the local name of these nodes:
+				Here is an example query that selects some of the available columns from the <code>nt:file</code> table and uses a constraint
+				to ensure the resulting file nodes have names that end in '.txt':
 			</para>
 			<programlisting><![CDATA[
 SELECT [jcr:primaryType], [jcr:created], [jcr:createdBy], [jcr:path] FROM [nt:file] 
 WHERE LOCALNAME() LIKE '%.txt'
 ]]></programlisting>
 		  <para>
-				Note that the local name constraint could be specified using the <code>mode:localName</code> pseudo-column supported by ModeShape.
-				This query is for all intents and purposes equivalent to the previous query and will produce the exact same results:
+				Of course, we could instead using <code>mode:localName</code> pseudo-column instead of the <code>LOCALNAME()</code> function.
+				Such a query is equivalent to the previous query and will produce the exact same results:
 			</para>
 			<programlisting><![CDATA[
 SELECT [jcr:primaryType], [jcr:created], [jcr:createdBy], [jcr:path] FROM [nt:file] 
@@ -1436,7 +1441,7 @@ WHERE [mode:localName] LIKE '%.txt'
 				Although this query looks much more like SQL, the use of the '[' and ']' characters to quote the identifiers is not typical of
 				a SQL dialect. ModeShape actually supports the using double-quote characters and square braces interchangeably around identifiers
 				(although they must match around any single identifier). Again, this next query,
-				which looks remarkably like any SQL-92 or -99 dialect, is functionally identical to the previous query:
+				which looks remarkably like any SQL-92 or -99 dialect, is functionally identical to the previous two queries:
 			</para>
 			<programlisting><![CDATA[
 SELECT "jcr:primaryType", "jcr:created", "jcr:createdBy", "jcr:path" FROM "nt:file" 
@@ -1467,6 +1472,7 @@ JOIN ON ISSAMENODE(file,ref)
 			</para>
 			<programlisting><![CDATA[
 SELECT file.[jcr:primaryType], file.[jcr:created], file.[jcr:createdBy], ref.[jcr:uuid] 
+       file.[jcr:path], file.[jcr:name], file.[jcr:score], file.[mode:localName], file.[mode:depth] 
 FROM [nt:file] AS file JOIN [mix:referenceable] AS ref
 JOIN ON ISSAMENODE(file,ref)
 ]]></programlisting>

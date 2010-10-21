@@ -329,7 +329,7 @@ public class JcrRepository implements Repository {
         public static final String ANONYMOUS_USER_ROLES = ModeShapeRoles.ADMIN;
 
         /**
-         * The default value for the {@link Option#PROJECT_NODE_TYPES} option is {@value} .
+         * The default value for the {@link Option#TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES} option is {@value} .
          */
         public static final String TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES = Boolean.TRUE.toString();
 
@@ -574,9 +574,11 @@ public class JcrRepository implements Repository {
 
         try {
             boolean includeInheritedProperties = Boolean.valueOf(this.options.get(Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES));
+            boolean includePseudoColumnInSelectStar = true;
 
             // this.repositoryTypeManager = new RepositoryNodeTypeManager(this, includeInheritedProperties);
-            this.repositoryTypeManager = new RepositoryNodeTypeManager(this, parentOfTypeNodes, includeInheritedProperties);
+            this.repositoryTypeManager = new RepositoryNodeTypeManager(this, parentOfTypeNodes, includeInheritedProperties,
+                                                                       includePseudoColumnInSelectStar);
             CndNodeTypeReader nodeTypeReader = new CndNodeTypeReader(this.executionContext);
             nodeTypeReader.readBuiltInTypes();
             this.repositoryTypeManager.registerNodeTypes(nodeTypeReader);

@@ -369,6 +369,7 @@ public class ImmutableSchemata implements Schemata {
                     Map<SelectorName, SelectorName> tableNameByAlias = null;
                     List<Column> viewColumns = new ArrayList<Column>(columns.size());
                     List<Column> viewColumnsInSelectStar = new ArrayList<Column>(columns.size());
+                    Set<String> columnNames = new HashSet<String>();
                     for (org.modeshape.graph.query.model.Column column : columns) {
                         // Find the table that the column came from ...
                         Table source = schemata.getTable(column.selectorName());
@@ -384,6 +385,7 @@ public class ImmutableSchemata implements Schemata {
                             }
                         }
                         String viewColumnName = column.columnName();
+                        if (columnNames.contains(viewColumnName)) continue;
                         String sourceColumnName = column.propertyName(); // getColumnName() returns alias
                         Column sourceColumn = source.getColumn(sourceColumnName);
                         if (sourceColumn == null) {
@@ -397,12 +399,13 @@ public class ImmutableSchemata implements Schemata {
                         if (source.getSelectAllColumnsByName().containsKey(sourceColumnName)) {
                             viewColumnsInSelectStar.add(newColumn);
                         }
+                        columnNames.add(newColumn.getName());
                     }
-                    if (viewColumns.size() != columns.size()) {
-                        // We weren't able to resolve all of the columns,
-                        // so maybe the columns were referencing yet-to-be-built views ...
-                        continue;
-                    }
+                    // if (viewColumns.size() != columns.size()) {
+                    // // We weren't able to resolve all of the columns,
+                    // // so maybe the columns were referencing yet-to-be-built views ...
+                    // continue;
+                    // }
 
                     // If we could resolve the definition ...
                     Map<String, Column> viewColumnsByName = new HashMap<String, Column>();

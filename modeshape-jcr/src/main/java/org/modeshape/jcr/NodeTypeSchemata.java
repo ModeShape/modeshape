@@ -71,6 +71,7 @@ class NodeTypeSchemata implements Schemata {
     private final Map<Integer, String> types;
     private final Map<String, String> prefixesByUris = new HashMap<String, String>();
     private final boolean includeColumnsForInheritedProperties;
+    private final boolean includePseudoColumnsInSelectStar;
     private final Collection<JcrPropertyDefinition> propertyDefinitions;
     private final Map<Name, JcrNodeType> nodeTypesByName;
     private final Multimap<JcrNodeType, JcrNodeType> subtypesByName = LinkedHashMultimap.create();
@@ -80,8 +81,10 @@ class NodeTypeSchemata implements Schemata {
     NodeTypeSchemata( ExecutionContext context,
                       Map<Name, JcrNodeType> nodeTypes,
                       Collection<JcrPropertyDefinition> propertyDefinitions,
-                      boolean includeColumnsForInheritedProperties ) {
+                      boolean includeColumnsForInheritedProperties,
+                      boolean includePseudoColumnsInSelectStar ) {
         this.includeColumnsForInheritedProperties = includeColumnsForInheritedProperties;
+        this.includePseudoColumnsInSelectStar = includePseudoColumnsInSelectStar;
         this.propertyDefinitions = propertyDefinitions;
         this.nodeTypesByName = nodeTypes;
 
@@ -247,7 +250,9 @@ class NodeTypeSchemata implements Schemata {
                 }
                 // Add (or overwrite) the column ...
                 builder.addColumn(tableName, columnName, type, fullTextSearchable);
-                builder.excludeFromSelectStar(tableName, columnName);
+                if (!includePseudoColumnsInSelectStar) {
+                    builder.excludeFromSelectStar(tableName, columnName);
+                }
 
                 // And build an indexing rule for this type ...
                 if (indexRuleBuilder != null) addIndexRule(indexRuleBuilder,
@@ -323,10 +328,6 @@ class NodeTypeSchemata implements Schemata {
             defns = nodeType.getPropertyDefinitions();
         } else {
             defns = nodeType.getDeclaredPropertyDefinitions();
-        }
-        if (defns.length == 0) {
-            // There are no properties, so there's no reason to have the view ...
-            return;
         }
         // Create the SQL statement ...
         StringBuilder viewDefinition = new StringBuilder("SELECT ");

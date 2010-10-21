@@ -88,7 +88,11 @@ public class JcrQueryManagerTest {
     protected static String[] carColumnNames() {
         return new String[] {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine", "car:mpgHighway",
             "car:valueRating", "jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model", "car:msrp", "jcr:created",
-            "jcr:createdBy"};
+            "jcr:createdBy", "jcr:name", "jcr:path", "jcr:score", "mode:depth", "mode:localName"};
+    }
+
+    protected static String[] minimumColumnNames() {
+        return new String[] {"jcr:primaryType", "jcr:name", "jcr:path", "jcr:score", "mode:depth", "mode:localName"};
     }
 
     protected static String[] searchColumnNames() {
@@ -104,72 +108,80 @@ public class JcrQueryManagerTest {
     @SuppressWarnings( "deprecation" )
     @BeforeClass
     public static void beforeAll() throws Exception {
-        configuration = new JcrConfiguration();
-        configuration.repositorySource("car-source")
-                     .usingClass(InMemoryRepositorySource.class)
-                     .setDescription("The automobile content");
-        configuration.repository("cars")
-                     .setSource("car-source")
-                     .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
-                     .addNodeTypes(resourceUrl("cars.cnd"))
-                     // Added ADMIN privilege to allow permanent namespace registration in one of the tests
-                     .setOption(Option.ANONYMOUS_USER_ROLES,
-                                ModeShapeRoles.READONLY + "," + ModeShapeRoles.READWRITE + "," + ModeShapeRoles.ADMIN)
-                     .setOption(Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
-        engine = configuration.build();
-        engine.start();
-
-        // Initialize the JAAS configuration to allow for an admin login later
-        // Initialize IDTrust
-        String configFile = "security/jaas.conf.xml";
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
-
         try {
-            idtrustConfig.config(configFile);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
+            configuration = new JcrConfiguration();
+            configuration.repositorySource("car-source")
+                         .usingClass(InMemoryRepositorySource.class)
+                         .setDescription("The automobile content");
+            configuration.repository("cars")
+                         .setSource("car-source")
+                         .registerNamespace("car", "http://www.modeshape.org/examples/cars/1.0")
+                         .addNodeTypes(resourceUrl("cars.cnd"))
+                         // Added ADMIN privilege to allow permanent namespace registration in one of the tests
+                         .setOption(Option.ANONYMOUS_USER_ROLES,
+                                    ModeShapeRoles.READONLY + "," + ModeShapeRoles.READWRITE + "," + ModeShapeRoles.ADMIN)
+                         .setOption(Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
+            engine = configuration.build();
+            engine.start();
 
-        // Start the repository ...
-        try {
-            repository = engine.getRepository("cars");
-        } catch (RuntimeException t) {
-            t.printStackTrace();
-            throw t;
-        } catch (Exception t) {
-            t.printStackTrace();
-            throw t;
-        }
+            // Initialize the JAAS configuration to allow for an admin login later
+            // Initialize IDTrust
+            String configFile = "security/jaas.conf.xml";
+            IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
 
-        // Use a session to load the contents ...
-        Session session = repository.login();
-        try {
-            InputStream stream = resourceStream("io/cars-system-view.xml");
             try {
-                session.getWorkspace().importXML("/", stream, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
-            } catch (Throwable t) {
-                t.printStackTrace();
-            } finally {
-                stream.close();
+                idtrustConfig.config(configFile);
+            } catch (Exception ex) {
+                throw new IllegalStateException(ex);
             }
 
-            // Create a branch that contains some same-name-siblings ...
-            Node other = session.getRootNode().addNode("Other", "nt:unstructured");
-            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value3 quick brown fox");
-            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value2 quick brown cat");
-            other.addNode("NodeA", "nt:unstructured").setProperty("something", "value1 quick black dog");
-            session.getRootNode().addNode("NodeB", "nt:unstructured").setProperty("myUrl", "http://www.acme.com/foo/bar");
-            session.save();
+            // Start the repository ...
+            try {
+                repository = engine.getRepository("cars");
+            } catch (RuntimeException t) {
+                t.printStackTrace();
+                throw t;
+            } catch (Exception t) {
+                t.printStackTrace();
+                throw t;
+            }
 
-            // Prime creating a first XPath query and SQL query ...
-            session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
-            session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", Query.JCR_SQL2);
-        } finally {
-            session.logout();
+            // Use a session to load the contents ...
+            Session session = repository.login();
+            try {
+                InputStream stream = resourceStream("io/cars-system-view.xml");
+                try {
+                    session.getWorkspace().importXML("/", stream, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                } finally {
+                    stream.close();
+                }
+
+                // Create a branch that contains some same-name-siblings ...
+                Node other = session.getRootNode().addNode("Other", "nt:unstructured");
+                other.addNode("NodeA", "nt:unstructured").setProperty("something", "value3 quick brown fox");
+                other.addNode("NodeA", "nt:unstructured").setProperty("something", "value2 quick brown cat");
+                other.addNode("NodeA", "nt:unstructured").setProperty("something", "value1 quick black dog");
+                session.getRootNode().addNode("NodeB", "nt:unstructured").setProperty("myUrl", "http://www.acme.com/foo/bar");
+                session.save();
+
+                // Prime creating a first XPath query and SQL query ...
+                session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured)", Query.XPATH);
+                session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base]", Query.JCR_SQL2);
+            } finally {
+                session.logout();
+            }
+
+            // Prime creating the schemata ...
+            repository.getRepositoryTypeManager().getRepositorySchemata();
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
-
-        // Prime creating the schemata ...
-        repository.getRepositoryTypeManager().getRepositorySchemata();
     }
 
     @AfterClass
@@ -316,7 +328,7 @@ public class JcrQueryManagerTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 24);
-        assertResultsHaveColumns(result, "jcr:primaryType");
+        assertResultsHaveColumns(result, minimumColumnNames());
     }
 
     @Test
@@ -392,7 +404,7 @@ public class JcrQueryManagerTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 23);
-        assertResultsHaveColumns(result, "jcr:primaryType");
+        assertResultsHaveColumns(result, minimumColumnNames());
     }
 
     @Test
@@ -417,7 +429,8 @@ public class JcrQueryManagerTest {
         assertResults(query, result, 5L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
             "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
-            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
+            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "jcr:name", "jcr:path", "jcr:score",
+            "mode:depth", "mode:localName"};
         assertResultsHaveColumns(result, expectedColumnNames);
     }
 
@@ -431,7 +444,9 @@ public class JcrQueryManagerTest {
         assertResults(query, result, 13L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
             "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
-            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
+            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "car.jcr:name", "car.jcr:path",
+            "car.jcr:score", "car.mode:depth", "car.mode:localName", "category.jcr:name", "category.jcr:path",
+            "category.jcr:score", "category.mode:depth", "category.mode:localName"};
         assertResultsHaveColumns(result, expectedColumnNames);
     }
 
@@ -457,7 +472,8 @@ public class JcrQueryManagerTest {
         assertResults(query, result, 5L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
             "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
-            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType"};
+            "car:msrp", "jcr:created", "jcr:createdBy", "category.jcr:primaryType", "jcr:name", "jcr:path", "jcr:score",
+            "mode:depth", "mode:localName"};
         assertResultsHaveColumns(result, expectedColumnNames);
     }
 
@@ -470,7 +486,11 @@ public class JcrQueryManagerTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 13L);
-        assertResultsHaveColumns(result, "category.jcr:primaryType", "cars.jcr:primaryType");
+        String[] expectedColumns = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:name", "cars.jcr:path",
+            "cars.jcr:score", "cars.mode:depth", "cars.mode:localName", "category.jcr:name", "category.jcr:path",
+            "category.jcr:score", "category.mode:depth", "category.mode:localName"};
+
+        assertResultsHaveColumns(result, expectedColumns);
     }
 
     @FixFor( "MODE-829" )
@@ -483,7 +503,10 @@ public class JcrQueryManagerTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 3L);
-        assertResultsHaveColumns(result, "category.jcr:primaryType", "cars.jcr:primaryType");
+        String[] expectedColumns = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:name", "cars.jcr:path",
+            "cars.jcr:score", "cars.mode:depth", "cars.mode:localName", "category.jcr:name", "category.jcr:path",
+            "category.jcr:score", "category.mode:depth", "category.mode:localName"};
+        assertResultsHaveColumns(result, expectedColumns);
     }
 
     @FixFor( "MODE-829" )
@@ -496,7 +519,10 @@ public class JcrQueryManagerTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 0L); // no nodes have a 'name' property (strictly speaking)
-        assertResultsHaveColumns(result, "category.jcr:primaryType", "cars.jcr:primaryType");
+        String[] expectedColumns = {"category.jcr:primaryType", "cars.jcr:primaryType", "cars.jcr:name", "cars.jcr:path",
+            "cars.jcr:score", "cars.mode:depth", "cars.mode:localName", "category.jcr:name", "category.jcr:path",
+            "category.jcr:score", "category.mode:depth", "category.mode:localName"};
+        assertResultsHaveColumns(result, expectedColumns);
     }
 
     @FixFor( "MODE-829" )
@@ -669,7 +695,7 @@ public class JcrQueryManagerTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 24);
-        assertResultsHaveColumns(result, new String[] {"jcr:primaryType"});
+        assertResultsHaveColumns(result, minimumColumnNames());
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
             Row row = iter.nextRow();
@@ -766,7 +792,7 @@ public class JcrQueryManagerTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 4); // the 4 types of cars
-        assertResultsHaveColumns(result, "jcr:path", "jcr:score", "jcr:primaryType");
+        assertResultsHaveColumns(result, minimumColumnNames());
     }
 
     /**
@@ -785,7 +811,7 @@ public class JcrQueryManagerTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 4); // the 4 types of cars
-        assertResultsHaveColumns(result, "jcr:path", "jcr:score", "jcr:primaryType");
+        assertResultsHaveColumns(result, minimumColumnNames());
     }
 
     @Test
@@ -924,7 +950,7 @@ public class JcrQueryManagerTest {
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 24);
-        assertResultsHaveColumns(result, new String[] {"jcr:primaryType", "jcr:path", "jcr:score"});
+        assertResultsHaveColumns(result, minimumColumnNames());
         RowIterator iter = result.getRows();
         while (iter.hasNext()) {
             Row row = iter.nextRow();
@@ -955,7 +981,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertResults(query, result, 24);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+        assertResultsHaveColumns(result, minimumColumnNames());
     }
 
     @SuppressWarnings( "deprecation" )
@@ -967,7 +993,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertResults(query, result, 24);
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+        assertResultsHaveColumns(result, minimumColumnNames());
     }
 
     @SuppressWarnings( "deprecation" )
@@ -990,7 +1016,7 @@ public class JcrQueryManagerTest {
         QueryResult result = query.execute();
         assertResults(query, result, 23);
         assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+        assertResultsHaveColumns(result, minimumColumnNames());
     }
 
     @SuppressWarnings( "deprecation" )
@@ -1104,7 +1130,7 @@ public class JcrQueryManagerTest {
         QueryResult result = query.execute();
         assertResults(query, result, 23);
         assertThat(result, is(notNullValue()));
-        assertResultsHaveColumns(result, "jcr:primaryType", "jcr:path", "jcr:score");
+        assertResultsHaveColumns(result, minimumColumnNames());
     }
 
     @SuppressWarnings( "deprecation" )
@@ -1141,6 +1167,9 @@ public class JcrQueryManagerTest {
                                  "jcr:score",
                                  "jcr:created",
                                  "jcr:createdBy",
+                                 "jcr:name",
+                                 "mode:localName",
+                                 "mode:depth",
                                  "car:mpgCity",
                                  "car:userRating",
                                  "car:mpgHighway",
@@ -1395,6 +1424,9 @@ public class JcrQueryManagerTest {
                                  "jcr:score",
                                  "jcr:created",
                                  "jcr:createdBy",
+                                 "jcr:name",
+                                 "mode:localName",
+                                 "mode:depth",
                                  "car:mpgCity",
                                  "car:userRating",
                                  "car:mpgHighway",

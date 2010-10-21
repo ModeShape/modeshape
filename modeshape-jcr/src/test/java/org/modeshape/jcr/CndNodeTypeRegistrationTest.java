@@ -65,7 +65,7 @@ public class CndNodeTypeRegistrationTest {
 
         when(repository.getExecutionContext()).thenReturn(context);
 
-        repoTypeManager = new RepositoryNodeTypeManager(repository, null, true);
+        repoTypeManager = new RepositoryNodeTypeManager(repository, null, true, true);
         try {
             CndNodeTypeReader cndReader = new CndNodeTypeReader(context);
             cndReader.readBuiltInTypes();
