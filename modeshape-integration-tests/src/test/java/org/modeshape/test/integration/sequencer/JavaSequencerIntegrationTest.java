@@ -123,6 +123,7 @@ public class JavaSequencerIntegrationTest extends AbstractSequencerTest {
         assertThat(file.exists(), is(true));
         uploadFile(file.toURI().toURL(), "/files/" + packageName);
         waitUntilSequencedNodesIs(1);
+        Thread.sleep(200);
         // printSubgraph(assertNode("/"));
 
         // Find the sequenced node ...
