@@ -592,7 +592,7 @@ public class JcrMetaData implements DatabaseMetaData {
                     currentRow.add(type.getName()); // TABLE_NAME
                     currentRow.add(propDefn.getName()); // COLUMN_NAME
                     currentRow.add(jcrtype.getJdbcType()); // DATA_TYPE
-                    currentRow.add(jcrtype.getJcrName()); // TYPE_NAME
+                    currentRow.add(jcrtype.getJdbcTypeName()); // TYPE_NAME
                     currentRow.add(jcrtype.getNominalDisplaySize()); // COLUMN_SIZE
                     currentRow.add("NULL"); // BUFFER_LENGTH
                     currentRow.add(JcrMetaData.DEFAULT_ZERO); // DECIMAL_DIGITS
