@@ -1070,6 +1070,11 @@
 				<artifactId>modeshape-web-jcr</artifactId>
 				<version>${project.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-jdbc</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 			<!--
 			   Collections
 			-->

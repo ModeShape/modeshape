@@ -44,6 +44,16 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         return "config/configRepositoryForTeiidSequencing.xml";
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.test.integration.AbstractSingleUseModeShapeTest#getRepositoryName()
+     */
+    @Override
+    protected String getRepositoryName() {
+        return "Content";
+    }
+
     @Before
     @Override
     public void beforeEach() throws Exception {
@@ -52,7 +62,7 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
 
     @After
     @Override
-    public void afterEach() {
+    public void afterEach() throws Exception {
         super.afterEach();
     }
 

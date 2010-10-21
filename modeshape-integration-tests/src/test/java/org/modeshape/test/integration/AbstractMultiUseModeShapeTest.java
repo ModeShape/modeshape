@@ -21,13 +21,14 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.test.integration.sequencer;
-
-import org.modeshape.test.integration.AbstractSingleUseModeShapeTest;
+package org.modeshape.test.integration;
 
 /**
+ * A base class for ModeShape integration tests that set up a new ModeShape engine once for use by all unit tests. Subclasses must
+ * define a @BeforeAll method that {@link #startEngine(Class, String, String) starts the engine} and an
  * 
+ * @AfterAll method that {@link #stopEngine() stops the engine}.
  */
-public abstract class AbstractSequencerTest extends AbstractSingleUseModeShapeTest {
+public abstract class AbstractMultiUseModeShapeTest extends AbstractModeShapeTest {
 
 }

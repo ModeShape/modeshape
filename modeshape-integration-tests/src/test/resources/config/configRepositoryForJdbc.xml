@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<configuration xmlns:mode="http://www.modeshape.org/1.0"
+               xmlns:jcr="http://www.jcp.org/jcr/1.0"
+               xmlns:nt="http://www.jcp.org/jcr/nt/1.0">
+    <!-- Define the sources from which content is made available.  -->
+    <mode:sources jcr:primaryType="nt:unstructured">
+        <mode:source jcr:name="Store" mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource">
+            <defaultWorkspaceName>default</defaultWorkspaceName>
+        </mode:source>
+    </mode:sources>
+    <!-- Define the sequencers. This is an optional section. -->
+    <mode:sequencers>
+        <!--
+        <mode:sequencer jcr:name="Delimited Text File Sequencer" mode:classname="org.modeshape.sequencer.text.DelimitedTextSequencer">
+            <mode:description>Sequences *.csv text files loaded into the repository under '/files', extracting comma-separated and delimited files into columnar information.</mode:description>        
+            <mode:pathExpression>/files//(*.csv[*])/jcr:content[@jcr:data] => /sequenced/text/delimited/$1 </mode:pathExpression>
+            <mode:splitPattern>,</mode:splitPattern>
+        </mode:sequencer>
+        <mode:sequencer jcr:name="Fixed Width Text File Sequencer" mode:classname="org.modeshape.sequencer.text.FixedWidthTextSequencer">
+            <mode:description>Sequences *.txt fixed-width text files loaded into the repository under '/files', extracting splitting rows into columns based on predefined positions.</mode:description>        
+            <mode:pathExpression>/files//(*.txt[*])/jcr:content[@jcr:data] => /sequenced/text/fixedWidth/$1 </mode:pathExpression>
+            <mode:columnStartPositions></mode:columnStartPositions>
+        </mode:sequencer>
+        <mode:sequencer jcr:name="Teiid Model Sequencer" mode:classname="org.modeshape.sequencer.teiid.ModelSequencer">
+            <mode:description>Sequences Teiid relational models (e.g., *.xmi) loaded into the repository under '/files', extracting the structure defined in the models.</mode:description>
+            <mode:pathExpression>/files(//)(*.xmi[*])/jcr:content[@jcr:data] => /sequenced/teiid/models$1 </mode:pathExpression>
+        </mode:sequencer>
+        <mode:sequencer jcr:name="Teiid VDB Sequencer" mode:classname="org.modeshape.sequencer.teiid.VdbSequencer">
+            <mode:description>Sequences Teiid Virtual Databases (e.g., *.vdb) loaded into the repository under '/files', extracting the VDB metadata and the structure defined in the VDB's relational models.</mode:description>        
+            <mode:pathExpression>/files(//)(*.vdb[*])/jcr:content[@jcr:data] => /sequenced/teiid/vdbs$1 </mode:pathExpression>
+        </mode:sequencer>
+        <mode:sequencer jcr:name="Class File Sequencer" mode:classname="org.modeshape.sequencer.classfile.ClassFileSequencer">
+            <mode:description>Sequences Java class files loaded into the repository under '/files', extracting structural information.</mode:description>        
+            <mode:pathExpression>/files//(*.class[*])/jcr:content[@jcr:data] => /sequenced/class/$1 </mode:pathExpression>
+        </mode:sequencer>
+        <mode:sequencer jcr:name="Java File Sequencer" mode:classname="org.modeshape.sequencer.java.JavaMetadataSequencer">
+            <mode:description>Sequences Java source files loaded into the repository under '/files', extracting structural information.</mode:description>        
+            <mode:pathExpression>/files//(*.java[*])/jcr:content[@jcr:data] => /sequenced/java/$1 </mode:pathExpression>
+        </mode:sequencer>
+        <mode:sequencer jcr:name="CND File Sequencer" mode:classname="org.modeshape.sequencer.cnd.CndSequencer">
+            <mode:description>Sequences CND files loaded into the repository under '/files', extracting the contained node type definitions.</mode:description>        
+            <mode:pathExpression>/files(//(*.cnd[*]))/jcr:content[@jcr:data] => /sequenced/cnd/$1 </mode:pathExpression>
+        </mode:sequencer>
+        <mode:sequencer jcr:name="DDL File Sequencer" mode:classname="org.modeshape.sequencer.ddl.DdlSequencer">
+            <mode:description>Sequences DDL files loaded into the repository under '/files', extracting the structured abstract syntax tree of the DDL commands and expressions.</mode:description>        
+            <mode:pathExpression>/files(//(*.ddl[*]))/jcr:content[@jcr:data] => /sequenced/ddl/$1 </mode:pathExpression>
+        </mode:sequencer>     
+        <mode:sequencer jcr:name="MS Office File Sequencer" mode:classname="org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer">
+            <mode:description>Sequences Microsoft Office documents and presentations under '/files', extracting summary information and structure.</mode:description>        
+            <mode:pathExpression>/files//(*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /sequenced/msoffice/$1 </mode:pathExpression>
+        </mode:sequencer>
+        <mode:sequencer jcr:name="XML File Sequencer" mode:classname="org.modeshape.sequencer.xml.XmlSequencer">
+            <mode:description>Sequences XML files loaded into the repository under '/files', extracting the contents into the equivalent JCR graph structure.</mode:description>        
+            <mode:pathExpression>/files(//(*.xml[*]))/jcr:content[@jcr:data] => /sequenced/xml/$1 </mode:pathExpression>
+        </mode:sequencer>  
+        <mode:sequencer jcr:name="ZIP File Sequencer" mode:classname="org.modeshape.sequencer.zip.ZipSequencer">
+            <mode:description>Sequences ZIP files loaded into the repository under '/files', extracting the archive file contents into the equivalent JCR graph structure of 'nt:file' and 'nt:folder' nodes.</mode:description>        
+            <mode:pathExpression>/files(//)(*.zip[*])/jcr:content[@jcr:data] => /sequenced/zip/$1 </mode:pathExpression>
+        </mode:sequencer>
+        -->                          
+    </mode:sequencers>
+    <!-- Define the mime type detectors. This is an optional section. -->
+    <mode:mimeTypeDetectors>
+        <mode:mimeTypeDetector jcr:name="Detector">
+            <mode:description>Standard extension-based MIME type detector</mode:description>        
+            <!-- 
+            Specify the implementation class (required), as a child element or attribute on parent element.
+            -->
+            <mode:classname>org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector</mode:classname>
+        </mode:mimeTypeDetector>
+    </mode:mimeTypeDetectors>
+    <!-- JCR Repositories.  This is required, with a separate repository for each JCR repository instance. -->
+    <mode:repositories>
+        <mode:repository jcr:name="Repo" mode:source="Store">
+            <jcr:nodeTypes>
+                <mode:resource>/jdbc/cars.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/teiid/teiid.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/ddl/StandardDdl.cnd</mode:resource>
+                <!--
+                <mode:resource>/org/modeshape/connector/meta/jdbc/connector-metajdbc.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/classfile/sequencer-classfile.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/image/images.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/java/javaSource.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/mp3/mp3.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/msoffice/msoffice.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/text/sequencer-text.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/xml/xml.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/zip/zip.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/ddl/dialect/derby/DerbyDdl.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/ddl/dialect/oracle/OracleDdl.cnd</mode:resource>
+                <mode:resource>/org/modeshape/sequencer/ddl/dialect/postgres/PostgresDdl.cnd</mode:resource>
+                -->
+            </jcr:nodeTypes>
+        </mode:repository>
+    </mode:repositories>
+</configuration>
