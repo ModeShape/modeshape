@@ -71,11 +71,23 @@
         </mode:sequencer>
         <mode:sequencer jcr:name="Class File Sequencer" mode:classname="org.modeshape.sequencer.classfile.ClassFileSequencer">
             <mode:description>Sequences Java class files loaded into the repository under '/files', extracting structural information.</mode:description>        
-            <mode:pathExpression>/files//(*.class[*])/jcr:content[@jcr:data] => /sequenced/class/$1 </mode:pathExpression>
+            <!-- Note this path expression captures the path below '/files' and includes the filename, and places the sequenced
+                 content under the same relative path below '/sequenced/class'. For example, if a classfile is uploaded
+                 to '/files/my/favorites/org/example/Customers.class', then the sequenced output will be placed at
+                 the '/sequenced/class/org/example/Customers.class' node, which will have a primary type of 'nt:unstructured'
+                 and will contain under it a 'class:class' for each Java class, under which are the nodes representing the
+                 methods, fields, constructors, and annotations. Of course, the path expression can be modified as needed. -->
+            <mode:pathExpression>/files(//(*.class[*]))/jcr:content[@jcr:data] => /sequenced/class/$1 </mode:pathExpression>
         </mode:sequencer>
         <mode:sequencer jcr:name="Java File Sequencer" mode:classname="org.modeshape.sequencer.java.JavaMetadataSequencer">
             <mode:description>Sequences Java source files loaded into the repository under '/files', extracting structural information.</mode:description>        
-            <mode:pathExpression>/files//(*.java[*])/jcr:content[@jcr:data] => /sequenced/java/$1 </mode:pathExpression>
+            <!-- Note this path expression captures the path below '/files' and includes the filename, and places the sequenced
+                 content under the same relative path below '/sequenced/java'. For example, if a classfile is uploaded
+                 to '/files/my/favorites/org/example/Customers.java', then the sequenced output will be placed at
+                 the '/sequenced/class/org/example/Customers.java' node, which will have a primary type of 'nt:unstructured'
+                 and will contain under it a 'class:class' for each Java class, under which are the nodes representing the
+                 methods, fields, constructors, and annotations. Of course, the path expression can be modified as needed. -->
+            <mode:pathExpression>/files(//(*.java[*]))/jcr:content[@jcr:data] => /sequenced/java/$1 </mode:pathExpression>
         </mode:sequencer>
         <mode:sequencer jcr:name="CND File Sequencer" mode:classname="org.modeshape.sequencer.cnd.CndSequencer">
             <mode:description>Sequences CND files loaded into the repository under '/files', extracting the contained node type definitions.</mode:description>        
