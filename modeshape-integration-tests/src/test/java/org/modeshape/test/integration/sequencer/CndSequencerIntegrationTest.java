@@ -43,6 +43,16 @@ public class CndSequencerIntegrationTest extends AbstractSequencerTest {
         return "config/configRepositoryForCndSequencing.xml";
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.test.integration.AbstractSingleUseModeShapeTest#getRepositoryName()
+     */
+    @Override
+    protected String getRepositoryName() {
+        return "Content";
+    }
+
     @Before
     @Override
     public void beforeEach() throws Exception {
@@ -51,7 +61,7 @@ public class CndSequencerIntegrationTest extends AbstractSequencerTest {
 
     @After
     @Override
-    public void afterEach() {
+    public void afterEach() throws Exception {
         super.afterEach();
     }
 

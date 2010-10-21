@@ -275,7 +275,7 @@ public class JcrDriver implements java.sql.Driver {
         }
     }
 
-     void setContextFactory( JcrContextFactory factory ) {
+    public void setContextFactory( JcrContextFactory factory ) {
         assert factory != null;
         this.contextFactory = factory;
     }
