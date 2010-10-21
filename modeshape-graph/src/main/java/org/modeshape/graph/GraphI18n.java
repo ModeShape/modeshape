@@ -100,6 +100,7 @@ public final class GraphI18n {
     public static I18n errorImportingContent;
     public static I18n unableToFindRepositorySourceWithName;
     public static I18n nodeAlreadyExistsWithUuid;
+    public static I18n nodeDoesNotExistWithUuid;
     public static I18n couldNotAcquireLock;
 
     public static I18n errorNotifyingObserver;

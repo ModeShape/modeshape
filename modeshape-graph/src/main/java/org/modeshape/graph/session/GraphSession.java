@@ -112,6 +112,12 @@ public class GraphSession<Payload, PropertyPayload> {
      * A map that records how the changes to a node are dependent upon other nodes.
      */
     protected final Map<NodeId, Dependencies> changeDependencies = new HashMap<NodeId, Dependencies>();
+    /**
+     * A set that records the UUIDs of the nodes that have been deleted from this session (via the {@link #operations}) but not
+     * yet {@link #save() saved}. This is used to know whether a node has been locally removed to prevent reloading the node from
+     * the persistent store.
+     */
+    protected final Set<UUID> deletedNodes = new HashSet<UUID>();
 
     private LinkedList<Request> requests;
     private BatchRequestBuilder requestBuilder;
@@ -260,11 +266,26 @@ public class GraphSession<Payload, PropertyPayload> {
                 }
             }
 
+            // Has this node already been deleted by this session (but not yet committed)?
+            if (this.deletedNodes.contains(uuid)) {
+                String msg = GraphI18n.nodeDoesNotExistWithUuid.text(uuid, workspaceName);
+                throw new PathNotFoundException(location, this.root.getPath(), msg);
+            }
+
             // Query for the actual location ...
             location = store.getNodeAt(location).getLocation();
         }
         assert location.hasPath();
-        return findNodeWith(null, location.getPath());
+        Node<Payload, PropertyPayload> result = findNodeWith(null, location.getPath());
+        if (uuid != null) {
+            // Check that the input UUID matches that of the result ...
+            UUID actualUuid = result.getLocation().getUuid();
+            if (!uuid.equals(actualUuid)) {
+                String msg = GraphI18n.nodeDoesNotExistWithUuid.text(uuid, workspaceName);
+                throw new PathNotFoundException(location, this.root.getPath(), msg);
+            }
+        }
+        return result;
     }
 
     private UUID uuidFor( Location location ) {
@@ -957,6 +978,9 @@ public class GraphSession<Payload, PropertyPayload> {
             throw new RepositorySourceException(e.getLocalizedMessage(), e);
         }
 
+        // Clear out the record of which nodes were deleted in that batch ...
+        this.deletedNodes.clear();
+
         // Create a new batch for future operations ...
         // LinkedList<Request> oldRequests = this.requests;
         this.requests = new LinkedList<Request>();
@@ -1097,7 +1121,12 @@ public class GraphSession<Payload, PropertyPayload> {
      */
     protected void recordDelete( Node<Payload, PropertyPayload> node ) {
         // Record the operation ...
-        operations.delete(node.getLocation());
+        Location location = node.getLocation();
+        operations.delete(location);
+        UUID nodeUuid = uuidFor(location);
+        if (nodeUuid != null) {
+            deletedNodes.add(nodeUuid);
+        }
         // Fix the cache's state ...
         nodes.remove(node.getNodeId());
         changeDependencies.remove(node.getNodeId());

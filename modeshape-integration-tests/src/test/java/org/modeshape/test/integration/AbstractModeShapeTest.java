@@ -32,11 +32,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -45,8 +42,6 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
-import javax.jcr.PropertyIterator;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
@@ -58,7 +53,6 @@ import net.jcip.annotations.Immutable;
 import org.junit.After;
 import org.junit.Before;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
@@ -594,82 +588,7 @@ public abstract class AbstractModeShapeTest {
                                 int depthOfSubgraph,
                                 int maxDepthOfSubgraph ) throws RepositoryException {
         if (!print) return;
-        int currentDepth = node.getDepth() - depthOfSubgraph + 1;
-        if (currentDepth > maxDepthOfSubgraph) return;
-        if (lead == null) lead = "";
-        String nodeLead = lead + StringUtil.createString(' ', (currentDepth - 1) * 2);
-
-        StringBuilder sb = new StringBuilder();
-        sb.append(nodeLead);
-        if (node.getDepth() == 0) {
-            sb.append("/");
-        } else {
-            sb.append(node.getName());
-            if (node.getIndex() != 1) {
-                sb.append('[').append(node.getIndex()).append(']');
-            }
-        }
-        sb.append(" jcr:primaryType=" + node.getPrimaryNodeType().getName());
-        boolean referenceable = false;
-        if (node.getMixinNodeTypes().length != 0) {
-            sb.append(" jcr:mixinTypes=[");
-            boolean first = true;
-            for (NodeType mixin : node.getMixinNodeTypes()) {
-                if (first) first = false;
-                else sb.append(',');
-                sb.append(mixin.getName());
-                if (mixin.getName().equals("mix:referenceable")) referenceable = true;
-            }
-            sb.append(']');
-        }
-        if (referenceable) {
-            sb.append(" jcr:uuid=" + node.getIdentifier());
-        }
-        System.out.println(sb);
-
-        List<String> propertyNames = new LinkedList<String>();
-        for (PropertyIterator iter = node.getProperties(); iter.hasNext();) {
-            Property property = iter.nextProperty();
-            String name = property.getName();
-            if (name.equals("jcr:primaryType") || name.equals("jcr:mixinTypes") || name.equals("jcr:uuid")) continue;
-            propertyNames.add(property.getName());
-        }
-        Collections.sort(propertyNames);
-        for (String propertyName : propertyNames) {
-            Property property = node.getProperty(propertyName);
-            sb = new StringBuilder();
-            sb.append(nodeLead).append("  - ").append(propertyName).append('=');
-            boolean binary = property.getType() == PropertyType.BINARY;
-            if (property.isMultiple()) {
-                sb.append('[');
-                boolean first = true;
-                for (Value value : property.getValues()) {
-                    if (first) first = false;
-                    else sb.append(',');
-                    if (binary) {
-                        sb.append(value.getBinary());
-                    } else {
-                        sb.append(value.getString());
-                    }
-                }
-                sb.append(']');
-            } else {
-                Value value = property.getValue();
-                if (binary) {
-                    sb.append(value.getBinary());
-                } else {
-                    sb.append(value.getString());
-                }
-            }
-            System.out.println(sb);
-        }
-
-        if (currentDepth < maxDepthOfSubgraph) {
-            for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
-                Node child = iter.nextNode();
-                printSubgraph(child, lead, depthOfSubgraph, maxDepthOfSubgraph);
-            }
-        }
+        tools.printSubgraph(node, lead, depthOfSubgraph, maxDepthOfSubgraph);
     }
 
     protected void printChildren( Node node ) throws RepositoryException {
