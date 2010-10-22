@@ -95,6 +95,7 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/teiid/vdb/qe.vdb", "/files/");
         waitUntilSequencingFinishes();
+        Thread.sleep(200); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
         Node vdb = assertNode("/sequenced/teiid/vdbs/qe", "vdb:virtualDatabase", "mix:referenceable");
@@ -115,6 +116,7 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/teiid/vdb/qe.vdb", "/files/my/favorites");
         waitUntilSequencingFinishes();
+        Thread.sleep(200); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
         Node vdb = assertNode("/sequenced/teiid/vdbs/my/favorites/qe", "vdb:virtualDatabase", "mix:referenceable");
@@ -135,6 +137,7 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/teiid/vdb/PartsFromXml.vdb", "/files/");
         waitUntilSequencingFinishes();
+        Thread.sleep(200); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
         Node vdb = assertNode("/sequenced/teiid/vdbs/PartsFromXml", "vdb:virtualDatabase", "mix:referenceable");
@@ -157,6 +160,7 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/teiid/vdb/YahooUdfTest.vdb", "/files/");
         waitUntilSequencingFinishes();
+        Thread.sleep(200); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
         Node vdb = assertNode("/sequenced/teiid/vdbs/YahooUdfTest", "vdb:virtualDatabase", "mix:referenceable");
@@ -177,6 +181,7 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
     public void shouldFindVdbsUsingQueryWithMultipleVariables() throws Exception {
         String[] vdbFiles = {"YahooUdfTest.vdb", "qe.vdb", "qe.2.vdb", "qe.3.vdb", "qe.4.vdb", "PartsFromXml.vdb"};
         uploadVdbs("/files/", vdbFiles);
+        Thread.sleep(1000); // wait a bit while the new content is indexed
 
         // Print out the top level of the VDBs ...
         Node files = assertNode("/files");
