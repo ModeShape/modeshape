@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
@@ -134,7 +135,7 @@ public class NodeEntity {
     // @JoinColumn( name = "NODE_UUID" )} )
     @ManyToMany
     @JoinTable( name = "ModeShape_LARGEVALUE_USAGES", joinColumns = {@JoinColumn( name = "ID" )} )
-    private final Collection<LargeValueEntity> largeValues = new HashSet<LargeValueEntity>();
+    private final Set<LargeValueEntity> largeValues = new HashSet<LargeValueEntity>();
 
     public NodeEntity() {
     }
