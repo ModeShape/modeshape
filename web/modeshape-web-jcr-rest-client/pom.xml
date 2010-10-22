@@ -337,6 +337,9 @@
 						<configuration>
 							<container>
 								<containerId>${cargo.container}</containerId>
+								<systemProperties>
+									<java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
+								</systemProperties>
 							</container>
 							<configuration>
 								<properties>
@@ -346,7 +349,7 @@
 									</cargo.servlet.users>
 									<cargo.servlet.port>8180</cargo.servlet.port>
 								</properties>
-								<home>target/cargo</home>
+								<home>${project.build.directory}/cargo</home>
 								<deployables>
 									<!-- application to deploy -->
 									<deployable>
