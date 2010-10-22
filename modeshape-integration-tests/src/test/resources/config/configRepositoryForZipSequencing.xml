@@ -48,7 +48,7 @@
     <mode:sequencers>
         <mode:sequencer jcr:name="ZIP File Sequencer" mode:classname="org.modeshape.sequencer.zip.ZipSequencer">
             <mode:description>Sequences ZIP files loaded into the repository under '/files', extracting the archive file contents into the equivalent JCR graph structure of 'nt:file' and 'nt:folder' nodes.</mode:description>        
-            <mode:pathExpression>/files(//)(*.zip[*])/jcr:content[@jcr:data] => /sequenced/zip/$1 </mode:pathExpression>
+            <mode:pathExpression>Store:default:/files(//)(*.zip[*])/jcr:content[@jcr:data] => Store:default:/sequenced/zip/$1 </mode:pathExpression>
         </mode:sequencer>                          
     </mode:sequencers>
 </configuration>

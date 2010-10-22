@@ -65,8 +65,8 @@ import org.modeshape.repository.service.ServiceAdministrator;
 import org.modeshape.repository.util.RepositoryNodePath;
 
 /**
- * A sequencing system is used to monitor changes in the content of ModeShape repositories and to sequence the content to extract or to
- * generate structured information.
+ * A sequencing system is used to monitor changes in the content of ModeShape repositories and to sequence the content to extract
+ * or to generate structured information.
  */
 public class SequencingService implements AdministeredService {
 
@@ -227,8 +227,8 @@ public class SequencingService implements AdministeredService {
 
     /**
      * Get configurations for all known sequencers
-     * @return List of {@link SequencerConfig}s
      * 
+     * @return List of {@link SequencerConfig}s
      * @throws IllegalArgumentException if <code>config</code> is null
      * @see #updateSequencer(SequencerConfig)
      * @see #removeSequencer(SequencerConfig)
@@ -236,7 +236,7 @@ public class SequencingService implements AdministeredService {
     public List<SequencerConfig> getSequencers() {
         return this.sequencerLibrary.getSequenceConfigs();
     }
-    
+
     /**
      * Update the configuration for a sequencer, or add it if there is no {@link SequencerConfig#equals(Object) matching
      * configuration}.
@@ -435,13 +435,14 @@ public class SequencingService implements AdministeredService {
                             for (Property property : change.getAddedOrModifiedProperties()) {
                                 Name propertyName = property.getName();
                                 String propertyNameStr = context.getValueFactories().getStringFactory().create(propertyName);
-                                String path = nodePathStr + "/@" + propertyNameStr;
+                                String path = repositorySourceName + ":" + repositoryWorkspaceName + ":" + nodePathStr + "/@"
+                                              + propertyNameStr;
                                 SequencerPathExpression.Matcher matcher = pathExpression.matcher(path);
                                 if (matcher.matches()) {
                                     // String selectedPath = matcher.getSelectedPath();
                                     RepositoryNodePath outputPath = RepositoryNodePath.parse(matcher.getOutputPath(),
-                                                                                             repositorySourceName,
-                                                                                             repositoryWorkspaceName);
+                                                                                             matcher.getOutputRepositoryName(),
+                                                                                             matcher.getOutputWorkspaceName());
                                     SequencerCall call = new SequencerCall(sequencer, propertyNameStr);
                                     // Record the output path ...
                                     Set<RepositoryNodePath> outputPaths = sequencerCalls.get(call);
@@ -506,20 +507,20 @@ public class SequencingService implements AdministeredService {
     }
 
     /**
-	 * @param sequencersList Sets sequencersList to the specified value.
-	 */
-	public void setSequencersList(List<Sequencer> sequencersList) {
-		this.sequencersList = sequencersList;
-	}
+     * @param sequencersList Sets sequencersList to the specified value.
+     */
+    public void setSequencersList( List<Sequencer> sequencersList ) {
+        this.sequencersList = sequencersList;
+    }
 
-	/**
-	 * @return sequencersList
-	 */
-	public List<Sequencer> getSequencersList() {
-		return sequencersList;
-	}
+    /**
+     * @return sequencersList
+     */
+    public List<Sequencer> getSequencersList() {
+        return sequencersList;
+    }
 
-	/**
+    /**
      * The statistics for the system. Each sequencing system has an instance of this class that is updated.
      * 
      * @author Randall Hauch

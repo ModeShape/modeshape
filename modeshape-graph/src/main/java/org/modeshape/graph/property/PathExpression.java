@@ -29,29 +29,18 @@ import java.util.regex.PatternSyntaxException;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
+import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.graph.GraphI18n;
 
 /**
  * An expression that defines an acceptable path using a regular-expression-like language. Path expressions can be used to
  * represent node paths or properties.
  * <p>
- * Path expressions consist of two parts: a selection criteria (or an input path) and an output path:
- * </p>
- * 
- * <pre>
- * inputPath =&gt; outputPath
- * </pre>
- * <p>
- * The <i>inputPath</i> part defines an expression for the path of a node that is to be sequenced. Input paths consist of '
- * <code>/</code>' separated segments, where each segment represents a pattern for a single node's name (including the
- * same-name-sibling indexes) and '<code>@</code>' signifies a property name.
- * </p>
- * <p>
- * Let's first look at some simple examples:
+ * Let's first look at some simple examples of path expressions:
  * </p>
  * <table>
  * <tr>
- * <th>Input Path</th>
+ * <th>Path expression</th>
  * <th>Description</th>
  * </tr>
  * <tr>
@@ -105,12 +94,12 @@ import org.modeshape.graph.GraphI18n;
  * slash characters are treated as two.
  * </p>
  * <p>
- * Many input paths can be created using just these simple rules. However, input paths can be more complicated. Here are some more
- * examples:
+ * Many path expressions can be created using just these simple rules. However, input paths can be more complicated. Here are some
+ * more examples:
  * </p>
  * <table>
  * <tr>
- * <th>Input Path</th>
+ * <th>Path expressions</th>
  * <th>Description</th>
  * </tr>
  * <tr>
@@ -141,6 +130,12 @@ import org.modeshape.graph.GraphI18n;
  * <p>
  * Square brackets can also be used to specify criteria on a node's properties or children. Whatever appears in between the square
  * brackets does not appear in the selected node.
+ * </p>
+ * <h3>Repository and Workspace names</h3>
+ * <p>
+ * Path expressions can also specify restrictions on the repository name and workspace name, to constrain the path expression to
+ * matching only paths from workspaces in repositories meeting the name criteria. Of course, if the path expression doesn't
+ * include these restrictions, the repository and workspace names are not considered when matching paths.
  * </p>
  */
 @Immutable
@@ -189,8 +184,35 @@ public class PathExpression implements Serializable {
     private static final String NON_INDEX_PREDICATE_PATTERN_STRING = "\\[(?:(?:\\d+(?:,\\d+)*)|\\*)\\]|(\\[[^\\]]+\\])";
     private static final Pattern NON_INDEX_PREDICATE_PATTERN = Pattern.compile(NON_INDEX_PREDICATE_PATTERN_STRING);
 
+    /**
+     * The regular expression that is used to extract the repository name, workspace name, and path from an path expression (or a
+     * real path). The regular expression is <code>((([^:/]*):)?(([^:/]*):))?(.*)</code>. Group 3 will contain the repository
+     * name, group 5 the workspace name, and group 6 the path.
+     */
+    private static final String REPOSITORY_AND_WORKSPACE_AND_PATH_PATTERN_STRING = "((([^:/]*):)?(([^:/]*):))?(.*)";
+    private static final Pattern REPOSITORY_AND_WORKSPACE_AND_PATH_PATTERN = Pattern.compile(REPOSITORY_AND_WORKSPACE_AND_PATH_PATTERN_STRING);
+
     private final String expression;
+
+    /**
+     * This is the pattern that is used to determine if the particular path is from a particular repository. This pattern will be
+     * null if the expression does not constrain the repository name.
+     */
+    private final Pattern repositoryPattern;
+
+    /**
+     * This is the pattern that is used to determine if the particular path is from a particular workspace. This pattern will be
+     * null if the expression does not constrain the workspace name.
+     */
+    private final Pattern workspacePattern;
+    /**
+     * This is the pattern that is used to determine if there is a match with particular paths.
+     */
     private final Pattern matchPattern;
+    /**
+     * This is the pattern that is used to determine which parts of the particular input paths are included in the
+     * {@link Matcher#getSelectedNodePath() selected path}, only after the input path has already matched.
+     */
     private final Pattern selectPattern;
 
     /**
@@ -206,8 +228,23 @@ public class PathExpression implements Serializable {
         if (this.expression.length() == 0) {
             throw new InvalidPathExpressionException(GraphI18n.pathExpressionMayNotBeBlank.text());
         }
+
+        // Separate out the repository name, workspace name, and path fragments into separate match patterns ...
+        RepositoryPath repoPath = parseRepositoryPath(this.expression);
+        if (repoPath == null) {
+            throw new InvalidPathExpressionException(GraphI18n.pathExpressionHasInvalidMatch.text(this.expression,
+                                                                                                  this.expression));
+        }
+        String repoPatternStr = repoPath.repositoryName != null ? repoPath.repositoryName : ".*";
+        String workPatternStr = repoPath.workspaceName != null ? repoPath.workspaceName : ".*";
+        String pathPatternStr = repoPath.path;
+        this.repositoryPattern = Pattern.compile(repoPatternStr);
+        this.workspacePattern = Pattern.compile(workPatternStr);
+
+        // Build the repository match pattern ...
+
         // Build the match pattern, which determines whether a path matches the condition ...
-        String matchString = this.expression;
+        String matchString = pathPatternStr;
         try {
             matchString = removeUnusedPredicates(matchString);
             matchString = replaceXPathPatterns(matchString);
@@ -217,7 +254,7 @@ public class PathExpression implements Serializable {
             throw new InvalidPathExpressionException(msg, e);
         }
         // Build the select pattern, which determines the path that will be selected ...
-        String selectString = this.expression;
+        String selectString = pathPatternStr;
         try {
             selectString = removeAllPredicatesExceptIndexes(selectString);
             selectString = replaceXPathPatterns(selectString);
@@ -400,28 +437,48 @@ public class PathExpression implements Serializable {
     }
 
     /**
-     * @param absolutePath
-     * @return the matcher
+     * Obtain a Matcher that can be used to convert the supplied absolute path (with repository name and workspace name) into an
+     * output repository, and output workspace name, and output path.
+     * 
+     * @param absolutePath the path, of the form <code>{repoName}:{workspaceName}:{absPath}</code>, where
+     *        <code>{repoName}:{workspaceName}:</code> is optional
+     * @return the matcher; never null
      */
     public Matcher matcher( String absolutePath ) {
+        // Extra the repository name, workspace name and absPath from the supplied path ...
+        RepositoryPath repoPath = parseRepositoryPath(absolutePath);
+        if (repoPath == null) {
+            // No match, so return immediately ...
+            return new Matcher(null, absolutePath, null, null, null);
+        }
+        String repoName = repoPath.repositoryName != null ? repoPath.repositoryName : "";
+        String workspaceName = repoPath.workspaceName != null ? repoPath.workspaceName : "";
+        String path = repoPath.path;
+
+        // Determine if the input repository matches the repository name pattern ...
+        if (!repositoryPattern.matcher(repoName).matches() || !workspacePattern.matcher(workspaceName).matches()) {
+            // No match, so return immediately ...
+            return new Matcher(null, path, null, null, null);
+        }
+
         // Determine if the input path match the select expression ...
-        String originalAbsolutePath = absolutePath;
+        String originalAbsolutePath = path;
         // if (!absolutePath.endsWith("/")) absolutePath = absolutePath + "/";
         // Remove all trailing '/' ...
-        absolutePath = absolutePath.replaceAll("/+$", "");
+        path = path.replaceAll("/+$", "");
 
         // See if the supplied absolute path matches the pattern ...
-        final java.util.regex.Matcher matcher = this.matchPattern.matcher(absolutePath);
+        final java.util.regex.Matcher matcher = this.matchPattern.matcher(path);
         if (!matcher.matches()) {
             // No match, so return immediately ...
-            return new Matcher(matcher, originalAbsolutePath, null);
+            return new Matcher(matcher, originalAbsolutePath, null, null, null);
         }
 
         // The absolute path does match the pattern, so use the select pattern and try to grab the selected path ...
-        final java.util.regex.Matcher selectMatcher = this.selectPattern.matcher(absolutePath);
+        final java.util.regex.Matcher selectMatcher = this.selectPattern.matcher(path);
         if (!selectMatcher.matches()) {
             // Nothing can be selected, so return immediately ...
-            return new Matcher(matcher, null, null);
+            return new Matcher(matcher, null, null, null, null);
         }
         // Grab the selected path ...
         String selectedPath = selectMatcher.group(1);
@@ -429,28 +486,34 @@ public class PathExpression implements Serializable {
         // Remove the trailing '/@property' ...
         selectedPath = selectedPath.replaceAll("/@[^/\\[\\]]+$", "");
 
-        return new Matcher(matcher, originalAbsolutePath, selectedPath);
+        return new Matcher(matcher, originalAbsolutePath, repoName, workspaceName, selectedPath);
     }
 
     @Immutable
     public static class Matcher {
 
         private final String inputPath;
+        private final String selectedRepository;
+        private final String selectedWorkspace;
         private final String selectedPath;
         private final java.util.regex.Matcher inputMatcher;
         private final int hc;
 
         protected Matcher( java.util.regex.Matcher inputMatcher,
                            String inputPath,
+                           String selectedRepository,
+                           String selectedWorkspace,
                            String selectedPath ) {
             this.inputMatcher = inputMatcher;
             this.inputPath = inputPath;
+            this.selectedRepository = selectedRepository == null || selectedRepository.length() == 0 ? null : selectedRepository;
+            this.selectedWorkspace = selectedWorkspace == null || selectedWorkspace.length() == 0 ? null : selectedWorkspace;
             this.selectedPath = selectedPath;
             this.hc = HashCode.compute(this.inputPath, this.selectedPath);
         }
 
         public boolean matches() {
-            return this.selectedPath != null;
+            return this.inputMatcher != null && this.selectedPath != null;
         }
 
         /**
@@ -467,7 +530,26 @@ public class PathExpression implements Serializable {
             return this.selectedPath;
         }
 
+        /**
+         * Get the name of the selected repository.
+         * 
+         * @return the repository name, or null if there is none specified
+         */
+        public String getSelectedRepositoryName() {
+            return this.selectedRepository;
+        }
+
+        /**
+         * Get the name of the selected workspace.
+         * 
+         * @return the workspace name, or null if there is none specified
+         */
+        public String getSelectedWorkspaceName() {
+            return this.selectedWorkspace;
+        }
+
         public int groupCount() {
+            if (this.inputMatcher == null) return 0;
             return this.inputMatcher.groupCount();
         }
 
@@ -531,5 +613,91 @@ public class PathExpression implements Serializable {
     }
 
     private static final PathExpression ALL_PATHS_EXPRESSION = PathExpression.compile("//");
+
+    /**
+     * Parse a path of the form <code>{repoName}:{workspaceName}:{absolutePath}</code> or <code>{absolutePath}</code>.
+     * 
+     * @param path the path
+     * @return the repository path, or null if the supplied path doesn't match any of the path patterns
+     */
+    public static RepositoryPath parseRepositoryPath( String path ) {
+        // Extra the repository name, workspace name and absPath from the supplied path ...
+        java.util.regex.Matcher pathMatcher = REPOSITORY_AND_WORKSPACE_AND_PATH_PATTERN.matcher(path);
+        if (!pathMatcher.matches()) {
+            // No match ...
+            return null;
+        }
+        String repoName = pathMatcher.group(3);
+        String workspaceName = pathMatcher.group(5);
+        String absolutePath = pathMatcher.group(6);
+        if (repoName == null || repoName.length() == 0 || repoName.trim().length() == 0) repoName = null;
+        if (workspaceName == null || workspaceName.length() == 0 || workspaceName.trim().length() == 0) workspaceName = null;
+        return new RepositoryPath(repoName, workspaceName, absolutePath);
+    }
+
+    @Immutable
+    public static class RepositoryPath {
+        public final String repositoryName;
+        public final String workspaceName;
+        public final String path;
+
+        public RepositoryPath( String repositoryName,
+                               String workspaceName,
+                               String path ) {
+            this.repositoryName = repositoryName;
+            this.workspaceName = workspaceName;
+            this.path = path;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            return path.hashCode();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            if (obj == this) return true;
+            if (obj instanceof RepositoryPath) {
+                RepositoryPath that = (RepositoryPath)obj;
+                if (!ObjectUtil.isEqualWithNulls(this.repositoryName, that.repositoryName)) return false;
+                if (!ObjectUtil.isEqualWithNulls(this.workspaceName, that.workspaceName)) return false;
+                return this.path.equals(that.path);
+            }
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return (repositoryName != null ? repositoryName : "") + ":" + (workspaceName != null ? workspaceName : "") + ":"
+                   + path;
+        }
+
+        public RepositoryPath withRepositoryName( String repositoryName ) {
+            return new RepositoryPath(repositoryName, workspaceName, path);
+        }
+
+        public RepositoryPath withWorkspaceName( String workspaceName ) {
+            return new RepositoryPath(repositoryName, workspaceName, path);
+        }
+
+        public RepositoryPath withPath( String path ) {
+            return new RepositoryPath(repositoryName, workspaceName, path);
+        }
+    }
 
 }
