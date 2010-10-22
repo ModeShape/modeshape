@@ -30,7 +30,9 @@ import java.util.regex.Pattern;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.HashCode;
+import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.graph.property.PathExpression;
+import org.modeshape.graph.property.PathExpression.RepositoryPath;
 import org.modeshape.repository.RepositoryI18n;
 
 /**
@@ -152,12 +154,16 @@ public class SequencerPathExpression implements Serializable {
     }
 
     /**
-     * @param absolutePath
-     * @return the matcher
+     * Obtain a Matcher that can be used to convert the supplied absolute path (with repository name and workspace name) into an
+     * output repository, and output workspace name, and output path.
+     * 
+     * @param absolutePath the path, of the form <code>{repoName}:{workspaceName}:{absPath}</code>
+     * @return the matcher; never null
      */
     public Matcher matcher( String absolutePath ) {
         PathExpression.Matcher inputMatcher = selectExpression.matcher(absolutePath);
         String outputPath = null;
+        RepositoryPath repoPath = null;
         if (inputMatcher.matches()) {
             // Grab the named groups ...
             Map<Integer, String> replacements = new HashMap<Integer, String>();
@@ -169,66 +175,72 @@ public class SequencerPathExpression implements Serializable {
             String selectedPath = inputMatcher.getSelectedNodePath();
 
             // Find the output path using the groups from the match pattern ...
-            outputPath = this.outputExpression;
-            if (!DEFAULT_OUTPUT_EXPRESSION.equals(outputPath)) {
-                java.util.regex.Matcher replacementMatcher = REPLACEMENT_VARIABLE_PATTERN.matcher(outputPath);
-                StringBuffer sb = new StringBuffer();
-                if (replacementMatcher.find()) {
-                    do {
-                        String variable = replacementMatcher.group(1);
-                        String replacement = replacements.get(Integer.valueOf(variable));
-                        if (replacement == null) replacement = replacementMatcher.group(0);
-                        replacementMatcher.appendReplacement(sb, replacement);
-                    } while (replacementMatcher.find());
-                    replacementMatcher.appendTail(sb);
-                    outputPath = sb.toString();
-                }
-                // Make sure there is a trailing '/' ...
-                if (!outputPath.endsWith("/")) outputPath = outputPath + "/";
-
-                // Replace all references to "/./" with "/" ...
-                outputPath = outputPath.replaceAll("/\\./", "/");
-
-                // Remove any path segment followed by a parent reference ...
-                java.util.regex.Matcher parentMatcher = PARENT_PATTERN.matcher(outputPath);
-                while (parentMatcher.find()) {
-                    outputPath = parentMatcher.replaceAll("");
+            repoPath = PathExpression.parseRepositoryPath(this.outputExpression);
+            if (repoPath != null) {
+                if (repoPath.repositoryName == null) repoPath = repoPath.withRepositoryName(inputMatcher.getSelectedRepositoryName());
+                if (repoPath.workspaceName == null) repoPath = repoPath.withWorkspaceName(inputMatcher.getSelectedWorkspaceName());
+                outputPath = repoPath.path;
+                if (!DEFAULT_OUTPUT_EXPRESSION.equals(outputPath)) {
+                    java.util.regex.Matcher replacementMatcher = REPLACEMENT_VARIABLE_PATTERN.matcher(outputPath);
+                    StringBuffer sb = new StringBuffer();
+                    if (replacementMatcher.find()) {
+                        do {
+                            String variable = replacementMatcher.group(1);
+                            String replacement = replacements.get(Integer.valueOf(variable));
+                            if (replacement == null) replacement = replacementMatcher.group(0);
+                            replacementMatcher.appendReplacement(sb, replacement);
+                        } while (replacementMatcher.find());
+                        replacementMatcher.appendTail(sb);
+                        outputPath = sb.toString();
+                    }
                     // Make sure there is a trailing '/' ...
                     if (!outputPath.endsWith("/")) outputPath = outputPath + "/";
-                    parentMatcher = PARENT_PATTERN.matcher(outputPath);
+
+                    // Replace all references to "/./" with "/" ...
+                    outputPath = outputPath.replaceAll("/\\./", "/");
+
+                    // Remove any path segment followed by a parent reference ...
+                    java.util.regex.Matcher parentMatcher = PARENT_PATTERN.matcher(outputPath);
+                    while (parentMatcher.find()) {
+                        outputPath = parentMatcher.replaceAll("");
+                        // Make sure there is a trailing '/' ...
+                        if (!outputPath.endsWith("/")) outputPath = outputPath + "/";
+                        parentMatcher = PARENT_PATTERN.matcher(outputPath);
+                    }
+
+                    // Remove all multiple occurrences of '/' ...
+                    outputPath = outputPath.replaceAll("/{2,}", "/");
+
+                    // Remove the trailing '/@property' ...
+                    outputPath = outputPath.replaceAll("/@[^/\\[\\]]+$", "");
+
+                    // Remove a trailing '/' ...
+                    outputPath = outputPath.replaceAll("/$", "");
+
+                    // If the output path is blank, then use the default output expression ...
+                    if (outputPath.length() == 0) outputPath = DEFAULT_OUTPUT_EXPRESSION;
+
                 }
-
-                // Remove all multiple occurrences of '/' ...
-                outputPath = outputPath.replaceAll("/{2,}", "/");
-
-                // Remove the trailing '/@property' ...
-                outputPath = outputPath.replaceAll("/@[^/\\[\\]]+$", "");
-
-                // Remove a trailing '/' ...
-                outputPath = outputPath.replaceAll("/$", "");
-
-                // If the output path is blank, then use the default output expression ...
-                if (outputPath.length() == 0) outputPath = DEFAULT_OUTPUT_EXPRESSION;
-
-            }
-            if (DEFAULT_OUTPUT_EXPRESSION.equals(outputPath)) {
-                // The output path is the default expression, so use the selected path ...
-                outputPath = selectedPath;
+                if (DEFAULT_OUTPUT_EXPRESSION.equals(outputPath)) {
+                    // The output path is the default expression, so use the selected path ...
+                    outputPath = selectedPath;
+                }
+                repoPath = repoPath.withPath(outputPath);
             }
         }
 
-        return new Matcher(inputMatcher, outputPath);
+        return new Matcher(inputMatcher, repoPath);
     }
 
     @Immutable
     public static class Matcher {
 
         private final PathExpression.Matcher inputMatcher;
-        private final String outputPath;
+        private final RepositoryPath outputPath;
         private final int hc;
 
         protected Matcher( PathExpression.Matcher inputMatcher,
-                           String outputPath ) {
+                           RepositoryPath outputPath ) {
             this.inputMatcher = inputMatcher;
             this.outputPath = outputPath;
             this.hc = HashCode.compute(super.hashCode(), this.outputPath);
@@ -253,10 +265,30 @@ public class SequencerPathExpression implements Serializable {
         }
 
         /**
-         * @return outputPath
+         * Get the path in the repository where the sequenced content should be placed.
+         * 
+         * @return outputPath the output path, or null if this matcher does not match the input
          */
         public String getOutputPath() {
-            return this.outputPath;
+            return this.outputPath != null ? this.outputPath.path : null;
+        }
+
+        /**
+         * Get the name of the repository where the sequenced content should be placed.
+         * 
+         * @return outputPath the output path, or null if this matcher does not match the input
+         */
+        public String getOutputRepositoryName() {
+            return this.outputPath != null ? this.outputPath.repositoryName : null;
+        }
+
+        /**
+         * Get the name of the workspace where the sequenced content should be placed.
+         * 
+         * @return outputPath the output path, or null if this matcher does not match the input
+         */
+        public String getOutputWorkspaceName() {
+            return this.outputPath != null ? this.outputPath.workspaceName : null;
         }
 
         /**
@@ -276,8 +308,7 @@ public class SequencerPathExpression implements Serializable {
             if (obj instanceof SequencerPathExpression.Matcher) {
                 SequencerPathExpression.Matcher that = (SequencerPathExpression.Matcher)obj;
                 if (!super.equals(that)) return false;
-                if (!this.outputPath.equalsIgnoreCase(that.outputPath)) return false;
-                return true;
+                return ObjectUtil.isEqualWithNulls(this.outputPath, that.outputPath);
             }
             return false;
         }

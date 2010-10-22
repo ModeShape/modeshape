@@ -253,6 +253,46 @@ public interface &SequencerOutput; {
 			Square brackets can also be used to specify criteria on a node's properties or children.  Whatever appears in between the square
 			brackets does not appear in the selected node.
 		</para>
+		<para>
+			So far, we've talked about how input paths and output paths are independent of the repository and workspace. However, there are times
+			when it's desirable to configure sequencers to only work against content in a specific source and/or specific workspace.
+			In these cases, it is possible to specify the repository name and workspace names before the path. For example:
+		</para>
+		<table frame='all'>
+			<title>Input Paths with Source and Workspace Names</title>
+			<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+	      <colspec colname='c1' colwidth="1*"/>
+	      <colspec colname='c2' colwidth="1*"/>
+				<thead>
+					<row>
+			  		<entry>Input Path</entry>
+			  		<entry>Description</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row><entry>source:default:/a/(b|c|d)</entry><entry>Match nodes in the "<code>default</code>" workspace within the "<code>source</code>"
+					     source that are children of the top level node "<code>a</code>" and named "<code>b</code>", 
+							 "<code>c</code>" or "<code>d</code>". None of the nodes may have same-name-sibling indexes.</entry></row>
+  				<row><entry>:default:/a/(b|c|d)</entry><entry>Match nodes in the "<code>default</code>" workspace within any source
+					     source that are children of the top level node "<code>a</code>" and named "<code>b</code>", 
+							 "<code>c</code>" or "<code>d</code>". None of the nodes may have same-name-sibling indexes.</entry></row>
+  				<row><entry>source::/a/(b|c|d)</entry><entry>Match nodes in any workspace in the "<code>source</code>" source
+					     that are children of the top level node "<code>a</code>" and named "<code>b</code>", 
+							 "<code>c</code>" or "<code>d</code>". None of the nodes may have same-name-sibling indexes.</entry></row>
+  				<row><entry>::/a/(b|c|d)</entry><entry>Match nodes in any within any source
+					     source that are children of the top level node "<code>a</code>" and named "<code>b</code>", 
+							 "<code>c</code>" or "<code>d</code>". None of the nodes may have same-name-sibling indexes. (This is equivalent to 
+							 the path "<code>/a/(b|c|d)</code>".)</entry></row>
+				</tbody>
+			</tgroup>
+		</table>
+		<para>
+			Again, the rules are pretty straightforward. You can leave off the repository name and workspace name, or you can prepend the path
+			with "<code>{sourceNamePattern}:{workspaceNamePattern}:</code>", where "<code>{sourceNamePattern}</code> is a regular-expression
+			pattern used to match the applicable source names, and "<code>{workspaceNamePattern}</code> is a regular-expression
+			pattern used to match the applicable workspace names. A blank pattern implies any match, and is a shorthand notation for "<code>.*</code>".
+			Note that the repository names may not include forward slashes (e.g., '/') or colons (e.g., ':').
+		</para>
 	  <para>
 			Let's go back to the previous code fragment and look at the first path expression:
 		</para>

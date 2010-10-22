@@ -27,8 +27,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
-import org.modeshape.graph.property.InvalidPathExpressionException;
-import org.modeshape.graph.property.PathExpression;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -104,6 +102,21 @@ public class PathExpressionTest {
     public void shouldCompileExpressionWithIndexes() {
         assertThat(PathExpression.compile("/a/b[0]/c[1]/d/e"), is(notNullValue()));
         assertThat(PathExpression.compile("/a/b[0]/c[1]/d/e[2]"), is(notNullValue()));
+    }
+
+    @Test
+    public void shouldCompileExpressionWithRepositoryAndWorkspaceNames() {
+        assertThat(PathExpression.compile("repo:ws:/a/b/c"), is(notNullValue()));
+    }
+
+    @Test
+    public void shouldCompileExpressionWithRepositoryAndNoWorkspaceNames() {
+        assertThat(PathExpression.compile("repo::/a/b/c"), is(notNullValue()));
+    }
+
+    @Test
+    public void shouldCompileExpressionWithNoRepositoryAndNoWorkspaceNames() {
+        assertThat(PathExpression.compile("::/a/b/c"), is(notNullValue()));
     }
 
     @Test
@@ -478,8 +491,8 @@ public class PathExpressionTest {
 
     @Test
     public void shouldMatchExpressionsWithRepositoryInSelectionPath() {
-        expr = PathExpression.compile("reposA:/a/b/c[d/e/@something]");
-        assertThat(expr.matcher("reposA:/a/b/c/d/e/@something").matches(), is(true));
+        expr = PathExpression.compile("reposA::/a/b/c[d/e/@something]");
+        assertThat(expr.matcher("reposA::/a/b/c/d/e/@something").matches(), is(true));
     }
 
     @Test
@@ -583,5 +596,82 @@ public class PathExpressionTest {
     public void shouldMatchExpressionWithFilenamePatternAndChildProperty() {
         expr = PathExpression.compile("//(*.(jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd))[*]/jcr:content[@jcr:data]");
         assertThat(expr.matcher("/a/b/caution.png/jcr:content/@jcr:data").matches(), is(true));
+    }
+
+    @Test
+    public void shouldMatchStringWithRepositoryAndWorkspaceUsingExpressionWithoutRepositoryOrWorkspace() {
+        expr = PathExpression.compile("//a/b");
+        assertThat(expr.matcher("repo:workspace:/a").matches(), is(false));
+        assertThat(expr.matcher("repo:workspace:/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace:/x/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace:/x/y/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo1:workspace2:/a").matches(), is(false));
+        assertThat(expr.matcher("repo1:workspace2:/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo1:workspace2:/x/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo1:workspace2:/x/y/a/b").matches(), is(true));
+    }
+
+    @Test
+    public void shouldMatchStringWithRepositoryAndWorkspaceUsingExpressionWithBlankRepositoryAndBlankWorkspace() {
+        expr = PathExpression.compile(":://a/b");
+        assertThat(expr.matcher("repo:workspace:/a").matches(), is(false));
+        assertThat(expr.matcher("repo:workspace:/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace:/x/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace:/x/y/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo1:workspace2:/a").matches(), is(false));
+        assertThat(expr.matcher("repo1:workspace2:/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo1:workspace2:/x/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo1:workspace2:/x/y/a/b").matches(), is(true));
+    }
+
+    @Test
+    public void shouldMatchStringWithRepositoryAndWorkspaceUsingExpressionWithRepositoryAndBlankWorkspace() {
+        expr = PathExpression.compile("repo:://a/b");
+        assertThat(expr.matcher("repo:workspace:/a").matches(), is(false));
+        assertThat(expr.matcher("repo:workspace:/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace:/x/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace:/x/y/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace2:/a").matches(), is(false));
+        assertThat(expr.matcher("repo:workspace2:/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace2:/x/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace2:/x/y/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo1:workspace2:/a").matches(), is(false));
+        assertThat(expr.matcher("repo1:workspace2:/a/b").matches(), is(false));
+        assertThat(expr.matcher("repo1:workspace2:/x/a/b").matches(), is(false));
+        assertThat(expr.matcher("repo1:workspace2:/x/y/a/b").matches(), is(false));
+    }
+
+    @Test
+    public void shouldMatchStringWithRepositoryAndWorkspaceUsingExpressionWithRepositoryAndWorkspace() {
+        expr = PathExpression.compile("repo:workspace://a/b");
+        assertThat(expr.matcher("repo:workspace:/a").matches(), is(false));
+        assertThat(expr.matcher("repo:workspace:/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace:/x/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace:/x/y/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace2:/a").matches(), is(false));
+        assertThat(expr.matcher("repo:workspace2:/a/b").matches(), is(false));
+        assertThat(expr.matcher("repo:workspace2:/x/a/b").matches(), is(false));
+        assertThat(expr.matcher("repo:workspace2:/x/y/a/b").matches(), is(false));
+        assertThat(expr.matcher("repo1:workspace2:/a").matches(), is(false));
+        assertThat(expr.matcher("repo1:workspace2:/a/b").matches(), is(false));
+        assertThat(expr.matcher("repo1:workspace2:/x/a/b").matches(), is(false));
+        assertThat(expr.matcher("repo1:workspace2:/x/y/a/b").matches(), is(false));
+    }
+
+    @Test
+    public void shouldMatchStringWithRepositoryAndWorkspaceUsingExpressionWithBlankRepositoryAndWorkspace() {
+        expr = PathExpression.compile(":workspace://a/b");
+        assertThat(expr.matcher("repo:workspace:/a").matches(), is(false));
+        assertThat(expr.matcher("repo:workspace:/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace:/x/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace:/x/y/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo:workspace2:/a").matches(), is(false));
+        assertThat(expr.matcher("repo:workspace2:/a/b").matches(), is(false));
+        assertThat(expr.matcher("repo:workspace2:/x/a/b").matches(), is(false));
+        assertThat(expr.matcher("repo:workspace2:/x/y/a/b").matches(), is(false));
+        assertThat(expr.matcher("repo1:workspace:/a").matches(), is(false));
+        assertThat(expr.matcher("repo1:workspace:/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo1:workspace:/x/a/b").matches(), is(true));
+        assertThat(expr.matcher("repo1:workspace:/x/y/a/b").matches(), is(true));
     }
 }

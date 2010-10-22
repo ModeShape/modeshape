@@ -27,11 +27,9 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
-import org.modeshape.graph.property.PathExpression;
-import org.modeshape.repository.sequencer.InvalidSequencerPathExpression;
-import org.modeshape.repository.sequencer.SequencerPathExpression;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.graph.property.PathExpression;
 
 /**
  * @author Randall Hauch
@@ -115,9 +113,19 @@ public class SequencerPathExpressionTest {
     protected void assertMatches( SequencerPathExpression.Matcher matcher,
                                   String selectedPath,
                                   String outputPath ) {
+        assertMatches(matcher, selectedPath, null, null, outputPath);
+    }
+
+    protected void assertMatches( SequencerPathExpression.Matcher matcher,
+                                  String selectedPath,
+                                  String outputRepository,
+                                  String outputWorkspace,
+                                  String outputPath ) {
         assertThat(matcher, is(notNullValue()));
         assertThat(matcher.getSelectedPath(), is(selectedPath));
         assertThat(matcher.getOutputPath(), is(outputPath));
+        assertThat(matcher.getOutputRepositoryName(), is(outputRepository));
+        assertThat(matcher.getOutputWorkspaceName(), is(outputWorkspace));
         if (selectedPath == null) {
             assertThat(matcher.matches(), is(false));
         } else {
@@ -228,14 +236,20 @@ public class SequencerPathExpressionTest {
 
     @Test
     public void shouldMatchExpressionsWithRepositoryInSelectionPath() {
-        expr = SequencerPathExpression.compile("reposA:/a/b/c[d/e/@something] => /x/y");
-        assertMatches(expr.matcher("reposA:/a/b/c/d/e/@something"), "reposA:/a/b/c", "/x/y");
+        expr = SequencerPathExpression.compile("reposA::/a/b/c[d/e/@something] => /x/y");
+        assertMatches(expr.matcher("reposA::/a/b/c/d/e/@something"), "/a/b/c", "reposA", null, "/x/y");
+    }
+
+    @Test
+    public void shouldMatchExpressionsWithRepositoryAndWorkspaceInSelectionPath() {
+        expr = SequencerPathExpression.compile("reposA::/a/b/c[d/e/@something] => /x/y");
+        assertMatches(expr.matcher("reposA:wsA:/a/b/c/d/e/@something"), "/a/b/c", "reposA", "wsA", "/x/y");
     }
 
     @Test
     public void shouldMatchExpressionsWithRepositoryInFullOutputPath() {
-        expr = SequencerPathExpression.compile("/a/b/c[d/e/@something] => reposA:/x/y");
-        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c", "reposA:/x/y");
+        expr = SequencerPathExpression.compile("/a/b/c[d/e/@something] => reposA::/x/y");
+        assertMatches(expr.matcher("/a/b/c/d/e/@something"), "/a/b/c", "reposA", null, "/x/y");
     }
 
     @Test
