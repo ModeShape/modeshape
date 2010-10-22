@@ -75,7 +75,7 @@ public class JavaSequencerIntegrationTest extends AbstractSequencerTest {
         assertThat(file.exists(), is(true));
         uploadFile(file.toURI().toURL(), "/files/");
         waitUntilSequencedNodesIs(1);
-        Thread.sleep(200);
+        Thread.sleep(200); // wait a bit while the new content is indexed
         // printSubgraph(assertNode("/"));
 
         // Find the sequenced node ...
@@ -124,7 +124,7 @@ public class JavaSequencerIntegrationTest extends AbstractSequencerTest {
         assertThat(file.exists(), is(true));
         uploadFile(file.toURI().toURL(), "/files/" + packageName);
         waitUntilSequencedNodesIs(1);
-        Thread.sleep(200);
+        Thread.sleep(200); // wait a bit while the new content is indexed
         // printSubgraph(assertNode("/"));
 
         // Find the sequenced node ...
@@ -182,6 +182,7 @@ public class JavaSequencerIntegrationTest extends AbstractSequencerTest {
         assertThat(file.exists(), is(true));
         uploadFile(file.toURI().toURL(), "/files/org/modeshape/test/integration/sequencer");
         waitUntilSequencedNodesIs(1);
+        Thread.sleep(200); // wait a bit while the new content is indexed
         // printSubgraph(assertNode("/"));
 
         // Find the sequenced node ...

@@ -70,6 +70,7 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("jcr-import-test.xml", "/files/");
         waitUntilSequencedNodesIs(1);
+        Thread.sleep(200); // wait a bit while the new content is indexed
         // printSubgraph(assertNode("/"));
 
         // Find the sequenced node ...
@@ -94,6 +95,7 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("jcr-import-test.xml", "/files/a/b");
         waitUntilSequencedNodesIs(1);
+        Thread.sleep(200); // wait a bit while the new content is indexed
         // printSubgraph(assertNode("/"));
 
         // Find the sequenced node ...

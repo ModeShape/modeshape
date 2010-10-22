@@ -70,6 +70,7 @@ public class CndSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/cnd/jsr_283_builtins.cnd", "/files/");
         waitUntilSequencedNodesIs(1);
+        Thread.sleep(200); // wait a bit while the new content is indexed
         // printSubgraph(assertNode("/"));
 
         // Find the sequenced node ...
@@ -90,6 +91,7 @@ public class CndSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/cnd/jsr_283_builtins.cnd", "/files/a/b");
         waitUntilSequencedNodesIs(1);
+        Thread.sleep(200); // wait a bit while the new content is indexed
         // printSubgraph(assertNode("/"));
 
         // Find the sequenced node ...
