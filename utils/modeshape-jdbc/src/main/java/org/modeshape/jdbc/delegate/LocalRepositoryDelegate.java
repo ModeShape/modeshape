@@ -158,8 +158,20 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
         jcrResults = null;
 
         // Create the query ...
-        jcrQuery = session().getWorkspace().getQueryManager().createQuery(query, language);
+        Session session = session();
+        jcrQuery = session.getWorkspace().getQueryManager().createQuery(query, language);
         jcrResults = jcrQuery.execute();
+
+        // The session just submits the query to it's internal query engine, and this is independent of the
+        // session's transient state. However, when the results are returned and processed, the session loads
+        // the nodes into its cache, and therefore this IS dependent upon the session state. If a query is issued
+        // and the results processed, the session will load each of those results. However, If the content is changed
+        // and the same (or a similar) query is submitted, the nodes in the results have already been loaded and will
+        // not be reloaded (or the new ones under these nodes read in). Therefore, we need to refresh the session.
+        //
+        // TODO: This is potentially a concurrency issue, because multiple threads may use the same connection and thus
+        // the same session. But at least this will return the right results.
+        session.refresh(false);
 
         return jcrResults;// always a ResultSet
 
