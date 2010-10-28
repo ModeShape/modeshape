@@ -114,4 +114,20 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
         printQuery("SELECT * FROM [modexml:element] WHERE NAME() = 'xhtml:p'", 2);
         printQuery("SELECT * FROM [modexml:elementContent]", 13);
     }
+    
+    /*
+     * Validates FixFor( "MODE-981" )
+     */
+    @Test
+    public void shouldSequence2XmlFiles2() throws Exception {
+        // print = true;
+    	uploadFile("docWithComments.xml", "/files/");
+    	waitUntilSequencedNodesIs(1);
+    	printQuery("SELECT * FROM [nt:base] ORDER BY [jcr:path]", 18);
+
+        uploadFile("docWithComments2.xml", "/files/");
+        waitUntilSequencedNodesIs(1);
+
+        printQuery("SELECT * FROM [nt:base]  ORDER BY [jcr:path]", 20);
+    }    
 }

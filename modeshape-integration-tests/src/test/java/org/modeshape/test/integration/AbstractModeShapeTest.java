@@ -80,6 +80,10 @@ public abstract class AbstractModeShapeTest {
     @After
     public void afterEach() throws Exception {
     }
+    
+    protected void setSession(Session session) {
+    	this.session = session;
+    }
 
     protected static void startEngine( Class<?> testClass,
                                        String resourcePathToConfigurationFile,
