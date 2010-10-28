@@ -39,7 +39,6 @@ import org.modeshape.jdbc.delegate.RepositoryDelegate;
 class JcrStatement implements Statement {
 
     private final JcrConnection connection;
-    private QueryResult jcrResults;
     private ResultSet results;
     private boolean closed;
     private SQLWarning warning;
@@ -242,6 +241,7 @@ class JcrStatement implements Statement {
     @Override
     public void cancel() throws SQLException {
         notClosed();
+        close();
         // Unable to cancel a JCR query ...
     }
 
@@ -285,7 +285,8 @@ class JcrStatement implements Statement {
     @Override
     public void close() {
         if (!closed) {
-            closed = true;
+        	closed = true;
+        	connection.getRepositoryDelegate().closeStatement();            
         }
     }
 
@@ -425,7 +426,7 @@ class JcrStatement implements Statement {
             // Convert the supplied SQL into JCR-SQL2 ...
             String jcrSql2 = connection.nativeSQL(sql);
             // Create the query ...
-            jcrResults = getJcrRepositoryDelegate().execute(jcrSql2, this.sqlLanguage);
+            final QueryResult jcrResults = getJcrRepositoryDelegate().execute(jcrSql2, this.sqlLanguage);
             results = new JcrResultSet(this, jcrResults, null);
             moreResults = 1;
         } catch (RepositoryException e) {
@@ -516,7 +517,7 @@ class JcrStatement implements Statement {
         }
         if (KEEP_CURRENT_RESULT != current) {
             // Close (by nulling) the results ...
-            jcrResults = null;
+//            jcrResults = null;
             results = null;
         }
         if (moreResults > 0) --moreResults;

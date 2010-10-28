@@ -144,6 +144,7 @@ public class JcrResultSet implements ResultSet {
     public void close() {
         if (!closed) {
             closed = true;
+        	this.statement.close();
         }
     }
 

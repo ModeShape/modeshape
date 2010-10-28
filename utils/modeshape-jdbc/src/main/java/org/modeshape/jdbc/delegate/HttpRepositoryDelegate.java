@@ -68,6 +68,7 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
         return new HttpConnectionInfo(url, info);
     }
 
+
     @Override
     public QueryResult execute( String query,
                                 String language ) {
@@ -175,8 +176,9 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
         this.setRepositoryNames(repositoryNames);
 
     }
+    
 
-    /**
+	/**
      * @see java.sql.Connection#isValid(int)
      */
     @Override
@@ -192,30 +194,11 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
     /**
      * {@inheritDoc}
      * 
-     * @see java.sql.Connection#commit()
-     */
-    @Override
-    public void commit() {
-        // nothing to do; we can't make any changes
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Connection#rollback()
-     */
-    @Override
-    public void rollback() {
-        // nothing to do; we can't make any changes
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
      * @see java.sql.Connection#close()
      */
     @Override
     public void close() {
+    	super.close();
         restClient = null;
         workspace = null;
         if (nodeTypes != null) nodeTypes.clear();
