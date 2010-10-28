@@ -68,11 +68,18 @@ public final class Utils {
     public static String getMimeType( File file ) {
         if (mimeTypeUtils == null) {
             // load custom extensions
-            InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream("org/modeshape/web/jcr/rest/client/mime.types");
-            Map<String, String> customMap = MimeTypeUtil.load(stream, null);
-
-            // construct
-            mimeTypeUtils = new MimeTypeUtil(customMap, true);
+        	ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        	try {	        		        	
+	        	Thread.currentThread().setContextClassLoader(Utils.class.getClassLoader());
+	        	
+	            InputStream stream =Thread.currentThread().getContextClassLoader().getResourceAsStream("org/modeshape/web/jcr/rest/client/mime.types");
+	            Map<String, String> customMap = MimeTypeUtil.load(stream, null);
+	
+	            // construct
+	            mimeTypeUtils = new MimeTypeUtil(customMap, true);
+        	} finally {
+        		Thread.currentThread().setContextClassLoader(cl);
+        	}
         }
 
         String mimeType = mimeTypeUtils.mimeTypeOf(file);
