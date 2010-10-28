@@ -24,17 +24,14 @@
 package org.modeshape.jdbc.delegate;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Set;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.QueryResult;
-
-import org.modeshape.jdbc.JcrConnection;
-
 
 
 /**
@@ -49,6 +46,20 @@ public interface RepositoryDelegate {
      */
     ConnectionInfo getConnectionInfo();
     
+    /**
+     * Called when the {@link Statement} the is closed.  This enables the underlying connection to the
+     * JcrRepository remain open until the statement is finished using it.
+     */
+    void closeStatement();
+    
+    /**
+     * Call to close the delegate connection and any outstanding
+     * transactions will be closed.
+     * 
+     * @see java.sql.Connection#close()
+     */
+    void close();
+   
 
     /**
      * Call to get {@link NodeType} based on specified name
@@ -81,6 +92,8 @@ public interface RepositoryDelegate {
      * Call to create the connection based on the implementation of this interface.
      * @return Connection
      * @throws SQLException
+     * 
+     * @see java.sql.Driver#connect(String, java.util.Properties)
      */
     Connection createConnection() throws SQLException;
     
@@ -112,20 +125,6 @@ public interface RepositoryDelegate {
      */
     boolean isValid( int timeout ) throws RepositoryException ;
     
-    /**
-     * Call to close the delegate connection.
-     * 
-     * @see java.sql.Connection#close()
-     */
-    void close();
-    
-    /**
-     * Call to create the DatabaseMetaData
-     * @param connection
-     * @return JcrMetaData
-     * @throws RepositoryException 
-     */
-    DatabaseMetaData createMetaData(JcrConnection connection ) throws RepositoryException;
     
     /**
      * 

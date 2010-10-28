@@ -28,13 +28,15 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import javax.jcr.Credentials;
+
+import javax.jcr.LoginException;
+import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.jcr.Workspace;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeIterator;
@@ -43,22 +45,22 @@ import javax.jcr.query.QueryResult;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+
 import org.modeshape.jcr.api.Repositories;
 import org.modeshape.jdbc.JcrDriver;
-import org.modeshape.jdbc.JdbcI18n;
 import org.modeshape.jdbc.JcrDriver.JcrContextFactory;
+import org.modeshape.jdbc.JdbcI18n;
 
 /**
  * The LocalRepositoryDelegate provides a local Repository implementation to access the Jcr layer via JNDI Lookup.
  */
 public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
     private static final String JNDI_EXAMPLE_URL = JcrDriver.JNDI_URL_PREFIX + "{jndiName}";
+    
+    protected static final Set<LocalSession> TRANSACTION_IDS = java.util.Collections.synchronizedSet(new HashSet<LocalSession>());
 
     private JcrContextFactory jcrContext = null;
-    private QueryResult jcrResults;
-    private Query jcrQuery;
-    private Session session;
-
+    
     public LocalRepositoryDelegate( String url,
                                     Properties info,
                                     JcrContextFactory contextFactory ) {
@@ -67,10 +69,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
         if (contextFactory == null) {
             jcrContext = new JcrContextFactory() {
                 public Context createContext( Properties properties ) throws NamingException {
-
-                    InitialContext initContext = ((properties == null || properties.isEmpty()) ? new InitialContext() : new InitialContext(
-                                                                                                                                           properties));
-
+                    InitialContext initContext = ((properties == null || properties.isEmpty()) ? new InitialContext() : new InitialContext( properties));
                     return initContext;
                 }
             };
@@ -85,38 +84,16 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
         return new JNDIConnectionInfo(url, info);
     }
 
-    protected Session session() throws RepositoryException {
-        if (session == null) {
-            LOGGER.debug("Setting up session for LocalRepositoryDelegte");
-            ConnectionInfo connInfo = getConnectionInfo();
-            Repository repository = getRepository();
-            Credentials credentials = connInfo.getCredentials();
-            String workspaceName = connInfo.getWorkspaceName();
-
-            if (workspaceName != null) {
-                this.session = credentials != null ? repository.login(credentials, workspaceName) : repository.login(workspaceName);
-                LOGGER.trace("Creating session when workspaceName is null");
-            } else {
-                this.session = credentials != null ? repository.login(credentials) : repository.login();
-                LOGGER.trace("Creating session for workspace {0}", workspaceName);
-            }
-            // this shouldn't happen, but in testing it did occur only because of the repository not being setup correctly
-            assert session != null;
-        }
-        return session;
-    }
-
-    @Override
-    protected boolean isSessionAvailable() {
-        try {
-            return (session() != null);
-        } catch (RepositoryException e) {
-        }
-        return false;
-    }
-
-    protected JcrContextFactory getJcrContext() {
+	private JcrContextFactory getJcrContext() {
         return jcrContext;
+    }
+    
+    private LocalSession getLocalSession() throws LoginException, NoSuchWorkspaceException, RepositoryException {
+    	return LocalSession.getLocalSessionInstance().getLocalSession(getRepository(), getConnectionInfo());
+    }
+    
+    private LocalSession getCurrentLocalSession() {
+    	return LocalSession.getLocalSessionInstance().getLocalSession();
     }
 
     /**
@@ -131,13 +108,16 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
 
     @Override
     public NodeType nodeType( String name ) throws RepositoryException {
-        return session().getWorkspace().getNodeTypeManager().getNodeType(name);
+    	LocalSession localSession = getLocalSession();
+		return localSession.getSession().getWorkspace().getNodeTypeManager().getNodeType(name);
     }
 
     @Override
     public List<NodeType> nodeTypes() throws RepositoryException {
+        
+    	LocalSession localSession = getLocalSession();
         List<NodeType> types = new ArrayList<NodeType>();
-        NodeTypeIterator its = session().getWorkspace().getNodeTypeManager().getAllNodeTypes();
+        NodeTypeIterator its = localSession.getSession().getWorkspace().getNodeTypeManager().getAllNodeTypes();
         while (its.hasNext()) {
             types.add((NodeType)its.next());
         }
@@ -154,27 +134,11 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
     public QueryResult execute( String query,
                                 String language ) throws RepositoryException {
         LOGGER.trace("Executing query: {0}" + query);
-        jcrQuery = null;
-        jcrResults = null;
 
         // Create the query ...
-        Session session = session();
-        jcrQuery = session.getWorkspace().getQueryManager().createQuery(query, language);
-        jcrResults = jcrQuery.execute();
-
-        // The session just submits the query to it's internal query engine, and this is independent of the
-        // session's transient state. However, when the results are returned and processed, the session loads
-        // the nodes into its cache, and therefore this IS dependent upon the session state. If a query is issued
-        // and the results processed, the session will load each of those results. However, If the content is changed
-        // and the same (or a similar) query is submitted, the nodes in the results have already been loaded and will
-        // not be reloaded (or the new ones under these nodes read in). Therefore, we need to refresh the session.
-        //
-        // TODO: This is potentially a concurrency issue, because multiple threads may use the same connection and thus
-        // the same session. But at least this will return the right results.
-        session.refresh(false);
-
-        return jcrResults;// always a ResultSet
-
+        
+        final Query jcrQuery = getLocalSession().getSession().getWorkspace().getQueryManager().createQuery(query, language);
+        return  jcrQuery.execute();
     }
 
     @Override
@@ -261,24 +225,47 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
      */
     @Override
     public boolean isValid( final int timeout ) throws RepositoryException {
-        if (!isSessionAvailable()) return false;
-        session().getRootNode();
+        
+    	LocalSession ls = getLocalSession();
+    	if (! ls.getSession().isLive()) {
+    		ls.remove();
+    		return false;
+    	}
+    	
         return true;
     }
-
+    
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.modeshape.jdbc.delegate.RepositoryDelegate#closeStatement()
+     */
+    @Override
+    public void closeStatement() {
+    	LocalSession session = getCurrentLocalSession();
+		try {
+			if (session != null) {
+				session.remove();
+			}
+		} catch (Exception e) {
+			// do nothing
+		} 
+    }
+    
     /**
      * {@inheritDoc}
      * 
-     * @see java.sql.Connection#commit()
+     * @see java.sql.Connection#close()
      */
     @Override
-    public void commit() throws RepositoryException {
-        if (!isSessionAvailable()) return;
-        Session session = session();
-        if (session != null) {
-            session.save();
-        }
-    }
+    public void close() {
+    	for (Iterator<LocalSession> it= TRANSACTION_IDS.iterator(); it.hasNext();) {
+    		LocalSession id = it.next();
+    		id.remove();
+    	}
+    }   
+
+
 
     /**
      * {@inheritDoc}
@@ -287,32 +274,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
      */
     @Override
     public void rollback() throws RepositoryException {
-        if (!isSessionAvailable()) return;
-        Session session = session();
-        if (session != null) {
-            session.refresh(false);
-        }
-
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see java.sql.Connection#close()
-     */
-    @Override
-    public void close() {
-        if (session == null || !isSessionAvailable()) return;
-        try {
-            Session session = session();
-            if (session != null) {
-                session.refresh(false);
-                session.logout();
-            }
-
-        } catch (RepositoryException e) {
-            // do nothing
-        }
+    	closeStatement();
     }
 
     /**
@@ -331,7 +293,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
             }
 
             if (iface.isInstance(Workspace.class)) {
-                Workspace workspace = session().getWorkspace();
+                Workspace workspace = getLocalSession().getSession().getWorkspace();
                 return iface.cast(workspace);
             }
         } catch (RepositoryException re) {
@@ -370,7 +332,8 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
                 boolean found = false;
                 if (no_errors) {
                     try {
-                        Context context = getJcrContext().createContext(getProperties());
+                        @SuppressWarnings("synthetic-access")
+						Context context = getJcrContext().createContext(getProperties());
                         Object obj = context.lookup(getRepositoryPath());
                         if (obj instanceof Repositories) {
                             nameRequired = true;
@@ -392,5 +355,5 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
             }
         }
     }
-
+  
 }

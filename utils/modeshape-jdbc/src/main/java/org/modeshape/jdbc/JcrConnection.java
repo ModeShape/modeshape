@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
@@ -408,11 +409,11 @@ public class JcrConnection implements Connection {
     public DatabaseMetaData getMetaData() throws SQLException {
         notClosed();
         if (metadata == null) {
-            try {
-        	metadata = this.getRepositoryDelegate().createMetaData(this);
-            } catch (RepositoryException e) {
-                throw new SQLException(e.getLocalizedMessage());
-            }
+        	String descriptor = this.getRepositoryDelegate().getDescriptor(Repository.REP_NAME_DESC);
+    		if (descriptor != null && descriptor.toLowerCase().contains("modeshape")) {
+    			return new ModeShapeMetaData(this);
+    		}
+            return new JcrMetaData(this);
         }
         return metadata;
     }
@@ -459,7 +460,7 @@ public class JcrConnection implements Connection {
      * @see java.sql.Connection#createStatement()
      */
     @Override
-    public Statement createStatement() {
+    public Statement createStatement() throws SQLException {
         return new JcrStatement(this);
     }
 

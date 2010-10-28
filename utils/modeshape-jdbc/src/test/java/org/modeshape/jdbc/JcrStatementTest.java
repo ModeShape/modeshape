@@ -36,6 +36,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Set;
+
+import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.QueryResult;
 import org.junit.After;
@@ -224,7 +226,7 @@ public class JcrStatementTest {
     }
 
     @Test
-    public void shouldSupportEquals() {
+    public void shouldSupportEquals() throws SQLException {
         assertTrue(stmt.equals(stmt));
 
         JcrStatement stmt2 = null;
@@ -233,6 +235,7 @@ public class JcrStatementTest {
 
             assertFalse(stmt.equals(stmt2));
 
+        	
         } finally {
             if (stmt2 != null) {
                 stmt2.close();
@@ -332,17 +335,21 @@ public class JcrStatementTest {
         @Override
         public void close() {
         }
+        
+        /**
+         * {@inheritDoc}
+         *
+         * @see org.modeshape.jdbc.delegate.RepositoryDelegate#closeStatement()
+         */
+        @Override
+        public void closeStatement() {
+        }
 
         @Override
         public void commit() {
         }
 
-        @Override
-        public JcrMetaData createMetaData( JcrConnection connection ) {
-            return null;
-        }
-
-        @Override
+		@Override
         public boolean isValid( int timeout ) {
             return false;
         }

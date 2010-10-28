@@ -24,17 +24,15 @@
 package org.modeshape.jdbc.delegate;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.Set;
 
 import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 
 import org.modeshape.jdbc.JcrConnection;
-import org.modeshape.jdbc.JcrMetaData;
 import org.modeshape.jdbc.JdbcI18n;
-import org.modeshape.jdbc.ModeShapeMetaData;
 import org.modeshape.jdbc.util.Logger;
 
 /**
@@ -54,11 +52,26 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
 		this.url = url;
 		this.propertiesInfo = info;
     }
-    
-    
-    protected abstract ConnectionInfo createConnectionInfo(final String url, final Properties info);
+   
+    /**
+     * The implementor must return a @link ConnectionInfo that provides the information
+     * that details 
+     * r
+     * @param url
+     * @param info
+     * @return ConnectionInfo
+     */
+    abstract ConnectionInfo createConnectionInfo(final String url, final Properties info);
+    	   
+	/**
+	 * Implementor is responsible for creating the repository.
+	 * @throws SQLException
+	 */
+    abstract void createRepository() throws SQLException;
 
-    public synchronized ConnectionInfo getConnectionInfo() {
+
+    @Override
+	public synchronized ConnectionInfo getConnectionInfo() {
     	if (this.connInfo == null) {
     		this.connInfo = createConnectionInfo(url, propertiesInfo);
     		this.connInfo.init();
@@ -66,13 +79,46 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
     	return connInfo;
     }
     
-    protected abstract void createRepository() throws SQLException;
-    
-    protected boolean isSessionAvailable() {
-    	return false;
+    /**
+     * {@inheritDoc}
+     *
+     * @see org.modeshape.jdbc.delegate.RepositoryDelegate#closeStatement()
+     */
+    @Override
+    public void closeStatement() {
+    }
+	
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.sql.Connection#commit()
+     */
+    @Override
+    public void commit() throws RepositoryException {
+    }
+	
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.sql.Connection#close()
+     */
+    @Override
+    public void close() {
     }
     
-    public  Connection createConnection() throws SQLException {
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.sql.Connection#rollback()
+     */
+    @Override
+    public void rollback() throws RepositoryException {
+    }
+
+    
+    @Override
+	public  Connection createConnection() throws SQLException {
        	LOGGER.debug("Creating connection for RepositoryDelegte" );
        	if (this.repository == null) {
        		createRepository();
@@ -129,16 +175,6 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
     	
     	return iface.cast(this);
      }
-    
-    
-    public DatabaseMetaData createMetaData(final JcrConnection connection )  {
-		
-		if (getDescriptor(Repository.REP_NAME_DESC) != null) {
-		    if (getDescriptor(Repository.REP_NAME_DESC).toLowerCase().contains("modeshape")) {
-			return new ModeShapeMetaData(connection);
-		    }
-		}
-        return new JcrMetaData(connection);
-    }
-
+   
 }
+

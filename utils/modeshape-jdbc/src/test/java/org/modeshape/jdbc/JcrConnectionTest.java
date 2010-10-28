@@ -95,8 +95,6 @@ public class JcrConnectionTest {
 
 	when(session.getRepository()).thenReturn(repository);
 	
-	
-	when(jcrDelegate.createMetaData((JcrConnection) conn)).thenReturn(jcrmetadata);
     }
 
     @After
