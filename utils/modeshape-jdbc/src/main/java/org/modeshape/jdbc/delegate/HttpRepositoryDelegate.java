@@ -117,7 +117,7 @@ public class HttpRepositoryDelegate extends AbstractRepositoryDelegate {
             if (nodeTypes == null) {
                 Map<String, NodeType> nodeTypesByName;
                 try {
-                    nodeTypesByName = this.restClient.getNodeTypes(workspace);
+                    nodeTypesByName = this.restClient.getNodeTypes(workspace.getRepository());
                     if (nodeTypesByName == null || nodeTypesByName.isEmpty()) {
                         String msg = JdbcI18n.noNodeTypesReturned.text(this.workspace.getServer().getUrl() + "/"
                                                                        + this.workspace.getRepository().getName() + "/"
