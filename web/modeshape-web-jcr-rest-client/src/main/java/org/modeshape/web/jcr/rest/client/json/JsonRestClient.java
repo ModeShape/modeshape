@@ -229,12 +229,34 @@ public final class JsonRestClient implements IRestClient {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeTypes(org.modeshape.web.jcr.rest.client.domain.Workspace)
+     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeTypes(org.modeshape.web.jcr.rest.client.domain.Repository)
      */
     @Override
-    public Map<String, javax.jcr.nodetype.NodeType> getNodeTypes( Workspace workspace ) throws Exception {
-        assert workspace != null;
-        LOGGER.trace("getNodeTypes: workspace={0}", workspace);
+    public Map<String, javax.jcr.nodetype.NodeType> getNodeTypes( Repository repository ) throws Exception {
+        assert repository != null;
+        LOGGER.trace("getNodeTypes: workspace={0}", repository);
+        
+        // because the http://<url> needs the workspace when it appends the depth option
+        // this logic must be used to obtain one.
+        Collection<Workspace> workspaces = getWorkspaces(repository);
+        Workspace workspace = null;
+        Workspace systemWs = null;
+        for (Workspace wspace : workspaces) {
+        	if (wspace.getName().equalsIgnoreCase("default")) {
+        		workspace = wspace;
+        		break;
+        	}
+        	if (workspace == null && !wspace.getName().equalsIgnoreCase("system")) {
+        		workspace = wspace;
+        	}
+        	
+        	if (wspace.getName().equalsIgnoreCase("system")) {
+        		systemWs = wspace;
+        	}
+        }
+        if (workspace == null) {
+        	workspace = systemWs;
+        }
 
         NodeTypeNode nodetypeNode = new NodeTypeNode(workspace);
         HttpClientConnection connection = connect(workspace.getServer(), nodetypeNode.getUrl(), RequestMethod.GET);

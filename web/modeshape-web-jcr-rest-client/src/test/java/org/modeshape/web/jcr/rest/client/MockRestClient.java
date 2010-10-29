@@ -142,10 +142,10 @@ public final class MockRestClient implements IRestClient {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeTypes(org.modeshape.web.jcr.rest.client.domain.Workspace)
+     * @see org.modeshape.web.jcr.rest.client.IRestClient#getNodeTypes(org.modeshape.web.jcr.rest.client.domain.Repository)
      */
     @Override
-    public Map<String, NodeType> getNodeTypes( Workspace workspace ) throws Exception {
+    public Map<String, NodeType> getNodeTypes( Repository repository ) throws Exception {
         return null;
     }
 }

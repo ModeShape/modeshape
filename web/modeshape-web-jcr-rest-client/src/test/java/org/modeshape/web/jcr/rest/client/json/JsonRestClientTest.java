@@ -109,8 +109,7 @@ public final class JsonRestClientTest {
     @Ignore
     @Test
     public void shouldGetNodeTypes() throws Exception {
-        Workspace ws = new Workspace(WORKSPACE_NAME, REPOSITORY1);
-        Map<String, NodeType> nodeTypes = this.restClient.getNodeTypes(ws);
+        Map<String, NodeType> nodeTypes = this.restClient.getNodeTypes(REPOSITORY1);
 
         // this is currently the number returned from the default jbossas installation
         // assertThat(results.size(), is(2));
