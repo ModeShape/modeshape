@@ -51,11 +51,11 @@ public interface IRestClient {
     /**
      * Obtains the ModeShape node types defined within the specified workspace.
      * 
-     * @param workspace whose node types are being requested (never <code>null</code>)
+     * @param repository for whose node types are being requested (never <code>null</code>)
      * @return the node types defined within the specified workspace (never <code>null</code>)
      * @throws Exception if there is a problem obtaining the node types
      */
-    Map<String, javax.jcr.nodetype.NodeType> getNodeTypes( Workspace workspace ) throws Exception;
+    Map<String, javax.jcr.nodetype.NodeType> getNodeTypes( Repository repository ) throws Exception;
 
     /**
      * @param file the file whose URL is being requested (never <code>null</code>)
