@@ -1229,4 +1229,15 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         assertThat(nodeA.getPath(), is("/nodeB/nodeA"));
         assertThat(nodeB.getPath(), is("/nodeB"));
     }
+
+    @FixFor( "MODE-956" )
+    public void testShouldBeAbleToSetNonexistingPropertyToNull() throws Exception {
+        Node rootNode = superuser.getRootNode();
+
+        Node child = rootNode.addNode("child", "nt:unstructured");
+        rootNode.save();
+
+        child.setProperty("foo", (Calendar)null);
+    }
+
 }
