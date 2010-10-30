@@ -1538,8 +1538,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
             property.remove();
             return property;
         }
-        // else the property doesn't exist ...
-        throw new RepositoryException(JcrI18n.propertyNotFoundOnNode.text(name, getPath(), cache.workspaceName()));
+
+        /*
+         * Return without throwing an exception to match JR behavior.  This is also in conformance with the spec.
+         * This is a fix for MODE-976.
+         */
+        return null;
     }
 
     /**
