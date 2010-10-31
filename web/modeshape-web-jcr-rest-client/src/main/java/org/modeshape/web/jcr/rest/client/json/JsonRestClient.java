@@ -588,8 +588,6 @@ public final class JsonRestClient implements IRestClient {
 
             Map<String, String> types = Collections.unmodifiableMap(columnTypes);
 
-            System.out.println(result);
-
             JSONArray rows = (JSONArray)result.get("rows");
             List<QueryRow> queryRows = new LinkedList<QueryRow>();
             for (int i = 0; i < rows.length(); i++) {
