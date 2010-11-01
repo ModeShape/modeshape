@@ -38,6 +38,8 @@
             <include>org.modeshape:modeshape-jcr</include>
             <include>org.modeshape:modeshape-search-lucene</include>
             <include>org.modeshape:modeshape-jbossas-service</include>
+            <include>org.modeshape:modeshape-clustering</include>
+            
 
             <!-- 3rd party dependencies required by the ModeShape JCR engine -->
             <include>joda-time:joda-time</include>
