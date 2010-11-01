@@ -178,7 +178,13 @@
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-connector-svn</artifactId>
                 <version>${project.version}</version>
-            </dependency>                   
+            </dependency>  
+            
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-clustering</artifactId>
+                <version>${project.version}</version>
+            </dependency>                             
 
             <dependency>
                 <groupId>org.modeshape</groupId>
