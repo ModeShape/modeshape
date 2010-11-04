@@ -1548,7 +1548,12 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 constraintNode.setProperty(CONSTRAINT_TYPE, PRIMARY_KEY);
 
                 // CONSUME COLUMNS
-                parseColumnNameList(tokens, constraintNode, TYPE_COLUMN_REFERENCE);
+                boolean columnsAdded = parseColumnNameList(tokens, constraintNode, TYPE_COLUMN_REFERENCE);
+
+                if (!columnsAdded) {
+                    // add the current column as the PK reference
+                    nodeFactory().node(colName, constraintNode, TYPE_COLUMN_REFERENCE);
+                }
 
                 parseConstraintAttributes(tokens, constraintNode);
             } else if (tokens.matches("REFERENCES")) {
