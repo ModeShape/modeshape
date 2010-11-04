@@ -104,6 +104,8 @@ import org.modeshape.jcr.query.JcrSqlQueryParser;
 import org.modeshape.jcr.xpath.XPathQueryParser;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 
 /**
  * Creates JCR {@link Session sessions} to an underlying repository (which may be a federated repository).
@@ -268,7 +270,15 @@ public class JcrRepository implements Repository {
          * The default value is 'true', meaning that these checks are performed.
          * </p>
          */
-        PERFORM_REFERENTIAL_INTEGRITY_CHECKS;
+        PERFORM_REFERENTIAL_INTEGRITY_CHECKS,
+
+        /**
+         * A String property that when specified tells the {@link JcrEngine} where to put the
+         * {@link Repository} in to JNDI.  Assumes that you have write access
+         * to the JNDI tree.  If no value set, then the {@link Repository} will not be bound to JNDI.
+         *
+         */
+        REPOSITORY_JNDI_LOCATION;
 
         /**
          * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
@@ -353,6 +363,11 @@ public class JcrRepository implements Repository {
          */
         public static final String PERFORM_REFERENTIAL_INTEGRITY_CHECKS = Boolean.TRUE.toString();
 
+        /**
+         * The default value for the {@link Option#REPOSITORY_JNDI_LOCATION} option is {@value}
+         */
+        public static final String REPOSITORY_JNDI_LOCATION = "";
+
     }
 
     /**
@@ -411,6 +426,7 @@ public class JcrRepository implements Repository {
         defaults.put(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY, DefaultOption.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY);
         defaults.put(Option.QUERY_INDEX_DIRECTORY, DefaultOption.QUERY_INDEX_DIRECTORY);
         defaults.put(Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS, DefaultOption.PERFORM_REFERENTIAL_INTEGRITY_CHECKS);
+        defaults.put(Option.REPOSITORY_JNDI_LOCATION,DefaultOption.REPOSITORY_JNDI_LOCATION);
         DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
     }
 
@@ -744,6 +760,19 @@ public class JcrRepository implements Repository {
         // This observer picks up notification of changes to the system graph in a cluster. It's a NOP if there is no cluster.
         repositoryObservationManager.register(new SystemChangeObserver(Arrays.asList(new JcrSystemObserver[] {
             repositoryLockManager, namespaceObserver, repositoryTypeManager})));
+
+        //If the JNDI Location is set and not trivial, attempt the bind.
+        String jndiLocation = this.options.get(Option.REPOSITORY_JNDI_LOCATION);
+        if(!jndiLocation.equals("")) {
+            try{
+                InitialContext ic = new InitialContext();
+                ic.rebind(jndiLocation,(javax.jcr.Repository)this);
+            } catch (NamingException e) {
+                I18n msg = JcrI18n.unableToBindToJndi;
+                LOGGER.error(msg, jndiLocation);
+                throw new RepositoryException(msg.text(jndiLocation),e);
+            }
+        }
     }
 
     protected void addWorkspace( String workspaceName,

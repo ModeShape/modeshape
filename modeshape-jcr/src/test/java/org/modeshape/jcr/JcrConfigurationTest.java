@@ -257,6 +257,7 @@ public class JcrConfigurationTest {
         options.put(Option.QUERY_INDEX_DIRECTORY, DefaultOption.QUERY_INDEX_DIRECTORY);
         options.put(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY, DefaultOption.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY);
         options.put(Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS, DefaultOption.PERFORM_REFERENTIAL_INTEGRITY_CHECKS);
+        options.put(Option.REPOSITORY_JNDI_LOCATION,DefaultOption.REPOSITORY_JNDI_LOCATION);
         assertThat(repository.getOptions(), is(options));
     }
 
