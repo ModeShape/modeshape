@@ -319,9 +319,15 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                 Node optionNode = configuration.getNodeAt(optionLocation);
                 Path.Segment segment = optionLocation.getPath().getLastSegment();
                 Property valueProperty = optionNode.getProperty(ModeShapeLexicon.VALUE);
-                if (valueProperty == null) continue;
+                if (valueProperty == null) {
+                    log.warn(JcrI18n.noOptionValueProvided,segment.getName().getLocalName());
+                    continue;
+                }
                 Option option = Option.findOption(segment.getName().getLocalName());
-                if (option == null) continue;
+                if (option == null) {
+                    log.warn(JcrI18n.invalidOptionProvided, segment.getName().getLocalName());
+                    continue;
+                }
                 options.put(option, valueProperty.getFirstValue().toString());
             }
         }
