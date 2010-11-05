@@ -58,6 +58,7 @@ public final class JcrI18n {
     public static I18n unableToFindNodeTypeDefinitionsOnClasspathOrFileOrUrl;
     public static I18n unableToFindResourceOnClasspathOrFileOrUrl;
     public static I18n fileMustExistAndBeReadable;
+    public static I18n invalidJcrUrl;
 
     public static I18n rootNodeHasNoParent;
     public static I18n rootNodeIsNotProperty;
