@@ -417,6 +417,10 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * @return the URL version of {@code jcrUrl} if {@code jcrUrl} is a valid URL, otherwise null
      */
     private URL urlFor( String jcrUrl ) {
+        if (jcrUrl == null || jcrUrl.isEmpty()) {
+            throw new IllegalStateException(JcrI18n.invalidJcrUrl.text(jcrUrl));
+        }
+
         try {
             return new URL(jcrUrl.toString());
         } catch (MalformedURLException mue) {
