@@ -1240,4 +1240,30 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         child.setProperty("foo", (Calendar)null);
     }
 
+    @FixFor( "MODE-1005" )
+    public void testShouldThrowRepositoryExceptionForRelativePathsInSessionGetNode() throws Exception {
+        try {
+            Node root = superuser.getRootNode();
+            root.addNode("nodeForRelativePathTest", "nt:unstructured");
+
+            superuser.getNode("nodeForRelativePathTest");
+            fail("Should throw RepositoryException when attempting to call Session.getNode(String) with a relative path");
+        } catch (RepositoryException re) {
+            // Expected
+        }
+    }
+
+    @FixFor( "MODE-1005" )
+    public void testShouldThrowRepositoryExceptionForRelativePathsInSessionGetProperty() throws Exception {
+        try {
+            Node root = superuser.getRootNode();
+            root.addNode("propertyNodeForRelativePathTest", "nt:unstructured");
+
+            superuser.getProperty("propertyNodeForRelativePathTest/jcr:primaryType");
+            fail("Should throw RepositoryException when attempting to call Session.getProperty(String) with a relative path");
+        } catch (RepositoryException re) {
+            // Expected
+        }
+    }
+
 }

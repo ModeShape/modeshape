@@ -80,6 +80,7 @@ public final class JcrI18n {
     public static I18n cleaningUpLocks;
     public static I18n cleanedUpLocks;
     public static I18n invalidRelativePath;
+    public static I18n invalidAbsolutePath;
     public static I18n invalidPathParameter;
     public static I18n invalidNamePattern;
     public static I18n invalidNodeTypeNameParameter;
