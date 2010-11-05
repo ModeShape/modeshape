@@ -654,7 +654,29 @@ POST http://www.example.com/resources/modeshape%3arepository/default/items/newNo
 ]]></programlisting>		 
 		Note that protected properties like jcr:uuid are not provided but that the primary type and mixin types are
 		provided as properties.  The REST server will translate these into the appropriate calls behind the
-		scenes.  The response from the request will be empty by convention.
+		scenes.  The JSON-encoded response from the request will contain the node that you just posted, including 
+		any autocreated properties and child nodes.  
+		</para>
+		<para>		
+		If you do not need this information, add <code>mode:includeNode=false</code>
+		as a query parameter to your URL. 
+<programlisting><![CDATA[
+POST http://www.example.com/resources/modeshape%3arepository/default/items/newNode?mode:includeNode=false
+
+{
+	"properties": {
+		"jcr:primaryType": "nt:unstructured",
+		"jcr:mixinTypes": "mix:referenceable",
+		"someProperty": "foo"
+	},
+	"children": {
+		"newChildNode": {
+			"properties": {"jcr:primaryType": "nt:unstructured"}
+		}
+	}
+}
+]]></programlisting>		
+		This will instruct the REST server to only return the path of the newly-created node in the response.
 		</para>
 		<para>
 		The PUT method allows for updates of nodes and properties.  If the URI points to a property, the body of the

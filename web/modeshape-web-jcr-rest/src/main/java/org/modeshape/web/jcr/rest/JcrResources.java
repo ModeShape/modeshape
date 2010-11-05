@@ -236,6 +236,9 @@ public class JcrResources extends AbstractHandler {
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param path the path to the item
+     * @param fullNodeInResponse if {@code fullNodeInResponse == null || Boolean.valueOf(fullNodeInResponse)}, indicates that a
+     *        representation of the created node (including all properties and children) should be returned; otherwise, only the
+     *        path to the new node will be returned
      * @param requestContent the JSON-encoded representation of the node or nodes to be added
      * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestContent}
      *         in that auto-created and protected properties (e.g., jcr:uuid) will be populated.
@@ -251,9 +254,15 @@ public class JcrResources extends AbstractHandler {
                               @PathParam( "repositoryName" ) String rawRepositoryName,
                               @PathParam( "workspaceName" ) String rawWorkspaceName,
                               @PathParam( "path" ) String path,
+                              @QueryParam( "mode:includeNode" ) String fullNodeInResponse,
                               String requestContent )
         throws NotFoundException, UnauthorizedException, RepositoryException, JSONException {
-        return itemHandler.postItem(request, rawRepositoryName, rawWorkspaceName, path, requestContent);
+        return itemHandler.postItem(request,
+                                    rawRepositoryName,
+                                    rawWorkspaceName,
+                                    path,
+                                    fullNodeInResponse == null || Boolean.valueOf(fullNodeInResponse),
+                                    requestContent);
     }
 
     /**

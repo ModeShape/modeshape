@@ -236,6 +236,8 @@ class ItemHandler extends AbstractHandler {
      * @param rawRepositoryName the URL-encoded repository name
      * @param rawWorkspaceName the URL-encoded workspace name
      * @param path the path to the item
+     * @param fullNodeInResponse if true, indicates that a representation of the created node (including all properties and
+     *        children) should be returned; otherwise, only the path to the new node will be returned
      * @param requestContent the JSON-encoded representation of the node or nodes to be added
      * @return the JSON-encoded representation of the node or nodes that were added. This will differ from {@code requestContent}
      *         in that auto-created and protected properties (e.g., jcr:uuid) will be populated.
@@ -248,6 +250,7 @@ class ItemHandler extends AbstractHandler {
                               String rawRepositoryName,
                               String rawWorkspaceName,
                               String path,
+                              boolean fullNodeInResponse,
                               String requestContent )
         throws NotFoundException, UnauthorizedException, RepositoryException, JSONException {
 
@@ -268,8 +271,14 @@ class ItemHandler extends AbstractHandler {
 
         session.save();
 
-        String json = jsonFor(newNode, -1).toString();
-        return Response.status(Status.CREATED).entity(json).build();
+        if (fullNodeInResponse) {
+
+            String json = jsonFor(newNode, -1).toString();
+            return Response.status(Status.CREATED).entity(json).build();
+        }
+
+        return Response.status(Status.CREATED).entity(newNode.getPath()).build();
+
     }
 
     /**

@@ -96,7 +96,9 @@ public final class JsonRestClient implements IRestClient {
                                  File file ) throws Exception {
         LOGGER.trace("createFileNode: workspace={0}, path={1}, file={2}", workspace.getName(), path, file.getAbsolutePath());
         FileNode fileNode = new FileNode(workspace, path, file);
-        HttpClientConnection connection = connect(workspace.getServer(), fileNode.getUrl(), RequestMethod.POST);
+        URL fileNodeUrl = fileNode.getUrl();
+        URL fileNodeUrlWithTerseResponse = new URL(fileNodeUrl.toString() + "?mode:includeNode=false");
+        HttpClientConnection connection = connect(workspace.getServer(), fileNodeUrlWithTerseResponse, RequestMethod.POST);
 
         try {
             LOGGER.trace("createFileNode: create node={0}", fileNode);
