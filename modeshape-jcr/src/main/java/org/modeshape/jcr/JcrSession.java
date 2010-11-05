@@ -632,6 +632,20 @@ class JcrSession implements Session {
     }
 
     /**
+     * Throws a {@code RepositoryException} if {@code path} is not an absolute path, otherwise returns silently.
+     * 
+     * @param pathAsString the string representation of the path
+     * @param path the path to check
+     * @throws RepositoryException if {@code !path.isAbsolute()}
+     */
+    private void checkAbsolute( String pathAsString,
+                                Path path ) throws RepositoryException {
+        if (!path.isAbsolute()) {
+            throw new RepositoryException(JcrI18n.invalidAbsolutePath.text(pathAsString));
+        }
+    }
+
+    /**
      * @param absolutePath an absolute path
      * @return the specified node
      * @throws IllegalArgumentException if <code>absolutePath</code> is empty or <code>null</code>.
@@ -646,6 +660,9 @@ class JcrSession implements Session {
         if (path.isRoot()) {
             return getRootNode();
         }
+
+        checkAbsolute(absolutePath, path);
+
         return getNode(path);
     }
 
@@ -665,6 +682,9 @@ class JcrSession implements Session {
         if (path.isRoot()) {
             return true;
         }
+
+        checkAbsolute(absolutePath, path);
+
         try {
             cache.findJcrNode(null, path);
             return true;
@@ -691,6 +711,8 @@ class JcrSession implements Session {
         if (path.isIdentifier()) {
             throw new PathNotFoundException(JcrI18n.identifierPathNeverReferencesProperty.text());
         }
+
+        checkAbsolute(absolutePath, path);
 
         Segment lastSegment = path.getLastSegment();
         if (lastSegment.hasIndex()) {
@@ -723,6 +745,8 @@ class JcrSession implements Session {
         if (path.isRoot() || path.isIdentifier()) {
             return false;
         }
+
+        checkAbsolute(absolutePath, path);
 
         Segment lastSegment = path.getLastSegment();
         if (lastSegment.hasIndex()) {
