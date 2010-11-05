@@ -193,7 +193,6 @@ public final class JsonRestClientTest {
         assertThat(actual, is(expected));
     }
 
-    @Ignore
     @FixFor( "MODE-919" )
     @Test
     public void shouldPublishDdlResource() throws Exception {
