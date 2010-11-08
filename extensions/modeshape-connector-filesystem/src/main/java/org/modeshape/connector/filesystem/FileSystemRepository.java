@@ -29,6 +29,7 @@ import java.util.UUID;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrNtLexicon;
+import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.connector.base.PathNode;
 import org.modeshape.graph.connector.base.PathTransaction;
@@ -36,6 +37,8 @@ import org.modeshape.graph.connector.base.Processor;
 import org.modeshape.graph.connector.base.Repository;
 import org.modeshape.graph.connector.base.Transaction;
 import org.modeshape.graph.observe.Observer;
+import org.modeshape.graph.property.InvalidPathException;
+import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.Path.Segment;
@@ -188,6 +191,43 @@ public class FileSystemRepository extends Repository<PathNode, FileSystemWorkspa
         protected void validateNode( FileSystemWorkspace workspace,
                                      PathNode node ) {
             workspace.validate(node);
+        }
+
+
+        @Override
+        public PathNode addChild( FileSystemWorkspace workspace,
+                                  PathNode parent,
+                                  Name name,
+                                  int index,
+                                  UUID uuid,
+                                  Iterable<Property> properties ) {
+            String newFileName = name.getLocalName();
+            if (!source.filenameFilter(true).accept(null, newFileName)) {
+                throw new InvalidPathException(FileSystemI18n.cannotCreateFileAsExcludedPattern.text(newFileName,
+                                                                                                     workspace.getName()));
+            }
+
+            return super.addChild(workspace, parent, name, index, uuid, properties);
+        }
+
+        @Override
+        public Location addChild( FileSystemWorkspace workspace,
+                                  PathNode parent,
+                                  PathNode originalChild,
+                                  PathNode beforeOtherChild,
+                                  Name desiredName ) {
+
+            if (desiredName != null) {
+                String newFileName = desiredName.getLocalName();
+                if (!source.filenameFilter(true).accept(null, newFileName)) {
+                    String oldFileName = originalChild.getName().getString(this.context.getNamespaceRegistry());
+                    throw new InvalidPathException(FileSystemI18n.cannotRenameFileToExcludedPattern.text(oldFileName,
+                                                                                                         newFileName,
+                                                                                                         workspace.getName()));
+                }
+            }
+
+            return super.addChild(workspace, parent, originalChild, beforeOtherChild, desiredName);
         }
     }
 
