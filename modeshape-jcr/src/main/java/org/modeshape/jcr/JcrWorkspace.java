@@ -65,6 +65,7 @@ import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.UuidAlreadyExistsException;
+import org.modeshape.graph.property.InvalidPathException;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
@@ -672,6 +673,8 @@ class JcrWorkspace implements Workspace {
             throw new RepositoryException(e.getLocalizedMessage(), e);
         } catch (AccessControlException ace) {
             throw new AccessDeniedException(ace);
+        } catch (InvalidPathException e) {
+            throw new RepositoryException(e.getLocalizedMessage(), e);
         }
     }
 

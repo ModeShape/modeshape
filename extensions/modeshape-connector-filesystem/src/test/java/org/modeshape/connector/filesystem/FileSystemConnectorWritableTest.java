@@ -42,6 +42,7 @@ import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.connector.test.AbstractConnectorTest;
+import org.modeshape.graph.property.InvalidPathException;
 import org.modeshape.graph.request.InvalidRequestException;
 
 public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
@@ -618,6 +619,25 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         // Now look up node A ...
         assertTrue(testWorkspaceRoot.list().length == 0);
         assertFalse(new File(testWorkspaceRoot, "a").exists());
+    }
+
+    @Test( expected = InvalidPathException.class )
+    public void shouldNotAllowWriteToExcludedFilename() {
+        graph.create("/.svn").and();
+    }
+
+    @Test( expected = InvalidPathException.class )
+    public void shouldNotAllowMoveToExcludedFilename() {
+        graph.create("/test").and();
+
+        graph.move("/test").as(".svn").into("/");
+    }
+
+    @Test( expected = InvalidPathException.class )
+    public void shouldNotAllowCopyToExcludedFilename() {
+        graph.create("/test").and();
+
+        graph.copy("/test").to("/.svn");
     }
 
     protected void assertContents( File file,

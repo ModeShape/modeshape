@@ -84,6 +84,8 @@ public final class FileSystemI18n {
     public static I18n parentIsReadOnly;
     public static I18n fileAlreadyExists;
     public static I18n couldNotCreateFile;
+    public static I18n cannotRenameFileToExcludedPattern;
+    public static I18n cannotCreateFileAsExcludedPattern;
     public static I18n unsupportedPrimaryType;
     public static I18n invalidNameForResource;
     public static I18n invalidPathForResource;
