@@ -7,7 +7,8 @@
 <deployment xmlns="urn:jboss:bean-deployer:2.0">
 
   
-    <!-- modeshape secureview application-policy definition -->
+    <!-- Define the JAAS application policy for ModeShape, named 'modeshape' and referenced
+         in the ModeShape configuration file via the 'jaasLoginConfigName' repository option. -->
     <application-policy xmlns="urn:jboss:security-beans:1.0" name="modeshape">
         <authentication>
             <login-module code="org.jboss.security.auth.spi.UsersRolesLoginModule" flag="required">
