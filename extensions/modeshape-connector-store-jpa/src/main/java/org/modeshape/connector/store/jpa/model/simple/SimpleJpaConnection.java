@@ -163,4 +163,20 @@ public class SimpleJpaConnection implements RepositoryConnection {
             logger.trace(this.getClass().getSimpleName() + ".execute(...) took " + sw.getTotalDuration());
         }
     }
+
+    /*
+     
+      This method is needed only to support the SimpleJpaSourceTest#shouldAllowChangingIsolationLevel() test.
+     
+    EntityManager entityManager() {
+        EntityManager entityManager = this.entityManager;
+
+        if (entityManager == null) {
+            acquireRepository();
+            entityManager = this.entityManager;
+        }
+
+        return entityManager;
+    }
+    */
 }

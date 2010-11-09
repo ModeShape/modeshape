@@ -129,6 +129,16 @@
 					</entry>
 				</row>
 				<row>
+                                       <entry>isolationLevel</entry>
+                                       <entry>Optional property that, if used, de
+                                       of the java.sql.Connection#TRANSACTION_* c
+                                       "TRANSACTION_READ_COMMITTED", "TRANSACTION
+                                       not all JDBC drivers support all isolation
+                                               When this property is not used, th
+                                               isolation level is currently set o
+                                       </entry>
+                               </row>
+                               <row>
 					<entry>largeValueSizeInBytes</entry>
 					<entry>
 						An advanced boolean property that controls the size of property values at which they are considered to be "large values".  

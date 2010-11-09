@@ -24,6 +24,8 @@
 package org.modeshape.connector.store.jpa.model.simple;
 
 import java.util.concurrent.TimeUnit;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.connector.store.jpa.JpaSource;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Subgraph;
@@ -31,8 +33,6 @@ import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositoryContext;
 import org.modeshape.graph.observe.Observer;
-import org.junit.Before;
-import org.junit.Test;
 
 public class SimpleJpaSourceTest {
 
@@ -50,7 +50,7 @@ public class SimpleJpaSourceTest {
         source.setUsername("sa");
         source.setPassword("");
         source.setUrl("jdbc:hsqldb:mem:.");
-        source.setShowSql(true);
+        source.setShowSql(false);
         source.setAutoGenerateSchema("create");
 
         source.initialize(new RepositoryContext() {
@@ -82,4 +82,42 @@ public class SimpleJpaSourceTest {
         connection.ping(1, TimeUnit.SECONDS);
         connection.close();
     }
+
+    /*    
+        The test below helps establish that the hibernate.connection.isolation property is being passed to Hibernate
+        correctly and respected by Hibernate, but the test case is very brittle and should not be checked in.
+        
+        If you wish to reverify this behavior, please uncomment the entityManager() method in SimpleJpaConnection.
+        @FixFor("MODE-983")
+        @Test
+        public void shouldAllowChangingIsolationLevel() throws Exception {
+            RepositoryConnection conn;
+            SimpleJpaConnection jpaConn;
+            EntityManagerImpl emgr;
+            int txLevel;
+
+            // txLevel = Connection.TRANSACTION_SERIALIZABLE;
+
+            txLevel = Connection.TRANSACTION_REPEATABLE_READ;
+            source.setIsolationLevel(txLevel);
+            conn = source.getConnection();
+            assertThat(conn, instanceOf(SimpleJpaConnection.class));
+
+            jpaConn = (SimpleJpaConnection)conn;
+            emgr = (EntityManagerImpl)jpaConn.entityManager();
+            assertTrue(emgr.getSession().connection().getTransactionIsolation() == txLevel);
+            jpaConn.close();
+
+        txLevel = Connection.TRANSACTION_SERIALIZABLE;
+        source.setIsolationLevel(txLevel);
+        conn = source.getConnection();
+        assertThat(conn, instanceOf(SimpleJpaConnection.class));
+
+        jpaConn = (SimpleJpaConnection)conn;
+        emgr = (EntityManagerImpl)jpaConn.entityManager();
+        assertTrue(emgr.getSession().connection().getTransactionIsolation() == txLevel);
+        jpaConn.close();
+
+        }
+        */
 }
