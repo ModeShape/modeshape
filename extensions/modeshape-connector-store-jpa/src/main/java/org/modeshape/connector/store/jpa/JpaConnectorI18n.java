@@ -47,6 +47,7 @@ public final class JpaConnectorI18n {
     public static I18n locationShouldHavePathAndOrProperty;
     public static I18n invalidUuidForWorkspace;
     public static I18n invalidReferences;
+    public static I18n invalidIsolationLevel;
     public static I18n unableToDeleteBecauseOfReferences;
 
     public static I18n workspaceAlreadyExists;
@@ -95,6 +96,9 @@ public final class JpaConnectorI18n {
     public static I18n urlPropertyDescription;
     public static I18n urlPropertyLabel;
     public static I18n urlPropertyCategory;
+    public static I18n isolationLevelPropertyDescription;
+    public static I18n isolationLevelPropertyLabel;
+    public static I18n isolationLevelPropertyCategory;
     public static I18n driverClassNamePropertyDescription;
     public static I18n driverClassNamePropertyLabel;
     public static I18n driverClassNamePropertyCategory;

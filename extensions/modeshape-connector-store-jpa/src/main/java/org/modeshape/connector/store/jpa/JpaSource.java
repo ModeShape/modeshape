@@ -23,6 +23,7 @@
  */
 package org.modeshape.connector.store.jpa;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -115,6 +116,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     protected static final String URL = "url";
     protected static final String DRIVER_CLASS_NAME = "driverClassName";
     protected static final String DRIVER_CLASSLOADER_NAME = "driverClassloaderName";
+    protected static final String ISOLATION_LEVEL = "isolationLevel";
     protected static final String MAXIMUM_CONNECTIONS_IN_POOL = "maximumConnectionsInPool";
     protected static final String MINIMUM_CONNECTIONS_IN_POOL = "minimumConnectionsInPool";
     protected static final String MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS = "maximumConnectionIdleTimeInSeconds";
@@ -167,6 +169,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * The initial {@link #getDefaultWorkspaceName() name of the default workspace} is "{@value} ", unless otherwise specified.
      */
     public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
+
+    private static final int DEFAULT_ISOLATION_LEVEL = Connection.TRANSACTION_REPEATABLE_READ;
 
     private static final int DEFAULT_RETRY_LIMIT = 0;
     private static final int DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS = 60 * 5; // 5 minutes
@@ -307,6 +311,11 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     @Label( i18n = JpaConnectorI18n.class, value = "defaultWorkspaceNamePropertyLabel" )
     @Category( i18n = JpaConnectorI18n.class, value = "defaultWorkspaceNamePropertyCategory" )
     private volatile String defaultWorkspace = DEFAULT_NAME_OF_DEFAULT_WORKSPACE;
+
+    @Description( i18n = JpaConnectorI18n.class, value = "isolationLevelPropertyDescription" )
+    @Label( i18n = JpaConnectorI18n.class, value = "isolationLevelPropertyLabel" )
+    @Category( i18n = JpaConnectorI18n.class, value = "isolationLevelPropertyCategory" )
+    private volatile int isolationLevel = DEFAULT_ISOLATION_LEVEL;
 
     @Description( i18n = JpaConnectorI18n.class, value = "predefinedWorkspacesPropertyDescription" )
     @Label( i18n = JpaConnectorI18n.class, value = "predefinedWorkspacesPropertyLabel" )
@@ -903,6 +912,34 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
+     * @return isolationLevel
+     */
+    public int getIsolationLevel() {
+        return isolationLevel;
+    }
+
+    /**
+     * @param isolationLevel Sets isolationLevel to the specified value.
+     */
+    public synchronized void setIsolationLevel( Integer isolationLevel ) {
+        if (isolationLevel == null) isolationLevel = DEFAULT_ISOLATION_LEVEL;
+
+        if (isolationLevel != Connection.TRANSACTION_NONE && isolationLevel != Connection.TRANSACTION_READ_COMMITTED
+            && isolationLevel != Connection.TRANSACTION_READ_UNCOMMITTED
+            && isolationLevel != Connection.TRANSACTION_REPEATABLE_READ && isolationLevel != Connection.TRANSACTION_SERIALIZABLE) {
+            throw new RepositorySourceException(this.name, JpaConnectorI18n.invalidIsolationLevel.text(isolationLevel));
+        }
+
+        if (this.isolationLevel == isolationLevel) return;
+
+        EntityManagers oldEntityManagers = this.entityManagers;
+        this.entityManagers = null;
+        oldEntityManagers.close();
+
+        this.isolationLevel = isolationLevel;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.modeshape.graph.connector.RepositorySource#initialize(org.modeshape.graph.connector.RepositoryContext)
@@ -930,6 +967,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         ref.add(new StringRefAddr(URL, getUrl()));
         ref.add(new StringRefAddr(DRIVER_CLASS_NAME, getDriverClassName()));
         ref.add(new StringRefAddr(DRIVER_CLASSLOADER_NAME, getDriverClassloaderName()));
+        ref.add(new StringRefAddr(ISOLATION_LEVEL, Integer.toString(getIsolationLevel())));
         ref.add(new StringRefAddr(MAXIMUM_CONNECTIONS_IN_POOL, Integer.toString(getMaximumConnectionsInPool())));
         ref.add(new StringRefAddr(MINIMUM_CONNECTIONS_IN_POOL, Integer.toString(getMinimumConnectionsInPool())));
         ref.add(new StringRefAddr(MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS,
@@ -994,6 +1032,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             String url = values.get(URL);
             String driverClassName = values.get(DRIVER_CLASS_NAME);
             String driverClassloaderName = values.get(DRIVER_CLASSLOADER_NAME);
+            String isolationLevel = values.get(ISOLATION_LEVEL);
             String maxConnectionsInPool = values.get(MAXIMUM_CONNECTIONS_IN_POOL);
             String minConnectionsInPool = values.get(MINIMUM_CONNECTIONS_IN_POOL);
             String maxConnectionIdleTimeInSec = values.get(MAXIMUM_CONNECTION_IDLE_TIME_IN_SECONDS);
@@ -1028,6 +1067,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             if (url != null) source.setUrl(url);
             if (driverClassName != null) source.setDriverClassName(driverClassName);
             if (driverClassloaderName != null) source.setDriverClassloaderName(driverClassloaderName);
+            if (isolationLevel != null) source.setIsolationLevel(Integer.parseInt(isolationLevel));
             if (maxConnectionsInPool != null) source.setMaximumConnectionsInPool(Integer.parseInt(maxConnectionsInPool));
             if (minConnectionsInPool != null) source.setMinimumConnectionsInPool(Integer.parseInt(minConnectionsInPool));
             if (maxConnectionIdleTimeInSec != null) source.setMaximumConnectionIdleTimeInSeconds(Integer.parseInt(maxConnectionIdleTimeInSec));
@@ -1069,6 +1109,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
 
             // Set the Hibernate properties used in all situations ...
             setProperty(configurator, "hibernate.dialect", this.dialect);
+            setProperty(configurator, "hibernate.connection.isolation", this.isolationLevel);
 
             // Configure additional properties, which may be overridden by subclasses ...
             configure(configurator);
