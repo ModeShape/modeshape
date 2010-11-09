@@ -19,7 +19,7 @@
 
 		<dependency>
 			<groupId>org.modeshape</groupId>
-			<artifactId>modeshape-graph</artifactId>
+			<artifactId>modeshape-common</artifactId>
 		</dependency>
 
 		<!-- 
