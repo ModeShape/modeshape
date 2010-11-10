@@ -119,6 +119,7 @@ public final class JcrI18n {
     public static I18n constraintViolatedOnReference;
     public static I18n invalidOptionProvided;
     public static I18n noOptionValueProvided;
+    public static I18n unableToBindToJndi;
 
     public static I18n cannotRemoveRootNode;
     public static I18n cannotRemoveParentNodeOfTarget;

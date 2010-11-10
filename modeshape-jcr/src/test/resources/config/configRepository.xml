@@ -70,6 +70,7 @@
             <mode:options>
                 <mode:option jcr:name="projectNodeTypes" mode:value="true"/>
                 <mode:option jcr:name="jaasLoginConfigName" mode:value="modeshape-jcr"/>
+                <mode:option jcr:name="repositoryJndiLocaation" mode:value="jcr/CarRepository"/>
             </mode:options>
             <mode:descriptors>
                 <mode:descriptor jcr:name="query.xpath.doc.order" mode:value="false"/>
