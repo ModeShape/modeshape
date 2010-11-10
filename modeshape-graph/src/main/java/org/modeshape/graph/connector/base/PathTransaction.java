@@ -449,7 +449,7 @@ public abstract class PathTransaction<NodeType extends PathNode, WorkspaceType e
 
         // Change the name of the new node ...
         NodeType newChild = (NodeType)copyOfOriginalChild.withName(childName).withParent(pathTo(parent));
-        parent = (NodeType)parent.withChild(index, originalChild.getName());
+        parent = (NodeType)parent.withChild(index, newChild.getName());
         changes.moved(originalChild, newChild, parent);
 
         return locationFor(newChild);
