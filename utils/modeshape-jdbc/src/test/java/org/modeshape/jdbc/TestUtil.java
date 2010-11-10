@@ -78,6 +78,7 @@ public class TestUtil {
         public static final String PROP_F = "propF";
         public static final String PROP_G = "propG";
         public static final String PROP_H = "propH";
+        public static final String PROP_I = "propI";
 
     }
 
@@ -96,10 +97,10 @@ public class TestUtil {
         // The column names must match the number of columns in #TUPLES
         COLUMN_NAMES = new String[] {COLUMN_NAME_PROPERTIES.PROP_A, COLUMN_NAME_PROPERTIES.PROP_B, COLUMN_NAME_PROPERTIES.PROP_C,
             COLUMN_NAME_PROPERTIES.PROP_D, COLUMN_NAME_PROPERTIES.PROP_E, COLUMN_NAME_PROPERTIES.PROP_F,
-            COLUMN_NAME_PROPERTIES.PROP_G, COLUMN_NAME_PROPERTIES.PROP_H};
+            COLUMN_NAME_PROPERTIES.PROP_G, COLUMN_NAME_PROPERTIES.PROP_H, COLUMN_NAME_PROPERTIES.PROP_I};
         TABLE_NAMES = new String[] {"typeA", "typeB", "typeA", "", "typeA"};
         // The TYPE_NAMES correspond to the column value types defined in #TUPLES
-        TYPE_NAMES = new String[] {STRING, LONG, PATH, REFERENCE, DOUBLE, BOOLEAN, DATE, BINARY};
+        TYPE_NAMES = new String[] {STRING, LONG, PATH, REFERENCE, DOUBLE, BOOLEAN, DATE, BINARY, LONG};
 
         NODE_NAMES = new String[] {"node1", "node2"};
         // Provides the resultset rows
@@ -110,13 +111,13 @@ public class TestUtil {
          */
          
         TUPLES.add(new Object[] {"r1c1", new Long(1), null, null, new Double(1), new Boolean(true), DATE_INSTANCE,
-            new String("Heres my data at r1").getBytes()});
+            new String("Heres my data at r1").getBytes(), null} );
         TUPLES.add(new Object[] {"r2c1", new Long(2), null, null, new Double(2), new Boolean(false), DATE_INSTANCE,
-            new String("Heres my data r2   ").getBytes()});
+            new String("Heres my data r2   ").getBytes(), null});
         TUPLES.add(new Object[] {"r3c1", new Long(3), null, null, new Double(3), new Boolean(true), DATE_INSTANCE,
-            new String("Heres my data at r3  ").getBytes()});
+            new String("Heres my data at r3  ").getBytes(), null});
         TUPLES.add(new Object[] {"r4c1", 4L, null, null, 4D, new Boolean(true).booleanValue(), DATE_INSTANCE,
-            new String("Heres  my  data    r4  ").getBytes()});
+            new String("Heres  my  data    r4  ").getBytes(), null});
 
     }
 
