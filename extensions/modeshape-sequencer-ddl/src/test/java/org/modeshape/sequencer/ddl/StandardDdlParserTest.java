@@ -24,6 +24,7 @@
 package org.modeshape.sequencer.ddl;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -811,40 +812,42 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
         AstNode columnRef = prim_key.getChildren().get(0);
         assertEquals("REALMUID", columnRef.getName().getString());
     }
-    
+
     @Test
     public void shouldParseCreateTableWithPrimaryKeyColumnConstraint() {
         printTest("shouldWork()");
         String PK_COL = "customerfamilyhistoryid";
         String content = "CREATE TABLE CustomerFamilyHistory (";
-        content += PK_COL + " numeric(10) CONSTRAINT customerfamilyhistoryid_pk PRIMARY KEY, firstname varchar(50) NOT NULL, lastname varchar(50) NOT NULL, age numeric(3), sibling varchar(20), customerid numeric(7) NOT NULL);";
+        content += PK_COL
+                   + " numeric(10) CONSTRAINT customerfamilyhistoryid_pk PRIMARY KEY, firstname varchar(50) NOT NULL, lastname varchar(50) NOT NULL, age numeric(3), sibling varchar(20), customerid numeric(7) NOT NULL);";
         DdlTokenStream tokens = getTokens(content);
         AstNode result = parser.parseCreateTableStatement(tokens, rootNode);
+        assertThat(result, is(notNullValue()));
 
         // test to make sure there is a table node
         assertEquals(1, rootNode.getChildCount()); // TABLE
         AstNode tableNode = rootNode.getChild(0);
-        
+
         // test to make sure all columns and primary key constraint are children of the table node
         assertEquals(7, tableNode.getChildCount()); // 6 Columns + 1 Constraint
-        
+
         // find constraint
         boolean foundConstraint = false;
         for (AstNode kid : tableNode.getChildren()) {
-        	Property value = (Property)kid.getProperty(CONSTRAINT_TYPE);
-        	
-        	if (value != null) {
-        		assertFalse(foundConstraint); // make sure no other constraint found
-        		foundConstraint = true;
+            Property value = kid.getProperty(CONSTRAINT_TYPE);
 
-        		assertEquals(value.getFirstValue(), PRIMARY_KEY); // test for primary key
-            	
-            	// make sure a child node pointing to the column is found
-            	assertEquals(1, kid.getChildCount());
-            	AstNode child = kid.getChild(0);
-            	assertTrue(hasMixinType(child.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_COLUMN_REFERENCE));
-            	assertEquals(PK_COL, child.getName().getString());
-        	}
+            if (value != null) {
+                assertFalse(foundConstraint); // make sure no other constraint found
+                foundConstraint = true;
+
+                assertEquals(value.getFirstValue(), PRIMARY_KEY); // test for primary key
+
+                // make sure a child node pointing to the column is found
+                assertEquals(1, kid.getChildCount());
+                AstNode child = kid.getChild(0);
+                assertTrue(hasMixinType(child.getProperty(JcrLexicon.MIXIN_TYPES), TYPE_COLUMN_REFERENCE));
+                assertEquals(PK_COL, child.getName().getString());
+            }
         }
     }
 

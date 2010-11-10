@@ -1235,7 +1235,7 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         Node rootNode = superuser.getRootNode();
 
         Node child = rootNode.addNode("child", "nt:unstructured");
-        rootNode.save();
+        rootNode.getSession().save();
 
         child.setProperty("foo", (Calendar)null);
     }
