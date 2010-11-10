@@ -260,6 +260,7 @@
 
                             <artifactId>maven-assembly-plugin</artifactId>
                              <configuration>
+                             	<finalName>modeshape</finalName>
                                 <descriptors>
                                      <descriptor>src/assembly/kit.xml</descriptor>
                                 </descriptors>
