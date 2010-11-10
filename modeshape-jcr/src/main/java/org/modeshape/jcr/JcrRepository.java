@@ -37,6 +37,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -54,6 +55,8 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.query.Query;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
@@ -104,8 +107,6 @@ import org.modeshape.jcr.query.JcrSqlQueryParser;
 import org.modeshape.jcr.xpath.XPathQueryParser;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 
 /**
  * Creates JCR {@link Session sessions} to an underlying repository (which may be a federated repository).
@@ -273,10 +274,35 @@ public class JcrRepository implements Repository {
         PERFORM_REFERENTIAL_INTEGRITY_CHECKS,
 
         /**
-         * A String property that when specified tells the {@link JcrEngine} where to put the
-         * {@link Repository} in to JNDI.  Assumes that you have write access
-         * to the JNDI tree.  If no value set, then the {@link Repository} will not be bound to JNDI.
-         *
+         * A boolean flag that indicates whether a complete list of workspace names should be exposed in the custom repository
+         * descriptor {@link org.modeshape.jcr.api.Repository#REPOSITORY_WORKSPACES}.
+         * <p>
+         * If this option is set to {@code true}, then any code that can access the repository can retrieve a complete list of
+         * workspace names through the {@link javax.jcr.Repository#getDescriptor(String)} method without
+         * {@link javax.jcr.Repository#login logging in}.
+         * </p>
+         * <p>
+         * Since some ModeShape installations may consider the list of workspace names to be restricted information and limit the
+         * ability of some or all users to see a complete list of workspace names, this option can be set to {@code false} to
+         * disable this capability. If this option is set to {@code false}, the
+         * {@link org.modeshape.jcr.api.Repository#REPOSITORY_WORKSPACES} descriptor will not be set. In other words, the
+         * following code will print {@code false}.
+         * </p>
+         * 
+         * <pre>
+         * Repository repo = ...;
+         * System.out.println(repo.getDescriptorKeys().contains(org.modeshape.jcr.api.Repository#REPOSITORY_WORKSPACES));
+         * </pre>
+         * <p>
+         * The default value is 'true', meaning that the descriptor is populated.
+         * </p>
+         */
+        EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR,
+
+        /**
+         * A String property that when specified tells the {@link JcrEngine} where to put the {@link Repository} in to JNDI.
+         * Assumes that you have write access to the JNDI tree. If no value set, then the {@link Repository} will not be bound to
+         * JNDI.
          */
         REPOSITORY_JNDI_LOCATION;
 
@@ -368,6 +394,11 @@ public class JcrRepository implements Repository {
          */
         public static final String REPOSITORY_JNDI_LOCATION = "";
 
+        /**
+         * The default value for the {@link Option#EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR} option is {@value} .
+         */
+        public static final String EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR = Boolean.TRUE.toString();
+
     }
 
     /**
@@ -426,12 +457,13 @@ public class JcrRepository implements Repository {
         defaults.put(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY, DefaultOption.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY);
         defaults.put(Option.QUERY_INDEX_DIRECTORY, DefaultOption.QUERY_INDEX_DIRECTORY);
         defaults.put(Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS, DefaultOption.PERFORM_REFERENTIAL_INTEGRITY_CHECKS);
-        defaults.put(Option.REPOSITORY_JNDI_LOCATION,DefaultOption.REPOSITORY_JNDI_LOCATION);
+        defaults.put(Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR, DefaultOption.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR);
+        defaults.put(Option.REPOSITORY_JNDI_LOCATION, DefaultOption.REPOSITORY_JNDI_LOCATION);
         DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
     }
 
     private final String sourceName;
-    private final Map<String, Object> descriptors;
+    private final Map<String, Object> descriptors = new HashMap<String, Object>();
     private final ExecutionContext executionContext;
     private final RepositoryConnectionFactory connectionFactory;
     private final RepositoryNodeTypeManager repositoryTypeManager;
@@ -642,7 +674,7 @@ public class JcrRepository implements Repository {
         }
 
         // Initialize required JCR descriptors.
-        this.descriptors = initializeDescriptors(executionContext.getValueFactories(), descriptors);
+        this.descriptors.putAll(initializeDescriptors(executionContext.getValueFactories(), descriptors));
 
         // If the repository is to support searching ...
         if (Boolean.valueOf(this.options.get(Option.QUERY_EXECUTION_ENABLED)) && WORKSPACES_SHARE_SYSTEM_BRANCH) {
@@ -761,18 +793,32 @@ public class JcrRepository implements Repository {
         repositoryObservationManager.register(new SystemChangeObserver(Arrays.asList(new JcrSystemObserver[] {
             repositoryLockManager, namespaceObserver, repositoryTypeManager})));
 
-        //If the JNDI Location is set and not trivial, attempt the bind.
+        // If the JNDI Location is set and not trivial, attempt the bind.
         String jndiLocation = this.options.get(Option.REPOSITORY_JNDI_LOCATION);
-        if(!jndiLocation.equals("")) {
-            try{
+        if (!jndiLocation.equals("")) {
+            try {
                 InitialContext ic = new InitialContext();
-                ic.rebind(jndiLocation,(javax.jcr.Repository)this);
+                ic.rebind(jndiLocation, this);
             } catch (NamingException e) {
                 I18n msg = JcrI18n.unableToBindToJndi;
                 LOGGER.error(msg, jndiLocation);
-                throw new RepositoryException(msg.text(jndiLocation),e);
+                throw new RepositoryException(msg.text(jndiLocation), e);
             }
         }
+
+        // Make sure the workspace names are in the descriptor ...
+        updateWorkspaceNames();
+    }
+
+    protected void updateWorkspaceNames() {
+        if (!Boolean.valueOf(this.options.get(Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR)).booleanValue()) return;
+
+        ValueFactories factories = this.getExecutionContext().getValueFactories();
+        List<JcrValue> values = new LinkedList<JcrValue>();
+        for (String name : workspaceNames()) {
+            values.add(new JcrValue(factories, null, PropertyType.STRING, name));
+        }
+        descriptors.put(Repository.REPOSITORY_WORKSPACES, values.toArray(new JcrValue[values.size()]));
     }
 
     protected void addWorkspace( String workspaceName,
@@ -791,6 +837,7 @@ public class JcrRepository implements Repository {
                 this.federatedSource.addWorkspace(workspaceName, projections, isDefault);
             }
         }
+        updateWorkspaceNames();
     }
 
     /**
@@ -824,6 +871,7 @@ public class JcrRepository implements Repository {
         }
         String actualName = graphWorkspace.getName();
         addWorkspace(actualName, false);
+        updateWorkspaceNames();
     }
 
     /**
@@ -872,6 +920,7 @@ public class JcrRepository implements Repository {
 
         // And now destroy the workspace ...
         graph.destroyWorkspace().named(workspaceName);
+        updateWorkspaceNames();
     }
 
     protected void initializeSystemContent( Graph systemGraph ) {

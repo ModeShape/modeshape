@@ -9,10 +9,12 @@ import java.util.Set;
  * Replicates JCR 2.0's Repository interface.
  */
 public interface Repository extends javax.jcr.Repository {
-	
-	static final String REPOSITORY_NAME = "custom.rep.name";
-	
-	/**
+
+    static final String REPOSITORY_NAME = "custom.rep.name";
+
+    static final String REPOSITORY_WORKSPACES = "custom.rep.workspace.names";
+
+    /**
      * An immutable collection of "standard" descriptors, as defined in the JSR-283 specification.
      */
     @SuppressWarnings( "deprecation" )
@@ -71,6 +73,4 @@ public interface Repository extends javax.jcr.Repository {
                                                                                                                REP_VENDOR_URL_DESC,
                                                                                                                REP_VERSION_DESC,})));
 
-    
-    
 }
