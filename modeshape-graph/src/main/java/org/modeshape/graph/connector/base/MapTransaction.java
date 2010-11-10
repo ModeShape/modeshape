@@ -68,6 +68,8 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
 
     /** The set of changes to the workspaces that have been made by this transaction */
     private Map<String, WorkspaceChanges> changesByWorkspaceName;
+    /** The set of nodes that have been read during this transaction */
+    private Map<WorkspaceType, Map<UUID, NodeType>> nodesByWorkspaceName;
 
     /**
      * Create a new transaction.
@@ -110,6 +112,50 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
     }
 
     /**
+     * Gets the map of changed nodes for the supplied workspace, populating the {@link #nodesByWorkspaceName transaction cache} as
+     * needed.
+     * 
+     * @param workspace the workspace; may not be null
+     * @return the map of changed nodes for that workspace; never null
+     */
+    protected Map<UUID, NodeType> getCachedNodesfor( WorkspaceType workspace ) {
+        if (nodesByWorkspaceName == null) {
+            nodesByWorkspaceName = new HashMap<WorkspaceType, Map<UUID, NodeType>>();
+        }
+
+        Map<UUID, NodeType> cachedNodes = nodesByWorkspaceName.get(workspace);
+        if (cachedNodes == null) {
+            cachedNodes = new HashMap<UUID, NodeType>();
+            nodesByWorkspaceName.put(workspace, cachedNodes);
+        }
+
+        return cachedNodes;
+    }
+
+    /**
+     * Returns the node with the given UUID in the given workspace from the transaction read cache, if it exists in that cache.
+     * Otherwise, this method uses {@link MapWorkspace#getNode(UUID)} to retrieve the node directly from the workspace.
+     * <p>
+     * The values returned by this method do not take any node modifications or deletions from this session into consideration.
+     * </p>
+     * 
+     * @param workspace the workspace from which the node should be read; may not be null
+     * @param uuid the UUID of the node to read; may not be null
+     * @return the node with the given UUID in the given workspace
+     */
+    private NodeType getNode( WorkspaceType workspace,
+                              UUID uuid ) {
+        Map<UUID, NodeType> cachedNodes = getCachedNodesfor(workspace);
+        NodeType cachedNode = cachedNodes.get(uuid);
+        if (cachedNode == null) {
+            cachedNode = workspace.getNode(uuid);
+            cachedNodes.put(uuid, cachedNode);
+        }
+
+        return cachedNode;
+    }
+
+    /**
      * {@inheritDoc}
      * 
      * @see org.modeshape.graph.connector.base.Transaction#getNode(org.modeshape.graph.connector.base.Workspace,
@@ -140,7 +186,7 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
                 if (node != null) return node;
             }
             // It hasn't been loaded already, so attempt to load it from the map owned by the workspace ...
-            node = workspace.getNode(uuid);
+            node = getNode(workspace, uuid);
             if (node != null) return node;
         }
         // Otherwise, look by path ...
@@ -206,7 +252,7 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
             if (node != null) return node;
         }
         // It hasn't been loaded already, so attempt to load it from the map owned by the workspace ...
-        node = workspace.getNode(uuid);
+        node = getNode(workspace, uuid);
         return node;
     }
 
@@ -237,7 +283,7 @@ public abstract class MapTransaction<NodeType extends MapNode, WorkspaceType ext
             NodeType child = changes.getChangedOrAdded(childUuid);
             if (child == null) {
                 // The node was not changed or added, so go back to the workspace ...
-                child = workspace.getNode(childUuid);
+                child = getNode(workspace, childUuid);
             }
             destroyNode(changes, workspace, child);
         }
