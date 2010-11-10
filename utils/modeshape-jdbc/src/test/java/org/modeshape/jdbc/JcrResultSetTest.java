@@ -185,6 +185,20 @@ public class JcrResultSetTest {
 
         }
     }
+    
+    /**
+     * MODE-1007
+     * @throws SQLException
+     */
+    @Test
+    public void shouldCallGetLongReturnZeroWhenNullUsingColumnName() throws SQLException {
+        int col = 8;
+        for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
+            assertThat(resultSet.next(), is(true));
+            assertThat(resultSet.getLong(TestUtil.COLUMN_NAMES[col]), is(  new Long(0).longValue()));
+
+        }
+    }    
 
     @Test
     public void shouldCallGetLongUsingColumnName() throws SQLException {

@@ -546,7 +546,11 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public InputStream getBinaryStream( String columnLabel ) throws SQLException {
-        return (InputStream)getValueReturn(columnLabel, PropertyType.BINARY);
+    	Object o = getValueReturn(columnLabel, PropertyType.BINARY);
+    	if (o != null) {
+    		return (InputStream) o;
+    	}
+    	return null;
     }
 
     /**
@@ -586,7 +590,12 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public boolean getBoolean( String columnLabel ) throws SQLException {
-        return (Boolean)getValueReturn(columnLabel, PropertyType.BOOLEAN);
+    	
+    	Object o = getValueReturn(columnLabel, PropertyType.BOOLEAN);
+    	if (o != null) {
+    		return ((Boolean) o).booleanValue();
+    	}
+    	return Boolean.FALSE.booleanValue();
     }
 
     /**
@@ -713,7 +722,8 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public Date getDate( String columnLabel ) throws SQLException {
-    	Calendar calv = (Calendar)getValueReturn(columnLabel, PropertyType.DATE); 	
+    	Calendar calv = (Calendar)getValueReturn(columnLabel, PropertyType.DATE); 
+    	if (calv == null) return null;
     	
     	return TimestampWithTimezone.createDate(calv.getTime());
     }
@@ -766,7 +776,11 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public double getDouble( String columnLabel ) throws SQLException {
-        return (Double)getValueReturn(columnLabel, PropertyType.DOUBLE);
+    	Object o = getValueReturn(columnLabel, PropertyType.DOUBLE);
+    	if (o != null) {
+    		return ((Double) o).doubleValue();
+    	}    	
+    	return 0;
     }
 
     /**
@@ -821,7 +835,7 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public int getInt( String columnLabel ) throws SQLException {
-        notClosed();
+        notClosed();        
         return (int)getLong(columnLabel);
     }
 
@@ -841,8 +855,12 @@ public class JcrResultSet implements ResultSet {
      * @see java.sql.ResultSet#getLong(java.lang.String)
      */
     @Override
-    public long getLong( String columnLabel ) throws SQLException {
-        return (Long)getValueReturn(columnLabel, PropertyType.LONG);
+    public long getLong( String columnLabel ) throws SQLException {  
+    	Object o = getValueReturn(columnLabel, PropertyType.LONG);
+    	if (o != null) {
+    		return ( (Long) o).longValue();
+    	}
+    	return 0L;
     }
 
     /**
@@ -1026,7 +1044,11 @@ public class JcrResultSet implements ResultSet {
      */
     @Override
     public String getString( String columnLabel ) throws SQLException {
-        return (String)getValueReturn(columnLabel, PropertyType.STRING);
+    	Object o = getValueReturn(columnLabel, PropertyType.STRING);
+    	if (o != null) {
+    		return (String) o;
+    	}    
+    	return null;
     }
 
     /**
@@ -1216,7 +1238,7 @@ public class JcrResultSet implements ResultSet {
             this.currentValue = getValueObject(value, type);
 
         } catch (PathNotFoundException pnfe) {
-            // do nothing, return null
+        	// do nothing
         } catch (ItemNotFoundException e) {
             itemNotFoundUsingColunName(columnName);
         } catch (RepositoryException e) {
