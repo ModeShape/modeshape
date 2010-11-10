@@ -127,6 +127,15 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     public static final int DEFAULT_MAX_PATH_LENGTH = 255; // 255 for windows users
     public static final String DEFAULT_EXCLUSION_PATTERN = null;
     public static final FilenameFilter DEFAULT_FILENAME_FILTER = null;
+    private static final FilenameFilter ACCEPT_ALL_FILTER = new FilenameFilter() {
+
+        @Override
+        public boolean accept( File file,
+                               String filename ) {
+            return true;
+        }
+
+    };
 
     protected static Map<String, CustomPropertiesFactory> EXTRA_PROPERTIES_CLASSNAME_BY_KEY;
 
@@ -337,6 +346,10 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
                 filenameFilter = ((BasePropertiesFactory)customPropsFactory).getFilenameFilter(filenameFilter);
             }
         }
+
+        // If there are no criteria that would allow us to build a filter, then accept any file.
+        if (filenameFilter == null) filenameFilter = ACCEPT_ALL_FILTER;
+
         return filenameFilter;
     }
 

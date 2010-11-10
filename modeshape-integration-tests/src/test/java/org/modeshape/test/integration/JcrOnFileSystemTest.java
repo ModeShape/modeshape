@@ -1,5 +1,6 @@
 package org.modeshape.test.integration;
 
+import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
@@ -18,7 +19,7 @@ import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
 
-public class FileSystemFilterTest {
+public class JcrOnFileSystemTest {
 
     private static final String SOURCE_NAME = "Source";
     private static final String REPO_NAME = "Repository";
@@ -104,6 +105,24 @@ public class FileSystemFilterTest {
 
         session.getWorkspace().copy("/copySource.txt", "/createfile.mode");
         session.save();
+
+    }
+
+    @FixFor( "MODE-1010" )
+    @Test
+    public void shouldAllowFileRenameThroughJcr() throws Exception {
+        Node root = session.getRootNode();
+        root.addNode("oldname", "nt:folder");
+        session.save();
+
+        File oldFile = new File(STORAGE_PATH + File.separator + "default" + File.separator + "oldname");
+        assertTrue(oldFile.exists());
+
+        session.move("/oldname", "/newname1");
+        session.save();
+
+        File newFile = new File(STORAGE_PATH + File.separator + "default" + File.separator + "newname1");
+        assertTrue(newFile.exists());
 
     }
 }
