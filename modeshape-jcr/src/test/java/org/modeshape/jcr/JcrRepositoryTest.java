@@ -26,19 +26,23 @@ package org.modeshape.jcr;
 import static org.hamcrest.collection.IsArrayContaining.hasItemInArray;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import javax.jcr.Credentials;
 import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.jcr.ValueFormatException;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.security.config.IDTrustConfiguration;
@@ -201,6 +205,31 @@ public class JcrRepositoryTest {
     }
 
     @Test
+    public void shouldProvideRepositoryWorkspaceNamesDescriptor() throws ValueFormatException {
+        Set<String> workspaceNames = repository.workspaceNames();
+        Set<String> descriptorValues = new HashSet<String>();
+        for (JcrValue value : repository.getDescriptorValues(org.modeshape.jcr.api.Repository.REPOSITORY_WORKSPACES)) {
+            descriptorValues.add(value.getString());
+        }
+        assertThat(descriptorValues, is(workspaceNames));
+    }
+
+    @Test
+    public void shouldNotProvideRepositoryWorkspaceNamesDescriptorIfOptionSetToFalse() throws Exception {
+        JcrConfiguration config = new JcrConfiguration();
+        config.repositorySource("Store").usingClass(InMemoryRepositorySource.class);
+        config.repository("JCR").setOption(JcrRepository.Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR, Boolean.FALSE.toString()).setSource("Store");
+
+        JcrEngine engine = config.build();
+        engine.start();
+
+        assertThat(engine.getRepository("JCR").getDescriptor(org.modeshape.jcr.api.Repository.REPOSITORY_WORKSPACES),
+                   is(nullValue()));
+
+        engine.shutdownAndAwaitTermination(3, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void shouldProvideObserver() {
         assertThat(this.repository.getObserver(), is(notNullValue()));
     }
@@ -283,8 +312,8 @@ public class JcrRepositoryTest {
     @Test
     public void shouldAllowLoginWithProperCredentials() throws Exception {
         repository.login(credentials);
-        repository.login(new JcrSecurityContextCredentials(
-                                                        new MockSecurityContext(null, Collections.singleton(ModeShapeRoles.ADMIN))));
+        repository.login(new JcrSecurityContextCredentials(new MockSecurityContext(null,
+                                                                                   Collections.singleton(ModeShapeRoles.ADMIN))));
     }
 
     @Test
@@ -293,9 +322,9 @@ public class JcrRepositoryTest {
         assertThat(session, notNullValue());
         session.logout();
         session = repository.login(new JcrSecurityContextCredentials(
-                                                                  new MockSecurityContext(
-                                                                                          null,
-                                                                                          Collections.singleton(ModeShapeRoles.ADMIN))),
+                                                                     new MockSecurityContext(
+                                                                                             null,
+                                                                                             Collections.singleton(ModeShapeRoles.ADMIN))),
                                    (String)null);
         assertThat(session, notNullValue());
         session.logout();
