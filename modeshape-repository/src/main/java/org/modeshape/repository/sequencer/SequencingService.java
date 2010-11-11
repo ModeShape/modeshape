@@ -26,6 +26,7 @@ package org.modeshape.repository.sequencer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -424,7 +425,7 @@ public class SequencingService implements AdministeredService {
                     // and track which output nodes should be passed to each sequencer...
                     final Path nodePath = change.getPath();
                     final String nodePathStr = context.getValueFactories().getStringFactory().create(nodePath);
-                    Map<SequencerCall, Set<RepositoryNodePath>> sequencerCalls = new HashMap<SequencerCall, Set<RepositoryNodePath>>();
+                    SequencerCalls sequencerCalls = new SequencerCalls();
                     if (allSequencers == null) {
                         allSequencers = this.sequencerLibrary.getInstances();
                     }
@@ -445,12 +446,7 @@ public class SequencingService implements AdministeredService {
                                                                                              matcher.getOutputWorkspaceName());
                                     SequencerCall call = new SequencerCall(sequencer, propertyNameStr);
                                     // Record the output path ...
-                                    Set<RepositoryNodePath> outputPaths = sequencerCalls.get(call);
-                                    if (outputPaths == null) {
-                                        outputPaths = new HashSet<RepositoryNodePath>();
-                                        sequencerCalls.put(call, outputPaths);
-                                    }
-                                    outputPaths.add(outputPath);
+                                    sequencerCalls.record(call, outputPath);
                                     sequencers.add(sequencer);
                                     break;
                                 }
@@ -459,12 +455,12 @@ public class SequencingService implements AdministeredService {
                     }
 
                     RepositorySource source = repositoryLibrary.getSource(repositorySourceName);
-                    Graph graph = Graph.create(source, context);
+                    Graph sourceGraph = Graph.create(source, context);
                     Node node = null;
                     if (!sequencers.isEmpty()) {
 
                         // Find the changed node ...
-                        node = graph.getNodeAt(nodePath);
+                        node = sourceGraph.getNodeAt(nodePath);
 
                         // Figure out which sequencers should run ...
                         sequencers = this.sequencerSelector.selectSequencers(sequencers, node, change);
@@ -476,25 +472,30 @@ public class SequencingService implements AdministeredService {
                         }
                     } else {
                         // Run each of those sequencers ...
-                        for (Map.Entry<SequencerCall, Set<RepositoryNodePath>> entry : sequencerCalls.entrySet()) {
-
-                            final SequencerCall sequencerCall = entry.getKey();
-                            final Set<RepositoryNodePath> outputPaths = entry.getValue();
+                        for (SequencerCall sequencerCall : sequencerCalls) {
                             final Sequencer sequencer = sequencerCall.getSequencer();
                             final String sequencerName = sequencer.getConfiguration().getName();
                             final String propertyName = sequencerCall.getSequencedPropertyName();
 
-                            // Get the paths to the nodes where the sequencer should write it's output ...
-                            assert outputPaths != null && outputPaths.size() != 0;
+                            // Figure out the different output paths for each output source ...
+                            Map<String, Set<RepositoryNodePath>> outputPathsBySourceName = sequencerCalls.getOutputPathsFor(sequencerCall);
+                            assert !outputPathsBySourceName.isEmpty();
 
-                            // Create a new execution context for each sequencer
-                            final SimpleProblems problems = new SimpleProblems();
-                            SequencerContext sequencerContext = new SequencerContext(context, graph);
-                            try {
-                                sequencer.execute(node, propertyName, change, outputPaths, sequencerContext, problems);
-                                sequencerContext.getDestination().submit();
-                            } catch (SequencerException e) {
-                                logger.error(e, RepositoryI18n.errorWhileSequencingNode, sequencerName, change);
+                            // Create a new execution context for the output paths in each output source ...
+                            for (Map.Entry<String, Set<RepositoryNodePath>> outputEntry : outputPathsBySourceName.entrySet()) {
+                                String sourceName = outputEntry.getKey();
+                                Set<RepositoryNodePath> outputPathsInSource = outputEntry.getValue();
+                                RepositorySource outputSource = repositoryLibrary.getSource(sourceName);
+                                Graph outputGraph = Graph.create(outputSource, context);
+
+                                final SimpleProblems problems = new SimpleProblems();
+                                SequencerContext sequencerContext = new SequencerContext(context, sourceGraph, outputGraph);
+                                try {
+                                    sequencer.execute(node, propertyName, change, outputPathsInSource, sequencerContext, problems);
+                                    sequencerContext.getDestination().submit();
+                                } catch (SequencerException e) {
+                                    logger.error(e, RepositoryI18n.errorWhileSequencingNode, sequencerName, change);
+                                }
                             }
                         }
                         this.statistics.recordNodeSequenced();
@@ -625,6 +626,16 @@ public class SequencingService implements AdministeredService {
             }
             return false;
         }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return sequencerName + " (" + sequencedPropertyName;
+        }
     }
 
     protected class RepositoryObserver extends NetChangeObserver {
@@ -648,6 +659,58 @@ public class SequencingService implements AdministeredService {
             } catch (RejectedExecutionException e) {
                 // The executor service has been shut down, so do nothing with this set of changes
             }
+        }
+    }
+
+    protected class SequencerCalls implements Iterable<SequencerCall> {
+        private final Map<SequencerCall, Map<String, Set<RepositoryNodePath>>> sequencerCalls = new HashMap<SequencerCall, Map<String, Set<RepositoryNodePath>>>();
+
+        protected void record( SequencerCall call,
+                               RepositoryNodePath outputPath ) {
+            assert outputPath != null;
+            String sourceName = outputPath.getRepositorySourceName();
+            assert sourceName != null;
+
+            // Record the output path ...
+            Map<String, Set<RepositoryNodePath>> outputPathsBySourceName = sequencerCalls.get(call);
+            if (outputPathsBySourceName == null) {
+                outputPathsBySourceName = new HashMap<String, Set<RepositoryNodePath>>();
+                sequencerCalls.put(call, outputPathsBySourceName);
+            }
+            Set<RepositoryNodePath> outputPaths = outputPathsBySourceName.get(sourceName);
+            if (outputPaths == null) {
+                outputPaths = new HashSet<RepositoryNodePath>();
+                outputPathsBySourceName.put(sourceName, outputPaths);
+            }
+            outputPaths.add(outputPath);
+        }
+
+        protected Iterable<SequencerCall> getCalls() {
+            return sequencerCalls.keySet();
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Iterable#iterator()
+         */
+        @Override
+        public Iterator<SequencerCall> iterator() {
+            return sequencerCalls.keySet().iterator();
+        }
+
+        protected Map<String, Set<RepositoryNodePath>> getOutputPathsFor( SequencerCall call ) {
+            return sequencerCalls.get(call);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see java.lang.Object#toString()
+         */
+        @Override
+        public String toString() {
+            return sequencerCalls.toString();
         }
     }
 }
