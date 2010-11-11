@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.graph.ExecutionContext;
@@ -88,7 +89,7 @@ public class StreamSequencerAdapterTest {
         final SequencerOutputMap finalOutput = sequencerOutput;
 
         InMemoryRepositorySource source = new InMemoryRepositorySource();
-        source.setName("repository");
+        source.setName(repositorySourceName);
         graph = Graph.create(source.getConnection(), context);
         this.streamSequencer = new StreamSequencer() {
 
@@ -108,7 +109,7 @@ public class StreamSequencerAdapterTest {
             }
         };
         sequencer = new StreamSequencerAdapter(streamSequencer);
-        seqContext = new SequencerContext(context, graph);
+        seqContext = new SequencerContext(context, graph, graph);
     }
 
     protected Path path( String path ) {
@@ -117,6 +118,23 @@ public class StreamSequencerAdapterTest {
 
     protected Name name( String name ) {
         return context.getValueFactories().getNameFactory().create(name);
+    }
+
+    protected Node assertNodeDoesExist( Graph graph,
+                                        String path ) {
+        Node node = graph.getNodeAt(path);
+        assertThat(node, is(notNullValue()));
+        return node;
+    }
+
+    protected void assertNodeDoesNotExist( Graph graph,
+                                           String path ) {
+        try {
+            graph.getNodeAt(path);
+            fail();
+        } catch (PathNotFoundException pnfe) {
+            // Expected
+        }
     }
 
     protected void testSequencer( final StreamSequencer sequencer ) throws Throwable {
@@ -294,13 +312,8 @@ public class StreamSequencerAdapterTest {
         graph.set("sequencedProperty").on("/a/b/c").to(new ByteArrayInputStream(sampleData.getBytes()));
 
         Node nodeC = graph.getNodeAt("/a/b/c");
-        try {
-            graph.getNodeAt("/d");
-            fail();
-        } catch (PathNotFoundException pnfe) {
-            // Expected
-        }
         assertThat(nodeC, is(notNullValue()));
+        assertNodeDoesNotExist(graph, "/d");
 
         // Set up the node changes ...
         Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
@@ -331,20 +344,9 @@ public class StreamSequencerAdapterTest {
         // Set the property that will be sequenced ...
         graph.set("sequencedProperty").on("/a/b/c").to(new ByteArrayInputStream(sampleData.getBytes()));
 
-        Node nodeC = graph.getNodeAt("/a/b/c");
-        try {
-            graph.getNodeAt("/d");
-            fail();
-        } catch (PathNotFoundException pnfe) {
-            // Expected
-        }
-        try {
-            graph.getNodeAt("/x");
-            fail();
-        } catch (PathNotFoundException pnfe) {
-            // Expected
-        }
-        assertThat(nodeC, is(notNullValue()));
+        Node nodeC = assertNodeDoesExist(graph, "/a/b/c");
+        assertNodeDoesNotExist(graph, "/d");
+        assertNodeDoesNotExist(graph, "/x");
 
         // Set up the node changes ...
         Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
@@ -591,6 +593,54 @@ public class StreamSequencerAdapterTest {
 
         assertThat(props.size(), is(2)); // Need to add one to account for dna:uuid
         assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
+
+    }
+
+    @FixFor( "MODE-1012" )
+    @Test
+    public void shouldSequenceInputFromOneGraphAndSaveOutputToAnotherGraph() throws Exception {
+        // Set up the second source ...
+        String repositorySourceName2 = "repository2";
+        InMemoryRepositorySource source2 = new InMemoryRepositorySource();
+        source2.setName(repositorySourceName2);
+        Graph graph2 = Graph.create(source2.getConnection(), context);
+        seqContext = new SequencerContext(context, graph, graph2);
+
+        // Set up the node that will be sequenced ...
+        graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
+        graph.set("sequencedProperty").on("/a/b/c").to(new ByteArrayInputStream(sampleData.getBytes()));
+
+        Node nodeC = assertNodeDoesExist(graph, "/a/b/c");
+        assertNodeDoesNotExist(graph, "/d");
+        assertNodeDoesNotExist(graph, "/x");
+
+        // Set up the node changes ...
+        Location location = Location.create(context.getValueFactories().getPathFactory().create("/a/b/c"));
+        Property sequencedProperty = nodeC.getProperty("sequencedProperty");
+        NetChange nodeChange = new NetChange(repositoryWorkspaceName, location, EnumSet.of(ChangeType.PROPERTY_CHANGED), null,
+                                             Collections.singleton(sequencedProperty), null, null, null, false);
+
+        // Set up the output directory ...
+        Set<RepositoryNodePath> outputPaths = new HashSet<RepositoryNodePath>();
+        outputPaths.add(new RepositoryNodePath(repositorySourceName2, repositoryWorkspaceName, "/d/e"));
+        outputPaths.add(new RepositoryNodePath(repositorySourceName2, repositoryWorkspaceName, "/x/y/z"));
+        outputPaths.add(new RepositoryNodePath(repositorySourceName2, repositoryWorkspaceName, "/x/z"));
+
+        // Generate the output data that the sequencer subclass will produce and that should be saved to the repository ...
+        sequencerOutput.setProperty(path("alpha/beta"), name("isSomething"), true);
+
+        // Call the sequencer ...
+        sequencer.execute(nodeC, "sequencedProperty", nodeChange, outputPaths, seqContext, problems);
+
+        // Check to see that the output nodes have been created ...
+        assertThat(graph2.getNodeAt("/d/e"), is(notNullValue()));
+        assertThat(graph2.getNodeAt("/x/y/z"), is(notNullValue()));
+        assertThat(graph2.getNodeAt("/x/z"), is(notNullValue()));
+
+        // Check to see that the sequencer-generated nodes have been created ...
+        assertThat(graph2.getNodeAt("/d/e/alpha/beta").getProperty("isSomething").getFirstValue().toString(), is("true"));
+        assertThat(graph2.getNodeAt("/x/y/z/alpha/beta").getProperty("isSomething").getFirstValue().toString(), is("true"));
+        assertThat(graph2.getNodeAt("/x/z/alpha/beta").getProperty("isSomething").getFirstValue().toString(), is("true"));
 
     }
 

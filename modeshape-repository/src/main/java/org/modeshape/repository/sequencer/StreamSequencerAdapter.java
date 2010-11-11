@@ -150,11 +150,11 @@ public class StreamSequencerAdapter implements Sequencer {
         try {
             // Parallel the JCR lemma for converting objects into streams
             stream = binary.getStream();
-            StreamSequencerContext StreamSequencerContext = createStreamSequencerContext(input,
+            StreamSequencerContext streamSequencerContext = createStreamSequencerContext(input,
                                                                                          sequencedProperty,
                                                                                          context,
                                                                                          problems);
-            this.streamSequencer.sequence(stream, output, StreamSequencerContext);
+            this.streamSequencer.sequence(stream, output, streamSequencerContext);
         } catch (Throwable t) {
             // Record the error ...
             firstError = t;
@@ -184,12 +184,12 @@ public class StreamSequencerAdapter implements Sequencer {
 
         // Find each output node and save the image metadata there ...
         for (RepositoryNodePath outputPath : outputPaths) {
-            // Get the name of the repository workspace and the path to the output node
+            // Get the name of the repository source, workspace and the path to the output node
             final String repositoryWorkspaceName = outputPath.getWorkspaceName();
             final String nodePath = outputPath.getNodePath();
 
             // Find or create the output node in this session ...
-            context.graph().useWorkspace(repositoryWorkspaceName);
+            context.destinationGraph().useWorkspace(repositoryWorkspaceName);
 
             buildPathTo(nodePath, context, builtPaths);
             // Node outputNode = context.graph().getNodeAt(nodePath);
@@ -240,7 +240,7 @@ public class StreamSequencerAdapter implements Sequencer {
 
             if (!builtPaths.contains(workingPath)) {
                 try {
-                    context.graph().getNodeAt(workingPath);
+                    context.destinationGraph().getNodeAt(workingPath);
                 } catch (PathNotFoundException pnfe) {
                     context.getDestination().create(workingPath, primaryType);
                     builtPaths.add(workingPath);
