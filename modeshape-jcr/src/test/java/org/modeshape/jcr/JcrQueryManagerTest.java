@@ -703,6 +703,24 @@ public class JcrQueryManagerTest {
         }
     }
 
+    @FixFor( "MODE-1020" )
+    @Test
+    public void shouldFindAllPublisAreas() throws Exception {
+        String sql = "SELECT [jcr:path], [jcr:title], [jcr:description] FROM [mode:publishArea]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 0L); // currently no records
+        assertResultsHaveColumns(result, new String[] {"jcr:path", "jcr:title", "jcr:description"});
+        RowIterator iter = result.getRows();
+        while (iter.hasNext()) {
+            Row row = iter.nextRow();
+            assertThat(row, is(notNullValue()));
+        }
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Full-text Search Queries
     // ----------------------------------------------------------------------------------------------------------------
