@@ -57,6 +57,7 @@ import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
+import org.modeshape.jcr.SessionCache.NodeEditor;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -94,6 +95,8 @@ class JcrContentHandler extends DefaultHandler {
     private final javax.jcr.NamespaceRegistry jcrNamespaceRegistry;
     private final SaveMode saveMode;
     protected final int uuidBehavior;
+    protected final boolean retentionInfoRetained;
+    protected final boolean lifecycleInfoRetained;
 
     protected final String primaryTypeName;
     protected final String mixinTypesName;
@@ -102,6 +105,7 @@ class JcrContentHandler extends DefaultHandler {
     private AbstractJcrNode currentNode;
     private ContentHandler delegate;
     protected final List<AbstractJcrProperty> refPropsRequiringConstraintValidation = new LinkedList<AbstractJcrProperty>();
+    protected final List<AbstractJcrNode> nodesForPostProcessing = new LinkedList<AbstractJcrNode>();
 
     private SessionCache cache;
 
@@ -113,7 +117,9 @@ class JcrContentHandler extends DefaultHandler {
     JcrContentHandler( JcrSession session,
                        Path parentPath,
                        int uuidBehavior,
-                       SaveMode saveMode ) throws PathNotFoundException, RepositoryException {
+                       SaveMode saveMode,
+                       boolean retentionInfoRetained,
+                       boolean lifecycleInfoRetained ) throws PathNotFoundException, RepositoryException {
         assert session != null;
         assert parentPath != null;
         assert uuidBehavior == ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW
@@ -127,6 +133,8 @@ class JcrContentHandler extends DefaultHandler {
         this.pathFactory = context.getValueFactories().getPathFactory();
         this.stringFactory = context.getValueFactories().getStringFactory();
         this.uuidBehavior = uuidBehavior;
+        this.retentionInfoRetained = retentionInfoRetained;
+        this.lifecycleInfoRetained = lifecycleInfoRetained;
 
         this.saveMode = saveMode;
         switch (this.saveMode) {
@@ -200,24 +208,128 @@ class JcrContentHandler extends DefaultHandler {
         return cache;
     }
 
+    protected void postProcessNodes() throws SAXException {
+        JcrVersionManager versions = null;
+        try {
+            for (AbstractJcrNode node : nodesForPostProcessing) {
+                NodeEditor editor = null;
+                // ---------------
+                // mix:versionable
+                // ---------------
+                if (node.isNodeType(JcrMixLexicon.VERSIONABLE)) {
+
+                    // At this point, we're not recovering version history information nor properly updating
+                    // existing versionable nodes. Instead, we're just checking whether all of the versionable
+                    // properties are valid. If they are, then the history must have been imported (or the import
+                    // replaced a versionable node that already had history).
+                    boolean validHistory = isValidReference(node, JcrLexicon.VERSION_HISTORY, false);
+                    boolean validBaseVersion = isValidReference(node, JcrLexicon.BASE_VERSION, false);
+                    boolean validPredecessors = isValidReference(node, JcrLexicon.PREDECESSORS, false);
+                    if (validHistory) {
+                        // There is a valid version history already ...
+                        if (!validBaseVersion || !validPredecessors) {
+                            // The imported base version is not valid anymore, so set it to the base version from the history ...
+                            if (versions == null) versions = node.versionManager();
+                            JcrVersionHistoryNode history = versions.getVersionHistory(node);
+                            UUID baseVersion = history.getRootVersion().uuid();
+                            JcrValue newValue = node.valueFrom(PropertyType.REFERENCE, baseVersion.toString());
+                            JcrValue[] newValues = new JcrValue[] {newValue};
+                            editor = node.editor();
+                            editor.setProperty(JcrLexicon.BASE_VERSION, newValue, true, false);
+                            editor.setProperty(JcrLexicon.PREDECESSORS, newValues, PropertyType.REFERENCE, false);
+                        } // otherwise the base version and predecessors are valid, too
+                    } else {
+                        // The version history reference is not valid, so remove all mix:versionable properties
+                        // (they'll be re-added during save by SessionCache) ...
+                        editor = node.editor();
+                        editor.removeProperty(JcrLexicon.IS_CHECKED_OUT);
+                        editor.removeProperty(JcrLexicon.VERSION_HISTORY);
+                        editor.removeProperty(JcrLexicon.BASE_VERSION);
+                        editor.removeProperty(JcrLexicon.PREDECESSORS);
+                        editor.removeProperty(JcrLexicon.MERGE_FAILED);
+                        editor.removeProperty(JcrLexicon.ACTIVITY);
+                        editor.removeProperty(JcrLexicon.CONFIGURATION);
+                    }
+                }
+
+                // ---------------
+                // mix:lockable
+                // ---------------
+                if (node.isNodeType(JcrMixLexicon.LOCKABLE) && node.isLocked()) {
+                    // Nodes should not be locked upon import ...
+                    node.unlock();
+                }
+
+                // ---------------
+                // mix:lifecycle
+                // ---------------
+                if (node.isNodeType(JcrMixLexicon.LIFECYCLE)) {
+                    if (lifecycleInfoRetained && !isValidReference(node, JcrLexicon.LIFECYCLE_POLICY, false)) {
+                        // The 'jcr:lifecyclePolicy' REFERENCE values is not valid or does not reference an existing node,
+                        // so the 'jcr:lifecyclePolicy' and 'jcr:currentLifecycleState' properties should be removed...
+                        if (editor == null) editor = node.editor();
+                        assert editor != null;
+                        editor.removeProperty(JcrLexicon.LIFECYCLE_POLICY);
+                        editor.removeProperty(JcrLexicon.CURRENT_LIFECYCLE_STATE);
+                    }
+                }
+
+                // --------------------
+                // mix:managedRetention
+                // --------------------
+                if (node.isNodeType(JcrMixLexicon.MANAGED_RETENTION)) {
+                    if (retentionInfoRetained && !isValidReference(node, JcrLexicon.RETENTION_POLICY, false)) {
+                        // The 'jcr:retentionPolicy' REFERENCE values is not valid or does not reference an existing node,
+                        // so the 'jcr:retentionPolicy', 'jcr:hold' and 'jcr:isDeep' properties should be removed ...
+                        if (editor == null) editor = node.editor();
+                        assert editor != null;
+                        editor.removeProperty(JcrLexicon.HOLD);
+                        editor.removeProperty(JcrLexicon.IS_DEEP);
+                        editor.removeProperty(JcrLexicon.RETENTION_POLICY);
+                    }
+
+                }
+            }
+        } catch (RepositoryException e) {
+            throw new EnclosingSAXException(e);
+        }
+    }
+
+    protected boolean isValidReference( AbstractJcrNode node,
+                                        Name propertyName,
+                                        boolean returnValueIfNoProperty ) throws RepositoryException {
+        AbstractJcrProperty property = node.getProperty(propertyName);
+        return property == null ? returnValueIfNoProperty : isValidReference(property);
+    }
+
+    protected boolean isValidReference( AbstractJcrProperty property ) throws RepositoryException {
+        JcrPropertyDefinition defn = property.getDefinition();
+        if (defn == null) return false;
+        if (property.isMultiple()) {
+            for (Value value : property.getValues()) {
+                if (!defn.canCastToTypeAndSatisfyConstraints(value)) {
+                    // We know it's not valid, so return ...
+                    return false;
+                }
+            }
+            // All values appeared to be valid ...
+            return true;
+        }
+        // Just a single value ...
+        return defn.canCastToTypeAndSatisfyConstraints(property.getValue());
+    }
+
     protected void validateReferenceConstraints() throws SAXException {
         if (refPropsRequiringConstraintValidation.isEmpty()) return;
         try {
             for (AbstractJcrProperty refProp : refPropsRequiringConstraintValidation) {
-                JcrPropertyDefinition defn = refProp.getDefinition();
-                if (refProp.isMultiple()) {
-                    for (Value value : refProp.getValues()) {
-                        if (!defn.canCastToTypeAndSatisfyConstraints(value)) {
-                            String name = stringFor(refProp.name());
-                            throw new ConstraintViolationException(JcrI18n.constraintViolatedOnReference.text(name, defn));
-                        }
-                    }
-                } else {
-                    Value value = refProp.getValue();
-                    if (!defn.canCastToTypeAndSatisfyConstraints(value)) {
-                        String name = stringFor(refProp.name());
-                        throw new ConstraintViolationException(JcrI18n.constraintViolatedOnReference.text(name, defn));
-                    }
+                // Make sure the reference is still there ...
+                if (refProp.propertyInfo() == null) continue;
+                // It is still there, so validate it ...
+                if (!isValidReference(refProp)) {
+                    JcrPropertyDefinition defn = refProp.getDefinition();
+                    String name = stringFor(refProp.name());
+                    throw new ConstraintViolationException(JcrI18n.constraintViolatedOnReference.text(name, defn));
                 }
             }
         } catch (RepositoryException e) {
@@ -245,6 +357,7 @@ class JcrContentHandler extends DefaultHandler {
      */
     @Override
     public void endDocument() throws SAXException {
+        postProcessNodes();
         validateReferenceConstraints();
         if (saveMode == SaveMode.WORKSPACE) {
             try {
@@ -397,18 +510,47 @@ class JcrContentHandler extends DefaultHandler {
     }
 
     /**
-     * The set of properties that should be skipped on import. Currently, this list includes all properties of "mix:lockable",
-     * since upon import no node should be locked.
+     * Some nodes need additional post-processing upon import, and this set of property names is used to come up with the nodes
+     * that may need to be post-processed.
+     * <p>
+     * Really, the nodes that need to be post-processed are best found using the node types of each node. However, that is more
+     * expensive to compute. Thus, we'll collect the candidate nodes that are candidates for post-processing, then in the
+     * post-processing we can more effectively and efficiently use the node types.
+     * </p>
+     * <p>
+     * Currently, we want to post-process nodes that contain repository-level semantics. In other words, nodes that are of the
+     * following node types:
+     * <ul>
+     * <li><code>mix:versionable</code></li>
+     * <li><code>mix:lockable</code></li>
+     * <li><code>mix:lifecycle</code></li>
+     * <li><code>mix:managedRetention</code></li>
+     * </ul>
+     * The <code>mix:simpleVersionable</code> would normally also be included here, except that the <code>jcr:isCheckedOut</code>
+     * property is a boolean value that doesn't need any particular post-processing.
+     * </p>
+     * <p>
+     * Some of these node types has a mandatory property, so the names of these mandatory properties are used to quickly determine
+     * candidates for post-processing. In cases where there is no mandatory property, then the set of all properties for that node
+     * type are included:
+     * <ul>
+     * <li><code>mix:versionable</code> --> <code>jcr:baseVersion</code> (mandatory)</li>
+     * <li><code>mix:lockable</code> --> <code>jcr:lockOwner</code> and <code>jcr:lockIsDeep</code></li>
+     * <li><code>mix:lifecycle</code> --> <code>jcr:lifecyclePolicy</code> and <code>jcr:currentLifecycleState</code></li>
+     * <li><code>mix:managedRetention</code> --> <code>jcr:hold</code>, <code>jcr:isDeep</code>, and
+     * <code>jcr:retentionPolicy</code></li>
+     * </ul>
+     * </p>
      */
-    protected static final Set<Name> PROPERTIES_TO_SKIP_ON_IMPORT = Collections.unmodifiableSet(JcrLexicon.LOCK_IS_DEEP,
-                                                                                                JcrLexicon.LOCK_OWNER);
-
-    // JcrLexicon.VERSION_HISTORY,
-    // JcrLexicon.PREDECESSORS,
-    // JcrLexicon.MERGE_FAILED,
-    // JcrLexicon.BASE_VERSION,
-    // JcrLexicon.IS_CHECKED_OUT,
-    // );
+    protected static final Set<Name> PROPERTIES_FOR_POST_PROCESSING = Collections.unmodifiableSet(
+    /* 'mix:lockable' has two optional properties */
+    JcrLexicon.LOCK_IS_DEEP, JcrLexicon.LOCK_OWNER,
+    /* 'mix:versionable' has several mandatory properties, but we only need to check one */
+    JcrLexicon.BASE_VERSION,
+    /* 'mix:lifecycle' has two optional properties */
+    JcrLexicon.LIFECYCLE_POLICY, JcrLexicon.CURRENT_LIFECYCLE_STATE,
+    /* 'mix:managedRetention' has three optional properties */
+    JcrLexicon.HOLD, JcrLexicon.IS_DEEP, JcrLexicon.RETENTION_POLICY);
 
     protected class BasicNodeHandler extends NodeHandler {
         private final Map<Name, List<Value>> properties;
@@ -416,6 +558,7 @@ class JcrContentHandler extends DefaultHandler {
         private NodeHandler parentHandler;
         private AbstractJcrNode node;
         private final int uuidBehavior;
+        private boolean postProcessed = false;
 
         protected BasicNodeHandler( Name name,
                                     NodeHandler parentHandler,
@@ -453,11 +596,6 @@ class JcrContentHandler extends DefaultHandler {
             return parentHandler;
         }
 
-        protected boolean shouldNotImportProperty( Name propertyName ) {
-            return false;
-            // return PROPERTIES_TO_SKIP_ON_IMPORT.contains(propertyName);
-        }
-
         @Override
         public void addPropertyValue( Name name,
                                       String value,
@@ -468,7 +606,6 @@ class JcrContentHandler extends DefaultHandler {
                     if (JcrLexicon.PRIMARY_TYPE.equals(name)) return;
                     if (JcrLexicon.MIXIN_TYPES.equals(name)) return;
                     if (JcrLexicon.UUID.equals(name)) return;
-                    if (shouldNotImportProperty(name)) return; // ignore some properties
 
                     // The node was already created, so set the property using the editor ...
                     node.editor().setProperty(name, (JcrValue)valueFor(value, propertyType));
@@ -498,6 +635,9 @@ class JcrContentHandler extends DefaultHandler {
                             values.add(valueFor(value, propertyType));
                         }
                     }
+                }
+                if (!postProcessed && PROPERTIES_FOR_POST_PROCESSING.contains(name)) {
+                    postProcessed = true;
                 }
             } catch (IOException ioe) {
                 throw new EnclosingSAXException(ioe);
@@ -604,11 +744,6 @@ class JcrContentHandler extends DefaultHandler {
                         continue;
                     }
 
-                    // Should we ignore this property?
-                    if (shouldNotImportProperty(propertyName)) {
-                        continue;
-                    }
-
                     List<Value> values = entry.getValue();
 
                     if (values.size() == 1) {
@@ -629,6 +764,12 @@ class JcrContentHandler extends DefaultHandler {
                 }
 
                 node = child;
+
+                if (postProcessed) {
+                    // This node needs to be post-processed ...
+                    nodesForPostProcessing.add(node);
+                }
+
             } catch (RepositoryException re) {
                 throw new EnclosingSAXException(re);
             }

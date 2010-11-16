@@ -506,6 +506,25 @@ public class JcrImportExportTest {
     }
 
     // ----------------------------------------------------------------------------------------------------------------
+    // Import System View WITH constraints
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldImportSystemViewWithReferenceConstraints() throws Exception {
+        // Set up the repository ...
+        assertImport("io/full-workspace-document-view-with-uuids.xml", "/", ImportBehavior.THROW); // no matching UUIDs expected
+        assertNode("/a/b/Cars");
+        assertNode("/a/b/Cars/Hybrid");
+        assertNode("/a/b/Cars/Hybrid/Toyota Prius");
+        assertNode("/a/b/Cars/Sports/Infiniti G37");
+        assertNode("/a/b/Cars/Utility/Land Rover LR3");
+        assertNoNode("/a/b/Cars[2]");
+        assertNoNode("/a/b/Cars/Hybrid[2]");
+        assertNoNode("/a/b/Cars/Hybrid/Toyota Prius[2]");
+        assertNoNode("/a/b/Cars/Sports[2]");
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
     // Utilities
     // ----------------------------------------------------------------------------------------------------------------
 

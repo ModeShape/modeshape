@@ -33,10 +33,13 @@ import org.modeshape.graph.property.basic.BasicName;
 @Immutable
 public class JcrLexicon extends org.modeshape.graph.JcrLexicon {
 
+    public static final Name ACTIVITY = new BasicName(Namespace.URI, "activity");
     public static final Name BASE_VERSION = new BasicName(Namespace.URI, "baseVersion");
     public static final Name CHILD_VERSION_HISTORY = new BasicName(Namespace.URI, "childVersionHistory");
+    public static final Name CONFIGURATION = new BasicName(Namespace.URI, "configuration");
     public static final Name CONTENT = new BasicName(Namespace.URI, "content");
     public static final Name COPIED_FROM = new BasicName(Namespace.URI, "copiedFrom");
+    public static final Name CURRENT_LIFECYCLE_STATE = new BasicName(Namespace.URI, "currentLifecycleState");
     public static final Name DATA = new BasicName(Namespace.URI, "data");
     public static final Name ENCODING = new BasicName(Namespace.URI, "encoding");
     public static final Name ETAG = new BasicName(Namespace.URI, "etag");
@@ -44,8 +47,11 @@ public class JcrLexicon extends org.modeshape.graph.JcrLexicon {
     public static final Name FROZEN_NODE = new BasicName(Namespace.URI, "frozenNode");
     public static final Name FROZEN_PRIMARY_TYPE = new BasicName(Namespace.URI, "frozenPrimaryType");
     public static final Name FROZEN_UUID = new BasicName(Namespace.URI, "frozenUuid");
+    public static final Name HOLD = new BasicName(Namespace.URI, "hold");
     public static final Name IS_CHECKED_OUT = new BasicName(Namespace.URI, "isCheckedOut");
+    public static final Name IS_DEEP = new BasicName(Namespace.URI, "isDeep");
     public static final Name LANGUAGE = new BasicName(Namespace.URI, "language");
+    public static final Name LIFECYCLE_POLICY = new BasicName(Namespace.URI, "lifecyclePolicy");
     public static final Name LOCK_IS_DEEP = new BasicName(Namespace.URI, "lockIsDeep");
     public static final Name LOCK_OWNER = new BasicName(Namespace.URI, "lockOwner");
     public static final Name MERGE_FAILED = new BasicName(Namespace.URI, "mergeFailed");
@@ -53,6 +59,7 @@ public class JcrLexicon extends org.modeshape.graph.JcrLexicon {
     /** The "jcr:path" pseudo-column used in queries */
     public static final Name PATH = new BasicName(Namespace.URI, "path");
     public static final Name PREDECESSORS = new BasicName(Namespace.URI, "predecessors");
+    public static final Name RETENTION_POLICY = new BasicName(Namespace.URI, "retentionPolicy");
     public static final Name ROOT = new BasicName(Namespace.URI, "root");
     public static final Name ROOT_VERSION = new BasicName(Namespace.URI, "rootVersion");
     /** The "jcr:score" pseudo-column used in queries */

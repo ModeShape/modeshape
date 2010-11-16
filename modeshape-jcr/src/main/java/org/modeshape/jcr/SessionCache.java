@@ -59,6 +59,7 @@ import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.BinaryFactory;
@@ -146,7 +147,7 @@ class SessionCache {
     protected final Path rootPath;
     protected final Name residualName;
 
-    private final GraphSession<JcrNodePayload, JcrPropertyPayload> graphSession;
+    private final CustomGraphSession graphSession;
 
     public SessionCache( JcrSession session ) {
         this(session, session.workspace().getName(), session.getExecutionContext(), session.nodeTypeManager(), session.graph());
@@ -177,8 +178,7 @@ class SessionCache {
         this.residualName = nameFactory.create(JcrNodeType.RESIDUAL_ITEM_NAME);
 
         // Create the graph session, customized for JCR ...
-        this.graphSession = new GraphSession<JcrNodePayload, JcrPropertyPayload>(this.store, this.workspaceName,
-                                                                                 new JcrNodeOperations(), new JcrAuthorizer());
+        this.graphSession = new CustomGraphSession(this.store, this.workspaceName, new JcrNodeOperations(), new JcrAuthorizer());
         // Set the read-depth if we can...
         try {
             int depth = Integer.parseInt(session.repository().getOptions().get(Option.READ_DEPTH));
@@ -187,8 +187,31 @@ class SessionCache {
         }
     }
 
+    protected class CustomGraphSession extends GraphSession<JcrNodePayload, JcrPropertyPayload> {
+        CustomGraphSession( Graph graph,
+                            String workspaceName,
+                            Operations<JcrNodePayload, JcrPropertyPayload> nodeOperations,
+                            Authorizer authorizer ) {
+            super(graph, workspaceName, nodeOperations, authorizer);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.session.GraphSession#operations()
+         */
+        @Override
+        protected Batch operations() {
+            return super.operations();
+        }
+    }
+
     final GraphSession<JcrNodePayload, JcrPropertyPayload> graphSession() {
         return graphSession;
+    }
+
+    Graph.Batch currentBatch() {
+        return graphSession.operations();
     }
 
     JcrSession session() {

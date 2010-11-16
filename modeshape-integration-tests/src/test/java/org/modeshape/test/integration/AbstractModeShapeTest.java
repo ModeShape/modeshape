@@ -80,9 +80,13 @@ public abstract class AbstractModeShapeTest {
     @After
     public void afterEach() throws Exception {
     }
-    
-    protected void setSession(Session session) {
-    	this.session = session;
+
+    protected void setSession( Session session ) {
+        this.session = session;
+    }
+
+    protected Session session() {
+        return session;
     }
 
     protected static void startEngine( Class<?> testClass,
@@ -148,8 +152,6 @@ public abstract class AbstractModeShapeTest {
 
             try {
                 session.getWorkspace().importXML(jcrPathToImportUnder, stream, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
-            } catch (Throwable t) {
-                t.printStackTrace();
             } finally {
                 stream.close();
             }
@@ -190,10 +192,10 @@ public abstract class AbstractModeShapeTest {
         String nodePath = parentPath + filename;
 
         // Now use the JCR API to upload the file ...
-        tools.uploadFile(session, nodePath, url);
+        tools.uploadFile(session(), nodePath, url);
 
         // Save the session ...
-        session.save();
+        session().save();
 
     }
 
@@ -271,7 +273,7 @@ public abstract class AbstractModeShapeTest {
                                    int numberOfDeclaredChildNodeDefinitions,
                                    int numberOfDeclaredPropertyDefinitions,
                                    String... supertypes ) throws Exception {
-        NodeType nodeType = session.getWorkspace().getNodeTypeManager().getNodeType(name);
+        NodeType nodeType = session().getWorkspace().getNodeTypeManager().getNodeType(name);
         assertThat(nodeType, is(notNullValue()));
         assertThat(nodeType.isAbstract(), is(isAbstract));
         assertThat(nodeType.isMixin(), is(isMixin));
@@ -288,7 +290,7 @@ public abstract class AbstractModeShapeTest {
 
     protected void assertNodeTypes( String... nodeTypeNames ) throws Exception {
         for (String nodeTypeName : nodeTypeNames) {
-            NodeType nodeType = session.getWorkspace().getNodeTypeManager().getNodeType(nodeTypeName);
+            NodeType nodeType = session().getWorkspace().getNodeTypeManager().getNodeType(nodeTypeName);
             assertThat(nodeType, is(notNullValue()));
         }
     }
@@ -317,13 +319,13 @@ public abstract class AbstractModeShapeTest {
     }
 
     protected Node assertNode( String path ) throws RepositoryException {
-        return session.getNode(path);
+        return session().getNode(path);
     }
 
     protected Node assertNode( String path,
                                String primaryType,
                                String... mixinTypes ) throws RepositoryException {
-        Node node = session.getNode(path);
+        Node node = session().getNode(path);
         assertThat(node.getPrimaryNodeType().getName(), is(primaryType));
         Set<String> expectedMixinTypes = new HashSet<String>(Arrays.asList(mixinTypes));
         Set<String> actualMixinTypes = new HashSet<String>();
@@ -387,7 +389,7 @@ public abstract class AbstractModeShapeTest {
     }
 
     protected Value value( String value ) throws Exception {
-        return session.getValueFactory().createValue(value);
+        return session().getValueFactory().createValue(value);
     }
 
     protected void assertSingleValueProperty( Node node,
@@ -420,7 +422,7 @@ public abstract class AbstractModeShapeTest {
                                               String propNameStr,
                                               int expectedValue ) throws Exception {
         Property prop = node.getProperty(propNameStr);
-        Value expValue = session.getValueFactory().createValue(expectedValue);
+        Value expValue = session().getValueFactory().createValue(expectedValue);
         Object actualValue = prop.getValue();
         assertThat(expValue, is(actualValue));
 
@@ -670,6 +672,7 @@ public abstract class AbstractModeShapeTest {
                                       String queryLanguage,
                                       long expectedNumberOfResults,
                                       Map<String, String> variables ) throws RepositoryException {
+        Session session = session();
         Query query = session.getWorkspace().getQueryManager().createQuery(queryExpression, queryLanguage);
         if (variables != null && !variables.isEmpty()) {
             for (Map.Entry<String, String> entry : variables.entrySet()) {

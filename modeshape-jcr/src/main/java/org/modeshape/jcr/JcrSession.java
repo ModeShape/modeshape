@@ -603,7 +603,9 @@ class JcrSession implements Session {
     public ContentHandler getImportContentHandler( String parentAbsPath,
                                                    int uuidBehavior ) throws PathNotFoundException, RepositoryException {
         Path parentPath = this.executionContext.getValueFactories().getPathFactory().create(parentAbsPath);
-        return new JcrContentHandler(this, parentPath, uuidBehavior, SaveMode.SESSION);
+        boolean retainLifecycleInfo = getRepository().getDescriptorValue(Repository.OPTION_LIFECYCLE_SUPPORTED).getBoolean();
+        boolean retainRetentionInfo = getRepository().getDescriptorValue(Repository.OPTION_RETENTION_SUPPORTED).getBoolean();
+        return new JcrContentHandler(this, parentPath, uuidBehavior, SaveMode.SESSION, retainRetentionInfo, retainLifecycleInfo);
     }
 
     /**
