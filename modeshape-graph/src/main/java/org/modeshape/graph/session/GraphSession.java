@@ -187,6 +187,10 @@ public class GraphSession<Payload, PropertyPayload> {
         return context;
     }
 
+    protected Graph.Batch operations() {
+        return operations;
+    }
+
     final String readable( Name name ) {
         return name.getString(context.getNamespaceRegistry());
     }

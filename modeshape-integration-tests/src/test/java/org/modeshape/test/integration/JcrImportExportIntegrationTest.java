@@ -4,13 +4,13 @@
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
  * See the AUTHORS.txt file in the distribution for a full listing of 
- * individual contributors. 
+ * individual contributors.
  *
  * ModeShape is free software. Unless otherwise indicated, all code in ModeShape
  * is licensed to you under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- *
+ * 
  * ModeShape is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -21,33 +21,22 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.jcr;
+package org.modeshape.test.integration;
 
-import net.jcip.annotations.Immutable;
-import org.modeshape.graph.property.Name;
-import org.modeshape.graph.property.basic.BasicName;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
 
-/**
- * Lexicon of names from the standard JCR "<code>http://www.jcp.org/jcr/mix/1.0</code>" namespace.
- */
-@Immutable
-public class JcrMixLexicon extends org.modeshape.graph.JcrMixLexicon {
+public class JcrImportExportIntegrationTest extends AbstractAdHocModeShapeTest {
 
-    /**
-     * The name for the "mix:etag" mixin.
-     */
-    public static final Name ETAG = new BasicName(Namespace.URI, "etag");
-    /**
-     * The name for the "mix:shareable" mixin.
-     */
-    public static final Name SHAREABLE = new BasicName(Namespace.URI, "shareable");
-    /**
-     * The name for the "mix:lifecycle" mixin.
-     */
-    public static final Name LIFECYCLE = new BasicName(Namespace.URI, "lifecycle");
-    /**
-     * The name for the "mix:managedRetention" mixin.
-     */
-    public static final Name MANAGED_RETENTION = new BasicName(Namespace.URI, "managedRetention");
+    @FixFor( "MODE-687" )
+    @Test
+    public void shouldBeAbleToImportSystemFileIntoRepository() throws Exception {
+        startEngine("config/configRepositoryForDroolsImportExport.xml", "Repo");
+        assertNode("/", "mode:root");
+        // import the file ...
+        importContent(getClass(), "io/drools/systemViewImport.xml");
+        // Verify the file was imported ...
+        // assertNode("/drools:repository", "nt:folder");
+    }
 
 }

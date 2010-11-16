@@ -41,6 +41,7 @@ import javax.jcr.ItemNotFoundException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -691,7 +692,11 @@ class JcrWorkspace implements Workspace {
         CheckArg.isNotNull(parentAbsPath, "parentAbsPath");
         session.checkLive();
         Path parentPath = this.context.getValueFactories().getPathFactory().create(parentAbsPath);
-        return new JcrContentHandler(this.session, parentPath, uuidBehavior, SaveMode.WORKSPACE);
+        Repository repo = getSession().getRepository();
+        boolean retainLifecycleInfo = repo.getDescriptorValue(Repository.OPTION_LIFECYCLE_SUPPORTED).getBoolean();
+        boolean retainRetentionInfo = repo.getDescriptorValue(Repository.OPTION_RETENTION_SUPPORTED).getBoolean();
+        return new JcrContentHandler(this.session, parentPath, uuidBehavior, SaveMode.WORKSPACE, retainRetentionInfo,
+                                     retainLifecycleInfo);
     }
 
     /**

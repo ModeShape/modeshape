@@ -54,6 +54,7 @@ import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.query.parse.QueryParsers;
+import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.query.JcrSql2QueryParser;
 import org.modeshape.jcr.xpath.XPathQueryParser;
 
@@ -192,6 +193,10 @@ public abstract class AbstractSessionTest {
         // Create the session and log in ...
         session = (JcrSession)workspace.getSession();
         registry = session.getExecutionContext().getNamespaceRegistry();
+
+        // Set descriptors ...
+        when(repository.getDescriptorValue(Repository.OPTION_LIFECYCLE_SUPPORTED)).thenReturn(value(true));
+        when(repository.getDescriptorValue(Repository.OPTION_RETENTION_SUPPORTED)).thenReturn(value(true));
     }
 
     @SuppressWarnings( "unused" )
@@ -207,7 +212,10 @@ public abstract class AbstractSessionTest {
         // Stub out the repository options ...
         options = new EnumMap<JcrRepository.Option, String>(JcrRepository.Option.class);
         options.put(JcrRepository.Option.PROJECT_NODE_TYPES, Boolean.FALSE.toString());
+    }
 
+    protected JcrValue value( boolean value ) {
+        return (JcrValue)session.getValueFactory().createValue(true);
     }
 
     @SuppressWarnings( "deprecation" )

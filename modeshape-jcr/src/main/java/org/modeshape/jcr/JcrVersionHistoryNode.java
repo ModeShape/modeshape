@@ -84,7 +84,7 @@ class JcrVersionHistoryNode extends JcrNode implements VersionHistory {
      * @{inheritDoc
      */
     @Override
-    public Version getRootVersion() throws RepositoryException {
+    public JcrVersionNode getRootVersion() throws RepositoryException {
         // Copied from AbstractJcrNode.getNode(String) to avoid double conversion. Needs to be refactored.
         Segment segment = context().getValueFactories().getPathFactory().createSegment(JcrLexicon.ROOT_VERSION);
         try {
