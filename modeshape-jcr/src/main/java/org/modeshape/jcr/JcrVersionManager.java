@@ -861,6 +861,7 @@ final class JcrVersionManager implements VersionManager {
                    .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_HISTORY)
                    .and(JcrLexicon.VERSIONABLE_UUID, jcrUuid)
                    .and(JcrLexicon.UUID, historyUuid)
+                   .ifAbsent()
                    .and();
 
         if (originalVersionUuid != null) {
@@ -876,6 +877,7 @@ final class JcrVersionManager implements VersionManager {
                    .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION)
                    .and(JcrLexicon.CREATED, now)
                    .and(JcrLexicon.UUID, versionUuid)
+                   .ifAbsent()
                    .and();
 
         Path frozenVersionPath = path(rootVersionPath, JcrLexicon.FROZEN_NODE);
@@ -884,6 +886,7 @@ final class JcrVersionManager implements VersionManager {
                    .and(JcrLexicon.FROZEN_UUID, jcrUuid)
                    .and(JcrLexicon.FROZEN_PRIMARY_TYPE, primaryTypeName)
                    .and(JcrLexicon.FROZEN_MIXIN_TYPES, mixinTypeNames)
+                   .ifAbsent()
                    .and();
 
         systemBatch.execute();

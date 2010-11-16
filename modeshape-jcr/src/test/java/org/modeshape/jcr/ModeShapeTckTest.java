@@ -21,6 +21,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.jcr.ValueFactory;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeTypeTemplate;
@@ -28,6 +29,7 @@ import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
+import javax.jcr.version.VersionIterator;
 import javax.jcr.version.VersionManager;
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -1266,4 +1268,48 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         }
     }
 
+    private void ensureExactlyOneVersionRoot( VersionManager vm,
+                                              String absPath ) throws Exception {
+        boolean foundRoot = false;
+        VersionHistory vh = vm.getVersionHistory(absPath);
+        VersionIterator vi = vh.getAllVersions();
+
+        while (vi.hasNext()) {
+            Version v = vi.nextVersion();
+
+            if ("jcr:rootVersion".equals(v.getName())) {
+                if (foundRoot) {
+                    fail("Found multiple root versions of versionable node at " + absPath);
+                }
+                foundRoot = true;
+            }
+        }
+
+        if (!foundRoot) fail("No root version found for versionable node at " + absPath);
+
+    }
+
+    @FixFor( "MODE-1017" )
+    public void testShouldNotHaveTwoRootVersions() throws Exception {
+        Session session = superuser;
+        ValueFactory vf = session.getValueFactory();
+
+        Node root = session.getRootNode();
+        Node file = root.addNode("createfile.mode", "nt:file");
+
+        Node content = file.addNode("jcr:content", "nt:resource");
+        content.setProperty("jcr:data", vf.createBinary(new ByteArrayInputStream("Write 1".getBytes())));
+        session.save();
+
+        file.addMixin("mix:versionable");
+        // When session.save(); is not called then the following warning will be present in log. That's also the place in
+        // JcrVersionManger where the second root version will be added.
+        // WARN ... Repaired version storage located at:
+        // /{http://www.jcp.org/jcr/1.0}system/{http://www.jcp.org/jcr/1.0}versionStorage/{}cc22bce9-a38b-4270-bb2a-492e41620a59
+        // session.save();
+
+        ensureExactlyOneVersionRoot(session.getWorkspace().getVersionManager(), "/createfile.mode");
+        session.save();
+        ensureExactlyOneVersionRoot(session.getWorkspace().getVersionManager(), "/createfile.mode");
+    }
 }
