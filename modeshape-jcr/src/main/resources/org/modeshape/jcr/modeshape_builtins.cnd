@@ -80,3 +80,7 @@
 
 [mode:hashed] mixin
 - mode:sha1 (string)
+
+// A marker node type that can be used to denote areas into which files can be published.
+// Published areas have optional titles and descriptions.
+[mode:publishArea] > mix:title mixin

@@ -504,6 +504,7 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
             "Repo    NULL    mode:namespace    VIEW    Is Mixin: false    NULL    NULL    NULL    mode:uri    DERIVED",
             "Repo    NULL    mode:namespaces    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    mode:nodeTypes    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    mode:publishArea    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    mode:resource    VIEW    Is Mixin: false    NULL    NULL    NULL    jcr:data    DERIVED",
             "Repo    NULL    mode:root    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    mode:share    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
@@ -570,7 +571,7 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
         while (rs.next()) {
             tableNames.add(rs.getString("TABLE_NAME"));
         }
-        assertThat(tableNames.size(), is(150));
+        assertThat(tableNames.size(), is(151));
         List<String> tablesWithProblems = new ArrayList<String>();
         for (String table : tableNames) {
             try {
@@ -646,29 +647,26 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
     @Test
     public void shouldGetAllColumnsFor1Table() throws SQLException {
         results.compareColumns = false;
-		
-		String[] expected = {
-			"TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-			"Repo    NULL    car:Car    car:engine    12    String    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:lengthInInches    8    Double    20    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:maker    12    String    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:model    12    String    50    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:mpgCity    -5    Long    20    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:mpgHighway    -5    Long    20    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:msrp    12    String    50    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:userRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:valueRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:wheelbaseInInches    8    Double    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:year    12    String    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    jcr:name    12    String    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    jcr:path    12    String    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    jcr:primaryType    12    String    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    jcr:score    8    Double    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    mode:depth    -5    Long    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    mode:localName    12    String    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"
-		};
-		
-		
+        String[] expected = {
+            "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
+            "Repo    NULL    car:Car    car:engine    12    String    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:lengthInInches    8    Double    20    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:maker    12    String    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:model    12    String    50    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:mpgCity    -5    Long    20    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:mpgHighway    -5    Long    20    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:msrp    12    String    50    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:userRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:valueRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:wheelbaseInInches    8    Double    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:year    12    String    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:name    12    String    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:path    12    String    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:primaryType    12    String    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:score    8    Double    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    mode:depth    -5    Long    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    mode:localName    12    String    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"};
+
         ResultSet rs = dbmd.getColumns("%", "%", "car:Car", "%");
         results.assertResultsSetEquals(rs, expected);
         results.assertRowCount(17);
@@ -678,16 +676,14 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
     @Test
     public void shouldGetAllColumnsForTableWithOnlyPseudoColumns() throws SQLException {
         results.compareColumns = false;
-		
-		String[] expected = {
-			"TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-			"Repo    NULL    mmcore:tags    jcr:name    12    String    20    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    mmcore:tags    jcr:path    12    String    50    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    mmcore:tags    jcr:score    8    Double    20    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    mmcore:tags    mode:depth    -5    Long    20    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    mmcore:tags    mode:localName    12    String    50    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0"
-		};
-		
+
+        String[] expected = {
+            "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
+            "Repo    NULL    mmcore:tags    jcr:name    12    String    20    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    mmcore:tags    jcr:path    12    String    50    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    mmcore:tags    jcr:score    8    Double    20    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    mmcore:tags    mode:depth    -5    Long    20    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    mmcore:tags    mode:localName    12    String    50    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0"};
 
         ResultSet rs = dbmd.getColumns("%", "%", "mmcore:tags", "%");
         results.assertResultsSetEquals(rs, expected);
@@ -699,27 +695,26 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
     public void shouldGetOnlyColumnsForCarPrefixedTables() throws SQLException {
         results.compareColumns = false;
 
-		String[] expected = {
-			"TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
-			"Repo    NULL    car:Car    car:engine    12    String    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:lengthInInches    8    Double    20    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:maker    12    String    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:model    12    String    50    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:mpgCity    -5    Long    20    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:mpgHighway    -5    Long    20    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:msrp    12    String    50    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:userRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:valueRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:wheelbaseInInches    8    Double    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    car:year    12    String    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    jcr:name    12    String    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    jcr:path    12    String    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    jcr:primaryType    12    String    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    jcr:score    8    Double    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    mode:depth    -5    Long    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
-			"Repo    NULL    car:Car    mode:localName    12    String    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"
-		};
-		
+        String[] expected = {
+            "TABLE_CAT[String]    TABLE_SCHEM[String]    TABLE_NAME[String]    COLUMN_NAME[String]    DATA_TYPE[Long]    TYPE_NAME[String]    COLUMN_SIZE[Long]    BUFFER_LENGTH[Long]    DECIMAL_DIGITS[Long]    NUM_PREC_RADIX[Long]    NULLABLE[Long]    REMARKS[String]    COLUMN_DEF[String]    SQL_DATA_TYPE[Long]    SQL_DATETIME_SUB[Long]    CHAR_OCTET_LENGTH[Long]    ORDINAL_POSITION[Long]    IS_NULLABLE[String]    SCOPE_CATLOG[String]    SCOPE_SCHEMA[String]    SCOPE_TABLE[String]    SOURCE_DATA_TYPE[Long]",
+            "Repo    NULL    car:Car    car:engine    12    String    50    NULL    0    0    2        NULL    0    0    0    1    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:lengthInInches    8    Double    20    NULL    0    0    2        NULL    0    0    0    2    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:maker    12    String    50    NULL    0    0    2        NULL    0    0    0    3    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:model    12    String    50    NULL    0    0    2        NULL    0    0    0    4    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:mpgCity    -5    Long    20    NULL    0    0    2        NULL    0    0    0    5    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:mpgHighway    -5    Long    20    NULL    0    0    2        NULL    0    0    0    6    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:msrp    12    String    50    NULL    0    0    2        NULL    0    0    0    7    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:userRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    8    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:valueRating    -5    Long    20    NULL    0    0    2        NULL    0    0    0    9    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:wheelbaseInInches    8    Double    20    NULL    0    0    2        NULL    0    0    0    10    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    car:year    12    String    50    NULL    0    0    2        NULL    0    0    0    11    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:name    12    String    20    NULL    0    0    2        NULL    0    0    0    12    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:path    12    String    50    NULL    0    0    2        NULL    0    0    0    13    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:primaryType    12    String    20    NULL    0    0    1        NULL    0    0    0    14    NO    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    jcr:score    8    Double    20    NULL    0    0    2        NULL    0    0    0    15    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    mode:depth    -5    Long    20    NULL    0    0    2        NULL    0    0    0    16    YES    NULL    NULL    NULL    0",
+            "Repo    NULL    car:Car    mode:localName    12    String    50    NULL    0    0    2        NULL    0    0    0    17    YES    NULL    NULL    NULL    0"};
+
         ResultSet rs = dbmd.getColumns("%", "%", "car%", "%");
         results.assertResultsSetEquals(rs, expected);
         results.assertRowCount(11);
@@ -739,99 +734,89 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
         results.assertRowCount(1);
 
     }
-    
-  /*
-  * FixFor( "MODE-981" )
-  * 
-  * The issue was the first read was cached, and after a new file was uploaded, subsequent reads did not see the new rows.
-  * This was due to a new  session wasn't being used.
-  */
+
+    /*
+    * FixFor( "MODE-981" )
+    * 
+    * The issue was the first read was cached, and after a new file was uploaded, subsequent reads did not see the new rows.
+    * This was due to a new  session wasn't being used.
+    */
     @Test
-	 public void shouldSequence2XmlFiles() throws Exception {
-    	String[] expected1 = {
-    			"jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
-    			"mode:root    /        1.0        0",
-    			"nt:unstructured    /Cars    Cars    1.0    Cars    1",
-    			"nt:unstructured    /Cars/Hybrid    Hybrid    1.0    Hybrid    2",
-    			"car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.0    Nissan Altima    3",
-    			"car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.0    Toyota Highlander    3",
-    			"car:Car    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.0    Toyota Prius    3",
-    			"nt:unstructured    /Cars/Luxury    Luxury    1.0    Luxury    2",
-    			"car:Car    /Cars/Luxury/Bentley Continental    Bentley Continental    1.0    Bentley Continental    3",
-    			"car:Car    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.0    Cadillac DTS    3",
-    			"car:Car    /Cars/Luxury/Lexus IS350    Lexus IS350    1.0    Lexus IS350    3",
-    			"nt:unstructured    /Cars/Sports    Sports    1.0    Sports    2",
-    			"car:Car    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.0    Aston Martin DB9    3",
-    			"car:Car    /Cars/Sports/Infiniti G37    Infiniti G37    1.0    Infiniti G37    3",
-    			"nt:unstructured    /Cars/Utility    Utility    1.0    Utility    2",
-    			"car:Car    /Cars/Utility/Ford F-150    Ford F-150    1.0    Ford F-150    3",
-    			"car:Car    /Cars/Utility/Hummer H3    Hummer H3    1.0    Hummer H3    3",
-    			"car:Car    /Cars/Utility/Land Rover LR2    Land Rover LR2    1.0    Land Rover LR2    3",
-    			"car:Car    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.0    Land Rover LR3    3",
-    			"nt:unstructured    /NodeB    NodeB    1.0    NodeB    1",
-    			"nt:unstructured    /Other    Other    1.0    Other    1",
-    			"nt:unstructured    /Other/NodeA    NodeA    1.0    NodeA    2",
-    			"nt:unstructured    /Other/NodeA[2]    NodeA    1.0    NodeA    2",
-    			"nt:unstructured    /Other/NodeA[3]    NodeA    1.0    NodeA    2",
-    			"nt:folder    /files    files    1.0    files    1",
-    			"nt:file    /files/docWithComments.xml    docWithComments.xml    1.0    docWithComments.xml    2",
-    			"nt:resource    /files/docWithComments.xml/jcr:content    jcr:content    1.0    content    3"
-    			};
+    public void shouldSequence2XmlFiles() throws Exception {
+        String[] expected1 = {
+            "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "mode:root    /        1.0        0", "nt:unstructured    /Cars    Cars    1.0    Cars    1",
+            "nt:unstructured    /Cars/Hybrid    Hybrid    1.0    Hybrid    2",
+            "car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.0    Nissan Altima    3",
+            "car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.0    Toyota Highlander    3",
+            "car:Car    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.0    Toyota Prius    3",
+            "nt:unstructured    /Cars/Luxury    Luxury    1.0    Luxury    2",
+            "car:Car    /Cars/Luxury/Bentley Continental    Bentley Continental    1.0    Bentley Continental    3",
+            "car:Car    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.0    Cadillac DTS    3",
+            "car:Car    /Cars/Luxury/Lexus IS350    Lexus IS350    1.0    Lexus IS350    3",
+            "nt:unstructured    /Cars/Sports    Sports    1.0    Sports    2",
+            "car:Car    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.0    Aston Martin DB9    3",
+            "car:Car    /Cars/Sports/Infiniti G37    Infiniti G37    1.0    Infiniti G37    3",
+            "nt:unstructured    /Cars/Utility    Utility    1.0    Utility    2",
+            "car:Car    /Cars/Utility/Ford F-150    Ford F-150    1.0    Ford F-150    3",
+            "car:Car    /Cars/Utility/Hummer H3    Hummer H3    1.0    Hummer H3    3",
+            "car:Car    /Cars/Utility/Land Rover LR2    Land Rover LR2    1.0    Land Rover LR2    3",
+            "car:Car    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.0    Land Rover LR3    3",
+            "nt:unstructured    /NodeB    NodeB    1.0    NodeB    1", "nt:unstructured    /Other    Other    1.0    Other    1",
+            "nt:unstructured    /Other/NodeA    NodeA    1.0    NodeA    2",
+            "nt:unstructured    /Other/NodeA[2]    NodeA    1.0    NodeA    2",
+            "nt:unstructured    /Other/NodeA[3]    NodeA    1.0    NodeA    2",
+            "nt:folder    /files    files    1.0    files    1",
+            "nt:file    /files/docWithComments.xml    docWithComments.xml    1.0    docWithComments.xml    2",
+            "nt:resource    /files/docWithComments.xml/jcr:content    jcr:content    1.0    content    3"};
 
-    	String[] expected2 = {
-    			"jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
-    			"mode:root    /        1.0        0",
-    			"nt:unstructured    /Cars    Cars    1.0    Cars    1",
-    			"nt:unstructured    /Cars/Hybrid    Hybrid    1.0    Hybrid    2",
-    			"car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.0    Nissan Altima    3",
-    			"car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.0    Toyota Highlander    3",
-    			"car:Car    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.0    Toyota Prius    3",
-    			"nt:unstructured    /Cars/Luxury    Luxury    1.0    Luxury    2",
-    			"car:Car    /Cars/Luxury/Bentley Continental    Bentley Continental    1.0    Bentley Continental    3",
-    			"car:Car    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.0    Cadillac DTS    3",
-    			"car:Car    /Cars/Luxury/Lexus IS350    Lexus IS350    1.0    Lexus IS350    3",
-    			"nt:unstructured    /Cars/Sports    Sports    1.0    Sports    2",
-    			"car:Car    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.0    Aston Martin DB9    3",
-    			"car:Car    /Cars/Sports/Infiniti G37    Infiniti G37    1.0    Infiniti G37    3",
-    			"nt:unstructured    /Cars/Utility    Utility    1.0    Utility    2",
-    			"car:Car    /Cars/Utility/Ford F-150    Ford F-150    1.0    Ford F-150    3",
-    			"car:Car    /Cars/Utility/Hummer H3    Hummer H3    1.0    Hummer H3    3",
-    			"car:Car    /Cars/Utility/Land Rover LR2    Land Rover LR2    1.0    Land Rover LR2    3",
-    			"car:Car    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.0    Land Rover LR3    3",
-    			"nt:unstructured    /NodeB    NodeB    1.0    NodeB    1",
-    			"nt:unstructured    /Other    Other    1.0    Other    1",
-    			"nt:unstructured    /Other/NodeA    NodeA    1.0    NodeA    2",
-    			"nt:unstructured    /Other/NodeA[2]    NodeA    1.0    NodeA    2",
-    			"nt:unstructured    /Other/NodeA[3]    NodeA    1.0    NodeA    2",
-    			"nt:folder    /files    files    1.0    files    1",
-    			"nt:file    /files/docWithComments.xml    docWithComments.xml    1.0    docWithComments.xml    2",
-    			"nt:resource    /files/docWithComments.xml/jcr:content    jcr:content    1.0    content    3",
-    			"nt:file    /files/docWithComments2.xml    docWithComments2.xml    1.0    docWithComments2.xml    2",
-    			"nt:resource    /files/docWithComments2.xml/jcr:content    jcr:content    1.0    content    3"
-    			};
+        String[] expected2 = {
+            "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "mode:root    /        1.0        0", "nt:unstructured    /Cars    Cars    1.0    Cars    1",
+            "nt:unstructured    /Cars/Hybrid    Hybrid    1.0    Hybrid    2",
+            "car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.0    Nissan Altima    3",
+            "car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.0    Toyota Highlander    3",
+            "car:Car    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.0    Toyota Prius    3",
+            "nt:unstructured    /Cars/Luxury    Luxury    1.0    Luxury    2",
+            "car:Car    /Cars/Luxury/Bentley Continental    Bentley Continental    1.0    Bentley Continental    3",
+            "car:Car    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.0    Cadillac DTS    3",
+            "car:Car    /Cars/Luxury/Lexus IS350    Lexus IS350    1.0    Lexus IS350    3",
+            "nt:unstructured    /Cars/Sports    Sports    1.0    Sports    2",
+            "car:Car    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.0    Aston Martin DB9    3",
+            "car:Car    /Cars/Sports/Infiniti G37    Infiniti G37    1.0    Infiniti G37    3",
+            "nt:unstructured    /Cars/Utility    Utility    1.0    Utility    2",
+            "car:Car    /Cars/Utility/Ford F-150    Ford F-150    1.0    Ford F-150    3",
+            "car:Car    /Cars/Utility/Hummer H3    Hummer H3    1.0    Hummer H3    3",
+            "car:Car    /Cars/Utility/Land Rover LR2    Land Rover LR2    1.0    Land Rover LR2    3",
+            "car:Car    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.0    Land Rover LR3    3",
+            "nt:unstructured    /NodeB    NodeB    1.0    NodeB    1", "nt:unstructured    /Other    Other    1.0    Other    1",
+            "nt:unstructured    /Other/NodeA    NodeA    1.0    NodeA    2",
+            "nt:unstructured    /Other/NodeA[2]    NodeA    1.0    NodeA    2",
+            "nt:unstructured    /Other/NodeA[3]    NodeA    1.0    NodeA    2",
+            "nt:folder    /files    files    1.0    files    1",
+            "nt:file    /files/docWithComments.xml    docWithComments.xml    1.0    docWithComments.xml    2",
+            "nt:resource    /files/docWithComments.xml/jcr:content    jcr:content    1.0    content    3",
+            "nt:file    /files/docWithComments2.xml    docWithComments2.xml    1.0    docWithComments2.xml    2",
+            "nt:resource    /files/docWithComments2.xml/jcr:content    jcr:content    1.0    content    3"};
 
-    	
         Session session = repository.login();
         try {
 
-        	this.setSession(session);
-        	
-		     uploadFile("docWithComments.xml", "/files/");
-		     
-		     print = true;
-		     
-		     
-		     ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:base] ORDER BY [jcr:path]", expected1, 26);     
-		
-		     uploadFile("docWithComments2.xml", "/files/");
-       	
-		     ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:base] ORDER BY [jcr:path]", expected2, 28);      
-		     
-      	
-        	
+            this.setSession(session);
+
+            uploadFile("docWithComments.xml", "/files/");
+
+            print = true;
+
+            ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:base] ORDER BY [jcr:path]", expected1, 26);
+
+            uploadFile("docWithComments2.xml", "/files/");
+
+            ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:base] ORDER BY [jcr:path]", expected2, 28);
+
         } finally {
             session.logout();
         }
 
-	 }        
+    }
 }
