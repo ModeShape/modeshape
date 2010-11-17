@@ -24,10 +24,13 @@
 package org.modeshape.graph;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import net.jcip.annotations.NotThreadSafe;
-import org.modeshape.common.collection.Collections;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.property.Name;
@@ -42,8 +45,21 @@ import org.modeshape.graph.property.ValueComparators;
 @NotThreadSafe
 class GraphMerger {
 
+    private static final PropertyMerger SKIP_MERGER = new SkipMerger();
+    private static final PropertyMerger UNION_MERGER = new UnionPropertyMerger();
+    private static final PropertyMerger DEFAULT_MERGER = new DefaultPropertyMerger();
+
+    private static final Map<Name, PropertyMerger> MERGERS;
+    static {
+        Map<Name, PropertyMerger> mergers = new HashMap<Name, PropertyMerger>();
+        mergers.put(JcrLexicon.NAME, SKIP_MERGER);
+        mergers.put(JcrLexicon.UUID, SKIP_MERGER);
+        mergers.put(ModeShapeLexicon.UUID, SKIP_MERGER);
+        mergers.put(JcrLexicon.MIXIN_TYPES, UNION_MERGER);
+        MERGERS = Collections.unmodifiableMap(mergers);
+    }
+
     private final Graph initialContent;
-    private final Set<Name> ignoredProperties = Collections.unmodifiableSet(JcrLexicon.UUID, ModeShapeLexicon.UUID);
 
     protected GraphMerger( Graph initialContent ) {
         CheckArg.isNotNull(initialContent, "initialContent");
@@ -89,29 +105,14 @@ class GraphMerger {
         Collection<Property> desiredProperties = desiredNode.getProperties();
         if (desiredProperties.isEmpty()) return;
         for (Property desiredProperty : desiredProperties) {
-            Property actual = actualNode.getProperty(desiredProperty.getName());
-            boolean performSet = false;
+            Name propertyName = desiredProperty.getName();
+            Property actual = actualNode.getProperty(propertyName);
             if (actual == null) {
-                performSet = true;
-            } else {
-                if (ignoredProperties.contains(actual.getName())) continue;
-                // the actual property already exists ...
-                Iterator<?> actualValues = actual.getValues();
-                Iterator<?> desiredValues = desiredProperty.getValues();
-                while (actualValues.hasNext() && desiredValues.hasNext()) {
-                    Object actualValue = actualValues.next();
-                    Object desiredValue = desiredValues.next();
-                    if (ValueComparators.OBJECT_COMPARATOR.compare(actualValue, desiredValue) != 0) {
-                        performSet = true;
-                        break;
-                    }
-                }
-                if (!performSet && (actualValues.hasNext() || desiredValues.hasNext())) {
-                    performSet = true;
-                }
-            }
-            if (performSet) {
                 batch.set(desiredProperty).on(actualLocation);
+            } else {
+                PropertyMerger merger = MERGERS.get(propertyName);
+                if (merger == null) merger = DEFAULT_MERGER;
+                merger.mergeProperty(batch, actualLocation.getPath(), actual, desiredProperty);
             }
         }
     }
@@ -157,6 +158,100 @@ class GraphMerger {
             } catch (PathNotFoundException e) {
                 // The node does not exist ...
                 createSubgraph(batch, desiredChild, path);
+            }
+        }
+    }
+
+    protected static interface PropertyMerger {
+        public void mergeProperty( Batch batch,
+                                   Path path,
+                                   Property actual,
+                                   Property desired );
+    }
+
+    protected static class SkipMerger implements PropertyMerger {
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.GraphMerger.PropertyMerger#mergeProperty(org.modeshape.graph.Graph.Batch,
+         *      org.modeshape.graph.property.Path, org.modeshape.graph.property.Property, org.modeshape.graph.property.Property)
+         */
+        public void mergeProperty( Batch batch,
+                                   Path path,
+                                   Property actual,
+                                   Property desired ) {
+            // do nothing ...
+        }
+    }
+
+    protected static class UnionPropertyMerger implements PropertyMerger {
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.GraphMerger.PropertyMerger#mergeProperty(org.modeshape.graph.Graph.Batch,
+         *      org.modeshape.graph.property.Path, org.modeshape.graph.property.Property, org.modeshape.graph.property.Property)
+         */
+        public void mergeProperty( Batch batch,
+                                   Path path,
+                                   Property actual,
+                                   Property desired ) {
+            // the actual property already exists ...
+            if (desired.size() == 0) {
+                // nothing in the desired property ...
+                return;
+            }
+
+            Set<Object> unionedValues = new HashSet<Object>();
+            Iterator<?> actualValues = actual.getValues();
+            while (actualValues.hasNext()) {
+                Object value = actualValues.next();
+                if (value == null) continue;
+                unionedValues.add(value);
+            }
+            int actualSize = unionedValues.size();
+            Iterator<?> desiredValues = desired.getValues();
+            while (desiredValues.hasNext()) {
+                Object value = desiredValues.next();
+                if (value == null) continue;
+                unionedValues.add(value);
+            }
+            if (actualSize == unionedValues.size()) {
+                // The desired property adds nothing ...
+                return;
+            }
+
+            batch.set(actual.getName()).on(path).to(unionedValues).and();
+        }
+    }
+
+    protected static class DefaultPropertyMerger implements PropertyMerger {
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.GraphMerger.PropertyMerger#mergeProperty(Batch, Path, Property, Property)
+         */
+        public void mergeProperty( Batch batch,
+                                   Path path,
+                                   Property actual,
+                                   Property desired ) {
+            // the actual property already exists ...
+            Iterator<?> actualValues = actual.getValues();
+            Iterator<?> desiredValues = desired.getValues();
+            boolean performSet = false;
+            while (actualValues.hasNext() && desiredValues.hasNext()) {
+                Object actualValue = actualValues.next();
+                Object desiredValue = desiredValues.next();
+                if (ValueComparators.OBJECT_COMPARATOR.compare(actualValue, desiredValue) != 0) {
+                    performSet = true;
+                    break;
+                }
+            }
+            if (!performSet && (actualValues.hasNext() || desiredValues.hasNext())) {
+                performSet = true;
+            }
+            if (performSet) {
+                batch.set(desired).on(path);
             }
         }
     }

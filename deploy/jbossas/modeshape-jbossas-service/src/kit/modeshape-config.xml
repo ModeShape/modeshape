@@ -56,6 +56,8 @@
                 <mode:resource>/org/modeshape/sequencer/ddl/dialect/oracle/OracleDdl.cnd</mode:resource>
                 <mode:resource>/org/modeshape/sequencer/ddl/dialect/postgres/PostgresDdl.cnd</mode:resource>
             </jcr:nodeTypes>
+            <!-- Define what the initial content looks like for each workspace -->
+            <mode:initialContent mode:workspaces="default" mode:applyToNewWorkspaces="true" mode:content="modeshape-initial-content.xml"/>
         </mode:repository>
     </mode:repositories>
 
