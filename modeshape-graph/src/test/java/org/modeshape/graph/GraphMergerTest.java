@@ -38,7 +38,7 @@ import org.modeshape.graph.property.PathNotFoundException;
 /**
  * 
  */
-public class GraphInitializerTest {
+public class GraphMergerTest {
 
     private ExecutionContext context;
     private InMemoryRepositorySource graphSource;
