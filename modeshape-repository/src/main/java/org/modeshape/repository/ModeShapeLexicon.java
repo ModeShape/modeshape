@@ -51,4 +51,8 @@ public class ModeShapeLexicon extends org.modeshape.graph.ModeShapeLexicon {
     public static final Name CLUSTERING = new BasicName(Namespace.URI, "clustering");
     public static final Name CONFIGURATION = new BasicName(Namespace.URI, "configuration");
     public static final Name CLUSTER_NAME = new BasicName(Namespace.URI, "clusterName");
+
+    public static final Name INITIAL_CONTENT = new BasicName(Namespace.URI, "initialContent");
+    public static final Name CONTENT = new BasicName(Namespace.URI, "content");
+    public static final Name APPLY_TO_NEW_WORKSPACES = new BasicName(Namespace.URI, "applyToNewWorkspaces");
 }

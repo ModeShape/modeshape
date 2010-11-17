@@ -43,6 +43,7 @@ import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.ValueFormatException;
+import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.jboss.security.config.IDTrustConfiguration;
@@ -121,7 +122,8 @@ public class JcrRepositoryTest {
 
         // Set up the repository ...
         descriptors = new HashMap<String, String>();
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, null);
+        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, null,
+                                       null);
 
         // Set up the graph that goes directly to the source ...
         sourceGraph = Graph.create(source(), context);
@@ -153,27 +155,27 @@ public class JcrRepositoryTest {
 
     @Test
     public void shouldAllowNullDescriptors() throws Exception {
-        new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, null, null);
+        new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, null, null, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullExecutionContext() throws Exception {
-        new JcrRepository(null, connectionFactory, sourceName, new MockObservable(), null, descriptors, null);
+        new JcrRepository(null, connectionFactory, sourceName, new MockObservable(), null, descriptors, null, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullConnectionFactories() throws Exception {
-        new JcrRepository(context, null, sourceName, new MockObservable(), null, descriptors, null);
+        new JcrRepository(context, null, sourceName, new MockObservable(), null, descriptors, null, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullObservable() throws Exception {
-        new JcrRepository(context, connectionFactory, sourceName, null, null, null, null);
+        new JcrRepository(context, connectionFactory, sourceName, null, null, null, null, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
     public void shouldNotAllowNullSourceName() throws Exception {
-        new JcrRepository(context, connectionFactory, null, new MockObservable(), null, descriptors, null);
+        new JcrRepository(context, connectionFactory, null, new MockObservable(), null, descriptors, null, null);
     }
 
     @Test( expected = IllegalArgumentException.class )
@@ -199,7 +201,7 @@ public class JcrRepositoryTest {
     @Test
     public void shouldProvideBuiltInDescriptorsWhenNotSuppliedDescriptors() throws Exception {
         Repository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
-                                                  descriptors, null);
+                                                  descriptors, null, null);
         testDescriptorKeys(repository);
         testDescriptorValues(repository);
     }
@@ -218,7 +220,9 @@ public class JcrRepositoryTest {
     public void shouldNotProvideRepositoryWorkspaceNamesDescriptorIfOptionSetToFalse() throws Exception {
         JcrConfiguration config = new JcrConfiguration();
         config.repositorySource("Store").usingClass(InMemoryRepositorySource.class);
-        config.repository("JCR").setOption(JcrRepository.Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR, Boolean.FALSE.toString()).setSource("Store");
+        config.repository("JCR")
+              .setOption(JcrRepository.Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR, Boolean.FALSE.toString())
+              .setSource("Store");
 
         JcrEngine engine = config.build();
         engine.start();
@@ -242,7 +246,7 @@ public class JcrRepositoryTest {
     @Test
     public void shouldHaveDefaultOptionsWhenNotOverridden() throws Exception {
         JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
-                                                     descriptors, null);
+                                                     descriptors, null, null);
         assertThat(repository.getOptions().get(JcrRepository.Option.PROJECT_NODE_TYPES),
                    is(JcrRepository.DefaultOption.PROJECT_NODE_TYPES));
     }
@@ -252,7 +256,7 @@ public class JcrRepositoryTest {
         Map<String, String> descriptors = new HashMap<String, String>();
         descriptors.put("property", "value");
         Repository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
-                                                  descriptors, null);
+                                                  descriptors, null, null);
         testDescriptorKeys(repository);
         testDescriptorValues(repository);
         assertThat(repository.getDescriptor("property"), is("value"));
@@ -263,7 +267,8 @@ public class JcrRepositoryTest {
         // This would work iff this code was executing in a privileged block, but it's not
         Map<Option, String> options = new HashMap<Option, String>();
         options.put(Option.ANONYMOUS_USER_ROLES, ""); // disable anonymous authentication
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, options);
+        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, options,
+                                       null);
         repository.login();
     }
 
@@ -300,7 +305,7 @@ public class JcrRepositoryTest {
         Map<JcrRepository.Option, String> options = new HashMap<JcrRepository.Option, String>();
         options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.READONLY);
         JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
-                                                     descriptors, options);
+                                                     descriptors, options, null);
 
         session = (JcrSession)repository.login();
 
@@ -498,6 +503,23 @@ public class JcrRepositoryTest {
         return session;
     }
 
+    protected JcrSession createSession( final String workspace ) throws Exception {
+        LoginContext login = new LoginContext("modeshape-jcr", new UserPasswordCallbackHandler("superuser",
+                                                                                               "superuser".toCharArray()));
+        login.login();
+
+        Subject subject = login.getSubject();
+        JcrSession session = (JcrSession)Subject.doAsPrivileged(subject, new PrivilegedExceptionAction<Session>() {
+
+            @SuppressWarnings( "synthetic-access" )
+            public Session run() throws Exception {
+                return repository.login(workspace);
+            }
+
+        }, AccessController.getContext());
+        return session;
+    }
+
     @SuppressWarnings( "deprecation" )
     private void testDescriptorKeys( Repository repository ) {
         String[] keys = repository.getDescriptorKeys();
@@ -547,7 +569,7 @@ public class JcrRepositoryTest {
         Map<Option, String> options = new HashMap<Option, String>();
         options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
         JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
-                                                     descriptors, options);
+                                                     descriptors, options, null);
 
         Session session;
 
@@ -573,7 +595,7 @@ public class JcrRepositoryTest {
         Map<Option, String> options = new HashMap<Option, String>();
         options.put(JcrRepository.Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
         JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null,
-                                                     descriptors, options);
+                                                     descriptors, options, null);
 
         String lockedNodeName = "lockedNode";
         JcrSession locker = (JcrSession)repository.login();
@@ -619,7 +641,8 @@ public class JcrRepositoryTest {
         sourceGraph = Graph.create(source(), context);
 
         // Create the repository ...
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, null);
+        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, null,
+                                       null);
 
         // Get the available workspaces ...
         session = createSession();
@@ -640,7 +663,8 @@ public class JcrRepositoryTest {
         sourceGraph = Graph.create(source(), context);
 
         // Create the repository ...
-        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, null);
+        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), null, descriptors, null,
+                                       null);
 
         // Get the available workspaces ...
         session = createSession();
@@ -653,6 +677,40 @@ public class JcrRepositoryTest {
 
     protected <T> Set<T> setOf( T... values ) {
         return org.modeshape.common.collection.Collections.unmodifiableSet(values);
+    }
+
+    @Test
+    public void shouldInitializeContentForNewlyCreatedWorkspacesIfDefined() throws Exception {
+        String urlToResourceFile = getClass().getClassLoader().getResource("initialWorkspaceContent.xml").toExternalForm();
+        String urlToCndFile = getClass().getClassLoader().getResource("cars.cnd").toExternalForm();
+
+        // Create the JcrRepositoyr instance ...
+        assertThat(source.getCapabilities().supportsCreatingWorkspaces(), is(true));
+        descriptors.put(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED, "true");
+        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), source.getCapabilities(),
+                                       descriptors, null, urlToResourceFile);
+
+        // Load the node types ...
+        session = createSession();
+        CndNodeTypeReader nodeTypeReader = new CndNodeTypeReader(session);
+        nodeTypeReader.read(urlToCndFile);
+        NodeTypeDefinition[] defns = nodeTypeReader.getNodeTypeDefinitions();
+        session.getWorkspace().getNodeTypeManager().registerNodeTypes(defns, true);
+        session.logout();
+
+        // Create a new workspace ...
+        session = createSession();
+        session.getWorkspace().createWorkspace("MyCarWorkspace");
+        session.logout();
+
+        // Check that the new workspace contains the initial content ...
+        session = createSession("MyCarWorkspace");
+        javax.jcr.Node cars = session.getRootNode().getNode("Cars");
+        javax.jcr.Node prius = session.getRootNode().getNode("Cars/Hybrid/Toyota Prius");
+        javax.jcr.Node g37 = session.getRootNode().getNode("Cars/Sports/Infiniti G37");
+        assertThat(cars, is(notNullValue()));
+        assertThat(prius, is(notNullValue()));
+        assertThat(g37, is(notNullValue()));
     }
 
 }

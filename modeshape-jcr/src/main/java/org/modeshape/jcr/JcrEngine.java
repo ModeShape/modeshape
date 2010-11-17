@@ -57,6 +57,7 @@ import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceCapabilities;
+import org.modeshape.graph.connector.xmlfile.XmlFileRepositorySource;
 import org.modeshape.graph.io.GraphBatchDestination;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
@@ -320,7 +321,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                 Path.Segment segment = optionLocation.getPath().getLastSegment();
                 Property valueProperty = optionNode.getProperty(ModeShapeLexicon.VALUE);
                 if (valueProperty == null) {
-                    log.warn(JcrI18n.noOptionValueProvided,segment.getName().getLocalName());
+                    log.warn(JcrI18n.noOptionValueProvided, segment.getName().getLocalName());
                     continue;
                 }
                 Option option = Option.findOption(segment.getName().getLocalName());
@@ -370,12 +371,65 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
             throw new RepositoryException(JcrI18n.repositoryReferencesNonExistantSource.text(repositoryName, sourceName));
         }
 
+        // Read the initial content ...
+        String initialContentForNewWorkspaces = null;
+        for (Location initialContentLocation : subgraph.getRoot().getChildren(ModeShapeLexicon.INITIAL_CONTENT)) {
+            Node initialContent = subgraph.getNode(initialContentLocation);
+            if (initialContent == null) continue;
+
+            // Determine where to load the initial content from ...
+            Property contentReference = initialContent.getProperty(ModeShapeLexicon.CONTENT);
+            if (contentReference == null || contentReference.isEmpty()) {
+                String readableName = readable(ModeShapeLexicon.CONTENT);
+                String readablePath = readable(initialContentLocation);
+                String msg = JcrI18n.propertyNotFoundOnNode.text(readableName,
+                                                                 readablePath,
+                                                                 configuration.getCurrentWorkspaceName());
+                throw new RepositoryException(msg);
+            }
+            String contentRef = string(contentReference.getFirstValue());
+
+            // Determine which workspaces this should apply to ...
+            Property workspaces = initialContent.getProperty(ModeShapeLexicon.WORKSPACES);
+            if (workspaces == null || workspaces.isEmpty()) {
+                String readableName = readable(ModeShapeLexicon.WORKSPACES);
+                String readablePath = readable(initialContentLocation);
+                String msg = JcrI18n.propertyNotFoundOnNode.text(readableName,
+                                                                 readablePath,
+                                                                 configuration.getCurrentWorkspaceName());
+                throw new RepositoryException(msg);
+            }
+
+            // Load the initial content into a transient source ...
+            XmlFileRepositorySource initialContentSource = new XmlFileRepositorySource();
+            initialContentSource.setName("Initial content for " + repositoryName);
+            initialContentSource.setContentLocation(contentRef);
+            Graph initialContentGraph = Graph.create(initialContentSource, context);
+            Graph sourceGraph = Graph.create(sourceName, connectionFactory, context);
+
+            // And initialize the source with the content (if not already there) ...
+            for (Object value : workspaces) {
+                String workspaceName = string(value);
+                if (workspaceName != null && workspaceName.trim().length() != 0) {
+                    // Load the content into the workspace with this name ...
+                    sourceGraph.useWorkspace(workspaceName);
+                    sourceGraph.merge(initialContentGraph);
+                }
+            }
+
+            // Determine if this initial content should apply to new workspaces ...
+            Property applyToNewWorkspaces = initialContent.getProperty(ModeShapeLexicon.APPLY_TO_NEW_WORKSPACES);
+            if (applyToNewWorkspaces != null && !applyToNewWorkspaces.isEmpty() && isTrue(applyToNewWorkspaces.getFirstValue())) {
+                initialContentForNewWorkspaces = contentRef; // may overwrite the value if seen more than once!
+            }
+        }
+
         // Find the capabilities ...
         RepositorySourceCapabilities capabilities = source.getCapabilities();
         // Create the repository ...
         JcrRepository repository = new JcrRepository(context, connectionFactory, sourceName,
                                                      getRepositoryService().getRepositoryLibrary(), capabilities, descriptors,
-                                                     options);
+                                                     options, initialContentForNewWorkspaces);
 
         // Register all the the node types ...
         Node nodeTypesNode = subgraph.getNode(JcrLexicon.NODE_TYPES);
@@ -464,6 +518,10 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
 
     protected final String string( Object value ) {
         return context.getValueFactories().getStringFactory().create(value);
+    }
+
+    protected final boolean isTrue( Object value ) {
+        return context.getValueFactories().getBooleanFactory().create(value);
     }
 
     /**

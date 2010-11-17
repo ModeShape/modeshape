@@ -2972,6 +2972,30 @@ public class Graph {
         return importXmlFrom(file.toURI());
     }
 
+    /**
+     * Merge the content in the supplied graph with the content in this graph, ensuring that all of the content in the supplied
+     * graph exists in this graph. Note that any extra content is this graph but not in the supplied graph will not be affected.
+     * 
+     * @param otherContent the content that should exist within this graph or, if it does not exist, added to this graph
+     * @return the interface for additional requests or actions
+     */
+    public Conjunction<Graph> merge( Graph otherContent ) {
+        GraphMerger initializer = new GraphMerger(otherContent);
+        Batch batch = batch();
+        initializer.merge(this, batch);
+        batch.execute();
+        return new Conjunction<Graph>() {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.modeshape.graph.Graph.Conjunction#and()
+             */
+            public Graph and() {
+                return Graph.this;
+            }
+        };
+    }
+
     protected Path createPath( String path ) {
         return getContext().getValueFactories().getPathFactory().create(path);
     }
@@ -4754,6 +4778,28 @@ public class Graph {
 
                 public BatchConjunction at( Iterable<Property> idProperties ) {
                     return at(Location.create(idProperties));
+                }
+            };
+        }
+
+        /**
+         * Ensure that this graph contains the content in the supplied graph. Any changes are recorded as operations on this
+         * batch, and require {@link #execute() execution}.
+         * 
+         * @param otherContent the content that should exist within this graph or, if it does not exist, added to this graph
+         * @return the interface for additional requests or actions
+         */
+        public Conjunction<Batch> merge( Graph otherContent ) {
+            GraphMerger initializer = new GraphMerger(otherContent);
+            initializer.merge(this.getGraph(), this);
+            return new Conjunction<Batch>() {
+                /**
+                 * {@inheritDoc}
+                 * 
+                 * @see org.modeshape.graph.Graph.Conjunction#and()
+                 */
+                public Batch and() {
+                    return Batch.this;
                 }
             };
         }
@@ -6793,6 +6839,14 @@ public class Graph {
             return request.getChildren();
         }
 
+        public List<Location> getChildren( Name namePattern ) {
+            List<Location> result = new ArrayList<Location>();
+            for (Location child : getChildren()) {
+                if (child.getPath().endsWith(namePattern)) result.add(child);
+            }
+            return result;
+        }
+
         public boolean hasChildren() {
             return request.getChildren().size() > 0;
         }
@@ -7089,6 +7143,14 @@ public class Graph {
             return children;
         }
 
+        public List<Location> getChildren( Name namePattern ) {
+            List<Location> result = new ArrayList<Location>();
+            for (Location child : getChildren()) {
+                if (child.getPath().endsWith(namePattern)) result.add(child);
+            }
+            return result;
+        }
+
         public boolean hasChildren() {
             return children.size() != 0;
         }
@@ -7313,6 +7375,14 @@ public class Graph {
             List<Location> children = request.getChildren(location);
             if (children == null) children = NO_CHILDREN;
             return children;
+        }
+
+        public List<Location> getChildren( Name namePattern ) {
+            List<Location> result = new ArrayList<Location>();
+            for (Location child : getChildren()) {
+                if (child.getPath().endsWith(namePattern)) result.add(child);
+            }
+            return result;
         }
 
         public Graph getGraph() {

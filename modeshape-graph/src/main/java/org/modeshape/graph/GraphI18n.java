@@ -139,6 +139,11 @@ public final class GraphI18n {
     public static I18n updatesAllowedPropertyLabel;
     public static I18n updatesAllowedPropertyCategory;
 
+    /* XML File Connector */
+    public static I18n contentPropertyDescription;
+    public static I18n contentPropertyLabel;
+    public static I18n contentPropertyCategory;
+
     /* Federation Connection */
     public static I18n namePropertyIsRequiredForFederatedRepositorySource;
     public static I18n propertyIsRequiredForFederatedRepositorySource;

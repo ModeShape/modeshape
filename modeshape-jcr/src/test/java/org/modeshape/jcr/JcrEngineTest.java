@@ -126,6 +126,22 @@ public class JcrEngineTest {
         engine.start();
     }
 
+    @Test
+    public void shouldCreateRepositoryEngineFromConfigurationFileWithInitialContentInRepository() throws Exception {
+        configuration = new JcrConfiguration().loadFrom("src/test/resources/config/configRepositoryWithInitialContent.xml");
+        engine = configuration.build();
+        engine.start();
+        repository = engine.getRepository("My Repository");
+        session = repository.login();
+
+        javax.jcr.Node cars = session.getRootNode().getNode("Cars");
+        javax.jcr.Node prius = session.getRootNode().getNode("Cars/Hybrid/Toyota Prius");
+        javax.jcr.Node g37 = session.getRootNode().getNode("Cars/Sports/Infiniti G37");
+        assertThat(cars, is(notNullValue()));
+        assertThat(prius, is(notNullValue()));
+        assertThat(g37, is(notNullValue()));
+    }
+
     // @Test
     // public void shouldCreateRepositoryConfiguredWithOneXmlNodeTypeDefinitionFiles() throws Exception {
     // configuration = new JcrConfiguration();
