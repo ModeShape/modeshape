@@ -25,6 +25,7 @@ package org.modeshape.jcr;
 
 import javax.jcr.PropertyType;
 import net.jcip.annotations.Immutable;
+import org.modeshape.common.SystemFailureException;
 
 /**
  * A utility for working with {@link PropertyType JCR property types} and {@link org.modeshape.graph.property.PropertyType
@@ -81,11 +82,14 @@ public class PropertyTypeUtil {
                 return org.modeshape.graph.property.PropertyType.NAME;
             case PropertyType.REFERENCE:
                 return org.modeshape.graph.property.PropertyType.REFERENCE;
+            case PropertyType.URI:
+                return org.modeshape.graph.property.PropertyType.URI;
             case PropertyType.WEAKREFERENCE:
                 return org.modeshape.graph.property.PropertyType.WEAKREFERENCE;
+            default:
+                // All JCR PropertyType values should be explicitly handled above ...
+                throw new SystemFailureException(JcrI18n.invalidPropertyType.text(jcrPropertyType));
         }
-        assert false;
-        return org.modeshape.graph.property.PropertyType.STRING;
     }
 
     /**
