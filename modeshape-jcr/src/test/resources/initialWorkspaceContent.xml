@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  ~ ModeShape (http://www.modeshape.org)
+  ~
+  ~ See the COPYRIGHT.txt file distributed with this work for information
+  ~ regarding copyright ownership.  Some portions may be licensed
+  ~ to Red Hat, Inc. under one or more contributor license agreements.
+  ~ See the AUTHORS.txt file in the distribution for a full listing of 
+  ~ individual contributors.
+  ~
+  ~ ModeShape is free software. Unless otherwise indicated, all code in ModeShape
+  ~ is licensed to you under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ ModeShape is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+  ~ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+  ~ for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public License
+  ~ along with this distribution; if not, write to:
+  ~ Free Software Foundation, Inc.
+  ~ 51 Franklin Street, Fifth Floor
+  ~ Boston, MA  02110-1301  USA
+  -->
+<Cars xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:car="http://www.modeshape.org/examples/cars/1.0">
+    <Hybrid>
+        <car:Car jcr:name="Toyota Prius" car:maker="Toyota" car:model="Prius" car:year="2008" car:msrp="$21,500" car:userRating="4.2" car:valueRating="5" car:mpgCity="48" car:mpgHighway="45"/>
+        <car:Car jcr:name="Toyota Highlander" car:maker="Toyota" car:model="Highlander" car:year="2008" car:msrp="$34,200" car:userRating="4" car:valueRating="5" car:mpgCity="27" car:mpgHighway="25"/>
+        <car:Car jcr:name="Nissan Altima" car:maker="Nissan" car:model="Altima" car:year="2008" car:msrp="$18,260" car:mpgCity="23" car:mpgHighway="32"/>
+    </Hybrid>
+    <Sports>
+        <car:Car jcr:name="Aston Martin DB9" car:maker="Aston Martin" car:model="DB9" car:year="2008" car:msrp="$171,600" car:userRating="5" car:mpgCity="12" car:mpgHighway="19" car:lengthInInches="185.5" car:wheelbaseInInches="108.0" car:engine="5,935 cc 5.9 liters V 12"/>
+        <car:Car jcr:name="Infiniti G37" car:maker="Infiniti" car:model="G37" car:year="2008" car:msrp="$34,900" car:userRating="3.5" car:valueRating="4" car:mpgCity="18" car:mpgHighway="24" />
+    </Sports>
+    <Luxury>
+        <car:Car jcr:name="Cadillac DTS" car:maker="Cadillac" car:model="DTS" car:year="2008" car:engine="3.6-liter V6" car:userRating="0"/>
+        <car:Car jcr:name="Bentley Continental" car:maker="Bentley" car:model="Continental" car:year="2008" car:msrp="$170,990" car:mpgCity="10" car:mpgHighway="17" />
+        <car:Car jcr:name="Lexus IS350" car:maker="Lexus" car:model="IS350" car:year="2008" car:msrp="$36,305" car:mpgCity="18" car:mpgHighway="25" car:userRating="4" car:valueRating="5" />
+    </Luxury>
+    <Utility>
+        <car:Car jcr:name="Land Rover LR2" car:maker="Land Rover" car:model="LR2" car:year="2008" car:msrp="$33,985" car:userRating="4.5" car:valueRating="5" car:mpgCity="16" car:mpgHighway="23" />
+        <car:Car jcr:name="Land Rover LR3" car:maker="Land Rover" car:model="LR3" car:year="2008" car:msrp="$48,525" car:userRating="5" car:valueRating="2" car:mpgCity="12" car:mpgHighway="17" />
+        <car:Car jcr:name="Hummer H3" car:maker="Hummer" car:model="H3" car:year="2008" car:msrp="$30,595" car:userRating="3.5" car:valueRating="4" car:mpgCity="13" car:mpgHighway="16" />
+        <car:Car jcr:name="Ford F-150" car:maker="Ford" car:model="F-150" car:year="2008" car:msrp="$23,910" car:userRating="4" car:valueRating="1" car:mpgCity="14" car:mpgHighway="20" />
+    </Utility>
+</Cars>

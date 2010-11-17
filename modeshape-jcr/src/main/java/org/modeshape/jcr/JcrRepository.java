@@ -84,6 +84,7 @@ import org.modeshape.graph.connector.federation.FederatedRepositorySource;
 import org.modeshape.graph.connector.federation.Projection;
 import org.modeshape.graph.connector.federation.ProjectionParser;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.graph.connector.xmlfile.XmlFileRepositorySource;
 import org.modeshape.graph.observe.Changes;
 import org.modeshape.graph.observe.Observable;
 import org.modeshape.graph.observe.Observer;
@@ -481,6 +482,9 @@ public class JcrRepository implements Repository {
     // Until the federated connector supports queries, we have to use a search engine ...
     private final RepositoryQueryManager queryManager;
 
+    /* The location of the XML file containing the initial content for newly-created workspaces */
+    private final String initialContentForNewWorkspaces;
+
     // package-scoped to facilitate testing
     final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<JcrSession, Object>();
 
@@ -496,6 +500,8 @@ public class JcrRepository implements Repository {
      *        known
      * @param descriptors the {@link #getDescriptorKeys() descriptors} for this repository; may be <code>null</code>.
      * @param options the optional {@link Option settings} for this repository; may be null
+     * @param initialContentForNewWorkspaces the URL, file system path, or classpath resource path to the XML file containing the
+     *        initial content for newly-created workspaces; may be null
      * @throws RepositoryException if there is a problem setting up this repository
      * @throws IllegalArgumentException If <code>executionContext</code>, <code>connectionFactory</code>,
      *         <code>repositorySourceName</code>, or <code>repositoryObservable</code> is <code>null</code>.
@@ -507,7 +513,8 @@ public class JcrRepository implements Repository {
                    Observable repositoryObservable,
                    RepositorySourceCapabilities repositorySourceCapabilities,
                    Map<String, String> descriptors,
-                   Map<Option, String> options ) throws RepositoryException {
+                   Map<Option, String> options,
+                   String initialContentForNewWorkspaces ) throws RepositoryException {
         CheckArg.isNotNull(executionContext, "executionContext");
         CheckArg.isNotNull(connectionFactory, "connectionFactory");
         CheckArg.isNotNull(repositorySourceName, "repositorySourceName");
@@ -589,6 +596,7 @@ public class JcrRepository implements Repository {
         assert this.systemSourceName != null;
         assert this.connectionFactory != null;
         this.sourceName = repositorySourceName;
+        this.initialContentForNewWorkspaces = initialContentForNewWorkspaces;
 
         // Set up the "/jcr:system" branch ...
         Graph systemGraph = Graph.create(this.systemSourceName, this.connectionFactory, executionContext);
@@ -868,6 +876,15 @@ public class JcrRepository implements Repository {
             graphWorkspace = graph.createWorkspace().clonedFrom(clonedFromWorkspaceNamed).named(workspaceName);
         } else {
             graphWorkspace = graph.createWorkspace().named(workspaceName);
+        }
+
+        // Ensure the workspace contains the initial content (if there is any) ...
+        if (initialContentForNewWorkspaces != null) {
+            XmlFileRepositorySource initialContentSource = new XmlFileRepositorySource();
+            initialContentSource.setName("Initial content for " + sourceName);
+            initialContentSource.setContentLocation(initialContentForNewWorkspaces);
+            Graph initialContentGraph = Graph.create(initialContentSource, executionContext);
+            graph.merge(initialContentGraph); // uses its own batch
         }
         String actualName = graphWorkspace.getName();
         addWorkspace(actualName, false);

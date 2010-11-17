@@ -97,6 +97,14 @@ public interface Node extends Iterable<Location> {
     List<Location> getChildren();
 
     /**
+     * Get the children that have the supplied name.
+     * 
+     * @param namePattern the name that each returned node should have
+     * @return the list of locations for each child with the supplied name; never null
+     */
+    List<Location> getChildren( Name namePattern );
+
+    /**
      * Get the list of child {@link Path.Segment segments}.
      * 
      * @return the list containing a segment for each child
