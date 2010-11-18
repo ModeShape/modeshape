@@ -36,6 +36,15 @@
     <!-- Define the sequencers. This is an optional section. -->
     <mode:sequencers>
         <!--
+        <mode:sequencer jcr:name="Teiid Model Sequencer" mode:classname="org.modeshape.sequencer.teiid.ModelSequencer">
+            <mode:description>Sequences Teiid relational models (e.g., *.xmi) loaded into the repository under '/files', extracting the structure defined in the models.</mode:description>
+            <mode:pathExpression>/files(//)(*.xmi[*])/jcr:content[@jcr:data] => /sequenced/teiid/models$1 </mode:pathExpression>
+        </mode:sequencer>
+        <mode:sequencer jcr:name="Teiid VDB Sequencer" mode:classname="org.modeshape.sequencer.teiid.VdbSequencer">
+            <mode:description>Sequences Teiid Virtual Databases (e.g., *.vdb) loaded into the repository under '/files', extracting the VDB metadata and the structure defined in the VDB's relational models.</mode:description>        
+            <mode:pathExpression>/files(//)(*.vdb[*])/jcr:content[@jcr:data] => /sequenced/teiid/vdbs$1 </mode:pathExpression>
+        </mode:sequencer>
+        -->
         <mode:sequencer jcr:name="Delimited Text File Sequencer" mode:classname="org.modeshape.sequencer.text.DelimitedTextSequencer">
             <mode:description>Sequences *.csv text files loaded into the repository under '/files', extracting comma-separated and delimited files into columnar information.</mode:description>        
             <mode:pathExpression>/files//(*.csv[*])/jcr:content[@jcr:data] => /sequenced/text/delimited/$1 </mode:pathExpression>
@@ -46,14 +55,7 @@
             <mode:pathExpression>/files//(*.txt[*])/jcr:content[@jcr:data] => /sequenced/text/fixedWidth/$1 </mode:pathExpression>
             <mode:columnStartPositions></mode:columnStartPositions>
         </mode:sequencer>
-        <mode:sequencer jcr:name="Teiid Model Sequencer" mode:classname="org.modeshape.sequencer.teiid.ModelSequencer">
-            <mode:description>Sequences Teiid relational models (e.g., *.xmi) loaded into the repository under '/files', extracting the structure defined in the models.</mode:description>
-            <mode:pathExpression>/files(//)(*.xmi[*])/jcr:content[@jcr:data] => /sequenced/teiid/models$1 </mode:pathExpression>
-        </mode:sequencer>
-        <mode:sequencer jcr:name="Teiid VDB Sequencer" mode:classname="org.modeshape.sequencer.teiid.VdbSequencer">
-            <mode:description>Sequences Teiid Virtual Databases (e.g., *.vdb) loaded into the repository under '/files', extracting the VDB metadata and the structure defined in the VDB's relational models.</mode:description>        
-            <mode:pathExpression>/files(//)(*.vdb[*])/jcr:content[@jcr:data] => /sequenced/teiid/vdbs$1 </mode:pathExpression>
-        </mode:sequencer>
+        <!--
         <mode:sequencer jcr:name="Class File Sequencer" mode:classname="org.modeshape.sequencer.classfile.ClassFileSequencer">
             <mode:description>Sequences Java class files loaded into the repository under '/files', extracting structural information.</mode:description>        
             <mode:pathExpression>/files//(*.class[*])/jcr:content[@jcr:data] => /sequenced/class/$1 </mode:pathExpression>
@@ -66,10 +68,12 @@
             <mode:description>Sequences CND files loaded into the repository under '/files', extracting the contained node type definitions.</mode:description>        
             <mode:pathExpression>/files(//(*.cnd[*]))/jcr:content[@jcr:data] => /sequenced/cnd/$1 </mode:pathExpression>
         </mode:sequencer>
+        -->
         <mode:sequencer jcr:name="DDL File Sequencer" mode:classname="org.modeshape.sequencer.ddl.DdlSequencer">
             <mode:description>Sequences DDL files loaded into the repository under '/files', extracting the structured abstract syntax tree of the DDL commands and expressions.</mode:description>        
             <mode:pathExpression>/files(//(*.ddl[*]))/jcr:content[@jcr:data] => /sequenced/ddl/$1 </mode:pathExpression>
         </mode:sequencer>     
+        <!-- 
         <mode:sequencer jcr:name="MS Office File Sequencer" mode:classname="org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer">
             <mode:description>Sequences Microsoft Office documents and presentations under '/files', extracting summary information and structure.</mode:description>        
             <mode:pathExpression>/files//(*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /sequenced/msoffice/$1 </mode:pathExpression>
@@ -111,7 +115,9 @@
                 <mode:resource>/org/modeshape/sequencer/text/sequencer-text.cnd</mode:resource>
                 <mode:resource>/org/modeshape/sequencer/xml/xml.cnd</mode:resource>
                 <mode:resource>/org/modeshape/sequencer/zip/zip.cnd</mode:resource>
+                -->
                 <mode:resource>/org/modeshape/sequencer/ddl/dialect/derby/DerbyDdl.cnd</mode:resource>
+                <!-- 
                 <mode:resource>/org/modeshape/sequencer/ddl/dialect/oracle/OracleDdl.cnd</mode:resource>
                 <mode:resource>/org/modeshape/sequencer/ddl/dialect/postgres/PostgresDdl.cnd</mode:resource>
                 -->
