@@ -52,7 +52,7 @@ public class BasicName implements Name {
 
     public BasicName( String namespaceUri,
                       String localName ) {
-        CheckArg.isNotEmpty(localName, "localName");
+        CheckArg.isNotNull(localName, "localName");
         this.namespaceUri = namespaceUri != null ? namespaceUri.trim().intern() : "";
         this.localName = trimNonEmptyStrings(localName);
         this.hc = HashCode.compute(this.namespaceUri, this.localName);

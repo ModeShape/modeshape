@@ -213,7 +213,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements javax.jcr.Node
     final JcrValue valueFrom( InputStream value ) {
         ValueFactories factories = cache.factories();
         org.modeshape.graph.property.Binary binary = factories.getBinaryFactory().create(value);
-        return new JcrValue(factories, cache, PropertyType.DATE, binary);
+        return new JcrValue(factories, cache, PropertyType.BINARY, binary);
     }
 
     final JcrValue valueFrom( Binary value ) {
