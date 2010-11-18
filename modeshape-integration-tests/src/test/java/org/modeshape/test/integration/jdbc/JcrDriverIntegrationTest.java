@@ -840,6 +840,7 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
             this.setSession(session);
 
             uploadFile("docWithComments.xml", "/files/");
+            Thread.sleep(1000L);
 
             print = true;
 
@@ -874,13 +875,9 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
             "car:Car    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.0    Land Rover LR3    3",
             "mode:root    /        1.0        0",
             "nt:file    /files/create_schema.ddl    create_schema.ddl    1.0    create_schema.ddl    2",
-            "nt:file    /files/docWithComments.xml    docWithComments.xml    1.0    docWithComments.xml    2",
-            "nt:file    /files/docWithComments2.xml    docWithComments2.xml    1.0    docWithComments2.xml    2",
             "nt:file    /files/standard_test_statements.ddl    standard_test_statements.ddl    1.0    standard_test_statements.ddl    2",
             "nt:folder    /files    files    1.0    files    1",
             "nt:resource    /files/create_schema.ddl/jcr:content    jcr:content    1.0    content    3",
-            "nt:resource    /files/docWithComments.xml/jcr:content    jcr:content    1.0    content    3",
-            "nt:resource    /files/docWithComments2.xml/jcr:content    jcr:content    1.0    content    3",
             "nt:resource    /files/standard_test_statements.ddl/jcr:content    jcr:content    1.0    content    3",
             "nt:unstructured    /Cars    Cars    1.0    Cars    1",
             "nt:unstructured    /Cars/Hybrid    Hybrid    1.0    Hybrid    2",
@@ -1069,10 +1066,46 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
             "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/view_1[4]/col1    col1    1.0    col1    6",
             "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/view_1[4]/col2    col2    1.0    col2    6",};
 
+        String[] expected2 = {"jcr:primaryType[STRING]", "car:Car", "car:Car", "car:Car", "car:Car", "car:Car", "car:Car",
+            "car:Car", "car:Car", "car:Car", "car:Car", "car:Car", "car:Car", "mode:root", "nt:file", "nt:file", "nt:folder",
+            "nt:resource", "nt:resource", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
+            "nt:unstructured", "nt:unstructured",};
+
         Session session = repository.login();
         try {
 
             this.setSession(session);
+            removeAllChildren("/files");
 
             uploadFile("org/modeshape/test/integration/sequencer/ddl/create_schema.ddl", "/files/");
             uploadFile("org/modeshape/test/integration/sequencer/ddl/standard_test_statements.ddl", "/files/");
@@ -1085,9 +1118,15 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
                                                     expected1,
                                                     26);
 
+            ConnectionResultsComparator.executeTest(this.connection,
+                                                    "SELECT [jcr:primaryType] FROM [nt:base] ORDER BY [jcr:primaryType]",
+                                                    expected2,
+                                                    26);
+
         } finally {
             session.logout();
         }
 
     }
+
 }
