@@ -36,11 +36,11 @@ if not "%1"=="" goto cont
 if "%1"=="" (
  @echo.
  @echo.
- @echo usage:  ddl-gen.bat -dialect (dialect name) -model (model_name) [-out (path to output directory)]
+ @echo usage:  ddl-gen.bat -dialect (dialect name) -model (model_name) [-out (path to output directory)]  [-delimiter (delim>)]
  @echo 		where dialect and model parameters should match the value of the dialect 
  @echo 			and model properties specified for the JPA connector.	
  @echo. 
- @echo Example: ddl-gen.bat -dialect HSQL -model Simple -out c:\temp
+ @echo Example: ddl-gen.bat -dialect HSQL -model Simple -out c:\temp -delimiter ;
  @echo. 
 
  goto end

@@ -65,5 +65,19 @@ public class SchemaGenTest {
         main.generate();
         checkFiles();
     }
+    
+    @Test
+    public void shouldCreateSchemaForOracleDialectWithDelimiter() throws IOException {
+        SchemaGen main = new SchemaGen("org.hibernate.dialect.Oracle10gDialect", MODEL_NAME, outputPath, ";");
+        main.generate();
+        checkFiles();
+    }
+    
+    @Test
+    public void shouldCreateSchemaForDialectThatIsNotFullyQualifiedWithDelimiter() throws IOException {
+        SchemaGen main = new SchemaGen("HSQLDialect", MODEL_NAME, outputPath, "%");
+        main.generate();
+        checkFiles();
+    }    
 
 }

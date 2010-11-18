@@ -31,11 +31,11 @@ usage ()
 {	
  echo
  echo
- echo "usage:  ddl-gen.sh -dialect <dialect name> -model <model_name> [-out <path to output directory>]"
+ echo "usage:  ddl-gen.sh -dialect <dialect name> -model <model_name> [-out <path to output directory>] [-delimiter <delim>]"
  echo "		where dialect and model parameters should match the value of the dialect and model properties"
  echo "				specified for the JPA connector.				"
  echo "    "
- echo "Example: ddl-gen.sh -dialect HSQL -model Simple -out /tmp"
+ echo "Example: ddl-gen.sh -dialect HSQL -model Simple -out /tmp -delimiter ;"
  echo "    "
  exit
 }
