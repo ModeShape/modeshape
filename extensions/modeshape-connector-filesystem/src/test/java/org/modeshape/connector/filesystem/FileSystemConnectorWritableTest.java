@@ -57,6 +57,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
     protected File otherWorkspaceRoot;
     protected File newWorkspaceRoot;
     protected File scratchDirectory;
+    private FileSystemSource source;
 
     @Override
     protected RepositorySource setUpSource() throws Exception {
@@ -69,7 +70,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
 
         // Set the connection properties to be use the content of "./src/test/resources/repositories" as a repository ...
         String[] predefinedWorkspaceNames = new String[] {"test", "otherWorkspace", "airplanes", "cars"};
-        FileSystemSource source = new FileSystemSource();
+        source = new FileSystemSource();
         source.setName("Test Repository");
         source.setWorkspaceRootPath(REPO_PATH);
         source.setPredefinedWorkspaceNames(predefinedWorkspaceNames);
@@ -458,7 +459,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
         assertContents(copiedFile, TEST_CONTENT);
     }
 
-    @FixFor("MODE-944")
+    @FixFor( "MODE-944" )
     @Test
     public void shouldBeAbleToRenameFileInBatch() {
         Batch batch = graph.batch();
@@ -471,7 +472,7 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
 
         batch.move("/testFile").as("copiedFile").into("/");
         batch.execute();
-        
+
         File newFile = new File(testWorkspaceRoot, "testFile");
         assertThat(newFile.exists(), is(false));
 
@@ -521,8 +522,16 @@ public class FileSystemConnectorWritableTest extends AbstractConnectorTest {
 
         for (int i = 0; i < 20; i++) {
             pathName += "/test";
+            // Check whether the java.io.File length would be too long
+            // (if so, then we'd get a RepositorySourceException here) ...
+            if (pathLengthExceedsOSLimits(pathName)) break;
+
             graph.create(pathName).orReplace().and();
         }
+    }
+
+    protected boolean pathLengthExceedsOSLimits( String path ) {
+        return (scratchDirectory.getAbsolutePath() + path).length() > source.getMaxPathLength();
     }
 
     @Test( expected = RepositorySourceException.class )
