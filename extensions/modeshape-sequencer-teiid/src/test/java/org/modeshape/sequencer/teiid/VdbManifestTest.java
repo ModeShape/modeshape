@@ -46,6 +46,7 @@ public class VdbManifestTest {
     @Test
     public void shouldReadVdbManifestFromQuickEmployees() throws Exception {
         VdbManifest manifest = VdbManifest.read(streamFor("/model/QuickEmployees/vdb.xml"), context);
+        assertThat(manifest.getModels().get(0).isBuiltIn(), is(false));
     }
 
     protected InputStream streamFor( String resourcePath ) throws Exception {
