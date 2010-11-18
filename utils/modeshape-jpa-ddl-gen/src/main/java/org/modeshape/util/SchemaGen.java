@@ -29,16 +29,41 @@ public class SchemaGen {
 	
     public static final String CREATE_FILE_NAME = "create.modeshape-jpa-connector.ddl";
     public static final String DROP_FILE_NAME = "drop.modeshape-jpa-connector.ddl";
-
+    
     private final Dialect dialect;
     private final Model model;
     private final File outputPath;
+    private final String delimiter;
+    
+	public SchemaGen(String dialect, String model, File outputPath) {
+
+		this.dialect = dialectFor(dialect);
+		this.delimiter = null;
+
+		this.model = JpaSource.Models.getModel(model);
+		if (this.model == null) {
+			throw new RuntimeException(JpaDdlGenI18n.invalidModel.text());
+		}
+		this.outputPath = outputPath;
+
+		if (this.outputPath != null && !this.outputPath.exists()) {
+			this.outputPath.mkdirs();
+
+			String logMsg = JpaDdlGenI18n.directoryLocationCreated
+					.text(this.outputPath.getAbsolutePath()); //$NON-NLS-1$
+			logger.log(Level.INFO, logMsg);
+
+		}
+	}
 
     public SchemaGen( String dialect,
                       String model,
-                      File outputPath ) {
+                      File outputPath,
+                      String delimiter) {
 
         this.dialect = dialectFor(dialect);
+        this.delimiter = delimiter;
+
         this.model = JpaSource.Models.getModel(model);
 		if (this.model == null) {
 			throw new RuntimeException(JpaDdlGenI18n.invalidModel.text());
@@ -100,19 +125,21 @@ public class SchemaGen {
         // cfg.setProperties(properties);
         SchemaExport export = new SchemaExport(configurator.getHibernateConfiguration());
         export.setOutputFile(new File(outputPath, CREATE_FILE_NAME).getCanonicalPath());
+        if (this.delimiter != null ) export.setDelimiter("\r" + delimiter);
         export.create(false, false);
 
         export.setOutputFile(new File(outputPath, DROP_FILE_NAME).getCanonicalPath());
         export.drop(false, false);
     }
 
-    public static final String USAGE = "./ddl-gen.sh -dialect <dialect name> -model <model_name> [-out <path to output directory>]\n"
-                                       + "\tExample: ./ddl-gen.sh -dialect HSQL -model Simple -out /tmp";
+    public static final String USAGE = "./ddl-gen.sh -dialect <dialect name> -model <model_name> [-out <path to output directory>] [-delimiter <delim>]\n"
+                                       + "\tExample: ./ddl-gen.sh -dialect HSQL -model Simple -out /tmp  -delimiter % ";
 
     public static void main( String[] args ) throws IOException {
         String modelName = null;
         String dialectName = null;
         File outputFile = new File(".");
+        String delim = null;
 
         int i = 0;
         while (i < args.length) {
@@ -125,6 +152,9 @@ public class SchemaGen {
             } else if ("-out".equals(args[i])) {
                 if (i == args.length - 1) printUsage();
                 outputFile = new File(args[++i]);
+            } else if ("-delimiter".equals(args[i])) {
+                if (i == args.length - 1) printUsage();                
+                delim =args[++i];
             } else if ("-help".equals(args[i]) || "-?".equals(args[i])) {
                 printUsage();
             }
@@ -133,7 +163,7 @@ public class SchemaGen {
 
         if (modelName == null || dialectName == null) printUsage();
 
-        SchemaGen main = new SchemaGen(dialectName, modelName, outputFile);
+        SchemaGen main = new SchemaGen(dialectName, modelName, outputFile, delim);
         main.generate();
     }
 
