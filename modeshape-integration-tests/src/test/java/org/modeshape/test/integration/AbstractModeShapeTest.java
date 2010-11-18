@@ -206,6 +206,15 @@ public abstract class AbstractModeShapeTest {
         }
     }
 
+    protected void removeAllChildren( String absPath ) throws RepositoryException {
+        try {
+            Node node = session().getNode(absPath);
+            tools.removeAllChildren(node);
+        } catch (PathNotFoundException e) {
+            // ignore
+        }
+    }
+
     /**
      * Get the sequencing statistics.
      * 
