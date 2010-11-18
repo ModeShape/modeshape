@@ -45,6 +45,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
 import org.modeshape.jdbc.ConnectionResultsComparator;
 import org.modeshape.jdbc.JcrConnection;
@@ -311,16 +312,6 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
     public void shouldBeAbleToExecuteSqlQueryToFindAllUnstructuredNodes() throws SQLException {
         String[] expected = {
             "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
-            "nt:unstructured    /Other    Other    0.004816451    Other    1",
-            "nt:unstructured    /Other/NodeA[3]    NodeA    0.004816451    NodeA    2",
-            "nt:unstructured    /NodeB    NodeB    0.004816451    NodeB    1",
-            "nt:unstructured    /Other/NodeA    NodeA    0.004816451    NodeA    2",
-            "nt:unstructured    /Other/NodeA[2]    NodeA    0.004816451    NodeA    2",
-            "nt:unstructured    /Cars/Luxury    Luxury    0.004816451    Luxury    2",
-            "nt:unstructured    /Cars/Sports    Sports    0.004816451    Sports    2",
-            "nt:unstructured    /Cars/Hybrid    Hybrid    0.004816451    Hybrid    2",
-            "nt:unstructured    /Cars    Cars    0.004816451    Cars    1",
-            "nt:unstructured    /Cars/Utility    Utility    0.004816451    Utility    2",
             "car:Car    /Cars/Luxury/Lexus IS350    Lexus IS350    0.003934855    Lexus IS350    3",
             "car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    0.003934855    Toyota Highlander    3",
             "car:Car    /Cars/Utility/Land Rover LR3    Land Rover LR3    0.003934855    Land Rover LR3    3",
@@ -332,9 +323,22 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
             "car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    0.003934855    Nissan Altima    3",
             "car:Car    /Cars/Luxury/Cadillac DTS    Cadillac DTS    0.003934855    Cadillac DTS    3",
             "car:Car    /Cars/Sports/Infiniti G37    Infiniti G37    0.003934855    Infiniti G37    3",
-            "car:Car    /Cars/Utility/Hummer H3    Hummer H3    0.003934855    Hummer H3    3"};
+            "car:Car    /Cars/Utility/Hummer H3    Hummer H3    0.003934855    Hummer H3    3",
+            "nt:unstructured    /Other    Other    0.004816451    Other    1",
+            "nt:unstructured    /Other/NodeA[3]    NodeA    0.004816451    NodeA    2",
+            "nt:unstructured    /NodeB    NodeB    0.004816451    NodeB    1",
+            "nt:unstructured    /Other/NodeA    NodeA    0.004816451    NodeA    2",
+            "nt:unstructured    /Other/NodeA[2]    NodeA    0.004816451    NodeA    2",
+            "nt:unstructured    /Cars/Luxury    Luxury    0.004816451    Luxury    2",
+            "nt:unstructured    /Cars/Sports    Sports    0.004816451    Sports    2",
+            "nt:unstructured    /Cars/Hybrid    Hybrid    0.004816451    Hybrid    2",
+            "nt:unstructured    /Cars    Cars    0.004816451    Cars    1",
+            "nt:unstructured    /Cars/Utility    Utility    0.004816451    Utility    2",};
 
-        ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:unstructured]", expected, 22);
+        ConnectionResultsComparator.executeTest(this.connection,
+                                                "SELECT * FROM [nt:unstructured] ORDER BY [jcr:primaryType]",
+                                                expected,
+                                                22);
 
     }
 
@@ -478,6 +482,34 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
             "Repo    NULL    ddl:tableReference    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    ddl:translationOperand    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    ddl:viewOperand    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:columnDefinition    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:createFunctionStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:createIndexStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:createProcedureStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:createRoleStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:createSynonymStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:createTriggerStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:declareGlobalTemporaryTableStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:dropFunctionStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:dropIndexStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:dropProcedureStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:dropRoleStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:dropSynonymStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:dropTriggerStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:functionOperand    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:functionParameter    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:grantOnFunctionStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:grantOnProcedureStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:grantRolesStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:indexColumnReference    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:indexOperand    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:lockTableStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:procedureOperand    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:renameTableStatement    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:roleName    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:roleOperand    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:synonymOperand    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    derbyddl:triggerOperand    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    jdbcs:imported    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    jdbcs:source    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    mix:created    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
@@ -561,7 +593,7 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
 
         ResultSet rs = dbmd.getTables("%", "%", "%", new String[] {});
         results.assertResultsSetEquals(rs, expected);
-        results.assertRowCount(150);
+        results.assertRowCount(438);
     }
 
     @Test
@@ -571,7 +603,7 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
         while (rs.next()) {
             tableNames.add(rs.getString("TABLE_NAME"));
         }
-        assertThat(tableNames.size(), is(151));
+        assertThat(tableNames.size(), is(179));
         List<String> tablesWithProblems = new ArrayList<String>();
         for (String table : tableNames) {
             try {
@@ -739,12 +771,11 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
 
     }
 
+    @FixFor( "MODE-981" )
     /*
-    * FixFor( "MODE-981" )
-    * 
-    * The issue was the first read was cached, and after a new file was uploaded, subsequent reads did not see the new rows.
-    * This was due to a new  session wasn't being used.
-    */
+     * The issue was the first read was cached, and after a new file was uploaded, subsequent reads did not see the new rows.
+     * This was due to a new  session wasn't being used.
+     */
     @Test
     public void shouldSequence2XmlFiles() throws Exception {
         String[] expected1 = {
@@ -817,6 +848,242 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
             uploadFile("docWithComments2.xml", "/files/");
 
             ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:base] ORDER BY [jcr:path]", expected2, 28);
+
+        } finally {
+            session.logout();
+        }
+
+    }
+
+    @FixFor( "MODE-909" )
+    @Test
+    public void shouldSequence2DdlFiles() throws Exception {
+        String[] expected1 = {
+            "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
+            "car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    1.0    Nissan Altima    3",
+            "car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    1.0    Toyota Highlander    3",
+            "car:Car    /Cars/Hybrid/Toyota Prius    Toyota Prius    1.0    Toyota Prius    3",
+            "car:Car    /Cars/Luxury/Bentley Continental    Bentley Continental    1.0    Bentley Continental    3",
+            "car:Car    /Cars/Luxury/Cadillac DTS    Cadillac DTS    1.0    Cadillac DTS    3",
+            "car:Car    /Cars/Luxury/Lexus IS350    Lexus IS350    1.0    Lexus IS350    3",
+            "car:Car    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    1.0    Aston Martin DB9    3",
+            "car:Car    /Cars/Sports/Infiniti G37    Infiniti G37    1.0    Infiniti G37    3",
+            "car:Car    /Cars/Utility/Ford F-150    Ford F-150    1.0    Ford F-150    3",
+            "car:Car    /Cars/Utility/Hummer H3    Hummer H3    1.0    Hummer H3    3",
+            "car:Car    /Cars/Utility/Land Rover LR2    Land Rover LR2    1.0    Land Rover LR2    3",
+            "car:Car    /Cars/Utility/Land Rover LR3    Land Rover LR3    1.0    Land Rover LR3    3",
+            "mode:root    /        1.0        0",
+            "nt:file    /files/create_schema.ddl    create_schema.ddl    1.0    create_schema.ddl    2",
+            "nt:file    /files/docWithComments.xml    docWithComments.xml    1.0    docWithComments.xml    2",
+            "nt:file    /files/docWithComments2.xml    docWithComments2.xml    1.0    docWithComments2.xml    2",
+            "nt:file    /files/standard_test_statements.ddl    standard_test_statements.ddl    1.0    standard_test_statements.ddl    2",
+            "nt:folder    /files    files    1.0    files    1",
+            "nt:resource    /files/create_schema.ddl/jcr:content    jcr:content    1.0    content    3",
+            "nt:resource    /files/docWithComments.xml/jcr:content    jcr:content    1.0    content    3",
+            "nt:resource    /files/docWithComments2.xml/jcr:content    jcr:content    1.0    content    3",
+            "nt:resource    /files/standard_test_statements.ddl/jcr:content    jcr:content    1.0    content    3",
+            "nt:unstructured    /Cars    Cars    1.0    Cars    1",
+            "nt:unstructured    /Cars/Hybrid    Hybrid    1.0    Hybrid    2",
+            "nt:unstructured    /Cars/Luxury    Luxury    1.0    Luxury    2",
+            "nt:unstructured    /Cars/Sports    Sports    1.0    Sports    2",
+            "nt:unstructured    /Cars/Utility    Utility    1.0    Utility    2",
+            "nt:unstructured    /NodeB    NodeB    1.0    NodeB    1",
+            "nt:unstructured    /Other    Other    1.0    Other    1",
+            "nt:unstructured    /Other/NodeA    NodeA    1.0    NodeA    2",
+            "nt:unstructured    /Other/NodeA[2]    NodeA    1.0    NodeA    2",
+            "nt:unstructured    /Other/NodeA[3]    NodeA    1.0    NodeA    2",
+            "nt:unstructured    /sequenced    sequenced    1.0    sequenced    1",
+            "nt:unstructured    /sequenced/ddl    ddl    1.0    ddl    2",
+            "nt:unstructured    /sequenced/ddl/create_schema.ddl    create_schema.ddl    1.0    create_schema.ddl    3",
+            "nt:unstructured    /sequenced/ddl/create_schema.ddl/ddl:statements    ddl:statements    1.0    statements    4",
+            "nt:unstructured    /sequenced/ddl/create_schema.ddl/ddl:statements/hollywood    hollywood    1.0    hollywood    5",
+            "nt:unstructured    /sequenced/ddl/create_schema.ddl/ddl:statements/hollywood/films    films    1.0    films    6",
+            "nt:unstructured    /sequenced/ddl/create_schema.ddl/ddl:statements/hollywood/films/producerName    producerName    1.0    producerName    7",
+            "nt:unstructured    /sequenced/ddl/create_schema.ddl/ddl:statements/hollywood/films/release    release    1.0    release    7",
+            "nt:unstructured    /sequenced/ddl/create_schema.ddl/ddl:statements/hollywood/films/title    title    1.0    title    7",
+            "nt:unstructured    /sequenced/ddl/create_schema.ddl/ddl:statements/hollywood/winners    winners    1.0    winners    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl    standard_test_statements.ddl    1.0    standard_test_statements.ddl    3",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements    ddl:statements    1.0    statements    4",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/ACTIVITIES    ACTIVITIES    1.0    ACTIVITIES    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/ACTIVITIES/ACTIVITY    ACTIVITY    1.0    ACTIVITY    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/ACTIVITIES/CITY_ID    CITY_ID    1.0    CITY_ID    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/ACTIVITIES/SEASON    SEASON    1.0    SEASON    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/Avgs    Avgs    1.0    Avgs    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/GRANT    GRANT    1.0    GRANT    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/GRANT[2]    GRANT    1.0    GRANT    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/GRANT[3]    GRANT    1.0    GRANT    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/GRANT[4]    GRANT    1.0    GRANT    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/GRANT[5]    GRANT    1.0    GRANT    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/GRANT[6]    GRANT    1.0    GRANT    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/HOTELAVAILABILITY    HOTELAVAILABILITY    1.0    HOTELAVAILABILITY    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/HOTELAVAILABILITY/BOOKING_DATE    BOOKING_DATE    1.0    BOOKING_DATE    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/HOTELAVAILABILITY/HOTEL_ID    HOTEL_ID    1.0    HOTEL_ID    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/HOTELAVAILABILITY/PK_1    PK_1    1.0    PK_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/HOTELAVAILABILITY/PK_1/BOOKING_DATE    BOOKING_DATE    1.0    BOOKING_DATE    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/HOTELAVAILABILITY/PK_1/HOTEL_ID    HOTEL_ID    1.0    HOTEL_ID    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/HOTELAVAILABILITY/ROOMS_TAKEN    ROOMS_TAKEN    1.0    ROOMS_TAKEN    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/MORE_ACTIVITIES    MORE_ACTIVITIES    1.0    MORE_ACTIVITIES    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/MORE_ACTIVITIES/ACTIVITY    ACTIVITY    1.0    ACTIVITY    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/MORE_ACTIVITIES/CITY_ID    CITY_ID    1.0    CITY_ID    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/MORE_ACTIVITIES/SEASON    SEASON    1.0    SEASON    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/PEOPLE    PEOPLE    1.0    PEOPLE    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/PEOPLE/PEOPLE_PK    PEOPLE_PK    1.0    PEOPLE_PK    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/PEOPLE/PEOPLE_PK/PERSON_ID    PERSON_ID    1.0    PERSON_ID    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/PEOPLE/PERSON    PERSON    1.0    PERSON    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/PEOPLE/PERSON_ID    PERSON_ID    1.0    PERSON_ID    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/assertIsZero    assertIsZero    1.0    assertIsZero    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/assertIsZero/CONSTRAINT_ATTRIBUTE    CONSTRAINT_ATTRIBUTE    1.0    CONSTRAINT_ATTRIBUTE    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/assertNotNull    assertNotNull    1.0    assertNotNull    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/assertNotNull/CONSTRAINT_ATTRIBUTE    CONSTRAINT_ATTRIBUTE    1.0    CONSTRAINT_ATTRIBUTE    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/assertconstr1    assertconstr1    1.0    assertconstr1    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/assertconstr1/CONSTRAINT_ATTRIBUTE    CONSTRAINT_ATTRIBUTE    1.0    CONSTRAINT_ATTRIBUTE    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/assertconstr1/CONSTRAINT_ATTRIBUTE[2]    CONSTRAINT_ATTRIBUTE    1.0    CONSTRAINT_ATTRIBUTE    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/assertconstr2    assertconstr2    1.0    assertconstr2    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/collation1    collation1    1.0    collation1    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/collation2    collation2    1.0    collation2    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/collation3    collation3    1.0    collation3    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/cs1    cs1    1.0    cs1    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/cs2    cs2    1.0    cs2    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/cs3    cs3    1.0    cs3    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/cs4    cs4    1.0    cs4    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/cs5    cs5    1.0    cs5    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/employee    employee    1.0    employee    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/employee/deptno    deptno    1.0    deptno    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/employee/emp_fk1    emp_fk1    1.0    emp_fk1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/employee/emp_fk1/CONSTRAINT_ATTRIBUTE    CONSTRAINT_ATTRIBUTE    1.0    CONSTRAINT_ATTRIBUTE    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/employee/emp_fk1/dept    dept    1.0    dept    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/employee/emp_fk1/deptno    deptno    1.0    deptno    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/employee/emp_fk1/deptno[2]    deptno    1.0    deptno    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/employee/emp_pk    emp_pk    1.0    emp_pk    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/employee/emp_pk/empno    empno    1.0    empno    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/employee/empname    empname    1.0    empname    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/employee/empno    empno    1.0    empno    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/employee/job    job    1.0    job    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/full_domain    full_domain    1.0    full_domain    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/mydecimal    mydecimal    1.0    mydecimal    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/myinteger    myinteger    1.0    myinteger    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/mynchar    mynchar    1.0    mynchar    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/oe    oe    1.0    oe    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/oe/GRANT    GRANT    1.0    GRANT    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/oe/new_product    new_product    1.0    new_product    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/oe/new_product/PK_1    PK_1    1.0    PK_1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/oe/new_product/PK_1/color    color    1.0    color    8",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/oe/new_product/color    color    1.0    color    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/oe/new_product/quantity    quantity    1.0    quantity    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/oe/new_product_view    new_product_view    1.0    new_product_view    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/partial_domain    partial_domain    1.0    partial_domain    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_1    schema_1    1.0    schema_1    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_1/table_1    table_1    1.0    table_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_1/table_1/col1    col1    1.0    col1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_1/table_1/col2    col2    1.0    col2    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_1/view_1    view_1    1.0    view_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_1/view_1/col1    col1    1.0    col1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_1/view_1/col2    col2    1.0    col2    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_2    schema_2    1.0    schema_2    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_name_1    schema_name_1    1.0    schema_name_1    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_name_1/SAMP.V1    SAMP.V1    1.0    SAMP.V1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_name_1/SAMP.V1/COL_DIFF    COL_DIFF    1.0    COL_DIFF    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_name_1/SAMP.V1/COL_SUM    COL_SUM    1.0    COL_SUM    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_name_1/table_name26    table_name26    1.0    table_name26    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_name_1/table_name26/UC_1    UC_1    1.0    UC_1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_name_1/table_name26/UC_1/ref_column_name_1    ref_column_name_1    1.0    ref_column_name_1    8",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_name_1/table_name26/column_name_1    column_name_1    1.0    column_name_1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_name_1/table_name_15    table_name_15    1.0    table_name_15    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_name_1/table_name_15/FK_1    FK_1    1.0    FK_1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_name_1/table_name_15/FK_1/column_name_1    column_name_1    1.0    column_name_1    8",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_name_1/table_name_15/FK_1/ref_column_name_1    ref_column_name_1    1.0    ref_column_name_1    8",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_name_1/table_name_15/FK_1/ref_table_name    ref_table_name    1.0    ref_table_name    8",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/schema_name_1/table_name_15/column_name_1    column_name_1    1.0    column_name_1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_3    table_3    1.0    table_3    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_3/col1    col1    1.0    col1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_3/option    option    1.0    option    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_4    table_4    1.0    table_4    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_4/PK_1    PK_1    1.0    PK_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_4/PK_1/col1    col1    1.0    col1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_4/col1    col1    1.0    col1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_4/option    option    1.0    option    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5    table_5    1.0    table_5    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/CHECK_1    CHECK_1    1.0    CHECK_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/CHECK_1[2]    CHECK_1    1.0    CHECK_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1    FK_1    1.0    FK_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1/col1    col1    1.0    col1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1/col3    col3    1.0    col3    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1/table_3    table_3    1.0    table_3    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[2]    FK_1    1.0    FK_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[2]/col1    col1    1.0    col1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[2]/col4    col4    1.0    col4    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[2]/table_4    table_4    1.0    table_4    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[3]    FK_1    1.0    FK_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[3]/col1    col1    1.0    col1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[3]/col5    col5    1.0    col5    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[3]/table_1    table_1    1.0    table_1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[4]    FK_1    1.0    FK_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[4]/CONSTRAINT_ATTRIBUTE    CONSTRAINT_ATTRIBUTE    1.0    CONSTRAINT_ATTRIBUTE    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[4]/CONSTRAINT_ATTRIBUTE[2]    CONSTRAINT_ATTRIBUTE    1.0    CONSTRAINT_ATTRIBUTE    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[4]/col2    col2    1.0    col2    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[4]/col3    col3    1.0    col3    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[4]/col4    col4    1.0    col4    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[4]/col5    col5    1.0    col5    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/FK_1[4]/table_7    table_7    1.0    table_7    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/UC_1    UC_1    1.0    UC_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/UC_1/col1    col1    1.0    col1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/UC_1[2]    UC_1    1.0    UC_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/UC_1[2]/col2    col2    1.0    col2    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/UC_1[3]    UC_1    1.0    UC_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/UC_1[3]/col6    col6    1.0    col6    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/UC_1[4]    UC_1    1.0    UC_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/UC_1[4]/CONSTRAINT_ATTRIBUTE    CONSTRAINT_ATTRIBUTE    1.0    CONSTRAINT_ATTRIBUTE    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/UC_1[4]/CONSTRAINT_ATTRIBUTE[2]    CONSTRAINT_ATTRIBUTE    1.0    CONSTRAINT_ATTRIBUTE    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/UC_1[4]/col1    col1    1.0    col1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/UC_1[4]/col4    col4    1.0    col4    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/ck2    ck2    1.0    ck2    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/col1    col1    1.0    col1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/col2    col2    1.0    col2    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/col3    col3    1.0    col3    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/col4    col4    1.0    col4    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/col5    col5    1.0    col5    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/col6    col6    1.0    col6    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/pk5    pk5    1.0    pk5    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/pk5/CONSTRAINT_ATTRIBUTE    CONSTRAINT_ATTRIBUTE    1.0    CONSTRAINT_ATTRIBUTE    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_5/pk5/col1    col1    1.0    col1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_name29    table_name29    1.0    table_name29    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_name29/column_name_1    column_name_1    1.0    column_name_1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_name29/fk_name    fk_name    1.0    fk_name    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_name29/fk_name/ref_column_name_1    ref_column_name_1    1.0    ref_column_name_1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_name29/fk_name/ref_column_name_1[2]    ref_column_name_1    1.0    ref_column_name_1    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_name29/fk_name/ref_column_name_2    ref_column_name_2    1.0    ref_column_name_2    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/table_name29/fk_name/ref_table_name    ref_table_name    1.0    ref_table_name    7",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/tn1    tn1    1.0    tn1    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/tn2    tn2    1.0    tn2    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/tn3    tn3    1.0    tn3    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/view_1    view_1    1.0    view_1    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/view_1/col1    col1    1.0    col1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/view_1/col2    col2    1.0    col2    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/view_1[2]    view_1    1.0    view_1    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/view_1[2]/col1    col1    1.0    col1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/view_1[2]/col2    col2    1.0    col2    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/view_1[3]    view_1    1.0    view_1    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/view_1[3]/col1    col1    1.0    col1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/view_1[3]/col2    col2    1.0    col2    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/view_1[4]    view_1    1.0    view_1    5",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/view_1[4]/col1    col1    1.0    col1    6",
+            "nt:unstructured    /sequenced/ddl/standard_test_statements.ddl/ddl:statements/view_1[4]/col2    col2    1.0    col2    6",};
+
+        Session session = repository.login();
+        try {
+
+            this.setSession(session);
+
+            uploadFile("org/modeshape/test/integration/sequencer/ddl/create_schema.ddl", "/files/");
+            uploadFile("org/modeshape/test/integration/sequencer/ddl/standard_test_statements.ddl", "/files/");
+            Thread.sleep(1000L);
+
+            print = true;
+
+            ConnectionResultsComparator.executeTest(this.connection,
+                                                    "SELECT * FROM [nt:base] ORDER BY [jcr:primaryType], [jcr:path]",
+                                                    expected1,
+                                                    26);
 
         } finally {
             session.logout();
