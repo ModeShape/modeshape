@@ -30,7 +30,6 @@ import java.util.Set;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
@@ -1400,7 +1399,7 @@ class JcrQueryManager implements QueryManager {
         @Override
         public Value createValue( int propertyType,
                                   Object value ) {
-            return new JcrValue(factories, cache, PropertyType.PATH, value);
+            return new JcrValue(factories, cache, propertyType, value);
         }
 
         /**

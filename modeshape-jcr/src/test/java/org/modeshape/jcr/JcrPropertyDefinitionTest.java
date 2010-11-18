@@ -43,6 +43,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
+import org.modeshape.graph.property.ValueFormatException;
 
 /**
  * Indirectly tests the JcrConstaintCheckerFactory through {@link JcrPropertyDefinition#satisfiesConstraints(Value)}, which
@@ -72,6 +73,8 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
 
     @Override
     protected void initializeContent() {
+        context.getNamespaceRegistry().register(TestLexicon.Namespace.PREFIX, TestLexicon.Namespace.URI);
+
         graph.create("/jcr:system").and().create("/jcr:system/mode:namespaces");
         graph.create("/a").and().create("/a/b").and().create("/a/b/c");
 
@@ -409,7 +412,7 @@ public class JcrPropertyDefinitionTest extends AbstractSessionTest {
         assertThat(satisfiesConstraints(prop, values), is(true));
     }
 
-    @Test
+    @Test( expected = ValueFormatException.class )
     public void shouldNotAllowInvalidNameValue() throws Exception {
         NodeType constrainedType = validateTypeDefinition();
         JcrPropertyDefinition prop = propertyDefinitionFor(constrainedType, TestLexicon.CONSTRAINED_NAME);

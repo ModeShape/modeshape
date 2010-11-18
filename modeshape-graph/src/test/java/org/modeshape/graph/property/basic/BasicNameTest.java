@@ -27,14 +27,14 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.containsString;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.common.text.Jsr283Encoder;
 import org.modeshape.common.text.TextEncoder;
 import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * @author Randall Hauch
@@ -95,7 +95,7 @@ public class BasicNameTest {
         new BasicName(validNamespaceUri, null);
     }
 
-    @Test( expected = IllegalArgumentException.class )
+    @Test
     public void shouldAllowEmptyLocalNameInConstructor() {
         new BasicName(validNamespaceUri, "");
     }
@@ -188,7 +188,8 @@ public class BasicNameTest {
     public void shouldUseDelimiterEncoderToEncodeDelimiterBetweenPrefixAndLocalPart() {
         encoder = new Jsr283Encoder();
         name = new BasicName(ModeShapeLexicon.Namespace.URI, "some:name:with:colons");
-        assertThat(name.getString(namespaceRegistry, encoder, delimiterEncoder), is("mode\\:some\uf03aname\uf03awith\uf03acolons"));
+        assertThat(name.getString(namespaceRegistry, encoder, delimiterEncoder),
+                   is("mode\\:some\uf03aname\uf03awith\uf03acolons"));
         assertThat(name.getString(null, encoder, delimiterEncoder), is("\\{" + encoder.encode(ModeShapeLexicon.Namespace.URI)
                                                                        + "\\}some\uf03aname\uf03awith\uf03acolons"));
     }
@@ -199,13 +200,13 @@ public class BasicNameTest {
         String encodedNameForEncoding = encoder.encode(nameForEncoding);
         // Make sure that we're not testing a trivial encoding
         assertThat(encodedNameForEncoding, not(nameForEncoding));
-        
+
         name = new BasicName(null, nameForEncoding);
 
         String result = name.getString(namespaceRegistry, encoder);
         assertThat(result, is(encodedNameForEncoding));
 
-        result = name.getString(encoder); 
+        result = name.getString(encoder);
         assertThat(result, is(encodedNameForEncoding));
     }
 
