@@ -185,7 +185,7 @@ public class VdbManifest {
                         VdbModel vdbModel = new VdbModel(modelName, modelType, modelPath);
                         vdbModel.setBuiltIn(firstValue(model, "builtIn", false));
                         vdbModel.setVisible(firstValue(model, "visible", true));
-                        vdbModel.setBuiltIn(property(model, "builtIn", false));
+                        vdbModel.setBuiltIn(property(model, "builtIn", vdbModel.isBuiltIn()));
                         vdbModel.setChecksum(property(model, "checksum", 0L));
                         vdbModel.getImports().addAll(properties(model, "imports"));
 

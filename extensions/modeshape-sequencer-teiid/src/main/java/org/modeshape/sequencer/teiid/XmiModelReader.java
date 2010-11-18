@@ -275,7 +275,7 @@ public class XmiModelReader extends XmiGraphReader {
         if (vdbModel != null) {
             output.setProperty(modelRootPath, VdbLexicon.VISIBLE, vdbModel.isVisible());
             output.setProperty(modelRootPath, VdbLexicon.CHECKSUM, vdbModel.getChecksum());
-            output.setProperty(modelRootPath, VdbLexicon.BUILT_IN, vdbModel.isVisible());
+            output.setProperty(modelRootPath, VdbLexicon.BUILT_IN, vdbModel.isBuiltIn());
             output.setProperty(modelRootPath, VdbLexicon.PATH_IN_VDB, vdbModel.getPathInVdb());
             String translator = vdbModel.getSourceTranslator();
             String sourceName = vdbModel.getSourceName();
