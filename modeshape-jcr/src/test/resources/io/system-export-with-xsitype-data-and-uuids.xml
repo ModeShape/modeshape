@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sv:node sv:name="company" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:mgnl="http://www.magnolia.info/jcr/mgnl"
+  xmlns:rep="internal" xmlns:mix="http://www.jcp.org/jcr/mix/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:fn="http://www.w3.org/2005/xpath-functions"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:sv="http://www.jcp.org/jcr/sv/1.0"
+  xmlns:fn_old="http://www.w3.org/2004/10/xpath-functions" xmlns:jcrfn="http://www.jcp.org/jcr/xpath-functions/1.0">
+  <sv:property sv:name="jcr:primaryType" sv:type="Name">
+    <sv:value>mgnl:contentNode</sv:value>
+  </sv:property>
+  <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+    <sv:value>mix:lockable</sv:value>
+  </sv:property>
+  <sv:property sv:name="jcr:uuid" sv:type="String">
+    <sv:value>bf90c9eb-ff67-4dbe-951c-2174ce7f913b</sv:value>
+  </sv:property>
+  <sv:property sv:name="dialog" sv:type="String">
+    <sv:value>company</sv:value>
+  </sv:property>
+  <sv:property sv:name="hierarchy" sv:type="Boolean">
+    <sv:value>false</sv:value>
+  </sv:property>
+  <sv:property sv:name="menuTitle" sv:type="String">
+    <sv:value>Company</sv:value>
+  </sv:property>
+  <sv:property sv:name="rootPath" sv:type="String">
+    <sv:value>/company</sv:value>
+  </sv:property>
+  <sv:property sv:name="sortByName" sv:type="Boolean">
+    <sv:value>false</sv:value>
+  </sv:property>
+  <sv:property sv:name="title" sv:type="String">
+    <sv:value>Company</sv:value>
+  </sv:property>
+  <sv:property sv:name="tree" sv:type="String">
+    <sv:value>company</sv:value>
+  </sv:property>
+  <sv:node sv:name="MetaData">
+    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+      <sv:value>mgnl:metaData</sv:value>
+    </sv:property>
+    <sv:property sv:name="mgnl:authorid" sv:type="String">
+      <sv:value>superuser</sv:value>
+    </sv:property>
+    <sv:property sv:name="mgnl:creationdate" sv:type="Date">
+      <sv:value>2009-10-30T13:20:40.492+01:00</sv:value>
+    </sv:property>
+    <sv:property sv:name="mgnl:lastmodified" sv:type="Date">
+      <sv:value>2009-10-30T13:34:52.208+01:00</sv:value>
+    </sv:property>
+    <sv:property sv:name="mgnl:template" sv:type="String">
+      <sv:value/>
+    </sv:property>
+  </sv:node>
+  <sv:node sv:name="department">
+    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+      <sv:value>mgnl:contentNode</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+      <sv:value>mix:lockable</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:uuid" sv:type="String">
+      <sv:value>aa5ed17b-f39b-4234-9196-e908ca849a5b</sv:value>
+    </sv:property>
+    <sv:property sv:name="dialog" sv:type="String">
+      <sv:value>department</sv:value>
+    </sv:property>
+    <sv:property sv:name="title" sv:type="String">
+      <sv:value>Department</sv:value>
+    </sv:property>
+    <sv:property sv:name="tree" sv:type="String">
+      <sv:value>department</sv:value>
+    </sv:property>
+    <sv:node sv:name="MetaData">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>mgnl:metaData</sv:value>
+      </sv:property>
+      <sv:property sv:name="mgnl:authorid" sv:type="String">
+        <sv:value>superuser</sv:value>
+      </sv:property>
+      <sv:property sv:name="mgnl:creationdate" sv:type="Date">
+        <sv:value>2009-10-30T13:21:07.968+01:00</sv:value>
+      </sv:property>
+      <sv:property sv:name="mgnl:lastmodified" sv:type="Date">
+        <sv:value>2009-10-30T15:35:07.098+01:00</sv:value>
+      </sv:property>
+      <sv:property sv:name="mgnl:template" sv:type="String">
+        <sv:value/>
+      </sv:property>
+    </sv:node>
+    <sv:node sv:name="image">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>mgnl:resource</sv:value>
+      </sv:property>
+      <sv:property sv:name="jcr:uuid" sv:type="String">
+        <sv:value>05a19e14-e470-41f9-b198-2e20dfd5fa14</sv:value>
+      </sv:property>
+      <sv:property sv:name="extension" sv:type="String">
+        <sv:value>gif</sv:value>
+      </sv:property>
+      <sv:property sv:name="fileName" sv:type="String">
+        <sv:value>package</sv:value>
+      </sv:property>
+      <sv:property sv:name="height" sv:type="String">
+        <sv:value>16</sv:value>
+      </sv:property>
+      <sv:property sv:name="jcr:data" sv:type="Binary">
+        <sv:value>R0lGODlhEAAQAMZpAGxZMW1bNW9bMm9cNnJdNXJdNnNfN3tnPX5oQIBqQYJrO4FrQoVtQIZuQohxQopyRopzQYtzRo10Qo51SI12SJB3SZN5Q5N5RpV7TJZ8TJd9SJh+TpyAT52CUJ+FUaOGU6OHUaSIUqGKUqaJVaiKVaGMV6mLVqWOXqyOVayOWLCSWa2VWrSVW7aXXbSbXbqaXrqaX7uaX7ubXsCfYrigcMKgY8OhY8SiZMWjZMWjZcelZsimZsqnZ8unZ8uoaMypaM2pac6qacOtbc+ratCsatKta8uwbdGvctOvbtSvbNWwbciyhdaxbdm2dda7ddq5gd26fN28gNe/ed6+htvCeuHAhd3EfOLCidrDmd7GfuLEj9/HfubKlufLmOjLmOnMmOnNmujNne3UpuzUqe3Vp+7VqO/VqO/Wqe7YsP///////////////////////////////////////////////////////////////////////////////////////////yH+EUNyZWF0ZWQgd2l0aCBHSU1QACH5BAEKAH8ALAAAAAAQABAAAAeJgH+Cg4SFhoeIiYqLhSciiR40S1hoY0JZVE5GK4MOZWdmZGJhJVumW1aDFGBfXl1cWiRSp1sufxYXV1VQUVNPMSAYDwgHEINNTEpJSEcwKR0VCwWERURDQUA9LSYcEwkDhD8+PDs6OCwjGxEIAYQyOTc2NTMqHxkNBgCFChIaKC8hGBBgJIARo0AAOw==</sv:value>
+      </sv:property>
+      <sv:property sv:name="jcr:lastModified" sv:type="Date">
+        <sv:value>2009-10-30T15:35:07.094+01:00</sv:value>
+      </sv:property>
+      <sv:property sv:name="jcr:mimeType" sv:type="String">
+        <sv:value>image/gif</sv:value>
+      </sv:property>
+      <sv:property sv:name="nodeDataTemplate" sv:type="String">
+        <sv:value/>
+      </sv:property>
+      <sv:property sv:name="size" sv:type="String">
+        <sv:value>577</sv:value>
+      </sv:property>
+      <sv:property sv:name="width" sv:type="String">
+        <sv:value>16</sv:value>
+      </sv:property>
+    </sv:node>
+  </sv:node>
+  <sv:node sv:name="employees">
+    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+      <sv:value>mgnl:contentNode</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+      <sv:value>mix:lockable</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:uuid" sv:type="String">
+      <sv:value>64ed7900-93b9-45a8-90db-8782217e4a4f</sv:value>
+    </sv:property>
+    <sv:property sv:name="dialog" sv:type="String">
+      <sv:value>employees</sv:value>
+    </sv:property>
+    <sv:property sv:name="title" sv:type="String">
+      <sv:value>Employees</sv:value>
+    </sv:property>
+    <sv:property sv:name="tree" sv:type="String">
+      <sv:value>employees</sv:value>
+    </sv:property>
+    <sv:node sv:name="MetaData">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>mgnl:metaData</sv:value>
+      </sv:property>
+      <sv:property sv:name="mgnl:authorid" sv:type="String">
+        <sv:value>superuser</sv:value>
+      </sv:property>
+      <sv:property sv:name="mgnl:creationdate" sv:type="Date">
+        <sv:value>2009-10-30T13:21:39.063+01:00</sv:value>
+      </sv:property>
+      <sv:property sv:name="mgnl:lastmodified" sv:type="Date">
+        <sv:value>2009-10-30T13:21:39.065+01:00</sv:value>
+      </sv:property>
+      <sv:property sv:name="mgnl:template" sv:type="String">
+        <sv:value/>
+      </sv:property>
+    </sv:node>
+    <sv:node sv:name="director">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>mgnl:contentNode</sv:value>
+      </sv:property>
+      <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+        <sv:value>mix:lockable</sv:value>
+      </sv:property>
+      <sv:property sv:name="jcr:uuid" sv:type="String">
+        <sv:value>f84e068f-8433-4a55-b830-1e216e35dd2f</sv:value>
+      </sv:property>
+      <sv:property sv:name="dialog" sv:type="String">
+        <sv:value>director</sv:value>
+      </sv:property>
+      <sv:property sv:name="title" sv:type="String">
+        <sv:value>Director</sv:value>
+      </sv:property>
+      <sv:property sv:name="tree" sv:type="String">
+        <sv:value>director</sv:value>
+      </sv:property>
+      <sv:node sv:name="MetaData">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>mgnl:metaData</sv:value>
+        </sv:property>
+        <sv:property sv:name="mgnl:authorid" sv:type="String">
+          <sv:value>superuser</sv:value>
+        </sv:property>
+        <sv:property sv:name="mgnl:creationdate" sv:type="Date">
+          <sv:value>2009-10-30T13:21:54.237+01:00</sv:value>
+        </sv:property>
+        <sv:property sv:name="mgnl:lastmodified" sv:type="Date">
+          <sv:value>2009-10-30T15:38:32.074+01:00</sv:value>
+        </sv:property>
+        <sv:property sv:name="mgnl:template" sv:type="String">
+          <sv:value/>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="image">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>mgnl:resource</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:uuid" sv:type="String">
+          <sv:value>7b2eed3c-56e4-4d1c-ba09-684585b04211</sv:value>
+        </sv:property>
+        <sv:property sv:name="extension" sv:type="String">
+          <sv:value>gif</sv:value>
+        </sv:property>
+        <sv:property sv:name="fileName" sv:type="String">
+          <sv:value>personal</sv:value>
+        </sv:property>
+        <sv:property sv:name="height" sv:type="String">
+          <sv:value>16</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:data" sv:type="Binary">
+          <sv:value>R0lGODlhEAAQAMZtAAAAAAYEAg0KBhEPChgRDBUTDCAZESQZEk43JgBJngJQqAJQqgBTsVxGMABVtVZJNAFYswJavAVeqQReswNexARgyQhlsglntghmzgpotgxrugttzw1vvg1vvxJs0A9ywg9ywxB2xxB2yBB3zhV22XlnShJ5yxJ5zBF61xJ7zhN80Bh53xWA1BaD2BeD2BiH3BiH3ReI5hqK4BqK4RiK7CKK6huN5ViBsBuO5h2R6R2R6nWBjx6U7qZ+WDaR6CCX8iuV5j2Q5SCY8iGb9qyEXCOe+pKKg5yKdTSe7iWi/zyg9Cuk/6mObKuRaD+l8jqm97OYbEGu/7iabbmbblCy+8Ojc1q4/1+7/2C7/8iremK8/8mresqsem+//M+wfW3B/4C+7X/E+3nG/3vG/9y7hd69hojM/4nN/4rN/5PQ/ubEi+bEjOjGjf///////////////////////////////////////////////////////////////////////////yH+EUNyZWF0ZWQgd2l0aCBHSU1QACH5BAEKAH8ALAAAAAAQABAAAAeQgH+Cg38EhIeDAAEAjAKIhAAGDwMlBQePgghSbE1qUA2YglVla2RZPaF/RFxeW1OpfzdGTEc7HqFBaWhgXVhKoWFnY19XVE4kjytmYlZRT0hAKI8+WktFPzkyLSkViDVJQzw2LywmHxSINEI6My4qIRwZEYgxODAsJyAaFhIOiBgbRojocGECBAapFihI8CgQADs=</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+          <sv:value>2009-10-30T15:38:32.073+01:00</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:mimeType" sv:type="String">
+          <sv:value>image/gif</sv:value>
+        </sv:property>
+        <sv:property sv:name="nodeDataTemplate" sv:type="String">
+          <sv:value/>
+        </sv:property>
+        <sv:property sv:name="size" sv:type="String">
+          <sv:value>584</sv:value>
+        </sv:property>
+        <sv:property sv:name="width" sv:type="String">
+          <sv:value>16</sv:value>
+        </sv:property>
+      </sv:node>
+    </sv:node>
+    <sv:node sv:name="manager">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>mgnl:contentNode</sv:value>
+      </sv:property>
+      <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+        <sv:value>mix:lockable</sv:value>
+      </sv:property>
+      <sv:property sv:name="jcr:uuid" sv:type="String">
+        <sv:value>1e39678d-1a0a-408e-ae6c-0e80d5fa04e2</sv:value>
+      </sv:property>
+      <sv:property sv:name="dialog" sv:type="String">
+        <sv:value>manager</sv:value>
+      </sv:property>
+      <sv:property sv:name="title" sv:type="String">
+        <sv:value>Manager</sv:value>
+      </sv:property>
+      <sv:property sv:name="tree" sv:type="String">
+        <sv:value>manager</sv:value>
+      </sv:property>
+      <sv:node sv:name="MetaData">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>mgnl:metaData</sv:value>
+        </sv:property>
+        <sv:property sv:name="mgnl:authorid" sv:type="String">
+          <sv:value>superuser</sv:value>
+        </sv:property>
+        <sv:property sv:name="mgnl:creationdate" sv:type="Date">
+          <sv:value>2009-10-30T13:22:14.459+01:00</sv:value>
+        </sv:property>
+        <sv:property sv:name="mgnl:lastmodified" sv:type="Date">
+          <sv:value>2009-10-30T15:41:50.354+01:00</sv:value>
+        </sv:property>
+        <sv:property sv:name="mgnl:template" sv:type="String">
+          <sv:value/>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="image">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>mgnl:resource</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:uuid" sv:type="String">
+          <sv:value>b7c734d3-2c70-4fed-aaa2-974f3f3cefcc</sv:value>
+        </sv:property>
+        <sv:property sv:name="extension" sv:type="String">
+          <sv:value>gif</sv:value>
+        </sv:property>
+        <sv:property sv:name="fileName" sv:type="String">
+          <sv:value>spreadsheet</sv:value>
+        </sv:property>
+        <sv:property sv:name="height" sv:type="String">
+          <sv:value>16</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:data" sv:type="Binary">
+          <sv:value>R0lGODlhEAAQAMZyAMcAAMcDAMcIANASFMAbBMAdBdgnJFtQTNkvMXlLOWlPRjhbb946PVxmTuFKQo9+PpV/NkuRZedkXkmbW+pqbbSFF3OWkOx2eZKSknmcl86SDO1+gFutZpqfOdGUDHuoT76eFlK8U9WdCrCoIqOjo4C1bmbBaaioqGHGYZystpq3U92wC66uroe/fGzKbKmxsqi2vK23sK63vY7Jh7m5ubu7u+TCE76+vr+/v5TRkMDAwNjKM77FycTExLvGy8XFxcbGxr3JzcfHx8jIyMnJycrKyuzSIsvLy8jMzszMzM3Nzc/Pz9DQ0NHR0e7aJtLS0tPT09TU1PHdMNXV1fHeN9bW1vHeONfX1/HfPPLfPtjY2NnZ2dra2tnb3Nvb29vc3N3d3d7e3t/f3+Dg4OLi4uTk5OXl5efn5+jo6Onp6erq6uvr6+3t7e7u7u/v7/Dw8PHx8fv7+////////////////////////////////////////////////////////yH+EUNyZWF0ZWQgd2l0aCBHSU1QACH5BAEKAH8ALAAAAAAQABAAAAfDgH+Cg0dHg4eCSWFma25vcFw0LIh/Wm+Xb2txcnBMOohaSyQnOiRlNxg1aYhXYD1CUT1TOD1Pa4hTYUJFVUJbREJQbYhRY0VKWkVeR7xuQodQYT9DUz9aQj1NbEOHUWRNUGBNYk1LV2pEh1NnYF0+FhkwPF9o6YNVQREcJi4oIR8dYgA5hGRCjhktSqjYYQXLCEQpDGy4QEFCFilUnIBAJIPAAAQMHBixsUIEBEoKCgQAIMCDhgoPXlAStOBAggYz/wQCADs=</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+          <sv:value>2009-10-30T15:41:50.352+01:00</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:mimeType" sv:type="String">
+          <sv:value>image/gif</sv:value>
+        </sv:property>
+        <sv:property sv:name="nodeDataTemplate" sv:type="String">
+          <sv:value/>
+        </sv:property>
+        <sv:property sv:name="size" sv:type="String">
+          <sv:value>635</sv:value>
+        </sv:property>
+        <sv:property sv:name="width" sv:type="String">
+          <sv:value>16</sv:value>
+        </sv:property>
+      </sv:node>
+    </sv:node>
+    <sv:node sv:name="developer">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name">
+        <sv:value>mgnl:contentNode</sv:value>
+      </sv:property>
+      <sv:property sv:name="jcr:mixinTypes" sv:type="Name">
+        <sv:value>mix:lockable</sv:value>
+      </sv:property>
+      <sv:property sv:name="jcr:uuid" sv:type="String">
+        <sv:value>4dca2d73-e4da-4c84-8e71-50b00aeb157c</sv:value>
+      </sv:property>
+      <sv:property sv:name="dialog" sv:type="String">
+        <sv:value>developer</sv:value>
+      </sv:property>
+      <sv:property sv:name="title" sv:type="String">
+        <sv:value>Developer</sv:value>
+      </sv:property>
+      <sv:property sv:name="tree" sv:type="String">
+        <sv:value>developer</sv:value>
+      </sv:property>
+      <sv:node sv:name="MetaData">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>mgnl:metaData</sv:value>
+        </sv:property>
+        <sv:property sv:name="mgnl:authorid" sv:type="String">
+          <sv:value>superuser</sv:value>
+        </sv:property>
+        <sv:property sv:name="mgnl:creationdate" sv:type="Date">
+          <sv:value>2009-10-30T13:22:34.232+01:00</sv:value>
+        </sv:property>
+        <sv:property sv:name="mgnl:lastmodified" sv:type="Date">
+          <sv:value>2009-10-30T15:39:51.742+01:00</sv:value>
+        </sv:property>
+        <sv:property sv:name="mgnl:template" sv:type="String">
+          <sv:value/>
+        </sv:property>
+      </sv:node>
+      <sv:node sv:name="image">
+        <sv:property sv:name="jcr:primaryType" sv:type="Name">
+          <sv:value>mgnl:resource</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:uuid" sv:type="String">
+          <sv:value>ad0b1022-43b0-4c03-828c-2226c94e2aa3</sv:value>
+        </sv:property>
+        <sv:property sv:name="extension" sv:type="String">
+          <sv:value>gif</sv:value>
+        </sv:property>
+        <sv:property sv:name="fileName" sv:type="String">
+          <sv:value>package_system</sv:value>
+        </sv:property>
+        <sv:property sv:name="height" sv:type="String">
+          <sv:value>16</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:data" sv:type="Binary">
+          <sv:value>R0lGODlhEAAQAMZ6AFZWVl1dXV5eXl9fX2BgYFthZVpjZ2VlZjhviGRmaGZmZmhoaAd+vwOAyAt/vWlsbmdtcER1i21tbQCFzVlzfgCHznBwcF90f2B0gB2Erlx3gnBzdnR0dACO0l16ihOKyQCQ03d3d3h4eDuGpEGGqiiMxm5+iQWW0Xt8fG1/iHJ+hHx8fH6AgoKCghGd2TGW0AGk3oaGhgWk3oeHhzuZzYmJiYqKio2NjY6Ojo6PkY+Pj5CQkJGRkUuh0ZOTk5OTlJSUlJWVlUqm05aWlpeXl5iZmZycnDi140ex4Dy041Sv2Z+fn2er0qCgoDK86Fy13Kampqenp6WprFe75ampqV264ZCuwme43m242lHA53+2062trYO201TC6a6urrCwsF/D6ZG3z7GxsZi3x6i3wqO4x568z6+5wqy9yaW/z729vb6+vsLCwsbGxsfHx8rKysHM08TN08nP1dDQ0M7S1tLS0tDT1tTU1NPW2Nna2v///////////////////////yH+EUNyZWF0ZWQgd2l0aCBHSU1QACH5BAEKAH8ALAAAAAAQABAAAAevgH+Cg4Q6LYSIfzdLYmh5RIk2RlJjXEw9L3hDiEBaWFVTSCQfDXabhEFXYF1HIxsYDHSngz5PWU4wGQlfF3JBiDxKSTIaFBEoKXGzgjtCLicGORBFHnDLfzg0HSAIFmxvKme/hDclExUOBQ8HUCzjgzNkZWlmVmEmCj8riYMxO1RRFizgwG8QDjZtagSQoADRljVt3LBR4yXEnwEKCCBaM6fOnSYiBAEYIKCgyT+BAAA7</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:lastModified" sv:type="Date">
+          <sv:value>2009-10-30T15:39:51.740+01:00</sv:value>
+        </sv:property>
+        <sv:property sv:name="jcr:mimeType" sv:type="String">
+          <sv:value>image/gif</sv:value>
+        </sv:property>
+        <sv:property sv:name="nodeDataTemplate" sv:type="String">
+          <sv:value/>
+        </sv:property>
+        <sv:property sv:name="size" sv:type="String">
+          <sv:value>615</sv:value>
+        </sv:property>
+        <sv:property sv:name="width" sv:type="String">
+          <sv:value>16</sv:value>
+        </sv:property>
+      </sv:node>
+    </sv:node>
+  </sv:node>
+  <sv:node sv:name="image">
+    <sv:property sv:name="jcr:primaryType" sv:type="Name">
+      <sv:value>mgnl:resource</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:uuid" sv:type="String">
+      <sv:value>7d3bdd40-b253-47e8-a6c3-a48ea88bcbf3</sv:value>
+    </sv:property>
+    <sv:property sv:name="extension" sv:type="String">
+      <!-- This is the binary representation of the "gif" string. See MODE-1026 for details. -->
+      <sv:value xsi:type="xs:base64Binary">Z2lm</sv:value>
+    </sv:property>
+    <sv:property sv:name="fileName" sv:type="String">
+      <sv:value>Factory-Yellow-2-16x16</sv:value>
+    </sv:property>
+    <sv:property sv:name="height" sv:type="String">
+      <sv:value>16</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:data" sv:type="Binary">
+      <sv:value>R0lGODlhEAAQAMZwAEYvCEgwBkkwB0kxB0kxCEsxB0wxBkwxB0kyCEwzC08zCUw0D0w1EFA1C1E4CX5XHZNfFZ1oHJ5qH59sEZ5sIp5tJJ9uJKluDZ9vKJ9xK657MsB7DbWAMMmCDs6HIdWID9KLJciNOduND9SNKdaOJtSPKduPIdiQIOGQEdaRLNiSJt2RJeOTEdaUMOGUEuSUEdeVM9eWM9eXM92ZOeWdLP2cCOKgNf2dCeChO/yeCf+eCP6eC+qgNvyfC/2fC+qiM/+gC/6gDvyhDf+hC/yiDf6iDf+iC/GjLP6iEP6iFvyjEv6jD+qkQP+iFv+jDv6jEf+jD/2jGP2kEf6kEf+kD/ylEvylE/2kGvykHeymO/6mEf+mEfemL/6nE/+nEv+oE/+pFPuoNP+qFf2pJ/+qJf+sFvusOvqvRf2vQf6yQP6zR/+2Tf+4S/+6U/+9V/+9XP///////////////////////////////////////////////////////////////yH+EUNyZWF0ZWQgd2l0aCBHSU1QACH5BAEKAH8ALAAAAAAQABAAAAefgH+Cg38eJISIgyZcIzxnM0wciYkPIRqTKxCTiSBhEZuIJWYSoIQpaBSlgy1qFYNHCj8NWQuEMGsYgjRpNmw4bgyEMW0ZfydjWFFJV2QJhDJvFn8oNTc5Oz1DBoQqTdIsPj1CQURQB4QfOtIvRUtIU09bBYQiQB0XLlJKVVpWXRODNhhxQmXLFi9fvoARI6aMg0EBBAyYSKAigosABAUCADs=</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:lastModified" sv:type="Date">
+      <sv:value>2009-10-30T13:34:52.193+01:00</sv:value>
+    </sv:property>
+    <sv:property sv:name="jcr:mimeType" sv:type="String">
+      <sv:value>image/gif</sv:value>
+    </sv:property>
+    <sv:property sv:name="nodeDataTemplate" sv:type="String">
+      <sv:value/>
+    </sv:property>
+    <sv:property sv:name="size" sv:type="String">
+      <sv:value>599</sv:value>
+    </sv:property>
+    <sv:property sv:name="width" sv:type="String">
+      <sv:value>16</sv:value>
+    </sv:property>
+  </sv:node>
+</sv:node>

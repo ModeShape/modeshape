@@ -23,6 +23,11 @@
  */
 package org.modeshape.test.integration;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import javax.jcr.Node;
+import javax.jcr.Property;
+import javax.jcr.PropertyType;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 
@@ -35,8 +40,28 @@ public class JcrImportExportIntegrationTest extends AbstractAdHocModeShapeTest {
         assertNode("/", "mode:root");
         // import the file ...
         importContent(getClass(), "io/drools/systemViewImport.xml");
+        session().refresh(false);
         // Verify the file was imported ...
-        // assertNode("/drools:repository", "nt:folder");
+        assertNode("/drools:repository", "nt:folder");
+    }
+
+    @FixFor( "MODE-1026" )
+    @Test
+    public void shouldBeAbleToImportFileWithValuesDefinedByXsiTypeAttributes() throws Exception {
+        startEngine("config/configRepositoryForDroolsImportExport.xml", "Repo");
+        assertNode("/", "mode:root");
+        // import the file ...
+        importContent(getClass(), "io/drools/mortgage-sample-repository.xml");
+        session().refresh(false);
+        // Verify the file was imported ...
+        assertNode("/drools:repository", "nt:folder");
+        assertNode("/drools:repository/drools:package_area", "nt:folder");
+        assertNode("/drools:repository/drools:package_area/mortgages", "drools:packageNodeType");
+        assertNode("/drools:repository/drools:package_area/mortgages/assets", "drools:versionableAssetFolder");
+        Node dsl = assertNode("/drools:repository/drools:package_area/mortgages/assets/ApplicantDsl", "drools:assetNodeType");
+        Property property = dsl.getProperty("drools:content");
+        assertThat(property.getType(), is(PropertyType.STRING));
+        assertThat(property.getValue().getString().startsWith("[when]"), is(true));
     }
 
 }

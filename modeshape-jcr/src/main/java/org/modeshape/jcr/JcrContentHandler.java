@@ -408,6 +408,20 @@ class JcrContentHandler extends DefaultHandler {
         }
     }
 
+    protected static byte[] decodeBase64( String value ) throws IOException {
+        try {
+            return Base64.decode(value.getBytes("UTF-8"));
+        } catch (IOException e) {
+            // try re-reading, in case this was an export from a prior ModeShape version that used URL_SAFE ...
+            return Base64.decode(value, Base64.URL_SAFE);
+        }
+    }
+
+    protected static String decodeBase64AsString( String value ) throws IOException {
+        byte[] decoded = decodeBase64(value);
+        return new String(decoded, "UTF-8");
+    }
+
     /**
      * {@inheritDoc}
      * 
@@ -617,13 +631,7 @@ class JcrContentHandler extends DefaultHandler {
                         properties.put(name, values);
                     }
                     if (propertyType == PropertyType.BINARY) {
-                        byte[] binary = null;
-                        try {
-                            binary = Base64.decode(value.getBytes("UTF-8"));
-                        } catch (IOException e) {
-                            // try re-reading, in case this was an export from a prior ModeShape version that used URL_SAFE ...
-                            binary = Base64.decode(value, Base64.URL_SAFE);
-                        }
+                        byte[] binary = decodeBase64(value);
                         ByteArrayInputStream is = new ByteArrayInputStream(binary);
                         values.add(valueFor(is));
                     } else {
@@ -907,6 +915,7 @@ class JcrContentHandler extends DefaultHandler {
         private final NodeHandlerFactory nodeHandlerFactory;
         private String currentPropertyName;
         private int currentPropertyType;
+        private boolean currentPropertyValueIsBinary;
         private StringBuilder currentPropertyValue;
 
         SystemViewContentHandler( AbstractJcrNode parent ) {
@@ -940,6 +949,11 @@ class JcrContentHandler extends DefaultHandler {
             } else if ("property".equals(localName)) {
                 currentPropertyName = atts.getValue(SYSTEM_VIEW_NAME_DECODER.decode(svNameName));
                 currentPropertyType = PropertyType.valueFromName(atts.getValue(svTypeName));
+            } else if ("value".equals(localName)) {
+                // See if there is an "xsi:type" attribute on this element, which means the property value contained
+                // characters that cannot be represented in XML without escaping. See Section 11.2, Item 11.b ...
+                String xsiType = atts.getValue("http://www.w3.org/2001/XMLSchema-instance", "type");
+                currentPropertyValueIsBinary = "xs:base64Binary".equals(xsiType);
             } else if (!"value".equals(localName)) {
                 throw new IllegalStateException("Unexpected element '" + name + "' in system view");
             }
@@ -967,6 +981,14 @@ class JcrContentHandler extends DefaultHandler {
             } else if ("value".equals(localName)) {
                 // Add the content for the current property ...
                 String currentPropertyString = currentPropertyValue.toString();
+                if (currentPropertyValueIsBinary) {
+                    // The current string is a base64 encoded string, so we need to decode it first ...
+                    try {
+                        currentPropertyString = decodeBase64AsString(currentPropertyString);
+                    } catch (IOException ioe) {
+                        throw new EnclosingSAXException(ioe);
+                    }
+                }
                 current.addPropertyValue(nameFor(currentPropertyName),
                                          currentPropertyString,
                                          currentPropertyType,

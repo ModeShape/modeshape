@@ -49,6 +49,7 @@ import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.property.Path;
@@ -438,6 +439,23 @@ public class JcrImportExportTest {
         assertImport(filename, "/a", ImportBehavior.THROW); // no matching UUIDs expected
     }
 
+    @FixFor( "MODE-1026" )
+    @Test
+    public void shouldImportFileExportedFromJackrabbitContainingBinaryStringData() throws Exception {
+        CndNodeTypeReader cndReader = new CndNodeTypeReader(session);
+        cndReader.read("magnolia.cnd");
+        session.getWorkspace().getNodeTypeManager().registerNodeTypes(cndReader.getNodeTypeDefinitions(), false);
+        assertThat(session.getWorkspace().getNodeTypeManager().getNodeType("mgnl:content"), is(notNullValue()));
+
+        // Now import the file ...
+        String filename = "io/system-export-with-xsitype-data-and-uuids.xml";
+        assertImport(filename, "/a", ImportBehavior.THROW); // no matching UUIDs expected
+        // print = true;
+        print("/a");
+        Node imageNode = assertNode("/a/company/image");
+        assertThat(imageNode.getProperty("extension").getValue().getString(), is("gif"));
+    }
+
     @Test
     public void shouldDecodeBase64() throws Exception {
         String base64Str = "R0lGODlhEAAQAMZpAGxZMW1bNW9bMm9cNnJdNXJdNnNfN3tnPX5oQIBqQYJrO4FrQoVtQIZuQohxQopyRopzQYtzRo10Qo51SI12SJB3SZN5Q5N5RpV7TJZ8TJd9SJh+TpyAT52CUJ+FUaOGU6OHUaSIUqGKUqaJVaiKVaGMV6mLVqWOXqyOVayOWLCSWa2VWrSVW7aXXbSbXbqaXrqaX7uaX7ubXsCfYrigcMKgY8OhY8SiZMWjZMWjZcelZsimZsqnZ8unZ8uoaMypaM2pac6qacOtbc+ratCsatKta8uwbdGvctOvbtSvbNWwbciyhdaxbdm2dda7ddq5gd26fN28gNe/ed6+htvCeuHAhd3EfOLCidrDmd7GfuLEj9/HfubKlufLmOjLmOnMmOnNmujNne3UpuzUqe3Vp+7VqO/VqO/Wqe7YsP///////////////////////////////////////////////////////////////////////////////////////////yH+EUNyZWF0ZWQgd2l0aCBHSU1QACH5BAEKAH8ALAAAAAAQABAAAAeJgH+Cg4SFhoeIiYqLhSciiR40S1hoY0JZVE5GK4MOZWdmZGJhJVumW1aDFGBfXl1cWiRSp1sufxYXV1VQUVNPMSAYDwgHEINNTEpJSEcwKR0VCwWERURDQUA9LSYcEwkDhD8+PDs6OCwjGxEIAYQyOTc2NTMqHxkNBgCFChIaKC8hGBBgJIARo0AAOw==";
@@ -476,7 +494,6 @@ public class JcrImportExportTest {
         // assertThat(apacheBytes, is(jbossBytes)); // apache pads 3 0s at the end
         assertThat(jrBytes, is(jbossBytes));
         assertThat(msBytes, is(jbossBytes));
-
     }
 
     String toString( byte[] bytes ) {
@@ -557,14 +574,14 @@ public class JcrImportExportTest {
         return engine.getExecutionContext().getValueFactories().getStringFactory().create(value);
     }
 
-    protected void assertNode( String path ) throws RepositoryException {
+    protected Node assertNode( String path ) throws RepositoryException {
         // Verify that the parent node does exist now ...
         String relativePath = relativePath(path);
         Node root = session.getRootNode();
         if (relativePath.trim().length() == 0) {
             // This is the root path, so of course it exists ...
             assertThat(root, is(notNullValue()));
-            return;
+            return session.getNode(path);
         }
         if (print && !root.hasNode(relativePath)) {
             Node parent = root;
@@ -579,6 +596,7 @@ public class JcrImportExportTest {
             }
         }
         assertThat(root.hasNode(relativePath), is(true));
+        return session.getNode(path);
     }
 
     protected void assertNoNode( String path ) throws RepositoryException {
