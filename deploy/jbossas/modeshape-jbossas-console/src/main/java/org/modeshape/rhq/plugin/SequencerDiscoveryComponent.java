@@ -31,12 +31,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jboss.managed.api.ComponentType;
 import org.jboss.managed.api.ManagedComponent;
+import org.jboss.metatype.api.types.EnumMetaType;
 import org.jboss.metatype.api.values.CollectionValueSupport;
 import org.jboss.metatype.api.values.CompositeValueSupport;
+import org.jboss.metatype.api.values.EnumValueSupport;
 import org.jboss.metatype.api.values.MetaValue;
-import org.jboss.metatype.api.values.MetaValueFactory;
 import org.modeshape.jboss.managed.ManagedEngine;
-import org.modeshape.jboss.managed.ManagedSequencerConfig;
 import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
 import org.modeshape.rhq.plugin.util.PluginConstants;
 import org.modeshape.rhq.plugin.util.ProfileServiceUtil;
@@ -91,12 +91,13 @@ public class SequencerDiscoveryComponent implements
 			return discoveredResources;
 		}
 
-		Collection<ManagedSequencerConfig> sequencerCollection = ModeShapeManagementView
+		Collection<MetaValue> sequencerCollection = ModeShapeManagementView
 				.getSequencerCollectionValue(sequencers);
 
-		for (ManagedSequencerConfig managedSequencer : sequencerCollection) {
+		for (MetaValue managedSequencer : sequencerCollection) {
 
-			String name = managedSequencer.getName();
+			MetaValue name = ((CompositeValueSupport)managedSequencer).get("name");
+			MetaValue description = ((CompositeValueSupport)managedSequencer).get("description");
 
 			/**
 			 * 
@@ -105,10 +106,10 @@ public class SequencerDiscoveryComponent implements
 			 */
 			DiscoveredResourceDetails detail = new DiscoveredResourceDetails(
 					discoveryContext.getResourceType(), // ResourceType
-					name, // Resource Key
-					name, // Resource name
+					ProfileServiceUtil.stringValue(name), // Resource Key
+					ProfileServiceUtil.stringValue(name), // Resource name
 					null, // version
-					managedSequencer.getDescription(), // Description
+					ProfileServiceUtil.stringValue(description), // Description
 					discoveryContext.getDefaultPluginConfiguration(), // Plugin config
 					null // Process info from a process scan
 			);
@@ -117,10 +118,11 @@ public class SequencerDiscoveryComponent implements
 
 			operation = "getProperties";
 
+			EnumValueSupport enumVs = new EnumValueSupport(new EnumMetaType(ManagedEngine.Component.values()), ManagedEngine.Component.SEQUENCER);
+			
 			MetaValue[] args = new MetaValue[] {
-					MetaValueFactory.getInstance().create(name),
-					MetaValueFactory.getInstance().create(
-							ManagedEngine.Component.SEQUENCER) };
+					name,
+					enumVs };
 			
 			MetaValue properties = ModeShapeManagementView
 					.executeManagedOperation(mc, operation, args);

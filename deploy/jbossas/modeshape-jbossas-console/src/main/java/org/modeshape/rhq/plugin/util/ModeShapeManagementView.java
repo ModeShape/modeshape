@@ -15,9 +15,7 @@ import org.jboss.managed.api.ManagedOperation;
 import org.jboss.metatype.api.types.MetaType;
 import org.jboss.metatype.api.values.CollectionValueSupport;
 import org.jboss.metatype.api.values.MetaValue;
-import org.jboss.metatype.api.values.MetaValueFactory;
-import org.modeshape.jboss.managed.ManagedRepository;
-import org.modeshape.jboss.managed.ManagedSequencerConfig;
+import org.jboss.metatype.api.values.SimpleValueSupport;
 import org.modeshape.rhq.plugin.objects.ExecutedResult;
 import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Connector;
 import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
@@ -28,9 +26,6 @@ public class ModeShapeManagementView implements PluginConstants {
 
 	private static final Log LOG = LogFactory
 			.getLog(PluginConstants.DEFAULT_LOGGER_CATEGORY);
-
-	private static final MetaValueFactory metaValueFactory = MetaValueFactory
-			.getInstance();
 
 	public ModeShapeManagementView() {
 
@@ -90,10 +85,7 @@ public class ModeShapeManagementView implements PluginConstants {
 				value = executeManagedOperation(
 						ProfileServiceUtil.getManagedEngine(connection),
 						metric,
-						new MetaValue[] { MetaValueFactory
-								.getInstance()
-								.create(
-										valueMap
+						new MetaValue[] { SimpleValueSupport.wrap((String)valueMap
 												.get(ComponentType.Repository.Operations.Parameters.REPOSITORY_NAME)) });
 				resultObject = ProfileServiceUtil.stringValue(value);
 		}
@@ -111,20 +103,14 @@ public class ModeShapeManagementView implements PluginConstants {
 			value = executeManagedOperation(
 					ProfileServiceUtil.getManagedEngine(connection),
 					metric,
-					new MetaValue[] { MetaValueFactory
-							.getInstance()
-							.create(
-									valueMap
+					new MetaValue[] { SimpleValueSupport.wrap((String)valueMap
 											.get(ComponentType.Connector.Operations.Parameters.CONNECTOR_NAME)) });
 			resultObject = ProfileServiceUtil.stringValue(value);
 		} else if (metric.equals(ComponentType.Repository.Metrics.ACTIVESESSIONS)) {
 				value = executeManagedOperation(
 						ProfileServiceUtil.getManagedEngine(connection),
 						metric,
-						new MetaValue[] { MetaValueFactory
-								.getInstance()
-								.create(
-										valueMap
+						new MetaValue[] { SimpleValueSupport.wrap((String)valueMap
 												.get(ComponentType.Connector.Operations.Parameters.CONNECTOR_NAME)) });
 				resultObject = ProfileServiceUtil.stringValue(value);
 		}
@@ -175,8 +161,7 @@ public class ModeShapeManagementView implements PluginConstants {
 			try {
 				String connectorName = (String) valueMap
 						.get(Connector.Operations.Parameters.CONNECTOR_NAME);
-				MetaValue[] args = new MetaValue[] { metaValueFactory
-						.create(connectorName) };
+				MetaValue[] args = new MetaValue[] { SimpleValueSupport.wrap(connectorName) };
 				MetaValue value = executeManagedOperation(ProfileServiceUtil
 						.getManagedEngine(connection), operationName,
 						operationResult, args);
@@ -267,16 +252,15 @@ public class ModeShapeManagementView implements PluginConstants {
 
 	}
 
-	public static Collection<ManagedRepository> getRepositoryCollectionValue(
+	public static Collection<MetaValue> getRepositoryCollectionValue(
 			MetaValue pValue) {
-		Collection<ManagedRepository> list = new ArrayList<ManagedRepository>();
+		Collection<MetaValue> list = new ArrayList<MetaValue>();
 		MetaType metaType = pValue.getMetaType();
 		if (metaType.isCollection()) {
 			for (MetaValue value : ((CollectionValueSupport) pValue)
 					.getElements()) {
 				if (value.getMetaType().isComposite()) {
-					ManagedRepository repository = (ManagedRepository) MetaValueFactory
-							.getInstance().unwrap(value);
+					MetaValue repository = (MetaValue) value;
 					list.add(repository);
 				} else {
 					throw new IllegalStateException(pValue
@@ -301,16 +285,15 @@ public class ModeShapeManagementView implements PluginConstants {
 		return sb.toString();
 	}
 
-	public static Collection<ManagedSequencerConfig> getSequencerCollectionValue(
+	public static Collection<MetaValue> getSequencerCollectionValue(
 			MetaValue pValue) {
-		Collection<ManagedSequencerConfig> list = new ArrayList<ManagedSequencerConfig>();
+		Collection<MetaValue> list = new ArrayList<MetaValue>();
 		MetaType metaType = pValue.getMetaType();
 		if (metaType.isCollection()) {
 			for (MetaValue value : ((CollectionValueSupport) pValue)
 					.getElements()) {
 				if (value.getMetaType().isComposite()) {
-					ManagedSequencerConfig sequencer = (ManagedSequencerConfig) MetaValueFactory
-							.getInstance().unwrap(value);
+					MetaValue sequencer = value;
 					list.add(sequencer);
 				} else {
 					throw new IllegalStateException(pValue

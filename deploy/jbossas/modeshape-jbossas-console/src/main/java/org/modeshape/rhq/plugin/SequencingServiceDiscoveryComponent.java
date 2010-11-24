@@ -30,10 +30,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jboss.managed.api.ComponentType;
 import org.jboss.managed.api.ManagedComponent;
+import org.jboss.metatype.api.types.EnumMetaType;
 import org.jboss.metatype.api.values.CollectionValueSupport;
 import org.jboss.metatype.api.values.CompositeValueSupport;
+import org.jboss.metatype.api.values.EnumValueSupport;
 import org.jboss.metatype.api.values.MetaValue;
-import org.jboss.metatype.api.values.MetaValueFactory;
 import org.modeshape.jboss.managed.ManagedEngine;
 import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
 import org.modeshape.rhq.plugin.util.PluginConstants;
@@ -98,10 +99,10 @@ public class SequencingServiceDiscoveryComponent implements
 		//Load properties
 		String operation = "getProperties";
 
+		EnumValueSupport enumVs = new EnumValueSupport(new EnumMetaType(ManagedEngine.Component.values()), ManagedEngine.Component.SEQUENCINGSERVICE);
 		MetaValue[] args = new MetaValue[] {
 				null,
-				MetaValueFactory.getInstance().create(
-						ManagedEngine.Component.SEQUENCINGSERVICE) };
+				enumVs };
 
 		MetaValue properties = ModeShapeManagementView
 				.executeManagedOperation(mc, operation, args);

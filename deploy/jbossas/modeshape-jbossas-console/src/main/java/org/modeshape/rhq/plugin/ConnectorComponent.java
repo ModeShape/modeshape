@@ -30,7 +30,7 @@ import java.util.Set;
 import javax.naming.NamingException;
 
 import org.jboss.metatype.api.values.MetaValue;
-import org.jboss.metatype.api.values.MetaValueFactory;
+import org.jboss.metatype.api.values.SimpleValueSupport;
 import org.mc4j.ems.connection.EmsConnection;
 import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
 import org.modeshape.rhq.plugin.util.PluginConstants;
@@ -69,8 +69,7 @@ public class ConnectorComponent extends Facet {
 		Boolean pingResultSuccess = new Boolean(false);
 		try {
 			String connectorName = this.resourceContext.getResourceKey();
-			MetaValue[] args = new MetaValue[] { MetaValueFactory.getInstance()
-					.create(connectorName) };
+			MetaValue[] args = new MetaValue[] { SimpleValueSupport.wrap(connectorName) };
 			value = ModeShapeManagementView.executeManagedOperation(
 					ProfileServiceUtil.getManagedEngine(getConnection()),
 					"pingConnector", args);
