@@ -34,9 +34,6 @@ import org.jboss.managed.api.ManagedComponent;
 import org.jboss.metatype.api.values.CollectionValueSupport;
 import org.jboss.metatype.api.values.CompositeValueSupport;
 import org.jboss.metatype.api.values.MetaValue;
-import org.jboss.metatype.api.values.MetaValueFactory;
-import org.modeshape.jboss.managed.ManagedEngine;
-import org.modeshape.jboss.managed.ManagedRepository;
 import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
 import org.modeshape.rhq.plugin.util.PluginConstants;
 import org.modeshape.rhq.plugin.util.ProfileServiceUtil;
@@ -88,15 +85,15 @@ public class RepositoryDiscoveryComponent implements
 			return discoveredResources;
 		}
 
-		Collection<ManagedRepository> repositoryCollection = ModeShapeManagementView
+		Collection<MetaValue> repositoryCollection = ModeShapeManagementView
 				.getRepositoryCollectionValue(repositories);
 
-		for (ManagedRepository managedRepository : repositoryCollection) {
+		for (MetaValue managedRepository : repositoryCollection) {
 
-			String name = managedRepository.getName();
+			MetaValue name = ((CompositeValueSupport)managedRepository).get("name");
 			MetaValue version = ModeShapeManagementView
 					.executeManagedOperation(mc, "getRepositoryVersion",
-							MetaValueFactory.getInstance().create(name));
+							name);
 
 			/**
 			 * 
@@ -105,8 +102,8 @@ public class RepositoryDiscoveryComponent implements
 			 */
 			DiscoveredResourceDetails detail = new DiscoveredResourceDetails(
 					discoveryContext.getResourceType(), // ResourceType
-					name, // Resource Key
-					name, // Resource name
+					ProfileServiceUtil.stringValue(name), // Resource Key
+					ProfileServiceUtil.stringValue(name), // Resource name
 					ProfileServiceUtil.stringValue(version), // Version
 					PluginConstants.ComponentType.Repository.MODESHAPE_REPOSITORY_DESC, // Description
 					discoveryContext.getDefaultPluginConfiguration(), // Plugin config
@@ -118,7 +115,7 @@ public class RepositoryDiscoveryComponent implements
 			operation = "getRepositoryProperties";
 
 			MetaValue[] args = new MetaValue[] {
-					MetaValueFactory.getInstance().create(name)};
+					name};
 			
 			MetaValue properties = ModeShapeManagementView
 					.executeManagedOperation(mc, operation, args);

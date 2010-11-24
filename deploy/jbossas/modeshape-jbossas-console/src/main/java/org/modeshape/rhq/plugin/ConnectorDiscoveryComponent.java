@@ -29,10 +29,12 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jboss.managed.api.ManagedComponent;
+import org.jboss.metatype.api.types.EnumMetaType;
 import org.jboss.metatype.api.values.CollectionValueSupport;
 import org.jboss.metatype.api.values.CompositeValueSupport;
+import org.jboss.metatype.api.values.EnumValueSupport;
 import org.jboss.metatype.api.values.MetaValue;
-import org.jboss.metatype.api.values.MetaValueFactory;
+import org.jboss.metatype.api.values.SimpleValueSupport;
 import org.modeshape.jboss.managed.ManagedEngine;
 import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
 import org.modeshape.rhq.plugin.util.PluginConstants;
@@ -109,11 +111,12 @@ public class ConnectorDiscoveryComponent implements
 
 			//Load connector properties
 			operation = "getProperties";
-
+			
+			EnumValueSupport enumVs = new EnumValueSupport(new EnumMetaType(ManagedEngine.Component.values()), ManagedEngine.Component.CONNECTOR);
+			
 			MetaValue[] args = new MetaValue[] {
-					MetaValueFactory.getInstance().create(name),
-					MetaValueFactory.getInstance().create(
-							ManagedEngine.Component.CONNECTOR) };
+					SimpleValueSupport.wrap(name),
+					enumVs};
 
 			MetaValue properties = ModeShapeManagementView
 					.executeManagedOperation(mc, operation, args);
@@ -126,10 +129,11 @@ public class ConnectorDiscoveryComponent implements
 			loadProperties(propertyArray, connectorlist);
 
 			//Load connection pool properties
+			enumVs = new EnumValueSupport(new EnumMetaType(ManagedEngine.Component.values()), ManagedEngine.Component.CONNECTIONPOOL);
+			
 			args = new MetaValue[] {
-					MetaValueFactory.getInstance().create(name),
-					MetaValueFactory.getInstance().create(
-							ManagedEngine.Component.CONNECTIONPOOL) };
+					SimpleValueSupport.wrap(name),
+					enumVs };
 
 			properties = ModeShapeManagementView
 					.executeManagedOperation(mc, operation, args);
