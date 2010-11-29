@@ -193,10 +193,14 @@ public class TimestampWithTimezone {
         
         Calendar cal = Calendar.getInstance(initial);
         cal.setTimeInMillis(time);
-
-        target.clear();
-        for (int i = 0; i <= Calendar.MILLISECOND; i++) {
-            target.set(i, cal.get(i));
-        }                
+        
+        target.set(Calendar.YEAR, cal.get(Calendar.YEAR));
+        target.set(Calendar.MONTH, cal.get(Calendar.MONTH));
+        target.set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH));       
+        target.set(Calendar.HOUR_OF_DAY, cal.get(Calendar.HOUR_OF_DAY));
+        target.set(Calendar.MINUTE, cal.get(Calendar.MINUTE));
+        target.set(Calendar.SECOND, cal.get(Calendar.SECOND));
+        target.set(Calendar.MILLISECOND, cal.get(Calendar.MILLISECOND));        
+                      
     }
 }

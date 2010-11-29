@@ -49,7 +49,8 @@ public class LocalRepositoryDelegateTest {
 
     private static final String VALID_JNDI_URL_WITH_PARMS = VALID_JNDI_URL + "?workspace=" + WORKSPACE + "&user=" + USER_NAME
                                                             + "&password=" + PASSWORD + "&" + JcrDriver.REPOSITORY_PROPERTY_NAME
-                                                            + "=" + REPOSITORY_NAME;
+                                                            + "=" + REPOSITORY_NAME + "&" + JcrDriver.TEIID_SUPPORT_PROPERTY_NAME 
+                                                            + "=true";
 
     private RepositoryDelegate delegate;
 
@@ -70,7 +71,9 @@ public class LocalRepositoryDelegateTest {
 
         assertThat(delegate.getConnectionInfo().getEffectiveUrl(),
                    is(JcrDriver.JNDI_URL_PREFIX
-                      + "jcr/local?user=jsmith&workspace=MyWorkspace&password=******&repositoryName=repositoryName"));
+                      + "jcr/local?teiidsupport=true&user=jsmith&workspace=MyWorkspace&password=******&repositoryName=repositoryName"));
+        
+        assertThat(delegate.getConnectionInfo().isTeiidSupport(), is(Boolean.TRUE.booleanValue()));
 
         DriverPropertyInfo[] infos = delegate.getConnectionInfo().getPropertyInfos();
         assertThat(infos.length, is(0));

@@ -48,7 +48,8 @@ public class HttpRepositoryDelegateTest {
     private static final String VALID_HTTP_URL = JcrDriver.HTTP_URL_PREFIX + SERVER + "/modeshape-rest";
 
     private static final String VALID_HTTP_URL_WITH_PARMS = VALID_HTTP_URL + "/" + REPOSITORY_NAME + "/" + WORKSPACE + "?user="
-                                                            + USER_NAME + "&password=" + PASSWORD;
+                                                            + USER_NAME + "&password=" + PASSWORD + "&" + JcrDriver.TEIID_SUPPORT_PROPERTY_NAME 
+                                                            + "=true";
 
     private RepositoryDelegate delegate;
 
@@ -66,7 +67,9 @@ public class HttpRepositoryDelegateTest {
         assertThat(delegate.getConnectionInfo().getPassword(), is(new String(PASSWORD).toCharArray()));
 
         assertThat(delegate.getConnectionInfo().getEffectiveUrl(),
-                   is(VALID_HTTP_URL + "?user=jsmith&workspace=MyWorkspace&password=******&repositoryName=repositoryName"));
+                   is(VALID_HTTP_URL + "?teiidsupport=true&user=jsmith&workspace=MyWorkspace&password=******&repositoryName=repositoryName"));
+
+        assertThat(delegate.getConnectionInfo().isTeiidSupport(), is(Boolean.TRUE.booleanValue()));
 
         DriverPropertyInfo[] infos = delegate.getConnectionInfo().getPropertyInfos();
         assertThat(infos.length, is(0));

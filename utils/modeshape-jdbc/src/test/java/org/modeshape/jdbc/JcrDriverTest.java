@@ -214,6 +214,8 @@ public class JcrDriverTest {
 
     @Test
     public void shouldAcceptValidUrls() {
+        assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=MyWorkspace&user=jsmith&password=secret&teiidsupport=true"),
+                is(true));    	
         assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=MyWorkspace&user=jsmith&password=secret"),
                    is(true));
         assertThat(driver.acceptsURL(JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=MyWorkspace&user=jsmith"), is(true));
@@ -237,13 +239,21 @@ public class JcrDriverTest {
 
     @Test
     public void shouldCreateConnectionInfoForUrlWithEscapedCharacters() throws SQLException{
-        validUrl = JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=My%20Workspace&user=j%20smith&password=secret&repositoryName=My%20Repository";
+        validUrl = JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=My%20Workspace&user=j%20smith&password=secret&repositoryName=My%20Repository&teiidsupport=true";
         ConnectionInfo info = driver.createConnectionInfo(validUrl, validProperties);
         assertThat(info.getWorkspaceName(), is("My Workspace"));
         assertThat(info.getUsername(), is("j smith"));
         assertThat(info.getPassword(), is("secret".toCharArray()));
         assertThat(info.getRepositoryName(), is("My Repository"));
+        assertThat(info.isTeiidSupport(), is(Boolean.TRUE.booleanValue()));
     }
+    
+    @Test
+    public void shouldCreateConnectionInfoButIndicateNoTeiidSupport() throws SQLException{
+        validUrl = JcrDriver.JNDI_URL_PREFIX + "java:nameInJndi?workspace=My%20Workspace&user=j%20smith&password=secret&repositoryName=My%20Repository";
+        ConnectionInfo info = driver.createConnectionInfo(validUrl, validProperties);
+        assertThat(info.isTeiidSupport(), is(Boolean.FALSE.booleanValue()));
+    }    
 
     @Test
     public void shouldCreateConnectionWithValidUrlAndProperties() throws SQLException {
