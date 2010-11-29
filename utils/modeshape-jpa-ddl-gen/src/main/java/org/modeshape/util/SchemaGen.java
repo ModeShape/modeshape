@@ -126,7 +126,7 @@ public class SchemaGen {
         SchemaExport export = new SchemaExport(configurator.getHibernateConfiguration());
         export.setOutputFile(new File(outputPath, CREATE_FILE_NAME).getCanonicalPath());
         if (this.delimiter != null ) export.setDelimiter("\r" + delimiter);
-        export.create(false, false);
+        export.execute(false, false, false, true);
 
         export.setOutputFile(new File(outputPath, DROP_FILE_NAME).getCanonicalPath());
         export.drop(false, false);
