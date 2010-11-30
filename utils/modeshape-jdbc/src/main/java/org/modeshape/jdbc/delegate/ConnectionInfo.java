@@ -178,6 +178,16 @@ public abstract class ConnectionInfo {
 		String result = properties.getProperty(JcrDriver.PASSWORD_PROPERTY_NAME);
 		return result != null ? result.toCharArray() : null;
     }
+    
+    /**
+     * Return true of Teiid support is required for this connection.
+     * @return true if Teiid support is required.
+     */
+	public boolean isTeiidSupport() {
+		String result = properties.getProperty(JcrDriver.TEIID_SUPPORT_PROPERTY_NAME);
+		if (result == null) return false;
+		return result.equalsIgnoreCase(Boolean.TRUE.toString());
+    }
 
     void setUrl(String url) {
     	this.url = url;

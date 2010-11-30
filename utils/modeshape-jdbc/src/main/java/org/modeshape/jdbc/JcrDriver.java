@@ -99,11 +99,13 @@ public class JcrDriver implements java.sql.Driver {
     public static final String REPOSITORY_PROPERTY_NAME = "repositoryName";
     public static final String USERNAME_PROPERTY_NAME = "user";
     public static final String PASSWORD_PROPERTY_NAME = "password";
+    public static final String TEIID_SUPPORT_PROPERTY_NAME = "teiidsupport";
 
     protected static final Set<String> ALL_PROPERTY_NAMES = Collections.unmodifiableSet(WORKSPACE_PROPERTY_NAME,
                                                                                         REPOSITORY_PROPERTY_NAME,
                                                                                         USERNAME_PROPERTY_NAME,
-                                                                                        PASSWORD_PROPERTY_NAME);
+                                                                                        PASSWORD_PROPERTY_NAME,
+                                                                                        TEIID_SUPPORT_PROPERTY_NAME);
 
     /* URL Prefix used for JNDI access */
     public static final String JNDI_URL_PREFIX = "jdbc:jcr:jndi:";

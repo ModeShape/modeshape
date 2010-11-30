@@ -582,41 +582,29 @@ public class JcrMetaData implements DatabaseMetaData {
 
                     PropertyDefinition propDefn = defnsIt.next();
 
-                    // list represents a record on the Results object.
-                    List<Object> currentRow = new ArrayList<Object>(JDBCColumnPositions.COLUMNS.MAX_COLUMNS);
-
                     JcrType jcrtype = JcrType.typeInfo(propDefn.getRequiredType());
-
-                    currentRow.add(catalogName); // TABLE_CAT
-                    currentRow.add("NULL"); // TABLE_SCHEM
-                    currentRow.add(type.getName()); // TABLE_NAME
-                    currentRow.add(propDefn.getName()); // COLUMN_NAME
-                    currentRow.add(jcrtype.getJdbcType()); // DATA_TYPE
-                    currentRow.add(jcrtype.getJdbcTypeName()); // TYPE_NAME
-                    currentRow.add(jcrtype.getNominalDisplaySize()); // COLUMN_SIZE
-                    currentRow.add("NULL"); // BUFFER_LENGTH
-                    currentRow.add(JcrMetaData.DEFAULT_ZERO); // DECIMAL_DIGITS
-                    currentRow.add(JcrMetaData.DEFAULT_ZERO); // NUM_PREC_RADIX
-
-                    currentRow.add((propDefn.isMandatory() ? ResultsMetadataConstants.NULL_TYPES.NOT_NULL : ResultsMetadataConstants.NULL_TYPES.NULLABLE)); // NULLABLE
-                    currentRow.add(""); // REMARKS
-                    currentRow.add("NULL"); // COLUMN_DEF
-                    currentRow.add(JcrMetaData.DEFAULT_ZERO); // COLUMN_DEF
-                    currentRow.add(JcrMetaData.DEFAULT_ZERO); // SQL_DATETIME_SUB
-
-                    currentRow.add(JcrMetaData.DEFAULT_ZERO); // CHAR_OCTET_LENGTH
-                    currentRow.add(new Integer(ordinal + 1)); // ORDINAL_POSITION
-                    currentRow.add(propDefn.isMandatory() ? "NO" : "YES"); // IS_NULLABLE
-                    currentRow.add("NULL"); // SCOPE_CATLOG
-                    currentRow.add("NULL"); // SCOPE_SCHEMA
-
-                    currentRow.add("NULL"); // SCOPE_TABLE
-                    currentRow.add(JcrMetaData.DEFAULT_ZERO); // SOURCE_DATA_TYPE
+                    
+                    Integer nullable = propDefn.isMandatory() ? ResultsMetadataConstants.NULL_TYPES.NOT_NULL : ResultsMetadataConstants.NULL_TYPES.NULLABLE;
+                    
+                    List<Object> currentRow = loadCurrentRow( type.getName(), propDefn.getName(), jcrtype, nullable, propDefn.isMandatory(), ordinal);
 
                     // add the current row to the list of records.
                     records.add(currentRow);
 
                     ++ordinal;
+                }
+                // if columns where added and if Teiid Support is requested, then add the mode:properties to the list of columns
+                if (ordinal > 0 && this.connection.getRepositoryDelegate().getConnectionInfo().isTeiidSupport()) {
+                	if (this.connection.getRepositoryDelegate().getConnectionInfo().isTeiidSupport()) {
+                		
+                        List<Object> currentRow = loadCurrentRow(type.getName(), 
+                        		"mode:properties",  
+                        		JcrType.typeInfo(PropertyType.STRING), 
+                        		ResultsMetadataConstants.NULL_TYPES.NULLABLE,
+                        		Boolean.FALSE.booleanValue(), ordinal);
+                        
+                        records.add(currentRow);
+                	}
                 }
 
             }// end of while
@@ -628,6 +616,39 @@ public class JcrMetaData implements DatabaseMetaData {
         } catch (RepositoryException e) {
             throw new SQLException(e.getLocalizedMessage());
         }
+    }
+    
+    private List<Object> loadCurrentRow(String tableName, String columnName, JcrType jcrtype, Integer nullable, boolean isMandatory, int ordinal) {
+        // list represents a record on the Results object.
+    	List<Object> currentRow = new ArrayList<Object>(JDBCColumnPositions.COLUMNS.MAX_COLUMNS);
+    	
+        currentRow.add(catalogName); // TABLE_CAT
+        currentRow.add("NULL"); // TABLE_SCHEM
+        currentRow.add(tableName); // TABLE_NAME
+        currentRow.add(columnName); // COLUMN_NAME
+        currentRow.add(jcrtype.getJdbcType()); // DATA_TYPE
+        currentRow.add(jcrtype.getJdbcTypeName()); // TYPE_NAME
+        currentRow.add(jcrtype.getNominalDisplaySize()); // COLUMN_SIZE
+        currentRow.add("NULL"); // BUFFER_LENGTH
+        currentRow.add(JcrMetaData.DEFAULT_ZERO); // DECIMAL_DIGITS
+        currentRow.add(JcrMetaData.DEFAULT_ZERO); // NUM_PREC_RADIX
+
+        currentRow.add(nullable); // NULLABLE
+        currentRow.add(""); // REMARKS
+        currentRow.add("NULL"); // COLUMN_DEF
+        currentRow.add(JcrMetaData.DEFAULT_ZERO); // COLUMN_DEF
+        currentRow.add(JcrMetaData.DEFAULT_ZERO); // SQL_DATETIME_SUB
+
+        currentRow.add(JcrMetaData.DEFAULT_ZERO); // CHAR_OCTET_LENGTH
+        currentRow.add(new Integer(ordinal + 1)); // ORDINAL_POSITION
+        currentRow.add(isMandatory ? "NO" : "YES"); // IS_NULLABLE
+        currentRow.add("NULL"); // SCOPE_CATLOG
+        currentRow.add("NULL"); // SCOPE_SCHEMA
+
+        currentRow.add("NULL"); // SCOPE_TABLE
+        currentRow.add(JcrMetaData.DEFAULT_ZERO); // SOURCE_DATA_TYPE
+        
+        return currentRow;
     }
 
     /**
