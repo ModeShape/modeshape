@@ -81,6 +81,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     protected static final String ALLOW_CREATING_WORKSPACES = "allowCreatingWorkspaces";
     protected static final String MAX_PATH_LENGTH = "maxPathLength";
     protected static final String EXCLUSION_PATTERN = "exclusionPattern";
+    protected static final String INCLUSION_PATTERN = "inclusionPattern";
     protected static final String FILENAME_FILTER = "filenameFilter";
     protected static final String CUSTOM_PROPERTY_FACTORY = "customPropertyFactory";
     protected static final String EAGER_FILE_LOADING = "eagerFileLoading";
@@ -126,16 +127,9 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
 
     public static final int DEFAULT_MAX_PATH_LENGTH = 255; // 255 for windows users
     public static final String DEFAULT_EXCLUSION_PATTERN = null;
+    public static final String DEFAULT_INCLUSION_PATTERN = null;
     public static final FilenameFilter DEFAULT_FILENAME_FILTER = null;
-    private static final FilenameFilter ACCEPT_ALL_FILTER = new FilenameFilter() {
-
-        @Override
-        public boolean accept( File file,
-                               String filename ) {
-            return true;
-        }
-
-    };
+    private static final FilenameFilter ACCEPT_ALL_FILTER = new InclusionExclusionFilenameFilter();
 
     protected static Map<String, CustomPropertiesFactory> EXTRA_PROPERTIES_CLASSNAME_BY_KEY;
 
@@ -173,6 +167,11 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     @Category( i18n = FileSystemI18n.class, value = "exclusionPatternPropertyCategory" )
     private volatile String exclusionPattern = DEFAULT_EXCLUSION_PATTERN;
 
+    @Description( i18n = FileSystemI18n.class, value = "inclusionPatternPropertyDescription" )
+    @Label( i18n = FileSystemI18n.class, value = "inclusionPatternPropertyLabel" )
+    @Category( i18n = FileSystemI18n.class, value = "inclusionPatternPropertyCategory" )
+    private volatile String inclusionPattern = DEFAULT_INCLUSION_PATTERN;
+    
     @Description( i18n = FileSystemI18n.class, value = "eagerFileLoadingPropertyDescription" )
     @Label( i18n = FileSystemI18n.class, value = "eagerFileLoadingPropertyLabel" )
     @Category( i18n = FileSystemI18n.class, value = "eagerFileLoadingPropertyCategory" )
@@ -189,6 +188,9 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     private volatile String extraProperties = DEFAULT_EXTRA_PROPERTIES;
 
     private volatile FilenameFilter filenameFilter = DEFAULT_FILENAME_FILTER;
+    private volatile InclusionExclusionFilenameFilter inclusionExclusionFilenameFilter 
+            = new InclusionExclusionFilenameFilter();
+
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
                                                                                                   SUPPORTS_SAME_NAME_SIBLINGS,
                                                                                                   DEFAULT_SUPPORTS_UPDATES,
@@ -251,22 +253,45 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      *         may be null
      */
     public String getExclusionPattern() {
-        return exclusionPattern;
+        return this.inclusionExclusionFilenameFilter.getExclusionPattern();
     }
 
     /**
      * Sets the regular expression that, if matched by a file or folder, indicates that the file or folder should be ignored
      * <p>
-     * Only one of the {@code exclusionPattern} and {@code filenameFilter} properties may be non-null at any one time. Calling
-     * this method automatically sets the {@code filenameFilter} property to {@code null}.
+     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time.  If Inclusion/exclusion are set, then
+     * FilenameFilter is ignored.
      * </p>
      * 
      * @param exclusionPattern the regular expression that, if matched by a file or folder, indicates that the file or folder
      *        should be ignored. If this pattern is {@code null}, no files will be excluded.
      */
     public synchronized void setExclusionPattern( String exclusionPattern ) {
-        this.exclusionPattern = exclusionPattern;
-        this.filenameFilter = null;
+        this.inclusionExclusionFilenameFilter.setExclusionPattern(exclusionPattern);
+    }
+
+    /**
+     * Get the regular expression that, if matched by a file or folder, indicates that the file or folder should be included
+     *
+     * @return the regular expression that, if matched by a file or folder, indicates that the file or folder should be included;
+     *         may be null
+     */
+    public String getInclusionPattern() {
+        return this.inclusionExclusionFilenameFilter.getInclusionPattern();
+    }
+
+    /**
+     * Sets the regular expression that, if matched by a file or folder, indicates that the file or folder should be included
+     * <p>
+     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time.  If Inclusion/exclusion are set, then
+     * FilenameFilter is ignored.
+     * </p>
+     *
+     * @param exclusionPattern the regular expression that, if matched by a file or folder, indicates that the file or folder
+     *        should be ignored. If this pattern is {@code null}, no files will be excluded.
+     */
+    public synchronized void setInclusionPattern( String inclusionPattern ) {
+        this.inclusionExclusionFilenameFilter.setInclusionPattern(inclusionPattern);
     }
 
     /**
@@ -280,8 +305,8 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     /**
      * Sets the filename filter that is used to restrict which content can be accessed by this connector
      * <p>
-     * Only one of the {@code exclusionPattern} and {@code filenameFilter} properties may be non-null at any one time. Calling
-     * this method automatically sets the {@code exclusionPattern} property to {@code null}.
+     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time.  If Inclusion/exclusion are set, then
+     * FilenameFilter is ignored.
      * </p>
      * 
      * @param filenameFilter the filename filter that is used to restrict which content can be accessed by this connector. If this
@@ -289,7 +314,6 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      */
     public synchronized void setFilenameFilter( FilenameFilter filenameFilter ) {
         this.filenameFilter = filenameFilter;
-        this.exclusionPattern = null;
     }
 
     /**
@@ -319,15 +343,16 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
         Class<?> filenameFilterClass = Class.forName(filenameFilterClassName);
 
         this.filenameFilter = (FilenameFilter)filenameFilterClass.newInstance();
-        this.exclusionPattern = null;
     }
 
     FilenameFilter filenameFilter( boolean hideFilesForCustomProperties ) {
         if (this.filenameFilter != null) return this.filenameFilter;
+        if (this.getInclusionPattern() != null || this.getExclusionPattern() != null)
+            return this.inclusionExclusionFilenameFilter;
 
         // Otherwise, create one that take into account the exclusion pattern ...
         FilenameFilter filenameFilter = null;
-        final String filterPattern = exclusionPattern;
+        final String filterPattern = this.inclusionExclusionFilenameFilter.getExclusionPattern();
         if (filterPattern != null) {
             filenameFilter = new FilenameFilter() {
                 Pattern filter = Pattern.compile(filterPattern);
@@ -622,8 +647,11 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
         if (getCustomPropertiesFactory() != null) {
             ref.add(new StringRefAddr(CUSTOM_PROPERTY_FACTORY, getCustomPropertiesFactory().getClass().getName()));
         }
-        if (exclusionPattern != null) {
-            ref.add(new StringRefAddr(EXCLUSION_PATTERN, exclusionPattern));
+        if (this.inclusionExclusionFilenameFilter.getExclusionPattern() != null) {
+            ref.add(new StringRefAddr(EXCLUSION_PATTERN, this.inclusionExclusionFilenameFilter.getExclusionPattern()));
+        }
+        if (this.inclusionExclusionFilenameFilter.getInclusionPattern() != null) {
+            ref.add(new StringRefAddr(INCLUSION_PATTERN, this.inclusionExclusionFilenameFilter.getInclusionPattern()));
         }
         if (filenameFilter != null) {
             ref.add(new StringRefAddr(FILENAME_FILTER, filenameFilter.getClass().getName()));
@@ -648,6 +676,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
             String defaultWorkspace = (String)values.get(DEFAULT_WORKSPACE);
             String createWorkspaces = (String)values.get(ALLOW_CREATING_WORKSPACES);
             String exclusionPattern = (String)values.get(EXCLUSION_PATTERN);
+            String inclusionPattern = (String)values.get(INCLUSION_PATTERN);
             String filenameFilterClassName = (String)values.get(FILENAME_FILTER);
             String maxPathLength = (String)values.get(DEFAULT_MAX_PATH_LENGTH);
             String customPropertiesFactoryClassName = (String)values.get(CUSTOM_PROPERTY_FACTORY);
@@ -669,6 +698,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
             if (createWorkspaces != null) source.setCreatingWorkspacesAllowed(Boolean.parseBoolean(createWorkspaces));
             if (workspaceNames != null && workspaceNames.length != 0) source.setPredefinedWorkspaceNames(workspaceNames);
             if (exclusionPattern != null) source.setExclusionPattern(exclusionPattern);
+            if (inclusionPattern != null) source.setInclusionPattern(inclusionPattern);
             if (filenameFilterClassName != null) source.setFilenameFilter(filenameFilterClassName);
             if (maxPathLength != null) source.setMaxPathLength(Integer.valueOf(maxPathLength));
             if (extraPropertiesBehavior != null) source.setExtraPropertiesBehavior(extraPropertiesBehavior);
