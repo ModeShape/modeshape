@@ -68,6 +68,11 @@ public class EngineDiscoveryComponent implements
 								PluginConstants.ComponentType.Engine.MODESHAPE_SUB_TYPE),
 						PluginConstants.ComponentType.Engine.MODESHAPE_ENGINE);
 		
+		if (mc==null){
+			log.debug("No ModeShape Engine discovered");
+			return discoveredResources;
+		}
+		
 		String version = ProfileServiceUtil.stringValue(ModeShapeManagementView.executeManagedOperation(mc, "getVersion", new MetaValue[]{null}));
 
 		/**
