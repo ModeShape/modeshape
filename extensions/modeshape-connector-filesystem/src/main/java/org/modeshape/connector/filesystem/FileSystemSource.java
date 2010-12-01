@@ -162,16 +162,6 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     @Category( i18n = FileSystemI18n.class, value = "maxPathLengthPropertyCategory" )
     private volatile int maxPathLength = DEFAULT_MAX_PATH_LENGTH;
 
-    @Description( i18n = FileSystemI18n.class, value = "exclusionPatternPropertyDescription" )
-    @Label( i18n = FileSystemI18n.class, value = "exclusionPatternPropertyLabel" )
-    @Category( i18n = FileSystemI18n.class, value = "exclusionPatternPropertyCategory" )
-    private volatile String exclusionPattern = DEFAULT_EXCLUSION_PATTERN;
-
-    @Description( i18n = FileSystemI18n.class, value = "inclusionPatternPropertyDescription" )
-    @Label( i18n = FileSystemI18n.class, value = "inclusionPatternPropertyLabel" )
-    @Category( i18n = FileSystemI18n.class, value = "inclusionPatternPropertyCategory" )
-    private volatile String inclusionPattern = DEFAULT_INCLUSION_PATTERN;
-    
     @Description( i18n = FileSystemI18n.class, value = "eagerFileLoadingPropertyDescription" )
     @Label( i18n = FileSystemI18n.class, value = "eagerFileLoadingPropertyLabel" )
     @Category( i18n = FileSystemI18n.class, value = "eagerFileLoadingPropertyCategory" )
@@ -188,8 +178,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     private volatile String extraProperties = DEFAULT_EXTRA_PROPERTIES;
 
     private volatile FilenameFilter filenameFilter = DEFAULT_FILENAME_FILTER;
-    private volatile InclusionExclusionFilenameFilter inclusionExclusionFilenameFilter 
-            = new InclusionExclusionFilenameFilter();
+    private volatile InclusionExclusionFilenameFilter inclusionExclusionFilenameFilter = new InclusionExclusionFilenameFilter();
 
     private volatile RepositorySourceCapabilities capabilities = new RepositorySourceCapabilities(
                                                                                                   SUPPORTS_SAME_NAME_SIBLINGS,
@@ -252,6 +241,9 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
      * @return the regular expression that, if matched by a file or folder, indicates that the file or folder should be ignored;
      *         may be null
      */
+    @Description( i18n = FileSystemI18n.class, value = "exclusionPatternPropertyDescription" )
+    @Label( i18n = FileSystemI18n.class, value = "exclusionPatternPropertyLabel" )
+    @Category( i18n = FileSystemI18n.class, value = "exclusionPatternPropertyCategory" )
     public String getExclusionPattern() {
         return this.inclusionExclusionFilenameFilter.getExclusionPattern();
     }
@@ -259,7 +251,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     /**
      * Sets the regular expression that, if matched by a file or folder, indicates that the file or folder should be ignored
      * <p>
-     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time.  If Inclusion/exclusion are set, then
+     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time. If Inclusion/exclusion are set, then
      * FilenameFilter is ignored.
      * </p>
      * 
@@ -272,10 +264,13 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
 
     /**
      * Get the regular expression that, if matched by a file or folder, indicates that the file or folder should be included
-     *
+     * 
      * @return the regular expression that, if matched by a file or folder, indicates that the file or folder should be included;
      *         may be null
      */
+    @Description( i18n = FileSystemI18n.class, value = "inclusionPatternPropertyDescription" )
+    @Label( i18n = FileSystemI18n.class, value = "inclusionPatternPropertyLabel" )
+    @Category( i18n = FileSystemI18n.class, value = "inclusionPatternPropertyCategory" )
     public String getInclusionPattern() {
         return this.inclusionExclusionFilenameFilter.getInclusionPattern();
     }
@@ -283,11 +278,11 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     /**
      * Sets the regular expression that, if matched by a file or folder, indicates that the file or folder should be included
      * <p>
-     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time.  If Inclusion/exclusion are set, then
+     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time. If Inclusion/exclusion are set, then
      * FilenameFilter is ignored.
      * </p>
-     *
-     * @param exclusionPattern the regular expression that, if matched by a file or folder, indicates that the file or folder
+     * 
+     * @param inclusionPattern the regular expression that, if matched by a file or folder, indicates that the file or folder
      *        should be ignored. If this pattern is {@code null}, no files will be excluded.
      */
     public synchronized void setInclusionPattern( String inclusionPattern ) {
@@ -305,7 +300,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
     /**
      * Sets the filename filter that is used to restrict which content can be accessed by this connector
      * <p>
-     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time.  If Inclusion/exclusion are set, then
+     * Only one of FilenameFilter or Inclusion/Exclusion Pattern are used at a given time. If Inclusion/exclusion are set, then
      * FilenameFilter is ignored.
      * </p>
      * 
@@ -347,8 +342,7 @@ public class FileSystemSource extends AbstractRepositorySource implements Object
 
     FilenameFilter filenameFilter( boolean hideFilesForCustomProperties ) {
         if (this.filenameFilter != null) return this.filenameFilter;
-        if (this.getInclusionPattern() != null || this.getExclusionPattern() != null)
-            return this.inclusionExclusionFilenameFilter;
+        if (this.getInclusionPattern() != null || this.getExclusionPattern() != null) return this.inclusionExclusionFilenameFilter;
 
         // Otherwise, create one that take into account the exclusion pattern ...
         FilenameFilter filenameFilter = null;

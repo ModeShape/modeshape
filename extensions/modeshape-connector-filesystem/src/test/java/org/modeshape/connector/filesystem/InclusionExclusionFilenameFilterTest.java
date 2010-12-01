@@ -23,15 +23,12 @@
  */
 package org.modeshape.connector.filesystem;
 
-import org.junit.After;
-import org.junit.AfterClass;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
- *
  * @author johnament
  */
 public class InclusionExclusionFilenameFilterTest {
@@ -40,7 +37,7 @@ public class InclusionExclusionFilenameFilterTest {
 
     @Before
     public void setUp() {
-         filter = new InclusionExclusionFilenameFilter();
+        filter = new InclusionExclusionFilenameFilter();
     }
 
     @Test
@@ -52,22 +49,22 @@ public class InclusionExclusionFilenameFilterTest {
     public void testInclusionOnly() {
         filter.setInclusionPattern("(.+)\\.mode");
         assertTrue(filter.accept(null, "myfile.mode"));
-        assertFalse(filter.accept(null,"anotherfile.txt"));
+        assertFalse(filter.accept(null, "anotherfile.txt"));
     }
 
     @Test
     public void testExclusionOnly() {
         filter.setExclusionPattern("(.+)\\.mode");
         assertFalse(filter.accept(null, "myfile.mode"));
-        assertTrue(filter.accept(null,"anotherfile.txt"));
+        assertTrue(filter.accept(null, "anotherfile.txt"));
     }
 
     @Test
     public void testInclusionExclusion() {
         filter.setInclusionPattern("(.+)\\.mode");
         filter.setExclusionPattern("ignore_me(.+)\\.mode");
-        assertTrue(filter.accept(null,"validfile.mode"));
-        assertFalse(filter.accept(null,"ignore_meinvalidfile.mode"));
+        assertTrue(filter.accept(null, "validfile.mode"));
+        assertFalse(filter.accept(null, "ignore_meinvalidfile.mode"));
     }
 
 }
