@@ -678,12 +678,15 @@
 				<dependency>
 					<groupId>com.ibm</groupId>
 					<artifactId>db2jcc</artifactId>
-					<version>3.8.47</version>
+					<!--version>3.8.47</version-->
+					<!--version>3.57.86</version-->
+					<version>3.58.82</version>
 				</dependency>
 				<dependency>
 					<groupId>com.ibm</groupId>
 					<artifactId>db2jcc_license_cu</artifactId>
-					<version>3.8.47</version>
+					<!--version>3.8.47</version-->
+					<version>3.57.86</version>
 					<scope>test</scope>
 				</dependency>
 			</dependencies>
@@ -692,8 +695,8 @@
 				<jpaSource.dialect>org.hibernate.dialect.DB2Dialect</jpaSource.dialect>
 				<jpaSource.driverClassName>com.ibm.db2.jcc.DB2Driver</jpaSource.driverClassName>
 				<jpaSource.url>jdbc:db2://vmg06.mw.lab.eng.bos.redhat.com:50000/jbossqa</jpaSource.url>
-				<jpaSource.username>modeshape</jpaSource.username>
-				<jpaSource.password>modeshape</jpaSource.password>
+				<jpaSource.username>dballo02</jpaSource.username>
+				<jpaSource.password>dballo02</jpaSource.password>
 			</properties>
 		</profile>
 
