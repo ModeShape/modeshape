@@ -162,7 +162,7 @@
                  the '/sequenced/xml/my/favorites/Customer.xml' node, which will have a primary type of 'modexml:document' and will
                  contain under it the nodes representing the XML elements, attributes, and content nodes. Of course, the path expression
                  can be modified as needed; for example, to exclude the filename extension, or to exclude the relative path. -->
-            <mode:pathExpression>store:default:/files(//(*.xml[*]))/jcr:content[@jcr:data] => store:default:/sequenced/xml/$1 </mode:pathExpression>
+            <mode:pathExpression>store:default:/files(//)*.xml[*]/jcr:content[@jcr:data] => store:default:/sequenced/xml/$1 </mode:pathExpression>
         </mode:sequencer>  
         <mode:sequencer jcr:name="ZIP File Sequencer" mode:classname="org.modeshape.sequencer.zip.ZipSequencer">
             <mode:description>Sequences ZIP files loaded under '/files', extracting the archive file contents into the equivalent JCR graph structure of 'nt:file' and 'nt:folder' nodes.</mode:description>        
