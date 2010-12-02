@@ -48,7 +48,7 @@
     <mode:sequencers>
         <mode:sequencer jcr:name="XML File Sequencer" mode:classname="org.modeshape.sequencer.xml.XmlSequencer">
             <mode:description>Sequences XML files loaded into the repository under '/files', extracting the contents into the equivalent JCR graph structure.</mode:description>        
-            <mode:pathExpression>/files(//(*.xml[*]))/jcr:content[@jcr:data] => /sequenced/xml/$1 </mode:pathExpression>
+            <mode:pathExpression>/files(//)*.xml[*]/jcr:content[@jcr:data] => /sequenced/xml/$1 </mode:pathExpression>
         </mode:sequencer>  
     </mode:sequencers>
 </configuration>

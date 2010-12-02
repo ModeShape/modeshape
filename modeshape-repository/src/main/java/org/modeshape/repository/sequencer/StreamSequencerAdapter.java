@@ -26,17 +26,20 @@ package org.modeshape.repository.sequencer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.Reflection;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
+import org.modeshape.graph.Location;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.observe.NetChangeObserver.NetChange;
 import org.modeshape.graph.property.Binary;
@@ -47,6 +50,7 @@ import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.ValueFactories;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.sequencer.StreamSequencer;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
 import org.modeshape.repository.RepositoryI18n;
@@ -267,10 +271,35 @@ public class StreamSequencerAdapter implements Sequencer {
         final PropertyFactory propertyFactory = context.getExecutionContext().getPropertyFactory();
         final Path outputNodePath = pathFactory.create(nodePath);
 
+        // Get the existing list of children under the output path ...
+        PathStrategy pathStrategy = null;
+        try {
+            List<Location> children = context.destinationGraph().getChildren().of(outputNodePath);
+            Map<Name, AtomicInteger> existingSnsByNodeName = new HashMap<Name, AtomicInteger>();
+            for (Location child : children) {
+                Segment childSegment = child.getPath().getLastSegment();
+                Name childName = child.getPath().getLastSegment().getName();
+                AtomicInteger sns = existingSnsByNodeName.get(childName);
+                if (sns == null) {
+                    sns = new AtomicInteger(childSegment.getIndex());
+                    existingSnsByNodeName.put(childName, sns);
+                } else {
+                    if (childSegment.getIndex() > sns.get()) {
+                        sns.set(childSegment.getIndex());
+                    }
+                }
+            }
+            pathStrategy = new NextSnsPathStrategy(existingSnsByNodeName, pathFactory);
+        } catch (PathNotFoundException e) {
+            // The target node doesn't yet exist, so just continue ...
+            pathStrategy = new PassThroughStrategy();
+        }
+
         // Iterate over the entries in the output, in Path's natural order (shorter paths first and in lexicographical order by
         // prefix and name)
         for (SequencerOutputMap.Entry entry : output) {
-            Path targetNodePath = entry.getPath();
+            Path path = entry.getPath();
+            Path targetNodePath = pathStrategy.validate(path);
 
             // Resolve this path relative to the output node path, handling any parent or self references ...
             Path absolutePath = targetNodePath.isAbsolute() ? targetNodePath : outputNodePath.resolve(targetNodePath);
@@ -345,5 +374,76 @@ public class StreamSequencerAdapter implements Sequencer {
             }
         }
         throw err;
+    }
+
+    protected interface PathStrategy {
+        Path validate( Path path );
+    }
+
+    protected class PassThroughStrategy implements PathStrategy {
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.repository.sequencer.StreamSequencerAdapter.PathStrategy#validate(org.modeshape.graph.property.Path)
+         */
+        @Override
+        public Path validate( Path path ) {
+            return path;
+        }
+    }
+
+    protected class NextSnsPathStrategy implements PathStrategy {
+
+        private final Map<Name, AtomicInteger> existingSnsByNodeName;
+        private final PathFactory pathFactory;
+        private final Map<Segment, Path> topLevelSegmentReplacements = new HashMap<Segment, Path>();
+
+        protected NextSnsPathStrategy( Map<Name, AtomicInteger> existingSnsByNodeName,
+                                       PathFactory pathFactory ) {
+            this.existingSnsByNodeName = existingSnsByNodeName;
+            assert this.existingSnsByNodeName != null;
+            this.pathFactory = pathFactory;
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.repository.sequencer.StreamSequencerAdapter.PathStrategy#validate(org.modeshape.graph.property.Path)
+         */
+        @Override
+        public Path validate( Path path ) {
+            if (path.size() == 0) return path;
+            if (path.isAbsolute()) return path;
+            Segment firstSegment = path.getSegment(0);
+            if (path.size() == 1) {
+                // This is a top-level node (there may be more than one), so we need to determine whether this
+                // node already exists and what to do in that case ...
+                Name nodeName = firstSegment.getName();
+                AtomicInteger lastSns = existingSnsByNodeName.get(nodeName);
+                if (lastSns == null) {
+                    // This name was not yet used in the children ...
+                    lastSns = new AtomicInteger(1);
+                    existingSnsByNodeName.put(nodeName, lastSns);
+                } else {
+                    // Increment the SNS ...
+                    lastSns.incrementAndGet();
+                }
+                int sns = lastSns.get();
+                if (sns != firstSegment.getIndex()) {
+                    // The SNS is different than the output expected ...
+                    Segment newSegment = pathFactory.createSegment(nodeName, sns);
+                    path = pathFactory.createRelativePath(newSegment);
+                    topLevelSegmentReplacements.put(firstSegment, path);
+                }
+            } else {
+                // Is the first segment in the path replaced with something else?
+                Path newBasePath = topLevelSegmentReplacements.get(firstSegment);
+                if (newBasePath != null) {
+                    // Yup, so replace it ...
+                    path = pathFactory.create(newBasePath, path.subpath(1));
+                }
+            }
+            return path;
+        }
     }
 }

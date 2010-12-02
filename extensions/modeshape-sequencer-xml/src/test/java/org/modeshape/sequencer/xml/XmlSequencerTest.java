@@ -64,11 +64,13 @@ public class XmlSequencerTest {
     private URL xml4;
     private URL xsd;
     private StreamSequencerContext context;
+    private String inputNodeName;
 
     @Before
     public void beforeEach() {
+        inputNodeName = "node";
         sequencer = new XmlSequencer();
-        context = new MockSequencerContext();
+        context = new MockSequencerContext("/some/" + inputNodeName);
         output = new MockSequencerOutput(context);
         xml2 = this.getClass().getClassLoader().getResource("master.xml");
         assertThat(xml2, is(notNullValue()));
@@ -165,6 +167,7 @@ public class XmlSequencerTest {
     private <T> T verify( String nodePath,
                           String property,
                           Class<T> expectedClass ) {
+        nodePath = nodePath.length() == 0 ? inputNodeName : inputNodeName + "/" + nodePath;
         Object[] values = output.getPropertyValues(nodePath.length() == 0 ? "" : nodePath, property);
         assertThat(values, notNullValue());
         assertThat(values.length, is(1));

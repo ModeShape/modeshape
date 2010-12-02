@@ -38,9 +38,6 @@ import org.modeshape.graph.sequencer.MockSequencerContext;
 import org.modeshape.graph.sequencer.MockSequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
 
-/**
- * @author John Verhaeg
- */
 public class InheritingXmlSequencerTest {
 
     private static final String DOCUMENT = "modexml:document";
@@ -50,11 +47,13 @@ public class InheritingXmlSequencerTest {
     private MockSequencerOutput output;
     private URL xsd;
     private StreamSequencerContext context;
+    private String inputNodeName;
 
     @Before
     public void beforeEach() {
+        inputNodeName = "input";
         sequencer = new InheritingXmlSequencer();
-        context = new MockSequencerContext();
+        context = new MockSequencerContext("/some/" + inputNodeName);
         output = new MockSequencerOutput(context);
         xsd = this.getClass().getClassLoader().getResource("Descriptor.1.0.xsd");
         assertThat(xsd, is(notNullValue()));
@@ -85,6 +84,7 @@ public class InheritingXmlSequencerTest {
     private <T> T verify( String nodePath,
                           String property,
                           Class<T> expectedClass ) {
+        nodePath = nodePath.length() == 0 ? inputNodeName : inputNodeName + "/" + nodePath;
         Object[] values = output.getPropertyValues(nodePath.length() == 0 ? "" : nodePath, property);
         assertThat(values, notNullValue());
         assertThat(values.length, is(1));

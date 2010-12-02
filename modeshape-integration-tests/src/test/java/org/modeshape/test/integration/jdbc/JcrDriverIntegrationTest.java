@@ -1105,7 +1105,7 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
 
             uploadFile("org/modeshape/test/integration/sequencer/ddl/create_schema.ddl", "/files/");
             uploadFile("org/modeshape/test/integration/sequencer/ddl/standard_test_statements.ddl", "/files/");
-            Thread.sleep(1000L);
+            Thread.sleep(2000L);
 
             print = true;
 

@@ -53,9 +53,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
-/**
- * @author Randall Hauch
- */
 public class XmlSequencerHandlerTest {
 
     private XmlSequencerHandler handler;
@@ -66,10 +63,12 @@ public class XmlSequencerHandlerTest {
     private Name nameAttribute;
     private XmlSequencer.AttributeScoping scoping;
     private LinkedList<Path> pathsInCreationOrder;
+    private String sequencedNodeName;
 
     @Before
     public void beforeEach() {
-        context = new MockSequencerContext();
+        sequencedNodeName = "input";
+        context = new MockSequencerContext("/some/" + sequencedNodeName);
         output = new MockSequencerOutput(context, true);
         context.getNamespaceRegistry().register(JcrLexicon.Namespace.PREFIX, JcrLexicon.Namespace.URI);
         context.getNamespaceRegistry().register(JcrNtLexicon.Namespace.PREFIX, JcrNtLexicon.Namespace.URI);
@@ -498,6 +497,9 @@ public class XmlSequencerHandlerTest {
 
     protected void assertNode( String path,
                                String... properties ) {
+        // Must prepend the name of the node that was sequenced, as the XML sequencer now outputs that ...
+        path = path.length() != 0 ? sequencedNodeName + "/" + path : sequencedNodeName;
+
         // Append an index to the path if not there ...
         if (path.length() != 0 && !path.endsWith("]")) {
             path = path + "[1]";
@@ -562,6 +564,9 @@ public class XmlSequencerHandlerTest {
 
     protected void assertCdata( String path,
                                 String content ) {
+        // Must prepend the name of the node that was sequenced, as the XML sequencer now outputs that ...
+        path = path.length() != 0 ? sequencedNodeName + "/" + path : sequencedNodeName;
+
         // Append an index to the path if not there ...
         if (path.length() != 0 && !path.endsWith("]")) {
             path = path + "[1]";

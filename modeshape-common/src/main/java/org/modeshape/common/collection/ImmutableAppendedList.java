@@ -246,7 +246,7 @@ public class ImmutableAppendedList<T> implements List<T> {
             // The bounds are the same as this list, so just return this list ...
             return this;
         }
-        if (toIndex == size || fromIndex == (size - 1)) {
+        if (toIndex == size && fromIndex == (size - 1)) {
             // The only list is the last element ...
             return Collections.singletonList(element);
         }
