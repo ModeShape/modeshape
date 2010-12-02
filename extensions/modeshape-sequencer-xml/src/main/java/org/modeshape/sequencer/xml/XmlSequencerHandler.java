@@ -172,7 +172,12 @@ public class XmlSequencerHandler extends DefaultHandler2 {
         assert this.namespaceRegistry != null;
 
         // Set up the initial path ...
-        this.currentPath = this.pathFactory.createRelativePath();
+        Path inputPath = context.getInputPath();
+        if (!inputPath.isRoot() && inputPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
+            inputPath = inputPath.getParent();
+        }
+        this.currentPath = inputPath.isRoot() ? this.pathFactory.createRelativePath() : this.pathFactory.createRelativePath(inputPath.getLastSegment()
+                                                                                                                                     .getName());
         assert this.currentPath != null;
     }
 

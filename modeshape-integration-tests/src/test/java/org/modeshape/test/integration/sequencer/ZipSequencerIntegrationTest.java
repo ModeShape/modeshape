@@ -75,7 +75,7 @@ public class ZipSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/zip/test-files.zip", "/files/");
         waitUntilSequencedNodesIs(1);
-        Thread.sleep(200); // wait a bit while the new content is indexed
+        Thread.sleep(1000); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
         String path = "/sequenced/zip/test-files.zip";
@@ -112,7 +112,7 @@ public class ZipSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/zip/test-files.zip", "/files/a/b");
         waitUntilSequencedNodesIs(1);
-        Thread.sleep(200); // wait a bit while the new content is indexed
+        Thread.sleep(1000); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
         String path = "/sequenced/zip/a/b/test-files.zip";

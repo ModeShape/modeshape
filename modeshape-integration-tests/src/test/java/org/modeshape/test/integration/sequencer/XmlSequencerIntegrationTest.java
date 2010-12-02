@@ -70,12 +70,13 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("jcr-import-test.xml", "/files/");
         waitUntilSequencedNodesIs(1);
-        Thread.sleep(200); // wait a bit while the new content is indexed
+        Thread.sleep(1000); // wait a bit while the new content is indexed
         // printSubgraph(assertNode("/"));
 
         // Find the sequenced node ...
+        printSubgraph(assertNode("/sequenced/xml", "nt:unstructured"));
         String path = "/sequenced/xml/jcr-import-test.xml";
-        Node xml = assertNode(path, "nt:unstructured");
+        Node xml = assertNode(path, "modexml:document");
         printSubgraph(xml);
 
         // Node file1 = assertNode(path + "/nt:activity", "nt:nodeType");
@@ -95,12 +96,12 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("jcr-import-test.xml", "/files/a/b");
         waitUntilSequencedNodesIs(1);
-        Thread.sleep(200); // wait a bit while the new content is indexed
+        Thread.sleep(1000); // wait a bit while the new content is indexed
         // printSubgraph(assertNode("/"));
 
         // Find the sequenced node ...
         String path = "/sequenced/xml/a/b/jcr-import-test.xml";
-        Node xml = assertNode(path, "nt:unstructured");
+        Node xml = assertNode(path, "modexml:document");
         printSubgraph(xml);
 
         // Node file1 = assertNode(path + "/nt:activity", "nt:nodeType");
@@ -114,20 +115,24 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
         printQuery("SELECT * FROM [modexml:element] WHERE NAME() = 'xhtml:p'", 2);
         printQuery("SELECT * FROM [modexml:elementContent]", 13);
     }
-    
+
     /*
      * Validates FixFor( "MODE-981" )
      */
     @Test
     public void shouldSequence2XmlFiles2() throws Exception {
         // print = true;
-    	uploadFile("docWithComments.xml", "/files/");
-    	waitUntilSequencedNodesIs(1);
-    	printQuery("SELECT * FROM [nt:base] ORDER BY [jcr:path]", 18);
+        uploadFile("docWithComments.xml", "/files/");
+        waitUntilSequencedNodesIs(1);
+        printQuery("SELECT * FROM [nt:base] ORDER BY [jcr:path]", 17);
 
         uploadFile("docWithComments2.xml", "/files/");
-        waitUntilSequencedNodesIs(1);
+        waitUntilSequencedNodesIs(2);
 
-        printQuery("SELECT * FROM [nt:base]  ORDER BY [jcr:path]", 20);
-    }    
+        printQuery("SELECT * FROM [nt:base]  ORDER BY [jcr:path]", 30);
+        printSubgraph(assertNode("/sequenced/xml", "nt:unstructured"));
+        uploadFile("docWithComments.xml", "/files/");
+        waitUntilSequencedNodesIs(3);
+        printSubgraph(assertNode("/sequenced/xml", "nt:unstructured"));
+    }
 }
