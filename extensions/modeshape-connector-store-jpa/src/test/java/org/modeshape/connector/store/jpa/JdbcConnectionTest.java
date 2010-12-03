@@ -24,6 +24,7 @@
 package org.modeshape.connector.store.jpa;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -33,6 +34,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.connector.store.jpa.model.common.WorkspaceEntity;
 import org.modeshape.connector.store.jpa.model.simple.SimpleModel;
+import org.modeshape.graph.connector.RepositoryConnection;
 
 /**
  * Simple unit test that simply verifies the database connection.
@@ -110,6 +112,25 @@ public class JdbcConnectionTest {
             assertThat(workspace2.getName(), is(workspace.getName()));
         } finally {
             manager.getTransaction().rollback();
+        }
+    }
+
+    @Test
+    public void shouldAutoDetectDialectAndSetOnJpaSource() {
+        // Set the connection properties using the environment defined in the POM files ...
+        JpaSource source = TestEnvironment.configureJpaSource("Test Repository", this);
+        String expectedDialect = source.getDialect();
+
+        source.setDialect(null);
+        RepositoryConnection connection = null;
+        try {
+            connection = source.getConnection();
+            assertThat(source.getDialect(), is(notNullValue()));
+            if (expectedDialect != null) {
+                assertThat(source.getDialect(), is(expectedDialect));
+            }
+        } finally {
+            if (connection != null) connection.close();
         }
     }
 }

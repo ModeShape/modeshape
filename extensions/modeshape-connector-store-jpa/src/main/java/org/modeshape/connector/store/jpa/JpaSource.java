@@ -46,8 +46,10 @@ import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.ejb.Ejb3Configuration;
+import org.hibernate.engine.SessionFactoryImplementor;
 import org.modeshape.common.annotation.AllowedValues;
 import org.modeshape.common.annotation.Category;
 import org.modeshape.common.annotation.Description;
@@ -1123,7 +1125,10 @@ public class JpaSource implements RepositorySource, ObjectFactory {
             configurator.addAnnotatedClass(StoreOptionEntity.class);
 
             // Set the Hibernate properties used in all situations ...
-            setProperty(configurator, "hibernate.dialect", this.dialect);
+            if (this.dialect != null) {
+                // The dialect may be auto-determined ...
+                setProperty(configurator, "hibernate.dialect", this.dialect);
+            }
             if (this.isolationLevel != null) {
                 setProperty(configurator, "hibernate.connection.isolation", this.isolationLevel);
             }
@@ -1226,6 +1231,17 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                             throw new RepositorySourceException(msg);
                         }
                     }
+
+                    // Determine the dialect, if it was to be automatically discovered ...
+                    if (this.dialect == null || this.dialect.trim().length() == 0) {
+                        this.dialect = determineDialect(entityManager);
+                    }
+                    if (this.dialect == null || this.dialect.trim().length() == 0) {
+                        // The dialect could not be determined ...
+                        String msg = JpaConnectorI18n.dialectCouldNotBeDeterminedAndMustBeSpecified.text(name);
+                        throw new RepositorySourceException(msg);
+                    }
+
                 } finally {
                     entityManager.close();
                 }
@@ -1258,6 +1274,19 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                 entityManagers = null;
             }
         }
+    }
+
+    /**
+     * Automatically determine the dialect.
+     * 
+     * @param entityManager the EntityManager instance; may not be null
+     * @return the name of the dialect, or null if the dialect cannot be determined
+     */
+    protected String determineDialect( EntityManager entityManager ) {
+        // We need the connection in order to determine the dialect ...
+        SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor)entityManager.unwrap(Session.class)
+                                                                                           .getSessionFactory();
+        return sessionFactory.getDialect().toString();
     }
 
     /**

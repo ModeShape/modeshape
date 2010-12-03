@@ -49,6 +49,7 @@ public final class JpaConnectorI18n {
     public static I18n invalidReferences;
     public static I18n invalidIsolationLevel;
     public static I18n unableToDeleteBecauseOfReferences;
+    public static I18n dialectCouldNotBeDeterminedAndMustBeSpecified;
 
     public static I18n workspaceAlreadyExists;
     public static I18n workspaceDoesNotExist;
