@@ -170,7 +170,11 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     public static final String DEFAULT_NAME_OF_DEFAULT_WORKSPACE = "default";
 
-    private static final int DEFAULT_ISOLATION_LEVEL = Connection.TRANSACTION_REPEATABLE_READ;
+    /**
+     * The default value for {@link #setIsolationLevel(Integer)} is 'null', meaning this source does not explicitly set the
+     * isolation level, so the JDBC DataSource's own level will be used.
+     */
+    private static final Integer DEFAULT_ISOLATION_LEVEL = null;
 
     private static final int DEFAULT_RETRY_LIMIT = 0;
     private static final int DEFAULT_CACHE_TIME_TO_LIVE_IN_SECONDS = 60 * 5; // 5 minutes
@@ -315,7 +319,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     @Description( i18n = JpaConnectorI18n.class, value = "isolationLevelPropertyDescription" )
     @Label( i18n = JpaConnectorI18n.class, value = "isolationLevelPropertyLabel" )
     @Category( i18n = JpaConnectorI18n.class, value = "isolationLevelPropertyCategory" )
-    private volatile int isolationLevel = DEFAULT_ISOLATION_LEVEL;
+    private volatile Integer isolationLevel = DEFAULT_ISOLATION_LEVEL;
 
     @Description( i18n = JpaConnectorI18n.class, value = "predefinedWorkspacesPropertyDescription" )
     @Label( i18n = JpaConnectorI18n.class, value = "predefinedWorkspacesPropertyLabel" )
@@ -912,19 +916,30 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     }
 
     /**
-     * @return isolationLevel
+     * Get the JDBC transaction isolation level that should be used. Note that if the isolation level is not set (the value is
+     * null), then this source does not explicitly set the isolation level, so the data source's value will implicitly be used.
+     * 
+     * @return isolationLevel the value of the isolation level, or null if the isolation level is not set by this source (meaning
+     *         the data source's current setting or its default will be used)
      */
-    public int getIsolationLevel() {
+    public Integer getIsolationLevel() {
         return isolationLevel;
     }
 
     /**
-     * @param isolationLevel Sets isolationLevel to the specified value.
+     * Set the JDBC transaction isolation level that should be used. Note that if the isolation level is not set (the value is
+     * null), then this source does not explicitly set the isolation level, so the data source's value will implicitly be used.
+     * 
+     * @param isolationLevel the value of the isolation level, or null if the isolation level is not set by this source (meaning
+     *        the data source's current setting or its default will be used)
      */
     public synchronized void setIsolationLevel( Integer isolationLevel ) {
-        if (isolationLevel == null) isolationLevel = DEFAULT_ISOLATION_LEVEL;
+        if (isolationLevel == null) {
+            isolationLevel = DEFAULT_ISOLATION_LEVEL;
+        }
 
-        if (isolationLevel != Connection.TRANSACTION_NONE && isolationLevel != Connection.TRANSACTION_READ_COMMITTED
+        if (isolationLevel != DEFAULT_ISOLATION_LEVEL && isolationLevel != Connection.TRANSACTION_NONE
+            && isolationLevel != Connection.TRANSACTION_READ_COMMITTED
             && isolationLevel != Connection.TRANSACTION_READ_UNCOMMITTED
             && isolationLevel != Connection.TRANSACTION_REPEATABLE_READ && isolationLevel != Connection.TRANSACTION_SERIALIZABLE) {
             throw new RepositorySourceException(this.name, JpaConnectorI18n.invalidIsolationLevel.text(isolationLevel));
@@ -1109,7 +1124,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
 
             // Set the Hibernate properties used in all situations ...
             setProperty(configurator, "hibernate.dialect", this.dialect);
-            setProperty(configurator, "hibernate.connection.isolation", this.isolationLevel);
+            if (this.isolationLevel != null) {
+                setProperty(configurator, "hibernate.connection.isolation", this.isolationLevel);
+            }
 
             // Configure additional properties, which may be overridden by subclasses ...
             configure(configurator);
