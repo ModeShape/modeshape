@@ -39,7 +39,7 @@
   <para>
   	This sequencer can be added to the repository configuration like so:
   </para>
-  <programlisting role="JAVA"><![CDATA[
+  <programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("CND Sequencer")

@@ -78,7 +78,7 @@
 			Here is an example configuration file used in the repository example covered in the &GettingStarted; document, 
 			though it has been slightly simplified for clarity):
 		</para>
-   	<programlisting role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+   	<programlisting language="XML" role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
   <!-- 
   Define the JCR repositories 
@@ -180,7 +180,7 @@
 			<para>Each repository source definition must include the name of the &RepositorySource; class as well as each bean property
 				that should be set on the object:
 			</para>
-   		<programlisting role="JAVA"><![CDATA[JcrConfiguration config = ...
+   		<programlisting language="JAVA" role="JAVA"><![CDATA[JcrConfiguration config = ...
 config.repositorySource("source A")
      .usingClass(InMemoryRepositorySource.class)
      .setDescription("The repository for our content")
@@ -204,7 +204,7 @@ config.repositorySource("source A")
 			<title>Repositories</title>
 			<para>Each repository must be defined to use a named repository source, but all other aspects (e.g., namespaces, node types, options) 
 				are optional.</para> 
-   		<programlisting role="JAVA"><![CDATA[JcrConfiguration config = ...
+   		<programlisting language="JAVA" role="JAVA"><![CDATA[JcrConfiguration config = ...
 config.repository("repository A")
      .addNodeTypes("myCustomNodeTypes.cnd")		// can be called multiple times
      .setSource("source 1")
@@ -231,7 +231,7 @@ config.repository("repository A")
 			<para>Each defined sequencer must specify the name of the &StreamSequencer; implementation class as well as the path expressions
 				defining which nodes should be sequenced and the output paths defining where the sequencer output should be placed (often as a function
 				of the input path expression).</para> 
-   		<programlisting role="JAVA"><![CDATA[JcrConfiguration config = ...
+   		<programlisting language="JAVA" role="JAVA"><![CDATA[JcrConfiguration config = ...
 config.sequencer("Image Sequencer")
      .usingClass("org.modeshape.sequencer.image.ImageMetadataSequencer")
      .loadedFromClasspath()
@@ -267,7 +267,7 @@ config.sequencer("Image Sequencer")
 			<title>MIME Type Detectors</title>
 			<para>Each defined MIME type detector must specify the name of the &MimeTypeDetector; implementation class as well as any
 				other bean properties required by the implementation.</para> 
-   		<programlisting role="JAVA"><![CDATA[JcrConfiguration config = ...
+   		<programlisting language="JAVA" role="JAVA"><![CDATA[JcrConfiguration config = ...
 config.mimeTypeDetector("Extension Detector")
      .usingClass(org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector.class);
 ]]></programlisting>
@@ -290,7 +290,7 @@ config.mimeTypeDetector("Extension Detector")
 			reloaded in the future to recreate the configuration. This makes it very easy to programmatically generate a configuration file
 			once while being able to load that same configuration at a later time (or on a different instance).
 		</para>
-   		<programlisting role="JAVA"><![CDATA[JcrConfiguration config = ...
+   		<programlisting language="JAVA" role="JAVA"><![CDATA[JcrConfiguration config = ...
 String pathToFile = ...
 
 // Save any changes before this point in the configuration repository ...
@@ -325,7 +325,7 @@ configuration.storeTo(pathToFile);
 			repository where the configuration is stored.  Then, create a &JcrConfiguration; instance and 
 			load from this source:
 		</para>
-   	<programlisting role="JAVA"><![CDATA[RepositorySource configSource = ...
+   	<programlisting language="JAVA" role="JAVA"><![CDATA[RepositorySource configSource = ...
 JcrConfiguration config = new JcrConfiguration();
 configuration.loadFrom(configSource);
 ]]></programlisting>
@@ -345,7 +345,7 @@ configuration.loadFrom(configSource);
 			to modify the configuration and then save those changes back to the repository. This technique can be used to
 			place a configuration into a repository (such as a database) for the first time:
 		</para>
-   	<programlisting role="JAVA"><![CDATA[RepositorySource configSource = ...	// a RepositorySource to an empty source
+   	<programlisting language="JAVA" role="JAVA"><![CDATA[RepositorySource configSource = ...	// a RepositorySource to an empty source
 JcrConfiguration config = new JcrConfiguration();
 
 // Bind the configuration to the repository source (which is initially empty)...
@@ -410,7 +410,7 @@ configuration.save();
 			Here is an abbreviated example of an XML configuration that defines a source for the system storage (in a MySQL database)
 			and a repository that uses it:
 		</para>
-   	<programlisting role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+   	<programlisting language="XML" role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns:mode="http://www.modeshape.org/1.0" 
 	             xmlns:jcr="http://www.jcp.org/jcr/1.0">
   <mode:repositories>
@@ -455,7 +455,7 @@ configuration.save();
 		<para>
 			Of course, you can always use a separate workspace in your primary source, too:
 		</para>
-   	<programlisting role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+   	<programlisting language="XML" role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
   <mode:repositories>
     <mode:repository jcr:name="car repository" mode:source="Cars">
@@ -509,7 +509,7 @@ configuration.save();
 			For example, here is part of a ModeShape configuration file that specifies these index files should be stored in the 
 			"<code>data/car_repository/indexes</code>" folder, relative to the folder where the JVM process was started:
 		</para>
-   	<programlisting role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+   	<programlisting language="XML" role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns:mode="http://www.modeshape.org/1.0" 
 	             xmlns:jcr="http://www.jcp.org/jcr/1.0">
   <mode:repositories>
@@ -586,7 +586,7 @@ configuration.save();
 			  A ModeShape configuration can have a "<code>clustering</code>" fragment that defines the name of the cluster and the
 			  JGroups configuration:
 			</para>
-    	<programlisting role="XML"><![CDATA[<clustering clusterName="modeshape-cluster" configuration="jgroups-modeshape.xml" />]]></programlisting>
+    	<programlisting language="XML" role="XML"><![CDATA[<clustering clusterName="modeshape-cluster" configuration="jgroups-modeshape.xml" />]]></programlisting>
 			<para>
 				The "<code>clusterName</code>" is a string that is a logical name of the cluster; all engines connecting to the same name
 				form a cluster. Any messages multicast from one engine in the cluster will be received by all other members of the cluster.
@@ -625,30 +625,30 @@ configuration.save();
 				Here is an example of a "<code>clustering</code>" fragment defining a cluster named "modeshape-cluster" using the JGroups
 				configuration defined in the "jgroups-modeshape.xml" file at the supplied URL:
 			</para>
-    	<programlisting role="XML"><![CDATA[<clustering clusterName="modeshape-cluster" 
+    	<programlisting language="XML" role="XML"><![CDATA[<clustering clusterName="modeshape-cluster" 
 	  configuration="file://some/path/jgroups-modeshape.xml" />]]></programlisting>
 			<para>
 				This next example uses the JGroups configuration defined in the "jgroups-modeshape.xml" resource file on the classpath
 				(or as an absolute path on a *nix system):
 			</para>
-    	<programlisting role="XML"><![CDATA[<clustering clusterName="modeshape-cluster" 
+    	<programlisting language="XML" role="XML"><![CDATA[<clustering clusterName="modeshape-cluster" 
 	  configuration="/some/path/jgroups-modeshape.xml" />]]></programlisting>
 			<para>
 				Next is an example that specifies the JGroups configuration using the older string representation of the form:
 			</para>
-    	<programlisting role="XML"><![CDATA[<clustering clusterName="modeshape-cluster" 
+    	<programlisting language="XML" role="XML"><![CDATA[<clustering clusterName="modeshape-cluster" 
 	  configuration="PROTOCOL(param=value;param=value):PROTOCOL:PROTOCOL" />]]></programlisting>
 			<para>
 				Of course, the "<code>configuration</code>" property can be specified as a child element, too (line breaks added for readability):
 			</para>
-    	<programlisting role="XML"><![CDATA[<clustering clusterName="modeshape-cluster">
+    	<programlisting language="XML" role="XML"><![CDATA[<clustering clusterName="modeshape-cluster">
 	     <configuration>UDP(max_bundle_size="60000":max_bundle_timeout="30"):
 		                  PING(timeout="2000"):...</configuration>
 </clustering>]]></programlisting>
 			<para>
 				And finally an example that specifies the JGroups configuration using the newer XML representation (line breaks added for readability):
 			</para>
-    	<programlisting role="XML">&lt;clustering clusterName="modeshape-cluster">
+    	<programlisting language="XML" role="XML">&lt;clustering clusterName="modeshape-cluster">
 	 &lt;configuration>&lt;![CDATA[&lt;config>&lt;UDP max_bundle_size="60000" 
 	      max_bundle_timeout="30".../>&lt;PING timeout="2000"/>...&lt;/config>]]&gt;
 	 &lt;/configuration>
@@ -673,7 +673,7 @@ configuration.save();
 		  <para>
 				An example of the newer-style JGroups XML format is:
 			</para>
-    	<programlisting role="XML"><![CDATA[<config>
+    	<programlisting language="XML" role="XML"><![CDATA[<config>
    <UDP
         mcast_addr="${jgroups.udp.mcast_addr:228.10.10.10}"
         mcast_port="${jgroups.udp.mcast_port:45588}"
@@ -1013,7 +1013,7 @@ deploy/admin-console.war/plugins/modeshape-jbossas-console-&versionNumber;.jar
 			<para>
 				Here's an example of a fragment of the <code>conf/context.xml</code> for Tomcat:
 			</para>
-<programlisting role="XML"><![CDATA[<Resource name="jcr/local" 
+<programlisting language="XML" role="XML"><![CDATA[<Resource name="jcr/local" 
           auth="Container"
           type="javax.jcr.Repository"
           factory="org.modeshape.jcr.JndiRepositoryFactory"
@@ -1039,7 +1039,7 @@ deploy/admin-console.war/plugins/modeshape-jbossas-console-&versionNumber;.jar
 				Then, your web application needs to reference the <code>Resource</code> and state its requirements in its 
 				<code>web.xml</code>:
 			</para>
-<programlisting role="XML"><![CDATA[<resource-env-ref>
+<programlisting language="XML" role="XML"><![CDATA[<resource-env-ref>
    <description>Repository</description>
    <resource-env-ref-name>jcr/local</resource-env-ref-name>
    <resource-env-ref-type>javax.jcr.Repository</resource-env-ref-type>
@@ -1053,7 +1053,7 @@ deploy/admin-console.war/plugins/modeshape-jbossas-console-&versionNumber;.jar
 				(or the more standard &RepositoryFactory; technique shown in the <link linkend="obtaining_jcr_repository">next chapter</link>), 
 				create and use a &Session;, and then close the &Session;.  Here's an example of a JSP page that does this:
 			</para>
-<programlisting role="JAVA"><![CDATA[
+<programlisting language="JAVA" role="JAVA"><![CDATA[
 <%@ page import="javax.naming.*, javax.jcr.*, org.jboss.security.config.IDTrustConfiguration" %>
 <%!
 
@@ -1127,7 +1127,7 @@ try {
 					One way to do this is to add the following to your project POM (you'll still likely want to use other Maven repositories 
 					for third-party artifacts):
 				</para>
-<programlisting role="XML"><![CDATA[<repositories>
+<programlisting language="XML" role="XML"><![CDATA[<repositories>
   <repository>
     <id>jboss</id>
     <url>http://repository.jboss.org/nexus/content/groups/public/</url>
@@ -1144,7 +1144,7 @@ try {
 				<para>
 					Then, simply modify your project's POM by adding dependencies on the ModeShape JCR library:
 			  </para>
-<programlisting role="XML"><![CDATA[<dependency>
+<programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-jcr</artifactId>
   <version>2.3.0.Final</version>
@@ -1154,7 +1154,7 @@ try {
 					This adds only the minimal libraries required to use ModeShape. If your application is going
 					to use clustering, you'll need to also depend upon the clustering module:
 				</para>
-<programlisting role="XML"><![CDATA[<dependency>
+<programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-clustering</artifactId>
   <version>2.3.0.Final</version>
@@ -1164,7 +1164,7 @@ try {
 					You also need to add dependencies for 
 					each of the connectors and sequencers you want to use. Here is the list of available sequencers:
 				</para>
-<programlisting role="XML"><![CDATA[<dependency>
+<programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-cnd</artifactId>
   <version>2.3.0.Final</version>
@@ -1223,7 +1223,7 @@ try {
 			<para>
 				Here is the list of available connectors:
 			</para>
-<programlisting role="XML"><![CDATA[<dependency>
+<programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-connector-filesystem</artifactId>
   <version>2.3.0.Final</version>
@@ -1276,7 +1276,7 @@ try {
 					for it, and so ModeShape log messages will be sent to the same logging system used in your application, you need to add a 
 					dependency to the SLF4J-to-Log4J binding JAR:
 				</para>
-<programlisting role="XML"><![CDATA[<dependency>
+<programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.slf4j</groupId>
   <artifactId>slf4j-log4j12</artifactId>
   <version>1.5.11</version>

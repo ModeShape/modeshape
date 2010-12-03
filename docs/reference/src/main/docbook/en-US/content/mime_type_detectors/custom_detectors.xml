@@ -70,7 +70,7 @@
 			</note>
 	    <para>You can create your Maven project any way you'd like.  For examples, see the <ulink url="http://maven.apache.org/guides/getting-started/index.html#How_do_I_make_my_first_Maven_project">Maven 2 documentation</ulink>.  
 	    Once you've done that, just add the dependencies in your project's <code>pom.xml</code> dependencies section:</para>
-	  	<programlisting role="XML"><![CDATA[<dependency>
+	  	<programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-common</artifactId>
   <version>0.1</version>
@@ -88,7 +88,7 @@
 			<para>These are minimum dependencies required for compiling a detector.  Of course, you'll have to add
 	  		other dependencies that your sequencer needs.</para>
 	  	<para>As for testing, you probably will want to add more dependencies, such as those listed here:</para>
-			<programlisting role="XML"><![CDATA[<dependency>
+			<programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>junit</groupId>
   <artifactId>junit</artifactId>
   <version>4.4</version>

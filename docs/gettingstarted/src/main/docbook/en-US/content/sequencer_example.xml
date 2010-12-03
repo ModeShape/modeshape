@@ -188,7 +188,7 @@
 		<para>The <code>main(String[] argv)</code> method is of course the method that is executed when the application is run.  This code
 		  creates the ModeShape configuration using the programmatic style.
 		</para>
-		<programlisting role="JAVA"><![CDATA[// Create the configuration. 
+		<programlisting language="JAVA" role="JAVA"><![CDATA[// Create the configuration. 
 String repositoryId = "content";
 String workspaceName = "default";
 JcrConfiguration config = new JcrConfiguration();
@@ -268,7 +268,7 @@ client.setUserInterface(new ConsoleInput(client));
 			the repository.  (This is actually a common practice according to the JCR specification, since Sessions are intended to be
 			very lightweight.)
     </para>
-		<programlisting role="JAVA"><![CDATA[
+		<programlisting language="JAVA" role="JAVA"><![CDATA[
 public void startRepository() throws Exception {
 		if (this.repository == null) {
 		    try {
@@ -288,7 +288,7 @@ public void startRepository() throws Exception {
 		<para>The <code>shutdownRepository()</code> method requests the <code>JcrEngine</code> instance shuts down and, since that may take
 	    a few moments (if there are any ongoing operations or enqueued activities) awaits for it to complete the shutdown.
    </para>
-    <programlisting role="JAVA"><![CDATA[
+    <programlisting language="JAVA" role="JAVA"><![CDATA[
 public void shutdownRepository() throws Exception {
 		if (this.repository != null) {
 		    try {
@@ -305,7 +305,7 @@ public void shutdownRepository() throws Exception {
 		<para>If we look at the <code>ConsoleInput</code> constructor, it starts the repository and a thread 
 			for the user interface. At this point, the constructor returns, but the main application continues under the user interface thread.  
 			When the user requests to quit, the user interface thread also shuts down the JCR repository.</para>
-    <programlisting role="JAVA"><![CDATA[
+    <programlisting language="JAVA" role="JAVA"><![CDATA[
 public ConsoleInput( SequencerClient client ) {
   try {
       client.startRepository();
@@ -345,7 +345,7 @@ public ConsoleInput( SequencerClient client ) {
 			<code>SecurityContext</code> implementation, then passes that credentials into the <code>login(Credentials,String)</code>
 			method:
 		</para>
-    <programlisting role="JAVA"><![CDATA[
+    <programlisting language="JAVA" role="JAVA"><![CDATA[
 protected Session createSession() throws RepositoryException {
     SecurityContext securityContext = new MyCustomSecurityContext();
     SecurityContextCredentials credentials = new SecurityContextCredentials(securityContext);
@@ -355,7 +355,7 @@ protected Session createSession() throws RepositoryException {
 		<para>
 			where the custom <code>SecurityContext</code> implementation is as follows:
 		</para>
-   <programlisting role="JAVA"><![CDATA[
+   <programlisting language="JAVA" role="JAVA"><![CDATA[
 protected class MyCustomSecurityContext implements SecurityContext {
     /**
      * @see org.modeshape.graph.SecurityContext#getUserName()

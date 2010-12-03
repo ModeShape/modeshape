@@ -131,7 +131,7 @@
 	        To use this sequencer, simply include the <code>modeshape-sequencer-text</code> JAR
 	        in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
 	    </para>
-	   	<programlisting role="JAVA"><![CDATA[
+	   	<programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("Delimited Text Sequencer")
@@ -177,7 +177,7 @@ config.sequencer("Delimited Text Sequencer")
 	        To use this sequencer, simply include the <code>modeshape-sequencer-text</code> JAR
 	        in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
 	    </para>
-	   	<programlisting role="JAVA"><![CDATA[
+	   	<programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("Fixed Width Text Sequencer")

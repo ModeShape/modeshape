@@ -97,7 +97,7 @@
 	    &Query; objects, executing queries, storing queries (not results) as &Node;s in the repository, and reconstituting 
 	    queries that were stored on &Node;s. Thus, querying a repository generally follows this pattern:
 		</para>
-<programlisting role="JAVA"><![CDATA[
+<programlisting language="JAVA" role="JAVA"><![CDATA[
 // Obtain the query manager for the session ...
 javax.jcr.query.QueryManager queryManager = session.getWorkspace().getQueryManager();
 
@@ -1663,7 +1663,7 @@ Char ::= /* Any character */
 			<para>
 				Here is a simple example that shows how this is done for the simple query "<code>SELECT * FROM [nt:unstructured] AS unstructNodes</code>":
 			</para>
-<programlisting role="JAVA"><![CDATA[
+<programlisting language="JAVA" role="JAVA"><![CDATA[
 // Obtain the query manager for the session ...
 javax.jcr.query.QueryManager queryManager = session.getWorkspace().getQueryManager();
 
@@ -1693,7 +1693,7 @@ javax.jcr.QueryResult result = query.execute();
      <para>
 			From this point on, processing the results is the same as when using the <link linkend="jcr-query-api">JCR Query API</link>:
 		</para>
-<programlisting role="JAVA"><![CDATA[
+<programlisting language="JAVA" role="JAVA"><![CDATA[
 
 // Iterate over the nodes in the results ...
 javax.jcr.NodeIterator nodeIter = result.getNodes();

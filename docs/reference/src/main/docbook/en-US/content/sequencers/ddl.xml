@@ -103,7 +103,7 @@ CREATE SCHEMA hollywood
 	      reference information and position of the statement in the text stream (e.g., line number, column number and character index)
 	      so the statement can be tied back to the original DDL:
 	    </para>
-	    <programlisting role="XML"><![CDATA[<nt:unstructured jcr:name="statements" ddl:parserId="POSTGRES">
+	    <programlisting language="XML" role="XML"><![CDATA[<nt:unstructured jcr:name="statements" ddl:parserId="POSTGRES">
   <nt:unstructured jcr:name="hollywood" jcr:mixinTypes="ddl:createSchemaStatement" 
 	                 ddl:startLineNumber="1"
                    ddl:startColumnNumber="1"
@@ -146,7 +146,7 @@ CREATE SCHEMA hollywood
         To use this sequencer, simply include the <code>modeshape-sequencer-ddl</code> JAR
         in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
     </para>
-   <programlisting role="JAVA"><![CDATA[
+   <programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("DDL Sequencer")
@@ -161,7 +161,7 @@ config.sequencer("DDL Sequencer")
 	    order or subset of the grammars, use the <code>setProperty(...)</code> method. Here's an example that just uses the
 	    standard grammar followed by the PostgreSQL grammar:
 	  </para>
-   <programlisting role="JAVA"><![CDATA[
+   <programlisting language="JAVA" role="JAVA"><![CDATA[
 config.sequencer("DDL Sequencer")
       .usingClass("org.modeshape.sequencer.ddl.DdlSequencer")
       .loadedFromClasspath()
@@ -174,7 +174,7 @@ config.sequencer("DDL Sequencer")
 	    And, to use a custom implementation of &DdlParser;, simply use the fully-qualified name of the implementation class
 	    (which must have a no-arg constructor) as the name of the grammar:
 	  </para>
-   <programlisting role="JAVA"><![CDATA[
+   <programlisting language="JAVA" role="JAVA"><![CDATA[
 config.sequencer("DDL Sequencer")
       .usingClass("org.modeshape.sequencer.ddl.DdlSequencer")
       .loadedFromClasspath()

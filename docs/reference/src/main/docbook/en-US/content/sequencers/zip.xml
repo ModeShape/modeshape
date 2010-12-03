@@ -39,7 +39,7 @@
 		To use this sequencer, simply include the <code>modeshape-sequencer-zip</code> JAR
 		in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
     </para>
-   <programlisting role="JAVA"><![CDATA[
+   <programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("ZIP Sequencer")

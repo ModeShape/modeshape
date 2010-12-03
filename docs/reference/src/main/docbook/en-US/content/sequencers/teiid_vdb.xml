@@ -129,7 +129,7 @@
         To use this sequencer, simply include the <code>modeshape-sequencer-teiid-&versionNumber;.jar</code> file
         in your application and define a sequencing configuration in the ModeShape configuration it using something similar to:
     </para>
-   	<programlisting role="XML"><![CDATA[
+   	<programlisting language="XML" role="XML"><![CDATA[
 <configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <mode:sequencers>
 	      ...
@@ -150,7 +150,7 @@
 </configuration>
 ]]></programlisting>
 		<para>or using the &JcrConfiguration;:</para>
-   	<programlisting role="JAVA"><![CDATA[
+   	<programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("Teiid VDB Sequencer")

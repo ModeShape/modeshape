@@ -122,7 +122,7 @@
 		One way to configure the JCR connector is to create &JcrConfiguration; instance with a repository source that uses the &JcrRepositorySource; class.
 		For example:
 	</para>
-  <programlisting role="JAVA"><![CDATA[
+  <programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 config.repositorySource("Repository Source")
       .usingClass(FileSystemSource.class)
@@ -137,7 +137,7 @@ config.repositorySource("Repository Source")
 		For example, here's a file named configRepository.xml that represents the same configuration as above:
 	</para>
 	
-  <programlisting role="XML"><![CDATA[
+  <programlisting language="XML" role="XML"><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
@@ -173,7 +173,7 @@ config.repositorySource("Repository Source")
 		The configuration can then be loaded from Java like this:
 	</para>
 	
-	<programlisting role="JAVA"><![CDATA[
+	<programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml");
  ]]></programlisting>
  </chapter>

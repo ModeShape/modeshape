@@ -212,7 +212,7 @@
 		One way to configure the JDBC metadata connector is to create &JcrConfiguration; instance with a repository source that uses the &JdbcMetadataSource; class.
 		For example:
 	</para>
-  <programlisting role="JAVA"><![CDATA[
+  <programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 config.repositorySource("Meta Store")
       .usingClass(JdbcMetadataSource.class)
@@ -230,7 +230,7 @@ config.repositorySource("Meta Store")
 		For example a file named configRepository.xml can be created with these contents:
 	</para>
 	
-  <programlisting role="XML"><![CDATA[
+  <programlisting language="XML" role="XML"><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
@@ -266,7 +266,7 @@ config.repositorySource("Meta Store")
 		The configuration can then be loaded from Java like this:
 	</para>
 	
-	<programlisting role="JAVA"><![CDATA[
+	<programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml");
  ]]></programlisting>
  </chapter>

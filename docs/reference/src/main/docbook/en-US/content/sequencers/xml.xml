@@ -34,7 +34,7 @@
     This sequencer stores the structure and data of an XML file into the repository.  DTD, entity, comments, 
     and other content are maintained by the sequencer in the output structure.
   </para>
-  <programlisting role="JAVA"><![CDATA[
+  <programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("XML Sequencer")

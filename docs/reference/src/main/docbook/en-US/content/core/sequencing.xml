@@ -358,7 +358,7 @@ public interface &SequencerOutput; {
 		  </note>
 	    <para>You can create your Maven project any way you'd like.  For examples, see the <ulink url="http://maven.apache.org/guides/getting-started/index.html#How_do_I_make_my_first_Maven_project">Maven 2 documentation</ulink>.  
 	    Once you've done that, just add the dependencies in your project's <code>pom.xml</code> dependencies section:</para>
-	  	<programlisting role="XML"><![CDATA[
+	  	<programlisting language="XML" role="XML"><![CDATA[
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-graph</artifactId>
@@ -368,7 +368,7 @@ public interface &SequencerOutput; {
 			<para>These are minimum dependencies required for compiling a sequencer.  Of course, you'll have to add
 	  		other dependencies that your sequencer needs.</para>
 	  	<para>As for testing, you probably will want to add more dependencies, such as those listed here:</para>
-			<programlisting role="XML"><![CDATA[
+			<programlisting language="XML" role="XML"><![CDATA[
 <!-- ModeShape-related unit testing utilities and classes -->
 <dependency>
   <groupId>org.modeshape</groupId>
@@ -419,7 +419,7 @@ public interface &SequencerOutput; {
 	  	<para>Testing ModeShape sequencers does not require a JCR repository or the ModeShape services.  (For more detail,
 	  		see the <link linkend="testing_custom_sequencers">testing section</link>.)  However, if you want to do
 	  		integration testing with a JCR repository and the ModeShape services, you'll need additional dependencies for these libraries.</para>
-			<programlisting role="XML"><![CDATA[
+			<programlisting language="XML" role="XML"><![CDATA[
 <!-- ModeShape JCR Repository -->
 <dependency>
   <groupId>org.modeshape</groupId>

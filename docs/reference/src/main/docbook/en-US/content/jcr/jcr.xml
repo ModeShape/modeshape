@@ -123,7 +123,7 @@
 				will still work, but the methods are now deprecated.  Therefore, you will very likely want to change to use the new &Binary; interface. 
 				For example, code that previously accessed the input stream directly from the &Property;:
 			</para>
-    <programlisting role="JAVA"><![CDATA[Property property = ...
+    <programlisting language="JAVA" role="JAVA"><![CDATA[Property property = ...
 InputStream stream = property.getInputStream();
 try {
    // Read stream
@@ -134,7 +134,7 @@ try {
   		<para>
 	      can be minimally changed to first get the &Binary; value and then get the stream from this Binary value:
 			</para>
-    <programlisting role="JAVA"><![CDATA[Property property = ...
+    <programlisting language="JAVA" role="JAVA"><![CDATA[Property property = ...
 InputStream stream = property.getBinary().getInputStream();
 try {
    // Read stream
@@ -331,7 +331,7 @@ try {
 			<ulink url="&Java;java/util/ServiceLoader.html">Java Standard Edition Service Loader mechanism</ulink>
 			to obtain a &Repository; instance, all using the JCR API alone:
 		</para>
-    <programlisting role="JAVA"><![CDATA[
+    <programlisting language="JAVA" role="JAVA"><![CDATA[
 Map<String,String> parameters = ...
 Repository repository = null;
 for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
@@ -363,7 +363,7 @@ for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
 		<para>
 			So, here's the ServiceLoader example again, but with ModeShape-specific parameters:
 		</para>
-    <programlisting role="JAVA"><![CDATA[
+    <programlisting language="JAVA" role="JAVA"><![CDATA[
 String configUrl = ... ; // URL that points to your configuration file
 Map<String,String> parameters = Collections.singletonMap("org.modeshape.jcr.URL", configUrl);
 
@@ -375,7 +375,7 @@ for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
 		<para>
 			Once you've gotten hold of a &Repository; instance, you can use it to create &Session;s, using code similar to:
     </para>			
-    <programlisting role="JAVA"><![CDATA[
+    <programlisting language="JAVA" role="JAVA"><![CDATA[
 Credentials credentials = ...; // JCR credentials
 String workspaceName = ...;  // Name of repository workspace
 Session session = repository.login(credentials,workspaceName);
@@ -488,7 +488,7 @@ Session session = repository.login(credentials,workspaceName);
 	      When you obtain your Repository instance using the ServiceLoader mechanism described earlier, keep a reference to the
 				&RepositoryFactory; that returns a non-null &Repository;:
 			</para>
-    <programlisting role="JAVA"><![CDATA[Map<String,String> parameters = ...
+    <programlisting language="JAVA" role="JAVA"><![CDATA[Map<String,String> parameters = ...
 Repository repository = null;
 RepositoryFactory factory = null;
 for (RepositoryFactory aFactory : ServiceLoader.load(RepositoryFactory.class)) {
@@ -502,7 +502,7 @@ for (RepositoryFactory aFactory : ServiceLoader.load(RepositoryFactory.class)) {
 	      Save this reference where your application's shutdown code can access it, then when your application is terminating,
 				check the type of the factory, cast to the ModeShape extension, and call the "<code>shutdown()</code>" method:
       </para>
-    <programlisting role="JAVA"><![CDATA[if ( factory instanceof org.modeshape.jcr.api.RepositoryFactory ) {
+    <programlisting language="JAVA" role="JAVA"><![CDATA[if ( factory instanceof org.modeshape.jcr.api.RepositoryFactory ) {
     ((org.modeshape.jcr.api.RepositoryFactory)factory).shutdown();
 }]]></programlisting>
       <para>
@@ -510,7 +510,7 @@ for (RepositoryFactory aFactory : ServiceLoader.load(RepositoryFactory.class)) {
 				to shutdown gracefully and return immediately (without waiting for any of them to complete the shutdown process).
 				If you'd rather block while the engines perform their shutdown, simply supply a timeout:
       </para>
-    <programlisting role="JAVA"><![CDATA[if ( factory instanceof org.modeshape.jcr.api.RepositoryFactory ) {
+    <programlisting language="JAVA" role="JAVA"><![CDATA[if ( factory instanceof org.modeshape.jcr.api.RepositoryFactory ) {
     ((org.modeshape.jcr.api.RepositoryFactory)factory).shutdown(30,TimeUnit.SECONDS);
 }]]></programlisting>
 			<para>
@@ -537,7 +537,7 @@ for (RepositoryFactory aFactory : ServiceLoader.load(RepositoryFactory.class)) {
 			in the <link linkend="jcr_configuration">previous chapter</link>. Then, load that configuration file and check
 			for problems:
 		</para>
-   	<programlisting role="JAVA"><![CDATA[JcrConfiguration config = new JcrConfiguration();
+   	<programlisting language="JAVA" role="JAVA"><![CDATA[JcrConfiguration config = new JcrConfiguration();
 configuration.loadFrom(file);
 if ( !configuration.getProblems().isEmpty() ) {
     for ( Problem problem : configuration.getProblems() ) {
@@ -572,7 +572,7 @@ if ( !configuration.getProblems().isEmpty() ) {
 		<para>
 			Once you have a valid &JcrConfiguration; instance with no errors, you can build and start the &JcrEngine;:
 		</para>
-    <programlisting role="JAVA"><![CDATA[
+    <programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 JcrEngine engine = config.build();
 engine.start();
@@ -580,7 +580,7 @@ engine.start();
 		<para>
 			Obtaining a JCR &Repository; instance is a matter of simply asking the engine for it by the name defined in the configuration:
 		</para>
-    <programlisting role="JAVA"><![CDATA[
+    <programlisting language="JAVA" role="JAVA"><![CDATA[
 javax.jcr.Repository repository = engine.getRepository("Name of repository");
  ]]></programlisting>
 		<para>
@@ -589,7 +589,7 @@ javax.jcr.Repository repository = engine.getRepository("Name of repository");
 		<para>
 			And, once you're finished with the &JcrEngine;, you should shut it down:
 		</para>
-    <programlisting role="JAVA"><![CDATA[
+    <programlisting language="JAVA" role="JAVA"><![CDATA[
 engine.shutdown();
 engine.awaitTermination(3,TimeUnit.SECONDS);	// optional
  ]]></programlisting>

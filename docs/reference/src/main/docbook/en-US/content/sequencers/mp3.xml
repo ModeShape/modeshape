@@ -41,7 +41,7 @@
 					To use this sequencer, simply include the <code>modeshape-sequencer-mp3</code> JAR and the <ulink url="http://www.jthink.net/jaudiotagger/">JAudioTagger</ulink>
 					library in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
 	      </para>
-		    <programlisting role="JAVA"><![CDATA[
+		    <programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("MP3 Sequencer")
