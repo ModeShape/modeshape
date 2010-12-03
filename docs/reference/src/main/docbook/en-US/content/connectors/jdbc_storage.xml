@@ -98,7 +98,10 @@
 				<row>
 					<entry>dialect</entry>
 					<entry>
-						Required property that defines the dialect of the database.  This must match one of the Hibernate dialect names, and must correspond to the type of driver being used.
+						Optional property that defines the dialect of the database. If not provided, the dialect will be auto-discovered by Hibernate. 
+						Otherwise, this must match one of the Hibernate dialect names, and must correspond to the type of driver being used.
+						And because Hibernate does a good job of auto-determining the dialect, it is recommended that you set this only if auto-discovery fails
+						for your database.
 					</entry>
 				</row>
 				<row>
@@ -254,7 +257,6 @@ JcrConfiguration config = ...
 config.repositorySource("JPA Store")
       .usingClass(JpaSource.class)
       .setDescription("The database store for our content")
-      .setProperty("dialect", "org.hibernate.dialect.MySQLDialect")
       .setProperty("dataSourceJndiName", "java:/MyDataSource")
       .setProperty("defaultWorkspaceName", "My Default Workspace")
       .setProperty("autoGenerateSchema", "validate");
@@ -286,7 +288,6 @@ config.repositorySource("JPA Store")
         <mode:source jcr:name="JPA Store" 
                     mode:classname="org.modeshape.connector.store.jpa.JpaSource"
                     mode:description="The database store for our content"
-                    mode:dialect="org.hibernate.dialect.MySQLDialect"
                     mode:dataSourceJndiName="java:/MyDataSource"
                     mode:defaultWorkspaceName="default"
                     mode:autoGenerateSchema="validate"/>    
