@@ -42,7 +42,7 @@
 	<ulink url="http://poi.apache.org/">POI</ulink> JARs
 	in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
    </para>
-  <programlisting role="JAVA"><![CDATA[
+  <programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("Microsoft Office Document Sequencer")

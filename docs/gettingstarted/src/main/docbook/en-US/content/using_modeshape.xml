@@ -49,7 +49,7 @@
 		<para>
 			ModeShape supports and recommends using this approach, which looks like this:
 		</para>
-    <programlisting role="JAVA"><![CDATA[
+    <programlisting language="JAVA" role="JAVA"><![CDATA[
 Properties parameters = new Properties();
 parameters.load(...)   // typically loaded from property file or set programmatically
 Repository repository;
@@ -77,7 +77,7 @@ for (RepositoryFactory factory : ServiceLoader.load(RepositoryFactory.class)) {
 			so they shouldn't be used concurrently by multiple threads. Therefore, the JCR specification recommends
 			applications create sessions to read, query or change repository content, and then quickly close the sessions:
     </para>			
-   	<programlisting role="JAVA"><![CDATA[Repository repository = // found earlier
+   	<programlisting language="JAVA" role="JAVA"><![CDATA[Repository repository = // found earlier
 Credentials credentials = ...; // JCR credentials
 String workspaceName = ...; // The name of the workspace in the JCR repository
 Session session = null;
@@ -198,7 +198,7 @@ org.modeshape.jcr.URL = file:modeshape-configuration.xml?repositoryName=MyReposi
 				Here is the configuration file that is used in the repository example, though it has been simplified a bit and most comments 
 				have been removed for clarity):
 			</para>
-    	<programlisting role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+    	<programlisting language="XML" role="XML"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
 	  <!-- 
 	  Define the JCR repositories 
@@ -494,7 +494,7 @@ deploy/admin-console.war/plugins/modeshape-jbossas-console-&versionNumber;.jar
 			<para>
 				Here's an example of a fragment of the <code>conf/context.xml</code> for Tomcat:
 			</para>
-<programlisting role="XML"><![CDATA[<Resource name="jcr/local" 
+<programlisting language="XML" role="XML"><![CDATA[<Resource name="jcr/local" 
           auth="Container"
           type="javax.jcr.Repository"
           factory="org.modeshape.jcr.JndiRepositoryFactory"
@@ -520,7 +520,7 @@ deploy/admin-console.war/plugins/modeshape-jbossas-console-&versionNumber;.jar
 				Then, your web application needs to reference the <code>Resource</code> and state its requirements in its 
 				<code>web.xml</code>:
 			</para>
-<programlisting role="XML"><![CDATA[<resource-env-ref>
+<programlisting language="XML" role="XML"><![CDATA[<resource-env-ref>
    <description>Repository</description>
    <resource-env-ref-name>jcr/local</resource-env-ref-name>
    <resource-env-ref-type>javax.jcr.Repository</resource-env-ref-type>
@@ -534,7 +534,7 @@ deploy/admin-console.war/plugins/modeshape-jbossas-console-&versionNumber;.jar
 				(or the more standard &RepositoryFactory; technique shown earlier), create and use a &Session;,
 				and then close the &Session;.  Here's an example of a JSP page that does this:
 			</para>
-<programlisting role="JAVA"><![CDATA[
+<programlisting language="JAVA" role="JAVA"><![CDATA[
 <%@ page import="javax.naming.*, javax.jcr.*, org.jboss.security.config.IDTrustConfiguration" %>
 <%!
 
@@ -610,7 +610,7 @@ try {
 					One way to do this is to add the following to your project POM (you'll still likely want to use other Maven repositories 
 					for third-party artifacts):
 				</para>
-<programlisting role="XML"><![CDATA[<repositories>
+<programlisting language="XML" role="XML"><![CDATA[<repositories>
   <repository>
     <id>jboss</id>
     <url>http://repository.jboss.org/nexus/content/groups/public/</url>
@@ -627,7 +627,7 @@ try {
 				<para>
 					Then, simply modify your project's POM by adding dependencies on the ModeShape JCR library:
 			  </para>
-<programlisting role="XML"><![CDATA[<dependency>
+<programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-jcr</artifactId>
   <version>2.3.0.Final</version>
@@ -637,7 +637,7 @@ try {
 					This adds only the minimal libraries required to use ModeShape. If your application is going
 					to use clustering, you'll need to also depend upon the clustering module:
 				</para>
-<programlisting role="XML"><![CDATA[<dependency>
+<programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-clustering</artifactId>
   <version>2.3.0.Final</version>
@@ -647,7 +647,7 @@ try {
 					You also need to add dependencies for 
 					each of the connectors and sequencers you want to use. Here is the list of available sequencers:
 				</para>
-<programlisting role="XML"><![CDATA[<dependency>
+<programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-sequencer-cnd</artifactId>
   <version>2.3.0.Final</version>
@@ -706,7 +706,7 @@ try {
 			<para>
 				Here is the list of available connectors:
 			</para>
-<programlisting role="XML"><![CDATA[<dependency>
+<programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-connector-filesystem</artifactId>
   <version>2.3.0.Final</version>
@@ -759,7 +759,7 @@ try {
 					for it, and so ModeShape log messages will be sent to the same logging system used in your application, you need to add a 
 					dependency to the SLF4J-to-Log4J binding JAR:
 				</para>
-<programlisting role="XML"><![CDATA[<dependency>
+<programlisting language="XML" role="XML"><![CDATA[<dependency>
   <groupId>org.slf4j</groupId>
   <artifactId>slf4j-log4j12</artifactId>
   <version>1.5.11</version>

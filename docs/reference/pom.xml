@@ -13,34 +13,35 @@
       <plugin>
         <groupId>org.jboss.maven.plugins</groupId>
         <artifactId>maven-jdocbook-plugin</artifactId>
-        <version>2.1.2</version>
+        <version>2.2.0</version>
         <extensions>true</extensions>
         <dependencies>
-          <dependency>
-            <groupId>net.sf.docbook</groupId>
-            <artifactId>docbook</artifactId>
-            <version>1.74.0</version>
-          </dependency>
+	        <!-- This is needed to override a dependency inherited from jbossorg-docbook-xslt -->
+	        <dependency>
+	            <groupId>org.richfaces.docs</groupId>
+	            <artifactId>highlight</artifactId>
+	            <version>3.3.3.Final</version>
+	        </dependency>
           <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jbossorg-docbook-xslt</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
           </dependency>
           <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jbossorg-jdocbook-style</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
             <type>jdocbook-style</type>
           </dependency>
         </dependencies>
         <configuration>
           <sourceDocumentName>master.xml</sourceDocumentName>
-           <imageResource>
-               <directory>${basedir}/src/main/docbook/en-US/images/</directory>
-               <includes>
-                 <include>*.png</include>
-               </includes>
-           </imageResource>
+          <imageResource>
+              <directory>${basedir}/src/main/docbook/en-US/images</directory>
+              <includes>
+                <include>*.png</include>
+              </includes>
+          </imageResource>
           <targetDirectory>${basedir}/target/docbook/en-US</targetDirectory>
           <formats>
             <format>

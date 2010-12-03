@@ -265,7 +265,7 @@
 	<para>The <code>main(String[] argv)</code> method is of course the method that is executed when the application is run.  This code
 	  creates the ModeShape configuration by loading it from a file.
 	</para>
-	<programlisting role="JAVA"><![CDATA[
+	<programlisting language="JAVA" role="JAVA"><![CDATA[
 // Set up the JAAS provider (IDTrust) and a policy file (which defines the "modeshape-jcr" login config name)
 IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
 try {
@@ -299,7 +299,7 @@ client.setUserInterface(new ConsoleInput(client, args));
 		obtained a <code>javax.jcr.Session</code> instance, since this will be done each time the client needs to access content from
 		the repository. (This is actually a common practice according to the JCR specification, since Sessions are lightweight.)
    </para>
-	<programlisting role="JAVA"><![CDATA[
+	<programlisting language="JAVA" role="JAVA"><![CDATA[
 public void startRepositories() throws IOException, SAXException {
     if (engine != null) return; // already started
 
@@ -339,7 +339,7 @@ public void startRepositories() throws IOException, SAXException {
 			shut down and, since that may take
 		  a few moments (if there are any ongoing operations or enqueued activities) awaits for it to complete the shutdown.
 	   </para>
-		<programlisting role="JAVA"><![CDATA[
+		<programlisting language="JAVA" role="JAVA"><![CDATA[
 public void shutdown() throws InterruptedException, LoginException {
     logout();
     if (engine == null) return;
@@ -367,7 +367,7 @@ public void shutdown() throws InterruptedException, LoginException {
 			There are really two different behaviors to this method, depending upon whether the JCR API is to be used or whether
 			the ModeShape Graph API is to be used.  The portion that uses JCR is shown below:
 	   </para>
-		<programlisting role="JAVA"><![CDATA[
+		<programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrRepository jcrRepository = engine.getRepository(sourceName);
 Session session = null;
 if (loginContext != null) {
@@ -442,7 +442,7 @@ try {
 			Here is the portion of the <code>getNodeInfo(...)</code> method that does the exact same operation as the JCR code
 			shown above:
 		</para>
-		<programlisting role="JAVA"><![CDATA[
+		<programlisting language="JAVA" role="JAVA"><![CDATA[
 // Use the ModeShape Graph API to read the properties and children of the node ...
 ExecutionContext context = loginContext != null ? this.context.create(loginContext) : this.context;
 Graph graph = engine.getGraph(context, sourceName);
@@ -475,7 +475,7 @@ if (children != null) {
 		<para>If we look at the <code>ConsoleInput</code> constructor, it starts the repository and a thread 
 			for the user interface. At this point, the constructor returns, but the main application continues under the user interface thread.  
 			When the user requests to quit, the user interface thread also shuts down the JCR repository.</para>
-    <programlisting role="JAVA"><![CDATA[
+    <programlisting language="JAVA" role="JAVA"><![CDATA[
 public ConsoleInput( SequencerClient client ) {
   try {
       client.startRepositories();

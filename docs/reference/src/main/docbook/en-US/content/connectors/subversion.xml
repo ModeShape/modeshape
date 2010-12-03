@@ -112,7 +112,7 @@
 		One way to configure the Subversion connector is to create &JcrConfiguration; instance with a repository source that uses the &SVNRepositorySource; class.
 		For example:
 	</para>
-  <programlisting role="JAVA"><![CDATA[
+  <programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 config.repositorySource("SVN Store")
       .usingClass(SVNRepositorySource.class)
@@ -127,7 +127,7 @@ config.repositorySource("SVN Store")
 		For example a file named configRepository.xml can be created with these contents:
 	</para>
 	
-  <programlisting role="XML"><![CDATA[
+  <programlisting language="XML" role="XML"><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
@@ -166,7 +166,7 @@ config.repositorySource("SVN Store")
 		The configuration can then be loaded from Java like this:
 	</para>
 	
-	<programlisting role="JAVA"><![CDATA[
+	<programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml");
  ]]></programlisting>
  

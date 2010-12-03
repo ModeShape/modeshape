@@ -289,7 +289,7 @@
 				<ulink url="http://maven.apache.org/guides/getting-started/index.html#How_do_I_make_my_first_Maven_project">Maven 2 documentation</ulink>.  
 	    	Once you've done that, just add the dependencies in your project's <code>pom.xml</code> dependencies section:
 			</para>
-	  	<programlisting role="XML"><![CDATA[
+	  	<programlisting language="XML" role="XML"><![CDATA[
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-graph</artifactId>
@@ -304,7 +304,7 @@
 	  	<para>
 				As for testing, you probably will want to add more dependencies, such as those listed here:
 			</para>
-			<programlisting role="XML"><![CDATA[
+			<programlisting language="XML" role="XML"><![CDATA[
 <!-- ModeShape-related unit testing utilities and classes -->
 <dependency>
   <groupId>org.modeshape</groupId>

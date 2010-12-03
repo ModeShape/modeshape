@@ -65,7 +65,7 @@
 			Here is an example web configuration that is used for integration testing of the ModeShape WebDAV server along with
 			an explanation of its parts.
 		</para>
-<programlisting role="XML"><![CDATA[
+<programlisting language="XML" role="XML"><![CDATA[
 <?xml version="1.0"?>
 <!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
                          "http://java.sun.com/dtd/web-app_2_3.dtd">
@@ -79,7 +79,7 @@
 		<para>
 			The next stanza configures the <link linkend="jcr_web_spi">repository provider</link>.
 		</para>
-<programlisting role="XML"><![CDATA[
+<programlisting language="XML" role="XML"><![CDATA[
   <!--
     This parameter provides the fully-qualified name of a class that implements
     the o.m.web.jcr.spi.RepositoryProvider interface.  It is required
@@ -100,7 +100,7 @@
 		<para>
 			Next we configure the ModeShape &JcrEngine; itself.
 		</para>
-<programlisting role="XML"><![CDATA[
+<programlisting language="XML" role="XML"><![CDATA[
   <!--
     This parameter, specific to the ModeShapeJcrRepositoryProvider implementation, specifies
     the name of the configuration file to initialize the repository or repositories.
@@ -123,7 +123,7 @@
 			JCR node types and WebDAV files and resources.  You can omit this section entirely to use the
 			default values.
 		</para>
-<programlisting role="XML"><![CDATA[
+<programlisting language="XML" role="XML"><![CDATA[
 <!--
 	Nodes with any of the primary node types in this comma-delimited list will be treated by the 
 	WebDAV implementation as content nodes.  The value below is the default value for this 
@@ -218,7 +218,7 @@
 			to the name of the &RepositoryResolver; implementation class. For example, here is how the
 			&MultiRepositoryRequestResolver; class is specified:
 		</para>
-<programlisting role="XML"><![CDATA[
+<programlisting language="XML" role="XML"><![CDATA[
 <!--
 	This optional parameter provides the name of the o.m.w.j.webdav.RequestResolver
 	implementation class.  The provided value must be the name of a class that 
@@ -234,7 +234,7 @@
 				Alternatively, if the &SingleRepositoryRequestResolver; class is to be used, then two additional properties must define
 				the repository name and workspace name:
 			</para>
-<programlisting role="XML"><![CDATA[
+<programlisting language="XML" role="XML"><![CDATA[
 <!--
 	This optional parameter provides the name of the o.m.w.j.webdav.RequestResolver
 	implementation class.  The provided value must be the name of a class that 
@@ -278,7 +278,7 @@
 		<para>
 			Once the &RequestResolver; has been specified, then more brief boilerplate ensues defines additional configuration information:
 		</para>
-<programlisting role="XML"><![CDATA[
+<programlisting language="XML" role="XML"><![CDATA[
 <!-- Required parameter for ModeShape WebDAV - should not be modified -->
 <listener>
 	<listener-class>org.modeshape.web.jcr.ModeShapeJcrDeployer</listener-class>
@@ -309,7 +309,7 @@
 		<para>
 			Finally, security must be configured for the WebDAV server.
 		</para>
-<programlisting role="XML"><![CDATA[
+<programlisting language="XML" role="XML"><![CDATA[
 	<!-- 
 		The ModeShape WebDAV implementation leverages the HTTP credentials to for authentication 
 		and authorization within the JCR repository.  Unless the repository provides for anonymous 
@@ -822,7 +822,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 			Here is an example web configuration that is used for integration testing of the ModeShape REST server along with
 			an explanation of its parts.
 		</para>
-<programlisting role="XML"><![CDATA[
+<programlisting language="XML" role="XML"><![CDATA[
 <?xml version="1.0"?>
 <!DOCTYPE web-app PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
                          "http://java.sun.com/dtd/web-app_2_3.dtd">
@@ -836,7 +836,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		<para>
 			The next stanza configures the <link linkend="jcr_web_spi">repository provider</link>.
 		</para>
-<programlisting role="XML"><![CDATA[
+<programlisting language="XML" role="XML"><![CDATA[
   <!--
     This parameter provides the fully-qualified name of a class that implements
     the o.m.web.jcr.spi.RepositoryProvider interface.  It is required
@@ -856,7 +856,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		<para>
 			Next we configure the ModeShape &JcrEngine; itself.
 		</para>
-<programlisting role="XML"><![CDATA[
+<programlisting language="XML" role="XML"><![CDATA[
   <!--
     This parameter, specific to the ModeShapeJcrRepositoryProvider implementation, specifies
     the name of the configuration file to initialize the repository or repositories.
@@ -877,7 +877,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		<para>
 			This is followed by a bit of RESTEasy and JAX-RS boilerplate.
 		</para>
-<programlisting role="XML"><![CDATA[
+<programlisting language="XML" role="XML"><![CDATA[
   <!--
     This parameter defines the JAX-RS application class, which is really just a metadata class
     that lets the JAX-RS engine (RESTEasy in this case) know which classes implement pieces
@@ -920,7 +920,7 @@ ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 		<para>
 			Finally, security must be configured for the REST server.
 		</para>
-<programlisting role="XML"><![CDATA[
+<programlisting language="XML" role="XML"><![CDATA[
   <!-- 
     The ModeShape REST implementation leverages the HTTP credentials to for authentication and 
     authorization within the JCR repository.  It makes no sense to try to log into the JCR 

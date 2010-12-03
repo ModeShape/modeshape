@@ -75,7 +75,7 @@
 	<para>
 		The default class file recorder creates a subgraph rooted at the output location that takes the following form:  
 	</para>
-	<programlisting role="XML"><![CDATA[
+	<programlisting language="XML" role="XML"><![CDATA[
 <nt:unstructured jcr:name="packageName1">
 	...
     <nt:unstructured jcr:name="packageNameN">
@@ -186,7 +186,7 @@
         To use this sequencer, simply include the <code>modeshape-sequencer-classfile</code> JAR
         in your application and configure the &JcrConfiguration; to use this sequencer using something similar to:
     </para>
-   	<programlisting role="JAVA"><![CDATA[
+   	<programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 
 config.sequencer("Java Class Sequencer")

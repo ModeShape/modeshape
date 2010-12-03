@@ -118,7 +118,7 @@
 		One way to configure the JBoss Cache connector is to create &JcrConfiguration; instance with a repository source that uses the &JBossCacheSource; class.
 		For example:
 	</para>
-  <programlisting role="JAVA"><![CDATA[
+  <programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = ...
 config.repositorySource("Store")
       .usingClass(JBossCacheSource.class)
@@ -133,7 +133,7 @@ config.repositorySource("Store")
 		For example a file named configRepository.xml can be created with these contents:
 	</para>
 	
-  <programlisting role="XML"><![CDATA[
+  <programlisting language="XML" role="XML"><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
     <!-- 
@@ -164,7 +164,7 @@ config.repositorySource("Store")
 		The configuration can then be loaded from Java like this:
 	</para>
 	
-	<programlisting role="JAVA"><![CDATA[
+	<programlisting language="JAVA" role="JAVA"><![CDATA[
 JcrConfiguration config = new JcrConfiguration().loadFrom("/configRepository.xml");
  ]]></programlisting>
  </chapter>
