@@ -197,7 +197,7 @@ public class LargeValueEntity {
         assert manager != null;
 
         int result = 0;
-        if (dialect.toLowerCase().indexOf("mysql") != -1) {
+        if (dialect != null && dialect.toLowerCase().indexOf("mysql") != -1) {
             // Unfortunately, we cannot delete all the unused large values in a single statement
             // because of MySQL (see MODE-691). Therefore, we need to do this in multiple steps:
             // 1) Find the set of hashes that are not used anymore
