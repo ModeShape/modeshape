@@ -83,7 +83,7 @@ public class JavaSequencerIntegrationTest extends AbstractSequencerTest {
         Node java = assertNode(path, "nt:unstructured");
         printSubgraph(java);
 
-        assertNode(path + "/ClusteringTest", "class:class");
+        assertNode(path + "/ClusteringTest", "class:class", "mode:derived");
         assertNode(path + "/ClusteringTest/class:constructors", "class:constructors");
         assertNode(path + "/ClusteringTest/class:methods", "class:methods");
         assertNode(path + "/ClusteringTest/class:methods/beforeAll()", "class:method");
@@ -132,7 +132,7 @@ public class JavaSequencerIntegrationTest extends AbstractSequencerTest {
         Node java = assertNode(path, "nt:unstructured");
         printSubgraph(java);
 
-        assertNode(path + "/" + typeName, "class:class");
+        assertNode(path + "/" + typeName, "class:class", "mode:derived");
         assertNode(path + "/" + typeName + "/class:constructors", "class:constructors");
         assertNode(path + "/" + typeName + "/class:methods", "class:methods");
         // etc.
@@ -190,7 +190,7 @@ public class JavaSequencerIntegrationTest extends AbstractSequencerTest {
         Node java = assertNode(path, "nt:unstructured");
         printSubgraph(java);
 
-        assertNode(path + "/SequencerTest", "class:class");
+        assertNode(path + "/SequencerTest", "class:class", "mode:derived");
         assertNode(path + "/SequencerTest/class:constructors", "class:constructors");
         assertNode(path + "/SequencerTest/class:methods", "class:methods");
         // etc.

@@ -98,7 +98,7 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         Thread.sleep(200); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
-        Node vdb = assertNode("/sequenced/teiid/vdbs/qe", "vdb:virtualDatabase", "mix:referenceable");
+        Node vdb = assertNode("/sequenced/teiid/vdbs/qe", "vdb:virtualDatabase", "mix:referenceable", "mode:derived");
         printSubgraph(vdb);
         printQuery("SELECT * FROM [vdb:virtualDatabase]", 1);
         printQuery("SELECT * FROM [vdb:model]", 3);
@@ -119,7 +119,7 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         Thread.sleep(200); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
-        Node vdb = assertNode("/sequenced/teiid/vdbs/my/favorites/qe", "vdb:virtualDatabase", "mix:referenceable");
+        Node vdb = assertNode("/sequenced/teiid/vdbs/my/favorites/qe", "vdb:virtualDatabase", "mix:referenceable", "mode:derived");
         printSubgraph(vdb);
         printQuery("SELECT * FROM [vdb:virtualDatabase]", 1);
         printQuery("SELECT * FROM [vdb:model]", 3);
@@ -140,7 +140,7 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         Thread.sleep(200); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
-        Node vdb = assertNode("/sequenced/teiid/vdbs/PartsFromXml", "vdb:virtualDatabase", "mix:referenceable");
+        Node vdb = assertNode("/sequenced/teiid/vdbs/PartsFromXml", "vdb:virtualDatabase", "mix:referenceable", "mode:derived");
         printSubgraph(vdb);
         printQuery("SELECT * FROM [vdb:virtualDatabase]", 1);
         printQuery("SELECT * FROM [vdb:model]", 2);
@@ -163,7 +163,7 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         Thread.sleep(200); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
-        Node vdb = assertNode("/sequenced/teiid/vdbs/YahooUdfTest", "vdb:virtualDatabase", "mix:referenceable");
+        Node vdb = assertNode("/sequenced/teiid/vdbs/YahooUdfTest", "vdb:virtualDatabase", "mix:referenceable", "mode:derived");
         printSubgraph(vdb);
         printQuery("SELECT * FROM [vdb:virtualDatabase]", 1);
         printQuery("SELECT * FROM [vdb:model]", 4);

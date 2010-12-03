@@ -97,4 +97,14 @@ public interface PropertyFactory {
                      PropertyType desiredType,
                      Iterator<?> values );
 
+    /**
+     * Create a property with the supplied name and {@link Path} value. This method is provided because Path implements
+     * Iterable&lt;Segment>.
+     * 
+     * @param name the property name; may not be null
+     * @param value the path value
+     * @return the resulting property
+     */
+    Property create( Name name,
+                     Path value );
 }

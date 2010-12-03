@@ -46,6 +46,7 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
@@ -58,6 +59,7 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.sequencer.SequencerOutput;
 import org.modeshape.graph.sequencer.StreamSequencer;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
+import org.modeshape.repository.ModeShapeLexicon;
 import org.modeshape.repository.util.RepositoryNodePath;
 
 /**
@@ -108,7 +110,7 @@ public class StreamSequencerAdapterTest {
                 }
             }
         };
-        sequencer = new StreamSequencerAdapter(streamSequencer);
+        sequencer = new StreamSequencerAdapter(streamSequencer, false);
         seqContext = new SequencerContext(context, graph, graph);
     }
 
@@ -549,7 +551,7 @@ public class StreamSequencerAdapterTest {
     @Test
     public void shouldNotCreateExtraNodesWhenSavingOutput() throws Exception {
         SequencerOutputMap output = new SequencerOutputMap(context.getValueFactories());
-        Map<Name, Property> props;
+        Map<Name, Property> props = null;
 
         /*
          * Create several output properties and make sure the resulting graph
@@ -562,7 +564,7 @@ public class StreamSequencerAdapterTest {
         output.setProperty(path("a/b[2]/c"), name("property1"), "value1");
 
         Set<Path> builtPaths = new HashSet<Path>();
-        sequencer.saveOutput("/", output, seqContext, builtPaths);
+        sequencer.saveOutput(path("/input/path"), "/", output, seqContext, builtPaths);
         seqContext.getDestination().submit();
 
         Node rootNode = graph.getNodeAt("/");
@@ -642,6 +644,60 @@ public class StreamSequencerAdapterTest {
         assertThat(graph2.getNodeAt("/x/y/z/alpha/beta").getProperty("isSomething").getFirstValue().toString(), is("true"));
         assertThat(graph2.getNodeAt("/x/z/alpha/beta").getProperty("isSomething").getFirstValue().toString(), is("true"));
 
+    }
+
+    @FixFor( "MODE-1033" )
+    @Test
+    public void shouldAddDerivedMixinAndDerivedFromPropertyToRootNodeOfSequencedOutput() {
+        sequencer = new StreamSequencerAdapter(streamSequencer, true);
+        SequencerOutputMap output = new SequencerOutputMap(context.getValueFactories());
+        Map<Name, Property> props = null;
+
+        /*
+         * Create several output properties and make sure the resulting graph
+         * does not contain duplicate nodes
+         */
+        output.setProperty(path("a"), name("property1"), "value1");
+        output.setProperty(path("a/b"), name("property1"), "value1");
+        output.setProperty(path("a/b"), name("property2"), "value2");
+        output.setProperty(path("a/b[2]"), name("property1"), "value1");
+        output.setProperty(path("a/b[2]/c"), name("property1"), "value1");
+
+        Set<Path> builtPaths = new HashSet<Path>();
+        Path inputPath = path("/input/path");
+        sequencer.saveOutput(inputPath, "/", output, seqContext, builtPaths);
+        seqContext.getDestination().submit();
+
+        Node rootNode = graph.getNodeAt("/");
+        assertThat(rootNode.getChildren().size(), is(1));
+
+        Node nodeA = graph.getNodeAt("/a");
+        props = nodeA.getPropertiesByName();
+
+        assertThat(nodeA.getChildren().size(), is(2));
+        assertThat(props.size(), is(4)); // Need to add one to account for dna:uuid, jcr:mixinTypes and mode:derivedFrom
+        assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
+        assertThat(props.get(JcrLexicon.MIXIN_TYPES).getFirstValue(), is((Object)ModeShapeLexicon.DERIVED));
+        assertThat(props.get(ModeShapeLexicon.DERIVED_FROM).getFirstValue(), is((Object)inputPath));
+
+        Node nodeB = graph.getNodeAt("/a/b[1]");
+        props = nodeB.getPropertiesByName();
+
+        assertThat(props.size(), is(3)); // Need to add one to account for dna:uuid
+        assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
+        assertThat(props.get(nameFor("property2")).getFirstValue().toString(), is("value2"));
+
+        Node nodeB2 = graph.getNodeAt("/a/b[2]");
+        props = nodeB2.getPropertiesByName();
+
+        assertThat(props.size(), is(2)); // Need to add one to account for dna:uuid
+        assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
+
+        Node nodeC = graph.getNodeAt("/a/b[2]/c");
+        props = nodeC.getPropertiesByName();
+
+        assertThat(props.size(), is(2)); // Need to add one to account for dna:uuid
+        assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
     }
 
     private void verifyProperty( StreamSequencerContext context,
