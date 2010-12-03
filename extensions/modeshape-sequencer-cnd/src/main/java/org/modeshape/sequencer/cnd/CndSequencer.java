@@ -26,7 +26,6 @@ package org.modeshape.sequencer.cnd;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.modeshape.cnd.CndImporter;
@@ -114,10 +113,10 @@ public class CndSequencer implements StreamSequencer {
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.graph.io.Destination#create(org.modeshape.graph.property.Path, java.util.List)
+         * @see org.modeshape.graph.io.Destination#create(Path, Iterable)
          */
         public void create( Path path,
-                            List<Property> properties ) {
+                            Iterable<Property> properties ) {
             path = checkPath(path);
             for (Property property : properties) {
                 output.setProperty(path, property.getName(), property.getValuesAsArray());

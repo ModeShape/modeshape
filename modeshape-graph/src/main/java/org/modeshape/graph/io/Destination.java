@@ -23,7 +23,6 @@
  */
 package org.modeshape.graph.io;
 
-import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.property.Path;
@@ -50,7 +49,7 @@ public interface Destination {
      * @param properties the properties for the node; never null, but may be empty if there are no properties
      */
     public void create( Path path,
-                        List<Property> properties );
+                        Iterable<Property> properties );
 
     /**
      * Create a node at the supplied path and with the supplied attributes. The path will be absolute.

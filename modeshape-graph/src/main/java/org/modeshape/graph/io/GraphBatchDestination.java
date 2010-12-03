@@ -23,7 +23,6 @@
  */
 package org.modeshape.graph.io;
 
-import java.util.List;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
@@ -89,17 +88,12 @@ public class GraphBatchDestination implements Destination {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.graph.io.Destination#create(org.modeshape.graph.property.Path, java.util.List)
+     * @see org.modeshape.graph.io.Destination#create(org.modeshape.graph.property.Path, Iterable)
      */
     public void create( Path path,
-                        List<Property> properties ) {
+                        Iterable<Property> properties ) {
         assert properties != null;
-        Create<Batch> create = null;
-        if (properties.isEmpty()) {
-            create = batch.create(path);
-        } else {
-            create = batch.create(path, properties);
-        }
+        Create<Batch> create = batch.create(path, properties);
         assert create != null;
         NodeConflictBehavior behavior = createBehaviorFor(path);
         if (behavior != null) {

@@ -26,6 +26,7 @@ package org.modeshape.repository.sequencer;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -41,6 +42,7 @@ import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Node;
+import org.modeshape.graph.io.Destination;
 import org.modeshape.graph.observe.NetChangeObserver.NetChange;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.Name;
@@ -53,6 +55,7 @@ import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.sequencer.StreamSequencer;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
+import org.modeshape.repository.ModeShapeLexicon;
 import org.modeshape.repository.RepositoryI18n;
 import org.modeshape.repository.util.RepositoryNodePath;
 
@@ -61,13 +64,22 @@ import org.modeshape.repository.util.RepositoryNodePath;
  */
 public class StreamSequencerAdapter implements Sequencer {
 
+    public static final boolean DEFAULT_ADD_DEFAULT_MIXIN = true;
+
     private static final Logger LOGGER = Logger.getLogger(StreamSequencerAdapter.class);
 
     private SequencerConfig configuration;
     private final StreamSequencer streamSequencer;
+    private final boolean addDerivedMixin;
 
     public StreamSequencerAdapter( StreamSequencer streamSequencer ) {
+        this(streamSequencer, DEFAULT_ADD_DEFAULT_MIXIN);
+    }
+
+    public StreamSequencerAdapter( StreamSequencer streamSequencer,
+                                   boolean addDerivedMixin ) {
         this.streamSequencer = streamSequencer;
+        this.addDerivedMixin = addDerivedMixin;
     }
 
     /**
@@ -187,6 +199,7 @@ public class StreamSequencerAdapter implements Sequencer {
         Set<Path> builtPaths = new HashSet<Path>();
 
         // Find each output node and save the image metadata there ...
+        final Path inputPath = input.getLocation().getPath();
         for (RepositoryNodePath outputPath : outputPaths) {
             // Get the name of the repository source, workspace and the path to the output node
             final String repositoryWorkspaceName = outputPath.getWorkspaceName();
@@ -199,7 +212,7 @@ public class StreamSequencerAdapter implements Sequencer {
             // Node outputNode = context.graph().getNodeAt(nodePath);
 
             // Now save the image metadata to the output node ...
-            saveOutput(nodePath, output, context, builtPaths);
+            saveOutput(inputPath, nodePath, output, context, builtPaths);
         }
 
         context.getDestination().submit();
@@ -257,19 +270,21 @@ public class StreamSequencerAdapter implements Sequencer {
      * Save the sequencing output to the supplied node. This method does not need to save the output, as that is done by the
      * caller of this method.
      * 
-     * @param nodePath the existing node onto (or below) which the output is to be written; never null
+     * @param inputPath the existing node that was sequenced; never null
+     * @param outputPath the existing node onto (or below) which the output is to be written; never null
      * @param output the (immutable) sequencing output; never null
      * @param context the execution context for this sequencing operation; never null
      * @param builtPaths a set of the paths that have already been created but not submitted in this batch
      */
-    protected void saveOutput( String nodePath,
+    protected void saveOutput( Path inputPath,
+                               String outputPath,
                                SequencerOutputMap output,
                                SequencerContext context,
                                Set<Path> builtPaths ) {
         if (output.isEmpty()) return;
         final PathFactory pathFactory = context.getExecutionContext().getValueFactories().getPathFactory();
         final PropertyFactory propertyFactory = context.getExecutionContext().getPropertyFactory();
-        final Path outputNodePath = pathFactory.create(nodePath);
+        final Path outputNodePath = pathFactory.create(outputPath);
 
         // Get the existing list of children under the output path ...
         PathStrategy pathStrategy = null;
@@ -297,6 +312,8 @@ public class StreamSequencerAdapter implements Sequencer {
 
         // Iterate over the entries in the output, in Path's natural order (shorter paths first and in lexicographical order by
         // prefix and name)
+        final Set<Path> pathsOfTopLevelNodes = new HashSet<Path>();
+        final Destination destination = context.getDestination();
         for (SequencerOutputMap.Entry entry : output) {
             Path path = entry.getPath();
             Path targetNodePath = pathStrategy.validate(path);
@@ -304,7 +321,7 @@ public class StreamSequencerAdapter implements Sequencer {
             // Resolve this path relative to the output node path, handling any parent or self references ...
             Path absolutePath = targetNodePath.isAbsolute() ? targetNodePath : outputNodePath.resolve(targetNodePath);
 
-            List<Property> properties = new LinkedList<Property>();
+            Collection<Property> properties = new LinkedList<Property>();
             // Set all of the properties on this
             for (SequencerOutputMap.PropertyValue property : entry.getPropertyValues()) {
                 Object value = property.getValue();
@@ -313,12 +330,63 @@ public class StreamSequencerAdapter implements Sequencer {
                 // TODO: Handle reference properties - currently passed in as Paths
             }
 
+            if (targetNodePath.size() <= 1 && addDerivedMixin && pathsOfTopLevelNodes.add(absolutePath)) {
+                properties = addDerivedProperties(properties, context, inputPath);
+            }
+
             if (absolutePath.getParent() != null) {
                 buildPathTo(absolutePath.getParent(), context, builtPaths);
             }
-            context.getDestination().create(absolutePath, properties);
+            destination.create(absolutePath, properties);
             builtPaths.add(absolutePath);
         }
+    }
+
+    protected Collection<Property> addDerivedProperties( Collection<Property> properties,
+                                                         SequencerContext context,
+                                                         Path inputPath ) {
+        Map<Name, Property> propertiesByName = new HashMap<Name, Property>();
+        for (Property property : properties) {
+            propertiesByName.put(property.getName(), property);
+        }
+
+        // Find the mixinTypes property and figure out the new value(s) for this property ...
+        Object values = null;
+        Property mixinTypes = propertiesByName.get(JcrLexicon.MIXIN_TYPES);
+        if (mixinTypes == null || mixinTypes.isEmpty()) {
+            values = ModeShapeLexicon.DERIVED;
+        } else {
+            // Add the mixin to the value(s) ...
+            if (mixinTypes.isSingle()) {
+                Name name = context.getExecutionContext().getValueFactories().getNameFactory().create(mixinTypes.getFirstValue());
+                values = new Object[] {name, ModeShapeLexicon.DERIVED};
+            } else {
+                Object[] oldValues = mixinTypes.getValuesAsArray();
+                Object[] newValues = new Object[oldValues.length + 1];
+                newValues[0] = ModeShapeLexicon.DERIVED;
+                System.arraycopy(oldValues, 0, newValues, 1, oldValues.length);
+                values = newValues;
+            }
+        }
+        PropertyFactory propertyFactory = context.getExecutionContext().getPropertyFactory();
+        Property newMixinTypes = propertyFactory.create(JcrLexicon.MIXIN_TYPES, values);
+        propertiesByName.put(newMixinTypes.getName(), newMixinTypes);
+
+        // Add the other 'mode:derived' property/properties ...
+        Property derivedFrom = propertiesByName.get(ModeShapeLexicon.DERIVED_FROM);
+        if (derivedFrom == null) {
+            // Only do this if the sequencer didn't already do this ...
+            assert inputPath != null;
+            if (!inputPath.isRoot() && inputPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
+                // We want to point to the sequenced 'nt:file' node, not the 'jcr:content' node ...
+                inputPath = inputPath.getParent();
+            }
+            derivedFrom = propertyFactory.create(ModeShapeLexicon.DERIVED_FROM, inputPath);
+            propertiesByName.put(derivedFrom.getName(), derivedFrom);
+        }
+
+        // Return the properties ...
+        return propertiesByName.values();
     }
 
     protected String[] extractMixinTypes( Object value ) {

@@ -79,7 +79,7 @@ public class ZipSequencerIntegrationTest extends AbstractSequencerTest {
 
         // Find the sequenced node ...
         String path = "/sequenced/zip/test-files.zip";
-        Node zipped = assertNode(path, "zip:file");
+        Node zipped = assertNode(path, "zip:file","mode:derived");
         Node file1 = assertNode(path + "/MODE-966-fix.patch", "nt:file");
         Node data1 = assertNode(path + "/MODE-966-fix.patch/jcr:content", "nt:resource");
         Node fold1 = assertNode(path + "/testFolder", "nt:folder");
@@ -116,7 +116,7 @@ public class ZipSequencerIntegrationTest extends AbstractSequencerTest {
 
         // Find the sequenced node ...
         String path = "/sequenced/zip/a/b/test-files.zip";
-        Node zipped = assertNode(path, "zip:file");
+        Node zipped = assertNode(path, "zip:file","mode:derived");
         Node file1 = assertNode(path + "/MODE-966-fix.patch", "nt:file");
         Node data1 = assertNode(path + "/MODE-966-fix.patch/jcr:content", "nt:resource");
         Node fold1 = assertNode(path + "/testFolder", "nt:folder");

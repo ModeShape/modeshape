@@ -530,6 +530,7 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
             "Repo    NULL    mmcore:model    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    mmcore:tags    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    mode:defined    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    mode:derived    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    mode:hashed    VIEW    Is Mixin: true    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    mode:lock    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    mode:locks    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
@@ -603,7 +604,7 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
         while (rs.next()) {
             tableNames.add(rs.getString("TABLE_NAME"));
         }
-        assertThat(tableNames.size(), is(179));
+        assertThat(tableNames.size(), is(180));
         List<String> tablesWithProblems = new ArrayList<String>();
         for (String table : tableNames) {
             try {

@@ -78,7 +78,7 @@ public class CndSequencerIntegrationTest extends AbstractSequencerTest {
         Node cnd = assertNode(path, "nt:unstructured");
         printSubgraph(cnd);
 
-        Node file1 = assertNode(path + "/nt:activity", "nt:nodeType");
+        Node file1 = assertNode(path + "/nt:activity", "nt:nodeType", "mode:derived");
         assertThat(file1, is(notNullValue()));
 
         printQuery("SELECT * FROM [nt:nodeType]", 34);
@@ -99,7 +99,7 @@ public class CndSequencerIntegrationTest extends AbstractSequencerTest {
         Node cnd = assertNode(path, "nt:unstructured");
         printSubgraph(cnd);
 
-        Node file1 = assertNode(path + "/nt:activity", "nt:nodeType");
+        Node file1 = assertNode(path + "/nt:activity", "nt:nodeType", "mode:derived");
         assertThat(file1, is(notNullValue()));
 
         printQuery("SELECT * FROM [nt:nodeType]", 34);

@@ -76,7 +76,7 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
         // Find the sequenced node ...
         printSubgraph(assertNode("/sequenced/xml", "nt:unstructured"));
         String path = "/sequenced/xml/jcr-import-test.xml";
-        Node xml = assertNode(path, "modexml:document");
+        Node xml = assertNode(path, "modexml:document", "mode:derived");
         printSubgraph(xml);
 
         // Node file1 = assertNode(path + "/nt:activity", "nt:nodeType");
@@ -101,7 +101,7 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
 
         // Find the sequenced node ...
         String path = "/sequenced/xml/a/b/jcr-import-test.xml";
-        Node xml = assertNode(path, "modexml:document");
+        Node xml = assertNode(path, "modexml:document", "mode:derived");
         printSubgraph(xml);
 
         // Node file1 = assertNode(path + "/nt:activity", "nt:nodeType");

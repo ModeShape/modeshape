@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
@@ -526,7 +525,7 @@ public class XmlHandlerTest {
         private final String workspace = "Recording Workspace";
 
         public void create( Path path,
-                            List<Property> properties ) {
+                            Iterable<Property> properties ) {
             assert path != null;
             Path parent = path.getParent();
             Name child = path.getLastSegment().getName();

@@ -30,6 +30,7 @@ import java.util.List;
 import net.jcip.annotations.Immutable;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.PropertyType;
@@ -51,6 +52,17 @@ public class BasicPropertyFactory implements PropertyFactory {
     public BasicPropertyFactory( ValueFactories valueFactories ) {
         CheckArg.isNotNull(valueFactories, "value factories");
         this.factories = valueFactories;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.property.PropertyFactory#create(org.modeshape.graph.property.Name,
+     *      org.modeshape.graph.property.Path)
+     */
+    public Property create( Name name,
+                            Path value ) {
+        return new BasicSingleValueProperty(name, value);
     }
 
     /**
@@ -93,6 +105,10 @@ public class BasicPropertyFactory implements PropertyFactory {
         if (values.length == 1) {
             Object value = values[0];
             // Check whether the sole value was a collection ...
+            if (value instanceof Path) {
+                value = factory.create(value);
+                return new BasicSingleValueProperty(name, value);
+            }
             if (value instanceof Collection<?>) {
                 // The single value is a collection, so create property with the collection's contents ...
                 return create(name, desiredType, (Iterable<?>)value);
