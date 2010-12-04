@@ -46,9 +46,9 @@ import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.ThreadSafe;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.ejb.Ejb3Configuration;
+import org.hibernate.ejb.HibernateEntityManager;
 import org.hibernate.engine.SessionFactoryImplementor;
 import org.modeshape.common.annotation.AllowedValues;
 import org.modeshape.common.annotation.Category;
@@ -1284,8 +1284,8 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     protected String determineDialect( EntityManager entityManager ) {
         // We need the connection in order to determine the dialect ...
-        SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor)entityManager.unwrap(Session.class)
-                                                                                           .getSessionFactory();
+        HibernateEntityManager em = (HibernateEntityManager)entityManager;
+        SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor)em.getSession().getSessionFactory();
         return sessionFactory.getDialect().toString();
     }
 
