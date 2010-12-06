@@ -818,6 +818,10 @@ public class JcrRepository implements Repository {
         updateWorkspaceNames();
     }
 
+    protected String repositoryName() {
+        return getDescriptor(org.modeshape.jcr.api.Repository.REPOSITORY_NAME);
+    }
+
     protected void updateWorkspaceNames() {
         if (!Boolean.valueOf(this.options.get(Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR)).booleanValue()) return;
 
@@ -1224,8 +1228,15 @@ public class JcrRepository implements Repository {
             try {
                 if (credentials instanceof SimpleCredentials) {
                     SimpleCredentials simple = (SimpleCredentials)credentials;
-                    execContext = executionContext.with(new JaasSecurityContext(options.get(Option.JAAS_LOGIN_CONFIG_NAME),
-                                                                                simple.getUserID(), simple.getPassword()));
+                    String policyName = options.get(Option.JAAS_LOGIN_CONFIG_NAME);
+                    try {
+                        execContext = executionContext.with(new JaasSecurityContext(policyName, simple.getUserID(),
+                                                                                    simple.getPassword()));
+                    } catch (javax.security.auth.login.LoginException error) {
+                        throw new javax.jcr.LoginException(JcrI18n.loginConfigNotFound.text(policyName,
+                                                                                            Option.JAAS_LOGIN_CONFIG_NAME,
+                                                                                            repositoryName()), error);
+                    }
                     for (String attributeName : simple.getAttributeNames()) {
                         Object attributeValue = simple.getAttribute(attributeName);
                         sessionAttributes.put(attributeName, attributeValue);
@@ -1254,9 +1265,11 @@ public class JcrRepository implements Repository {
                     }
                 }
             } catch (RuntimeException error) {
-                throw error;
+                throw error; // pass along
+            } catch (javax.jcr.LoginException error) {
+                throw error; // pass along
             } catch (Exception error) {
-                throw new javax.jcr.LoginException(error);
+                throw new javax.jcr.LoginException(error); // wrap
             }
         }
         return sessionForContext(execContext, workspaceName, sessionAttributes);

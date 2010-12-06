@@ -33,11 +33,11 @@
             <mode:source>store</mode:source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names-->
             <mode:options jcr:primaryType="options">
-	              <!-- Should node types appear as nodes under '/jcr:system/jcr:nodeTypes'? -->
-                <projectNodeTypes jcr:primaryType="option" value="true"/>
-	              <!-- The name of the JAAS application policy, used when clients get a session with credentials.
+                <!-- Should node types appear as nodes under '/jcr:system/jcr:nodeTypes'? -->
+                <mode:option jcr:name="projectNodeTypes" mode:value="true"/>
+	            <!-- The name of the JAAS application policy, used when clients get a session with credentials.
 	                   (This policy is defined in the 'jboss-modeshape-beans.xml' file). -->
-                <jaasLoginConfigName jcr:primaryType="option" value="modeshape"/>
+                <mode:option jcr:name="jaasLoginConfigName" mode:value="modeshape"/>
             </mode:options>
             <!-- Define any custom node types. Importing CND files via JcrConfiguration is equivalent to specifying here.-->
             <jcr:nodeTypes>

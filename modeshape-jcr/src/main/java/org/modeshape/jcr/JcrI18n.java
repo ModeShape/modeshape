@@ -42,6 +42,7 @@ public final class JcrI18n {
     public static I18n cannotConvertValue;
     public static I18n credentialsMustProvideJaasMethod;
     public static I18n mustBeInPrivilegedAction;
+    public static I18n loginConfigNotFound;
     public static I18n credentialsMustReturnLoginContext;
     public static I18n defaultWorkspaceName;
     public static I18n pathNotFound;
