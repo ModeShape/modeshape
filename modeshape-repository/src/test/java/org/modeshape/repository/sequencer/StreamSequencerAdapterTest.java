@@ -564,7 +564,7 @@ public class StreamSequencerAdapterTest {
         output.setProperty(path("a/b[2]/c"), name("property1"), "value1");
 
         Set<Path> builtPaths = new HashSet<Path>();
-        sequencer.saveOutput(path("/input/path"), "/", output, seqContext, builtPaths);
+        sequencer.saveOutput(path("/input/path"), "/", output, seqContext, builtPaths, true);
         seqContext.getDestination().submit();
 
         Node rootNode = graph.getNodeAt("/");
@@ -665,7 +665,7 @@ public class StreamSequencerAdapterTest {
 
         Set<Path> builtPaths = new HashSet<Path>();
         Path inputPath = path("/input/path");
-        sequencer.saveOutput(inputPath, "/", output, seqContext, builtPaths);
+        sequencer.saveOutput(inputPath, "/", output, seqContext, builtPaths, true);
         seqContext.getDestination().submit();
 
         Node rootNode = graph.getNodeAt("/");
