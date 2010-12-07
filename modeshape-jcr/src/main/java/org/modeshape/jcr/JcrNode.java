@@ -106,9 +106,9 @@ class JcrNode extends AbstractJcrNode {
      */
     @Override
     protected void doRemove() throws RepositoryException, LockException {
-        Node parentNode = getParent();
+        AbstractJcrNode parentNode = getParent();
         if (parentNode.isLocked()) {
-            Lock parentLock = lockManager().getLock(this);
+            Lock parentLock = lockManager().getLock(parentNode);
             if (parentLock != null && !parentLock.isLockOwningSession()) {
                 throw new LockException(JcrI18n.lockTokenNotHeld.text(this.location));
             }
