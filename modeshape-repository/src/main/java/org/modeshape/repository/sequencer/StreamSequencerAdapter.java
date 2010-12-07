@@ -38,10 +38,12 @@ import org.modeshape.common.collection.Collections;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.Reflection;
+import org.modeshape.graph.Graph;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Node;
+import org.modeshape.graph.Results;
 import org.modeshape.graph.io.Destination;
 import org.modeshape.graph.observe.NetChangeObserver.NetChange;
 import org.modeshape.graph.property.Binary;
@@ -52,6 +54,7 @@ import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.ValueFactories;
+import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.sequencer.StreamSequencer;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
@@ -198,6 +201,16 @@ public class StreamSequencerAdapter implements Sequencer {
         // Accumulator of paths that we've added to the batch but have not yet been submitted to the graph
         Set<Path> builtPaths = new HashSet<Path>();
 
+        // Determine if previously-derived content should be removed ...
+        boolean replacePreviouslyDerivedContent = Boolean.parseBoolean(SequencerConfig.DEFAULT_REPLACE_PREVIOUSLY_DERIVED_CONTENT_PROPERTY_VALUE);
+        SequencerConfig config = getConfiguration();
+        if (config != null) {
+            Object value = config.getProperties().get(SequencerConfig.REPLACE_PREVIOUSLY_DERIVED_CONTENT_PROPERTY_NAME);
+            if (value != null) {
+                replacePreviouslyDerivedContent = Boolean.parseBoolean(value.toString());
+            }
+        }
+
         // Find each output node and save the image metadata there ...
         final Path inputPath = input.getLocation().getPath();
         for (RepositoryNodePath outputPath : outputPaths) {
@@ -212,7 +225,7 @@ public class StreamSequencerAdapter implements Sequencer {
             // Node outputNode = context.graph().getNodeAt(nodePath);
 
             // Now save the image metadata to the output node ...
-            saveOutput(inputPath, nodePath, output, context, builtPaths);
+            saveOutput(inputPath, nodePath, output, context, builtPaths, replacePreviouslyDerivedContent);
         }
 
         context.getDestination().submit();
@@ -275,25 +288,31 @@ public class StreamSequencerAdapter implements Sequencer {
      * @param output the (immutable) sequencing output; never null
      * @param context the execution context for this sequencing operation; never null
      * @param builtPaths a set of the paths that have already been created but not submitted in this batch
+     * @param replacePreviouslyDerivedContent true if any existing content that was previously derived from the same input path
+     *        should first be removed before saving the output, or false otherwise
      */
     protected void saveOutput( Path inputPath,
                                String outputPath,
                                SequencerOutputMap output,
                                SequencerContext context,
-                               Set<Path> builtPaths ) {
+                               Set<Path> builtPaths,
+                               boolean replacePreviouslyDerivedContent ) {
         if (output.isEmpty()) return;
         final PathFactory pathFactory = context.getExecutionContext().getValueFactories().getPathFactory();
         final PropertyFactory propertyFactory = context.getExecutionContext().getPropertyFactory();
         final Path outputNodePath = pathFactory.create(outputPath);
+        final Path derivedFromPath = derivedFromPath(inputPath);
 
         // Get the existing list of children under the output path ...
         PathStrategy pathStrategy = null;
         try {
-            List<Location> children = context.destinationGraph().getChildren().of(outputNodePath);
+            Graph graph = context.destinationGraph();
+            Graph.Batch batch = graph.batch();
+            List<Location> children = graph.getChildren().of(outputNodePath);
             Map<Name, AtomicInteger> existingSnsByNodeName = new HashMap<Name, AtomicInteger>();
             for (Location child : children) {
                 Segment childSegment = child.getPath().getLastSegment();
-                Name childName = child.getPath().getLastSegment().getName();
+                Name childName = childSegment.getName();
                 AtomicInteger sns = existingSnsByNodeName.get(childName);
                 if (sns == null) {
                     sns = new AtomicInteger(childSegment.getIndex());
@@ -303,12 +322,61 @@ public class StreamSequencerAdapter implements Sequencer {
                         sns.set(childSegment.getIndex());
                     }
                 }
+                if (replacePreviouslyDerivedContent) {
+                    // Get the 'mode:derivedFrom' property on this node ...
+                    batch.readProperty(ModeShapeLexicon.DERIVED_FROM).on(child).and();
+                }
             }
-            pathStrategy = new NextSnsPathStrategy(existingSnsByNodeName, pathFactory);
+
+            // Which of these children are 'mode:derived' from the same 'mode:derivedFrom' path?
+            // To figure this out, we'll use a single batch to load the 'mode:derivedFrom' property
+            // on each of the child nodes. (Not sure if this is the most efficient way to do this,
+            // but it is the least costly in terms of memory.)
+            Results derivedResults = batch.execute();
+            if (!derivedResults.getRequests().isEmpty()) {
+                Graph.Batch deleteExistingBatch = graph.batch();
+                for (Node child : derivedResults) {
+                    Property derivedFrom = child.getProperty(ModeShapeLexicon.DERIVED_FROM);
+                    if (derivedFrom == null) continue;
+                    for (Object value : derivedFrom) {
+                        try {
+                            Path derivedFromValue = pathFactory.create(value);
+                            if (derivedFromPath.isSameAs(derivedFromValue)) {
+                                // Decrement the SNS index ...
+                                Location childLocation = child.getLocation();
+                                Segment childSegment = childLocation.getPath().getLastSegment();
+                                Name childName = childSegment.getName();
+                                AtomicInteger sns = existingSnsByNodeName.get(childName);
+                                if (sns != null) {
+                                    if (sns.decrementAndGet() < 1) {
+                                        // there will be no more SNS with this name
+                                        existingSnsByNodeName.remove(childName);
+                                    }
+                                    // And delete this subgraph (via batch) ...
+                                    deleteExistingBatch.delete(childLocation).and();
+                                    break; // nothing more to do for this child
+                                }
+                            }
+                        } catch (ValueFormatException e) {
+                            // shouldn't happen, but ignore if it does ...
+                        }
+                    }
+
+                }
+                // We've already sequenced the file and we're saving it, so go ahead and remove the previously-derived
+                // content (if there is any) ...
+                deleteExistingBatch.execute();
+            }
+
+            if (!existingSnsByNodeName.isEmpty()) {
+                // Create a strategy that will compute the next SNS index for the output (if there are clashes) ...
+                pathStrategy = new NextSnsPathStrategy(existingSnsByNodeName, pathFactory);
+            }
         } catch (PathNotFoundException e) {
             // The target node doesn't yet exist, so just continue ...
-            pathStrategy = new PassThroughStrategy();
         }
+
+        if (pathStrategy == null) pathStrategy = new PassThroughStrategy();
 
         // Iterate over the entries in the output, in Path's natural order (shorter paths first and in lexicographical order by
         // prefix and name)
@@ -331,7 +399,7 @@ public class StreamSequencerAdapter implements Sequencer {
             }
 
             if (targetNodePath.size() <= 1 && addDerivedMixin && pathsOfTopLevelNodes.add(absolutePath)) {
-                properties = addDerivedProperties(properties, context, inputPath);
+                properties = addDerivedProperties(properties, context, derivedFromPath);
             }
 
             if (absolutePath.getParent() != null) {
@@ -344,7 +412,7 @@ public class StreamSequencerAdapter implements Sequencer {
 
     protected Collection<Property> addDerivedProperties( Collection<Property> properties,
                                                          SequencerContext context,
-                                                         Path inputPath ) {
+                                                         Path derivedPath ) {
         Map<Name, Property> propertiesByName = new HashMap<Name, Property>();
         for (Property property : properties) {
             propertiesByName.put(property.getName(), property);
@@ -376,17 +444,29 @@ public class StreamSequencerAdapter implements Sequencer {
         Property derivedFrom = propertiesByName.get(ModeShapeLexicon.DERIVED_FROM);
         if (derivedFrom == null) {
             // Only do this if the sequencer didn't already do this ...
-            assert inputPath != null;
-            if (!inputPath.isRoot() && inputPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
-                // We want to point to the sequenced 'nt:file' node, not the 'jcr:content' node ...
-                inputPath = inputPath.getParent();
-            }
-            derivedFrom = propertyFactory.create(ModeShapeLexicon.DERIVED_FROM, inputPath);
+            derivedFrom = propertyFactory.create(ModeShapeLexicon.DERIVED_FROM, derivedPath);
             propertiesByName.put(derivedFrom.getName(), derivedFrom);
         }
 
         // Return the properties ...
         return propertiesByName.values();
+    }
+
+    /**
+     * Compute the path that will be used in the "mode:derivedFrom" property on the "mode:derived" node(s) output by the
+     * sequencing operation. If the supplied input path of the node being sequenced ends with "jcr:content", then the derived path
+     * is the parent path; otherwise, this method simply returns the supplied input path.
+     * 
+     * @param inputPath the path of the node being sequenced; may not be null
+     * @return the derived path; never null
+     */
+    protected Path derivedFromPath( Path inputPath ) {
+        assert inputPath != null;
+        if (!inputPath.isRoot() && inputPath.getLastSegment().getName().equals(JcrLexicon.CONTENT)) {
+            // We want to point to the sequenced 'nt:file' node, not the 'jcr:content' node ...
+            inputPath = inputPath.getParent();
+        }
+        return inputPath;
     }
 
     protected String[] extractMixinTypes( Object value ) {

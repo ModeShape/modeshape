@@ -37,6 +37,17 @@ import org.modeshape.common.component.ComponentConfig;
 @Immutable
 public class SequencerConfig extends ComponentConfig {
 
+    /**
+     * The name of the property that can be set on any sequencer configuration that specifies whether the output of the sequencer
+     * should replace any existing content that was previously derived from the same input.
+     */
+    public static final String REPLACE_PREVIOUSLY_DERIVED_CONTENT_PROPERTY_NAME = "replacePreviouslyDerivedContent";
+    /**
+     * The default value (of {@value} ) for the {@link #REPLACE_PREVIOUSLY_DERIVED_CONTENT_PROPERTY_NAME property} that controls
+     * whether the output of the sequencer should replace any existing content that was previously derived from the same input.
+     */
+    public static final String DEFAULT_REPLACE_PREVIOUSLY_DERIVED_CONTENT_PROPERTY_VALUE = Boolean.TRUE.toString();
+
     private final Set<SequencerPathExpression> pathExpressions;
 
     public SequencerConfig( String name,
