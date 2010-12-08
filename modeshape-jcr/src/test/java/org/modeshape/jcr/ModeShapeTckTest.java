@@ -23,6 +23,7 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.ValueFactory;
 import javax.jcr.lock.LockException;
+import javax.jcr.lock.LockManager;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
@@ -1311,5 +1312,514 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         ensureExactlyOneVersionRoot(session.getWorkspace().getVersionManager(), "/createfile.mode");
         session.save();
         ensureExactlyOneVersionRoot(session.getWorkspace().getVersionManager(), "/createfile.mode");
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyShallowLockPreventsOtherSessionsFromChangingPropertiesOnLockedNode() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        Session session2 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:folder");
+        Node node1 = tmp.addNode("node1", "nt:folder");
+        Node node2 = tmp.addNode("node1/node2", "nt:folder");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:folder");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        node2.addMixin("mix:lockable");
+        session1.save();
+        lm1.lock("/tmp/node1/node2", false, false, 100000, "Locked");
+        session1.save();
+
+        // Attempt to a child node of node2
+        session2.refresh(true);
+        Node toChange = session2.getNode("/tmp/node1/node2");
+        try {
+            toChange.addMixin("mix:versionable");
+            fail("Expected to see LockException");
+        } catch (LockException e) {
+            // expected
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+            session2.logout();
+        }
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyShallowLockAllowsOtherSessionsToDeleteLockedNode() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        Session session2 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:folder");
+        Node node1 = tmp.addNode("node1", "nt:folder");
+        Node node2 = tmp.addNode("node1/node2", "nt:folder");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:folder");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        node2.addMixin("mix:lockable");
+        session1.save();
+        lm1.lock("/tmp/node1/node2", false, false, 100000, "Locked");
+        session1.save();
+
+        // Attempt to a child node of node2
+        session2.refresh(true);
+        Node toDelete = session2.getNode("/tmp/node1/node2");
+        try {
+            // This is possible because removing node2 is an alteration of node1, upon which there is no lock
+            toDelete.remove();
+            session2.save();
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+            session2.logout();
+        }
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyShallowLockAllowsSameSessionToDeleteLockedNode() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:folder");
+        Node node1 = tmp.addNode("node1", "nt:folder");
+        Node node2 = tmp.addNode("node1/node2", "nt:folder");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:folder");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        node2.addMixin("mix:lockable");
+        session1.save();
+        lm1.lock("/tmp/node1/node2", false, false, 10000, "Locked");
+        session1.save();
+
+        // Attempt to a child node of node2
+        try {
+            node3.remove();
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+        }
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyShallowLockPreventsOtherSessionsFromDeletingChildOfLockedNode() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        Session session2 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:folder");
+        Node node1 = tmp.addNode("node1", "nt:folder");
+        Node node2 = tmp.addNode("node1/node2", "nt:folder");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:folder");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        node2.addMixin("mix:lockable");
+        session1.save();
+        lm1.lock("/tmp/node1/node2", false, false, 10000, "Locked");
+        session1.save();
+
+        // Attempt to a child node of node2
+        session2.refresh(true);
+        Node toDelete = session2.getNode("/tmp/node1/node2/node3");
+        try {
+            toDelete.remove();
+            fail("Expected to see LockException");
+        } catch (LockException e) {
+            // expected
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+            session2.logout();
+        }
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyShallowLockAllowsSameSessionToDeleteChildOfLockedNode() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        Session session2 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:folder");
+        Node node1 = tmp.addNode("node1", "nt:folder");
+        Node node2 = tmp.addNode("node1/node2", "nt:folder");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:folder");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        node2.addMixin("mix:lockable");
+        session1.save();
+        lm1.lock("/tmp/node1/node2", false, false, 10000, "Locked");
+        session1.save();
+
+        // Attempt to a child node of node2
+        try {
+            node3.remove();
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+            session2.logout();
+        }
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyShallowLockAllowOtherSessionsToChangePropertiesOfChildOfLockedNode() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        Session session2 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:folder");
+        Node node1 = tmp.addNode("node1", "nt:folder");
+        Node node2 = tmp.addNode("node1/node2", "nt:folder");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:folder");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        node2.addMixin("mix:lockable");
+        session1.save();
+        lm1.lock("/tmp/node1/node2", false, false, 100000, "Locked");
+        session1.save();
+
+        // Attempt to a child node of node2
+        session2.refresh(true);
+        Node toChange = session2.getNode("/tmp/node1/node2/node3");
+        try {
+            toChange.addMixin("mix:referenceable");
+            session2.save();
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+            session2.logout();
+        }
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyShallowLockAllowsSameSessionToChangeChildProperties() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:unstructured");
+        Node node1 = tmp.addNode("node1", "nt:unstructured");
+        Node node2 = tmp.addNode("node1/node2", "nt:unstructured");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:unstructured");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        node2.addMixin("mix:lockable");
+        session1.save();
+        lm1.lock("/tmp/node1/node2", false, false, 100000, "Locked");
+        session1.save();
+
+        // Attempt to a child node of node2
+        Node toChange = node2;
+        try {
+            toChange.setProperty("newProp", "newValue");
+            session1.save();
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+        }
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyAddingMixinAndSavingRequiredBeforeLockingNode() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:folder");
+        Node node1 = tmp.addNode("node1", "nt:folder");
+        Node node2 = tmp.addNode("node1/node2", "nt:folder");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:folder");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        try {
+            node2.addMixin("mix:lockable");
+            lm1.lock("/tmp/node1/node2", false, false, 10000, "Locked");
+            session1.save();
+        } catch (InvalidItemStateException e) {
+            // expected??, since the lock manager is owned by the workspace
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+        }
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyDeepLockPreventsOtherSessionsFromChangingPropertiesOnLockedNode() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        Session session2 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:folder");
+        Node node1 = tmp.addNode("node1", "nt:folder");
+        Node node2 = tmp.addNode("node1/node2", "nt:folder");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:folder");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        node2.addMixin("mix:lockable");
+        session1.save();
+        lm1.lock("/tmp/node1/node2", true, false, 100000, "Locked");
+        session1.save();
+
+        // Attempt to a child node of node2
+        session2.refresh(true);
+        Node toChange = session2.getNode("/tmp/node1/node2");
+        try {
+            toChange.addMixin("mix:versionable");
+            fail("Expected to see LockException");
+        } catch (LockException e) {
+            // expected
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+            session2.logout();
+        }
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyDeepLockAllowsOtherSessionsToDeleteLockedNode() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        Session session2 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:folder");
+        Node node1 = tmp.addNode("node1", "nt:folder");
+        Node node2 = tmp.addNode("node1/node2", "nt:folder");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:folder");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        node2.addMixin("mix:lockable");
+        session1.save();
+        lm1.lock("/tmp/node1/node2", true, false, 100000, "Locked");
+        session1.save();
+
+        // Attempt to a child node of node2
+        session2.refresh(true);
+        Node toDelete = session2.getNode("/tmp/node1/node2");
+        try {
+            // This is possible because removing node2 is an alteration of node1, upon which there is no lock
+            toDelete.remove();
+            session2.save();
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+            session2.logout();
+        }
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyDeepLockAllowsSameSessionToDeleteLockedNode() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:folder");
+        Node node1 = tmp.addNode("node1", "nt:folder");
+        Node node2 = tmp.addNode("node1/node2", "nt:folder");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:folder");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        node2.addMixin("mix:lockable");
+        session1.save();
+        lm1.lock("/tmp/node1/node2", true, false, 10000, "Locked");
+        session1.save();
+
+        // Attempt to a child node of node2
+        try {
+            node3.remove();
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+        }
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyDeepLockPreventsOtherSessionsFromDeletingChildOfLockedNode() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        Session session2 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:folder");
+        Node node1 = tmp.addNode("node1", "nt:folder");
+        Node node2 = tmp.addNode("node1/node2", "nt:folder");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:folder");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        node2.addMixin("mix:lockable");
+        session1.save();
+        lm1.lock("/tmp/node1/node2", true, false, 10000, "Locked");
+        session1.save();
+
+        // Attempt to a child node of node2
+        session2.refresh(true);
+        Node toDelete = session2.getNode("/tmp/node1/node2/node3");
+        try {
+            toDelete.remove();
+            fail("Expected to see LockException");
+        } catch (LockException e) {
+            // expected
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+            session2.logout();
+        }
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyDeepLockAllowsSameSessionToDeleteChildOfLockedNode() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        Session session2 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:folder");
+        Node node1 = tmp.addNode("node1", "nt:folder");
+        Node node2 = tmp.addNode("node1/node2", "nt:folder");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:folder");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        node2.addMixin("mix:lockable");
+        session1.save();
+        lm1.lock("/tmp/node1/node2", true, false, 10000, "Locked");
+        session1.save();
+
+        // Attempt to a child node of node2
+        try {
+            node3.remove();
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+            session2.logout();
+        }
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyDeepLockPreventsOtherSessionsFromChangePropertiesOfChildOfLockedNode() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        Session session2 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:folder");
+        Node node1 = tmp.addNode("node1", "nt:folder");
+        Node node2 = tmp.addNode("node1/node2", "nt:folder");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:folder");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        node2.addMixin("mix:lockable");
+        session1.save();
+        lm1.lock("/tmp/node1/node2", true, false, 100000, "Locked");
+        session1.save();
+
+        // Attempt to a child node of node2
+        session2.refresh(true);
+        Node toChange = session2.getNode("/tmp/node1/node2/node3");
+        try {
+            toChange.addMixin("mix:referenceable");
+            session2.save();
+            fail("Expected to see LockException");
+        } catch (LockException e) {
+            // expected
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+            session2.logout();
+        }
+    }
+
+    @FixFor( "MODE-1040" )
+    @SuppressWarnings( "unused" )
+    public void testShouldVerifyDeepLockAllowsSameSessionToChangeChildProperties() throws Exception {
+        Session session1 = getHelper().getSuperuserSession();
+        LockManager lm1 = session1.getWorkspace().getLockManager();
+
+        // Create node structure
+        Node root1 = session1.getRootNode();
+        Node tmp = root1.addNode("tmp", "nt:unstructured");
+        Node node1 = tmp.addNode("node1", "nt:unstructured");
+        Node node2 = tmp.addNode("node1/node2", "nt:unstructured");
+        Node node3 = tmp.addNode("node1/node2/node3", "nt:unstructured");
+        session1.save();
+
+        // Create an open-scoped shallow lock on node2
+        node2.addMixin("mix:lockable");
+        session1.save();
+        lm1.lock("/tmp/node1/node2", true, false, 100000, "Locked");
+        session1.save();
+
+        // Attempt to a child node of node2
+        Node toChange = node2;
+        try {
+            toChange.setProperty("newProp", "newValue");
+            session1.save();
+        } finally {
+            tmp.remove();
+            session1.save();
+            session1.logout();
+        }
     }
 }
