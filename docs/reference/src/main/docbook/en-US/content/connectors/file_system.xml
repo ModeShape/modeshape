@@ -121,9 +121,15 @@
 						this connector.  Files and folders with a name that matches the provided regular expression will <emphasis>not</emphasis> be exposed by this source. 
 						Setting this property to <code>null</code> has the effect of removing the exclusion pattern.
 						</para>
+					</entry>
+				</row>
+				<row>
+					<entry>inclusionPattern</entry>
+					<entry>
 						<para>
-						This property is mutually incompatible with the <code>filenameFilter</code> property.  Setting this property to a non-null value
-						will automatically set the <code>filenameFilter</code> property to <code>null</code>.
+						Specifies a regular expression that is used to determine which files and folders in the underlying file system should be exposed through
+						this connector.  Files and folders with a name that matches the provided regular expression will be exposed by this source. 
+						Setting this property to <code>null</code> has the effect of removing the inclusion pattern.
 						</para>
 					</entry>
 				</row>
@@ -140,9 +146,14 @@
 						interface.  In the latter case, a the named class will be instantiated and used as the filename filter implementation.
 						Setting this property to null has the effect of clearing the filter.
 						</para>
+					</entry>
+				</row>
+				<row>
+					<entry></entry>
+					<entry>
 						<para>
-						This property is mutually incompatible with the <code>exclusionPattern</code> property.  Setting this property to a non-null value
-						will automatically set the <code>exclusionPattern</code> property to <code>null</code>.
+						Note: the filenameFilter, exclusionPattern, and inclusionPattern properties are somewhat mutually exclusive.  If a filenameFilter is specified, 
+						then exclusionPattern and inclusionPattern are both ignored.  
 						</para>
 					</entry>
 				</row>
