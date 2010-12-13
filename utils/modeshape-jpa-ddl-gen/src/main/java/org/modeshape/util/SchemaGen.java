@@ -118,14 +118,13 @@ public class SchemaGen {
     void generate() throws IOException {
         Ejb3Configuration configurator = new Ejb3Configuration();
         configurator.setProperty(Environment.DIALECT, dialect.toString());
-		if (model == null) System.out.println("NULL MODEL");
         model.configure(configurator);
         configurator.addAnnotatedClass(StoreOptionEntity.class);
 
         // cfg.setProperties(properties);
         SchemaExport export = new SchemaExport(configurator.getHibernateConfiguration());
         export.setOutputFile(new File(outputPath, CREATE_FILE_NAME).getCanonicalPath());
-        if (this.delimiter != null ) export.setDelimiter("\r" + delimiter);
+        if (this.delimiter != null ) export.setDelimiter(delimiter);
         export.execute(false, false, false, true);
 
         export.setOutputFile(new File(outputPath, DROP_FILE_NAME).getCanonicalPath());
