@@ -19,7 +19,7 @@ import org.modeshape.connector.store.jpa.util.StoreOptionEntity;
  * to be bundled with scripts that are to be invoked with the following syntax:
  * 
  * <pre>
- * ddl-gen.sh -dialect &lt;dialect name&gt; -model &lt;model_name&gt; [-out &lt;path to output directory&gt;]
+ * ddl-gen.sh -dialect &lt;dialect name&gt; -model &lt;model_name&gt; [-out &lt;path to output directory&gt;] [-delimiter &lt;delim&gt;] [-newline]
  *     Example: ddl-gen.sh -dialect HSQL -model Simple -out /tmp
  * </pre>
  */
@@ -33,7 +33,10 @@ public class SchemaGen {
     private final Dialect dialect;
     private final Model model;
     private final File outputPath;
+    // delimiter is what the statement separater should be.  Default is what SchemaExport uses"
     private final String delimiter;
+    // newLine indicates that a new line should occur after the statement, and before the delimiter.
+    private boolean newLineAfterStatement = false;
     
 	public SchemaGen(String dialect, String model, File outputPath) {
 
@@ -77,6 +80,10 @@ public class SchemaGen {
             logger.log(Level.INFO, logMsg);
 
         }
+    }
+    
+    public void setNewLineAfterStatement(boolean newLine) {
+    	this.newLineAfterStatement = newLine;
     }
 
     /**
@@ -124,21 +131,26 @@ public class SchemaGen {
         // cfg.setProperties(properties);
         SchemaExport export = new SchemaExport(configurator.getHibernateConfiguration());
         export.setOutputFile(new File(outputPath, CREATE_FILE_NAME).getCanonicalPath());
-        if (this.delimiter != null ) export.setDelimiter(delimiter);
+        if (this.delimiter != null ) {
+        	export.setDelimiter( (this.newLineAfterStatement ? ("\r" + delimiter) : delimiter) );
+        } else if (this.newLineAfterStatement) {
+        	export.setDelimiter("\r");
+        }
         export.execute(false, false, false, true);
 
         export.setOutputFile(new File(outputPath, DROP_FILE_NAME).getCanonicalPath());
         export.drop(false, false);
     }
 
-    public static final String USAGE = "./ddl-gen.sh -dialect <dialect name> -model <model_name> [-out <path to output directory>] [-delimiter <delim>]\n"
-                                       + "\tExample: ./ddl-gen.sh -dialect HSQL -model Simple -out /tmp  -delimiter % ";
+    public static final String USAGE = "./ddl-gen.sh -dialect <dialect name> -model <model_name> [-out <path to output directory>] [-delimiter <delim>] [-newline]\n"
+                                       + "\tExample: ./ddl-gen.sh -dialect HSQL -model Simple -out /tmp  -delimiter % -newline ";
 
     public static void main( String[] args ) throws IOException {
         String modelName = null;
         String dialectName = null;
         File outputFile = new File(".");
         String delim = null;
+        boolean newline = false;
 
         int i = 0;
         while (i < args.length) {
@@ -154,6 +166,8 @@ public class SchemaGen {
             } else if ("-delimiter".equals(args[i])) {
                 if (i == args.length - 1) printUsage();                
                 delim =args[++i];
+            } else if ("-newline".equals(args[i])) {
+            	newline = true;
             } else if ("-help".equals(args[i]) || "-?".equals(args[i])) {
                 printUsage();
             }
@@ -163,6 +177,7 @@ public class SchemaGen {
         if (modelName == null || dialectName == null) printUsage();
 
         SchemaGen main = new SchemaGen(dialectName, modelName, outputFile, delim);
+        main.setNewLineAfterStatement(newline);
         main.generate();
     }
 
