@@ -478,6 +478,7 @@ public class JcrRepository implements Repository {
     private final RepositoryObservationManager repositoryObservationManager;
     private final SecurityContext anonymousUserContext;
     private final QueryParsers queryParsers;
+    private Set<String> cachedWorkspaceNames = new HashSet<String>();
 
     // Until the federated connector supports queries, we have to use a search engine ...
     private final RepositoryQueryManager queryManager;
@@ -827,7 +828,8 @@ public class JcrRepository implements Repository {
 
         ValueFactories factories = this.getExecutionContext().getValueFactories();
         List<JcrValue> values = new LinkedList<JcrValue>();
-        for (String name : workspaceNames()) {
+        this.cachedWorkspaceNames = readWorkspaceNamesFromSource();
+        for (String name : this.cachedWorkspaceNames) {
             values.add(new JcrValue(factories, null, PropertyType.STRING, name));
         }
         descriptors.put(Repository.REPOSITORY_WORKSPACES, values.toArray(new JcrValue[values.size()]));
@@ -891,8 +893,7 @@ public class JcrRepository implements Repository {
             graph.merge(initialContentGraph); // uses its own batch
         }
         String actualName = graphWorkspace.getName();
-        addWorkspace(actualName, false);
-        updateWorkspaceNames();
+        addWorkspace(actualName, false); // this updates the workspace names
     }
 
     /**
@@ -1405,6 +1406,13 @@ public class JcrRepository implements Repository {
      * @return a list of all workspace names, without regard to the access permissions of any particular user
      */
     Set<String> workspaceNames() {
+        return cachedWorkspaceNames;
+    }
+
+    /**
+     * @return a list of all workspace names, without regard to the access permissions of any particular user
+     */
+    private Set<String> readWorkspaceNamesFromSource() {
         return Graph.create(sourceName, connectionFactory, executionContext).getWorkspaces();
     }
 
