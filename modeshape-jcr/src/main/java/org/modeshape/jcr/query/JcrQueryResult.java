@@ -567,7 +567,7 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
                     return iterator.jcrDouble(score);
                 }
             }
-            return node.getProperty(columnName).getValue();
+            return node.hasProperty(columnName) ? node.getProperty(columnName).getValue() : null;
         }
 
         /**
@@ -695,7 +695,7 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
                     return iterator.jcrDouble(score);
                 }
             }
-            return node.getProperty(columnName).getValue();
+            return node.hasProperty(columnName) ? node.getProperty(columnName).getValue() : null;
         }
 
         /**

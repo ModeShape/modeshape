@@ -119,7 +119,6 @@ class JcrQueryManager implements QueryManager {
      * @throws InvalidQueryException if expression is invalid or language is unsupported
      * @throws RepositoryException if the session is no longer live
      */
-    @SuppressWarnings( "deprecation" )
     public Query createQuery( String expression,
                               String language,
                               Path storedAtPath ) throws InvalidQueryException, RepositoryException {
@@ -144,9 +143,7 @@ class JcrQueryManager implements QueryManager {
             PlanHints hints = new PlanHints();
             hints.showPlan = true;
             hints.hasFullTextSearch = true; // always include the score
-            if (Query.XPATH.equals(language)) {
-                hints.validateColumnExistance = false;
-            }
+            hints.validateColumnExistance = false; // see MODE-1055
             return resultWith(expression, parser.getLanguage(), command, hints, storedAtPath);
         } catch (ParsingException e) {
             // The query is not well-formed and cannot be parsed ...
