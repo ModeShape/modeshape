@@ -322,6 +322,11 @@ class NodeTypeSchemata implements Schemata {
                                   JcrNodeType nodeType ) {
         NamespaceRegistry registry = context.getNamespaceRegistry();
 
+        if (!nodeType.isQueryable()) {
+            // The node type is defined as not queryable, so skip it ...
+            return;
+        }
+
         String tableName = nodeType.getName();
         JcrPropertyDefinition[] defns = null;
         if (includeColumnsForInheritedProperties) {
