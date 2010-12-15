@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.net.URL;
 import javax.jcr.Session;
+import javax.jcr.Workspace;
 import javax.jcr.nodetype.NodeType;
 import org.junit.After;
 import org.junit.Test;
@@ -209,4 +210,46 @@ public class JcrEngineTest {
 
     }
 
+    @Test
+    public void shouldAllowCreatingWorkspaces() throws Exception {
+        configuration = new JcrConfiguration().loadFrom("src/test/resources/config/configRepositoryWithDefaultNamespace.xml");
+        engine = configuration.build();
+        engine.start();
+        repository = engine.getRepository("mode:Car Repository");
+
+        String workspaceName = "MyNewWorkspace";
+
+        // Create a session ...
+        Session jcrSession = repository.login();
+        Workspace defaultWorkspace = jcrSession.getWorkspace();
+        defaultWorkspace.createWorkspace(workspaceName);
+        assertAccessibleWorkspace(defaultWorkspace, workspaceName);
+        jcrSession.logout();
+    }
+
+    protected void assertAccessibleWorkspace( Session session,
+                                              String workspaceName ) throws Exception {
+        assertAccessibleWorkspace(session.getWorkspace(), workspaceName);
+    }
+
+    protected void assertAccessibleWorkspace( Workspace workspace,
+                                              String workspaceName ) throws Exception {
+        assertContains(workspace.getAccessibleWorkspaceNames(), workspaceName);
+    }
+
+    protected void assertContains( String[] actuals,
+                                   String... expected ) {
+        // Each expected must appear in the actuals ...
+        for (String expect : expected) {
+            if (expect == null) continue;
+            boolean found = false;
+            for (String actual : actuals) {
+                if (expect.equals(actual)) {
+                    found = true;
+                    break;
+                }
+            }
+            assertThat("Did not find '" + expect + "' in the actuals: " + actuals, found, is(true));
+        }
+    }
 }

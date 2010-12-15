@@ -713,4 +713,64 @@ public class JcrRepositoryTest {
         assertThat(g37, is(notNullValue()));
     }
 
+    @Test
+    public void shouldAllowCreatingWorkspaces() throws Exception {
+
+        // Create the JcrRepositoyr instance ...
+        assertThat(source.getCapabilities().supportsCreatingWorkspaces(), is(true));
+        descriptors.put(Repository.OPTION_WORKSPACE_MANAGEMENT_SUPPORTED, "true");
+        repository = new JcrRepository(context, connectionFactory, sourceName, new MockObservable(), source.getCapabilities(),
+                                       descriptors, null, null);
+
+        // Create several sessions ...
+        Session session2 = null;
+        Session session3 = null;
+        try {
+            session = createSession();
+            session2 = createSession();
+
+            // Create a new workspace ...
+            String newWorkspaceName = "MyCarWorkspace";
+            session.getWorkspace().createWorkspace(newWorkspaceName);
+            assertAccessibleWorkspace(session, newWorkspaceName);
+            assertAccessibleWorkspace(session2, newWorkspaceName);
+            session.logout();
+
+            session3 = createSession();
+            assertAccessibleWorkspace(session2, newWorkspaceName);
+            assertAccessibleWorkspace(session3, newWorkspaceName);
+
+            // Create a session for this new workspace ...
+            session = createSession(newWorkspaceName);
+        } finally {
+            try {
+                if (session2 != null) session2.logout();
+            } finally {
+                if (session3 != null) session3.logout();
+            }
+        }
+
+    }
+
+    protected void assertAccessibleWorkspace( Session session,
+                                              String workspaceName ) throws Exception {
+        assertContains(session.getWorkspace().getAccessibleWorkspaceNames(), workspaceName);
+    }
+
+    protected void assertContains( String[] actuals,
+                                   String... expected ) {
+        // Each expected must appear in the actuals ...
+        for (String expect : expected) {
+            if (expect == null) continue;
+            boolean found = false;
+            for (String actual : actuals) {
+                if (expect.equals(actual)) {
+                    found = true;
+                    break;
+                }
+            }
+            assertThat("Did not find '" + expect + "' in the actuals: " + actuals, found, is(true));
+        }
+    }
+
 }

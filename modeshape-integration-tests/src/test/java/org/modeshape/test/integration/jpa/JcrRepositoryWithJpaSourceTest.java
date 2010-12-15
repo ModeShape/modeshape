@@ -31,6 +31,7 @@ import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.Workspace;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -123,4 +124,44 @@ public class JcrRepositoryWithJpaSourceTest {
         assertThat(root.hasNode(pathToNode), is(false));
     }
 
+    @Test
+    public void shouldAllowCreatingWorkspaces() throws Exception {
+        String workspaceName = "MyNewWorkspace";
+
+        // Create a session ...
+        Session jcrSession = repository.login();
+        Workspace defaultWorkspace = jcrSession.getWorkspace();
+        defaultWorkspace.createWorkspace(workspaceName);
+        assertAccessibleWorkspace(defaultWorkspace, workspaceName);
+        jcrSession.logout();
+
+        Session session2 = repository.login(workspaceName);
+        session2.logout();
+    }
+
+    protected void assertAccessibleWorkspace( Session session,
+                                              String workspaceName ) throws Exception {
+        assertAccessibleWorkspace(session.getWorkspace(), workspaceName);
+    }
+
+    protected void assertAccessibleWorkspace( Workspace workspace,
+                                              String workspaceName ) throws Exception {
+        assertContains(workspace.getAccessibleWorkspaceNames(), workspaceName);
+    }
+
+    protected void assertContains( String[] actuals,
+                                   String... expected ) {
+        // Each expected must appear in the actuals ...
+        for (String expect : expected) {
+            if (expect == null) continue;
+            boolean found = false;
+            for (String actual : actuals) {
+                if (expect.equals(actual)) {
+                    found = true;
+                    break;
+                }
+            }
+            assertThat("Did not find '" + expect + "' in the actuals: " + actuals, found, is(true));
+        }
+    }
 }

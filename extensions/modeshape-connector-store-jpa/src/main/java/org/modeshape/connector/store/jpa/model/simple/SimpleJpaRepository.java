@@ -226,7 +226,8 @@ public class SimpleJpaRepository extends MapRepository {
      */
     @Override
     public Set<String> getWorkspaceNames() {
-        Set<String> workspaceNames = new HashSet<String>(super.getWorkspaceNames());
+        // Have to look this up in the database, in case new workspaces were added by another connection ...
+        Set<String> workspaceNames = new HashSet<String>(workspaceEntities.getWorkspaceNames());
         workspaceNames.addAll(predefinedWorkspaceNames);
 
         return workspaceNames;
