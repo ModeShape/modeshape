@@ -24,7 +24,9 @@
 package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.io.InputStream;
 import java.net.URI;
@@ -331,6 +333,66 @@ public class JcrQueryManagerTest {
         assertResultsHaveColumns(result, minimumColumnNames());
     }
 
+    @FixFor( "MODE-1055" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllNodesWithCriteria() throws RepositoryException {
+        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [car:year] < 2009",
+                                                                           Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13);
+        assertResultsHaveColumns(result, minimumColumnNames());
+    }
+
+    @FixFor( "MODE-1055" )
+    @Test
+    public void shouldReturnNullValuesForNonExistantPropertiesInSelectClauseOfJcrSql2Query() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT bogus, laughable, [car:year] FROM [nt:base] WHERE [car:year] < 2009",
+                                          Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 13);
+        assertResultsHaveColumns(result, "bogus", "laughable", "car:year");
+        RowIterator rows = result.getRows();
+        while (rows.hasNext()) {
+            Row row = rows.nextRow();
+            assertThat(row.getValue("bogus"), is(nullValue()));
+            assertThat(row.getValue("laughable"), is(nullValue()));
+            assertThat(row.getValue("car:year"), is(not(nullValue())));
+        }
+    }
+
+    @FixFor( "MODE-1055" )
+    @Test
+    public void shouldNotMatchNodesWhenQueryUsesNonExistantPropertyInCriteriaInSelectClauseOfJcrSql2Query()
+        throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT bogus, laughable, [car:year] FROM [nt:base] WHERE argle < 2009", Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 0);
+        assertResultsHaveColumns(result, "bogus", "laughable", "car:year");
+    }
+
+    @FixFor( "MODE-1055" )
+    @Test
+    public void shouldNotOrderByNonExistantPropertyInCriteriaInSelectClauseOfJcrSql2Query() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT bogus, laughable, [car:year] FROM [nt:base] ORDER BY argle", Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 24);
+        assertResultsHaveColumns(result, "bogus", "laughable", "argle", "car:year");
+    }
+
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarNodes() throws RepositoryException {
         Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [car:Car]", Query.JCR_SQL2);
@@ -526,13 +588,18 @@ public class JcrQueryManagerTest {
     }
 
     @FixFor( "MODE-829" )
-    @Test( expected = RepositoryException.class )
-    public void shouldFailToExecuteJcrSql2QueryWithDescendantNodeJoinUsingNonExistantNameColumnOnTypeWithNoResidualProperties()
+    @Test
+    public void shouldReturnNoResultsForJcrSql2QueryWithDescendantNodeJoinUsingNonExistantNameColumnOnTypeWithNoResidualProperties()
         throws RepositoryException {
         String sql = "SELECT * FROM [nt:base] AS category JOIN [nt:base] AS cars ON ISDESCENDANTNODE(cars,category) WHERE ISCHILDNODE(category,'/Cars') AND cars.name = 'd2'";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
-        query.execute();
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 0); // no results, because it is a join on an invalid column
+        assertResultsHaveColumns(result, new String[] {"cars.mode:depth", "cars.mode:localName", "category.jcr:primaryType",
+            "category.jcr:score", "cars.jcr:score", "category.jcr:path", "cars.jcr:primaryType", "category.mode:localName",
+            "cars.jcr:path", "category.mode:depth", "cars.jcr:name", "category.jcr:name"});
     }
 
     @FixFor( "MODE-869" )
