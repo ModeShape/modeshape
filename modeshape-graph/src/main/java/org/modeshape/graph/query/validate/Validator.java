@@ -34,6 +34,7 @@ import org.modeshape.graph.query.model.ArithmeticOperand;
 import org.modeshape.graph.query.model.ChildNode;
 import org.modeshape.graph.query.model.ChildNodeJoinCondition;
 import org.modeshape.graph.query.model.Column;
+import org.modeshape.graph.query.model.Comparison;
 import org.modeshape.graph.query.model.DescendantNode;
 import org.modeshape.graph.query.model.DescendantNodeJoinCondition;
 import org.modeshape.graph.query.model.DynamicOperand;
@@ -47,6 +48,8 @@ import org.modeshape.graph.query.model.NodeDepth;
 import org.modeshape.graph.query.model.NodeLocalName;
 import org.modeshape.graph.query.model.NodeName;
 import org.modeshape.graph.query.model.NodePath;
+import org.modeshape.graph.query.model.Operator;
+import org.modeshape.graph.query.model.Ordering;
 import org.modeshape.graph.query.model.PropertyExistence;
 import org.modeshape.graph.query.model.PropertyValue;
 import org.modeshape.graph.query.model.Query;
@@ -56,6 +59,7 @@ import org.modeshape.graph.query.model.SameNodeJoinCondition;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.model.Subquery;
 import org.modeshape.graph.query.model.TypeSystem;
+import org.modeshape.graph.query.model.UpperCase;
 import org.modeshape.graph.query.model.Visitor;
 import org.modeshape.graph.query.model.Visitors.AbstractVisitor;
 import org.modeshape.graph.query.validate.Schemata.Table;
@@ -176,6 +180,18 @@ public class Validator extends AbstractVisitor {
     @Override
     public void visit( Column obj ) {
         verify(obj.selectorName(), obj.propertyName(), this.validateColumnExistence); // don't care about the alias
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.model.Visitors.AbstractVisitor#visit(org.modeshape.graph.query.model.Comparison)
+     */
+    @Override
+    public void visit( Comparison obj ) {
+        // The dynamic operand itself will be visited by the validator as it walks the comparison object.
+        // All we need to do here is check the operator ...
+        verifyOperator(obj.operand1(), obj.operator());
     }
 
     /**
@@ -328,6 +344,16 @@ public class Validator extends AbstractVisitor {
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.graph.query.model.Visitors.AbstractVisitor#visit(org.modeshape.graph.query.model.Ordering)
+     */
+    @Override
+    public void visit( Ordering obj ) {
+        verifyOrdering(obj.operand());
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.modeshape.graph.query.model.Visitors.AbstractVisitor#visit(org.modeshape.graph.query.model.PropertyExistence)
      */
     @Override
@@ -413,13 +439,112 @@ public class Validator extends AbstractVisitor {
         verify(obj.selector2Name());
     }
 
+    protected void verifyOrdering( DynamicOperand operand ) {
+        if (operand instanceof PropertyValue) {
+            PropertyValue propValue = (PropertyValue)operand;
+            verifyOrdering(propValue.selectorName(), propValue.propertyName());
+        } else if (operand instanceof ReferenceValue) {
+            ReferenceValue value = (ReferenceValue)operand;
+            verifyOrdering(value.selectorName(), value.propertyName());
+        } else if (operand instanceof Length) {
+            Length length = (Length)operand;
+            verifyOrdering(length.propertyValue());
+        } else if (operand instanceof LowerCase) {
+            verifyOrdering(((LowerCase)operand).operand());
+        } else if (operand instanceof UpperCase) {
+            verifyOrdering(((UpperCase)operand).operand());
+            // } else if (operand instanceof NodeDepth) {
+            // NodeDepth depth = (NodeDepth)operand;
+            // verifyOrdering(depth.selectorName(), "mode:depth");
+            // } else if (operand instanceof NodePath) {
+            // NodePath depth = (NodePath)operand;
+            // verifyOrdering(depth.selectorName(), "jcr:path");
+            // } else if (operand instanceof NodeLocalName) {
+            // NodeLocalName depth = (NodeLocalName)operand;
+            // verifyOrdering(depth.selectorName(), "mode:localName");
+            // } else if (operand instanceof NodeName) {
+            // NodeName depth = (NodeName)operand;
+            // verifyOrdering(depth.selectorName(), "jcr:name");
+        } else if (operand instanceof ArithmeticOperand) {
+            // The LEFT and RIGHT dynamic operands must both work with this operator ...
+            ArithmeticOperand arith = (ArithmeticOperand)operand;
+            verifyOrdering(arith.left());
+            verifyOrdering(arith.right());
+        }
+    }
+
+    protected void verifyOrdering( SelectorName selectorName,
+                                   String propertyName ) {
+        Schemata.Column column = verify(selectorName, propertyName, false);
+        if (column != null && !column.isOrderable()) {
+            problems.addError(GraphI18n.columnInTableIsNotOrderable, propertyName, selectorName.getString());
+        }
+    }
+
+    protected void verifyOperator( DynamicOperand operand,
+                                   Operator op ) {
+        if (operand instanceof PropertyValue) {
+            PropertyValue propValue = (PropertyValue)operand;
+            verifyOperator(propValue.selectorName(), propValue.propertyName(), op);
+        } else if (operand instanceof ReferenceValue) {
+            ReferenceValue value = (ReferenceValue)operand;
+            verifyOperator(value.selectorName(), value.propertyName(), op);
+        } else if (operand instanceof Length) {
+            Length length = (Length)operand;
+            verifyOperator(length.propertyValue(), op);
+        } else if (operand instanceof LowerCase) {
+            verifyOperator(((LowerCase)operand).operand(), op);
+        } else if (operand instanceof UpperCase) {
+            verifyOperator(((UpperCase)operand).operand(), op);
+            // } else if (operand instanceof NodeDepth) {
+            // NodeDepth depth = (NodeDepth)operand;
+            // verifyOperator(depth.selectorName(), "mode:depth", op);
+            // } else if (operand instanceof NodePath) {
+            // NodePath depth = (NodePath)operand;
+            // verifyOperator(depth.selectorName(), "jcr:path", op);
+            // } else if (operand instanceof NodeLocalName) {
+            // NodeLocalName depth = (NodeLocalName)operand;
+            // verifyOperator(depth.selectorName(), "mode:localName", op);
+            // } else if (operand instanceof NodeName) {
+            // NodeName depth = (NodeName)operand;
+            // verifyOperator(depth.selectorName(), "jcr:name", op);
+        } else if (operand instanceof ArithmeticOperand) {
+            // The LEFT and RIGHT dynamic operands must both work with this operator ...
+            ArithmeticOperand arith = (ArithmeticOperand)operand;
+            verifyOperator(arith.left(), op);
+            verifyOperator(arith.right(), op);
+        }
+    }
+
+    protected void verifyOperator( SelectorName selectorName,
+                                   String propertyName,
+                                   Operator op ) {
+        Schemata.Column column = verify(selectorName, propertyName, false);
+        if (column != null) {
+            if (!column.getOperators().contains(op)) {
+                StringBuilder sb = new StringBuilder();
+                boolean first = true;
+                for (Operator allowed : column.getOperators()) {
+                    if (first) first = false;
+                    else sb.append(", ");
+                    sb.append(allowed.symbol());
+                }
+                problems.addError(GraphI18n.operatorIsNotValidAgainstColumnInTable,
+                                  op.symbol(),
+                                  propertyName,
+                                  selectorName.getString(),
+                                  sb);
+            }
+        }
+    }
+
     protected Table tableWithNameOrAlias( SelectorName tableName ) {
         Table table = selectorsByNameOrAlias.get(tableName);
         if (table == null) {
             // Try looking up the table by it's real name (if an alias were used) ...
             table = selectorsByName.get(tableName);
         }
-        return table;
+        return table; // may be null
     }
 
     protected Table verify( SelectorName selectorName ) {
@@ -427,7 +552,7 @@ public class Validator extends AbstractVisitor {
         if (table == null) {
             problems.addError(GraphI18n.tableDoesNotExist, selectorName.name());
         }
-        return table;
+        return table; // may be null
     }
 
     protected Table verifyTable( SelectorName tableName ) {
@@ -435,7 +560,7 @@ public class Validator extends AbstractVisitor {
         if (table == null) {
             problems.addError(GraphI18n.tableDoesNotExist, tableName.name());
         }
-        return table;
+        return table; // may be null
     }
 
     protected Schemata.Column verify( SelectorName selectorName,

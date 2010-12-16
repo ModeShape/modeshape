@@ -210,6 +210,8 @@ public final class GraphI18n {
     public static I18n expectingLiteralAndUnableToParseAsDate;
     public static I18n unexpectedClosingParenthesis;
     public static I18n leftAndRightQueriesInSetQueryMustHaveUnionableColumns;
+    public static I18n operatorIsNotValidAgainstColumnInTable;
+    public static I18n columnInTableIsNotOrderable;
 
     /* Search */
     public static I18n interruptedWhileClosingChannel;

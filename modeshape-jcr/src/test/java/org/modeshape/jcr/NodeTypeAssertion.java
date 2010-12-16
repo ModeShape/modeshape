@@ -11,6 +11,7 @@ import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.jcr.nodetype.NodeTypeTemplate;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
+import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
 
 /**
  * Helper class to compare various manifestions of node type definitions. Ideally, this should be converted to a Hamcrest matcher
@@ -81,7 +82,8 @@ public class NodeTypeAssertion {
                 String ntName = childNodeTemplate.getName() == null ? JcrNodeType.RESIDUAL_ITEM_NAME : childNodeTemplate.getName();
                 if (nd.getName().equals(ntName) && nd.allowsSameNameSiblings() == childNodeTemplate.allowsSameNameSiblings()) {
                     boolean onlyBaseTypeRequired = nd.getRequiredPrimaryTypes().length == 0
-                                                   || (nd.getRequiredPrimaryTypes().length == 1 && nd.getRequiredPrimaryTypes()[0].getName().equals("nt:base"));
+                                                   || (nd.getRequiredPrimaryTypes().length == 1 && nd.getRequiredPrimaryTypes()[0].getName()
+                                                                                                                                  .equals("nt:base"));
                     boolean onlyHasBase = childNodeTemplate.getRequiredPrimaryTypeNames().length == 0
                                           || (childNodeTemplate.getRequiredPrimaryTypeNames().length == 1 && childNodeTemplate.getRequiredPrimaryTypeNames()[0].equals("nt:base"));
 
@@ -117,9 +119,8 @@ public class NodeTypeAssertion {
         }
     }
 
-
     private static void comparePropertyTemplateToPropertyDefinition( JcrPropertyDefinitionTemplate template,
-                                                              JcrPropertyDefinition definition ) {
+                                                                     JcrPropertyDefinition definition ) {
 
         assertThat(definition, is(notNullValue()));
         assertThat(definition.getDeclaringNodeType(), is(notNullValue()));
@@ -136,11 +137,19 @@ public class NodeTypeAssertion {
         assertThat(template.isFullTextSearchable(), is(definition.isFullTextSearchable()));
         assertThat(template.isQueryOrderable(), is(definition.isQueryOrderable()));
 
-        assertThat(template.getAvailableQueryOperators(), is(definition.getAvailableQueryOperators()));
+        String[] tempOps = template.getAvailableQueryOperators();
+        if (tempOps == null) {
+            tempOps = new String[] {QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO,
+                QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN,
+                QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO,
+                QueryObjectModelConstants.JCR_OPERATOR_LESS_THAN, QueryObjectModelConstants.JCR_OPERATOR_LESS_THAN_OR_EQUAL_TO,
+                QueryObjectModelConstants.JCR_OPERATOR_LIKE, QueryObjectModelConstants.JCR_OPERATOR_NOT_EQUAL_TO};
+        }
+        assertThat(tempOps, is(definition.getAvailableQueryOperators()));
     }
 
     private static void compareNodeTemplateToNodeDefinition( JcrNodeDefinitionTemplate template,
-                                                      JcrNodeDefinition definition ) {
+                                                             JcrNodeDefinition definition ) {
         assertThat(definition, is(notNullValue()));
         assertThat(definition.getDeclaringNodeType(), is(notNullValue()));
         // Had to match on name to even get to the definition
