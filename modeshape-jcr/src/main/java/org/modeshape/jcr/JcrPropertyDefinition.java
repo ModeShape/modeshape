@@ -24,6 +24,9 @@
 package org.modeshape.jcr;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import javax.jcr.Node;
@@ -45,6 +48,7 @@ import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.graph.property.basic.JodaDateTime;
+import org.modeshape.graph.query.model.Operator;
 import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
 
 /**
@@ -53,6 +57,27 @@ import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
  */
 @Immutable
 class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinition {
+
+    protected static final Map<String, Operator> OPERATORS_BY_JCR_NAME;
+
+    static {
+        Map<String, Operator> map = new HashMap<String, Operator>();
+        map.put(QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO, Operator.EQUAL_TO);
+        map.put(QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN, Operator.GREATER_THAN);
+        map.put(QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO, Operator.GREATER_THAN_OR_EQUAL_TO);
+        map.put(QueryObjectModelConstants.JCR_OPERATOR_LESS_THAN, Operator.LESS_THAN);
+        map.put(QueryObjectModelConstants.JCR_OPERATOR_LESS_THAN_OR_EQUAL_TO, Operator.LESS_THAN_OR_EQUAL_TO);
+        map.put(QueryObjectModelConstants.JCR_OPERATOR_LIKE, Operator.LIKE);
+        map.put(QueryObjectModelConstants.JCR_OPERATOR_NOT_EQUAL_TO, Operator.NOT_EQUAL_TO);
+        OPERATORS_BY_JCR_NAME = Collections.unmodifiableMap(map);
+    }
+
+    static Operator operatorFromSymbol( String jcrConstantValue ) {
+        Operator op = OPERATORS_BY_JCR_NAME.get(jcrConstantValue);
+        if (op == null) op = Operator.forSymbol(jcrConstantValue);
+        assert op != null;
+        return op;
+    }
 
     private final Value[] defaultValues;
     private final int requiredType;
@@ -183,6 +208,11 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         return queryOperators;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.nodetype.PropertyDefinition#getAvailableQueryOperators()
+     */
     @Override
     public String[] getAvailableQueryOperators() {
         return queryOperators;

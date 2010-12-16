@@ -1170,7 +1170,6 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
         for (int i = 0; i < childNodeDefs.length; i++) {
             projectChildNodeDefinitionOnto(childNodeDefs[i], nodeTypePath, batch);
         }
-
     }
 
     /**
@@ -1214,6 +1213,12 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                                              OnParentVersionAction.nameFromValue(jcrPropDef.getOnParentVersion())));
         propsList.add(propertyFactory.create(JcrLexicon.REQUIRED_TYPE, PropertyType.nameFromValue(jcrPropDef.getRequiredType())
                                                                                    .toUpperCase()));
+
+        List<String> symbols = new ArrayList<String>();
+        for (String value : jcrPropDef.getAvailableQueryOperators()) {
+            if (value != null) symbols.add(value);
+        }
+        propsList.add(propertyFactory.create(JcrLexicon.QUERY_OPERATORS, symbols));
 
         Value[] defaultValues = jcrPropDef.getDefaultValues();
         if (defaultValues.length > 0) {

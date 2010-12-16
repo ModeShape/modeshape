@@ -25,7 +25,6 @@ package org.modeshape.jcr;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,7 +53,6 @@ import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.model.TypeSystem;
 import org.modeshape.graph.query.validate.ImmutableSchemata;
 import org.modeshape.graph.query.validate.Schemata;
-import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
 import org.modeshape.search.lucene.IndexRules;
 import org.modeshape.search.lucene.LuceneSearchEngine;
 import com.google.common.collect.LinkedHashMultimap;
@@ -70,19 +68,6 @@ class NodeTypeSchemata implements Schemata {
 
     protected static final boolean DEFAULT_CAN_CONTAIN_REFERENCES = true;
     protected static final boolean DEFAULT_FULL_TEXT_SEARCHABLE = true;
-    protected static final Map<String, Operator> OPERATORS_BY_JCR_NAME;
-
-    static {
-        Map<String, Operator> map = new HashMap<String, Operator>();
-        map.put(QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO, Operator.EQUAL_TO);
-        map.put(QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN, Operator.GREATER_THAN);
-        map.put(QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO, Operator.GREATER_THAN_OR_EQUAL_TO);
-        map.put(QueryObjectModelConstants.JCR_OPERATOR_LESS_THAN, Operator.LESS_THAN);
-        map.put(QueryObjectModelConstants.JCR_OPERATOR_LESS_THAN_OR_EQUAL_TO, Operator.LESS_THAN_OR_EQUAL_TO);
-        map.put(QueryObjectModelConstants.JCR_OPERATOR_LIKE, Operator.LIKE);
-        map.put(QueryObjectModelConstants.JCR_OPERATOR_NOT_EQUAL_TO, Operator.NOT_EQUAL_TO);
-        OPERATORS_BY_JCR_NAME = Collections.unmodifiableMap(map);
-    }
 
     private final Schemata schemata;
     private final Map<Integer, String> types;
@@ -291,8 +276,7 @@ class NodeTypeSchemata implements Schemata {
         if (ops == null || ops.length == 0) return EnumSet.allOf(Operator.class);
         Set<Operator> result = new HashSet<Operator>();
         for (String symbol : ops) {
-            Operator op = OPERATORS_BY_JCR_NAME.get(symbol);
-            if (op == null) op = Operator.forSymbol(symbol);
+            Operator op = JcrPropertyDefinition.operatorFromSymbol(symbol);
             assert op != null;
             result.add(op);
         }
