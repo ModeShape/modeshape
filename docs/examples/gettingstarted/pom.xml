@@ -12,6 +12,10 @@
     <module>sequencers</module>
     <module>repositories</module>
   </modules>
+	<properties>
+		<!-- Instruct the build to use only UTF-8 encoding for source code -->
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
 
   <dependencyManagement>
     <dependencies>

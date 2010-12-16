@@ -30,14 +30,6 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>
         </dependency>
-		<!-- 
-        Testing (note the scope)
-        -->
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
     <!-- 
     Testing (note the scope)
     -->

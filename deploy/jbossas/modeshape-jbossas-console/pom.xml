@@ -17,6 +17,8 @@
 		<jopr.jboss.as5.plugin.version>1.4.0.B01</jopr.jboss.as5.plugin.version>
 		<org.jboss.jopr.version>1.2.0.GA</org.jboss.jopr.version>
 		<apache.ant.version>1.7.0</apache.ant.version>
+		<!-- Instruct the build to use only UTF-8 encoding for source code -->
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 	</properties>
 
