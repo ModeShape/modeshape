@@ -43,7 +43,7 @@
 			<groupId>junit</groupId>
 			<artifactId>junit-dep</artifactId>
 			<version>4.4</version>
-			<scope>integration-test</scope>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<build>
