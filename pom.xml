@@ -535,7 +535,7 @@
 			<activation>
 				<property>
 					<name>database</name>
-					<value>h2</value>
+					<value>hsqldb</value>
 				</property>
 			</activation>
 			<dependencies>
@@ -551,6 +551,33 @@
 				<jpaSource.dialect>org.hibernate.dialect.HSQLDialect</jpaSource.dialect>
 				<jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
 				<jpaSource.url>jdbc:hsqldb:mem:modeshape</jpaSource.url>
+				<jpaSource.username>sa</jpaSource.username>
+				<jpaSource.password />
+			</properties>
+		</profile>
+
+		<!-- The HSQLDB test environment -->
+		<profile>
+			<id>hsqldb_disk</id>
+			<activation>
+				<property>
+					<name>database</name>
+					<value>hsqldb_disk</value>
+				</property>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>hsqldb</groupId>
+					<artifactId>hsqldb</artifactId>
+					<version>1.8.0.2</version>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+			<properties>
+				<database>hsqldb</database>
+				<jpaSource.dialect>org.hibernate.dialect.HSQLDialect</jpaSource.dialect>
+				<jpaSource.driverClassName>org.hsqldb.jdbcDriver</jpaSource.driverClassName>
+				<jpaSource.url>jdbc:hsqldb:file:target/hsqldb/modeshape</jpaSource.url>
 				<jpaSource.username>sa</jpaSource.username>
 				<jpaSource.password />
 			</properties>
@@ -585,18 +612,30 @@
 		</profile>
 
 		<!-- The PostgreSQL test environment, local to the developer -->
-		<!--
-			profile> <id>postgresql_local</id> <activation> <property>
-			<name>database</name> <value>postgresql_local</value> </property>
-			</activation> <dependencies> <dependency>
-			<groupId>postgresql</groupId> <artifactId>postgresql</artifactId>
-			<version>8.4-701.jdbc3</version> <scope>test</scope> </dependency>
-			</dependencies> <properties>
-			<jpaSource.dialect>org.hibernate.dialect.PostgreSQLDialect</jpaSource.dialect>
-			<jpaSource.driver>org.postgresql.Driver</jpaSource.driver>
-			<jpaSource.url>jdbc:postgresql://localhost/unit_test</jpaSource.url>
-			<jpaSource.username>postgres</jpaSource.username>
-			<jpaSource.password>data</jpaSource.password> </properties> </profile -->
+		<profile>
+			<id>postgresql_local</id>
+			<activation>
+				<property>
+					<name>database</name>
+					<value>postgresql_local</value>
+				</property>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>postgresql</groupId>
+					<artifactId>postgresql</artifactId>
+					<version>8.4-701.jdbc3</version>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+			<properties>
+				<jpaSource.dialect>org.hibernate.dialect.PostgreSQLDialect</jpaSource.dialect>
+				<jpaSource.driver>org.postgresql.Driver</jpaSource.driver>
+				<jpaSource.url>jdbc:postgresql://localhost/unit_test</jpaSource.url>
+				<jpaSource.username>postgres</jpaSource.username>
+				<jpaSource.password>data</jpaSource.password>
+			</properties>
+		</profile>
 
 		<!--
 			###################################################################

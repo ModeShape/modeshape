@@ -371,6 +371,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                 int type = definition.getRequiredType();
                 // Don't check constraints on reference properties
                 if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
+                if (type == PropertyType.WEAKREFERENCE && type == value.getType()) return definition;
                 if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
             }
 
@@ -382,6 +383,9 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                         // Don't check constraints on reference properties
                         int type = definition.getRequiredType();
                         if (type == PropertyType.REFERENCE && definition.canCastToType(value)) {
+                            return definition;
+                        }
+                        if (type == PropertyType.WEAKREFERENCE && definition.canCastToType(value)) {
                             return definition;
                         }
                         if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
@@ -403,6 +407,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                         int type = definition.getRequiredType();
                         // Don't check constraints on reference properties
                         if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
+                        if (type == PropertyType.WEAKREFERENCE && type == value.getType()) return definition;
                         if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
                     }
                     if (value != null) {
@@ -413,6 +418,9 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                             // Don't check constraints on reference properties
                             int type = definition.getRequiredType();
                             if (type == PropertyType.REFERENCE && definition.canCastToType(value)) {
+                                return definition;
+                            }
+                            if (type == PropertyType.WEAKREFERENCE && definition.canCastToType(value)) {
                                 return definition;
                             }
                             if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
@@ -445,6 +453,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                     int type = definition.getRequiredType();
                     // Don't check constraints on reference properties
                     if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
+                    if (type == PropertyType.WEAKREFERENCE && type == value.getType()) return definition;
                     if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
                 }
                 if (matchedOnName) {
@@ -456,6 +465,9 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                             // Don't check constraints on reference properties
                             int type = definition.getRequiredType();
                             if (type == PropertyType.REFERENCE && definition.canCastToType(value)) {
+                                return definition;
+                            }
+                            if (type == PropertyType.WEAKREFERENCE && definition.canCastToType(value)) {
                                 return definition;
                             }
                             if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
@@ -476,6 +488,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                             int type = definition.getRequiredType();
                             // Don't check constraints on reference properties
                             if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
+                            if (type == PropertyType.WEAKREFERENCE && type == value.getType()) return definition;
                             if ((type == PropertyType.UNDEFINED || type == value.getType())
                                 && definition.satisfiesConstraints(value)) return definition;
                         }
@@ -488,6 +501,9 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                                 // Don't check constraints on reference properties
                                 int type = definition.getRequiredType();
                                 if (type == PropertyType.REFERENCE && definition.canCastToType(value)) {
+                                    return definition;
+                                }
+                                if (type == PropertyType.WEAKREFERENCE && definition.canCastToType(value)) {
                                     return definition;
                                 }
                                 if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
@@ -518,6 +534,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                     int type = definition.getRequiredType();
                     // Don't check constraints on reference properties
                     if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
+                    if (type == PropertyType.WEAKREFERENCE && type == value.getType()) return definition;
                     if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
                 }
                 if (value != null) {
@@ -529,6 +546,9 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                         // Don't check constraints on reference properties
                         int type = definition.getRequiredType();
                         if (type == PropertyType.REFERENCE && definition.canCastToType(value)) {
+                            return definition;
+                        }
+                        if (type == PropertyType.WEAKREFERENCE && definition.canCastToType(value)) {
                             return definition;
                         }
                         if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
@@ -558,6 +578,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                         int type = definition.getRequiredType();
                         // Don't check constraints on reference properties
                         if (type == PropertyType.REFERENCE && type == value.getType()) return definition;
+                        if (type == PropertyType.WEAKREFERENCE && type == value.getType()) return definition;
                         if ((type == PropertyType.UNDEFINED || type == value.getType()) && definition.satisfiesConstraints(value)) return definition;
                     }
                     if (value != null) {
@@ -569,6 +590,9 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                             // Don't check constraints on reference properties
                             int type = definition.getRequiredType();
                             if (type == PropertyType.REFERENCE && definition.canCastToType(value)) {
+                                return definition;
+                            }
+                            if (type == PropertyType.WEAKREFERENCE && definition.canCastToType(value)) {
                                 return definition;
                             }
                             if (definition.canCastToTypeAndSatisfyConstraints(value)) return definition;
@@ -669,6 +693,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                 boolean typeMatches = values.length == 0 || type == PropertyType.UNDEFINED || type == propertyType;
                 // Don't check constraints on reference properties
                 if (typeMatches && type == PropertyType.REFERENCE) return definition;
+                if (typeMatches && type == PropertyType.WEAKREFERENCE) return definition;
                 if (typeMatches && definition.satisfiesConstraints(values)) return definition;
             }
 
@@ -684,6 +709,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                         assert definition.getRequiredType() != PropertyType.UNDEFINED;
                         // Don't check constraints on reference properties
                         if (definition.getRequiredType() == PropertyType.REFERENCE && definition.canCastToType(values)) return definition;
+                        if (definition.getRequiredType() == PropertyType.WEAKREFERENCE && definition.canCastToType(values)) return definition;
                         if (definition.canCastToTypeAndSatisfyConstraints(values)) return definition;
                     }
                 }
@@ -715,6 +741,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                     boolean typeMatches = values.length == 0 || type == PropertyType.UNDEFINED || type == propertyType;
                     // Don't check constraints on reference properties
                     if (typeMatches && type == PropertyType.REFERENCE) return definition;
+                    if (typeMatches && type == PropertyType.WEAKREFERENCE) return definition;
                     if (typeMatches && definition.satisfiesConstraints(values)) return definition;
                 }
                 if (matchedOnName) {
@@ -729,6 +756,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                             assert definition.getRequiredType() != PropertyType.UNDEFINED;
                             // Don't check constraints on reference properties
                             if (definition.getRequiredType() == PropertyType.REFERENCE && definition.canCastToType(values)) return definition;
+                            if (definition.getRequiredType() == PropertyType.WEAKREFERENCE && definition.canCastToType(values)) return definition;
                             if (definition.canCastToTypeAndSatisfyConstraints(values)) return definition;
                         }
                     }
@@ -2233,6 +2261,7 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
                 // Values of any type MAY fail when converting to these types
             case PropertyType.NAME:
             case PropertyType.REFERENCE:
+            case PropertyType.WEAKREFERENCE:
                 return false;
 
                 // Any type can be converted to these types

@@ -52,7 +52,9 @@ import javax.jcr.lock.LockManager;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.observation.ObservationManager;
+import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
+import javax.jcr.query.QueryResult;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionManager;
@@ -62,6 +64,7 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.SubgraphNode;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceException;
@@ -635,30 +638,76 @@ class JcrWorkspace implements Workspace {
 
             cache.findBestNodeDefinition(parentNode.nodeInfo(), newNodeName, primaryTypeName);
 
+            // ----------------------------------------------------------------------------------------
             // Now perform the clone, using the direct (non-session) method ...
-            cache.graphSession().immediateCopy(srcPath, srcWorkspace, destPath);
+            // ----------------------------------------------------------------------------------------
+            Location copy = cache.graphSession().immediateCopy(srcPath, srcWorkspace, destPath);
+            destPath = copy.getPath();
 
-            List<AbstractJcrNode> nodesToCheck = new LinkedList<AbstractJcrNode>();
-            nodesToCheck.add(cache.findJcrNode(Location.create(destPath)));
+            // ----------------------------------------------------------------------------------------
+            // We need to initialize the version history for all newly-created versionable nodes ...
+            // ----------------------------------------------------------------------------------------
+            if (repository.isQueryExecutionEnabled()) {
+                // Use the query system to find the (hopefully small) subset of the new nodes that are versionable ...
 
-            while (!nodesToCheck.isEmpty()) {
-                AbstractJcrNode node = nodesToCheck.remove(0);
+                // Step 1: Query the source branch to find all versionable nodes in the source brach ...
+                String queryStr = "SELECT [jcr:path],[jcr:uuid] FROM [mix:versionable] WHERE PATH() = '" + srcAbsPath
+                                  + "' OR PATH() LIKE '" + srcAbsPath + "/%'";
+                Query query = getQueryManager().createQuery(queryStr, JcrRepository.QueryLanguage.JCR_SQL2);
+                QueryResult result = query.execute();
 
-                if (node.isNodeType(JcrMixLexicon.VERSIONABLE)) {
-                    // Find the node that this was copied from
-                    Path nodeDestPath = node.path().relativeTo(destPath);
-                    Path nodeSourcePath = nodeDestPath.resolveAgainst(srcPath);
+                // Step 2: Load the new versionable nodes into the cache and initialize their version history ...
+                Batch batch = repository.createWorkspaceGraph(srcWorkspace, context).batch();
+                NodeIterator versionableIter = result.getNodes();
+                int initializedCount = 0;
+                while (versionableIter.hasNext()) {
+                    AbstractJcrNode versionable = (AbstractJcrNode)versionableIter.nextNode();
+                    // Map this source node's path into the destination path ...
+                    Path sourcePath = versionable.path();
+                    Path newNodePath = null;
+                    if (sourcePath.equals(srcPath)) {
+                        newNodePath = destPath;
+                    } else {
+                        Path relativePath = versionable.path().relativeTo(srcPath);
+                        newNodePath = relativePath.resolveAgainst(destPath);
+                    }
 
-                    AbstractJcrNode fromNode = cache.findJcrNode(Location.create(nodeSourcePath));
-                    if (!(fromNode instanceof JcrSharedNode)) {
-                        UUID originalVersion = fromNode.getBaseVersion().uuid();
-                        versionManager.initializeVersionHistoryFor(node, originalVersion);
+                    // We have to load the node in the cache ...
+                    AbstractJcrNode newVersionableNode = cache.findJcrNode(Location.create(newNodePath));
+                    if (newVersionableNode instanceof JcrSharedNode) continue;
+                    UUID originalVersion = versionable.getBaseVersion().uuid();
+                    versionManager.initializeVersionHistoryFor(batch, newVersionableNode.nodeInfo(), originalVersion, true);
+                    ++initializedCount;
+                }
+                batch.execute();
+            } else {
+                // Don't use the queries ...
+                List<AbstractJcrNode> nodesToCheck = new LinkedList<AbstractJcrNode>();
+                nodesToCheck.add(cache.findJcrNode(Location.create(destPath)));
+
+                // Create a batch that we'll use for initializing the version history of all newly-created versionable nodes ...
+                Batch batch = repository.createWorkspaceGraph(srcWorkspace, context).batch();
+                while (!nodesToCheck.isEmpty()) {
+                    AbstractJcrNode node = nodesToCheck.remove(0);
+
+                    if (node.isNodeType(JcrMixLexicon.VERSIONABLE)) {
+                        // Find the node that this was copied from
+                        Path nodeDestPath = node.path().relativeTo(destPath);
+                        Path nodeSourcePath = nodeDestPath.resolveAgainst(srcPath);
+
+                        AbstractJcrNode fromNode = cache.findJcrNode(Location.create(nodeSourcePath));
+                        if (!(fromNode instanceof JcrSharedNode)) {
+                            UUID originalVersion = fromNode.getBaseVersion().uuid();
+                            // versionManager.initializeVersionHistoryFor(node, originalVersion);
+                            versionManager.initializeVersionHistoryFor(batch, node.nodeInfo(), originalVersion, true);
+                        }
+                    }
+
+                    for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
+                        nodesToCheck.add((AbstractJcrNode)iter.nextNode());
                     }
                 }
-
-                for (NodeIterator iter = node.getNodes(); iter.hasNext();) {
-                    nodesToCheck.add((AbstractJcrNode)iter.nextNode());
-                }
+                batch.execute();
             }
 
         } catch (ItemNotFoundException e) {

@@ -76,6 +76,7 @@ import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.jcr.JcrObservationManager.JcrEventBundle;
 import org.modeshape.jcr.JcrRepository.Option;
+import org.modeshape.jcr.JcrRepository.VersionHistoryOption;
 
 /**
  * The {@link JcrObservationManager} test class.
@@ -1921,7 +1922,12 @@ public final class JcrObservationManagerTest extends TestSuite {
     @FixFor( "MODE-786" )
     @Test
     public void shouldReceiveEventsForChangesToVersionsInSystemContent() throws Exception {
-        TestListener listener = addListener(session, 15, ALL_EVENTS, "/jcr:system", true, null, null, false);
+        boolean hiearchical = engine.getRepository(REPOSITORY)
+                                    .getOptions()
+                                    .get(JcrRepository.Option.VERSION_HISTORY_STRUCTURE)
+                                    .equalsIgnoreCase(VersionHistoryOption.HIERARCHICAL);
+        int numEvents = hiearchical ? 23 : 15;
+        TestListener listener = addListener(session, numEvents, ALL_EVENTS, "/jcr:system", true, null, null, false);
 
         Node node = session.getRootNode().addNode("/test", "nt:unstructured");
         node.addMixin("mix:versionable");

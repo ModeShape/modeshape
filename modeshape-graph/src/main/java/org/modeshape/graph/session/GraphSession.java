@@ -624,15 +624,16 @@ public class GraphSession<Payload, PropertyPayload> {
      * @param sourceWorkspace the name of the workspace where the source node is to be found, or null if the current workspace
      *        should be used
      * @param destination the path where the copy is to be placed; may not be null
+     * @return the location of the copy
      * @throws IllegalArgumentException either path is null or invalid
      * @throws PathNotFoundException if the node being copied or the parent of the destination path do not exist
      * @throws InvalidWorkspaceException if the source workspace name is invalid or does not exist
      * @throws AccessControlException if the caller does not have the permission to perform the operation
      * @throws RepositorySourceException if any error resulting while performing the operation
      */
-    public void immediateCopy( Path source,
-                               String sourceWorkspace,
-                               Path destination )
+    public Location immediateCopy( Path source,
+                                   String sourceWorkspace,
+                                   Path destination )
         throws InvalidWorkspaceException, AccessControlException, PathNotFoundException, RepositorySourceException {
         CheckArg.isNotNull(source, "source");
         CheckArg.isNotNull(destination, "destination");
@@ -656,6 +657,7 @@ public class GraphSession<Payload, PropertyPayload> {
             // Update the children to make them match the latest snapshot from the store ...
             parent.synchronizeWithNewlyPersistedNode(locationOfCopy);
         }
+        return locationOfCopy;
     }
 
     /**
