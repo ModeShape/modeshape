@@ -56,8 +56,11 @@
 [mode:locks] > nt:base
 + * (mode:lock) = mode:lock protected ignore
 
-[mode:versionStorage] > nt:base
+[mode:versionHistoryFolder] > nt:base
 + * (nt:versionHistory) = nt:versionHistory protected ignore
++ * (mode:versionHistoryFolder) protected ignore
+
+[mode:versionStorage] > mode:versionHistoryFolder
 
 [mode:system] > nt:base
 + mode:namespaces (mode:namespaces) = mode:namespaces autocreated mandatory protected abort

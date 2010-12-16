@@ -305,7 +305,27 @@ public class JcrRepository implements Repository {
          * Assumes that you have write access to the JNDI tree. If no value set, then the {@link Repository} will not be bound to
          * JNDI.
          */
-        REPOSITORY_JNDI_LOCATION;
+        REPOSITORY_JNDI_LOCATION,
+
+        /**
+         * The structure of the version history. There are two values allowed:
+         * <ul>
+         * <li>"<strong>flat</strong>" will store all "<code>nt:versionHistory</code>" nodes with a name matching the UUID of the
+         * versioned node and directly under the <code>/jcr:system/jcr:versionStorage</code> node. For example, given a "
+         * <code>mix:versionable</code>" node with the UUID <code>fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>, the corresponding "
+         * <code>nt:versionHistory</code>" node will be at
+         * <code>/jcr:system/jcr:versionStorage/fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>.</li>
+         * <li>"<strong>hierarchical</strong>" will store all "<code>nt:versionHistory</code>" nodes under a hiearchical structure
+         * created by the first 8 characters of the UUID string. For example, given a "<code>mix:versionable</code>" node with the
+         * UUID <code>fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>, the corresponding "<code>nt:versionHistory</code>" node will be
+         * at <code>/jcr:system/jcr:versionStorage/fa/e2/b9/29/c5ef-4ce5-9fa1-514779ca0ae3</code>.</li>
+         * </ul>
+         * <p>
+         * The "flat" structure is used by default and in cases where the option's value does not case-independently match the
+         * {@link VersionHistoryOption#FLAT} or {@link VersionHistoryOption#HIERARCHICAL} values.
+         * </p>
+         */
+        VERSION_HISTORY_STRUCTURE;
 
         /**
          * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
@@ -334,6 +354,29 @@ public class JcrRepository implements Repository {
                 }
             }
         }
+    }
+
+    /**
+     * The possible values for the {@link Option#VERSION_HISTORY_STRUCTURE} option.
+     */
+    public static class VersionHistoryOption {
+        /**
+         * The value that signals that all "<code>nt:versionHistory</code>" nodes with a name matching the UUID of the versioned
+         * node are stored directly under the <code>/jcr:system/jcr:versionStorage</code> node. For example, given a "
+         * <code>mix:versionable</code>" node with the UUID <code>fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>, the corresponding "
+         * <code>nt:versionHistory</code>" node will be at
+         * <code>/jcr:system/jcr:versionStorage/fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>.
+         */
+        public static final String FLAT = "flat";
+
+        /**
+         * The value that signals that all "<code>nt:versionHistory</code>" nodes be stored under a 4-tier hiearchical structure
+         * created by the first 8 characters of the UUID string broken into 2-character pairs. For example, given a "
+         * <code>mix:versionable</code>" node with the UUID <code>fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>, the corresponding "
+         * <code>nt:versionHistory</code>" node will be at
+         * <code>/jcr:system/jcr:versionStorage/fa/e2/b9/29/c5ef-4ce5-9fa1-514779ca0ae3</code>.
+         */
+        public static final String HIERARCHICAL = "hierarchical";
     }
 
     /**
@@ -400,6 +443,10 @@ public class JcrRepository implements Repository {
          */
         public static final String EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR = Boolean.TRUE.toString();
 
+        /**
+         * The default value for the {@link Option#VERSION_HISTORY_STRUCTURE} option is {@value} .
+         */
+        public static final String VERSION_HISTORY_STRUCTURE = VersionHistoryOption.HIERARCHICAL;
     }
 
     /**
@@ -459,6 +506,7 @@ public class JcrRepository implements Repository {
         defaults.put(Option.QUERY_INDEX_DIRECTORY, DefaultOption.QUERY_INDEX_DIRECTORY);
         defaults.put(Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS, DefaultOption.PERFORM_REFERENTIAL_INTEGRITY_CHECKS);
         defaults.put(Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR, DefaultOption.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR);
+        defaults.put(Option.VERSION_HISTORY_STRUCTURE, DefaultOption.VERSION_HISTORY_STRUCTURE);
         defaults.put(Option.REPOSITORY_JNDI_LOCATION, DefaultOption.REPOSITORY_JNDI_LOCATION);
         DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
     }
@@ -1088,6 +1136,10 @@ public class JcrRepository implements Repository {
      */
     Observable getRepositoryObservable() {
         return this.repositoryObservationManager;
+    }
+
+    protected boolean isQueryExecutionEnabled() {
+        return Boolean.valueOf(getOptions().get(Option.QUERY_EXECUTION_ENABLED));
     }
 
     /**

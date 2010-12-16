@@ -18,6 +18,13 @@
 	-->
 	<dependencies>
 		<dependency>
+			<groupId>com.oracle</groupId>
+			<artifactId>ojdbc14</artifactId>
+			<!-- use the 10g drivers which are surprisingly largely bug free -->
+			<version>10.0.2.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-common</artifactId>
 		</dependency>
@@ -314,6 +321,7 @@
         <includes>
           <include>tck/basic-jpa/configRepository.xml</include>
           <include>tck/simple-jpa/configRepository.xml</include>
+          <include>config/configRepository*.xml</include>
         </includes>
       </testResource>
     </testResources>

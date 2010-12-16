@@ -542,6 +542,7 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
             "Repo    NULL    mode:root    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    mode:share    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    mode:system    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
+            "Repo    NULL    mode:versionHistoryFolder    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    mode:versionStorage    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    nt:activity    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "Repo    NULL    nt:address    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",

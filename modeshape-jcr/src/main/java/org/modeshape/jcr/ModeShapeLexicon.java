@@ -47,6 +47,7 @@ public class ModeShapeLexicon extends org.modeshape.repository.ModeShapeLexicon 
     public static final Name REPOSITORIES = new BasicName(Namespace.URI, "repositories");
     public static final Name SYSTEM = new BasicName(Namespace.URI, "system");
     public static final Name VERSION_STORAGE = new BasicName(Namespace.URI, "versionStorage");
+    public static final Name VERSION_HISTORY_FOLDER = new BasicName(Namespace.URI, "versionHistoryFolder");
     public static final Name WORKSPACE = new BasicName(Namespace.URI, "workspace");
     /**
      * The name of the "mode:share" node type, used as the primary type on nodes that are proxies for the original node. The

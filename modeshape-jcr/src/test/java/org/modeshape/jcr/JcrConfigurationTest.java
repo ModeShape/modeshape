@@ -258,6 +258,7 @@ public class JcrConfigurationTest {
         options.put(Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY, DefaultOption.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY);
         options.put(Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS, DefaultOption.PERFORM_REFERENTIAL_INTEGRITY_CHECKS);
         options.put(Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR, DefaultOption.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR);
+        options.put(Option.VERSION_HISTORY_STRUCTURE, DefaultOption.VERSION_HISTORY_STRUCTURE);
         options.put(Option.REPOSITORY_JNDI_LOCATION, DefaultOption.REPOSITORY_JNDI_LOCATION);
         assertThat(repository.getOptions(), is(options));
     }

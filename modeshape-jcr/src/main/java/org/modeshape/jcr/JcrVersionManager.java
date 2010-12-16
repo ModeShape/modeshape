@@ -73,7 +73,9 @@ import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.DateTimeFactory;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactories;
@@ -81,6 +83,8 @@ import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.session.GraphSession.Node;
 import org.modeshape.graph.session.GraphSession.PropertyInfo;
+import org.modeshape.jcr.JcrRepository.Option;
+import org.modeshape.jcr.JcrRepository.VersionHistoryOption;
 import org.modeshape.jcr.SessionCache.JcrNodePayload;
 import org.modeshape.jcr.SessionCache.JcrPropertyPayload;
 import org.modeshape.jcr.SessionCache.NodeEditor;
@@ -110,10 +114,22 @@ final class JcrVersionManager implements VersionManager {
                                                                                                               JcrLexicon.UUID})));
 
     private final JcrSession session;
+    protected final Path versionStoragePath;
+    private final PathAlgorithm hiearchicalPathAlgorithm;
+    private final PathAlgorithm flatPathAlgorithm;
+    private final PathAlgorithm versionHistoryPathAlgorithm;
 
     public JcrVersionManager( JcrSession session ) {
         super();
         this.session = session;
+        versionStoragePath = absolutePath(JcrLexicon.SYSTEM, JcrLexicon.VERSION_STORAGE);
+        String storageFormat = session.repository().getOptions().get(Option.VERSION_HISTORY_STRUCTURE);
+        if (storageFormat != null) storageFormat = storageFormat.trim().toLowerCase();
+        ExecutionContext context = session.getExecutionContext();
+        boolean isHier = VersionHistoryOption.HIERARCHICAL.equals(storageFormat);
+        hiearchicalPathAlgorithm = new HiearchicalPathAlgorithm(versionStoragePath, context);
+        flatPathAlgorithm = new FlatPathAlgorithm(versionStoragePath, context);
+        versionHistoryPathAlgorithm = isHier ? hiearchicalPathAlgorithm : flatPathAlgorithm;
     }
 
     ExecutionContext context() {
@@ -175,6 +191,25 @@ final class JcrVersionManager implements VersionManager {
     }
 
     /**
+     * Return the path to the nt:versionHistory node for the node with the supplied UUID.
+     * <p>
+     * This method uses one of two algorithms.
+     * <ul>
+     * <li>The flat algorithm just returns the path <code>/jcr:system/jcr:versionStorage/&lt;UUID></code>. For example, given the
+     * UUID <code>fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>, the returned path would be
+     * <code>/jcr:system/jcr:versionStorage/fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>.</li>
+     * <li>The hierarchical algorithm breaks the UUID string into 5 parts (where the first 4 parts each consist of two characters
+     * in the string representation) and returns the path
+     * <code>/jcr:system/jcr:versionStorage/&lt;part1>/&lt;part2>/&lt;part3>/&lt;part4>/&lt;part5></code>, where
+     * <code>part1</code> consists of the 1st and 2nd characters of the UUID string, <code>part2</code> consists of the 3rd and
+     * 4th characters of the UUID string, <code>part3</code> consists of the 5th and 6th characters of the UUID string,
+     * <code>part4</code> consists of the 7th and 8th characters of the UUID string, and <code>part5</code> consists of the 10th
+     * and remaining characters. (Note the 9th character is a '-' and is not used.) For example, given the UUID
+     * <code>fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>, the returned path would be
+     * <code>/jcr:system/jcr:versionStorage/fa/e2/b9/29/c5ef-4ce5-9fa1-514779ca0ae3</code>.</li>
+     * </ul>
+     * </p>
+     * 
      * @param uuid the value of the {@code jcr:uuid} property (as a UUID) for the node for which the version history should be
      *        returned
      * @return the path to the version history node that corresponds to the node with the given UUID. This does not guarantee that
@@ -183,7 +218,20 @@ final class JcrVersionManager implements VersionManager {
      *         node at the path returned by this method.
      */
     Path versionHistoryPathFor( UUID uuid ) {
-        return absolutePath(JcrLexicon.SYSTEM, JcrLexicon.VERSION_STORAGE, name(uuid.toString()));
+        return versionHistoryPathAlgorithm.versionHistoryPathFor(uuid);
+    }
+
+    Path[] versionHistoryPathsTo( Path historyPath ) {
+        int numIntermediatePaths = historyPath.size() - versionStoragePath.size() - 1;
+        if (numIntermediatePaths <= 0) return null;
+
+        Path[] paths = new Path[numIntermediatePaths];
+        Path path = historyPath.getParent();
+        for (int i = numIntermediatePaths - 1; i >= 0; --i) {
+            paths[i] = path;
+            path = path.getParent();
+        }
+        return paths;
     }
 
     /**
@@ -203,6 +251,15 @@ final class JcrVersionManager implements VersionManager {
         try {
             return (JcrVersionHistoryNode)cache().findJcrNode(historyLocation);
         } catch (ItemNotFoundException infe) {
+            if (versionHistoryPathAlgorithm != flatPathAlgorithm) {
+                // Next try the flat structure, in case the version history was already created and the structure was changed ...
+                try {
+                    Location flatHistoryLocation = Location.create(versionHistoryPathFor(node.uuid()));
+                    return (JcrVersionHistoryNode)cache().findJcrNode(flatHistoryLocation);
+                } catch (ItemNotFoundException nested) {
+                    // Ignore and continue ...
+                }
+            }
             initializeVersionHistoryFor(node);
 
             // This will throw an ItemNotFoundException if the history node still doesn't exist
@@ -818,10 +875,6 @@ final class JcrVersionManager implements VersionManager {
 
         initializeVersionStorageFor(node, historyUuid, originalVersionUuid, versionUuid);
 
-        PropertyInfo<JcrPropertyPayload> jcrUuidProp = node.getProperty(JcrLexicon.UUID);
-        UUID jcrUuid = uuid(jcrUuidProp.getProperty().getFirstValue());
-        Path historyPath = versionHistoryPathFor(jcrUuid);
-
         ValueFactory<Reference> refFactory = context().getValueFactories().getReferenceFactory();
         org.modeshape.graph.property.Property isCheckedOut = propertyFactory().create(JcrLexicon.IS_CHECKED_OUT, true);
         org.modeshape.graph.property.Property versionHistory = propertyFactory().create(JcrLexicon.VERSION_HISTORY,
@@ -834,10 +887,9 @@ final class JcrVersionManager implements VersionManager {
         // This batch will get executed as part of the save
         batch.set(isCheckedOut, versionHistory, baseVersion, predecessors).on(node.getPath()).and();
 
-        Path storagePath = historyPath.getParent();
-        Node<JcrNodePayload, JcrPropertyPayload> storageNode = cache().findNode(null, storagePath);
-
-        cache().refresh(storageNode.getNodeId(), storagePath, false);
+        // Refresh the version storage node ...
+        Node<JcrNodePayload, JcrPropertyPayload> storageNode = cache().findNode(null, versionStoragePath);
+        cache().refresh(storageNode.getNodeId(), versionStoragePath, false);
     }
 
     void initializeVersionStorageFor( Node<JcrNodePayload, JcrPropertyPayload> node,
@@ -847,7 +899,6 @@ final class JcrVersionManager implements VersionManager {
         JcrNodePayload payload = node.getPayload();
 
         Graph systemGraph = session().repository().createSystemGraph(context());
-        Batch systemBatch = systemGraph.batch();
 
         Name primaryTypeName = payload.getPrimaryTypeName();
         List<Name> mixinTypeNames = payload.getMixinTypeNames();
@@ -856,6 +907,19 @@ final class JcrVersionManager implements VersionManager {
 
         UUID jcrUuid = uuid(jcrUuidProp.getProperty().getFirstValue());
         Path historyPath = versionHistoryPathFor(jcrUuid);
+        Batch systemBatch = systemGraph.batch();
+
+        // Determine if there are any intermediate paths to where this history node is to be ...
+        Path[] intermediatePaths = versionHistoryPathsTo(historyPath);
+        if (intermediatePaths != null) {
+            // Create any intermediate nodes, if absent ...
+            for (Path intermediatePath : intermediatePaths) {
+                systemBatch.create(intermediatePath)
+                           .with(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.VERSION_HISTORY_FOLDER)
+                           .ifAbsent()
+                           .and();
+            }
+        }
 
         systemBatch.create(historyPath)
                    .with(JcrLexicon.PRIMARY_TYPE, JcrNtLexicon.VERSION_HISTORY)
@@ -890,7 +954,6 @@ final class JcrVersionManager implements VersionManager {
                    .and();
 
         systemBatch.execute();
-
     }
 
     @NotThreadSafe
@@ -1807,6 +1870,53 @@ final class JcrVersionManager implements VersionManager {
     public javax.jcr.Node createConfiguration( String absPath )
         throws UnsupportedRepositoryOperationException, RepositoryException {
         throw new UnsupportedRepositoryOperationException();
+    }
+
+    protected static interface PathAlgorithm {
+        Path versionHistoryPathFor( UUID uuid );
+    }
+
+    protected static abstract class BasePathAlgorithm implements PathAlgorithm {
+        protected final PathFactory paths;
+        protected final NameFactory names;
+        protected final Path versionStoragePath;
+
+        protected BasePathAlgorithm( Path versionStoragePath,
+                                     ExecutionContext context ) {
+            this.paths = context.getValueFactories().getPathFactory();
+            this.names = context.getValueFactories().getNameFactory();
+            this.versionStoragePath = versionStoragePath;
+        }
+    }
+
+    protected static class HiearchicalPathAlgorithm extends BasePathAlgorithm {
+        protected HiearchicalPathAlgorithm( Path versionStoragePath,
+                                            ExecutionContext context ) {
+            super(versionStoragePath, context);
+        }
+
+        @Override
+        public Path versionHistoryPathFor( UUID uuid ) {
+            String uuidStr = uuid.toString();
+            Name p1 = names.create(uuidStr.substring(0, 2));
+            Name p2 = names.create(uuidStr.substring(2, 4));
+            Name p3 = names.create(uuidStr.substring(4, 6));
+            Name p4 = names.create(uuidStr.substring(6, 8));
+            Name p5 = names.create(uuidStr.substring(9));
+            return paths.createAbsolutePath(JcrLexicon.SYSTEM, JcrLexicon.VERSION_STORAGE, p1, p2, p3, p4, p5);
+        }
+    }
+
+    protected static class FlatPathAlgorithm extends BasePathAlgorithm {
+        protected FlatPathAlgorithm( Path versionStoragePath,
+                                     ExecutionContext context ) {
+            super(versionStoragePath, context);
+        }
+
+        @Override
+        public Path versionHistoryPathFor( UUID uuid ) {
+            return paths.createAbsolutePath(JcrLexicon.SYSTEM, JcrLexicon.VERSION_STORAGE, names.create(uuid.toString()));
+        }
     }
 
 }
