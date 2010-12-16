@@ -1744,7 +1744,6 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
         String[] valueConstraints = propDefn.getValueConstraints();
         String[] queryOperators = propDefn.getAvailableQueryOperators();
         if (valueConstraints == null) valueConstraints = new String[0];
-        if (queryOperators == null) queryOperators = new String[0];
         return new JcrPropertyDefinition(this.context, null, propertyName, onParentVersionBehavior, autoCreated, mandatory,
                                          isProtected, defaultValues, requiredType, valueConstraints, multiple,
                                          fullTextSearchable, queryOrderable, queryOperators);

@@ -26,6 +26,7 @@ package org.modeshape.graph.query.validate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -38,6 +39,7 @@ import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.query.QueryContext;
+import org.modeshape.graph.query.model.Operator;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.SelectorName;
 import org.modeshape.graph.query.model.TypeSystem;
@@ -78,6 +80,8 @@ public class ImmutableSchemata implements Schemata {
         private final Map<String, MutableTable> tables = new HashMap<String, MutableTable>();
         private final Map<SelectorName, QueryCommand> viewDefinitions = new HashMap<SelectorName, QueryCommand>();
         private final Set<SelectorName> tablesOrViewsWithExtraColumns = new HashSet<SelectorName>();
+        private final Map<String, Map<String, Boolean>> orderableColumnsByTableName = new HashMap<String, Map<String, Boolean>>();
+        private final Map<String, Map<String, Set<Operator>>> operatorsForColumnsByTableName = new HashMap<String, Map<String, Set<Operator>>>();
 
         protected Builder( TypeSystem typeSystem ) {
             this.typeSystem = typeSystem;
@@ -192,7 +196,12 @@ public class ImmutableSchemata implements Schemata {
             CheckArg.isNotEmpty(tableName, "tableName");
             CheckArg.isNotEmpty(columnName, "columnName");
             CheckArg.isNotNull(type, "type");
-            return addColumn(tableName, columnName, type, ImmutableColumn.DEFAULT_FULL_TEXT_SEARCHABLE);
+            return addColumn(tableName,
+                             columnName,
+                             type,
+                             ImmutableColumn.DEFAULT_FULL_TEXT_SEARCHABLE,
+                             ImmutableColumn.DEFAULT_ORDERABLE,
+                             ImmutableColumn.ALL_OPERATORS);
         }
 
         /**
@@ -203,6 +212,9 @@ public class ImmutableSchemata implements Schemata {
          * @param columnName the names of the column
          * @param type the type for the column
          * @param fullTextSearchable true if the column should be full-text searchable, or false if not
+         * @param orderable true if the column can be used in order clauses, or false if not
+         * @param operations the set operations that can be applied to this column within comparisons; may be empty or null if all
+         *        operations apply
          * @return this builder, for convenience in method chaining; never null
          * @throws IllegalArgumentException if the table name is null or empty, the column name is null or empty, or if the
          *         property type is null
@@ -210,12 +222,14 @@ public class ImmutableSchemata implements Schemata {
         public Builder addColumn( String tableName,
                                   String columnName,
                                   String type,
-                                  boolean fullTextSearchable ) {
+                                  boolean fullTextSearchable,
+                                  boolean orderable,
+                                  Set<Operator> operations ) {
             CheckArg.isNotEmpty(tableName, "tableName");
             CheckArg.isNotEmpty(columnName, "columnName");
             CheckArg.isNotNull(type, "type");
             MutableTable existing = tables.get(tableName);
-            Column column = new ImmutableColumn(columnName, type, fullTextSearchable);
+            Column column = new ImmutableColumn(columnName, type, fullTextSearchable, orderable, operations);
             if (existing == null) {
                 List<Column> columns = new ArrayList<Column>();
                 columns.add(column);
@@ -242,17 +256,96 @@ public class ImmutableSchemata implements Schemata {
             MutableTable existing = tables.get(tableName);
             if (existing == null) {
                 List<Column> columns = new ArrayList<Column>();
-                columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType(), true));
+                columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType(), true, ImmutableColumn.DEFAULT_ORDERABLE,
+                                                ImmutableColumn.ALL_OPERATORS));
                 existing = new MutableTable(tableName, columns, false);
                 tables.put(tableName, existing);
             } else {
                 Column column = existing.getColumn(columnName);
                 if (column != null && !column.isFullTextSearchable()) {
-                    column = new ImmutableColumn(columnName, column.getPropertyType(), true);
+                    boolean orderable = column.isOrderable();
+                    Set<Operator> operators = column.getOperators();
+                    column = new ImmutableColumn(columnName, column.getPropertyType(), true, orderable, operators);
                 }
                 existing.addColumn(column);
             }
             return this;
+        }
+
+        /**
+         * Record whether the column on the named table should be orderable.
+         * 
+         * @param tableName the name of the new table
+         * @param columnName the names of the column
+         * @param orderable true if the column should be orderable, or false otherwise
+         * @return this builder, for convenience in method chaining; never null
+         */
+        public Builder markOrderable( String tableName,
+                                      String columnName,
+                                      boolean orderable ) {
+            CheckArg.isNotEmpty(tableName, "tableName");
+            Map<String, Boolean> byColumnNames = orderableColumnsByTableName.get(tableName);
+            if (byColumnNames == null) {
+                byColumnNames = new HashMap<String, Boolean>();
+                orderableColumnsByTableName.put(tableName, byColumnNames);
+            }
+            byColumnNames.put(columnName, orderable);
+            return this;
+        }
+
+        protected boolean orderable( SelectorName tableName,
+                                     String columnName,
+                                     boolean defaultValue ) {
+            Map<String, Boolean> byColumnNames = orderableColumnsByTableName.get(tableName.getString());
+            if (byColumnNames != null) {
+                Boolean value = byColumnNames.get(columnName);
+                if (value != null) return value.booleanValue();
+            }
+            return defaultValue;
+        }
+
+        /**
+         * Record the operators that are allowed for the named column on the named table.
+         * 
+         * @param tableName the name of the new table
+         * @param columnName the names of the column
+         * @param operators the set of operators, or null or empty if the default operators should be used
+         * @return this builder, for convenience in method chaining; never null
+         */
+        public Builder markOperators( String tableName,
+                                      String columnName,
+                                      Set<Operator> operators ) {
+            CheckArg.isNotEmpty(tableName, "tableName");
+            boolean useDefaults = operators == null || operators.isEmpty();
+            Map<String, Set<Operator>> byColumnNames = operatorsForColumnsByTableName.get(tableName);
+            if (byColumnNames == null) {
+                if (useDefaults) return this;
+                byColumnNames = new HashMap<String, Set<Operator>>();
+                operatorsForColumnsByTableName.put(tableName, byColumnNames);
+            }
+            if (useDefaults) {
+                byColumnNames.remove(columnName);
+                if (byColumnNames.isEmpty()) {
+                    // Nothing more for any of the columns, so remove the table from the map ...
+                    operatorsForColumnsByTableName.remove(tableName);
+                }
+            } else {
+                Set<Operator> opSet = EnumSet.copyOf(operators);
+                byColumnNames.put(columnName, opSet);
+            }
+            return this;
+        }
+
+        protected Set<Operator> operators( SelectorName tableName,
+                                           String columnName,
+                                           Set<Operator> defaultOperators ) {
+            Map<String, Set<Operator>> byColumnNames = operatorsForColumnsByTableName.get(tableName.getString());
+            if (byColumnNames != null) {
+                Set<Operator> ops = byColumnNames.get(columnName);
+                if (ops != null) return ops;
+            }
+            return defaultOperators;
+
         }
 
         /**
@@ -283,7 +376,8 @@ public class ImmutableSchemata implements Schemata {
             MutableTable existing = tables.get(tableName);
             if (existing == null) {
                 List<Column> columns = new ArrayList<Column>();
-                columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType(), true));
+                columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType(), true, ImmutableColumn.DEFAULT_ORDERABLE,
+                                                ImmutableColumn.ALL_OPERATORS));
                 existing = new MutableTable(tableName, columns, false);
                 tables.put(tableName, existing);
             }
@@ -393,8 +487,10 @@ public class ImmutableSchemata implements Schemata {
                                                             "The view references a non-existant column '" + column.columnName()
                                                             + "' in '" + source.getName() + "'");
                         }
+                        Set<Operator> operators = operators(name, viewColumnName, sourceColumn.getOperators());
+                        boolean orderable = orderable(name, viewColumnName, sourceColumn.isOrderable());
                         Column newColumn = new ImmutableColumn(viewColumnName, sourceColumn.getPropertyType(),
-                                                               sourceColumn.isFullTextSearchable());
+                                                               sourceColumn.isFullTextSearchable(), orderable, operators);
                         viewColumns.add(newColumn);
                         if (source.getSelectAllColumnsByName().containsKey(sourceColumnName)) {
                             viewColumnsInSelectStar.add(newColumn);

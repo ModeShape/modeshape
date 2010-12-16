@@ -23,31 +23,62 @@
  */
 package org.modeshape.graph.query.validate;
 
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Set;
 import net.jcip.annotations.Immutable;
+import org.modeshape.common.collection.Collections;
+import org.modeshape.graph.query.model.Operator;
 import org.modeshape.graph.query.validate.Schemata.Column;
 
 @Immutable
 class ImmutableColumn implements Column {
 
+    public static final Set<Operator> ALL_OPERATORS = Collections.unmodifiableSet(EnumSet.allOf(Operator.class));
+    public static final Set<Operator> NO_OPERATORS = Collections.unmodifiableSet(EnumSet.noneOf(Operator.class));
+
     public static final boolean DEFAULT_FULL_TEXT_SEARCHABLE = false;
+    public static final boolean DEFAULT_ORDERABLE = true;
 
     private final boolean fullTextSearchable;
+    private final boolean orderable;
     private final String name;
     private final String type;
+    private final Set<Operator> operators;
 
     protected ImmutableColumn( String name,
                                String type ) {
-        this(name, type, DEFAULT_FULL_TEXT_SEARCHABLE);
+        this(name, type, DEFAULT_FULL_TEXT_SEARCHABLE, DEFAULT_ORDERABLE, ALL_OPERATORS);
     }
 
     protected ImmutableColumn( String name,
                                String type,
                                boolean fullTextSearchable ) {
+        this(name, type, fullTextSearchable, DEFAULT_ORDERABLE, ALL_OPERATORS);
+    }
+
+    protected ImmutableColumn( String name,
+                               String type,
+                               boolean fullTextSearchable,
+                               boolean orderable,
+                               Operator... operators ) {
+        this(name, type, fullTextSearchable, orderable,
+             operators != null && operators.length != 0 ? EnumSet.copyOf(Arrays.asList(operators)) : null);
+    }
+
+    protected ImmutableColumn( String name,
+                               String type,
+                               boolean fullTextSearchable,
+                               boolean orderable,
+                               Set<Operator> operators ) {
         this.name = name;
         this.type = type;
         this.fullTextSearchable = fullTextSearchable;
+        this.orderable = orderable;
+        this.operators = operators == null || operators.isEmpty() ? ALL_OPERATORS : Collections.unmodifiableSet(EnumSet.copyOf(operators));
         assert this.name != null;
         assert this.type != null;
+        assert this.operators != null;
     }
 
     /**
@@ -75,6 +106,24 @@ class ImmutableColumn implements Column {
      */
     public boolean isFullTextSearchable() {
         return fullTextSearchable;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.validate.Schemata.Column#isOrderable()
+     */
+    public boolean isOrderable() {
+        return orderable;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.query.validate.Schemata.Column#getOperators()
+     */
+    public Set<Operator> getOperators() {
+        return operators;
     }
 
     /**

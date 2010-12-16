@@ -45,6 +45,7 @@ import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.graph.property.basic.JodaDateTime;
+import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
 
 /**
  * ModeShape implementation of the {@link PropertyDefinition} interface. This implementation is immutable and has all fields
@@ -86,7 +87,11 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         this.multiple = multiple;
         this.fullTextSearchable = fullTextSearchable;
         this.queryOrderable = queryOrderable;
-        this.queryOperators = queryOperators;
+        this.queryOperators = queryOperators != null ? queryOperators : new String[] {
+            QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO, QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN,
+            QueryObjectModelConstants.JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO, QueryObjectModelConstants.JCR_OPERATOR_LESS_THAN,
+            QueryObjectModelConstants.JCR_OPERATOR_LESS_THAN_OR_EQUAL_TO, QueryObjectModelConstants.JCR_OPERATOR_LIKE,
+            QueryObjectModelConstants.JCR_OPERATOR_NOT_EQUAL_TO};
         this.isPrivate = name != null && ModeShapeIntLexicon.Namespace.URI.equals(name.getNamespaceUri());
         assert this.valueConstraints != null;
     }
@@ -149,15 +154,37 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         return isPrivate;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.nodetype.PropertyDefinition#isFullTextSearchable()
+     */
     public boolean isFullTextSearchable() {
         return fullTextSearchable;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see javax.jcr.nodetype.PropertyDefinition#isQueryOrderable()
+     */
     public boolean isQueryOrderable() {
         return queryOrderable;
     }
 
+    /**
+     * Same as {@link #getAvailableQueryOperators()}.
+     * 
+     * @return the query operators
+     * @deprecated Use the standard JCR {@link #getAvailableQueryOperators()} method instead
+     */
+    @Deprecated
     public String[] getQueryOperators() {
+        return queryOperators;
+    }
+
+    @Override
+    public String[] getAvailableQueryOperators() {
         return queryOperators;
     }
 
@@ -173,7 +200,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         return new JcrPropertyDefinition(this.context, declaringNodeType, this.name, this.getOnParentVersion(),
                                          this.isAutoCreated(), this.isMandatory(), this.isProtected(), this.getDefaultValues(),
                                          this.getRequiredType(), this.getValueConstraints(), this.isMultiple(),
-                                         this.isFullTextSearchable(), this.isQueryOrderable(), this.getQueryOperators());
+                                         this.isFullTextSearchable(), this.isQueryOrderable(), this.getAvailableQueryOperators());
     }
 
     /**
@@ -188,7 +215,7 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
         return new JcrPropertyDefinition(context, this.declaringNodeType, this.name, this.getOnParentVersion(),
                                          this.isAutoCreated(), this.isMandatory(), this.isProtected(), this.getDefaultValues(),
                                          this.getRequiredType(), this.getValueConstraints(), this.isMultiple(),
-                                         this.isFullTextSearchable(), this.isQueryOrderable(), this.getQueryOperators());
+                                         this.isFullTextSearchable(), this.isQueryOrderable(), this.getAvailableQueryOperators());
     }
 
     /**
@@ -921,12 +948,6 @@ class JcrPropertyDefinition extends JcrItemDefinition implements PropertyDefinit
 
             return false;
         }
-    }
-
-    @Override
-    public String[] getAvailableQueryOperators() {
-        // TODO Auto-generated method stub
-        return null;
     }
 
 }

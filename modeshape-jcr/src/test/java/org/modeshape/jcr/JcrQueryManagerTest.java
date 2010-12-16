@@ -429,6 +429,34 @@ public class JcrQueryManagerTest {
         assertRow(result, 10).has("car:model", "DB9").and("car:msrp", "$171,600").and("car:mpgCity", 12);
     }
 
+    @FixFor( "MODE-1057" )
+    @Test
+    public void shouldAllowEqualityCriteriaOnPropertyDefinedWithNumericPropertyDefinition() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT [car:maker], [car:model], [car:year], [car:userRating] FROM [car:Car] AS car WHERE [car:userRating] = 4",
+                                          Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 4L);
+        assertResultsHaveColumns(result, "car:maker", "car:model", "car:year", "car:userRating");
+    }
+
+    @FixFor( "MODE-1057" )
+    @Test
+    public void shouldAllowLikeCriteriaOnPropertyDefinedWithNumericPropertyDefinition() throws RepositoryException {
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT [car:maker], [car:model], [car:year], [car:userRating] FROM [car:Car] AS car WHERE [car:userRating] LIKE 4",
+                                          Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 4L);
+        assertResultsHaveColumns(result, "car:maker", "car:model", "car:year", "car:userRating");
+    }
+
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarsUnderHybrid() throws RepositoryException {
         Query query = session.getWorkspace()

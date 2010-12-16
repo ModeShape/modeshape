@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.jcip.annotations.Immutable;
+import org.modeshape.graph.query.model.Operator;
+import org.modeshape.graph.query.model.Ordering;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.SelectorName;
 
@@ -189,6 +191,20 @@ public interface Schemata {
          * @return true if the column is full-text searchable, or false otherwise
          */
         boolean isFullTextSearchable();
+
+        /**
+         * Get the set of operators that can be used in a comparison involving this column.
+         * 
+         * @return the operators; never null but possibly empty
+         */
+        Set<Operator> getOperators();
+
+        /**
+         * Get whether this column can be used within an {@link Ordering ORDER BY clause}.
+         * 
+         * @return true if this column can be used in an order specification, or false otherwise
+         */
+        boolean isOrderable();
     }
 
     /**
