@@ -49,6 +49,7 @@ import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
+import javax.jcr.query.qom.QueryObjectModelConstants;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -357,7 +358,7 @@ public class ClusteringTest {
 
         PropertyDefinitionTemplate prop = typeManager1.createPropertyDefinitionTemplate();
         prop.setName("prop");
-        prop.setAvailableQueryOperators(new String[] {"="});
+        prop.setAvailableQueryOperators(new String[] {QueryObjectModelConstants.JCR_OPERATOR_EQUAL_TO});
         prop.setMultiple(true);
         prop.setRequiredType(PropertyType.STRING);
         nodeType.getPropertyDefinitionTemplates().add(prop);
