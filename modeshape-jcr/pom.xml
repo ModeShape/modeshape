@@ -111,11 +111,6 @@
       <artifactId>jackrabbit-jcr-tests</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.google.collections</groupId>
-      <artifactId>google-collections</artifactId>
-      <version>1.0-rc3</version>
-    </dependency>
-    <dependency>
       <groupId>org.jboss.security</groupId>
       <artifactId>jboss-idtrust</artifactId>
       <version>2.0.2.CR1</version>
