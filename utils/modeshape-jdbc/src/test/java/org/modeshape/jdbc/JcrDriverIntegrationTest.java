@@ -373,31 +373,32 @@ public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
     public void shouldBeAbleToExecuteSqlQueryToFindAllUnstructuredNodes() throws SQLException {
         String[] expected = {
             "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
-            "nt:unstructured    /Other    Other    0.6445352435112    Other    1",
-            "nt:unstructured    /Other/NodeA[3]    NodeA    0.6445352435112    NodeA    2",
-            "nt:unstructured    /NodeB    NodeB    0.6445352435112    NodeB    1",
-            "nt:unstructured    /Other/NodeA    NodeA    0.6445352435112    NodeA    2",
-            "nt:unstructured    /Other/NodeA[2]    NodeA    0.6445352435112    NodeA    2",
+            "car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    0.5265605449676514    Nissan Altima    3",
+            "car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    0.5265605449676514    Toyota Highlander    3",
+            "car:Car    /Cars/Hybrid/Toyota Prius    Toyota Prius    0.5265605449676514    Toyota Prius    3",
+            "car:Car    /Cars/Luxury/Bentley Continental    Bentley Continental    0.5265605449676514    Bentley Continental    3",
+            "car:Car    /Cars/Luxury/Cadillac DTS    Cadillac DTS    0.5265605449676514    Cadillac DTS    3",
+            "car:Car    /Cars/Luxury/Lexus IS350    Lexus IS350    0.5265605449676514    Lexus IS350    3",
+            "car:Car    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    0.5265605449676514    Aston Martin DB9    3",
+            "car:Car    /Cars/Sports/Infiniti G37    Infiniti G37    0.5265605449676514    Infiniti G37    3",
+            "car:Car    /Cars/Utility/Ford F-150    Ford F-150    0.5265605449676514    Ford F-150    3",
+            "car:Car    /Cars/Utility/Hummer H3    Hummer H3    0.5265605449676514    Hummer H3    3",
+            "car:Car    /Cars/Utility/Land Rover LR2    Land Rover LR2    0.5265605449676514    Land Rover LR2    3",
+            "car:Car    /Cars/Utility/Land Rover LR3    Land Rover LR3    0.5265605449676514    Land Rover LR3    3",
+            "nt:unstructured    /Cars    Cars    0.6445352435112    Cars    1",
+            "nt:unstructured    /Cars/Hybrid    Hybrid    0.6445352435112    Hybrid    2",
             "nt:unstructured    /Cars/Luxury    Luxury    0.6445352435112    Luxury    2",
             "nt:unstructured    /Cars/Sports    Sports    0.6445352435112    Sports    2",
-            "nt:unstructured    /Cars/Hybrid    Hybrid    0.6445352435112    Hybrid    2",
-            "nt:unstructured    /Cars    Cars    0.6445352435112    Cars    1",
             "nt:unstructured    /Cars/Utility    Utility    0.6445352435112    Utility    2",
-            "car:Car    /Cars/Luxury/Lexus IS350    Lexus IS350    0.5265605449676514    Lexus IS350    3",
-            "car:Car    /Cars/Hybrid/Toyota Highlander    Toyota Highlander    0.5265605449676514    Toyota Highlander    3",
-            "car:Car    /Cars/Utility/Land Rover LR3    Land Rover LR3    0.5265605449676514    Land Rover LR3    3",
-            "car:Car    /Cars/Luxury/Bentley Continental    Bentley Continental    0.5265605449676514    Bentley Continental    3",
-            "car:Car    /Cars/Sports/Aston Martin DB9    Aston Martin DB9    0.5265605449676514    Aston Martin DB9    3",
-            "car:Car    /Cars/Utility/Ford F-150    Ford F-150    0.5265605449676514    Ford F-150    3",
-            "car:Car    /Cars/Hybrid/Toyota Prius    Toyota Prius    0.5265605449676514    Toyota Prius    3",
-            "car:Car    /Cars/Utility/Land Rover LR2    Land Rover LR2    0.5265605449676514    Land Rover LR2    3",
-            "car:Car    /Cars/Hybrid/Nissan Altima    Nissan Altima    0.5265605449676514    Nissan Altima    3",
-            "car:Car    /Cars/Luxury/Cadillac DTS    Cadillac DTS    0.5265605449676514    Cadillac DTS    3",
-            "car:Car    /Cars/Sports/Infiniti G37    Infiniti G37    0.5265605449676514    Infiniti G37    3",
-            "car:Car    /Cars/Utility/Hummer H3    Hummer H3    0.5265605449676514    Hummer H3    3",};
-
-        ConnectionResultsComparator.executeTest(this.connection, "SELECT * FROM [nt:unstructured]", expected, 22);
-
+            "nt:unstructured    /NodeB    NodeB    0.6445352435112    NodeB    1",
+            "nt:unstructured    /Other    Other    0.6445352435112    Other    1",
+            "nt:unstructured    /Other/NodeA    NodeA    0.6445352435112    NodeA    2",
+            "nt:unstructured    /Other/NodeA[2]    NodeA    0.6445352435112    NodeA    2",
+            "nt:unstructured    /Other/NodeA[3]    NodeA    0.6445352435112    NodeA    2",};
+        ConnectionResultsComparator.executeTest(this.connection,
+                                                "SELECT * FROM [nt:unstructured] ORDER BY [jcr:primaryType], [jcr:path]",
+                                                expected,
+                                                22);
     }
 
     /**
