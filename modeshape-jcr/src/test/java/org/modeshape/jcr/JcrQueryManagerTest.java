@@ -537,12 +537,31 @@ public class JcrQueryManagerTest {
 
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithDescendantNodeJoinWithoutCriteria() throws RepositoryException {
-        String sql = "SELECT * FROM [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category)";
+        // The 'all' selector will find all nodes, including '/Car' and '/Car/Sports'. Thus,
+        // '/Car/Sports/Infiniti G37' will be a descendant of both '/Car' and '/Car/Sports', and thus will appear
+        // once joined with '/Car' and once joined with '/Car/Sports'. These two tuples will be similar, but they are
+        // actually not repeats (since the columns from 'all' will be different).
+        String sql = "SELECT * FROM [car:Car] as car JOIN [nt:unstructured] as all ON ISDESCENDANTNODE(car,all)";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
-        print = true;
+        assertResults(query, result, 26L);
+        String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
+            "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
+            "car:msrp", "jcr:created", "jcr:createdBy", "all.jcr:primaryType", "car.jcr:name", "car.jcr:path", "car.jcr:score",
+            "car.mode:depth", "car.mode:localName", "all.jcr:name", "all.jcr:path", "all.jcr:score", "all.mode:depth",
+            "all.mode:localName"};
+        assertResultsHaveColumns(result, expectedColumnNames);
+    }
+
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithDescendantNodeJoinWithDepthCriteria() throws RepositoryException {
+        String sql = "SELECT * FROM [car:Car] as car JOIN [nt:unstructured] as category ON ISDESCENDANTNODE(car,category) WHERE DEPTH(category) = 2";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
         assertResults(query, result, 13L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
             "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
@@ -854,7 +873,7 @@ public class JcrQueryManagerTest {
         sql = "SELECT [jcr:path] FROM [nt:base] WHERE NOT(ISCHILDNODE([nt:base],'/Cars')) ORDER BY [jcr:path]";
         query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
-        print = true;
+        // print = true;
         result = query.execute();
         assertThat(result, is(notNullValue()));
         assertResults(query, result, 20L);
