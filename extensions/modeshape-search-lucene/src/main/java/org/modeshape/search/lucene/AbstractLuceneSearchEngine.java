@@ -560,6 +560,9 @@ public abstract class AbstractLuceneSearchEngine<WorkspaceType extends SearchEng
                     Query notted = createQuery(not.constraint());
                     if (notted == null) return new MatchAllDocsQuery();
                     BooleanQuery query = new BooleanQuery();
+                    // We need at least some positive match, so get all docs ...
+                    query.add(new MatchAllDocsQuery(), Occur.SHOULD);
+                    // Now apply the original query being 'NOT-ed' as a MUST_NOT occurrence ...
                     query.add(notted, Occur.MUST_NOT);
                     return query;
                 }

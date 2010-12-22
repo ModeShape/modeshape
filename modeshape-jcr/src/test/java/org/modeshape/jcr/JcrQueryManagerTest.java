@@ -256,6 +256,17 @@ public class JcrQueryManagerTest {
         assertThat(actualNames, is(expectedNames));
     }
 
+    protected void assertResultsHaveRows( QueryResult result,
+                                          String columnName,
+                                          String... rowValuesAsStrings ) throws RepositoryException {
+        RowIterator iter = result.getRows();
+        int i = 0;
+        while (iter.hasNext()) {
+            Row row = iter.nextRow();
+            assertThat(row.getValue(columnName).getString(), is(rowValuesAsStrings[i++]));
+        }
+    }
+
     public class RowResult {
         private final Row row;
 
@@ -531,6 +542,7 @@ public class JcrQueryManagerTest {
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
+        print = true;
         assertResults(query, result, 13L);
         String[] expectedColumnNames = {"car:mpgCity", "car:lengthInInches", "car:maker", "car:userRating", "car:engine",
             "car:mpgHighway", "car:valueRating", "car.jcr:primaryType", "car:wheelbaseInInches", "car:year", "car:model",
@@ -800,7 +812,7 @@ public class JcrQueryManagerTest {
 
     @FixFor( "MODE-1020" )
     @Test
-    public void shouldFindAllPublisAreas() throws Exception {
+    public void shouldFindAllPublishAreas() throws Exception {
         String sql = "SELECT [jcr:path], [jcr:title], [jcr:description] FROM [mode:publishArea]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
@@ -814,6 +826,61 @@ public class JcrQueryManagerTest {
             Row row = iter.nextRow();
             assertThat(row, is(notNullValue()));
         }
+    }
+
+    @FixFor( "MODE-1052" )
+    @Test
+    public void shouldProperlyUseNotWithPathConstraints() throws Exception {
+        // Find all nodes that are children of '/Cars' ... there should be 4 ...
+        String sql = "SELECT [jcr:path] FROM [nt:base] WHERE ISCHILDNODE([nt:base],'/Cars') ORDER BY [jcr:path]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        // print = true;
+        QueryResult result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 4L);
+        assertResultsHaveColumns(result, new String[] {"jcr:path"});
+        assertResultsHaveRows(result, "jcr:path", "/Cars/Hybrid", "/Cars/Luxury", "/Cars/Sports", "/Cars/Utility");
+
+        // Find all nodes ... there should be 24 ...
+        sql = "SELECT [jcr:path] FROM [nt:base] ORDER BY [jcr:path]";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 24L);
+
+        // Find all nodes that are NOT children of '/Cars' ... there should be 4 ...
+        sql = "SELECT [jcr:path] FROM [nt:base] WHERE NOT(ISCHILDNODE([nt:base],'/Cars')) ORDER BY [jcr:path]";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        assertThat(query, is(notNullValue()));
+        print = true;
+        result = query.execute();
+        assertThat(result, is(notNullValue()));
+        assertResults(query, result, 20L);
+        assertResultsHaveColumns(result, new String[] {"jcr:path"});
+        assertResultsHaveRows(result,
+                              "jcr:path",
+                              "/",
+                              "/Cars",
+                              "/Cars/Hybrid/Nissan Altima",
+                              "/Cars/Hybrid/Toyota Highlander",
+                              "/Cars/Hybrid/Toyota Prius",
+                              "/Cars/Luxury/Bentley Continental",
+                              "/Cars/Luxury/Cadillac DTS",
+                              "/Cars/Luxury/Lexus IS350",
+                              "/Cars/Sports/Aston Martin DB9",
+                              "/Cars/Sports/Infiniti G37",
+                              "/Cars/Utility/Ford F-150",
+                              "/Cars/Utility/Hummer H3",
+                              "/Cars/Utility/Land Rover LR2",
+                              "/Cars/Utility/Land Rover LR3",
+                              "/Cars/Utility/Toyota Land Cruiser",
+                              "/NodeB",
+                              "/Other",
+                              "/Other/NodeA",
+                              "/Other/NodeA[2]",
+                              "/Other/NodeA[3]");
     }
 
     // ----------------------------------------------------------------------------------------------------------------
