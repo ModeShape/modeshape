@@ -333,6 +333,11 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
             }
         }
 
+        // Disable the derived content removal option if not explicitly set and no sequencers ...
+        if (!options.containsKey(Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL) && getSequencingService().getSequencers().isEmpty()) {
+            options.put(Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL, Boolean.FALSE.toString());
+        }
+
         // Read the descriptors ...
         Node descriptorsNode = subgraph.getNode(ModeShapeLexicon.DESCRIPTORS);
         if (descriptorsNode != null) {

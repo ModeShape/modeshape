@@ -53,6 +53,7 @@ public class ModeShapeLexicon extends org.modeshape.graph.ModeShapeLexicon {
     public static final Name CLUSTER_NAME = new BasicName(Namespace.URI, "clusterName");
     public static final Name DERIVED = new BasicName(Namespace.URI, "derived");
     public static final Name DERIVED_FROM = new BasicName(Namespace.URI, "derivedFrom");
+    public static final Name DERIVED_AT = new BasicName(Namespace.URI, "derivedAt");
 
     public static final Name INITIAL_CONTENT = new BasicName(Namespace.URI, "initialContent");
     public static final Name CONTENT = new BasicName(Namespace.URI, "content");

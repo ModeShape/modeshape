@@ -90,7 +90,7 @@
       -->
       <mode:repository jcr:name="car repository" mode:source="Cars">
           <mode:options jcr:primaryType="mode:options">
-              <jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
+              <mode:option jcr:name="jaasLoginConfigName" mode:value="modeshape-jcr"/>
           </mode:options>
           <mode:descriptors>
             <!-- 
@@ -362,6 +362,275 @@ configuration.save();
 			Now you can load this configuration in multiple processes, using the approach mentioned above.
 		</para>
 	</sect2>
+ </sect1>
+ <sect1 id="jcr_repository_options">
+	  <title>JCR Repository options</title>
+	  <para>
+		  ModeShape JCR repositories have a number of behaviors that can be controlled from within the configuration.
+		  These are known as <emphasis>repository options</emphasis>, and all have sensible defaults. However, they
+		  do allow you to better configure the JCR repository instances to best suit your needs. 
+		</para>
+		<para>
+			As mentioned earlier, these options can be set programmatically or within the configuration file. When setting up the configuration programmatically, 
+			the actual enum literal values must be used, and all values are String literals:
+		</para>
+ 		<programlisting language="JAVA" role="JAVA"><![CDATA[JcrConfiguration config = ...
+config.repository("repository A")
+     .setOption(JcrRepository.Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr");
+]]></programlisting>
+		<para>
+			When using a configuration file, you set the option within the "<code>mode:options</code>"
+			fragment under the "<code>mode:repository</code>" section. Each option fragment typically looks
+			something like this:
+		</para>
+   	<programlisting language="JAVA" role="JAVA"><![CDATA[<mode:option jcr:name="jaasLoginConfigName" mode:value="modeshape-jcr"/>
+]]></programlisting>
+		<para>
+			where the "<code>jcr:name</code>" XML attribute value contains the lower-camel-case form of the option literal, and the "<code>mode:value</code>" 
+			XML attribute value contains the repository option value. In the example above, the "jaasLoginConfigName" is the option name,
+			and "modeshape-jcr" is the option value. An alternative representation is to set the name using the XML element name and set the primary type
+			with an XML attribute. Thus, this fragment is equivalent to the previous listing:
+		</para>
+   	<programlisting language="JAVA" role="JAVA"><![CDATA[<jaasLoginConfigName jcr:primaryType="mode:option" mode:value="modeshape-jcr"/>
+]]></programlisting>
+		<para>
+			The following table describes all of the current repository options.
+		</para>
+	<table frame='all'>
+		<title>JCR Repository Options</title>
+		<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+      <colspec colname='c1' colwidth="1*"/>
+      <colspec colname='c2' colwidth="1*"/>
+			<thead>
+				<row>
+		  		<entry>Option</entry>
+		  		<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>jaasLoginConfigName</entry>
+					<entry>
+						The JAAS <ulink url='&Java;javax/security/auth/login/Configuration.html'>JAAS application configuration name</ulink>
+						that specifies which login module should be used to validate credentials. By default, "modeshape-jcr" is used.
+						The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#JAAS_LOGIN_CONFIG_NAME'>Option.JAAS_LOGIN_CONFIG_NAME</ulink>
+					</entry>
+				</row>
+				<row>
+					<entry>systemSourceName</entry>
+					<entry>
+						<para>
+						The name of the source (and optionally the workspace in the source) where the "/jcr:system" branch should be stored. 
+						The format is "name of workspace@name of source", or simply "name of source" if the default workspace is to be used. 
+						If this option is not used, a transient in-memory source will be used. Note that all leading and trailing whitespaces is removed 
+						for both the source name and workspace name. Thus, a value of "@" implies a zero-length workspace name and zero-length source name.
+						Also, any use of the '@' character in source and workspace names must be escaped with a preceding backslash.
+						</para>
+						<para>
+						The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#SYSTEM_SOURCE_NAME'>Option.SYSTEM_SOURCE_NAME</ulink>
+  					</para>
+					</entry>
+				</row>
+				<row>
+					<entry>anonymousUserRoles</entry>
+					<entry>
+						A comma-delimited list of default roles provided for anonymous access. A null or empty value for this option means that anonymous access is disabled.
+						The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#ANONYMOUS_USER_ROLES'>Option.ANONYMOUS_USER_ROLES</ulink>
+					</entry>
+				</row>
+				<row>
+					<entry>exposeWorksapceNamesInDescription</entry>
+					<entry>
+						<para>
+							A boolean flag that indicates whether a complete list of workspace names should be exposed in the custom repository descriptor 
+							"<code>org.modeshape.jcr.api.Repository.REPOSITORY_WORKSPACES</code>". If this option is set to true, then any code that can access the 
+							repository can retrieve a complete list of workspace names through the javax.jcr.Repository.getDescriptor(String) method without logging in.
+							The default value is 'true', meaning that the descriptor is populated.
+						</para>
+						<para>
+							Since some ModeShape installations may consider the list of workspace names to be restricted information and limit the ability of some or all 
+							users to see a complete list of workspace names, this option can be set to "false" to disable this capability. If this option is set to "false", 
+							the "<code>org.modeshape.jcr.api.Repository.REPOSITORY_WORKSPACES</code>" descriptor will not be set.
+						</para>
+						<para>
+							The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR'>Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR</ulink>
+						</para>
+					</entry>
+				</row>
+				<row>
+					<entry>repositoryJndiLocation</entry>
+					<entry>
+						A string property that when specified tells the &JcrEngine; where to put the &Repository; in JNDI. Assumes that you have write access to the JNDI tree. 
+						If no value set, then the &Repository; will not be bound to JNDI.
+						The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#REPOSITORY_JNDI_LOCATION'>Option.REPOSITORY_JNDI_LOCATION</ulink>
+					</entry>
+				</row>
+				<row>
+					<entry>queryExecutionEnabled</entry>
+					<entry>
+						A boolean flag that specifies whether this repository is expected to execute searches and queries. If client applications will never perform searches 
+						or queries, then maintaining the query indexes is an unnecessary overhead, and can be disabled. Note that this is merely a hint, and that searches 
+						and queries might still work when this is set to 'false'. The default is 'true', meaning that clients can execute searches and queries.
+						The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#QUERY_EXECUTION_ENABLED'>Option.QUERY_EXECUTION_ENABLED</ulink>
+					</entry>
+				</row>
+				<row>
+					<entry>queryIndexDirectory</entry>
+					<entry>
+						<para>
+							The system may maintain a set of indexes that improve the performance of searching and querying the content. These size of these indexes 
+							depend upon the size of the content being stored, and thus may consume a significant amount of space. This option defines a location on 
+							the file system where this repository may (if needed) store indexes so they don't consume large amounts of memory.
+						</para>
+						<para>
+							If specified, the value must be a valid path to a writable directory on the file system. If the path specifies a non-existant location, 
+							the repository may attempt to create the missing directories. The path may be absolute or relative to the location where this VM was started. 
+							If the specified location is not a readable and writable directory (or cannot be created as such), then this will generate an exception when 
+							the repository is created.
+						</para>
+						<para>
+							The default value is null, meaning the search indexes may not be stored on the local file system and, if needed, will be stored within memory.
+						</para>
+						<para>
+							The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#QUERY_INDEX_DIRECTORY'>Option.QUERY_INDEX_DIRECTORY</ulink>
+  					</para>
+					</entry>
+				</row>
+				<row>
+					<entry>queryIndexesUpdatedSynchronously</entry>
+					<entry>
+						<para>
+							An <emphasis>advanced</emphasis> boolean flag that specifies whether updates to the indexes (if used) should be made synchronously, meaning that a call to Session.save() 
+							will not return until the search indexes have been completely updated. The benefit of synchronous updates is that a search or query 
+							performed immediately after a save() will operate upon content that was just changed. The downside is that the save() operation will take longer.
+						</para>
+						<para>
+							With asynchronous updates, however, the only work done during a save() invocation is that required to persist the changes in the underlying 
+							repository source, while changes to the search indexes are made in a different thread that may not run immediately. In this case, there may 
+							be an indeterminate lag before searching or querying after a save() will operate upon the changed content.
+						</para>
+						<para>
+							The default is value '<emphasis>false</emphasis>', meaning the updates are performed asynchronously.
+						</para>
+						<para>
+							The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#QUERY_INDEXES_UPDATED_SYNCHRONOUSLY'>Option.QUERY_INDEXES_UPDATED_SYNCHRONOUSLY</ulink>
+						</para>
+					</entry>
+				</row>
+				<row>
+					<entry>projectNodeTypes</entry>
+					<entry>
+						An <emphasis>advanced</emphasis> boolean flag that defines whether or not the node types should be exposed as content under the "/jcr:system/jcr:nodeTypes" node. 
+						Value is either "true" or "false" (default).
+						The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#PROJECT_NODE_TYPES'>Option.PROJECT_NODE_TYPES</ulink>
+					</entry>
+				</row>
+				<row>
+					<entry>readDepth</entry>
+					<entry>
+						An <emphasis>advanced</emphasis> integer flag that specifies the depth of the subgraphs that should be loaded from the connectors during normal 
+						read operations. The default value is 1.
+						The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#READ_DEPTH'>Option.READ_DEPTH</ulink>
+					</entry>
+				</row>
+				<row>
+					<entry>indexReadDepth</entry>
+					<entry>
+						An <emphasis>advanced</emphasis> integer flag that specifies the depth of the subgraphs that should be loaded from the connectors during indexing 
+						operations. The default value is 4.
+						The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#INDEX_READ_DEPTH'>Option.INDEX_READ_DEPTH</ulink>
+					</entry>
+				</row>
+				<row>
+					<entry>tablesIncludeColumnsForInheritedProperties</entry>
+					<entry>
+						<para>
+							An <emphasis>advanced</emphasis> boolean flag that dictates whether the property definitions inherited from supertypes should be represented
+							in the corresponding queryable table with columns. The JCR specification gives implementations some flexibility, so ModeShape allows this to be controlled.
+						</para>
+						<para>
+							When this option is set to "false", then each table has only those columns representing the (single-valued) property definitions explicitly defined by the 
+							node type. When this option is set to "true" (the default), each table will contain columns for each of the (single-valued) property definitions explicitly defined on
+							the node type and inherited by the node type from all of the supertypes.
+						</para>
+						<para>
+							The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES'>Option.TABLES_INCLUDE_COLUMNS_FOR_INHERITED_PROPERTIES</ulink>
+						</para>
+					</entry>
+				</row>
+				<row>
+					<entry>performReferentialIntegrityChecks</entry>
+					<entry>
+						<para>
+							An <emphasis>advanced</emphasis> boolean flag that specifies whether referential integrity checks should be performed upon Session.save(). 
+							If set to "true" (the default), referential integrity checks are performed to ensure that nodes referenced by other nodes 
+							cannot be removed. If the value is set to "false", then these referential integrity checks will not be performed when removing nodes.
+						</para>
+						<para>
+							Many people generally discourage the use of REFERENCE properties because of the overhead and the need for referential integrity. These concerns are
+							somewhat mitigated by the introduction in JCR 2.0 of the WEAKREFERENCE property type, which are excluded from referential integrity checks.
+						</para>
+						<para>
+							This option is available for those cases where REFERENCE properties are <emphasis>not</emphasis> used within your content, and thus
+							the referential integrity checks will never find violations. In these cases, you may disable these checks to slightly improve performance
+							of delete operations.
+						</para>
+						<para>
+							The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#PERFORM_REFERENTIAL_INTEGRITY_CHECKS'>Option.PERFORM_REFERENTIAL_INTEGRITY_CHECKS</ulink>
+						</para>
+					</entry>
+				</row>
+				<row>
+					<entry>versionHistoryStructure</entry>
+					<entry>
+						<para>
+							An <emphasis>advanced</emphasis> flag that specifies the structure used to store version histories under the "<code>/jcr:system/jcr:versionStorage</code>" branch. 
+							The JCR 2.0 specification does not predefine any particular structure, but ModeShape supports two types:
+							<itemizedlist>
+								<listitem>
+									<para>A value of "flat" dictates that all "<code>nt:versionHistory</code>" nodes are stored with a name matching the UUID of the versioned node and 
+										directly under the "<code>/jcr:system/jcr:versionStorage</code>" node. For example, given a "<code>mix:versionable</code>" node with the UUID 
+										<code>fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>, the corresponding " <code>nt:versionHistory</code>" node will be at 
+										"<code>/jcr:system/jcr:versionStorage/fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>".
+									</para>
+								</listitem>
+								<listitem>
+									<para>A value of "hierarchical" dictates that all "<code>nt:versionHistory</code>" nodes are stored under a hiearchical structure created by the first 
+										8 characters of the UUID string. For example, given a "<code>mix:versionable</code>" node with the UUID <code>fae2b929-c5ef-4ce5-9fa1-514779ca0ae3</code>, 
+										the corresponding "<code>nt:versionHistory</code>" node will be at "<code>/jcr:system/jcr:versionStorage/fa/e2/b9/29/c5ef-4ce5-9fa1-514779ca0ae3</code>.
+									</para>
+								</listitem>
+							</itemizedlist>
+							The "hiearchical" structure is used by default and in cases where the option's value does not case-independently match the one of these two values.
+						</para>
+						<para>
+							The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#VERSION_HISTORY_STRUCTURE'>Option.VERSION_HISTORY_STRUCTURE</ulink>,
+							and the values are <ulink url='&API;jcr/JcrRepository.VersionHistoryOption.html#FLAT'>VersionHistoryOption.FLAT</ulink> and
+							<ulink url='&API;jcr/JcrRepository.VersionHistoryOption.html#HIERARCHICAL'>VersionHistoryOption.HIERARCHICAL</ulink>
+					</para>
+					</entry>
+				</row>
+				<row>
+					<entry>removeDerivedContentWithOriginal</entry>
+					<entry>
+						<para>
+							An <emphasis>advanced</emphasis> boolean flag that dictates whether content derived from other content (e.g., that output by sequencers) should be 
+							automatically (re)moved when the content from which it was derived is (re)moved from the repository. For example, consider that a file is uploaded and 
+							sequenced, and that the content derived from the file is stored in the repository. When that file is (re)moved, this option dictates whether the 
+							derived content should also be (re)moved automatically.
+						</para>
+						<para>
+							By default this option has a value of "true", ensuring that all derived content is deleted whenever the original content is deleted.
+							A value of "false" will leave the derived content.
+						</para>
+						<para>
+							The enumeration literal is <ulink url='&API;jcr/JcrRepository.Option.html#REMOVE_DERIVED_CONTENT_WITH_ORIGINAL'>Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL</ulink>
+						</para>
+					</entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
  </sect1>
  <sect1 id="system_workspace_configuration">
 	  <title>Repository system content</title>

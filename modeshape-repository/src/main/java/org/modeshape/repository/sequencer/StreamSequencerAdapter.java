@@ -440,12 +440,21 @@ public class StreamSequencerAdapter implements Sequencer {
         Property newMixinTypes = propertyFactory.create(JcrLexicon.MIXIN_TYPES, values);
         propertiesByName.put(newMixinTypes.getName(), newMixinTypes);
 
-        // Add the other 'mode:derived' property/properties ...
+        // Add the 'mode:derivedFrom' property ...
         Property derivedFrom = propertiesByName.get(ModeShapeLexicon.DERIVED_FROM);
         if (derivedFrom == null) {
             // Only do this if the sequencer didn't already do this ...
             derivedFrom = propertyFactory.create(ModeShapeLexicon.DERIVED_FROM, derivedPath);
             propertiesByName.put(derivedFrom.getName(), derivedFrom);
+        }
+
+        // Add the 'mode:derivedAt' property ...
+        Property derivedOn = propertiesByName.get(ModeShapeLexicon.DERIVED_AT);
+        if (derivedOn == null) {
+            // Only do this if the sequencer didn't already do this ...
+            // The timestamp should match that of the change event.
+            derivedOn = propertyFactory.create(ModeShapeLexicon.DERIVED_AT, context.getTimestamp());
+            propertiesByName.put(derivedOn.getName(), derivedOn);
         }
 
         // Return the properties ...

@@ -260,6 +260,11 @@ public class JcrConfigurationTest {
         options.put(Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR, DefaultOption.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR);
         options.put(Option.VERSION_HISTORY_STRUCTURE, DefaultOption.VERSION_HISTORY_STRUCTURE);
         options.put(Option.REPOSITORY_JNDI_LOCATION, DefaultOption.REPOSITORY_JNDI_LOCATION);
+        String defaultRemoveDerivedValue = DefaultOption.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL;
+        if (engine.getSequencingService().getSequencers().isEmpty()) {
+            defaultRemoveDerivedValue = Boolean.FALSE.toString();
+        }
+        options.put(Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL, defaultRemoveDerivedValue);
         assertThat(repository.getOptions(), is(options));
     }
 
