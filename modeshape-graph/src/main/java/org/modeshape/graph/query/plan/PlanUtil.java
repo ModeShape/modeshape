@@ -1023,7 +1023,7 @@ public class PlanUtil {
             if (descendant.equals(viewName)) descendant = sourceName;
             if (ancestor == condition.ancestorSelectorName() && descendant == condition.descendantSelectorName()) return condition;
             node.addSelector(ancestor, descendant);
-            return new ChildNodeJoinCondition(ancestor, descendant);
+            return new DescendantNodeJoinCondition(ancestor, descendant);
         }
         return joinCondition;
     }
