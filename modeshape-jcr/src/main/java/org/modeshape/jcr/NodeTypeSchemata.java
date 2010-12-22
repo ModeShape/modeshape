@@ -326,8 +326,7 @@ class NodeTypeSchemata implements Schemata {
             store = Store.NO;
             builder.referenceField(defn.getInternalName(), store, index);
         } else if (typeSystem.getPathFactory().getTypeName().equals(type)) {
-            store = Store.NO;
-            builder.weakReferenceField(defn.getInternalName(), store, index, defn.isFullTextSearchable());
+            builder.pathField(defn.getInternalName(), store, index);
         } else {
             // Everything else gets stored as a string ...
             builder.stringField(defn.getInternalName(), store, index, canBeReference, defn.isFullTextSearchable());
