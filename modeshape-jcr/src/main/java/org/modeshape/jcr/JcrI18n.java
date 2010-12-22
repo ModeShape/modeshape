@@ -135,6 +135,8 @@ public final class JcrI18n {
     public static I18n errorImportingNodeTypeContent;
     public static I18n nodeTypesNotFoundInXml;
 
+    public static I18n failedToQueryForDerivedContent;
+
     public static I18n systemSourceNameOptionValueDoesNotReferenceExistingSource;
     public static I18n systemSourceNameOptionValueDoesNotReferenceValidWorkspace;
     public static I18n systemSourceNameOptionValueIsNotFormattedCorrectly;

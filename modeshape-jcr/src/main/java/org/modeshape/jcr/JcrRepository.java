@@ -71,9 +71,11 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.JaasSecurityContext;
+import org.modeshape.graph.Location;
 import org.modeshape.graph.SecurityContext;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.Workspace;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositoryContext;
@@ -86,8 +88,10 @@ import org.modeshape.graph.connector.federation.ProjectionParser;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.connector.xmlfile.XmlFileRepositorySource;
 import org.modeshape.graph.observe.Changes;
+import org.modeshape.graph.observe.NetChangeObserver;
 import org.modeshape.graph.observe.Observable;
 import org.modeshape.graph.observe.Observer;
+import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
@@ -95,8 +99,16 @@ import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.ValueFactories;
+import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
+import org.modeshape.graph.query.QueryBuilder;
+import org.modeshape.graph.query.QueryResults;
+import org.modeshape.graph.query.QueryBuilder.ConstraintBuilder;
+import org.modeshape.graph.query.model.QueryCommand;
+import org.modeshape.graph.query.model.Visitors;
 import org.modeshape.graph.query.parse.QueryParsers;
+import org.modeshape.graph.query.plan.PlanHints;
+import org.modeshape.graph.query.validate.Schemata;
 import org.modeshape.graph.request.ChangeRequest;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.jcr.RepositoryQueryManager.PushDown;
@@ -193,7 +205,7 @@ public class JcrRepository implements Repository {
 
         /**
          * The depth of the subgraphs that should be loaded from the connectors during indexing operations. The default value is
-         * 10.
+         * 4.
          */
         INDEX_READ_DEPTH,
 
@@ -216,7 +228,7 @@ public class JcrRepository implements Repository {
 
         /**
          * A boolean flag that specifies whether this repository is expected to execute searches and queries. If client
-         * applications will never perform searches or queries, then maintaining the query indexes is an unncessary overhead, and
+         * applications will never perform searches or queries, then maintaining the query indexes is an unnecessary overhead, and
          * can be disabled. Note that this is merely a hint, and that searches and queries might still work when this is set to
          * 'false'.
          * <p>
@@ -325,7 +337,22 @@ public class JcrRepository implements Repository {
          * {@link VersionHistoryOption#FLAT} or {@link VersionHistoryOption#HIERARCHICAL} values.
          * </p>
          */
-        VERSION_HISTORY_STRUCTURE;
+        VERSION_HISTORY_STRUCTURE,
+
+        /**
+         * A boolean option that dictates whether content derived from other content (e.g., by sequencers) should be automatically
+         * removed when the content from which it was derived is removed from the repository.
+         * <p>
+         * For example, consider that a file is uploaded and sequenced, and that the content derived from the file is stored in
+         * the repository. When that file is removed, this option dictates whether the derived content should also be removed
+         * automatically.
+         * </p>
+         * <p>
+         * A value of 'true' will ensure that all content derived from deleted content is also deleted. A value of 'false' will
+         * leave the derived content. The default value is 'true'.
+         * </p>
+         */
+        REMOVE_DERIVED_CONTENT_WITH_ORIGINAL, ;
 
         /**
          * Determine the option given the option name. This does more than {@link Option#valueOf(String)}, since this method first
@@ -447,6 +474,11 @@ public class JcrRepository implements Repository {
          * The default value for the {@link Option#VERSION_HISTORY_STRUCTURE} option is {@value} .
          */
         public static final String VERSION_HISTORY_STRUCTURE = VersionHistoryOption.HIERARCHICAL;
+
+        /**
+         * The default value for the {@link Option#REMOVE_DERIVED_CONTENT_WITH_ORIGINAL} option is {@value} .
+         */
+        public static final String REMOVE_DERIVED_CONTENT_WITH_ORIGINAL = Boolean.TRUE.toString();
     }
 
     /**
@@ -508,6 +540,7 @@ public class JcrRepository implements Repository {
         defaults.put(Option.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR, DefaultOption.EXPOSE_WORKSPACE_NAMES_IN_DESCRIPTOR);
         defaults.put(Option.VERSION_HISTORY_STRUCTURE, DefaultOption.VERSION_HISTORY_STRUCTURE);
         defaults.put(Option.REPOSITORY_JNDI_LOCATION, DefaultOption.REPOSITORY_JNDI_LOCATION);
+        defaults.put(Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL, DefaultOption.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL);
         DEFAULT_OPTIONS = Collections.<Option, String>unmodifiableMap(defaults);
     }
 
@@ -849,6 +882,11 @@ public class JcrRepository implements Repository {
         // This observer picks up notification of changes to the system graph in a cluster. It's a NOP if there is no cluster.
         repositoryObservationManager.register(new SystemChangeObserver(Arrays.asList(new JcrSystemObserver[] {
             repositoryLockManager, namespaceObserver, repositoryTypeManager})));
+
+        if (Boolean.valueOf(this.options.get(Option.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL))) {
+            // Add an observer that moves/removes derived content when the original is moved/removed ...
+            repositoryObservationManager.register(new DerivedContentSynchronizer());
+        }
 
         // If the JNDI Location is set and not trivial, attempt the bind.
         String jndiLocation = this.options.get(Option.REPOSITORY_JNDI_LOCATION);
@@ -2006,6 +2044,128 @@ public class JcrRepository implements Repository {
                                                       systemSourceName, changes.getTimestamp(), changesForObserver,
                                                       changes.getData());
                 jcrSystemObserver.notify(filteredChanges);
+            }
+        }
+    }
+
+    class DerivedContentSynchronizer extends NetChangeObserver {
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.observe.NetChangeObserver#notify(org.modeshape.graph.observe.NetChangeObserver.NetChanges)
+         */
+        @Override
+        protected void notify( NetChanges netChanges ) {
+            // Go through the changes and look for moves or removes, and accumulate the paths that we should search for ...
+            Map<String, Map<Path, Path>> pathsByWorkspaceName = null;
+            for (NetChange change : netChanges.getNetChanges()) {
+                String workspaceName = change.getRepositoryWorkspaceName();
+
+                // Don't watch the system workspace ...
+                if (getSystemWorkspaceName().equals(workspaceName)) continue;
+
+                // Go through each net change, and only process node/property adds and property changes ...
+                if (change.includes(ChangeType.NODE_REMOVED, ChangeType.NODE_MOVED)) {
+                    if (pathsByWorkspaceName == null) pathsByWorkspaceName = new HashMap<String, Map<Path, Path>>();
+                    Map<Path, Path> paths = pathsByWorkspaceName.get(change.getRepositoryWorkspaceName());
+                    if (paths == null) {
+                        paths = new HashMap<Path, Path>();
+                        pathsByWorkspaceName.put(change.getRepositoryWorkspaceName(), paths);
+                    }
+                    Path newPath = null;
+                    if (change.includes(ChangeType.NODE_MOVED)) {
+                        newPath = change.getLocation().getPath();
+                    }
+                    paths.put(change.getPath(), newPath);
+                }
+            }
+
+            if (pathsByWorkspaceName == null) {
+                // No removes or deletes ...
+                return;
+            }
+
+            // We should have at least one query ...
+            final ExecutionContext context = getExecutionContext();
+            QueryBuilder builder = new QueryBuilder(context.getValueFactories().getTypeSystem());
+            DateTime timestamp = netChanges.getTimestamp();
+            Schemata schemata = getRepositoryTypeManager().getRepositorySchemata();
+            Map<String, Object> variables = null;
+            QueryCommand query = null;
+            String workspaceName = null;
+            PathFactory pathFactory = context.getValueFactories().getPathFactory();
+            ValueFactory<String> strings = context.getValueFactories().getStringFactory();
+
+            try {
+
+                // Query for 'mode:derived' nodes that were derived from any content at/under these paths ...
+                for (Map.Entry<String, Map<Path, Path>> entry : pathsByWorkspaceName.entrySet()) {
+                    workspaceName = entry.getKey();
+                    Map<Path, Path> newPathByOld = entry.getValue();
+                    Set<Path> paths = newPathByOld.keySet();
+
+                    // Build a query for each workspace ...
+                    ConstraintBuilder constraint = builder.select("jcr:path", "mode:derivedFrom", "mode:derivedAt")
+                                                          .from("mode:derived")
+                                                          .where();
+                    constraint = constraint.propertyValue("mode:derived", "mode:derivedAt")
+                                           .isLessThanOrEqualTo()
+                                           .literal(timestamp)
+                                           .and()
+                                           .openParen();
+                    boolean first = true;
+                    for (Path path : paths) {
+                        if (first) first = false;
+                        else constraint = constraint.or();
+                        constraint = constraint.propertyValue("mode:derived", "mode:derivedFrom")
+                                               .isEqualTo()
+                                               .literal(strings.create(path))
+                                               .or()
+                                               .propertyValue("mode:derived", "mode:derivedFrom")
+                                               .isLike(strings.create(path) + "/%");
+                    }
+                    constraint = constraint.closeParen();
+                    query = constraint.end().query();
+
+                    // Submit the query ...
+                    PlanHints hints = new PlanHints();
+                    QueryResults results = queryManager().query(workspaceName, query, schemata, hints, variables);
+                    int locIndex = results.getColumns().getLocationIndex("mode:derived");
+                    int fromIndex = results.getColumns().getColumnIndexForName("mode:derivedFrom");
+                    Batch batch = createWorkspaceGraph(workspaceName, context).batch();
+                    for (Object[] tuple : results.getTuples()) {
+                        Location derivedLocation = (Location)tuple[locIndex];
+                        Path derivedFrom = pathFactory.create(tuple[fromIndex]);
+                        // Find out which of the changed paths this corresponds. Note that we have to walk the changed paths
+                        // because the changed paths may be ancestors) ..
+                        for (Path path : paths) {
+                            if (derivedFrom.isAtOrBelow(path)) {
+                                // The derived location should only be below one of the changed paths ...
+                                Path changedToPath = newPathByOld.get(path);
+                                if (changedToPath != null) {
+                                    // This is a move, so figure out the new derivedFrom path ...
+                                    Path relative = derivedFrom.relativeTo(path);
+                                    Path newDerivedFrom = relative.resolveAgainst(changedToPath);
+                                    batch.set(ModeShapeLexicon.DERIVED_FROM).on(derivedLocation).to(newDerivedFrom).and();
+                                } else {
+                                    // The changed node was deleted ...
+                                    batch.delete(derivedLocation).and();
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    builder.clear();
+
+                    // Execute the batch ...
+                    batch.execute();
+                }
+            } catch (RepositoryException e) {
+                String queryStr = Visitors.readable(query);
+                Logger.getLogger(JcrRepository.this.getClass()).error(e,
+                                                                      JcrI18n.failedToQueryForDerivedContent,
+                                                                      workspaceName,
+                                                                      queryStr);
             }
         }
     }

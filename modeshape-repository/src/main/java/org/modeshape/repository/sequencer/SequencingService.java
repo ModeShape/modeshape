@@ -489,7 +489,8 @@ public class SequencingService implements AdministeredService {
                                 Graph outputGraph = Graph.create(outputSource, context);
 
                                 final SimpleProblems problems = new SimpleProblems();
-                                SequencerContext sequencerContext = new SequencerContext(context, sourceGraph, outputGraph);
+                                SequencerContext sequencerContext = new SequencerContext(context, sourceGraph, outputGraph,
+                                                                                         changes.getTimestamp());
                                 try {
                                     sequencer.execute(node, propertyName, change, outputPathsInSource, sequencerContext, problems);
                                     sequencerContext.getDestination().submit();

@@ -5,6 +5,7 @@ import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.io.Destination;
 import org.modeshape.graph.io.GraphBatchDestination;
+import org.modeshape.graph.property.DateTime;
 
 /**
  * The sequencer context represents the complete context of a sequencer invocation, including the execution context (which
@@ -20,19 +21,23 @@ public class SequencerContext {
     private final Graph sourceGraph;
     private final Graph destinationGraph;
     private final Destination destination;
+    private final DateTime timestamp;
 
     public SequencerContext( ExecutionContext executionContext,
                              Graph sourceGraph,
-                             Graph outputGraph ) {
+                             Graph outputGraph,
+                             DateTime timestamp ) {
         super();
 
         assert executionContext != null;
         assert sourceGraph != null;
+        assert timestamp != null;
 
         this.executionContext = executionContext;
         this.sourceGraph = sourceGraph;
         this.destinationGraph = outputGraph != null ? outputGraph : sourceGraph;
         this.destination = new GraphBatchDestination(destinationGraph.batch());
+        this.timestamp = timestamp;
     }
 
     /**
@@ -42,6 +47,15 @@ public class SequencerContext {
      */
     public ExecutionContext getExecutionContext() {
         return executionContext;
+    }
+
+    /**
+     * Get the timestamp of the sequencing. This is always the timestamp of the change event that is being processed.
+     * 
+     * @return timestamp the "current" timestamp; never null
+     */
+    public DateTime getTimestamp() {
+        return timestamp;
     }
 
     /**

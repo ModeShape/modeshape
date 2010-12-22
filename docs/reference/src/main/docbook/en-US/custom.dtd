@@ -86,6 +86,7 @@
 <!ENTITY Date											    "<ulink url='&Java;java/util/Date.html'><classname>Date</classname></ulink>">
 <!ENTITY EntityManagerFactory					"<ulink url='&Java;javax/persistence/EntityManagerFactory.html'><classname>EntityManagerFactory</classname></ulink>">
 <!ENTITY InitialContext								"<ulink url='&Java;javax/naming/InitialContext.html'><classname>InitialContext</classname></ulink>">
+<!ENTITY JaasConfiguration						"<ulink url='&Java;javax/security/auth/login/Configuration.html'><classname>Configuration</classname></ulink>">
 
 
 <!-- Types in JCR API -->

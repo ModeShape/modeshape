@@ -52,6 +52,7 @@ import org.modeshape.graph.Node;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.graph.observe.NetChangeObserver.ChangeType;
 import org.modeshape.graph.observe.NetChangeObserver.NetChange;
+import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathNotFoundException;
@@ -82,11 +83,13 @@ public class StreamSequencerAdapterTest {
     private Problems problems;
     private Graph graph;
     private Property sequencedProperty;
+    private DateTime now;
 
     @Before
     public void beforeEach() {
         problems = new SimpleProblems();
         this.context = new ExecutionContext();
+        this.now = this.context.getValueFactories().getDateFactory().create();
         this.sequencerOutput = new SequencerOutputMap(this.context.getValueFactories());
         final SequencerOutputMap finalOutput = sequencerOutput;
 
@@ -111,7 +114,7 @@ public class StreamSequencerAdapterTest {
             }
         };
         sequencer = new StreamSequencerAdapter(streamSequencer, false);
-        seqContext = new SequencerContext(context, graph, graph);
+        seqContext = new SequencerContext(context, graph, graph, now);
     }
 
     protected Path path( String path ) {
@@ -606,7 +609,7 @@ public class StreamSequencerAdapterTest {
         InMemoryRepositorySource source2 = new InMemoryRepositorySource();
         source2.setName(repositorySourceName2);
         Graph graph2 = Graph.create(source2.getConnection(), context);
-        seqContext = new SequencerContext(context, graph, graph2);
+        seqContext = new SequencerContext(context, graph, graph2, now);
 
         // Set up the node that will be sequenced ...
         graph.create("/a").and().create("/a/b").and().create("/a/b/c").and();
@@ -675,10 +678,12 @@ public class StreamSequencerAdapterTest {
         props = nodeA.getPropertiesByName();
 
         assertThat(nodeA.getChildren().size(), is(2));
-        assertThat(props.size(), is(4)); // Need to add one to account for dna:uuid, jcr:mixinTypes and mode:derivedFrom
+        assertThat(props.size(), is(5)); // Need to add one to account for dna:uuid, jcr:mixinTypes, mode:derivedFrom,
+        // mode:derivedAt
         assertThat(props.get(nameFor("property1")).getFirstValue().toString(), is("value1"));
         assertThat(props.get(JcrLexicon.MIXIN_TYPES).getFirstValue(), is((Object)ModeShapeLexicon.DERIVED));
         assertThat(props.get(ModeShapeLexicon.DERIVED_FROM).getFirstValue(), is((Object)inputPath));
+        assertThat(props.get(ModeShapeLexicon.DERIVED_AT).getFirstValue(), is((Object)now));
 
         Node nodeB = graph.getNodeAt("/a/b[1]");
         props = nodeB.getPropertiesByName();
