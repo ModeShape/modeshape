@@ -333,8 +333,8 @@ public class JcrRepository implements Repository {
          * at <code>/jcr:system/jcr:versionStorage/fa/e2/b9/29/c5ef-4ce5-9fa1-514779ca0ae3</code>.</li>
          * </ul>
          * <p>
-         * The "flat" structure is used by default and in cases where the option's value does not case-independently match the
-         * {@link VersionHistoryOption#FLAT} or {@link VersionHistoryOption#HIERARCHICAL} values.
+         * The "hierarchical" structure is used by default and in cases where the option's value does not case-independently match
+         * the {@link VersionHistoryOption#FLAT} or {@link VersionHistoryOption#HIERARCHICAL} values.
          * </p>
          */
         VERSION_HISTORY_STRUCTURE,
