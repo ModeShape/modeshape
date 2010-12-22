@@ -101,7 +101,8 @@
 						Optional property that defines the dialect of the database. If not provided, the dialect will be auto-discovered by Hibernate. 
 						Otherwise, this must match one of the Hibernate dialect names, and must correspond to the type of driver being used.
 						And because Hibernate does a good job of auto-determining the dialect, it is recommended that you set this only if auto-discovery fails
-						for your database.
+						for your database. (Note that auto-discovering the dialect does not always work well with MySQL, since Hibernate has multiple
+						dialects for MySQL and will often choose  MySQL 4 MyISAM.)
 					</entry>
 				</row>
 				<row>
