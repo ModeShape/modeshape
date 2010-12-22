@@ -415,6 +415,24 @@ public class IndexRules {
         }
 
         /**
+         * Define a path-based field in the indexes. This method will overwrite any existing definition in this builder.
+         * 
+         * @param name the name of the field
+         * @param store the storage setting, or null if the field should be {@link Store#YES stored}
+         * @param index the index setting, or null if the field should be indexed but {@link Index#NOT_ANALYZED not analyzed}
+         * @return this builder for convenience and method chaining; never null
+         */
+        public Builder pathField( Name name,
+                                  Field.Store store,
+                                  Field.Index index ) {
+            if (store == null) store = Field.Store.YES;
+            if (index == null) index = Field.Index.NOT_ANALYZED;
+            Rule rule = new TypedRule(FieldType.STRING, store, index, false, false);
+            rulesByName.put(name, rule);
+            return this;
+        }
+
+        /**
          * Define a reference-based field in the indexes. This method will overwrite any existing definition in this builder.
          * 
          * @param name the name of the field
