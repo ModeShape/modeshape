@@ -25,11 +25,11 @@ package org.modeshape.jdbc.util;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.TimeZone;
-
-import org.modeshape.jdbc.JcrType;
-
 
 
 /**
@@ -47,6 +47,11 @@ import org.modeshape.jdbc.JcrType;
  */
 public class TimestampWithTimezone {
 	
+    public static DateFormat DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); //$NON-NLS-1$
+    public static DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd"); //$NON-NLS-1$
+    public static DateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss a"); //$NON-NLS-1$
+
+	
 	private static ThreadLocal<Calendar> CALENDAR = new ThreadLocal<Calendar>() {
 		@Override
 		protected Calendar initialValue() {
@@ -60,147 +65,157 @@ public class TimestampWithTimezone {
 	
 	public static void resetCalendar(TimeZone tz) {
 		TimeZone.setDefault(tz);
-		CALENDAR.set(Calendar.getInstance());
+		Calendar cal = Calendar.getInstance();
+		cal.setTimeZone(tz);
+		CALENDAR.set(cal);
 	}
-
-    public static Object create(java.util.Date date, TimeZone initial, Calendar target, Class<?> type) {
-        if (type.equals(JcrType.DefaultDataTypes.DATE)) {
-            return type.cast(createTime(date, initial, target));
-        }
-        return type.cast(createTimestamp(date, initial, target));
-    }
-        
-    public static Timestamp createTimestamp(java.util.Date date, TimeZone initial, Calendar target) {
+	
+	
+    public static Timestamp createTimestamp(Calendar initial, Calendar target) {
         if (target == null) {
             target = getCalendar();
         }
 
         long time = target.getTimeInMillis(); 
-            
-        adjustCalendar(date, initial, target);
+        
+        Calendar new_target = adjustCalendarForTimeStamp(initial, target);
+                
+        Timestamp tsInTz = createTimestamp(new_target); 
+                
+        target.setTimeInMillis(time);
+        return tsInTz;      
+    }	
+    
+    public static Time createTime(Calendar initial, Calendar target) {
+        if (target == null) {
+        	// if target is null, then obtain current calendar
+        	target = getCalendar();
+        }
+       
+        long time = target.getTimeInMillis(); 
+
+        adjustCalendarForTime(initial, target); 
         
         target.set(Calendar.MILLISECOND, 0);
         
-        Timestamp tsInTz = new Timestamp(target.getTimeInMillis());
-        
-        if(date instanceof Timestamp) {
-            tsInTz.setNanos(((Timestamp)date).getNanos());
-        }
+        Time result = createTime(target);
         
         target.setTimeInMillis(time);
-        return tsInTz;      
+
+        return result;
     }
     
-    public static Time createTime(java.util.Date date, TimeZone initial, Calendar target) {
+    public static Date createDate(Calendar initial, Calendar target) {
         if (target == null) {
-            target = getCalendar();
+            return createDate(initial);
         }
 
         long time = target.getTimeInMillis(); 
         
-        adjustCalendar(date, initial, target);
-        
-        Time result = normalizeTime(date, target);
-        
+        target = adjustCalendarForDate(initial, target);
+                 
+        Date result = normalizeDate(target, true);
+               
         target.setTimeInMillis(time);
+
         return result;
     }
     
-    public static Date createDate(java.util.Date date, TimeZone initial, Calendar target) {
-        if (target == null) {
-            target = getCalendar();
-        }
-
-        long time = target.getTimeInMillis(); 
-        
-        adjustCalendar(date, initial, target);
-        
-        Date result = normalizeDate(date, target);
-        
-        target.setTimeInMillis(time);
-        return result;
-    }
-
     /**
-     * Creates normalized SQL Time Object
-     * @param date 
+     * Creates normalized SQL Time Object based on
+     * the target Calendar.
+     * @param target Calendar 
      * 
      * @return Time
-     * @since 4.3
      */
-    public static Time createTime(java.util.Date date) {
-        if (date instanceof Time) {
-            return (Time)date;
-        }
-        Calendar cal = getCalendar();
-        cal.setTime(date);
-        return normalizeTime(date, cal);
+    public static Time createTime(Calendar target) {  
+    	return new Time(target.getTimeInMillis());
     }
+    
+  /**
+  * Creates normalized SQL Date Object based on
+  * the target Calendar
+  * @param target Calendar 
+  *  
+  * @return Date
+  */ 
+    public static Date createDate(Calendar target) {		        
+        return new java.sql.Date(target.getTime().getTime());
+    }
+    
     
     /**
-     * Creates normalized SQL Date Object
-     * @param date 
+     * Creates normalized SQL Timestamp Object based on
+     * the target Calendar
+     * @param target Calendar 
      *  
-     * @return Date
-     * @since 4.3
+     * @return Timestamp
      */ 
-    public static Date createDate(java.util.Date date) {
-        if (date instanceof Date) {
-            return (Date)date;
-        }
-        Calendar cal = getCalendar();
-        cal.setTime(date);
-        return normalizeDate(date, cal);
+    public static Timestamp createTimestamp(Calendar target) {
+        return new Timestamp(target.getTime().getTime());
     }
     
-    public static Timestamp createTimestamp(java.util.Date date) {
-        if (date instanceof Timestamp) {
-            return (Timestamp)date;
-        }
-        return new Timestamp(date.getTime());
-    }
-
-    private static Date normalizeDate(java.util.Date date, Calendar target) {
-        if (!(date instanceof Date)) {
+    private static Date normalizeDate(Calendar target, boolean isDate) {
+         if (isDate) {
             target.set(Calendar.HOUR_OF_DAY, 0);
             target.set(Calendar.MINUTE, 0);
             target.set(Calendar.SECOND, 0);
             target.set(Calendar.MILLISECOND, 0);
         }
-        Date result = new Date(target.getTimeInMillis());
-        return result;
-    }
+        return createDate(target);
+    } 
     
-    private static Time normalizeTime(java.util.Date date, Calendar target) {
-        if (!(date instanceof Time)) {
-            target.set(Calendar.MILLISECOND, 0);
-        }        
-        Time result = new Time(target.getTimeInMillis());
-        return result;
-    }
+	private static void adjustCalendarForTime(Calendar initial,
+			Calendar target) {
+		assert initial != null;
 
-    private static void adjustCalendar(java.util.Date date,
-                                       TimeZone initial,
-                                       Calendar target) {
-    	assert initial != null;
-        if (initial.hasSameRules(target.getTimeZone())) {
-            target.setTime(date);
-        	return;
+        if (initial.getTimeZone().hasSameRules(target.getTimeZone())) {
+			 target.setTime(initial.getTime());
+			 return;
         }
-        
-        //start with base time
-        long time = date.getTime(); 
-        
-        Calendar cal = Calendar.getInstance(initial);
-        cal.setTimeInMillis(time);
-        
-        target.set(Calendar.YEAR, cal.get(Calendar.YEAR));
-        target.set(Calendar.MONTH, cal.get(Calendar.MONTH));
-        target.set(Calendar.DAY_OF_MONTH, cal.get(Calendar.DAY_OF_MONTH));       
-        target.set(Calendar.HOUR_OF_DAY, cal.get(Calendar.HOUR_OF_DAY));
-        target.set(Calendar.MINUTE, cal.get(Calendar.MINUTE));
-        target.set(Calendar.SECOND, cal.get(Calendar.SECOND));
-        target.set(Calendar.MILLISECOND, cal.get(Calendar.MILLISECOND));        
-                      
-    }
+         
+        target.clear();
+        for (int i = 0; i <= Calendar.MILLISECOND; i++) {
+            target.set(i, initial.get(i));
+        }     		
+	}
+   
+	private static Calendar adjustCalendarForDate(Calendar initial,
+			Calendar target) {
+		assert initial != null;
+
+		if (initial.getTimeZone().hasSameRules(target.getTimeZone())) {	
+			target.setTime(initial.getTime());
+			return target;
+		}
+		
+		Calendar ntarget = new GregorianCalendar(target.getTimeZone());
+		ntarget.setTimeInMillis(initial.getTimeInMillis()); 	
+
+        return ntarget;
+	}
+	
+	private static Calendar adjustCalendarForTimeStamp(Calendar initial,
+			Calendar target) {
+		assert initial != null;
+
+		if (initial.getTimeZone().hasSameRules(target.getTimeZone())) {	
+			target.setTime(initial.getTime());
+			return target;
+		}
+		
+		TimeZone targetTimeZone = target.getTimeZone();
+		    Calendar ret = new GregorianCalendar(targetTimeZone);
+		    ret.setTimeInMillis(initial.getTimeInMillis() +
+		    		targetTimeZone.getOffset(initial.getTimeInMillis()) -
+		            initial.getTimeZone().getOffset(initial.getTimeInMillis()));
+		    ret.getTime();
+		    return ret;
+		    
+//		    Calendar ret = new GregorianCalendar(targetTimeZone);
+//		    ret.setTimeInMillis(initial.getTimeInMillis() +
+//		    		targetTimeZone.getOffset(initial.getTimeInMillis()) -
+//		            TimeZone.getDefault().getOffset(initial.getTimeInMillis()));
+		
+	}	
 }

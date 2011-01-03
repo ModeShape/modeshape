@@ -25,24 +25,27 @@ package org.modeshape.jdbc;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.text.DateFormat;
 import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.TimeZone;
+
 import javax.jcr.query.QueryResult;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.jdbc.util.TimestampWithTimezone;
 
 /**
  * 
@@ -63,6 +66,13 @@ public class JcrResultSetTest {
 
         result = TestUtil.createQueryResult();
         resultSet = new JcrResultSet(statement, result, null);
+        
+        Calendar londonTime = new GregorianCalendar();
+        londonTime.clear();
+        londonTime.setTimeZone(TimeZone.getTimeZone(TestUtil.TIME_ZONE));
+        
+        TimestampWithTimezone.resetCalendar(TimeZone.getTimeZone(TestUtil.TIME_ZONE)); //$NON-NLS-1$ 
+ 
     }
 
     @After
@@ -274,48 +284,31 @@ public class JcrResultSetTest {
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            Object[] tuple = TestUtil.TUPLES.get(i);
+            
+            java.sql.Date r = resultSet.getDate(col + 1);
 
-            java.sql.Date resultDate = resultSet.getDate(TestUtil.COLUMN_NAMES[col]);
+            // the result date should match the date coming from the souce, no change should occur 
+            // somewhere based on calendar or timezone           
 
-            String expected = DateFormat.getDateInstance().format(tuple[col]);
-            String resultis = DateFormat.getDateInstance().format(resultDate);
-            assertEquals(expected, resultis);
-
+           assertThat(r.toString(), is(TestUtil.USE_DATE_FOR_SOURCE));
         }
     }
 
     @Test
     public void shouldCallGetDateUsingColumnNameAndCalendar() throws SQLException {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-06:00"));
+    	
+    	Calendar localTime = new GregorianCalendar();
+    	localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
+
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            java.sql.Date resultDate = resultSet.getDate(TestUtil.COLUMN_NAMES[col], cal);
-
-            // take the tuple date and turn it into the java.sql.Date that should be returned
-            Object[] tuple = TestUtil.TUPLES.get(i);
-            java.util.Date d = (java.util.Date)tuple[col];
-
-            cal.setTimeInMillis(d.getTime());
-
-            java.sql.Date expectedDate = new java.sql.Date(cal.getTime().getTime());
-
-            String expected = DateFormat.getDateInstance().format(expectedDate);
-            String resultis = DateFormat.getDateInstance().format(resultDate);
-            assertEquals(expected, resultis);
+            
+            java.sql.Date resultDate = resultSet.getDate(col + 1, localTime);
+            
+            assertThat(resultDate.toString(), is(TestUtil.EXPECTED_DATE_FOR_TARGET));
         }
-    }
 
-    @Test( expected = java.lang.AssertionError.class )
-    public void shouldThrowExceptionGetDateUsingColumnNameAndCalendar() throws SQLException {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-06:00"));
-        int col = getColumnTypeLoc(TestUtil.DATE);
-        for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
-            assertThat(resultSet.next(), is(true));
-            Object[] tuple = TestUtil.TUPLES.get(i);
-            assertThat(resultSet.getDate(TestUtil.COLUMN_NAMES[col], cal), is(tuple[col]));
-        }
     }
 
     @Test
@@ -323,36 +316,29 @@ public class JcrResultSetTest {
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            Object[] tuple = TestUtil.TUPLES.get(i);
-            // need to increment because ResultSet is 1 based.
+            
+            java.sql.Date r = resultSet.getDate(col + 1);
 
-            String expected = DateFormat.getDateInstance().format(tuple[col]);
-            String resultis = DateFormat.getDateInstance().format(resultSet.getDate(col + 1));
-            assertEquals(expected, resultis);
+          // the result date should match the date coming from the souce, no change should occur 
+          // somewhere based on calendar or timezone           
 
+            assertThat(r.toString(), is(TestUtil.USE_DATE_FOR_SOURCE));
         }
     }
 
     @Test
-    public void shouldCallGetDateUsingColmnIndexAndCalendar() throws SQLException {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-06:00"));
+    public void shouldCallGetDateUsingColmnIndexAndCalendar() throws SQLException {  
+    	    	
+    	Calendar localTime = new GregorianCalendar();
+    	localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
 
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
 
-            java.sql.Date resultDate = resultSet.getDate(col + 1, cal);
-
-            Object[] tuple = TestUtil.TUPLES.get(i);
-            java.util.Date d = (java.util.Date)tuple[col];
-            cal.setTimeInMillis(d.getTime());
-
-            java.sql.Date expectedDate = new java.sql.Date(cal.getTime().getTime());
-
-            String expected = DateFormat.getDateInstance().format(expectedDate);
-            String resultis = DateFormat.getDateInstance().format(resultDate);
-            assertEquals(expected, resultis);
-
+            java.sql.Date resultDate = resultSet.getDate(col + 1, localTime);
+            
+            assertThat(resultDate.toString(), is(TestUtil.EXPECTED_DATE_FOR_TARGET));
         }
     }
 
@@ -361,36 +347,30 @@ public class JcrResultSetTest {
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            Object[] tuple = TestUtil.TUPLES.get(i);
-            long lt = ((java.util.Date)tuple[col]).getTime();
-            java.sql.Time t = new java.sql.Time(lt);
+            
+            java.sql.Time r = resultSet.getTime(col + 1);
 
-            String expected = DateFormat.getDateInstance().format(t);
-            String resultis = DateFormat.getDateInstance().format(resultSet.getTime(TestUtil.COLUMN_NAMES[col]));
-            assertEquals(expected, resultis);
+            // the result date should match the date coming from the souce, no change should occur 
+            // somewhere based on calendar or timezone           
 
+           assertThat(r.toString(), is(TestUtil.USE_TIME_FOR_SOURCE));
         }
     }
 
     @Test
     public void shouldCallGetTimeUsingColumnNameAndCalendar() throws SQLException {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-06:00"));
-        int col = getColumnTypeLoc(TestUtil.DATE);
+    	Calendar localTime = new GregorianCalendar();
+    	localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
+    	
+    	String EXPECTED_TIME_FOR_TARGET = "08:39:10";
+
+
+    	int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            java.sql.Time resultTime = resultSet.getTime(TestUtil.COLUMN_NAMES[col], cal);
-
-            // take the tuple date and turn it into the java.sql.Date that should be returned
-            Object[] tuple = TestUtil.TUPLES.get(i);
-            java.util.Date d = (java.util.Date)tuple[col];
-
-            cal.setTimeInMillis(d.getTime());
-
-            java.sql.Time expectedTime = new java.sql.Time(cal.getTime().getTime());
-
-            String expected = DateFormat.getDateInstance().format(expectedTime);
-            String resultis = DateFormat.getDateInstance().format(resultTime);
-            assertEquals(expected, resultis);
+            java.sql.Time resultTime = resultSet.getTime(TestUtil.COLUMN_NAMES[col], localTime);
+            assertThat(resultTime.toString(), is(EXPECTED_TIME_FOR_TARGET));
+  
         }
     }
 
@@ -399,34 +379,32 @@ public class JcrResultSetTest {
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            Object[] tuple = TestUtil.TUPLES.get(i);
-            long lt = ((java.util.Date)tuple[col]).getTime();
-            java.sql.Time t = new java.sql.Time(lt);
+            
+            java.sql.Time r = resultSet.getTime(col + 1);
 
-            String expected = DateFormat.getDateInstance().format(t);
-            String resultis = DateFormat.getDateInstance().format(resultSet.getTime(col + 1));
-            assertEquals(expected, resultis);
+            // the result date should match the date coming from the souce, no change should occur 
+            // somewhere based on calendar or timezone           
 
+           assertThat(r.toString(), is(TestUtil.USE_TIME_FOR_SOURCE));
+ 
         }
     }
 
     @Test
     public void shouldCallGetTimeUsingColmnIndexAndCalendar() throws SQLException {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-06:00"));
+    	Calendar localTime = new GregorianCalendar();
+    	localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
+    	
+    	String EXPECTED_TIME_FOR_TARGET = "08:39:10";
+
 
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
 
-            java.sql.Time resultTime = resultSet.getTime(col + 1, cal);
-
-            Object[] tuple = TestUtil.TUPLES.get(i);
-            java.util.Date d = (java.util.Date)tuple[col];
-            cal.setTimeInMillis(d.getTime());
-
-            java.sql.Time expectedTime = new java.sql.Time(cal.getTime().getTime());
-
-            assertEquals(DateFormat.getDateInstance().format(expectedTime), DateFormat.getDateInstance().format(resultTime));
+            java.sql.Time resultTime = resultSet.getTime(col + 1, localTime);
+            
+            assertThat(resultTime.toString(), is(EXPECTED_TIME_FOR_TARGET));
         }
     }
 
@@ -435,33 +413,29 @@ public class JcrResultSetTest {
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            Object[] tuple = TestUtil.TUPLES.get(i);
-            long lt = ((java.util.Date)tuple[col]).getTime();
-            java.sql.Timestamp t = new java.sql.Timestamp(lt);
-            assertThat(resultSet.getTimestamp(TestUtil.COLUMN_NAMES[col]), is(t));
+            
+            java.sql.Timestamp r = resultSet.getTimestamp(col + 1);
+
+            // the result date should match the date coming from the souce, no change should occur 
+            // somewhere based on calendar or timezone           
+
+           assertThat(r.toString(), is(TestUtil.USE_TIMESTAMP_FOR_SOURCE));
 
         }
     }
 
     @Test
     public void shouldCallGetTimeStampUsingColumnNameAndCalendar() throws SQLException {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-06:00"));
-        int col = getColumnTypeLoc(TestUtil.DATE);
+    	Calendar localTime = new GregorianCalendar();
+    	localTime.clear();
+    	localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
+
+    	int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            java.sql.Timestamp resultTimestamp = resultSet.getTimestamp(TestUtil.COLUMN_NAMES[col], cal);
-
-            // take the tuple date and turn it into the java.sql.Date that should be returned
-            Object[] tuple = TestUtil.TUPLES.get(i);
-            java.util.Date d = (java.util.Date)tuple[col];
-
-            cal.setTimeInMillis(d.getTime());
-
-            java.sql.Timestamp expectedTimestamp = new java.sql.Timestamp(cal.getTime().getTime());
-
-            String expected = DateFormat.getDateInstance().format(expectedTimestamp);
-            String resultis = DateFormat.getDateInstance().format(resultTimestamp);
-            assertEquals(expected, resultis);
+            java.sql.Timestamp resultTimestamp = resultSet.getTimestamp(TestUtil.COLUMN_NAMES[col], localTime);
+            
+            assertThat(resultTimestamp.toString(), is( TestUtil.EXPECTED_TIMESTAMP_FOR_TARGET));
         }
     }
 
@@ -470,33 +444,30 @@ public class JcrResultSetTest {
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
-            Object[] tuple = TestUtil.TUPLES.get(i);
-            long lt = ((java.util.Date)tuple[col]).getTime();
-            java.sql.Timestamp t = new java.sql.Timestamp(lt);
+            
+            java.sql.Timestamp r = resultSet.getTimestamp(col + 1);
 
-            // need to increment because ResultSet is 1 based.
-            assertThat(resultSet.getTimestamp(col + 1), is(t));
+            // the result date should match the date coming from the souce, no change should occur 
+            // somewhere based on calendar or timezone           
+
+           assertThat(r.toString(), is(TestUtil.USE_TIMESTAMP_FOR_SOURCE));
 
         }
     }
 
     @Test
     public void shouldCallGetTimeStampUsingColmnIndexAndCalendar() throws SQLException {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT-06:00"));
+    	Calendar localTime = new GregorianCalendar();
+    	localTime.clear();
+    	localTime.setTimeZone(TimeZone.getTimeZone(TestUtil.EXPECTED_TIMEZONE));
 
         int col = getColumnTypeLoc(TestUtil.DATE);
         for (int i = 0; i < TestUtil.TUPLES.size(); i++) {
             assertThat(resultSet.next(), is(true));
 
-            java.sql.Timestamp resultTime = resultSet.getTimestamp(col + 1, cal);
-
-            Object[] tuple = TestUtil.TUPLES.get(i);
-            java.util.Date d = (java.util.Date)tuple[col];
-            cal.setTimeInMillis(d.getTime());
-
-            java.sql.Timestamp expectedTime = new java.sql.Timestamp(cal.getTime().getTime());
-
-            assertEquals(DateFormat.getDateInstance().format(expectedTime), DateFormat.getDateInstance().format(resultTime));
+            java.sql.Timestamp resultTime = resultSet.getTimestamp(col + 1, localTime);
+            
+            assertThat(resultTime.toString(), is(TestUtil.EXPECTED_TIMESTAMP_FOR_TARGET));
         }
     }
 

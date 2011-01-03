@@ -78,6 +78,10 @@ public class JcrResultSet implements ResultSet {
     private Map<String, Integer> columnIndexesByName;
 
     private String[] columnIDs = null;
+    
+    /** default Calendar instance for converting date/time/timestamp values */
+    private Calendar defaultCalendar;
+
 
     protected JcrResultSet( JcrStatement statement,
                             QueryResult jcrResults,
@@ -125,6 +129,14 @@ public class JcrResultSet implements ResultSet {
         columnIndexesByName = Collections.emptyMap();
     }
     
+    
+    Calendar getDefaultCalendar() {
+        if (defaultCalendar == null) {
+            defaultCalendar = TimestampWithTimezone.getCalendar(); 
+        }
+        return defaultCalendar;
+    }
+     
     /**
      * {@inheritDoc}
      * 
@@ -725,7 +737,7 @@ public class JcrResultSet implements ResultSet {
     	Calendar calv = (Calendar)getValueReturn(columnLabel, PropertyType.DATE); 
     	if (calv == null) return null;
     	
-    	return TimestampWithTimezone.createDate(calv.getTime());
+    	return TimestampWithTimezone.createDate(calv);
     }
 
     /**
@@ -751,12 +763,9 @@ public class JcrResultSet implements ResultSet {
         Calendar actual = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
 
         if (actual == null) return null; 
+              
+    	return TimestampWithTimezone.createDate(actual, cal);
         
-        java.util.Date actualDate = actual.getTime();
-        java.util.TimeZone actualTz = actual.getTimeZone();
-
-        // if cal is null, it will be supplied in TimestampWithTimezone
-        return TimestampWithTimezone.createDate(actualDate,actualTz,cal);    	
     }
 
     /**
@@ -1069,8 +1078,9 @@ public class JcrResultSet implements ResultSet {
     @Override
     public Time getTime( String columnLabel ) throws SQLException {
     	Calendar calv = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
-    	if (calv == null) return null;
-    	return TimestampWithTimezone.createTime(calv.getTime());
+    	if (calv == null) return null;  	
+    	
+    	return TimestampWithTimezone.createTime(calv);
     }
 
     /**
@@ -1096,12 +1106,10 @@ public class JcrResultSet implements ResultSet {
         Calendar actual = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
 
         if (actual == null) return null; 
-        
-        java.util.Date actualDate = actual.getTime();
-        java.util.TimeZone actualTz = actual.getTimeZone();
 
         // if cal is null, it will be supplied in TimestampWithTimezone
-        return TimestampWithTimezone.createTime(actualDate,actualTz,cal);    	
+        return TimestampWithTimezone.createTime(actual, cal);  
+ 
     }
 
     /**
@@ -1123,7 +1131,7 @@ public class JcrResultSet implements ResultSet {
     public Timestamp getTimestamp( String columnLabel ) throws SQLException {
     	Calendar calv = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
     	if (calv == null) return null;
-    	return TimestampWithTimezone.createTimestamp(calv.getTime());
+    	return TimestampWithTimezone.createTimestamp(calv);
 
     }
 
@@ -1149,13 +1157,10 @@ public class JcrResultSet implements ResultSet {
     	
         Calendar actual = (Calendar)getValueReturn(columnLabel, PropertyType.DATE);
 
-        if (actual == null) return null; 
-        
-        java.util.Date actualDate = actual.getTime();
-        java.util.TimeZone actualTz = actual.getTimeZone();
+        if (actual == null) return null;         
         
         // if cal is null, it will be supplied in TimestampWithTimezone
-        return TimestampWithTimezone.createTimestamp(actualDate,actualTz,cal);    	
+        return TimestampWithTimezone.createTimestamp(actual, cal);    	
     }
 
     /**
@@ -1266,8 +1271,7 @@ public class JcrResultSet implements ResultSet {
                     return value.getString();
                 case PropertyType.BOOLEAN:
                     return value.getBoolean();
-                case PropertyType.DATE:
-                   // return new java.sql.Date(value.getDate().getTime().getTime());
+                case PropertyType.DATE:       
                 	return value.getDate();
                 case PropertyType.DOUBLE:
                     return value.getDouble();
