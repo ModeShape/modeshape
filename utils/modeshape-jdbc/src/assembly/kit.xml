@@ -6,7 +6,7 @@
   <id>http-jar-with-dependencies</id>
       
   <formats>
-    <format>jar</format>
+    <format>zip</format>
   </formats>
   <includeBaseDirectory>false</includeBaseDirectory>
 
@@ -14,7 +14,7 @@
  
     <dependencySets>
        <dependencySet>
-       <unpack>true</unpack>
+       <unpack>false</unpack>
 	
 		<unpackOptions>
 		  <!-- Excluding duplicates where LICENSE and NOTICE are already included, but don't have the .txt extension 
