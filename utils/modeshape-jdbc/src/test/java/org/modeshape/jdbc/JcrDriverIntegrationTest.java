@@ -410,10 +410,10 @@ public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
     public void shouldBeAbleToExecuteSqlQueryWithChildAxisCriteria() throws SQLException {
         String[] expected = {
             "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
-            "nt:unstructured    /Cars/Utility    Utility    1.4142135381698608    Utility    2",
-            "nt:unstructured    /Cars/Hybrid    Hybrid    1.4142135381698608    Hybrid    2",
-            "nt:unstructured    /Cars/Sports    Sports    1.4142135381698608    Sports    2",
-            "nt:unstructured    /Cars/Luxury    Luxury    1.4142135381698608    Luxury    2"};
+            "nt:unstructured    /Cars/Utility    Utility    1.0    Utility    2",
+            "nt:unstructured    /Cars/Hybrid    Hybrid    1.0    Hybrid    2",
+            "nt:unstructured    /Cars/Sports    Sports    1.0    Sports    2",
+            "nt:unstructured    /Cars/Luxury    Luxury    1.0    Luxury    2"};
         ConnectionResultsComparator.executeTest(this.connection,
                                                 "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%' ",
                                                 expected,
@@ -431,10 +431,10 @@ public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
     public void shouldBeAbleToExecuteSqlQueryWithContainsCriteria() throws SQLException {
         String[] expected = {
             "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
-            "nt:unstructured    /Cars/Utility    Utility    1.4142135381698608    Utility    2",
-            "nt:unstructured    /Cars/Hybrid    Hybrid    1.4142135381698608    Hybrid    2",
-            "nt:unstructured    /Cars/Sports    Sports    1.4142135381698608    Sports    2",
-            "nt:unstructured    /Cars/Luxury    Luxury    1.4142135381698608    Luxury    2"};
+            "nt:unstructured    /Cars/Utility    Utility    1.0    Utility    2",
+            "nt:unstructured    /Cars/Hybrid    Hybrid    1.0    Hybrid    2",
+            "nt:unstructured    /Cars/Sports    Sports    1.0    Sports    2",
+            "nt:unstructured    /Cars/Luxury    Luxury    1.0    Luxury    2"};
 
         ConnectionResultsComparator.executeTest(this.connection,
                                                 "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'",

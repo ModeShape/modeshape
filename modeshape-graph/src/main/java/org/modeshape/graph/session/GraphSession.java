@@ -105,9 +105,15 @@ public class GraphSession<Payload, PropertyPayload> {
     protected int loadDepth = 1;
 
     /**
-     * A map of the nodes keyed by their identifier.
+     * A map of the nodes keyed by their identifier. This map contains all of the nodes and is the normative
      */
     protected final Map<NodeId, Node<Payload, PropertyPayload>> nodes = new HashMap<NodeId, Node<Payload, PropertyPayload>>();
+
+    /**
+     * A utility map of the nodes keyed by their UUID. This map will not contain nodes that have no UUIDs.
+     */
+    protected final Map<UUID, Node<Payload, PropertyPayload>> nodesByUuid = new HashMap<UUID, Node<Payload, PropertyPayload>>();
+
     /**
      * A map that records how the changes to a node are dependent upon other nodes.
      */
@@ -181,6 +187,36 @@ public class GraphSession<Payload, PropertyPayload> {
         this.requests = new LinkedList<Request>();
         this.requestBuilder = new BatchRequestBuilder(this.requests);
         this.operations = this.store.batch(this.requestBuilder);
+    }
+
+    protected void put( Node<Payload, PropertyPayload> node ) {
+        this.nodes.put(node.getNodeId(), node);
+        // The UUID of the node should never change once its assigned ...
+        UUID uuid = node.getLocation().getUuid();
+        if (uuid != null) this.nodesByUuid.put(uuid, node);
+    }
+
+    protected Node<Payload, PropertyPayload> node( NodeId id ) {
+        return this.nodes.get(id);
+    }
+
+    protected Node<Payload, PropertyPayload> node( UUID uuid ) {
+        // The UUID of the node should never change once its assigned ...
+        return this.nodesByUuid.get(uuid);
+    }
+
+    protected void removeNode( NodeId id ) {
+        Node<Payload, PropertyPayload> removed = this.nodes.remove(id);
+        if (removed != null) {
+            UUID uuid = removed.getLocation().getUuid();
+            if (uuid != null) this.nodesByUuid.remove(uuid);
+        }
+        this.changeDependencies.remove(id);
+    }
+
+    protected void clearNodes() {
+        nodes.clear();
+        nodes.put(root.getNodeId(), root);
     }
 
     ExecutionContext context() {
@@ -261,14 +297,9 @@ public class GraphSession<Payload, PropertyPayload> {
         UUID uuid = location.getUuid();
         if (uuid != null) {
 
-            // Try to find the node in the cache
-            for (Node<Payload, PropertyPayload> node : nodes.values()) {
-                UUID nodeUuid = uuidFor(node.getLocation());
-
-                if (uuid.equals(nodeUuid)) {
-                    return node;
-                }
-            }
+            // Try to find the node in the cache ...
+            Node<Payload, PropertyPayload> node = node(uuid);
+            if (node != null) return node;
 
             // Has this node already been deleted by this session (but not yet committed)?
             if (this.deletedNodes.contains(uuid)) {
@@ -277,19 +308,30 @@ public class GraphSession<Payload, PropertyPayload> {
             }
 
             // Query for the actual location ...
-            location = store.getNodeAt(location).getLocation();
+            org.modeshape.graph.Node persistentNode = store.getNodeAt(location);
+            location = persistentNode.getLocation();
+            Path path = location.getPath();
+
+            // If the node is the root, we already have it ...
+            if (path.isRoot()) return root;
+
+            // Make sure the user has access ...
+            authorizer.checkPermissions(path, Action.READ);
+
+            // Now find the nodes down to (but not including) this node ...
+            Path relativePathFromRootToParent = path.getParent().relativeToRoot();
+            Node<Payload, PropertyPayload> parent = findNodeRelativeTo(root, relativePathFromRootToParent, true);
+
+            // Now materialize the child at our location ...
+            if (!parent.isLoaded()) parent.load();
+            node = parent.getChild(path.getLastSegment());
+            nodeOperations.materialize(persistentNode, node);
+            return node;
         }
+
+        // There was no UUID, so there has to be a path ...
         assert location.hasPath();
-        Node<Payload, PropertyPayload> result = findNodeWith(null, location.getPath());
-        if (uuid != null) {
-            // Check that the input UUID matches that of the result ...
-            UUID actualUuid = result.getLocation().getUuid();
-            if (!uuid.equals(actualUuid)) {
-                String msg = GraphI18n.nodeDoesNotExistWithUuid.text(uuid, workspaceName);
-                throw new PathNotFoundException(location, this.root.getPath(), msg);
-            }
-        }
-        return result;
+        return findNodeWith(null, location.getPath());
     }
 
     private UUID uuidFor( Location location ) {
@@ -311,7 +353,7 @@ public class GraphSession<Payload, PropertyPayload> {
      */
     public Node<Payload, PropertyPayload> findNodeWith( NodeId id ) {
         CheckArg.isNotNull(id, "id");
-        return nodes.get(id);
+        return node(id);
     }
 
     /**
@@ -331,7 +373,7 @@ public class GraphSession<Payload, PropertyPayload> {
             CheckArg.isNotNull(id, "id");
             CheckArg.isNotNull(path, "path");
         }
-        Node<Payload, PropertyPayload> result = id != null ? nodes.get(id) : null; // if found, the user should have read
+        Node<Payload, PropertyPayload> result = id != null ? node(id) : null; // if found, the user should have read
         // privilege since it was
         // already in the cache
         if (result == null || result.isStale()) {
@@ -820,8 +862,7 @@ public class GraphSession<Payload, PropertyPayload> {
             refresh(root, keepChanges);
         } else {
             // Clear out all state ...
-            nodes.clear();
-            nodes.put(root.getNodeId(), root);
+            clearNodes();
             // Clear out all changes ...
             requests.clear();
             changeDependencies.clear();
@@ -1134,8 +1175,7 @@ public class GraphSession<Payload, PropertyPayload> {
             deletedNodes.add(nodeUuid);
         }
         // Fix the cache's state ...
-        nodes.remove(node.getNodeId());
-        changeDependencies.remove(node.getNodeId());
+        removeNode(node.getNodeId());
         recordUnloaded(node);
     }
 
@@ -1153,8 +1193,7 @@ public class GraphSession<Payload, PropertyPayload> {
                 @Override
                 public boolean visit( Node<Payload, PropertyPayload> unloaded ) {
                     if (unloaded != node) { // info for 'node' should not be removed
-                        nodes.remove(unloaded.getNodeId());
-                        changeDependencies.remove(unloaded.getNodeId());
+                        removeNode(unloaded.getNodeId());
                         unloaded.parent = null;
                     }
                     return true;
@@ -1798,8 +1837,7 @@ public class GraphSession<Payload, PropertyPayload> {
                         childrenToKeep.put(existing.getLocation(), existing);
                     } else {
                         // Otherwise, remove the child from the cache since we won't be needing it anymore ...
-                        cache.nodes.remove(existing.getNodeId());
-                        assert !cache.changeDependencies.containsKey(existing.getNodeId());
+                        cache.removeNode(existing.getNodeId());
                         existing.parent = null;
                     }
                 }
@@ -1827,7 +1865,7 @@ public class GraphSession<Payload, PropertyPayload> {
                         // The existing child (if there was one) is to be refreshed ...
                         NodeId nodeId = cache.idFactory.create();
                         Node<Payload, PropertyPayload> replacementChild = cache.createNode(this, nodeId, location);
-                        cache.nodes.put(replacementChild.getNodeId(), replacementChild);
+                        cache.put(replacementChild);
                         assert replacementChild.getName().equals(childName);
                         assert replacementChild.parent == this;
                         // Add it to the parent node ...
@@ -1868,7 +1906,7 @@ public class GraphSession<Payload, PropertyPayload> {
                     NodeId id = cache.idFactory.create();
                     Name childName = location.getPath().getLastSegment().getName();
                     Node<Payload, PropertyPayload> child = cache.createNode(this, id, location);
-                    cache.nodes.put(child.getNodeId(), child);
+                    cache.put(child);
                     List<Node<Payload, PropertyPayload>> currentChildren = childrenByName.get(childName);
                     currentChildren.add(child);
                     child.parent = this;
@@ -2032,19 +2070,19 @@ public class GraphSession<Payload, PropertyPayload> {
             for (Map.Entry<NodeId, Dependencies> entry : cache.changeDependencies.entrySet()) {
                 Dependencies dependency = entry.getValue();
                 NodeId nodeId = entry.getKey();
-                Node<Payload, PropertyPayload> changedNode = cache.nodes.get(nodeId);
+                Node<Payload, PropertyPayload> changedNode = cache.node(nodeId);
 
                 // First, check whether the changed node is within the branch ...
                 if (!changedNode.isAtOrBelow(this)) {
                     // The node is not within this branch, so the original parent must not be at or below this node ...
-                    if (cache.nodes.get(dependency.getMovedFrom()).isAtOrBelow(this)) {
+                    if (cache.node(dependency.getMovedFrom()).isAtOrBelow(this)) {
                         // The original parent is below 'this' but the changed node is not ...
                         return true;
                     }
                     // None of the other dependencies can be within this branch ...
                     for (NodeId dependentId : dependency.getRequireChangesTo()) {
                         // The dependent node must not be at or below this node ...
-                        if (cache.nodes.get(dependentId).isAtOrBelow(this)) {
+                        if (cache.node(dependentId).isAtOrBelow(this)) {
                             // The other node that must change is at or below 'this'
                             return true;
                         }
@@ -2056,7 +2094,7 @@ public class GraphSession<Payload, PropertyPayload> {
 
                 // Second, check whether this node was moved from outside this branch ...
                 if (dependency.getMovedFrom() != null) {
-                    Node<Payload, PropertyPayload> originalParent = cache.nodes.get(dependency.getMovedFrom());
+                    Node<Payload, PropertyPayload> originalParent = cache.node(dependency.getMovedFrom());
                     // If the original parent cannot be found ...
                     if (originalParent == null) {
                         continue;
@@ -2069,7 +2107,7 @@ public class GraphSession<Payload, PropertyPayload> {
                     // All of the other dependencies must be within this branch ...
                     for (NodeId dependentId : dependency.getRequireChangesTo()) {
                         // The dependent node must not be at or below this node ...
-                        if (!cache.nodes.get(dependentId).isAtOrBelow(this)) {
+                        if (!cache.node(dependentId).isAtOrBelow(this)) {
                             // Another dependent node is not at or below this branch either ...
                             return true;
                         }
@@ -2682,7 +2720,7 @@ public class GraphSession<Payload, PropertyPayload> {
                 throw e;
             }
 
-            cache.nodes.put(child.getNodeId(), child);
+            cache.put(child);
 
             return child;
         }

@@ -30,6 +30,7 @@ import java.util.Set;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
@@ -1441,9 +1442,15 @@ class JcrQueryManager implements QueryManager {
          * @see org.modeshape.jcr.query.JcrQueryContext#getNode(Location)
          */
         @Override
-        public Node getNode( Location location ) throws AccessDeniedException, RepositoryException {
+        public Node getNode( Location location ) throws RepositoryException {
             if (!session.wasRemovedInSession(location)) {
-                return session.getNode(location.getPath());
+                try {
+                    return session.getNode(location.getPath());
+                } catch (PathNotFoundException e) {
+                    // Must have been deleted from storage but not yet from the indexes ...
+                } catch (AccessDeniedException e) {
+                    // No access to this node ...
+                }
             }
             return null;
         }
