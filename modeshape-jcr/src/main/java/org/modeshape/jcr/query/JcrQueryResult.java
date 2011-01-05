@@ -29,7 +29,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import javax.jcr.AccessDeniedException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -406,17 +405,12 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
             int index = 0;
             for (int locationIndex : locationIndexes) {
                 Location location = (Location)tuple[locationIndex];
-                try {
-                    Node node = context.getNode(location);
-                    if (node == null) {
-                        // Skip this record because one of the nodes no longer exists ...
-                        return null;
-                    }
-                    nodes[index++] = node;
-                } catch (AccessDeniedException e) {
-                    // No access to this node, so skip the record ...
+                Node node = context.getNode(location);
+                if (node == null) {
+                    // Skip this record because one of the nodes no longer exists ...
                     return null;
                 }
+                nodes[index++] = node;
             }
             return new MultiSelectorQueryResultRow(this, nodes, locationIndexes, tuple);
         }

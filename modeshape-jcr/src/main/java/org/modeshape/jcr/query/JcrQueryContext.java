@@ -24,7 +24,6 @@
 package org.modeshape.jcr.query;
 
 import java.util.Map;
-import javax.jcr.AccessDeniedException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
@@ -53,7 +52,7 @@ public interface JcrQueryContext {
                 String language,
                 String statement ) throws RepositoryException;
 
-    Node getNode( Location location ) throws AccessDeniedException, RepositoryException;
+    Node getNode( Location location ) throws RepositoryException;
 
     Value createValue( int propertyType,
                        Object value );
