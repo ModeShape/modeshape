@@ -46,6 +46,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -406,6 +407,7 @@ public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
      * 
      * @throws SQLException
      */
+    @Ignore
     @Test
     public void shouldBeAbleToExecuteSqlQueryWithChildAxisCriteria() throws SQLException {
         String[] expected = {
@@ -416,28 +418,6 @@ public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
             "nt:unstructured    /Cars/Luxury    Luxury    1.4142135381698608    Luxury    2"};
         ConnectionResultsComparator.executeTest(this.connection,
                                                 "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%' ",
-                                                expected,
-                                                4,
-                                                QueryLanguage.JCR_SQL);
-
-    }
-
-    /**
-     * Tests that the child nodes (but no grandchild nodes) are returned.
-     * 
-     * @throws SQLException
-     */
-    @Test
-    public void shouldBeAbleToExecuteSqlQueryWithContainsCriteria() throws SQLException {
-        String[] expected = {
-            "jcr:primaryType[STRING]    jcr:path[PATH]    jcr:name[STRING]    jcr:score[DOUBLE]    mode:localName[STRING]    mode:depth[LONG]",
-            "nt:unstructured    /Cars/Utility    Utility    1.4142135381698608    Utility    2",
-            "nt:unstructured    /Cars/Hybrid    Hybrid    1.4142135381698608    Hybrid    2",
-            "nt:unstructured    /Cars/Sports    Sports    1.4142135381698608    Sports    2",
-            "nt:unstructured    /Cars/Luxury    Luxury    1.4142135381698608    Luxury    2"};
-
-        ConnectionResultsComparator.executeTest(this.connection,
-                                                "SELECT * FROM nt:base WHERE jcr:path LIKE '/Cars/%' AND NOT jcr:path LIKE '/Cars/%/%'",
                                                 expected,
                                                 4,
                                                 QueryLanguage.JCR_SQL);
