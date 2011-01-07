@@ -346,6 +346,15 @@ public abstract class AbstractModeShapeTest {
     }
 
     protected Node assertNode( Node topNode,
+                               String name ) throws Exception {
+        Node node = findNode(topNode, name);
+        if (node == null) {
+            fail("NODE: " + name + " not found");
+        }
+        return node;
+    }
+
+    protected Node assertNode( Node topNode,
                                String name,
                                String propName ) throws Exception {
         Node node = findNode(topNode, name);

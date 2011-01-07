@@ -26,31 +26,26 @@ package org.modeshape.test.integration.sequencer;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-import java.net.URL;
+import java.io.File;
+import javax.jcr.Node;
+import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeType;
 import org.junit.After;
 import org.junit.Test;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
-import org.modeshape.jcr.JcrEngine;
-import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeRoles;
 import org.modeshape.jcr.JcrRepository.Option;
+import org.modeshape.sequencer.image.ImageMetadataLexicon;
+import org.modeshape.test.integration.AbstractModeShapeTest;
 
-public class SequencerTest {
+public class SequencerTest extends AbstractModeShapeTest {
 
-    protected static URL resourceUrl( String name ) {
-        return SequencerTest.class.getClassLoader().getResource(name);
-    }
-
-    private JcrConfiguration configuration;
-    private JcrEngine engine;
-    private JcrRepository repository;
-    private Session session;
-
+    @Override
     @After
-    public void afterEach() {
+    public void afterEach() throws Exception {
+        super.afterEach();
         configuration = null;
 
         try {
@@ -149,6 +144,80 @@ public class SequencerTest {
                         "jdbcs:imported");
     }
 
+    @Test
+    public void shouldSequenceContentInOneSourceAndStoreDerivedContentInAnother() throws Exception {
+        String repoId = "content";
+        String repoSrcId = "store";
+        String workSpace = "images";
+
+        String metaRepoId = "metadata";
+        String metaRepoSrcId = "imageexif";
+        String metaWorkSpace = "info";
+
+        // Configuration
+        configuration = new JcrConfiguration();
+
+        // Image repository source
+        configuration.repositorySource(repoSrcId)
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The repository for our content")
+                     .setProperty("defaultWorkspaceName", workSpace);
+
+        // Metadata repository source
+        configuration.repositorySource(metaRepoSrcId)
+                     .usingClass(InMemoryRepositorySource.class)
+                     .setDescription("The meta repository for our content")
+                     .setProperty("defaultWorkspaceName", metaWorkSpace);
+
+        // Image repository
+        configuration.repository(repoId).registerNamespace(ImageMetadataLexicon.Namespace.PREFIX,
+                                                           ImageMetadataLexicon.Namespace.URI).setSource(repoSrcId);
+
+        // Metadata repository
+        configuration.repository(metaRepoId)
+                     .addNodeTypes("src/test/resources/sequencers/cnd/images.cnd")
+                     .registerNamespace("example", "http://www.example.com/exif")
+                     .setSource(metaRepoSrcId);
+
+        // Sequencer
+        configuration.sequencer("Image Sequencer")
+                     .usingClass("org.modeshape.sequencer.image.ImageMetadataSequencer")
+                     .loadedFromClasspath()
+                     .setDescription("Sequences image files to extract the characteristics of the image")
+                     .sequencingFrom("store:images://(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd)[*])/jcr:content[@jcr:data]")
+                     .andOutputtingTo("imageexif:info:/$1");
+
+        engine = configuration.build();
+        if (!engine.getProblems().isEmpty()) {
+            System.out.println(engine.getProblems());
+        }
+        engine.start();
+        repository = engine.getRepository(repoId);
+        session = repository.login();
+
+        // Add the "files" node ...
+        session.getRootNode().addNode("files", "nt:unstructured");
+        session.save();
+
+        // Upload an image ...
+        File file = new File("src/test/resources/sequencers/image/caution.gif");
+        assertThat(file.exists(), is(true));
+        uploadFile(file.toURI().toURL(), "/files/");
+        waitUntilSequencedNodesIs(1);
+        Thread.sleep(200); // wait a bit while the new content is indexed
+
+        // Now look for the derived content ...
+        Repository imageRepo = engine.getRepository(metaRepoId);
+        Session imageSession = imageRepo.login();
+
+        Node caution = imageSession.getNode("/caution.gif");
+        Node metadata = caution.getNode("image:metadata");
+        assertThat(metadata.getProperty("image:height").getLong(), is(48L));
+
+        // print = true;
+        printSubgraph(caution);
+    }
+
     // @Test
     // public void shouldCreateRepositoryConfiguredWithOneXmlNodeTypeDefinitionFiles() throws Exception {
     // configuration = new JcrConfiguration();
@@ -191,6 +260,7 @@ public class SequencerTest {
     // assertNodeType("mgnl:workItem", false, false, true, true, null, 1, 1, "nt:hierarchyNode");
     // }
 
+    @Override
     protected void assertNodeType( String name,
                                    boolean isAbstract,
                                    boolean isMixin,
@@ -215,6 +285,7 @@ public class SequencerTest {
         assertThat(nodeType.getDeclaredPropertyDefinitions().length, is(numberOfDeclaredPropertyDefinitions));
     }
 
+    @Override
     protected void assertNodeTypes( String... nodeTypeNames ) throws Exception {
         for (String nodeTypeName : nodeTypeNames) {
             NodeType nodeType = session.getWorkspace().getNodeTypeManager().getNodeType(nodeTypeName);
