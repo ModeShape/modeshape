@@ -84,7 +84,7 @@ public class StringUtil {
         }
         if (err || requiredParameterCount < parameters.length) {
             throw new IllegalArgumentException(
-                                               JdbcI18n.requiredToSuppliedParameterMismatch.text(parameters.length,
+                                               JdbcI18n.i18nRequiredToSuppliedParameterMismatch.text(parameters.length,
                                                                                                    parameters.length == 1 ? "" : "s",
                                                                                                    requiredParameterCount,
                                                                                                    requiredParameterCount == 1 ? "" : "s",
