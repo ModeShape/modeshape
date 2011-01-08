@@ -72,7 +72,6 @@ public final class JdbcI18n {
     public static I18n noRepositoryNamesFound;
     public static I18n argumentMayNotBeNegative;
     public static I18n argumentMayNotBeNull;
-    public static I18n requiredToSuppliedParameterMismatch;
 
     public static I18n connectionIsClosed;
     public static I18n statementIsClosed;
