@@ -4,9 +4,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.jcr.Binary;
 import javax.jcr.Item;
@@ -504,8 +508,7 @@ class ItemHandler extends AbstractHandler {
         assert rawWorkspaceName != null;
 
         Session session = getSession(request, rawRepositoryName, rawWorkspaceName);
-        Node node;
-        Item item;
+        Item item = null;
         if ("".equals(path) || "/".equals(path)) {
             item = session.getRootNode();
         } else {
@@ -516,30 +519,119 @@ class ItemHandler extends AbstractHandler {
             }
         }
 
+        Node node = updateItem(item, requestContent);
+        node.getSession().save();
+        return jsonFor(node, 0).toString();
+    }
+
+    /**
+     * Updates the existing item based upon the supplied JSON content.
+     * 
+     * @param item the node or property to be updated
+     * @param requestContent the JSON-encoded representation of the item(s) to be updated
+     * @return the node that was updated; never null
+     * @throws JSONException if there is an error encoding the node
+     * @throws RepositoryException if any other error occurs
+     */
+    private Node updateItem( Item item,
+                             String requestContent ) throws RepositoryException, JSONException {
         if (item instanceof Node) {
-            JSONObject properties = new JSONObject(requestContent);
-            node = (Node)item;
+            JSONObject jsonNode = new JSONObject(requestContent);
+            return updateNode((Node)item, jsonNode);
+        }
+
+        // Otherwise the incoming content should be a JSON object containing the property name and
+        // a value that is either a JSON string or a JSON array.
+        Property property = (Property)item;
+        String propertyName = property.getName();
+        JSONObject jsonProperty = new JSONObject(requestContent);
+        String jsonPropertyName = jsonProperty.has(propertyName) ? propertyName : propertyName + BASE64_ENCODING_SUFFIX;
+        Node node = property.getParent();
+        setPropertyOnNode(node, jsonPropertyName, jsonProperty.get(jsonPropertyName));
+        return node;
+    }
+
+    /**
+     * Updates the existing node with the properties (and optionally children) as described by {@code jsonNode}.
+     * 
+     * @param node the node to be updated
+     * @param jsonNode the JSON-encoded representation of the node or nodes to be updated.
+     * @return the Node that was updated; never null
+     * @throws JSONException if there is an error encoding the node
+     * @throws RepositoryException if any other error occurs
+     */
+    private Node updateNode( Node node,
+                             JSONObject jsonNode ) throws RepositoryException, JSONException {
+        // If the JSON object has a properties holder, then this is likely a subgraph ...
+        JSONObject properties = jsonNode;
+        if (jsonNode.has(PROPERTIES_HOLDER)) {
+            properties = jsonNode.getJSONObject(PROPERTIES_HOLDER);
+        }
+
+        // Check out the node if it is versionable ...
+        boolean versionable = node.isNodeType("mix:versionable");
+        if (versionable) {
+            node.getSession().getWorkspace().getVersionManager().checkout(node.getPath());
+            // If this fails, we don't need to do a checkin ...
+        }
+
+        try {
 
             for (Iterator<?> iter = properties.keys(); iter.hasNext();) {
                 String key = (String)iter.next();
-
+                if (PRIMARY_TYPE_PROPERTY.equals(key)) continue; // can't change the primary type
                 setPropertyOnNode(node, key, properties.get(key));
             }
 
-        } else {
-            /*
-             * The incoming content should be a JSON object containing the property name and a value that is either a JSON
-             * string or a JSON array.
-             */
-            Property property = (Property)item;
-            String propertyName = property.getName();
-            JSONObject jsonProperty = new JSONObject(requestContent);
-            String jsonPropertyName = jsonProperty.has(propertyName) ? propertyName : propertyName + BASE64_ENCODING_SUFFIX;
-            node = property.getParent();
-            setPropertyOnNode(node, jsonPropertyName, jsonProperty.get(jsonPropertyName));
+            // If the JSON object has a children holder, then we need to update the list of children and child nodes ...
+            if (jsonNode.has(CHILD_NODE_HOLDER)) {
+                Node parent = node;
+                JSONObject children = jsonNode.getJSONObject(CHILD_NODE_HOLDER);
+
+                // Get the existing children ...
+                Map<String, Node> existingChildNames = new LinkedHashMap<String, Node>();
+                NodeIterator childIter = parent.getNodes();
+                while (childIter.hasNext()) {
+                    Node child = childIter.nextNode();
+                    existingChildNames.put(nameOf(child), child);
+                }
+
+                for (Iterator<?> iter = children.keys(); iter.hasNext();) {
+                    String childName = (String)iter.next();
+                    JSONObject child = children.getJSONObject(childName);
+                    // Find the existing node ...
+                    if (parent.hasNode(childName)) {
+                        // The node exists, so get it and update it ...
+                        Node childNode = parent.getNode(childName);
+                        updateNode(childNode, child);
+                        existingChildNames.remove(nameOf(childNode));
+                    } else {
+                        // Have to add the new child ...
+                        addNode(parent, childName, child);
+                    }
+                }
+
+                // Remove the children in reverse order (starting with the last child to be removed) ...
+                LinkedList<Node> childNodes = new LinkedList<Node>(existingChildNames.values());
+                Collections.reverse(childNodes);
+                while (!childNodes.isEmpty()) {
+                    Node child = childNodes.removeLast();
+                    child.remove();
+                }
+            }
+        } finally {
+            if (versionable) {
+                node.getSession().getWorkspace().getVersionManager().checkin(node.getPath());
+            }
         }
-        node.getSession().save();
-        return jsonFor(node, 0).toString();
+
+        return node;
+    }
+
+    private String nameOf( Node node ) throws RepositoryException {
+        int index = node.getIndex();
+        String childName = node.getName();
+        return index == 1 ? childName : childName + "[" + index + "]";
     }
 
 }
