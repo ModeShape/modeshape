@@ -122,6 +122,44 @@ public final class JsonRestClient implements IRestClient {
     }
 
     /**
+     * Creates a file node in the specified repository. Note: All parent folders are assumed to already exist.
+     * 
+     * @param workspace the workspace where the file node is being created
+     * @param path the path in the workspace to the folder where the file node is being created
+     * @param file the file whose contents will be contained in the file node being created
+     * @throws Exception if there is a problem creating the file
+     */
+    private void updateFileNode( Workspace workspace,
+                                 String path,
+                                 File file ) throws Exception {
+        LOGGER.trace("updateFileNode: workspace={0}, path={1}, file={2}", workspace.getName(), path, file.getAbsolutePath());
+        FileNode fileNode = new FileNode(workspace, path, file);
+        URL fileNodeUrl = fileNode.getUrl();
+        URL fileNodeUrlWithTerseResponse = new URL(fileNodeUrl.toString() + "?mode:includeNode=false");
+        HttpClientConnection connection = connect(workspace.getServer(), fileNodeUrlWithTerseResponse, RequestMethod.PUT);
+
+        try {
+            LOGGER.trace("updateFileNode: create node={0}", fileNode);
+            connection.write(fileNode.getContent());
+
+            // make sure node was created
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                // node was not updated
+                LOGGER.error(RestClientI18n.connectionErrorMsg, responseCode, "updateFileNode");
+                String msg = RestClientI18n.updateFileFailedMsg.text(file.getName(), path, workspace.getName(), responseCode);
+                throw new RuntimeException(msg);
+            }
+        } finally {
+            if (connection != null) {
+                LOGGER.trace("updateFileNode: leaving");
+                connection.disconnect();
+            }
+        }
+    }
+
+    /**
      * Creates a folder node in the specified workspace. Note: All parent folders are assumed to already exist.
      * 
      * @param workspace the workspace where the folder node is being created
@@ -237,27 +275,27 @@ public final class JsonRestClient implements IRestClient {
     public Map<String, javax.jcr.nodetype.NodeType> getNodeTypes( Repository repository ) throws Exception {
         assert repository != null;
         LOGGER.trace("getNodeTypes: workspace={0}", repository);
-        
+
         // because the http://<url> needs the workspace when it appends the depth option
         // this logic must be used to obtain one.
         Collection<Workspace> workspaces = getWorkspaces(repository);
         Workspace workspace = null;
         Workspace systemWs = null;
         for (Workspace wspace : workspaces) {
-        	if (wspace.getName().equalsIgnoreCase("default")) {
-        		workspace = wspace;
-        		break;
-        	}
-        	if (workspace == null && !wspace.getName().equalsIgnoreCase("system")) {
-        		workspace = wspace;
-        	}
-        	
-        	if (wspace.getName().equalsIgnoreCase("system")) {
-        		systemWs = wspace;
-        	}
+            if (wspace.getName().equalsIgnoreCase("default")) {
+                workspace = wspace;
+                break;
+            }
+            if (workspace == null && !wspace.getName().equalsIgnoreCase("system")) {
+                workspace = wspace;
+            }
+
+            if (wspace.getName().equalsIgnoreCase("system")) {
+                systemWs = wspace;
+            }
         }
         if (workspace == null) {
-        	workspace = systemWs;
+            workspace = systemWs;
         }
 
         NodeTypeNode nodetypeNode = new NodeTypeNode(workspace);
@@ -412,16 +450,16 @@ public final class JsonRestClient implements IRestClient {
         LOGGER.trace("publish: workspace={0}, path={1}, file={2}", workspace.getName(), path, file.getAbsolutePath());
 
         try {
-            // first delete if file exists at that path
             if (pathExists(workspace, path, file)) {
-                unpublish(workspace, path, file);
+                // Update it ...
+                updateFileNode(workspace, path, file);
             } else {
                 // doesn't exist so make sure the parent path exists
                 ensureFolderExists(workspace, path);
+                // publish file
+                createFileNode(workspace, path, file);
             }
 
-            // publish file
-            createFileNode(workspace, path, file);
         } catch (Exception e) {
             String msg = RestClientI18n.publishFailedMsg.text(file.getAbsolutePath(), path, workspace.getName());
             return new Status(Severity.ERROR, msg, e);

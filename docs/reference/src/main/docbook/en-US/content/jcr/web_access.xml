@@ -684,7 +684,7 @@ POST http://www.example.com/resources/modeshape%3arepository/default/items/newNo
 		proper determination of whether the values are binary; see the 
 		<link linkend="binary_properties_in_rest_representations">next section"</link>").
 <programlisting><![CDATA[
-PUT http://www.example.com/resources/modeshape%3arepository/default/items/newNode/someProperty
+PUT http://www.example.com/resources/modeshape%3arepository/default/items/some/existing/node/someProperty
 
 {
 	"someProperty" : "bar"
@@ -693,13 +693,55 @@ PUT http://www.example.com/resources/modeshape%3arepository/default/items/newNod
 		Setting multiple properties at once can be performed by providing a URI to a node instead of a property. The
 		body of the request should then be a JSON object that maps property names to their new values.
 <programlisting><![CDATA[
-PUT http://www.example.com/resources/modeshape%3arepository/default/items/newNode
+PUT http://www.example.com/resources/modeshape%3arepository/default/items/some/existing/node
 
 {
 	"someProperty": "foobar",
 	"someOtherProperty": "newValue"
 }
 ]]></programlisting>
+		The JSON request can even contain a properties container:
+<programlisting><![CDATA[
+PUT http://www.example.com/resources/modeshape%3arepository/default/items/some/existing/node
+
+{
+	"properties": {
+		"someProperty": "foobar",
+		"someOtherProperty": "newValue"
+	}
+}
+]]></programlisting>
+		</para>
+		<para>		
+		A subgraph can be updated all at once using a PUT against a URI of the top node in the subgraph. Note that
+		in this case, very node in the subgraph must be provided in the JSON request (any node not in the request will be removed).
+		This method will attempt to set all of the properties to the new value(s) as specified in the JSON request,
+		plus any descendant node in the JSON request that doesn't reflect an existing node will be created while any
+		existing node not reflected in the JSON request will be removed. (Any specifications of "jcr:primaryType" are ignored
+		if the node already exists.) In other words, the request only needs to contain the properties that are changed. 
+		Of course, if a node is being added, all of its properties need to be included in the request. 
+	</para>
+	<para>
+		Here is an example:
+<programlisting><![CDATA[
+PUT http://www.example.com/resources/modeshape%3arepository/default/items/some/existing/node
+
+{
+	"properties": {
+		"jcr:primaryType": "nt:unstructured",
+		"jcr:mixinTypes": "mix:referenceable",
+		"someProperty": "foo"
+	},
+	"children": {
+		"childNode": {
+			"properties": {"jcr:primaryType": "nt:unstructured"}
+		}
+	}
+}
+]]></programlisting>		
+		This will update the existing node at "/some/existing/node" with the specified properties, and ensure
+		that it contains one child node named "childNode". Note that the body of this request is identical in structure
+		to that of the POST requests.
 		</para>
 
 

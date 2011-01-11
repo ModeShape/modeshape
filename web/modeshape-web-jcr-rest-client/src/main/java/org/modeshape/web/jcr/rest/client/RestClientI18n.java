@@ -43,6 +43,7 @@ public final class RestClientI18n {
     // JsonRestClient messages
     public static I18n connectionErrorMsg;
     public static I18n createFileFailedMsg;
+    public static I18n updateFileFailedMsg;
     public static I18n createFolderFailedMsg;
     public static I18n getRepositoriesFailedMsg;
     public static I18n getWorkspacesFailedMsg;
