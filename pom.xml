@@ -118,6 +118,15 @@
 			</roles>
 			<timezone>+1</timezone>
 		</developer>
+		<developer>
+			<name>Van Halbert</name>
+			<id>vhalbert@redhat.com</id>
+			<email>vhalbert@redhat.com</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<timezone>-6</timezone>
+		</developer>
 	</developers>
 	<contributors>
 		<contributor>
