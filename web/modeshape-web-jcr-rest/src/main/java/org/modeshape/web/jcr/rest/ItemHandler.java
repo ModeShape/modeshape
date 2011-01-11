@@ -620,7 +620,8 @@ class ItemHandler extends AbstractHandler {
                 }
             }
         } finally {
-            if (versionable) {
+            if (versionable || node.isNodeType("mix:versionable")) {
+                // It either was versionable, or it wasn't but is now ...
                 node.getSession().getWorkspace().getVersionManager().checkin(node.getPath());
             }
         }
