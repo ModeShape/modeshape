@@ -287,7 +287,7 @@
                             
                             Note:  this is all changing in future releases.
                             
-                            test dups:  unzip -l modeshape-jdbc-2.2.1-http-jar-with-dependencies.jar | awk '{print $NF}' | sort | uniq -c | grep -v "1 "
+                            test dups:  unzip -l modeshape-jdbc-${project.version}-http-jar-with-dependencies.jar | awk '{print $NF}' | sort | uniq -c | grep -v "1 "
                          -->
                          
                         <plugin>
@@ -352,9 +352,9 @@
                                                 <fileset file="target/tempproviders/jet_providers" />
                                         </concat>
                                                                            
-                                        <unzip src="target/tempjars/modeshape-common-2.2.1.jar" dest="target/temploc"/>                                   
-                                        <unzip src="target/tempjars/modeshape-jcr-api-2.2.1.jar" dest="target/temploc"/>                                   
-                                        <unzip src="target/tempjars/modeshape-web-jcr-rest-client-2.2.1.jar" dest="target/temploc"/> 
+                                        <unzip src="target/tempjars/modeshape-common-${project.version}.jar" dest="target/temploc"/>
+                                        <unzip src="target/tempjars/modeshape-jcr-api-${project.version}.jar" dest="target/temploc"/>
+                                        <unzip src="target/tempjars/modeshape-web-jcr-rest-client-${project.version}.jar" dest="target/temploc"/>
                                         
                                          <copy todir="target/temploc/org">
                                             <fileset dir="target/tempjars/org"/>
