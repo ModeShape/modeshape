@@ -293,7 +293,7 @@
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-graph</artifactId>
-  <version>2.3.0.Final</version>
+  <version>2.4.0.Final</version>
 </dependency>
 	 ]]></programlisting>
 			<para>
@@ -309,14 +309,14 @@
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-graph</artifactId>
-  <version>2.3.0.Final</version>
+  <version>2.4.0.Final</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>
 <dependency>
   <groupId>org.modeshape</groupId>
   <artifactId>modeshape-common</artifactId>
-  <version>2.3.0.Final</version>
+  <version>2.4.0.Final</version>
   <type>test-jar</type>
   <scope>test</scope>
 </dependency>

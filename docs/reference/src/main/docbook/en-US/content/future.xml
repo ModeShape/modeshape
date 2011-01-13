@@ -34,7 +34,7 @@
 		ModeShape &versionNumber; provides a very capable JCR implementation with powerful and unique features not matched
 		by other implementations.  
 		Version &versionNumber; improves the JDBC driver, the JBoss AS deployment, and the JOPR/RHQ monitoring
-		plugin. There are also two new sequencers for Teiid relational models and virtual database definitions.
+		plugin, along with numerous other fixes and improvements.
 		Of course, the release also comes with quite a few <ulink url="&ReleaseNotes;">bug fixes and improvements</ulink>.
 	</para>
 	<para>ModeShape now implements all of the required JCR 2.0 features:
@@ -74,11 +74,8 @@
 		are fixed, we'll start the process of attaining JCR 2.0 certification for ModeShape.
 	</para>
 	<para>
-		What's next for ModeShape? 
-		Over the next few releases, we'll be adding more
-		<link linkend="repository-connectors">connectors</link> and <link linkend="sequencers">sequencers</link> to our library,
-		and making a variety of improvements and bug fixes.
-		Other items on our <ulink url="&Roadmap;">roadmap</ulink> include
+		What's next for ModeShape? The focus for the next release will be to focus on optimization and performance improvements.
+		Other items on our longer term <ulink url="&Roadmap;">roadmap</ulink> include
 		a web user interface, Seam integration, and integration with even more kinds of
 		information systems and repositories.
 	</para>
