@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.modeshape</groupId>
 	<artifactId>modeshape</artifactId>
-	<version>2.4.0.Final</version>
+	<version>2.5-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>ModeShape</name>
 	<url>http://www.modeshape.org</url>
@@ -11,9 +11,9 @@
 		ModeShape is a JCR repository implementation with support for federation and sequencing.
 	</description>
 	<scm>
-		<connection>scm:svn:https://anonsvn.jboss.org/repos/modeshape/tags/modeshape-2.4.0.Final</connection>
-		<developerConnection>scm:svn:https://svn.jboss.org/repos/modeshape/tags/modeshape-2.4.0.Final</developerConnection>
-		<url>http://anonsvn.jboss.org/repos/modeshape/tags/modeshape-2.4.0.Final</url>
+		<connection>scm:svn:https://anonsvn.jboss.org/repos/modeshape/trunk</connection>
+		<developerConnection>scm:svn:https://svn.jboss.org/repos/modeshape/trunk</developerConnection>
+		<url>http://anonsvn.jboss.org/repos/modeshape</url>
 	</scm>
 	<issueManagement>
 		<system>jira</system>
