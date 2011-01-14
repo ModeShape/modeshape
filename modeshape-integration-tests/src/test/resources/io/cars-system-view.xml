@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sv:node xmlns:jcr="http://www.jcp.org/jcr/1.0" 
+         xmlns:nt="http://www.jcp.org/jcr/nt/1.0" 
+         xmlns:sv="http://www.jcp.org/jcr/sv/1.0"
+         xmlns:car="http://www.modeshape.org/examples/cars/1.0"
+         sv:name="Cars">
+  <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>nt:unstructured</sv:value></sv:property>
+  <sv:node sv:name="Hybrid">
+    <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>nt:unstructured</sv:value></sv:property>
+    <sv:node sv:name="Toyota Prius">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>
+      <sv:property sv:name="car:maker" sv:type="String"><sv:value>Toyota</sv:value></sv:property>
+      <sv:property sv:name="car:model" sv:type="String"><sv:value>Prius</sv:value></sv:property>
+      <sv:property sv:name="car:year" sv:type="String"><sv:value>2008</sv:value></sv:property>
+      <sv:property sv:name="car:msrp" sv:type="String"><sv:value>$21,500</sv:value></sv:property>
+      <sv:property sv:name="car:userRating" sv:type="Long"><sv:value>4</sv:value></sv:property>
+      <sv:property sv:name="car:valueRating" sv:type="Long"><sv:value>5</sv:value></sv:property>
+      <sv:property sv:name="car:mpgCity" sv:type="Long"><sv:value>48</sv:value></sv:property>
+      <sv:property sv:name="car:mpgHighway" sv:type="Long"><sv:value>45</sv:value></sv:property>
+    </sv:node>
+    <sv:node sv:name="Toyota Highlander">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>
+      <sv:property sv:name="car:maker" sv:type="String"><sv:value>Toyota</sv:value></sv:property>
+      <sv:property sv:name="car:model" sv:type="String"><sv:value>Highlander</sv:value></sv:property>
+      <sv:property sv:name="car:year" sv:type="String"><sv:value>2008</sv:value></sv:property>
+      <sv:property sv:name="car:msrp" sv:type="String"><sv:value>$34,200</sv:value></sv:property>
+      <sv:property sv:name="car:userRating" sv:type="Long"><sv:value>4</sv:value></sv:property>
+      <sv:property sv:name="car:valueRating" sv:type="Long"><sv:value>5</sv:value></sv:property>
+      <sv:property sv:name="car:mpgCity" sv:type="Long"><sv:value>27</sv:value></sv:property>
+      <sv:property sv:name="car:mpgHighway" sv:type="Long"><sv:value>25</sv:value></sv:property>
+    </sv:node>
+    <sv:node sv:name="Nissan Altima">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>
+      <sv:property sv:name="car:maker" sv:type="String"><sv:value>Nissan</sv:value></sv:property>
+      <sv:property sv:name="car:model" sv:type="String"><sv:value>Altima</sv:value></sv:property>
+      <sv:property sv:name="car:year" sv:type="String"><sv:value>2008</sv:value></sv:property>
+      <sv:property sv:name="car:msrp" sv:type="String"><sv:value>$18,260</sv:value></sv:property>
+      <sv:property sv:name="car:mpgCity" sv:type="Long"><sv:value>23</sv:value></sv:property>
+      <sv:property sv:name="car:mpgHighway" sv:type="Long"><sv:value>32</sv:value></sv:property>
+    </sv:node>
+  </sv:node>
+  <sv:node sv:name="Sports">
+    <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>nt:unstructured</sv:value></sv:property>
+    <sv:node sv:name="Aston Martin DB9">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>
+      <sv:property sv:name="car:maker" sv:type="String"><sv:value>Aston Martin</sv:value></sv:property>
+      <sv:property sv:name="car:model" sv:type="String"><sv:value>DB9</sv:value></sv:property>
+      <sv:property sv:name="car:year" sv:type="String"><sv:value>2008</sv:value></sv:property>
+      <sv:property sv:name="car:msrp" sv:type="String"><sv:value>$171,600</sv:value></sv:property>
+      <sv:property sv:name="car:userRating" sv:type="Long"><sv:value>5</sv:value></sv:property>
+      <sv:property sv:name="car:mpgCity" sv:type="Long"><sv:value>12</sv:value></sv:property>
+      <sv:property sv:name="car:mpgHighway" sv:type="Long"><sv:value>19</sv:value></sv:property>
+      <sv:property sv:name="car:lengthInInches" sv:type="Double"><sv:value>185.5</sv:value></sv:property>
+      <sv:property sv:name="car:wheelbaseInInches" sv:type="Double"><sv:value>108.0</sv:value></sv:property>
+      <sv:property sv:name="car:engine" sv:type="String"><sv:value>5,935 cc 5.9 liters V 12</sv:value></sv:property>
+    </sv:node>
+    <sv:node sv:name="Infiniti G37">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>
+      <sv:property sv:name="car:maker" sv:type="String"><sv:value>Infiniti</sv:value></sv:property>
+      <sv:property sv:name="car:model" sv:type="String"><sv:value>G37</sv:value></sv:property>
+      <sv:property sv:name="car:year" sv:type="String"><sv:value>2008</sv:value></sv:property>
+      <sv:property sv:name="car:msrp" sv:type="String"><sv:value>$34,900</sv:value></sv:property>
+      <sv:property sv:name="car:userRating" sv:type="Long"><sv:value>3</sv:value></sv:property>
+      <sv:property sv:name="car:valueRating" sv:type="Long"><sv:value>4</sv:value></sv:property>
+      <sv:property sv:name="car:mpgCity" sv:type="Long"><sv:value>18</sv:value></sv:property>
+      <sv:property sv:name="car:mpgHighway" sv:type="Long"><sv:value>24</sv:value></sv:property>
+    </sv:node>
+  </sv:node>
+  <sv:node sv:name="Luxury">
+    <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>nt:unstructured</sv:value></sv:property>
+    <sv:node sv:name="Cadillac DTS">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>
+      <sv:property sv:name="car:maker" sv:type="String"><sv:value>Cadillac</sv:value></sv:property>
+      <sv:property sv:name="car:model" sv:type="String"><sv:value>DTS</sv:value></sv:property>
+      <sv:property sv:name="car:year" sv:type="String"><sv:value>2008</sv:value></sv:property>
+      <sv:property sv:name="car:userRating" sv:type="Long"><sv:value>1</sv:value></sv:property>
+      <sv:property sv:name="car:engine" sv:type="String"><sv:value>3.6 liter V6</sv:value></sv:property>
+    </sv:node>
+    <sv:node sv:name="Bentley Continental">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>
+      <sv:property sv:name="car:maker" sv:type="String"><sv:value>Bentley</sv:value></sv:property>
+      <sv:property sv:name="car:model" sv:type="String"><sv:value>Continental</sv:value></sv:property>
+      <sv:property sv:name="car:year" sv:type="String"><sv:value>2008</sv:value></sv:property>
+      <sv:property sv:name="car:msrp" sv:type="String"><sv:value>$170,990</sv:value></sv:property>
+      <sv:property sv:name="car:mpgCity" sv:type="Long"><sv:value>10</sv:value></sv:property>
+      <sv:property sv:name="car:mpgHighway" sv:type="Long"><sv:value>17</sv:value></sv:property>
+    </sv:node>
+    <sv:node sv:name="Lexus IS350">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>
+      <sv:property sv:name="car:maker" sv:type="String"><sv:value>Lexus</sv:value></sv:property>
+      <sv:property sv:name="car:model" sv:type="String"><sv:value>IS350</sv:value></sv:property>
+      <sv:property sv:name="car:year" sv:type="String"><sv:value>2008</sv:value></sv:property>
+      <sv:property sv:name="car:msrp" sv:type="String"><sv:value>$36,305</sv:value></sv:property>
+      <sv:property sv:name="car:userRating" sv:type="Long"><sv:value>4</sv:value></sv:property>
+      <sv:property sv:name="car:valueRating" sv:type="Long"><sv:value>5</sv:value></sv:property>
+      <sv:property sv:name="car:mpgCity" sv:type="Long"><sv:value>18</sv:value></sv:property>
+      <sv:property sv:name="car:mpgHighway" sv:type="Long"><sv:value>25</sv:value></sv:property>
+    </sv:node>
+  </sv:node>
+  <sv:node sv:name="Utility">
+    <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>nt:unstructured</sv:value></sv:property>
+    <sv:node sv:name="Land Rover LR2">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>
+      <sv:property sv:name="car:maker" sv:type="String"><sv:value>Land Rover</sv:value></sv:property>
+      <sv:property sv:name="car:model" sv:type="String"><sv:value>LR2</sv:value></sv:property>
+      <sv:property sv:name="car:year" sv:type="String"><sv:value>2008</sv:value></sv:property>
+      <sv:property sv:name="car:msrp" sv:type="String"><sv:value>$33,985</sv:value></sv:property>
+      <sv:property sv:name="car:userRating" sv:type="Long"><sv:value>4</sv:value></sv:property>
+      <sv:property sv:name="car:valueRating" sv:type="Long"><sv:value>5</sv:value></sv:property>
+      <sv:property sv:name="car:mpgCity" sv:type="Long"><sv:value>16</sv:value></sv:property>
+      <sv:property sv:name="car:mpgHighway" sv:type="Long"><sv:value>23</sv:value></sv:property>
+    </sv:node>
+    <sv:node sv:name="Land Rover LR3">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>
+      <sv:property sv:name="car:maker" sv:type="String"><sv:value>Land Rover</sv:value></sv:property>
+      <sv:property sv:name="car:model" sv:type="String"><sv:value>LR3</sv:value></sv:property>
+      <sv:property sv:name="car:year" sv:type="String"><sv:value>2008</sv:value></sv:property>
+      <sv:property sv:name="car:msrp" sv:type="String"><sv:value>$48,525</sv:value></sv:property>
+      <sv:property sv:name="car:userRating" sv:type="Long"><sv:value>5</sv:value></sv:property>
+      <sv:property sv:name="car:valueRating" sv:type="Long"><sv:value>2</sv:value></sv:property>
+      <sv:property sv:name="car:mpgCity" sv:type="Long"><sv:value>12</sv:value></sv:property>
+      <sv:property sv:name="car:mpgHighway" sv:type="Long"><sv:value>17</sv:value></sv:property>
+    </sv:node>
+    <sv:node sv:name="Hummer H3">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>
+      <sv:property sv:name="car:maker" sv:type="String"><sv:value>Hummer</sv:value></sv:property>
+      <sv:property sv:name="car:model" sv:type="String"><sv:value>H3</sv:value></sv:property>
+      <sv:property sv:name="car:year" sv:type="String"><sv:value>2008</sv:value></sv:property>
+      <sv:property sv:name="car:msrp" sv:type="String"><sv:value>$30,595</sv:value></sv:property>
+      <sv:property sv:name="car:userRating" sv:type="Long"><sv:value>3</sv:value></sv:property>
+      <sv:property sv:name="car:valueRating" sv:type="Long"><sv:value>4</sv:value></sv:property>
+      <sv:property sv:name="car:mpgCity" sv:type="Long"><sv:value>13</sv:value></sv:property>
+      <sv:property sv:name="car:mpgHighway" sv:type="Long"><sv:value>16</sv:value></sv:property>
+      <sv:property sv:name="car:engine" sv:type="String"><sv:value>5.7 L Vortec 5700 gasoline V8 TBI/GM 4L80-E 4-speed</sv:value></sv:property>
+    </sv:node>
+    <sv:node sv:name="Ford F-150">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>
+      <sv:property sv:name="car:maker" sv:type="String"><sv:value>Ford</sv:value></sv:property>
+      <sv:property sv:name="car:model" sv:type="String"><sv:value>F-150</sv:value></sv:property>
+      <sv:property sv:name="car:year" sv:type="String"><sv:value>2008</sv:value></sv:property>
+      <sv:property sv:name="car:msrp" sv:type="String"><sv:value>$23,910</sv:value></sv:property>
+      <sv:property sv:name="car:userRating" sv:type="Long"><sv:value>5</sv:value></sv:property>
+      <sv:property sv:name="car:valueRating" sv:type="Long"><sv:value>1</sv:value></sv:property>
+      <sv:property sv:name="car:mpgCity" sv:type="Long"><sv:value>14</sv:value></sv:property>
+      <sv:property sv:name="car:mpgHighway" sv:type="Long"><sv:value>20</sv:value></sv:property>
+      <sv:property sv:name="car:engine" sv:type="String"><sv:value>4.6L 260 hp V8 5-speed (heavy-duty)</sv:value></sv:property>
+    </sv:node>
+    <sv:node sv:name="Toyota Land Cruiser">
+      <sv:property sv:name="jcr:primaryType" sv:type="Name"><sv:value>car:Car</sv:value></sv:property>
+      <sv:property sv:name="car:maker" sv:type="String"><sv:value>Toyota</sv:value></sv:property>
+      <sv:property sv:name="car:model" sv:type="String"><sv:value>Land Cruiser FJ55</sv:value></sv:property>
+      <sv:property sv:name="car:year" sv:type="String"><sv:value>1967</sv:value></sv:property>
+      <sv:property sv:name="car:msrp" sv:type="String"><sv:value>$13,255</sv:value></sv:property>
+      <sv:property sv:name="car:userRating" sv:type="Long"><sv:value>5</sv:value></sv:property>
+      <sv:property sv:name="car:valueRating" sv:type="Long"><sv:value>3</sv:value></sv:property>
+      <sv:property sv:name="car:mpgCity" sv:type="Long"><sv:value>7</sv:value></sv:property>
+      <sv:property sv:name="car:mpgHighway" sv:type="Long"><sv:value>9</sv:value></sv:property>
+      <sv:property sv:name="car:engine" sv:type="String"><sv:value>3.9 L I6 F</sv:value></sv:property>
+    </sv:node>
+  </sv:node>
+</sv:node>

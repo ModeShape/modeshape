@@ -24,9 +24,14 @@
 package org.modeshape.test.integration.jpa;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import javax.jcr.Credentials;
+import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -35,7 +40,9 @@ import javax.jcr.Workspace;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.graph.SecurityContext;
+import org.modeshape.jcr.CndNodeTypeReader;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrSecurityContextCredentials;
@@ -137,6 +144,120 @@ public class JcrRepositoryWithJpaSourceTest {
 
         Session session2 = repository.login(workspaceName);
         session2.logout();
+    }
+
+    @FixFor( "MODE-1066" )
+    @Test
+    public void shouldReimportContentThatWasJustDeletedInPriorSave() throws Exception {
+        // Register the cars node type(s) ...
+        registerNodeTypes("io/cars.cnd", session);
+
+        // Create a node under which we'll import the content ...
+        session.getRootNode().addNode("workArea");
+        session.save();
+
+        // Import some content ...
+        InputStream stream = resourceStream("io/cars-system-view.xml");
+        session.importXML("/workArea", stream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+        session.save();
+
+        // Delete the content ...
+        session.getNode("/workArea/Cars").remove();
+        session.save();
+
+        // Import the same content ...
+        stream = resourceStream("io/cars-system-view.xml");
+        session.importXML("/workArea", stream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+        session.save();
+    }
+
+    @FixFor( "MODE-1066" )
+    @Test
+    public void shouldReimportContentThatWasJustDeletedInSameSave() throws Exception {
+        // Register the cars node type(s) ...
+        registerNodeTypes("io/cars.cnd", session);
+
+        // Create a node under which we'll import the content ...
+        session.getRootNode().addNode("workArea");
+        session.save();
+
+        for (int i = 0; i != 3; ++i) {
+            // Import some content ...
+            InputStream stream = resourceStream("io/cars-system-view.xml");
+            session.importXML("/workArea", stream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+
+            // Delete the content ...
+            session.getNode("/workArea/Cars").remove();
+        }
+        session.save();
+    }
+
+    @FixFor( "MODE-1066" )
+    @Test
+    public void shouldReimportContentWithUuidsThatWasJustDeletedInPriorSave() throws Exception {
+        // Register the cars node type(s) ...
+        registerNodeTypes("io/cars.cnd", session);
+
+        // Create a node under which we'll import the content ...
+        session.getRootNode().addNode("workArea");
+        session.save();
+
+        // Import some content ...
+        InputStream stream = resourceStream("io/cars-system-view-with-uuids.xml");
+        session.importXML("/workArea", stream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+        session.save();
+
+        // Delete the content ...
+        session.getNode("/workArea/Cars").remove();
+        session.save();
+
+        // Import the same content ...
+        stream = resourceStream("io/cars-system-view-with-uuids.xml");
+        session.importXML("/workArea", stream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+        session.save();
+    }
+
+    @FixFor( "MODE-1066" )
+    @Test
+    public void shouldReimportContentWithUuidsThatWasJustDeletedInSameSave() throws Exception {
+        // Register the cars node type(s) ...
+        registerNodeTypes("io/cars.cnd", session);
+
+        // Create a node under which we'll import the content ...
+        session.getRootNode().addNode("workArea");
+        session.save();
+
+        for (int i = 0; i != 3; ++i) {
+            // Import some content ...
+            InputStream stream = resourceStream("io/cars-system-view-with-uuids.xml");
+            session.importXML("/workArea", stream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+
+            // Delete the content ...
+            session.getNode("/workArea/Cars").remove();
+        }
+        session.save();
+    }
+
+    protected void registerNodeTypes( String pathToCndResourceFile,
+                                      Session session ) throws IOException, RepositoryException {
+        // Register the cars node type(s) ...
+        CndNodeTypeReader reader = new CndNodeTypeReader(session);
+        reader.read(pathToCndResourceFile);
+        if (!reader.getProblems().isEmpty()) {
+            // Report problems
+            System.err.println(reader.getProblems());
+            fail("Error loading the CND file at '" + pathToCndResourceFile + "'");
+        } else {
+            boolean allowUpdate = false;
+            session.getWorkspace().getNodeTypeManager().registerNodeTypes(reader.getNodeTypeDefinitions(), allowUpdate);
+        }
+
+    }
+
+    protected InputStream resourceStream( String resourcePath ) {
+        InputStream stream = this.getClass().getClassLoader().getResourceAsStream(resourcePath);
+        assertThat(stream, is(notNullValue()));
+        return stream;
     }
 
     protected void assertAccessibleWorkspace( Session session,
