@@ -245,6 +245,17 @@ public class SimpleJpaRepository extends MapRepository {
     }
 
     /**
+     * Collect and remove all records that are no longer needed in the database.
+     * 
+     * @return true if all unused records could be deleted, or false if some unused records still remain (because removing them
+     *         all would have been too time consuming or costly).
+     */
+    protected boolean collectGarbage() {
+        // Delete unused large values ...
+        return LargeValueEntity.deleteUnused(entityManager, dialect);
+    }
+
+    /**
      * This class provides a logical mapping of UUIDs to {@link JpaNode nodes} within a named workspace.
      * <p>
      * Like its enclosing class, this class only survives for the lifetime of a single request (which may be a
@@ -409,9 +420,6 @@ public class SimpleJpaRepository extends MapRepository {
             branch.deleteSubgraph(true);
             branch.close();
 
-            // Delete unused large values ...
-            LargeValueEntity.deleteUnused(entityManager, dialect);
-
             // And clean up the local cache by paths by brute force ...
             this.nodesByPath.clear();
         }
@@ -433,9 +441,6 @@ public class SimpleJpaRepository extends MapRepository {
             Query query = entityManager.createQuery("NodeEntity.deleteAllInWorkspace");
             query.setParameter("workspaceId", workspaceId);
             query.executeUpdate();
-
-            // Delete unused large values ...
-            LargeValueEntity.deleteUnused(entityManager, dialect);
         }
 
         /*

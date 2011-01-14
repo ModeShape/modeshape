@@ -127,7 +127,12 @@ public class JdbcConnectionTest {
             connection = source.getConnection();
             assertThat(source.getDialect(), is(notNullValue()));
             if (expectedDialect != null) {
-                assertThat(source.getDialect(), is(expectedDialect));
+                if (expectedDialect.toLowerCase().contains("mysql")) {
+                    // The MySQL auto-detected dialect may be different than the dialect that was explicitly set
+                    assertThat(source.getDialect().toLowerCase().contains("mysql"), is(true));
+                } else {
+                    assertThat(source.getDialect(), is(expectedDialect));
+                }
             }
         } finally {
             if (connection != null) connection.close();

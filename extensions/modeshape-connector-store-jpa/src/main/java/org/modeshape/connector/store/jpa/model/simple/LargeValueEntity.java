@@ -24,7 +24,6 @@
 package org.modeshape.connector.store.jpa.model.simple;
 
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityManager;
@@ -32,7 +31,6 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Lob;
-import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Query;
 import javax.persistence.Table;
@@ -48,11 +46,32 @@ import org.modeshape.graph.property.PropertyType;
  */
 @Entity
 @Table( name = "MODE_SIMPLE_LARGE_VALUES" )
-@NamedQueries( {
-    @NamedQuery( name = "LargeValueEntity.selectUnused", query = "select largeValue.hash from LargeValueEntity largeValue where largeValue.hash not in (select values.hash from NodeEntity node join node.largeValues values)" ),
-    @NamedQuery( name = "LargeValueEntity.deleteAllUnused", query = "delete LargeValueEntity lve where lve.hash not in (select values.hash from NodeEntity node join node.largeValues values)" ),
-    @NamedQuery( name = "LargeValueEntity.deleteIn", query = "delete LargeValueEntity lve where lve.hash in (:inValues)" )} )
+@NamedQuery( name = "LargeValueEntity.deleteAllUnused", query = "delete LargeValueEntity lve where lve.hash not in (select values.hash from NodeEntity node join node.largeValues values)" )
 public class LargeValueEntity {
+
+    /**
+     * The MySQL delete statement to remove all unused LargeValueEntity records.
+     * <p>
+     * Normally, the "LargeValueEntity.deleteAllUnused" named query attempts to delete all of the LargeValueEntity records that
+     * have an SHA1 that is not in the set of SHA1 values in the "usages" intersect table. This works well on all DBMSes except
+     * for MySQL, which is unable to select from the table being deleted (see MODE-691). Therefore, we use a MySQL-specific native
+     * query to do this deletion.
+     * </p>
+     * <p>
+     * This delete statement uses a left outer join between the LargeValueEntity and "usages" table and a criteria on the result
+     * to ensure that the only records returned are those without any "usages" records in the tuples. This works because a left
+     * outer join between tables A and B always contains all records from A, whether or not there are no corresponding records
+     * from B. And, if a criteria is added such that a column from B that can never be null is actually null, then we know the
+     * result will contain only those records from A that do <i>not</i> have a corresponding B record. In our case, this ends up
+     * deleting only those LargeValueEntity records that are not referenced in the "usages" table (i.e., they are not used).
+     * </p>
+     * <p>
+     * We can do this native SQL because this only is used for the MySQL dialect.
+     * </p>
+     */
+    private static final String MYSQL_DELETE_ALL_UNUSED_LARGE_VALUE_ENTITIES = "DELETE lv FROM MODE_SIMPLE_LARGE_VALUES AS lv "
+                                                                               + "LEFT OUTER JOIN ModeShape_LARGEVALUE_USAGES AS lvu "
+                                                                               + "ON lv.SHA1 = lvu.largeValues_SHA1 WHERE lvu.ID IS NULL";
 
     @Id
     @Column( name = "SHA1", nullable = false, length = 40 )
@@ -189,43 +208,29 @@ public class LargeValueEntity {
      * 
      * @param manager the manager; never null
      * @param dialect the dialect
-     * @return the number of deleted large values
+     * @return whether all the unused records were able to be removed in this pass
      */
-    @SuppressWarnings( "unchecked" )
-    public static int deleteUnused( EntityManager manager,
-                                    String dialect ) {
+    public static boolean deleteUnused( EntityManager manager,
+                                        String dialect ) {
         assert manager != null;
 
-        int result = 0;
-        if (dialect != null && dialect.toLowerCase().indexOf("mysql") != -1) {
-            // Unfortunately, we cannot delete all the unused large values in a single statement
-            // because of MySQL (see MODE-691). Therefore, we need to do this in multiple steps:
-            // 1) Find the set of hashes that are not used anymore
-            // 2) Delete each of these rows, using bulk deletes with a small number (20) of hashes at a time
-
-            Query select = manager.createNamedQuery("LargeValueEntity.selectUnused");
-            List<String> hashes = select.getResultList();
-            if (hashes.isEmpty()) return 0;
-
-            // Delete the unused large entities, (up to) 20 at a time
-            int endIndex = hashes.size();
-            int fromIndex = 0;
-            do {
-                int toIndex = Math.min(fromIndex + 20, endIndex);
-                Query query = manager.createNamedQuery("LargeValueEntity.deleteIn");
-                query.setParameter("inValues", hashes.subList(fromIndex, toIndex));
-                query.executeUpdate();
-                result += toIndex - fromIndex;
-                fromIndex = toIndex;
-            } while (fromIndex < endIndex);
-        } else {
+        try {
+            if (dialect != null && dialect.toLowerCase().indexOf("mysql") != -1) {
+                // Because MySQL does not allow DELETE statements with subselects against the same table,
+                // we have to use a different approach here. There's really no effective way to do this
+                // in HQL, but since we're only dealing with MySQL, we can drop to native SQL and
+                // do a very efficient delete ...
+                Query delete = manager.createNativeQuery(MYSQL_DELETE_ALL_UNUSED_LARGE_VALUE_ENTITIES);
+                delete.executeUpdate();
+                return true;
+            }
             // For all dialects other than MySQL, we can just use the one delete statement ...
             Query delete = manager.createNamedQuery("LargeValueEntity.deleteAllUnused");
-            result = delete.executeUpdate();
+            delete.executeUpdate();
+            return true;
+        } finally {
+            manager.flush();
         }
-
-        manager.flush();
-        return result;
     }
 
     private static byte[] computeHash( byte[] value ) {

@@ -141,6 +141,10 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      */
     protected static final boolean SUPPORTS_EVENTS = true;
     /**
+     * This source does not support automatic garbage collection.
+     */
+    protected static final boolean SUPPORTS_AUTOMATIC_GARBAGE_COLLECTION = false;
+    /**
      * This source supports same-name-siblings.
      */
     protected static final boolean SUPPORTS_SAME_NAME_SIBLINGS = true;
@@ -333,7 +337,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
                                                                                                   DEFAULT_ALLOWS_UPDATES,
                                                                                                   SUPPORTS_EVENTS,
                                                                                                   DEFAULT_SUPPORTS_CREATING_WORKSPACES,
-                                                                                                  SUPPORTS_REFERENCES);
+                                                                                                  SUPPORTS_REFERENCES).withAutomaticGarbageCollection(SUPPORTS_AUTOMATIC_GARBAGE_COLLECTION);
 
     @Description( i18n = JpaConnectorI18n.class, value = "modelNamePropertyDescription" )
     @Label( i18n = JpaConnectorI18n.class, value = "modelNamePropertyLabel" )

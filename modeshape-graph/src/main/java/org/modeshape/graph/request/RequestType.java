@@ -8,6 +8,7 @@ public enum RequestType {
     COMPOSITE,
     CLONE_BRANCH,
     CLONE_WORKSPACE,
+    COLLECT_GARBAGE,
     COPY_BRANCH,
     CREATE_NODE,
     CREATE_WORKSPACE,

@@ -23,6 +23,9 @@
  */
 package org.modeshape.connector.meta.jdbc;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +39,8 @@ public class TestEnvironment {
 
     static Properties propertiesFor( Object testCase ) {
         Properties properties = new Properties();
-        ClassLoader loader = testCase instanceof Class<?> ? ((Class<?>)testCase).getClassLoader() : testCase.getClass().getClassLoader();
+        ClassLoader loader = testCase instanceof Class<?> ? ((Class<?>)testCase).getClassLoader() : testCase.getClass()
+                                                                                                            .getClassLoader();
         try {
             properties.load(loader.getResourceAsStream("database.properties"));
         } catch (IOException e) {
@@ -107,7 +111,7 @@ public class TestEnvironment {
                                    Object testCase ) throws Exception {
         Connection conn = null;
         Statement stmt = null;
-        InputStream is = null;
+        InputStream istream = null;
         BufferedReader reader = null;
 
         try {
@@ -115,8 +119,9 @@ public class TestEnvironment {
             conn = dataSource.getConnection();
             stmt = conn.createStatement();
 
-            is = TestEnvironment.class.getResourceAsStream("/" + properties.getProperty("database") + "/" + fileName);
-            reader = new BufferedReader(new InputStreamReader(is));
+            istream = TestEnvironment.class.getResourceAsStream("/" + properties.getProperty("database") + "/" + fileName);
+            assertThat(istream, is(notNullValue()));
+            reader = new BufferedReader(new InputStreamReader(istream));
 
             /*
              * We have to send the DDL line-at-a-time because the MySQL driver doesn't like getting multiple DDL statements at once
@@ -139,8 +144,8 @@ public class TestEnvironment {
                 conn.close();
             } catch (Exception ignore) {
             }
-            if (is != null) try {
-                is.close();
+            if (istream != null) try {
+                istream.close();
             } catch (Exception ignore) {
             }
         }

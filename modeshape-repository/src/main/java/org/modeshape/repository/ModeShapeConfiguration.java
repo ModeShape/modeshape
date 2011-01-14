@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.Immutable;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.collection.Problems;
@@ -688,6 +689,29 @@ public class ModeShapeConfiguration {
     }
 
     /**
+     * Obtain the definition for this engine's global properties.
+     * 
+     * @return the global properties definition; never null
+     */
+    public GlobalProperties<? extends ModeShapeConfiguration> globalProperties() {
+        return globalProperties(this);
+    }
+
+    /**
+     * Set the interval for garbage collection, should garbage collection be required by the sources).
+     * 
+     * @param interval the interval magnitude
+     * @param unit the interval time unit
+     * @return this configuration object for method chaining purposes
+     */
+    public ModeShapeConfiguration withGarbageCollectionInterval( long interval,
+                                                                 TimeUnit unit ) {
+        long intervalInSeconds = unit.convert(interval, TimeUnit.SECONDS);
+        globalProperties().setProperty(ModeShapeLexicon.GARBAGE_COLLECTION_INTERVAL, intervalInSeconds);
+        return this;
+    }
+
+    /**
      * Convenience method to make the code that sets up this configuration easier to read. This method simply returns this object.
      * 
      * @return this configuration component; never null
@@ -1131,6 +1155,17 @@ public class ModeShapeConfiguration {
         return (ClusterDefinition<ReturnType>)clusterDefinition;
     }
 
+    /**
+     * Utility method to construct a setter for global properties.
+     * 
+     * @param <ReturnType> the type of the return object
+     * @param returnObject the return object
+     * @return the global properties setter; never null
+     */
+    protected <ReturnType extends ModeShapeConfiguration> GlobalProperties<ReturnType> globalProperties( ReturnType returnObject ) {
+        return new GlobalProperties<ReturnType>(returnObject, changes(), path());
+    }
+
     protected static class BaseReturnable<ReturnType> implements Returnable<ReturnType> {
         protected final ReturnType returnObject;
 
@@ -1517,6 +1552,25 @@ public class ModeShapeConfiguration {
         }
     }
 
+    protected static class GlobalProperties<ReturnType> extends GraphReturnable<ReturnType, GlobalProperties<ReturnType>> {
+        protected GlobalProperties( ReturnType returnObject,
+                                    Graph.Batch batch,
+                                    Path path,
+                                    Name... names ) {
+            super(returnObject, batch, path, names);
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.repository.ModeShapeConfiguration.GraphReturnable#thisType()
+         */
+        @Override
+        protected GlobalProperties<ReturnType> thisType() {
+            return this;
+        }
+    }
+
     /**
      * Representation of the current configuration content.
      */
@@ -1662,6 +1716,16 @@ public class ModeShapeConfiguration {
                 if (workspace != null) graph.useWorkspace(workspace);
             }
             return graph;
+        }
+
+        /**
+         * Read a global configuration property.
+         * 
+         * @param name the property name
+         * @return the property, or null if there is no such property
+         */
+        public Property getGlobalProperty( Name name ) {
+            return graph().getProperty(ModeShapeLexicon.GARBAGE_COLLECTION_INTERVAL).on(getPath());
         }
     }
 }

@@ -24,6 +24,7 @@
 package org.modeshape.graph.connector;
 
 import net.jcip.annotations.Immutable;
+import org.modeshape.graph.request.CollectGarbageRequest;
 
 /**
  * The capabilities of a {@link RepositorySource}. This class can be used as is, or subclassed by a connector to define more
@@ -74,6 +75,11 @@ public class RepositorySourceCapabilities {
      */
     public static final boolean DEFAULT_SUPPORT_LOCKS = false;
 
+    /**
+     * The default support for automatic garbage collection is {@value} .
+     */
+    public static final boolean DEFAULT_SUPPORT_AUTOMATIC_GARBAGE_COLLECTION = true;
+
     private final boolean sameNameSiblings;
     private final boolean updates;
     private final boolean events;
@@ -82,6 +88,7 @@ public class RepositorySourceCapabilities {
     private final boolean locks;
     private final boolean queries;
     private final boolean searches;
+    private final boolean autoGarbageCollection;
 
     /**
      * Create a capabilities object using the defaults, .
@@ -89,19 +96,20 @@ public class RepositorySourceCapabilities {
     public RepositorySourceCapabilities() {
         this(DEFAULT_SUPPORT_SAME_NAME_SIBLINGS, DEFAULT_SUPPORT_UPDATES, DEFAULT_SUPPORT_EVENTS,
              DEFAULT_SUPPORT_CREATING_WORKSPACES, DEFAULT_SUPPORT_REFERENCES, DEFAULT_SUPPORT_LOCKS, DEFAULT_SUPPORT_QUERIES,
-             DEFAULT_SUPPORT_SEARCHES);
+             DEFAULT_SUPPORT_SEARCHES, DEFAULT_SUPPORT_AUTOMATIC_GARBAGE_COLLECTION);
     }
 
     public RepositorySourceCapabilities( RepositorySourceCapabilities capabilities ) {
         this(capabilities.supportsSameNameSiblings(), capabilities.supportsUpdates(), capabilities.supportsEvents(),
              capabilities.supportsCreatingWorkspaces(), capabilities.supportsReferences(), capabilities.supportsLocks(),
-             capabilities.supportsQueries(), capabilities.supportsSearches());
+             capabilities.supportsQueries(), capabilities.supportsSearches(), capabilities.supportsAutomaticGarbageCollection());
     }
 
     public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
                                          boolean supportsUpdates ) {
         this(supportsSameNameSiblings, supportsUpdates, DEFAULT_SUPPORT_EVENTS, DEFAULT_SUPPORT_CREATING_WORKSPACES,
-             DEFAULT_SUPPORT_REFERENCES, DEFAULT_SUPPORT_LOCKS, DEFAULT_SUPPORT_QUERIES, DEFAULT_SUPPORT_SEARCHES);
+             DEFAULT_SUPPORT_REFERENCES, DEFAULT_SUPPORT_LOCKS, DEFAULT_SUPPORT_QUERIES, DEFAULT_SUPPORT_SEARCHES,
+             DEFAULT_SUPPORT_AUTOMATIC_GARBAGE_COLLECTION);
     }
 
     public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
@@ -110,7 +118,8 @@ public class RepositorySourceCapabilities {
                                          boolean supportsCreatingWorkspaces,
                                          boolean supportsReferences ) {
         this(supportsSameNameSiblings, supportsUpdates, supportsEvents, supportsCreatingWorkspaces, supportsReferences,
-             DEFAULT_SUPPORT_LOCKS, DEFAULT_SUPPORT_QUERIES, DEFAULT_SUPPORT_SEARCHES);
+             DEFAULT_SUPPORT_LOCKS, DEFAULT_SUPPORT_QUERIES, DEFAULT_SUPPORT_SEARCHES,
+             DEFAULT_SUPPORT_AUTOMATIC_GARBAGE_COLLECTION);
     }
 
     public RepositorySourceCapabilities( boolean supportsSameNameSiblings,
@@ -120,7 +129,8 @@ public class RepositorySourceCapabilities {
                                          boolean supportsReferences,
                                          boolean supportsLocks,
                                          boolean supportsQueries,
-                                         boolean supportsSearches ) {
+                                         boolean supportsSearches,
+                                         boolean supportsAutomaticGarbageCollection ) {
 
         this.sameNameSiblings = supportsSameNameSiblings;
         this.updates = supportsUpdates;
@@ -130,6 +140,7 @@ public class RepositorySourceCapabilities {
         this.locks = supportsLocks;
         this.queries = supportsQueries;
         this.searches = supportsSearches;
+        this.autoGarbageCollection = supportsAutomaticGarbageCollection;
     }
 
     /**
@@ -205,4 +216,117 @@ public class RepositorySourceCapabilities {
     public boolean supportsSearches() {
         return searches;
     }
+
+    /**
+     * Return whether the source supports automatic garbage collection. If not, then the source expects explicit
+     * {@link CollectGarbageRequest} calls.
+     * 
+     * @return true if automatic garbage collection is supported, or false if the source is not capable of automatically
+     *         collecting all of its garbage and requires periodic, manual collection
+     */
+    public boolean supportsAutomaticGarbageCollection() {
+        return autoGarbageCollection;
+    }
+
+    /**
+     * Create a new instance that is a copy of this instance but uses the supplied value for {@link #supportsSameNameSiblings()}.
+     * 
+     * @param sameNameSiblings the new value
+     * @return the new instance
+     */
+    public RepositorySourceCapabilities withSameNameSiblings( boolean sameNameSiblings ) {
+        return new RepositorySourceCapabilities(sameNameSiblings, updates, events, creatingWorkspaces, references, locks,
+                                                queries, searches, autoGarbageCollection);
+    }
+
+    /**
+     * Create a new instance that is a copy of this instance but uses the supplied value for {@link #supportsUpdates()}.
+     * 
+     * @param updates the new value
+     * @return the new instance
+     */
+    public RepositorySourceCapabilities withUpdates( boolean updates ) {
+        return new RepositorySourceCapabilities(sameNameSiblings, updates, events, creatingWorkspaces, references, locks,
+                                                queries, searches, autoGarbageCollection);
+    }
+
+    /**
+     * Create a new instance that is a copy of this instance but uses the supplied value for {@link #supportsEvents()}.
+     * 
+     * @param events the new value
+     * @return the new instance
+     */
+    public RepositorySourceCapabilities withEvents( boolean events ) {
+        return new RepositorySourceCapabilities(sameNameSiblings, updates, events, creatingWorkspaces, references, locks,
+                                                queries, searches, autoGarbageCollection);
+    }
+
+    /**
+     * Create a new instance that is a copy of this instance but uses the supplied value for {@link #supportsCreatingWorkspaces()}
+     * .
+     * 
+     * @param creatingWorkspaces the new value
+     * @return the new instance
+     */
+    public RepositorySourceCapabilities withCreatingWorkspaces( boolean creatingWorkspaces ) {
+        return new RepositorySourceCapabilities(sameNameSiblings, updates, events, creatingWorkspaces, references, locks,
+                                                queries, searches, autoGarbageCollection);
+    }
+
+    /**
+     * Create a new instance that is a copy of this instance but uses the supplied value for {@link #supportsReferences()}.
+     * 
+     * @param references the new value
+     * @return the new instance
+     */
+    public RepositorySourceCapabilities withReferences( boolean references ) {
+        return new RepositorySourceCapabilities(sameNameSiblings, updates, events, creatingWorkspaces, references, locks,
+                                                queries, searches, autoGarbageCollection);
+    }
+
+    /**
+     * Create a new instance that is a copy of this instance but uses the supplied value for {@link #supportsLocks()}.
+     * 
+     * @param locks the new value
+     * @return the new instance
+     */
+    public RepositorySourceCapabilities withLocks( boolean locks ) {
+        return new RepositorySourceCapabilities(sameNameSiblings, updates, events, creatingWorkspaces, references, locks,
+                                                queries, searches, autoGarbageCollection);
+    }
+
+    /**
+     * Create a new instance that is a copy of this instance but uses the supplied value for {@link #supportsQueries()}.
+     * 
+     * @param queries the new value
+     * @return the new instance
+     */
+    public RepositorySourceCapabilities withQueries( boolean queries ) {
+        return new RepositorySourceCapabilities(sameNameSiblings, updates, events, creatingWorkspaces, references, locks,
+                                                queries, searches, autoGarbageCollection);
+    }
+
+    /**
+     * Create a new instance that is a copy of this instance but uses the supplied value for {@link #supportsSearches()}.
+     * 
+     * @param searches the new value
+     * @return the new instance
+     */
+    public RepositorySourceCapabilities withSearches( boolean searches ) {
+        return new RepositorySourceCapabilities(sameNameSiblings, updates, events, creatingWorkspaces, references, locks,
+                                                queries, searches, autoGarbageCollection);
+    }
+
+    /**
+     * Create a new instance that is a copy of this instance but uses the supplied value for
+     * {@link #supportsAutomaticGarbageCollection()}.
+     * 
+     * @param autoGarbageCollection the new value
+     * @return the new instance
+     */
+    public RepositorySourceCapabilities withAutomaticGarbageCollection( boolean autoGarbageCollection ) {
+        return new RepositorySourceCapabilities(sameNameSiblings, updates, events, creatingWorkspaces, references, locks,
+                                                queries, searches, autoGarbageCollection);
+    }
+
 }

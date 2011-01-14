@@ -391,6 +391,7 @@ public class DdlSequencerIntegrationTest extends DdlIntegrationTestUtil {
         // Upload a file ...
         uploadFile(ddlTestResourceRootFolder, "create_schema.ddl", "shouldBeAbleToCreateAndExecuteJcrSql2QueryWithOrderBy");
         waitUntilSequencedNodesIs(1);
+        Thread.sleep(500);
 
         // Now query for content ...
         Query query = session.getWorkspace()
