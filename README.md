@@ -25,7 +25,7 @@ The easiest way to get started with the code is to [create your own fork](http:/
 
 	$ git clone git@github.com:<you>/modeshape.git
 	$ cd modeshape
-	$ git remote add upstream git://github.com/modeshape/modeshape.git
+	$ git remote add upstream git://github.com/ModeShape/modeshape.git
 	
 At any time, you can pull changes from the upstream and merge them onto your master:
 
