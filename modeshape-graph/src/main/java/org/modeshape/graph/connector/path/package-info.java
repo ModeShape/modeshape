@@ -22,15 +22,15 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * The {@link PathRepository} class and its supporting classes provide a default read-only implementation of the connector
- * classes for connectors that only support path-based access to a {@link PathNode standard
+ * The {@link org.modeshape.graph.connector.path.PathRepository} class and its supporting classes provide a default read-only implementation of the connector
+ * classes for connectors that only support path-based access to a {@link org.modeshape.graph.connector.path.PathNode standard
  * representation of a node}.  Connectors to systems that provide a unique identifier for each node would generally be better implemented using the {@link org.modeshape.graph.connector.map.MapRepository map repository implementation instead}.
- * To implement a connector based on this framework, one must create an implementation of {@link PathRepositorySource the repository source},
- * an implementation of {@link PathRepository the repository itself}, and an implementation of {@link PathWorkspace the workspace}.
+ * To implement a connector based on this framework, one must create an implementation of {@link org.modeshape.graph.connector.path.PathRepositorySource the repository source},
+ * an implementation of {@link org.modeshape.graph.connector.path.PathRepository the repository itself}, and an implementation of {@link org.modeshape.graph.connector.path.PathWorkspace the workspace}.
  * <p>
- * The {@link PathRepositorySource repository source implementation} contains properties for the repository configuration and caching policies.  A key
+ * The {@link org.modeshape.graph.connector.path.PathRepositorySource repository source implementation} contains properties for the repository configuration and caching policies.  A key
  * method in the {@code PathRepositorySource} implementation if the {@link org.modeshape.graph.connector.RepositorySource#getConnection()} method,
- * which should generally be implemented using the {@link PathRepositoryConnection default connection implementation}.
+ * which should generally be implemented using the {@link org.modeshape.graph.connector.path.PathRepositoryConnection default connection implementation}.
  * <pre>
  * if (repository == null) {
  *  repository = new JdbcMetadataRepository(this);
@@ -39,9 +39,9 @@
  * </pre>
  * </p>
  * <p>
- * The {@link PathRepository repository implementation} is only required to provide an implementation of the {@link PathRepository#initialize()}
- * method to initialize the repository with a default {@link PathWorkspace workspace} implementation for the connector and an implementation of {@link PathWorkspace}.  All constructors for the repository must 
- * call {@link PathRepository#initialize()} after the constructor has completed its initialization, as demonstrated below:
+ * The {@link org.modeshape.graph.connector.path.PathRepository repository implementation} is only required to provide an implementation of the {@link org.modeshape.graph.connector.path.PathRepository#initialize()}
+ * method to initialize the repository with a default {@link org.modeshape.graph.connector.path.PathWorkspace workspace} implementation for the connector and an implementation of {@link org.modeshape.graph.connector.path.PathWorkspace}.  All constructors for the repository must 
+ * call {@link org.modeshape.graph.connector.path.PathRepository#initialize()} after the constructor has completed its initialization, as demonstrated below:
  * <pre>
  * public JdbcMetadataRepository( JdbcMetadataSource source ) {
  *   initialize();

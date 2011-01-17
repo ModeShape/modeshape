@@ -26,7 +26,7 @@
  * provides a reusable and extensible query engine that is capable of planning, validating, optimizing, and executing queries
  * against a generic back-end system.  Simply subclass the {@link org.modeshape.graph.query.process.QueryProcessor}
  * that creates a {@link org.modeshape.graph.query.process.ProcessingComponent}
- * to operates against the back-end system, and assemble a {@link QueryEngine} that can be used to provide a rich
+ * to operates against the back-end system, and assemble a {@link org.modeshape.graph.query.QueryEngine} that can be used to provide a rich
  * query capability.
  * </p>
  * <h3>Abstract query model</h3>
@@ -38,7 +38,7 @@
  * </p>
  * <p>
  * There are two ways to construct abstract query models.  The first is to programmatically construct a query
- * model using the {@link QueryBuilder}, which provides a fluent API that makes it easy to create a query
+ * model using the {@link org.modeshape.graph.query.QueryBuilder}, which provides a fluent API that makes it easy to create a query
  * with Java code.  The second (and more common) approach is to use a {@link org.modeshape.graph.query.parse.QueryParser}
  * that parses a query represented in a specific language (like SQL or XPath) and then creates the query's equivalent abstract query model.
  * There's even a {@link org.modeshape.graph.query.parse.QueryParsers} class that can manage the parsers for multiple languages.
@@ -53,9 +53,9 @@
  * </p>
  * <h3>QueryEngine</h3>
  * <p>
- * The {@link QueryEngine} is the component that accepts and executes queries expressed as abstract query models.
+ * The {@link org.modeshape.graph.query.QueryEngine} is the component that accepts and executes queries expressed as abstract query models.
  * Each submitted query is planned, validated, optimized, and then processed to compute and return the final 
- * {@link QueryResults query results}.
+ * {@link org.modeshape.graph.query.QueryResults query results}.
  * </p>
  * <p>
  * Note that the QueryEngine is thread-safe.

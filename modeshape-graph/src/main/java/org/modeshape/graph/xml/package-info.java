@@ -23,7 +23,7 @@
  */
 /**
  * Graph content can often be represented in XML, so this part of the ModeShape Graph API defines the classes
- * that provide the binding between graph and XML content.  The {@link XmlHandler} is an implementation of
+ * that provide the binding between graph and XML content.  The {@link org.modeshape.graph.xml.XmlHandler} is an implementation of
  * several SAX interfaces (including {@link org.xml.sax.ext.LexicalHandler}, {@link org.xml.sax.ext.DeclHandler}, 
  * and {@link org.xml.sax.ext.EntityResolver2}) that responds to XML content events by creating the corresponding 
  * content in a supplied graph. 

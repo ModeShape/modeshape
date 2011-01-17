@@ -26,24 +26,24 @@
  * representing and working with properties and their values.
  * <p>
  * A <i>property</i> consists of a <i>name</i> and a set of <i>values</i>.  A property name is represented
- * by {@link Name}, and is defined as a {@link Name#getLocalName() local name} in a {@link Name#getNamespaceUri() namespace}.
+ * by {@link org.modeshape.graph.property.Name}, and is defined as a {@link org.modeshape.graph.property.Name#getLocalName() local name} in a {@link org.modeshape.graph.property.Name#getNamespaceUri() namespace}.
  * Property values can be of any type, although there are specific interfaces for the known types:
  * <ul>
- *  <li>{@link PropertyType#STRING String} - A value represented with instances of the standard {@link String} class.</li>
- *  <li>{@link PropertyType#BINARY Binary} - A value represented with instances of the {@link Binary} interface.</li>
- *  <li>{@link PropertyType#LONG Long} - A value represented with instances of the standard {@link Long} class.</li>
- *  <li>{@link PropertyType#DOUBLE Double} - A value represented with instances of the standard {@link Double} class.</li>
- *  <li>{@link PropertyType#DECIMAL Decimal} - A value represented with instances of the standard {@link java.math.BigDecimal} class.</li>
- *  <li>{@link PropertyType#DATE Date} - A value represented with instances of the {@link DateTime} interface.
+ *  <li>{@link org.modeshape.graph.property.PropertyType#STRING String} - A value represented with instances of the standard {@link java.lang.String} class.</li>
+ *  <li>{@link org.modeshape.graph.property.PropertyType#BINARY Binary} - A value represented with instances of the {@link org.modeshape.graph.property.Binary} interface.</li>
+ *  <li>{@link org.modeshape.graph.property.PropertyType#LONG Long} - A value represented with instances of the standard {@link java.lang.Long} class.</li>
+ *  <li>{@link org.modeshape.graph.property.PropertyType#DOUBLE Double} - A value represented with instances of the standard {@link java.lang.Double} class.</li>
+ *  <li>{@link org.modeshape.graph.property.PropertyType#DECIMAL Decimal} - A value represented with instances of the standard {@link java.math.BigDecimal} class.</li>
+ *  <li>{@link org.modeshape.graph.property.PropertyType#DATE Date} - A value represented with instances of the {@link org.modeshape.graph.property.DateTime} interface.
  *  This interface hides the mishmash of Java date representations, and is designed to follow the anticipated
  *  <code>ZonedDateTime</code> that is part of JSR-310.</li>
- *  <li>{@link PropertyType#BOOLEAN Boolean} - A value represented with instances of the standard {@link Boolean} class.</li>
- *  <li>{@link PropertyType#NAME Name} - A value represented with instances of the {@link Name} interface.</li>
- *  <li>{@link PropertyType#PATH Path} - A value represented with instances of the {@link Path} interface.</li>
- *  <li>{@link PropertyType#UUID UUID} - A value represented with instances of the standard {@link java.util.UUID} class.</li>
- *  <li>{@link PropertyType#REFERENCE Reference} - A value represented with instances of the {@link Reference} interface.</li>
- *  <li>{@link PropertyType#URI URI} - A value represented with instances of the standard {@link java.net.URI} class.</li>
- *  <li>{@link PropertyType#OBJECT Object} - A value represented with instances of any class, although the class
+ *  <li>{@link org.modeshape.graph.property.PropertyType#BOOLEAN Boolean} - A value represented with instances of the standard {@link java.lang.Boolean} class.</li>
+ *  <li>{@link org.modeshape.graph.property.PropertyType#NAME Name} - A value represented with instances of the {@link org.modeshape.graph.property.Name} interface.</li>
+ *  <li>{@link org.modeshape.graph.property.PropertyType#PATH Path} - A value represented with instances of the {@link org.modeshape.graph.property.Path} interface.</li>
+ *  <li>{@link org.modeshape.graph.property.PropertyType#UUID UUID} - A value represented with instances of the standard {@link java.util.UUID} class.</li>
+ *  <li>{@link org.modeshape.graph.property.PropertyType#REFERENCE Reference} - A value represented with instances of the {@link org.modeshape.graph.property.Reference} interface.</li>
+ *  <li>{@link org.modeshape.graph.property.PropertyType#URI URI} - A value represented with instances of the standard {@link java.net.URI} class.</li>
+ *  <li>{@link org.modeshape.graph.property.PropertyType#OBJECT Object} - A value represented with instances of any class, although the class
  *  should in all practicality implement {@link java.io.Serializable}.</li>
  * </ul>
  * </p>
@@ -53,19 +53,19 @@
  * The design of properties and their values was centered around one key principle: when using a property value,
  * you often don't care what type the property value actually is, but instead care about converting it to a
  * property type that you know how to work with.  For example, you may be working with a property that represents
- * a date, and you want to work with the value as a {@link DateTime} object, regardless of whether the values
- * are actually String, {@link DateTime}, {@link Binary}, or even {@link java.util.Calendar} or {@link java.util.Date}
+ * a date, and you want to work with the value as a {@link org.modeshape.graph.property.DateTime} object, regardless of whether the values
+ * are actually String, {@link org.modeshape.graph.property.DateTime}, {@link org.modeshape.graph.property.Binary}, or even {@link java.util.Calendar} or {@link java.util.Date}
  * instances.  You know its should be a date, so you want to get a value that behaves as a date.
  * </p>
  * <p>
  * This notion of working with a <i>desired type</i> implies the ability to convert from one value type to another.
  * And in fact, creating values is really just converting from "other" types into a known type.
  * So, we can use the <i>factory</i> design pattern to have a single concept of a component that creates property values
- * from a variety of types.  But by using generics, we can use a single {@link ValueFactory factory} interface
+ * from a variety of types.  But by using generics, we can use a single {@link org.modeshape.graph.property.ValueFactory factory} interface
  * that has the same methods for creating value objects, but make the return type specific to the type we want to create.
  * </p>
  * <p>
- * The {@link ValueFactory} interface is defined as follows:
+ * The {@link org.modeshape.graph.property.ValueFactory} interface is defined as follows:
  * <pre>
  *   public interface ValueFactory&lt;T> {
  *       T create( String value ) throws ValueFormatException;
@@ -101,18 +101,18 @@
  * take an array of values and return an array of <code>T</code>.
  * </p>
  * <p>
- * These methods also all throw a {@link ValueFormatException}, in case the supplied
+ * These methods also all throw a {@link org.modeshape.graph.property.ValueFormatException}, in case the supplied
  * parameter cannot be converted to the desired type.  In many cases, there is a conversion (e.g., from the String "123"
  * to an integer), but there certainly are cases where no conversion is allowed (e.g., the String "a123" cannot be converted
- * to an integer, and a {@link Name} cannot be converted to a <code>boolean</code>).  All types can be converted
+ * to an integer, and a {@link org.modeshape.graph.property.Name} cannot be converted to a <code>boolean</code>).  All types can be converted
  * to a string, and all factories support converting that string back to its original form.
  * </p>
  * <p>
- * The factory for creating {@link DateTime} objects would then be an implementation of <code>ValueFactory&lt;DateTime></code>,
- * a factory for creating {@link Binary} objects would be an implementation of <code>ValueFactory&lt;Binary</code>,
+ * The factory for creating {@link org.modeshape.graph.property.DateTime} objects would then be an implementation of <code>ValueFactory&lt;DateTime></code>,
+ * a factory for creating {@link org.modeshape.graph.property.Binary} objects would be an implementation of <code>ValueFactory&lt;Binary</code>,
  * and so on.  In some cases, we'd like to add additional forms of <code>create(...)</code> for specific values, and
- * we can do this by extending a typed {@link ValueFactory}.  For example, the {@link DateTimeFactory} adds
- * more methods for creating {@link DateTime} objects for the current time, current time in UTC, from another time
+ * we can do this by extending a typed {@link org.modeshape.graph.property.ValueFactory}.  For example, the {@link org.modeshape.graph.property.DateTimeFactory} adds
+ * more methods for creating {@link org.modeshape.graph.property.DateTime} objects for the current time, current time in UTC, from another time
  * and an offset, and from individual field values:
  * <pre>
  *   public interface DateTimeFactory extends ValueFactories&lt;DateTime> {
@@ -129,11 +129,11 @@
  *                        String timeZoneId );
  *   }
  * </pre>
- * There are specialized factory interfaces for several other types, including {@link PathFactory}, {@link NameFactory},
- * and {@link UuidFactory}.
+ * There are specialized factory interfaces for several other types, including {@link org.modeshape.graph.property.PathFactory}, {@link org.modeshape.graph.property.NameFactory},
+ * and {@link org.modeshape.graph.property.UuidFactory}.
  * </p>
  * <p>
- * The {@link ValueFactories} interface collects all the factories into a single spot:
+ * The {@link org.modeshape.graph.property.ValueFactories} interface collects all the factories into a single spot:
  * <pre>
  *   public interface ValueFactories&lt;T> {
  *       ValueFactory&lt;String> getStringFactory();
@@ -162,7 +162,7 @@
  *    DateTime now = factories.getDateFactory.create();
  *    String stringValue = factories.getStringFactory().create(now);
  * </pre>
- * A {@link ValueFactories} is provided as part of the {@link org.modeshape.graph.ExecutionContext}.  In this way,
+ * A {@link org.modeshape.graph.property.ValueFactories} is provided as part of the {@link org.modeshape.graph.ExecutionContext}.  In this way,
  * the environment may use a different implementation of one or more factories.
  * </p>
  * 
@@ -170,8 +170,8 @@
  * <p>
  * Because we have a mixture of standard Java types and custom interfaces for property values, we need
  * a set of {@link java.util.Comparator} implementations that allow us to compare property values.
- * The {@link ValueComparators} class defines a number of singleton comparators that can be used.
- * Plus, the {@link PropertyType} enumeration has the ability to {@link PropertyType#getComparator() get the comparator}
+ * The {@link org.modeshape.graph.property.ValueComparators} class defines a number of singleton comparators that can be used.
+ * Plus, the {@link org.modeshape.graph.property.PropertyType} enumeration has the ability to {@link org.modeshape.graph.property.PropertyType#getComparator() get the comparator}
  * for the specific type (e.g., <code>PropertyType.BINARY.getComparator()</code>).
  * </p>
  * 

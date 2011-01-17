@@ -38,13 +38,13 @@ public class ObjectUtil {
         return reference1 == null ? reference2 == null : reference1.equals(reference2);
     }
 
-    @SuppressWarnings( "unchecked" )
+    @SuppressWarnings( {"unchecked", "rawtypes"} )
     public static int compareNoNulls( Comparable reference1,
                                       Comparable reference2 ) {
         return reference1.compareTo(reference2);
     }
 
-    @SuppressWarnings( "unchecked" )
+    @SuppressWarnings( {"unchecked", "rawtypes"} )
     public static int compareWithNulls( Comparable reference1,
                                         Comparable reference2 ) {
         if (reference1 == null) return reference2 == null ? 0 : 1;

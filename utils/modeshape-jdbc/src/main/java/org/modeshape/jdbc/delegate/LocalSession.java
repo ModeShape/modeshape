@@ -34,71 +34,69 @@ import javax.jcr.Session;
 
  */
 public class LocalSession {
-			
-	private static LocalSession instance = new LocalSession();
-		
-	public static LocalSession getLocalSessionInstance() { return instance; }
-	
-	  private ThreadLocal<LocalSession> tlocal = new ThreadLocal<LocalSession>() {
-		  	@Override
-			protected LocalSession initialValue() {
-		  		LocalSession ls = new LocalSession();
-		  		LocalRepositoryDelegate.TRANSACTION_IDS.add(ls);
-		  		return ls;
-		    }
-		  };
 
+    private static LocalSession instance = new LocalSession();
 
-		private Session session;
-	
-	  	private void setSession(Session localSession) {
-	  		session = localSession;
-	  	}
-	  	
-	  	public LocalSession getLocalSession()  {
-			return tlocal.get();
-	  	}
+    public static LocalSession getLocalSessionInstance() {
+        return instance;
+    }
 
-	  	
-	  	public LocalSession getLocalSession(final Repository repository, final ConnectionInfo connInfo) throws LoginException, NoSuchWorkspaceException, RepositoryException {
-			LocalSession lsession = tlocal.get();
-	  		
-	  		Credentials credentials = connInfo.getCredentials();
-			String workspaceName = connInfo.getWorkspaceName();
-			Session session = null;
-			if (workspaceName != null) {
-				session = credentials != null ? repository.login(credentials,
-						workspaceName) : repository.login(workspaceName);
-			} else {
-				session = credentials != null ? repository.login(credentials)
-						: repository.login();
-			}
-			// this shouldn't happen, but in testing it did occur only because of
-			// the repository not being setup correctly
-			assert session != null;
-			
-			lsession.setSession(session);
-	
-			return lsession;
-	  	}
-	
-	
-	  	
-	  	public  Session getSession() {
-	  		return session;
-	  	}
-	  	
-	  	public void remove() {
-	  		tlocal.remove();
-	  		LocalRepositoryDelegate.TRANSACTION_IDS.remove(this);
-	  		session.logout();  	
-	  	}
-	  	   	
-	  	@Override
-		public String toString() {
-	  		StringBuffer sb = new StringBuffer("Session:");
-	  		sb.append(session.toString());    		
-	  		return sb.toString();
-	  	}
+    private ThreadLocal<LocalSession> tlocal = new ThreadLocal<LocalSession>() {
+        @Override
+        protected LocalSession initialValue() {
+            LocalSession ls = new LocalSession();
+            LocalRepositoryDelegate.TRANSACTION_IDS.add(ls);
+            return ls;
+        }
+    };
 
-};
+    private Session session;
+
+    private void setSession( Session localSession ) {
+        session = localSession;
+    }
+
+    public LocalSession getLocalSession() {
+        return tlocal.get();
+    }
+
+    public LocalSession getLocalSession( final Repository repository,
+                                         final ConnectionInfo connInfo )
+        throws LoginException, NoSuchWorkspaceException, RepositoryException {
+        LocalSession lsession = tlocal.get();
+
+        Credentials credentials = connInfo.getCredentials();
+        String workspaceName = connInfo.getWorkspaceName();
+        Session session = null;
+        if (workspaceName != null) {
+            session = credentials != null ? repository.login(credentials, workspaceName) : repository.login(workspaceName);
+        } else {
+            session = credentials != null ? repository.login(credentials) : repository.login();
+        }
+        // this shouldn't happen, but in testing it did occur only because of
+        // the repository not being setup correctly
+        assert session != null;
+
+        lsession.setSession(session);
+
+        return lsession;
+    }
+
+    public Session getSession() {
+        return session;
+    }
+
+    public void remove() {
+        tlocal.remove();
+        LocalRepositoryDelegate.TRANSACTION_IDS.remove(this);
+        session.logout();
+    }
+
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer("Session:");
+        sb.append(session.toString());
+        return sb.toString();
+    }
+
+}

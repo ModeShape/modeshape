@@ -22,8 +22,8 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * This package defines the {@link QueryProcessor} interface, which is responsible for constructing for each query
- * a tree of {@link ProcessingComponent} objects that each are responsible for processing a specific aspect of
+ * This package defines the {@link org.modeshape.graph.query.process.QueryProcessor} interface, which is responsible for constructing for each query
+ * a tree of {@link org.modeshape.graph.query.process.ProcessingComponent} objects that each are responsible for processing a specific aspect of
  * the query and returning the tuples to the parent component.
  * <p>
  * At the bottom are the "access" components that perform the low-level access of the tuples from the graph container.

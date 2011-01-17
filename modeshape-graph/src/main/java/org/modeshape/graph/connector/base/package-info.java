@@ -43,41 +43,41 @@
  * do two things each time the 
  * {@link org.modeshape.graph.connector.RepositorySource#getConnection() getConnection()} method is called:
  * <ol>
- * <li>Instantiate and manage a single transient {@link Repository} instance (or reuse if already created); and</li>
- * <li>Create and return a new {@link Connection} instance.</li>
+ * <li>Instantiate and manage a single transient {@link org.modeshape.graph.connector.base.Repository} instance (or reuse if already created); and</li>
+ * <li>Create and return a new {@link org.modeshape.graph.connector.base.Connection} instance.</li>
  * </ol>
- * However, this framework does define a {@link BaseRepositorySource} interface that extend the 
+ * However, this framework does define a {@link org.modeshape.graph.connector.base.BaseRepositorySource} interface that extend the 
  * {@link org.modeshape.graph.connector.RepositorySource} interface with a few additional
  * methods needed by this framework.
  * </p>
  * <p>
- * The {@link Connection} class is a concrete implementation of {@link org.modeshape.graph.connector.RepositoryConnection}
+ * The {@link org.modeshape.graph.connector.base.Connection} class is a concrete implementation of {@link org.modeshape.graph.connector.RepositoryConnection}
  * that {@link org.modeshape.graph.connector.RepositoryConnection#execute(org.modeshape.graph.ExecutionContext, org.modeshape.graph.request.Request) executes}
- * the requests by creating a {@link Transaction}, using a fully-implemented {@link Processor} to process all of the requests,
- * and either {@link Transaction#commit() commits} or {@link Transaction#rollback() rolls back} the transaction if
+ * the requests by creating a {@link org.modeshape.graph.connector.base.Transaction}, using a fully-implemented {@link org.modeshape.graph.connector.base.Processor} to process all of the requests,
+ * and either {@link org.modeshape.graph.connector.base.Transaction#commit() commits} or {@link org.modeshape.graph.connector.base.Transaction#rollback() rolls back} the transaction if
  * all requests succeeded or if any failed, respectively. 
  * </p>
  * <p>
- * You can use the concrete {@link Connection} class as is, but you will have to write a concrete {@link Transaction}
+ * You can use the concrete {@link org.modeshape.graph.connector.base.Connection} class as is, but you will have to write a concrete {@link org.modeshape.graph.connector.base.Transaction}
  * implementation since that is where all of the source-specific logic goes. This package does offer a couple of 
  * different specializations of Transaction that may fit how your connector stores its data (see below).
  * </p>
  * <p>
- * The {@link Repository} class manages a set of named {@link Workspace} objects, but it is responsible for 
- * {@link Repository#startTransaction(org.modeshape.graph.ExecutionContext, boolean) startTransaction(...) creating the Transaction}
+ * The {@link org.modeshape.graph.connector.base.Repository} class manages a set of named {@link org.modeshape.graph.connector.base.Workspace} objects, but it is responsible for 
+ * {@link org.modeshape.graph.connector.base.Repository#startTransaction(org.modeshape.graph.ExecutionContext, boolean) startTransaction(...) creating the Transaction}
  * objects. Thus, Repository is an abstract class, so you must create a concrete subclass an instantiate it in
- * your BaseRepositorySource's {@link BaseRepositorySource#getConnection() getConnection()} method.
+ * your BaseRepositorySource's {@link org.modeshape.graph.connector.base.BaseRepositorySource#getConnection() getConnection()} method.
  * </p>
  * <p>
  * To summarize, this connector foundation defines the following concepts:
  * <ul>
- * <li>Define a {@link Node} implementation class that represents a graph node.</li>
- * <li>Define a {@link Workspace} implementation class that represents each named workspace in your source.</li>
- * <li>Define a concrete {@link BaseRepositorySource} subclass that manages a single
- * {@link Repository} instance and create {@link Connection} objects.</li>
- * <li>Define a {@link Repository} subclass that manages the {@link Workspace} objects and create {@link Transaction}
- * objects for use by the {@link Connection}.</li>
- * <li>Define a {@link Transaction} class that implements all of the source-specific logic for interacting with the underlying source
+ * <li>Define a {@link org.modeshape.graph.connector.base.Node} implementation class that represents a graph node.</li>
+ * <li>Define a {@link org.modeshape.graph.connector.base.Workspace} implementation class that represents each named workspace in your source.</li>
+ * <li>Define a concrete {@link org.modeshape.graph.connector.base.BaseRepositorySource} subclass that manages a single
+ * {@link org.modeshape.graph.connector.base.Repository} instance and create {@link org.modeshape.graph.connector.base.Connection} objects.</li>
+ * <li>Define a {@link org.modeshape.graph.connector.base.Repository} subclass that manages the {@link org.modeshape.graph.connector.base.Workspace} objects and create {@link org.modeshape.graph.connector.base.Transaction}
+ * objects for use by the {@link org.modeshape.graph.connector.base.Connection}.</li>
+ * <li>Define a {@link org.modeshape.graph.connector.base.Transaction} class that implements all of the source-specific logic for interacting with the underlying source
  * of data.</li>
  * </ul>
  * Of course, before you do this, see if your source fits one of the patterns described below. If it does, the procedure
@@ -99,32 +99,32 @@
  * provides several base classes that can be used to easily create a UUID-based connector.
  * </p>
  * <p>
- * {@link MapNode} is a serializable representation of a node's properties and child references. Each MapNode
- * has a {@link MapNode#getUuid() UUID}, and thus all child references are managed as UUIDs. MapNode instances
- * are stored in a {@link MapWorkspace} that can be thought of as a wrapper around a {@link java.util.Map Map}-like
- * data structure. The {@link MapTransaction} is an abstract class that implements all the Map-oriented operations,
+ * {@link org.modeshape.graph.connector.base.MapNode} is a serializable representation of a node's properties and child references. Each MapNode
+ * has a {@link org.modeshape.graph.connector.base.MapNode#getUuid() UUID}, and thus all child references are managed as UUIDs. MapNode instances
+ * are stored in a {@link org.modeshape.graph.connector.base.MapWorkspace} that can be thought of as a wrapper around a {@link java.util.Map Map}-like
+ * data structure. The {@link org.modeshape.graph.connector.base.MapTransaction} is an abstract class that implements all the Map-oriented operations,
  * creates MapWorkspace objects when needed, and tracks changes to the nodes that are either committed or rolled back
  * by the Connection.
  * </p>
  * <p>
- * A {@link StandardMapWorkspace} is provided to simplify working with a real underlying {@link java.util.Map}
- * where all nodes are stored. If your source does not have a real Map interface, simply subclass {@link MapWorkspace}
- * to define how to {@link MapWorkspace#getNode(java.util.UUID) get} and {@link MapWorkspace#putNode(MapNode) put}
+ * A {@link org.modeshape.graph.connector.base.StandardMapWorkspace} is provided to simplify working with a real underlying {@link java.util.Map}
+ * where all nodes are stored. If your source does not have a real Map interface, simply subclass {@link org.modeshape.graph.connector.base.MapWorkspace}
+ * to define how to {@link org.modeshape.graph.connector.base.MapWorkspace#getNode(java.util.UUID) get} and {@link org.modeshape.graph.connector.base.MapWorkspace#putNode(MapNode) put}
  * nodes into the source's representation of the workspace.
  * </p>
  * <p>
  * To summarize, if your source actually provides a {@link java.util.Map} implementation, you will:
  * <ul>
- * <li>Use directly or create a subclass of {@link MapNode}.</li>
- * <li>Define a {@link MapWorkspace MapWorkspace&lt;YourMapNode>} class that represents each named workspace in your source,
- * or simply reuse {@link StandardMapWorkspace StandardMapWorkspace&lt;YourMapNode>} if your source uses a {@link java.util.Map}.</li>
- * <li>Define a {@link Transaction MapTransaction&lt;YourMapNode,YourMapWorkspace>} concrete subclass that implements all 
+ * <li>Use directly or create a subclass of {@link org.modeshape.graph.connector.base.MapNode}.</li>
+ * <li>Define a {@link org.modeshape.graph.connector.base.MapWorkspace MapWorkspace&lt;YourMapNode>} class that represents each named workspace in your source,
+ * or simply reuse {@link org.modeshape.graph.connector.base.StandardMapWorkspace StandardMapWorkspace&lt;YourMapNode>} if your source uses a {@link java.util.Map}.</li>
+ * <li>Define a {@link org.modeshape.graph.connector.base.Transaction MapTransaction&lt;YourMapNode,YourMapWorkspace>} concrete subclass that implements all 
  * of the source-specific logic for interacting with the underlying source of data.</li>
- * <li>Define a {@link Repository Repository&lt;YourMapNode,YourMapWorkspace>} subclass that manages the 
- * {@link MapWorkspace MapWorkspace&lt;YourMapNode>} objects and create {@link Transaction MapTransaction&lt;YourMapNode,YourMapWorkspace>}
- * objects for use by the {@link Connection}.</li>
- * <li>Define a concrete {@link BaseRepositorySource} subclass that manages a single
- * {@link Repository Repository&lt;YourMapNode,YourMapWorkspace>} instance and create {@link Connection} objects.</li>
+ * <li>Define a {@link org.modeshape.graph.connector.base.Repository Repository&lt;YourMapNode,YourMapWorkspace>} subclass that manages the 
+ * {@link org.modeshape.graph.connector.base.MapWorkspace MapWorkspace&lt;YourMapNode>} objects and create {@link org.modeshape.graph.connector.base.Transaction MapTransaction&lt;YourMapNode,YourMapWorkspace>}
+ * objects for use by the {@link org.modeshape.graph.connector.base.Connection}.</li>
+ * <li>Define a concrete {@link org.modeshape.graph.connector.base.BaseRepositorySource} subclass that manages a single
+ * {@link org.modeshape.graph.connector.base.Repository Repository&lt;YourMapNode,YourMapWorkspace>} instance and create {@link org.modeshape.graph.connector.base.Connection} objects.</li>
  * </ul>
  * </p>
  * 

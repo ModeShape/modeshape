@@ -58,8 +58,8 @@ import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
-import org.modeshape.graph.Location;
 import org.modeshape.graph.Graph.Batch;
+import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.RepositorySourceException;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.BinaryFactory;
@@ -77,12 +77,12 @@ import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.session.GraphSession;
-import org.modeshape.graph.session.InvalidStateException;
-import org.modeshape.graph.session.ValidationException;
 import org.modeshape.graph.session.GraphSession.Node;
 import org.modeshape.graph.session.GraphSession.NodeId;
 import org.modeshape.graph.session.GraphSession.PropertyInfo;
 import org.modeshape.graph.session.GraphSession.Status;
+import org.modeshape.graph.session.InvalidStateException;
+import org.modeshape.graph.session.ValidationException;
 import org.modeshape.jcr.JcrRepository.Option;
 
 /**
@@ -889,7 +889,7 @@ class SessionCache {
             } catch (InvalidWorkspaceException iwe) {
                 throw new NoSuchWorkspaceException(JcrI18n.workspaceNameIsInvalid.text(store.getSourceName(), workspaceName));
             }
-            org.modeshape.graph.Node node;
+            org.modeshape.graph.Node node = null;
             if (uuid != null) {
                 node = store.getNodeAt(uuid);
 
@@ -900,6 +900,7 @@ class SessionCache {
                 }
 
             } else {
+                assert relativePath != null;
                 Path absolutePath = pathFactory.createAbsolutePath(relativePath.getSegmentsList());
                 node = store.getNodeAt(absolutePath);
             }

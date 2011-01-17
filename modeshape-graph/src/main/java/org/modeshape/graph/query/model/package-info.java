@@ -24,8 +24,8 @@
 /**
  * <p>The Abstract Query Model is a vocabulary that can be used to construct a language-neutral representation of a query.
  * It consists of a family of Java classes each represent the important semantic elements
- * needed to fully define a query.  A {@link QueryCommand} is the interface that represents a top-level query,
- * with the {@link Query} and {@link SetQuery} classes being the two implementations.
+ * needed to fully define a query.  A {@link org.modeshape.graph.query.model.QueryCommand} is the interface that represents a top-level query,
+ * with the {@link org.modeshape.graph.query.model.Query} and {@link org.modeshape.graph.query.model.SetQuery} classes being the two implementations.
  * </p>
  * <p>
  * There are two ways to construct abstract query models.  The first is to programmatically construct a query

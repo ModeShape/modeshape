@@ -41,12 +41,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.After;
+import org.junit.Test;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.graph.Graph;
 import org.modeshape.sequencer.classfile.ClassFileSequencer;
 import org.modeshape.sequencer.classfile.MockEnum;
-import org.junit.After;
-import org.junit.Test;
 
 public class ClassFileMetadataReaderTest {
 
@@ -223,19 +223,19 @@ public class ClassFileMetadataReaderTest {
             // for (AnnotationMetadata amd : metaMethod.getAnnotations()) {
             // Class<Annotation> annotationClass = (Class<Annotation>)Class.forName(amd.getAnnotationClassName());
             // Annotation annotation = clazz.getAnnotation(annotationClass);
-            //                
+            //
             // assertThat(annotation, is(notNullValue()));
             // }
         }
     }
 
-    @SuppressWarnings( {"unchecked", "synthetic-access"} )
+    @SuppressWarnings( {"synthetic-access"} )
     private void checkConstructors( ClassMetadata cmd,
                                     Class<?> clazz ) throws Exception {
-        Map<MethodKey, Constructor> clazzCtors = new HashMap<MethodKey, Constructor>();
+        Map<MethodKey, Constructor<?>> clazzCtors = new HashMap<MethodKey, Constructor<?>>();
         Map<MethodKey, MethodMetadata> metaCtors = new HashMap<MethodKey, MethodMetadata>();
 
-        for (Constructor field : clazz.getDeclaredConstructors()) {
+        for (Constructor<?> field : clazz.getDeclaredConstructors()) {
             clazzCtors.put(new MethodKey(field), field);
         }
 
@@ -252,7 +252,7 @@ public class ClassFileMetadataReaderTest {
              * We already know that the parameter types and name are equal, otherwise this would fail
              */
 
-            Constructor clazzCtor = clazzCtors.get(entry.getKey());
+            Constructor<?> clazzCtor = clazzCtors.get(entry.getKey());
             MethodMetadata metaCtor = entry.getValue();
             assert clazzCtor != null;
 
@@ -266,7 +266,7 @@ public class ClassFileMetadataReaderTest {
             // for (AnnotationMetadata amd : metaMethod.getAnnotations()) {
             // Class<Annotation> annotationClass = (Class<Annotation>)Class.forName(amd.getAnnotationClassName());
             // Annotation annotation = clazz.getAnnotation(annotationClass);
-            //                
+            //
             // assertThat(annotation, is(notNullValue()));
             // }
         }
@@ -319,8 +319,7 @@ public class ClassFileMetadataReaderTest {
             }
         }
 
-        @SuppressWarnings( "unchecked" )
-        private MethodKey( Constructor ctor ) {
+        private MethodKey( Constructor<?> ctor ) {
             this.name = ctor.getName();
             this.parameters = new ArrayList<String>();
             for (Class<?> parameter : ctor.getParameterTypes()) {

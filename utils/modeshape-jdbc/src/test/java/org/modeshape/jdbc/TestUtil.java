@@ -24,7 +24,6 @@
 package org.modeshape.jdbc;
 
 import static org.mockito.Mockito.when;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +38,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.TimeZone;
-
 import javax.jcr.Binary;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
@@ -51,7 +49,6 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
-
 import org.mockito.Mockito;
 
 /**
@@ -70,9 +67,9 @@ public class TestUtil {
     public static final String REFERENCE = PropertyType.nameFromValue(PropertyType.REFERENCE);
 
     public static String[] COLUMN_NAMES;
-    
+
     public static String TIME_ZONE = "Europe/London";
-    
+
     public static DateFormat DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); //$NON-NLS-1$
     public static DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd"); //$NON-NLS-1$
     public static DateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss a"); //$NON-NLS-1$
@@ -80,14 +77,13 @@ public class TestUtil {
     public static String USE_TIMESTAMP_FOR_SOURCE = "2004-06-30 02:39:10.201";
     public static String USE_TIME_FOR_SOURCE = "02:39:10";
     public static String USE_DATE_FOR_SOURCE = "2004-06-30";
-    
+
     // this is the expected date based on the test using "GMT-05:00" when testing rsultset methods that take a calendar
     public static String EXPECTED_TIMESTAMP_FOR_TARGET = "2004-06-29 20:39:10.201";
     public static String EXPECTED_TIME_FOR_TARGET = "20:39:10";
     public static String EXPECTED_DATE_FOR_TARGET = "2004-06-29";
     public static String EXPECTED_TIMEZONE = "America/Chicago";
-    
-    
+
     public static interface COLUMN_NAME_PROPERTIES {
         public static final String PROP_A = "propA";
         public static final String PROP_B = "propB";
@@ -112,9 +108,9 @@ public class TestUtil {
     public static final String DRIVER_VERSION = JdbcI18n.driverVersion.text();
 
     static {
-    	
+
         Calendar cal_instance = createTestCalendar();
- 
+
         // The column names must match the number of columns in #TUPLES
         COLUMN_NAMES = new String[] {COLUMN_NAME_PROPERTIES.PROP_A, COLUMN_NAME_PROPERTIES.PROP_B, COLUMN_NAME_PROPERTIES.PROP_C,
             COLUMN_NAME_PROPERTIES.PROP_D, COLUMN_NAME_PROPERTIES.PROP_E, COLUMN_NAME_PROPERTIES.PROP_F,
@@ -130,35 +126,35 @@ public class TestUtil {
         /*
          *  the tuples data types for each column correspond to @see TYPE_NAMES
          */
-         
-        TUPLES.add(new Object[] {"r1c1", new Long(1), null, null, new Double(1), new Boolean(true),  cal_instance,
-            new String("Heres my data at r1").getBytes(), null} );
-        
+
+        TUPLES.add(new Object[] {"r1c1", new Long(1), null, null, new Double(1), new Boolean(true), cal_instance,
+            new String("Heres my data at r1").getBytes(), null});
+
         cal_instance = createTestCalendar();
-        
+
         TUPLES.add(new Object[] {"r2c1", new Long(2), null, null, new Double(2), new Boolean(false), cal_instance,
             new String("Heres my data r2   ").getBytes(), null});
-        
+
         cal_instance = createTestCalendar();
-       
+
         TUPLES.add(new Object[] {"r3c1", new Long(3), null, null, new Double(3), new Boolean(true), cal_instance,
             new String("Heres my data at r3  ").getBytes(), null});
-        
+
         cal_instance = createTestCalendar();
-        
+
         TUPLES.add(new Object[] {"r4c1", 4L, null, null, 4D, new Boolean(true).booleanValue(), cal_instance,
             new String("Heres  my  data    r4  ").getBytes(), null});
- 
+
     }
-    
+
     private static Calendar createTestCalendar() {
         Calendar cal_instance = new GregorianCalendar();
         cal_instance.clear();
         cal_instance.setTimeZone(TimeZone.getTimeZone(TIME_ZONE));
-    	
+
         cal_instance.set(Calendar.MONTH, Calendar.JUNE);
         cal_instance.set(Calendar.DAY_OF_MONTH, 30);
-        cal_instance.set(Calendar.YEAR, 2004);        
+        cal_instance.set(Calendar.YEAR, 2004);
         cal_instance.set(Calendar.HOUR_OF_DAY, 2);
         cal_instance.set(Calendar.MINUTE, 39);
         cal_instance.set(Calendar.SECOND, 10);
@@ -448,7 +444,7 @@ class QueryResultRowIterator implements RowIterator {
     }
 }
 
-class QueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
+class QueryResultRow implements org.modeshape.jcr.api.query.Row {
     protected final QueryResultRowIterator iterator;
     private Node[] nodes;
     protected final Object[] tuple;
@@ -573,17 +569,17 @@ class QueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
             @Override
             public Calendar getDate() throws ValueFormatException, IllegalStateException, RepositoryException {
                 if (value instanceof Date) {
-                	
-                	Calendar t = new GregorianCalendar();
-                	t.clear();
-                	t.setTimeZone(TimeZone.getTimeZone(TestUtil.TIME_ZONE));
-                	t.setTimeInMillis( ((Date)value).getTime());
-                	return t;
- 
+
+                    Calendar t = new GregorianCalendar();
+                    t.clear();
+                    t.setTimeZone(TimeZone.getTimeZone(TestUtil.TIME_ZONE));
+                    t.setTimeInMillis(((Date)value).getTime());
+                    return t;
+
                 } else if (value instanceof Calendar) {
 
-                	return (Calendar) value;
-                	
+                    return (Calendar)value;
+
                 }
                 throw new ValueFormatException("Value not instance of Date");
             }

@@ -22,10 +22,10 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * The ModeShape implementation of the JCR API.  To use, first create a {@link JcrConfiguration} to represent the desired
- * configuration, and then use the configuration to {@link JcrConfiguration#build() build} a {@link JcrEngine} instance.
- * This engine must be {@link JcrEngine#start() started}, used to obtain {@link JcrEngine#getRepository(String) JCR Repository} instances,
- * and then {@link JcrEngine#shutdown() shutdown} when no longer needed. 
+ * The ModeShape implementation of the JCR API.  To use, first create a {@link org.modeshape.jcr.JcrConfiguration} to represent the desired
+ * configuration, and then use the configuration to {@link org.modeshape.jcr.JcrConfiguration#build() build} a {@link org.modeshape.jcr.JcrEngine} instance.
+ * This engine must be {@link org.modeshape.jcr.JcrEngine#start() started}, used to obtain {@link org.modeshape.jcr.JcrEngine#getRepository(String) JCR Repository} instances,
+ * and then {@link org.modeshape.jcr.JcrEngine#shutdown() shutdown} when no longer needed. 
  */
 
 package org.modeshape.jcr;

@@ -32,13 +32,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-
-import javax.jcr.Credentials;
 import javax.jcr.LoginException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.jcr.Workspace;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeIterator;
@@ -47,7 +44,6 @@ import javax.jcr.query.QueryResult;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-
 import org.modeshape.jcr.api.Repositories;
 import org.modeshape.jdbc.JcrDriver;
 import org.modeshape.jdbc.JcrDriver.JcrContextFactory;
@@ -58,11 +54,11 @@ import org.modeshape.jdbc.JdbcI18n;
  */
 public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
     private static final String JNDI_EXAMPLE_URL = JcrDriver.JNDI_URL_PREFIX + "{jndiName}";
-    
+
     protected static final Set<LocalSession> TRANSACTION_IDS = java.util.Collections.synchronizedSet(new HashSet<LocalSession>());
 
     private JcrContextFactory jcrContext = null;
-    
+
     public LocalRepositoryDelegate( String url,
                                     Properties info,
                                     JcrContextFactory contextFactory ) {
@@ -71,7 +67,8 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
         if (contextFactory == null) {
             jcrContext = new JcrContextFactory() {
                 public Context createContext( Properties properties ) throws NamingException {
-                    InitialContext initContext = ((properties == null || properties.isEmpty()) ? new InitialContext() : new InitialContext( properties));
+                    InitialContext initContext = ((properties == null || properties.isEmpty()) ? new InitialContext() : new InitialContext(
+                                                                                                                                           properties));
                     return initContext;
                 }
             };
@@ -86,16 +83,16 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
         return new JNDIConnectionInfo(url, info);
     }
 
-	private JcrContextFactory getJcrContext() {
+    protected JcrContextFactory getJcrContext() {
         return jcrContext;
     }
-    
+
     private LocalSession getLocalSession() throws LoginException, NoSuchWorkspaceException, RepositoryException {
-    	return LocalSession.getLocalSessionInstance().getLocalSession(getRepository(), getConnectionInfo());
+        return LocalSession.getLocalSessionInstance().getLocalSession(getRepository(), getConnectionInfo());
     }
-    
+
     private LocalSession getCurrentLocalSession() {
-    	return LocalSession.getLocalSessionInstance().getLocalSession();
+        return LocalSession.getLocalSessionInstance().getLocalSession();
     }
 
     /**
@@ -110,14 +107,14 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
 
     @Override
     public NodeType nodeType( String name ) throws RepositoryException {
-    	LocalSession localSession = getLocalSession();
-		return localSession.getSession().getWorkspace().getNodeTypeManager().getNodeType(name);
+        LocalSession localSession = getLocalSession();
+        return localSession.getSession().getWorkspace().getNodeTypeManager().getNodeType(name);
     }
 
     @Override
     public List<NodeType> nodeTypes() throws RepositoryException {
-        
-    	LocalSession localSession = getLocalSession();
+
+        LocalSession localSession = getLocalSession();
         List<NodeType> types = new ArrayList<NodeType>();
         NodeTypeIterator its = localSession.getSession().getWorkspace().getNodeTypeManager().getAllNodeTypes();
         while (its.hasNext()) {
@@ -138,9 +135,9 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
         LOGGER.trace("Executing query: {0}" + query);
 
         // Create the query ...
-        
+
         final Query jcrQuery = getLocalSession().getSession().getWorkspace().getQueryManager().createQuery(query, language);
-        return  jcrQuery.execute();
+        return jcrQuery.execute();
     }
 
     @Override
@@ -227,33 +224,33 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
      */
     @Override
     public boolean isValid( final int timeout ) throws RepositoryException {
-        
-    	LocalSession ls = getLocalSession();
-    	if (! ls.getSession().isLive()) {
-    		ls.remove();
-    		return false;
-    	}
-    	
+
+        LocalSession ls = getLocalSession();
+        if (!ls.getSession().isLive()) {
+            ls.remove();
+            return false;
+        }
+
         return true;
     }
-    
+
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.jdbc.delegate.RepositoryDelegate#closeStatement()
      */
     @Override
     public void closeStatement() {
-    	LocalSession session = getCurrentLocalSession();
-		try {
-			if (session != null) {
-				session.remove();
-			}
-		} catch (Exception e) {
-			// do nothing
-		} 
+        LocalSession session = getCurrentLocalSession();
+        try {
+            if (session != null) {
+                session.remove();
+            }
+        } catch (Exception e) {
+            // do nothing
+        }
     }
-    
+
     /**
      * {@inheritDoc}
      * 
@@ -261,13 +258,11 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
      */
     @Override
     public void close() {
-    	for (Iterator<LocalSession> it= TRANSACTION_IDS.iterator(); it.hasNext();) {
-    		LocalSession id = it.next();
-    		id.remove();
-    	}
-    }   
-
-
+        for (Iterator<LocalSession> it = TRANSACTION_IDS.iterator(); it.hasNext();) {
+            LocalSession id = it.next();
+            id.remove();
+        }
+    }
 
     /**
      * {@inheritDoc}
@@ -276,7 +271,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
      */
     @Override
     public void rollback() throws RepositoryException {
-    	closeStatement();
+        closeStatement();
     }
 
     /**
@@ -356,5 +351,5 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
             }
         }
     }
-  
+
 }

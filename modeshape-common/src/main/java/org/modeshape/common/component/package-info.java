@@ -22,7 +22,8 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * A simple framework for loading and managing {@link Component} objects that may be configured and used reflectively.
+ * A simple framework for loading and managing {@link org.modeshape.common.component.Component} objects that may be configured and used reflectively.
  */
 
 package org.modeshape.common.component;
+

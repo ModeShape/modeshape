@@ -170,9 +170,7 @@ class JoinRequestProcessor extends RequestProcessor {
             cacheableOriginal.setCachePolicy(getDefaultCachePolicy());
             while (projectedRequest != null) {
                 Request requestToSource = projectedRequest.getRequest();
-                if (cacheableOriginal != null) {
-                    setCacheableInfo(cacheableOriginal, ((CacheableRequest)requestToSource).getCachePolicy());
-                }
+                setCacheableInfo(cacheableOriginal, ((CacheableRequest)requestToSource).getCachePolicy());
                 projectedRequest = projectedRequest.next();
             }
         }

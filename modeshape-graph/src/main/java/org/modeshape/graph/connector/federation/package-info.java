@@ -24,7 +24,7 @@
 /**
  * ModeShape provides a federated connector that is able to access repository content from multiple external systems
  * and make that content look like it exists in a single unified repository.  Like other connectors, a 
- * {@link org.modeshape.graph.connector.RepositorySource} implementation is provided, called {@link FederatedRepositorySource},
+ * {@link org.modeshape.graph.connector.RepositorySource} implementation is provided, called {@link org.modeshape.graph.connector.federation.FederatedRepositorySource},
  * that can be set up and configured to be used by a {@link org.modeshape.graph.Graph} or a JCR repository. 
  * 
  * <h3>Projections</h3>

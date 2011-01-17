@@ -223,7 +223,7 @@ public class Serializer {
         for (Object value : property) {
             if (value instanceof String) {
                 String stringValue = (String)value;
-                if (largeValues != null && stringValue.length() > largeValues.getMinimumSize()) {
+                if (stringValue.length() > largeValues.getMinimumSize()) {
                     // Store the value in the large values area, but record the hash and length here.
                     byte[] hash = computeHash(stringValue);
                     stream.writeChar('L');
@@ -262,7 +262,7 @@ public class Serializer {
             } else if (value instanceof URI) {
                 URI uri = (URI)value;
                 String stringValue = uri.toString();
-                if (largeValues != null && stringValue.length() > largeValues.getMinimumSize()) {
+                if (stringValue.length() > largeValues.getMinimumSize()) {
                     // Store the URI in the large values area, but record the hash and length here.
                     byte[] hash = computeHash(stringValue);
                     stream.writeChar('L');
@@ -307,7 +307,7 @@ public class Serializer {
                 try {
                     binary.acquire();
                     length = binary.getSize();
-                    if (largeValues != null && length > largeValues.getMinimumSize()) {
+                    if (length > largeValues.getMinimumSize()) {
                         // Store the value in the large values area, but record the hash and length here.
                         hash = binary.getHash();
                         stream.writeChar('L');
@@ -334,7 +334,7 @@ public class Serializer {
                     binary.release();
                 }
                 // If this is a large value and the binary has been released, write it to the large objects ...
-                if (largeValues != null && hash != null) {
+                if (hash != null) {
                     largeValues.write(hash, length, PropertyType.BINARY, value);
                 }
             } else {

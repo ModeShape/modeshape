@@ -446,9 +446,10 @@ public class Histogram<T extends Number> {
             return Histogram.this.math.getOperandClass();
         }
 
+        @SuppressWarnings( "unchecked" )
         @Override
         public boolean equals( Object obj ) {
-            if (obj != null && obj.getClass() == this.getClass()) {
+            if (obj instanceof Histogram.Bucket) {
                 Bucket that = (Bucket)obj;
                 if (this.getNumberClass().isAssignableFrom(that.getNumberClass())) {
                     if (Histogram.this.math.compare(this.lowerBound, that.lowerBound) != 0) return false;

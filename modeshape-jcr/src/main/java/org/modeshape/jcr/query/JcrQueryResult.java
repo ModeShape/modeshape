@@ -35,7 +35,6 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
-import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import net.jcip.annotations.NotThreadSafe;
@@ -58,7 +57,7 @@ import org.modeshape.jcr.JcrI18n;
  * @see JcrSqlQueryResult
  */
 @NotThreadSafe
-public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.QueryResult {
+public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
     public static final String JCR_SCORE_COLUMN_NAME = "jcr:score";
     public static final String JCR_PATH_COLUMN_NAME = "jcr:path";
     public static final String JCR_NAME_COLUMN_NAME = "jcr:name";
@@ -497,7 +496,7 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
         }
     }
 
-    protected static class SingleSelectorQueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
+    protected static class SingleSelectorQueryResultRow implements org.modeshape.jcr.api.query.Row {
         protected final SingleSelectorQueryResultRowIterator iterator;
         protected final Node node;
         protected final Object[] tuple;
@@ -617,7 +616,7 @@ public class JcrQueryResult implements QueryResult, org.modeshape.jcr.api.query.
         }
     }
 
-    protected static class MultiSelectorQueryResultRow implements Row, org.modeshape.jcr.api.query.Row {
+    protected static class MultiSelectorQueryResultRow implements org.modeshape.jcr.api.query.Row {
         protected final QueryResultRowIterator iterator;
         protected final Object[] tuple;
         private Value[] values = null;

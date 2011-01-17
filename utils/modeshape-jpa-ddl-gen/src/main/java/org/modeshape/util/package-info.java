@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * Some utilities that are useful for ModeShape, including the {@link SchemaGen DDL generator} 
+ * Some utilities that are useful for ModeShape, including the {@link org.modeshape.util.SchemaGen DDL generator} 
  * for the various kinds of databases used by the {@link org.modeshape.connector.store.jpa.JpaSource JPA connector}.
  */
 

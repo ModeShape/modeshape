@@ -26,7 +26,7 @@
  * A simple framework for defining internationalized strings and obtaining the localized forms.
  * </p>
  * <p>
- * The {@link I18n} class represents an internationalized string with the ability to obtain the localized message
+ * The {@link org.modeshape.common.i18n.I18n} class represents an internationalized string with the ability to obtain the localized message
  * given a {@link java.util.Locale Locale} or, if not supplied, the {@link java.util.Locale#getDefault() default locale}.
  * </p>
  * <h3>Using the I18n objects</h3>
@@ -79,7 +79,7 @@
  * executorIsShutdown = The executor is already shutdown
  * </pre>
  * Note that each of the localized messages may contain number parameters that are replaced with actual values
- * supplied to the {@link I18n#text(Object...)} or {@link I18n#text(java.util.Locale, Object...)} methods.
+ * supplied to the {@link org.modeshape.common.i18n.I18n#text(Object...)} or {@link org.modeshape.common.i18n.I18n#text(java.util.Locale, Object...)} methods.
  * </p>
  * <h3>Localization Repositories</h3>
  * <p>
@@ -87,12 +87,12 @@
  * include their localization bundles with their JARs or make them available on the classpath.
  * </p>
  * <p>
- * However, it is possible to access the localization bundles from other sources using the {@link LocalizationRepository}
+ * However, it is possible to access the localization bundles from other sources using the {@link org.modeshape.common.i18n.LocalizationRepository}
  * interface that defines a single method for obtaining the {@link java.net.URL URL} for a given bundle name
  * and Locale. The resulting URL must be capable of accessing the bundle contents via the {@link java.net.URL#openStream()} method.
  * </p>
  * <p>
- * To specify that your localization repository should be used, simply call the {@link I18n#setLocalizationRepository(LocalizationRepository)}
+ * To specify that your localization repository should be used, simply call the {@link org.modeshape.common.i18n.I18n#setLocalizationRepository(LocalizationRepository)}
  * method once within your application.
  * </p>
  * <h3>Testing the localizations</h3>
@@ -100,9 +100,9 @@
  * The framework provides several utility methods to obtain any problems the were found while loading the localized
  * messages.
  * <ul>
- *  <li>{@link I18n#getLocalizationProblemLocales(Class)} returns the set of Locale objects for which there were problems;</li>
- *  <li>{@link I18n#getLocalizationProblems(Class)} returns the set of problems found while loading all of the locales;</li>
- *  <li>{@link I18n#getLocalizationProblems(Class,java.util.Locale)} returns the set of problems found while loading the supplied locale</li>
+ *  <li>{@link org.modeshape.common.i18n.I18n#getLocalizationProblemLocales(Class)} returns the set of Locale objects for which there were problems;</li>
+ *  <li>{@link org.modeshape.common.i18n.I18n#getLocalizationProblems(Class)} returns the set of problems found while loading all of the locales;</li>
+ *  <li>{@link org.modeshape.common.i18n.I18n#getLocalizationProblems(Class,java.util.Locale)} returns the set of problems found while loading the supplied locale</li>
  * </ul>
  * Problems include any missing messages in a localization file, extra messages in a localization file, or inability
  * to access the localization file.
@@ -110,8 +110,8 @@
  * <p>
  * These utility methods can be used in unit tests to ensure that all locale message bundles were loaded successfully.
  * In fact, this framework provides an abstract unit test that does exactly this.  To use simply create a concrete
- * subclass with a no-arg constructor that calls the abstract class's constructor with the {@link Class} containing
- * the {@link I18n} objects:
+ * subclass with a no-arg constructor that calls the abstract class's constructor with the {@link java.lang.Class} containing
+ * the {@link org.modeshape.common.i18n.I18n} objects:
  * <pre>
  * public class MyAppI18nTest extends AbstractI18nTest {
  *    public MyAppI18nTest() {
