@@ -855,7 +855,7 @@ config.repository("repository A")
 			  A ModeShape configuration can have a "<code>clustering</code>" fragment that defines the name of the cluster and the
 			  JGroups configuration:
 			</para>
-    	<programlisting language="XML" role="XML"><![CDATA[<clustering clusterName="modeshape-cluster" configuration="jgroups-modeshape.xml" />]]></programlisting>
+    	<programlisting language="XML" role="XML"><![CDATA[<mode:clustering clusterName="modeshape-cluster" configuration="jgroups-modeshape.xml" />]]></programlisting>
 			<para>
 				The "<code>clusterName</code>" is a string that is a logical name of the cluster; all engines connecting to the same name
 				form a cluster. Any messages multicast from one engine in the cluster will be received by all other members of the cluster.
