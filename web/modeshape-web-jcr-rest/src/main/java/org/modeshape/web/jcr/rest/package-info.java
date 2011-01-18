@@ -26,13 +26,12 @@
  * <p>
  * The key classes are:
  * <ul>
- * <li>{@link JcrResources} - the class that handles requests for valid URIs</li>
- * <li>{@link JcrApplication} - the JAX-RS application class that indicates that JcrResources should be used to handle URIs</li>
- * <li>{@link RepositoryFactory} - the interface to the ModeShape JCR SPI</li> 
+ * <li>{@link org.modeshape.web.jcr.rest.JcrResources} - the class that handles requests for valid URIs</li>
+ * <li>{@link org.modeshape.web.jcr.rest.JcrApplication} - the JAX-RS application class that indicates that JcrResources should be used to handle URIs</li>
+ * <li>{@link org.modeshape.web.jcr.RepositoryFactory} - the interface to the ModeShape JCR SPI</li> 
  * </ul>
  * </p>
  */
 package org.modeshape.web.jcr.rest;
 
-import org.modeshape.web.jcr.RepositoryFactory;
 

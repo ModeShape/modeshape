@@ -27,41 +27,41 @@
  * Many event frameworks define the listeners and sources as interfaces.  While this is often useful, it requires
  * the implementations properly address the thread-safe semantics of managing and calling the listeners.
  * This observation framework uses abstract or concrete classes to minimize the effort required for implementing
- * {@link ChangeObserver} or {@link Observable}. The classes also allow the framework to implement a number of
- * utility methods, such as the {@link ChangeObserver#unregister() unregister()} method on ChangeObserver, that
+ * {@link org.modeshape.graph.observe.ChangeObserver} or {@link org.modeshape.graph.observe.Observable}. The classes also allow the framework to implement a number of
+ * utility methods, such as the {@link org.modeshape.graph.observe.ChangeObserver#unregister() unregister()} method on ChangeObserver, that
  * also save effort and code.
  * </p>
  * <p>
- * However, one of the more important reasons for providing classes is that {@link ChangeObserver} uses 
- * {@link java.lang.ref.WeakReference weak references} to track the {@link Observable} instances, and the {@link ChangeObservers}
- * class uses weak references for the listeners.  This means that if an observers do not prevent {@link Observable} instances
- * from being garbage collected, nor do observers prevent {@link Observable} instances from being garbage collected.
+ * However, one of the more important reasons for providing classes is that {@link org.modeshape.graph.observe.ChangeObserver} uses 
+ * {@link java.lang.ref.WeakReference weak references} to track the {@link org.modeshape.graph.observe.Observable} instances, and the {@link org.modeshape.graph.observe.ChangeObservers}
+ * class uses weak references for the listeners.  This means that if an observers do not prevent {@link org.modeshape.graph.observe.Observable} instances
+ * from being garbage collected, nor do observers prevent {@link org.modeshape.graph.observe.Observable} instances from being garbage collected.
  * </p>
  * <h3>Observable</h3>
  * <p>
- * Any component that can have changes and be observed can implement the {@link Observable} interface.  This interface
+ * Any component that can have changes and be observed can implement the {@link org.modeshape.graph.observe.Observable} interface.  This interface
  * allows Observers to register (or be registered) to receive notifications of the changes.  However, a concrete and thread-safe 
- * implementation of this interface, called {@link ChangeObservers}, is available and should be used where possible, since it 
- * automatically manages the registered {@link ChangeObserver} instances and properly implements the register and unregister mechanisms.
+ * implementation of this interface, called {@link org.modeshape.graph.observe.ChangeObservers}, is available and should be used where possible, since it 
+ * automatically manages the registered {@link org.modeshape.graph.observe.ChangeObserver} instances and properly implements the register and unregister mechanisms.
  * </p>
  * <h3>Observers</h3>
  * <p>
  * Components that are to recieve notifications of changes are called <i>observers</i>.  To create an observer, simply extend 
- * the {@link ChangeObserver} abstract class and provide an implementation of the {@link ChangeObserver#notify(Changes)} method.
- * Then, register the observer with an {@link Observable} using its {@link Observable#register(Observer)} method.
- * The observer's {@link ChangeObserver#notify(Changes)} method will then be called with the changes that have
+ * the {@link org.modeshape.graph.observe.ChangeObserver} abstract class and provide an implementation of the {@link org.modeshape.graph.observe.ChangeObserver#notify(Changes)} method.
+ * Then, register the observer with an {@link org.modeshape.graph.observe.Observable} using its {@link org.modeshape.graph.observe.Observable#register(Observer)} method.
+ * The observer's {@link org.modeshape.graph.observe.ChangeObserver#notify(Changes)} method will then be called with the changes that have
  * been made to the Observable.
  * </p>
- * <p>When an observer is no longer needed, it should be unregistered from all {@link Observable} instances with which
- * it was registered.  The {@link ChangeObserver} class automatically tracks which {@link Observable} instances it is
- * registered with, and calling the observer's {@link ChangeObserver#unregister()} will unregister the observer from
+ * <p>When an observer is no longer needed, it should be unregistered from all {@link org.modeshape.graph.observe.Observable} instances with which
+ * it was registered.  The {@link org.modeshape.graph.observe.ChangeObserver} class automatically tracks which {@link org.modeshape.graph.observe.Observable} instances it is
+ * registered with, and calling the observer's {@link org.modeshape.graph.observe.ChangeObserver#unregister()} will unregister the observer from
  * all of these Observables.  Alternatively, an observer can be unregistered from a single Observable using the
- * Observable's {@link Observable#unregister(Observer)} method.
+ * Observable's {@link org.modeshape.graph.observe.Observable#unregister(Observer)} method.
  * </p>
  * <h3>Changes</h3>
  * <p>
- * The {@link Changes} class represents the set of individual changes that have been made during a single, atomic
- * operation.  Each {@link Changes} instance has information about the source of the changes, the timestamp at which
+ * The {@link org.modeshape.graph.observe.Changes} class represents the set of individual changes that have been made during a single, atomic
+ * operation.  Each {@link org.modeshape.graph.observe.Changes} instance has information about the source of the changes, the timestamp at which
  * the changes occurred, and the individual changes that were made.  These individual changes take the form of
  * {@link org.modeshape.graph.request.ChangeRequest} objects, such as {@link org.modeshape.graph.request.CreateNodeRequest}, 
  * {@link org.modeshape.graph.request.DeleteBranchRequest}, etc.  Each request is 
@@ -84,7 +84,7 @@
  * actually changed. 
  * </p>
  * <p>
- * Third, the requests that make up a {@link Changes} instance can actually be replayed.  Consider the case of a cache
+ * Third, the requests that make up a {@link org.modeshape.graph.observe.Changes} instance can actually be replayed.  Consider the case of a cache
  * that is backed by a {@link org.modeshape.graph.connector.RepositorySource}, which might use an observer to keep the cache in sync.  
  * As the cache is notified of Changes, the cache can simply replay the changes against its source.
  */

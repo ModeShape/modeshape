@@ -680,14 +680,13 @@ public class JdbcMetadataSource extends AbstractRepositorySource implements Obje
      * @see Class#forName(String)
      * @see Class#newInstance()
      */
-    @SuppressWarnings( "unchecked" )
     public synchronized void setMetadataCollectorClassName( String metadataCollectorClassName )
         throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         if (metadataCollectorClassName == null) {
             this.metadataCollectorClassName = DEFAULT_METADATA_COLLECTOR.getClass().getName();
             this.metadataCollector = DEFAULT_METADATA_COLLECTOR;
         } else {
-            Class newCollectorClass = Class.forName(metadataCollectorClassName);
+            Class<?> newCollectorClass = Class.forName(metadataCollectorClassName);
             this.metadataCollector = (MetadataCollector)newCollectorClass.newInstance();
             this.metadataCollectorClassName = metadataCollectorClassName;
         }

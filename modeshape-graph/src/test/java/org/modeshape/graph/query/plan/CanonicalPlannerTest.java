@@ -128,7 +128,7 @@ public class CanonicalPlannerTest {
         } else {
             assertThat(node.hasProperty(Property.SOURCE_ALIAS), is(false));
         }
-        Collection<Schemata.Column> columns = (Collection)node.getProperty(Property.SOURCE_COLUMNS);
+        Collection<Schemata.Column> columns = (Collection<Schemata.Column>)node.getProperty(Property.SOURCE_COLUMNS);
         assertThat(columns.size(), is(availableColumns.length));
         int i = 0;
         for (Schemata.Column column : columns) {
@@ -333,9 +333,9 @@ public class CanonicalPlannerTest {
     @Test
     public void shouldProducePlanWhenUsingSubquery() {
         // Define the schemata ...
-        schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3").addTable("otherTable",
-                                                                                                   "columnA",
-                                                                                                   "columnB").build();
+        schemata = schemataBuilder.addTable("someTable", "column1", "column2", "column3")
+                                  .addTable("otherTable", "columnA", "columnB")
+                                  .build();
         // Define the subquery command ...
         QueryCommand subquery = builder.select("columnA").from("otherTable").query();
         builder = new QueryBuilder(typeSystem);
@@ -439,8 +439,8 @@ public class CanonicalPlannerTest {
         assertThat(criteriaNode2.getType(), is(PlanNode.Type.SELECT));
         assertThat(criteriaNode2.getChildCount(), is(1));
         assertThat(criteriaNode2.getSelectors(), is(selectors("stillOther")));
-        assertThat(criteriaNode2.getProperty(Property.SELECT_CRITERIA), is((Object)lessThan(property("stillOther", "columnX"),
-                                                                                            literal(3L))));
+        assertThat(criteriaNode2.getProperty(Property.SELECT_CRITERIA),
+                   is((Object)lessThan(property("stillOther", "columnX"), literal(3L))));
         PlanNode subquerySource2 = criteriaNode2.getFirstChild();
         assertSourceNode(subquerySource2, "stillOther", null, "columnX", "columnY");
         assertThat(subquerySource2.getChildCount(), is(0));
@@ -455,8 +455,8 @@ public class CanonicalPlannerTest {
         assertThat(criteriaNode1.getType(), is(PlanNode.Type.SELECT));
         assertThat(criteriaNode1.getChildCount(), is(1));
         assertThat(criteriaNode1.getSelectors(), is(selectors("otherTable")));
-        assertThat(criteriaNode1.getProperty(Property.SELECT_CRITERIA), is((Object)equals(property("otherTable", "columnB"),
-                                                                                          var("__subquery2"))));
+        assertThat(criteriaNode1.getProperty(Property.SELECT_CRITERIA),
+                   is((Object)equals(property("otherTable", "columnB"), var("__subquery2"))));
         PlanNode subquerySource1 = criteriaNode1.getFirstChild();
         assertSourceNode(subquerySource1, "otherTable", null, "columnA", "columnB");
         assertThat(subquerySource1.getChildCount(), is(0));
@@ -541,8 +541,8 @@ public class CanonicalPlannerTest {
         assertThat(criteriaNode1.getType(), is(PlanNode.Type.SELECT));
         assertThat(criteriaNode1.getChildCount(), is(1));
         assertThat(criteriaNode1.getSelectors(), is(selectors("otherTable")));
-        assertThat(criteriaNode1.getProperty(Property.SELECT_CRITERIA), is((Object)equals(property("otherTable", "columnB"),
-                                                                                          literal("winner"))));
+        assertThat(criteriaNode1.getProperty(Property.SELECT_CRITERIA),
+                   is((Object)equals(property("otherTable", "columnB"), literal("winner"))));
         PlanNode subquerySource1 = criteriaNode1.getFirstChild();
         assertSourceNode(subquerySource1, "otherTable", null, "columnA", "columnB");
         assertThat(subquerySource1.getChildCount(), is(0));
@@ -562,8 +562,8 @@ public class CanonicalPlannerTest {
         assertThat(criteriaNode2.getType(), is(PlanNode.Type.SELECT));
         assertThat(criteriaNode2.getChildCount(), is(1));
         assertThat(criteriaNode2.getSelectors(), is(selectors("stillOther")));
-        assertThat(criteriaNode2.getProperty(Property.SELECT_CRITERIA), is((Object)lessThan(property("stillOther", "columnX"),
-                                                                                            literal(3L))));
+        assertThat(criteriaNode2.getProperty(Property.SELECT_CRITERIA),
+                   is((Object)lessThan(property("stillOther", "columnX"), literal(3L))));
         PlanNode subquerySource2 = criteriaNode2.getFirstChild();
         assertSourceNode(subquerySource2, "stillOther", null, "columnX", "columnY");
         assertThat(subquerySource2.getChildCount(), is(0));
@@ -581,8 +581,8 @@ public class CanonicalPlannerTest {
         assertThat(criteriaNode3.getProperty(Property.SELECT_CRITERIA),
                    is((Object)like(nodePath("someTable"), var("__subquery2"))));
         PlanNode criteriaNode4 = criteriaNode3.getFirstChild();
-        assertThat(criteriaNode4.getProperty(Property.SELECT_CRITERIA), is((Object)in(property("someTable", "column3"),
-                                                                                      var("__subquery1"))));
+        assertThat(criteriaNode4.getProperty(Property.SELECT_CRITERIA),
+                   is((Object)in(property("someTable", "column3"), var("__subquery1"))));
 
         PlanNode source = criteriaNode4.getFirstChild();
         assertSourceNode(source, "someTable", null, "column1", "column2", "column3");

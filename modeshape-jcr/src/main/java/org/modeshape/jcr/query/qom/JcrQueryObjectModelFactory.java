@@ -84,8 +84,7 @@ import org.modeshape.jcr.query.JcrQueryContext;
  * does not validate any of the parameters or the resulting query definition. All validation is performed when the query is
  * {@link Query#execute() executed}.
  */
-public class JcrQueryObjectModelFactory
-    implements QueryObjectModelFactory, org.modeshape.jcr.api.query.qom.QueryObjectModelFactory {
+public class JcrQueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.QueryObjectModelFactory {
 
     public static final String LANGUAGE = Query.JCR_JQOM;
     private final JcrQueryContext context;

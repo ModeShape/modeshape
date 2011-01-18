@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * This package defines the {@link QueryParser} interface, which defines a component that can parse a query represented
+ * This package defines the {@link org.modeshape.graph.query.parse.QueryParser} interface, which defines a component that can parse a query represented
  * in a specific language and produce the corresponding {@link org.modeshape.graph.query.model abstract query model} representation.
  * <p>
  * Several parsers are provided, including one that parses a subset of SQL and another that parses the full-text search

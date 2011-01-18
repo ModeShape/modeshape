@@ -24,12 +24,12 @@
 /**
  * Utilities for inputing and outputing larger amounts of data. 
  * <p>
- * The {@link Destination} interface defines an
- * interface that abstracts away where the graph content is to be placed, and the {@link GraphBatchDestination}
- * is a usable {@link Destination} implementation for sending content to a {@link org.modeshape.graph.Graph} instance.
+ * The {@link org.modeshape.graph.io.Destination} interface defines an
+ * interface that abstracts away where the graph content is to be placed, and the {@link org.modeshape.graph.io.GraphBatchDestination}
+ * is a usable {@link org.modeshape.graph.io.Destination} implementation for sending content to a {@link org.modeshape.graph.Graph} instance.
  * </p>
  * <p>
- * Meanwhile, {@link GraphImporter} can be used to import XML into a {@link org.modeshape.graph.Graph} instance.
+ * Meanwhile, {@link org.modeshape.graph.io.GraphImporter} can be used to import XML into a {@link org.modeshape.graph.Graph} instance.
  * </p>
  */
 

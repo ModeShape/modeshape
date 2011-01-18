@@ -36,17 +36,17 @@
  * </p>
  * <p>
  * The description of a particular source system (e.g., the "Customer" database, or the company LDAP system) is 
- * called a <strong>repository source</strong>. ModeShape defines a {@link RepositorySource} interface that defines methods 
+ * called a <strong>repository source</strong>. ModeShape defines a {@link org.modeshape.graph.connector.RepositorySource} interface that defines methods 
  * describing the behavior and supported features and a method for establishing connections. A connector will 
  * have a class that implements this interface and that has JavaBean properties for all of the connector-specific 
  * properties required to fully describe an instance of the system. Use of JavaBean properties is not required, 
  * but it is highly recommended, as it enables reflective configuration and administration. Applications that 
- * use ModeShape create an instance of the connector's {@link RepositorySource} implementation and set the properties 
+ * use ModeShape create an instance of the connector's {@link org.modeshape.graph.connector.RepositorySource} implementation and set the properties 
  * for the external source that the application wants to access with that connector.
  * </p>
  * <p>
  * A repository source instance is then used to establish <strong>connections</strong> to that source. 
- * A connector provides an implementation of the {@link RepositoryConnection} interface, which defines methods for 
+ * A connector provides an implementation of the {@link org.modeshape.graph.connector.RepositoryConnection} interface, which defines methods for 
  * interacting with the external system. In particular, the execute(...) method takes an {@link org.modeshape.graph.ExecutionContext} 
  * instance and a {@link org.modeshape.graph.request.Request} object. The object defines the environment in which 
  * the processing is occurring, including information about the JAAS Subject and LoginContext. The 
@@ -54,7 +54,7 @@
  * operations on the content, with different concrete subclasses representing each type of activity. 
  * Examples of commands include (but not limited to) getting a node, moving a node, creating a node, 
  * changing a node, and deleting a node. And, if the repository source is able to participate in JTA/JTS 
- * distributed transactions, then the {@link RepositoryConnection} must implement the {@link RepositoryConnection#getXAResource()}
+ * distributed transactions, then the {@link org.modeshape.graph.connector.RepositoryConnection} must implement the {@link org.modeshape.graph.connector.RepositoryConnection#getXAResource()}
  * method by returning a valid {@link javax.transaction.xa.XAResource} object that can be used by the transaction monitor. 
  * </p>
  * 
@@ -63,14 +63,14 @@
  * As an example, consider that we want ModeShape to give us access through JCR to the schema information contained
  * in a relational databases. We first have to develop a connector that allows us to interact with relational
  * databases using JDBC. That connector would contain a <code>JdbcRepositorySource</code> Java class that 
- * implements {@link RepositorySource}, and that has all of the various JavaBean properties for setting the 
+ * implements {@link org.modeshape.graph.connector.RepositorySource}, and that has all of the various JavaBean properties for setting the 
  * name of the driver class, URL, username, password, and other properties. (Or we might have a JavaBean property 
  * that defines the JNDI name where we can find a JDBC DataSource instance pointing to our JDBC database.)
  * </p>
  * <p>
  * Our new connector would also have a <code>JdbcRepositoryConnection</code> Java class that implements the 
- * {@link RepositoryConnection} interface. This class would probably wrap a {@link java.sql.Connection JDBC database connection}, 
- * and would implement the {@link RepositoryConnection#execute(org.modeshape.graph.ExecutionContext, org.modeshape.graph.request.Request)}
+ * {@link org.modeshape.graph.connector.RepositoryConnection} interface. This class would probably wrap a {@link java.sql.Connection JDBC database connection}, 
+ * and would implement the {@link org.modeshape.graph.connector.RepositoryConnection#execute(org.modeshape.graph.ExecutionContext, org.modeshape.graph.request.Request)}
  * method such that the nodes exposed by the connector describe the database schema of the database. For example, 
  * the connector might represent each database table as a node with the table's name, with properties that describe 
  * the table (e.g., the description, whether it's a temporary table), and with child nodes that represent each of 
@@ -87,7 +87,7 @@
  * <h3>Implementing a connector</h3>
  * <p>
  * As mentioned earlier, a connector consists of the Java code that is used to access content from a system. 
- * Perhaps the most important class that makes up a connector is the implementation of the {@link RepositorySource}. 
+ * Perhaps the most important class that makes up a connector is the implementation of the {@link org.modeshape.graph.connector.RepositorySource}. 
  * This class is analogous to JDBC's {@link javax.sql.DataSource} in that it is instantiated to represent a single 
  * instance of a system that will be accessed, and it contains enough information (in the form of JavaBean properties) 
  * so that it can create connections to the source.

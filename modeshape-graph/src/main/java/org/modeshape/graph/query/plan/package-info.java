@@ -22,8 +22,8 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * This package defines the {@link Planner} interface, the {@link CanonicalPlanner} implementation, and the
- * {@link PlanNode} class that is used to represent a canonical query plan.
+ * This package defines the {@link org.modeshape.graph.query.plan.Planner} interface, the {@link org.modeshape.graph.query.plan.CanonicalPlanner} implementation, and the
+ * {@link org.modeshape.graph.query.plan.PlanNode} class that is used to represent a canonical query plan.
  * <p>
  * The query plan is a tree of {@link org.modeshape.graph.query.plan.PlanNode} objects that each represent a 
  * different aspect of the query, and is a form that is easily manipulated by subsequent stages.

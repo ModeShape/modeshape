@@ -74,9 +74,9 @@ import org.xml.sax.SAXException;
  * 
  * </p>
  * <p>
- * The <code>configUrl</code> used in the sample above should point to a configuration file (e.g., {@code
- * file:src/test/resources/configRepository.xml?repositoryName=MyRepository}) OR a {@link Repositories} instance stored in the
- * JNDI tree (e.g., {@code jndi://name/of/Repositories/resource?repositoryName=MyRepository}).
+ * The <code>configUrl</code> used in the sample above should point to a configuration file (e.g.,
+ * {@code file:src/test/resources/configRepository.xml?repositoryName=MyRepository}) OR a {@link Repositories} instance stored in
+ * the JNDI tree (e.g., {@code jndi://name/of/Repositories/resource?repositoryName=MyRepository}).
  * </p>
  * 
  * @see #getRepository(Map)
@@ -100,8 +100,9 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     public static final String REPOSITORY_NAME_PARAM = "repositoryName";
 
     /**
-     * Returns a reference to the appropriate repository for the given parameter map, if one exists. Although the {@code
-     * parameters} map can have any number of entries, this method only considers the entry with the key JcrRepositoryFactory#URL.
+     * Returns a reference to the appropriate repository for the given parameter map, if one exists. Although the
+     * {@code parameters} map can have any number of entries, this method only considers the entry with the key
+     * JcrRepositoryFactory#URL.
      * <p>
      * The value of this key is treated as a URL with the format {@code PROTOCOL://PATH[?repositoryName=REPOSITORY_NAME]} where
      * PROTOCOL is "jndi" or "file", PATH is the JNDI name of the JcrEngine or the path to the configuration file, and
@@ -121,7 +122,7 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      *         <ul>
      * @see RepositoryFactory#getRepository(Map)
      */
-    @SuppressWarnings( "unchecked" )
+    @SuppressWarnings( {"unchecked", "rawtypes"} )
     @Override
     public Repository getRepository( Map parameters ) {
         LOG.debug("Trying to load ModeShape JCR Repository with parameters: " + parameters);
@@ -381,8 +382,8 @@ public class JcrRepositoryFactory implements RepositoryFactory {
      * </p>
      * 
      * @param url the ModeShape-compatible URL that specifies the {@link JcrEngine} to be used; may not be null
-     * @param parameters an optional list of parameters that will be passed into the JNDI {@link InitialContext} if the {@code
-     *        url} parameter specifies a ModeShape URL that uses the JNDI protocol; may be null or empty
+     * @param parameters an optional list of parameters that will be passed into the JNDI {@link InitialContext} if the
+     *        {@code url} parameter specifies a ModeShape URL that uses the JNDI protocol; may be null or empty
      * @return the {@code JcrEngine} referenced by the given URL if it can be accessed and started (if not already started),
      *         otherwise {@code null}.
      */
@@ -430,11 +431,11 @@ public class JcrRepositoryFactory implements RepositoryFactory {
     }
 
     /**
-     * Returns the repository name to use for the given URL. If the {@code url} contains a query parameter named {@code
-     * repositoryName}, the value of that query parameter is returned. If the {@code url} does not contain a query paramer named
-     * {@code repositoryName} then {@code engine} is checked to see if it contains exactly one repository. If so, that repository
-     * is returned. If {@code engine} contains more than one JCR repository and the {@code repositoryName} parameter is {@code
-     * null}, then {@code null} is returned.
+     * Returns the repository name to use for the given URL. If the {@code url} contains a query parameter named
+     * {@code repositoryName}, the value of that query parameter is returned. If the {@code url} does not contain a query paramer
+     * named {@code repositoryName} then {@code engine} is checked to see if it contains exactly one repository. If so, that
+     * repository is returned. If {@code engine} contains more than one JCR repository and the {@code repositoryName} parameter is
+     * {@code null}, then {@code null} is returned.
      * <p>
      * NOTE: If a repository name is provided in the {@code url} parameter, this method does not validate that a repository with
      * that name exists in {@code engine}.

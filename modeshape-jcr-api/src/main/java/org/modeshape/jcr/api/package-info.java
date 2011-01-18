@@ -23,7 +23,7 @@
  */
 /**
  * This package provides a set of interfaces that extend the JCR 2.0 API interfaces with additional functionality,
- * as well as defining the {@link Repositories} interface as a generic abstraction to any container of multiple
+ * as well as defining the {@link org.modeshape.jcr.api.Repositories} interface as a generic abstraction to any container of multiple
  * JCR {@link javax.jcr.Repository Repository} instances. 
  */
 

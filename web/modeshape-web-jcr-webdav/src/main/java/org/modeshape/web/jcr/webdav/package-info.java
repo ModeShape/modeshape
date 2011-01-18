@@ -26,12 +26,12 @@
  * <p>
  * The key classes are:
  * <ul>
- * <li>{@link ModeShapeWebdavServlet} - the servlet class that handles requests for WebDAV URIs</li>
- * <li>{@link ModeShapeWebdavStore} - the implementation class that maps WebDAV operations to JCR operations</li>
- * <li>{@link RequestResolver} - the contract for mapping an incoming URI to a repository, workspace, and path within the workspace</li>
- * <li>{@link SingleRepositoryRequestResolver} - the {@link RequestResolver} that maps URIs into a path within a single, hard-coded repository and workspace (defined by the configuration)</li>
- * <li>{@link MultiRepositoryRequestResolver} - the {@link RequestResolver} that maps URIs into a repository name, workspace name, and path</li>
- * <li>{@link ResolvedRequest} - the representation of a repository name, workspace name, and path as output by the {@link RequestResolver}</li>
+ * <li>{@link org.modeshape.web.jcr.webdav.ModeShapeWebdavServlet} - the servlet class that handles requests for WebDAV URIs</li>
+ * <li>{@link org.modeshape.web.jcr.webdav.ModeShapeWebdavStore} - the implementation class that maps WebDAV operations to JCR operations</li>
+ * <li>{@link org.modeshape.web.jcr.webdav.RequestResolver} - the contract for mapping an incoming URI to a repository, workspace, and path within the workspace</li>
+ * <li>{@link org.modeshape.web.jcr.webdav.SingleRepositoryRequestResolver} - the {@link org.modeshape.web.jcr.webdav.RequestResolver} that maps URIs into a path within a single, hard-coded repository and workspace (defined by the configuration)</li>
+ * <li>{@link org.modeshape.web.jcr.webdav.MultiRepositoryRequestResolver} - the {@link org.modeshape.web.jcr.webdav.RequestResolver} that maps URIs into a repository name, workspace name, and path</li>
+ * <li>{@link org.modeshape.web.jcr.webdav.ResolvedRequest} - the representation of a repository name, workspace name, and path as output by the {@link org.modeshape.web.jcr.webdav.RequestResolver}</li>
  * </ul>
  * </p>
  */

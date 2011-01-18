@@ -26,9 +26,9 @@
  * <p>
  * The key classes are:
  * <ul>
- * <li>{@link RepositoryFactory} - the class creates JCR sessions based on HTTP requests</li>
- * <li>{@link ServletSecurityContext} - the bridge from HTTP security to ModeShape JAAS-based security</li>
- * <li>{@link ModeShapeJcrDeployer} - the servlet context listener that initializes the {@link RepositoryFactory}.</li>
+ * <li>{@link org.modeshape.web.jcr.RepositoryFactory} - the class creates JCR sessions based on HTTP requests</li>
+ * <li>{@link org.modeshape.web.jcr.ServletSecurityContext} - the bridge from HTTP security to ModeShape JAAS-based security</li>
+ * <li>{@link org.modeshape.web.jcr.ModeShapeJcrDeployer} - the servlet context listener that initializes the {@link org.modeshape.web.jcr.RepositoryFactory}.</li>
  * </ul>
  * </p>
  */

@@ -44,9 +44,9 @@ import org.modeshape.graph.query.model.JoinType;
 import org.modeshape.graph.query.model.Ordering;
 import org.modeshape.graph.query.model.Readable;
 import org.modeshape.graph.query.model.SelectorName;
+import org.modeshape.graph.query.model.SetQuery.Operation;
 import org.modeshape.graph.query.model.Visitable;
 import org.modeshape.graph.query.model.Visitors;
-import org.modeshape.graph.query.model.SetQuery.Operation;
 import org.modeshape.graph.query.validate.Schemata;
 
 /**
@@ -744,7 +744,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     public <ValueType> Collection<ValueType> getPropertyAsCollection( Property propertyId,
                                                                       Class<ValueType> type ) {
         if (nodeProperties == null) return null;
-        return (Collection)nodeProperties.get(propertyId);
+        return (Collection<ValueType>)nodeProperties.get(propertyId);
     }
 
     /**
@@ -759,7 +759,7 @@ public final class PlanNode implements Iterable<PlanNode>, Readable, Cloneable, 
     public <ValueType> List<ValueType> getPropertyAsList( Property propertyId,
                                                           Class<ValueType> type ) {
         if (nodeProperties == null) return null;
-        return (List)nodeProperties.get(propertyId);
+        return (List<ValueType>)nodeProperties.get(propertyId);
     }
 
     /**

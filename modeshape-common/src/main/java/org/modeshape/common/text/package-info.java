@@ -22,11 +22,12 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * A set of utilities for working with text.  Included is an {@link Inflector} class that transforms (English) works into singular,
+ * A set of utilities for working with text.  Included is an {@link org.modeshape.common.text.Inflector} class that transforms (English) works into singular,
  * plural, and human-readable forms, and is capable of transforming between camel-case, whitespace-delimited, or underscore-delimited
- * forms.  There is also components that can {@link TextEncoder encode} and {@link TextDecoder decode} text.
- * Finally, this package defines a simple framework for {@link TokenStream tokenizing text} (e.g., from files or stream)
+ * forms.  There is also components that can {@link org.modeshape.common.text.TextEncoder encode} and {@link org.modeshape.common.text.TextDecoder decode} text.
+ * Finally, this package defines a simple framework for {@link org.modeshape.common.text.TokenStream tokenizing text} (e.g., from files or stream)
  * making it very easy to create very straightforward parsers.
  */
 
 package org.modeshape.common.text;
+

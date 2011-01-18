@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * Caching of graph content is controlled with {@link CachePolicy cache policies}, and these are used
+ * Caching of graph content is controlled with {@link org.modeshape.graph.cache.CachePolicy cache policies}, and these are used
  * in {@link org.modeshape.graph.connector connectors} and in {@link org.modeshape.graph.request.CacheableRequest requests}
  * (among other places).
  */

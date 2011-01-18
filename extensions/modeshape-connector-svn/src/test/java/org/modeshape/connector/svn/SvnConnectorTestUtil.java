@@ -82,7 +82,7 @@ public class SvnConnectorTestUtil {
             // listEntries(trunkWorkspace, "/root");
             // // long latestRevision = trunkWorkspace.getLatestRevision( );
             // // System.out.println( "workspace latest revision: " + latestRevision );
-            //            
+            //
             // //// SVNNodeKind kind = trunkWorkspace.checkPath("/", -1);
             // // if(kind == SVNNodeKind.NONE) {
             // // System.out.println("none");
@@ -154,7 +154,7 @@ public class SvnConnectorTestUtil {
     @SuppressWarnings( "unchecked" )
     public static void listEntries( SVNRepository workspace,
                                     String path ) throws SVNException {
-        Collection<SVNDirEntry> entries = workspace.getDir(path, -1, null, (Collection)null);
+        Collection<SVNDirEntry> entries = workspace.getDir(path, -1, null, (Collection<SVNDirEntry>)null);
         Iterator<SVNDirEntry> iterator = entries.iterator();
         while (iterator.hasNext()) {
             SVNDirEntry entry = iterator.next();

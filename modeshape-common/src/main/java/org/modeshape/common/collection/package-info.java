@@ -23,8 +23,9 @@
  */
 /**
  * A set of common classes for dealing with collections of other objects.  Some of these classes work with standard
- * collections, while others represent {@link Problems} that record multiple warnings, errors, and informational
+ * collections, while others represent {@link org.modeshape.common.collection.Problems} that record multiple warnings, errors, and informational
  * messages.
  */
 
 package org.modeshape.common.collection;
+

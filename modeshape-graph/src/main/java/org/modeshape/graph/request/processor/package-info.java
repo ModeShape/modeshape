@@ -22,9 +22,9 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 /**
- * This portion of the ModeShape Graph API defines the {@link RequestProcessor processor} for {@link org.modeshape.graph.request.Request requests}.
+ * This portion of the ModeShape Graph API defines the {@link org.modeshape.graph.request.processor.RequestProcessor processor} for {@link org.modeshape.graph.request.Request requests}.
  * Simple enough, it defines methods that handle the processing of each kind of request
- * (for example, {@link RequestProcessor#process(org.modeshape.graph.request.ReadNodeRequest)}).
+ * (for example, {@link org.modeshape.graph.request.processor.RequestProcessor#process(org.modeshape.graph.request.ReadNodeRequest)}).
  * Usually, an implementation will inherit default implementations for some of these methods, but will override
  * others (or provide implementations for the abstract methods).
  * <p>
@@ -33,7 +33,7 @@
  * is likely to be different, this helps to separate all the different processing code.
  * </p>
  * <p>The design also makes it possible to easily inherit or override <code>process(...)</code> implementations.
- * In fact, the {@link RequestProcessor} abstract class provides a number of default implementations that are
+ * In fact, the {@link org.modeshape.graph.request.processor.RequestProcessor} abstract class provides a number of default implementations that are
  * pretty good.  Sure, the default implementations may not the fastest, but it allows you to implement the minimum
  * number of methods and have a complete processor.  And should you find that the performance is not good enough
  * (which you'll verify by actually measuring performance, right?), then simply override the method in question
@@ -42,9 +42,9 @@
  * <p>
  * This design has a great benefit, though: backward compability.  Let's imagine that you're using a particular release
  * of ModeShape, and have written a {@link org.modeshape.graph.connector.RepositoryConnection connector} that uses
- * your own {@link RequestProcessor} subclass.  The next release of ModeShape might include additional request types
+ * your own {@link org.modeshape.graph.request.processor.RequestProcessor} subclass.  The next release of ModeShape might include additional request types
  * and provide default implementations for the corresponding <code>process(NewRequestType)</code> method, and your 
- * {@link RequestProcessor} subclass (written against an earlier release) will automatically work with the next release.
+ * {@link org.modeshape.graph.request.processor.RequestProcessor} subclass (written against an earlier release) will automatically work with the next release.
  * Plus, your connector will inherit the new functionality with zero effort on your part.
  * </p>
  */

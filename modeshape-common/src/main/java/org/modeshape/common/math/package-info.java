@@ -23,7 +23,8 @@
  */
 /**
  * A set of classes that define mathematic operations for a particular class of values. 
- * This is useful for generic classes that must work with one of the {@link Number} subclasses.
+ * This is useful for generic classes that must work with one of the {@link java.lang.Number} subclasses.
  */
 
 package org.modeshape.common.math;
+

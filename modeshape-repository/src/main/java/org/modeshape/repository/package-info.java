@@ -23,10 +23,10 @@
  */
 /**
  * The components and services that make up ModeShape's lower-level graph engine, which is used within its JCR Engine.
- * To use, first create a {@link ModeShapeConfiguration} to represent the desired
- * configuration, and then use the configuration to {@link ModeShapeConfiguration#build() build} a {@link ModeShapeEngine} instance.
- * This engine must be {@link ModeShapeEngine#start() started}, used to obtain {@link ModeShapeEngine#getGraph(String) graph} instances,
- * and then {@link ModeShapeEngine#shutdown() shutdown} when no longer needed.
+ * To use, first create a {@link org.modeshape.repository.ModeShapeConfiguration} to represent the desired
+ * configuration, and then use the configuration to {@link org.modeshape.repository.ModeShapeConfiguration#build() build} a {@link org.modeshape.repository.ModeShapeEngine} instance.
+ * This engine must be {@link org.modeshape.repository.ModeShapeEngine#start() started}, used to obtain {@link org.modeshape.repository.ModeShapeEngine#getGraph(String) graph} instances,
+ * and then {@link org.modeshape.repository.ModeShapeEngine#shutdown() shutdown} when no longer needed.
  */
 
 package org.modeshape.repository;
