@@ -16,11 +16,11 @@ import org.modeshape.graph.observe.Changes;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.DateTimeFactory;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.ValueFactory;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.request.ChangeRequest;
 import org.modeshape.graph.request.CreateNodeRequest;
 
@@ -55,10 +55,11 @@ class RepositoryLockManager implements JcrSystemObserver {
      * Returns the lock manager for the named workspace (if one already exists) or creates a new lock manager and returns it. This
      * method is thread-safe.
      * 
-     * @param workspaceName the name of the workspace for which the lock manager should be returned
+     * @param workspaceName the name of the workspace for which the lock manager should be returned; may not be null
      * @return the lock manager for the workspace; never null
      */
     WorkspaceLockManager getLockManager( String workspaceName ) {
+        assert workspaceName != null;
         WorkspaceLockManager lockManager = lockManagers.get(workspaceName);
         if (lockManager != null) return lockManager;
 
@@ -118,7 +119,8 @@ class RepositoryLockManager implements JcrSystemObserver {
         for (Location lockLocation : locksGraph.getRoot().getChildren()) {
             Node lockNode = locksGraph.getNode(lockLocation);
 
-            Boolean isSessionScoped = booleanFactory.create(lockNode.getProperty(ModeShapeLexicon.IS_SESSION_SCOPED).getFirstValue());
+            Boolean isSessionScoped = booleanFactory.create(lockNode.getProperty(ModeShapeLexicon.IS_SESSION_SCOPED)
+                                                                    .getFirstValue());
 
             if (!isSessionScoped) continue;
             String lockingSession = stringFactory.create(lockNode.getProperty(ModeShapeLexicon.LOCKING_SESSION).getFirstValue());
@@ -127,7 +129,8 @@ class RepositoryLockManager implements JcrSystemObserver {
             if (activeSessionIds.contains(lockingSession)) {
                 systemGraph.set(ModeShapeLexicon.EXPIRATION_DATE).on(lockLocation).to(newExpirationDate);
             } else {
-                DateTime expirationDate = dateFactory.create(lockNode.getProperty(ModeShapeLexicon.EXPIRATION_DATE).getFirstValue());
+                DateTime expirationDate = dateFactory.create(lockNode.getProperty(ModeShapeLexicon.EXPIRATION_DATE)
+                                                                     .getFirstValue());
                 // Destroy expired locks (if it was still held by an active session, it would have been extended by now)
                 if (expirationDate.isBefore(now)) {
                     String workspaceName = stringFactory.create(lockNode.getProperty(ModeShapeLexicon.WORKSPACE).getFirstValue());
@@ -187,7 +190,7 @@ class RepositoryLockManager implements JcrSystemObserver {
                             isSessionScopedProp = prop;
                         } else if (JcrLexicon.UUID.equals(prop.getName())) {
                             isSessionScopedProp = prop;
-                        } else if (ModeShapeLexicon.WORKSPACE_NAME.equals(prop.getName())) {
+                        } else if (ModeShapeLexicon.WORKSPACE.equals(prop.getName())) {
                             workspaceNameProp = prop;
                         }
                     }
@@ -206,7 +209,6 @@ class RepositoryLockManager implements JcrSystemObserver {
                     break;
                 case DELETE_BRANCH:
 
-                    
                     boolean success = false;
                     for (WorkspaceLockManager workspaceLockManager : lockManagers.values()) {
                         if (workspaceLockManager.lockFor(lockedNodeUuid) != null) {
