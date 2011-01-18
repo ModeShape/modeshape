@@ -446,10 +446,12 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
         private void crawl( Location location,
                             int depth ) {
             Path path = location.getPath();
-            // Remove all work below this point ...
-            Iterator<Map.Entry<Path, WorkRequest>> iter = requestByPath.entrySet().iterator();
-            while (iter.hasNext()) {
-                if (iter.next().getKey().isDecendantOf(path)) iter.remove();
+            if (depth > 1) {
+                // Remove all work below this point ...
+                Iterator<Map.Entry<Path, WorkRequest>> iter = requestByPath.entrySet().iterator();
+                while (iter.hasNext()) {
+                    if (iter.next().getKey().isDecendantOf(path)) iter.remove();
+                }
             }
             requestByPath.put(path, new CrawlSubgraph(location, depth));
         }

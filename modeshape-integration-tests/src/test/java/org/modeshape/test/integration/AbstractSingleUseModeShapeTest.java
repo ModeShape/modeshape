@@ -25,6 +25,7 @@ package org.modeshape.test.integration;
 
 import org.junit.After;
 import org.junit.Before;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.JcrTools;
 
 /**
@@ -35,6 +36,9 @@ public abstract class AbstractSingleUseModeShapeTest extends AbstractModeShapeTe
     @Override
     @Before
     public void beforeEach() throws Exception {
+        // Delete any index files that were stored on disk from a previous run ...
+        FileUtil.delete("target/indexes");
+
         print = false;
         startEngine(getClass(), getResourcePathToConfigurationFile(), getRepositoryName());
         session = repository.login();
@@ -53,6 +57,8 @@ public abstract class AbstractSingleUseModeShapeTest extends AbstractModeShapeTe
             session = null;
             stopEngine();
         }
+        // Delete any index files that were stored on disk ...
+        FileUtil.delete("target/indexes");
     }
 
     /**
