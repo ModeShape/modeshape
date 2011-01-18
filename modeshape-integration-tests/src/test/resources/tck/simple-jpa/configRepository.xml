@@ -32,7 +32,7 @@
     -->
     <mode:sources jcr:primaryType="nt:unstructured">
         <!-- 
-        The 'JCR' repository is a JBoss Cache source with a single default workspace (though others could be created, too).
+        The 'JCR' repository is a JDBC source with a single default workspace (though others could be created, too).
         -->
         <mode:source jcr:name="Store" mode:classname="org.modeshape.connector.store.jpa.JpaSource"
         	mode:model="Simple"

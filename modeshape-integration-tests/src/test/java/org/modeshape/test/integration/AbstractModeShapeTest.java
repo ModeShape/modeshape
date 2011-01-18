@@ -327,6 +327,23 @@ public abstract class AbstractModeShapeTest {
 
     }
 
+    protected void assertNodeIsSearchable( String path,
+                                           String nodeType,
+                                           String... otherTypes ) throws RepositoryException {
+        boolean p = print;
+        try {
+            print = false;
+            printQuery("SELECT * FROM [" + nodeType + "] WHERE PATH() = $path", 1, var("path", path));
+            if (otherTypes != null) {
+                for (String type : otherTypes) {
+                    printQuery("SELECT * FROM [" + type + "] WHERE PATH() = $path", 1, var("path", path));
+                }
+            }
+        } finally {
+            print = p;
+        }
+    }
+
     protected Node assertNode( String path ) throws RepositoryException {
         return session().getNode(path);
     }
@@ -336,12 +353,14 @@ public abstract class AbstractModeShapeTest {
                                String... mixinTypes ) throws RepositoryException {
         Node node = session().getNode(path);
         assertThat(node.getPrimaryNodeType().getName(), is(primaryType));
+        primaryType = node.getPrimaryNodeType().getName();
         Set<String> expectedMixinTypes = new HashSet<String>(Arrays.asList(mixinTypes));
         Set<String> actualMixinTypes = new HashSet<String>();
         for (NodeType mixin : node.getMixinNodeTypes()) {
             actualMixinTypes.add(mixin.getName());
         }
         assertThat("Mixin types do not match", actualMixinTypes, is(expectedMixinTypes));
+        assertNodeIsSearchable(path, primaryType, mixinTypes);
         return node;
     }
 

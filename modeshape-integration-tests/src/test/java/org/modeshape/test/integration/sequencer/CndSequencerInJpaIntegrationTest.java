@@ -31,7 +31,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class CndSequencerIntegrationTest extends AbstractSequencerTest {
+public class CndSequencerInJpaIntegrationTest extends AbstractSequencerTest {
 
     /**
      * {@inheritDoc}
@@ -40,7 +40,7 @@ public class CndSequencerIntegrationTest extends AbstractSequencerTest {
      */
     @Override
     protected String getResourcePathToConfigurationFile() {
-        return "config/configRepositoryForCndSequencing.xml";
+        return "config/configRepositoryForCndSequencingUsingJpa.xml";
     }
 
     /**
@@ -70,7 +70,7 @@ public class CndSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/cnd/jsr_283_builtins.cnd", "/files/");
         waitUntilSequencedNodesIs(1);
-        Thread.sleep(400); // wait a bit while the new content is indexed
+        Thread.sleep(1000); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
         String path = "/sequenced/cnd/jsr_283_builtins.cnd";
@@ -80,9 +80,9 @@ public class CndSequencerIntegrationTest extends AbstractSequencerTest {
         Node file1 = assertNode(path + "/nt:activity", "nt:nodeType", "mode:derived");
         assertThat(file1, is(notNullValue()));
 
-        assertNode("/files", "nt:folder");
-        assertNode("/files/jsr_283_builtins.cnd", "nt:file");
+        assertNode("/files", "nt:folder", "mode:publishArea");
         assertNode("/files/jsr_283_builtins.cnd/jcr:content");
+        assertNode("/files/jsr_283_builtins.cnd", "nt:file");
         assertNode("/sequenced/cnd", "nt:unstructured");
         assertNode("/sequenced/cnd/jsr_283_builtins.cnd");
 
@@ -107,7 +107,7 @@ public class CndSequencerIntegrationTest extends AbstractSequencerTest {
         Node file1 = assertNode(path + "/nt:activity", "nt:nodeType", "mode:derived");
         assertThat(file1, is(notNullValue()));
 
-        assertNode("/files", "nt:folder");
+        assertNode("/files", "nt:folder", "mode:publishArea");
         assertNode("/files/a", "nt:folder");
         assertNode("/files/a/b", "nt:folder");
         assertNode("/files/a/b/jsr_283_builtins.cnd", "nt:file");
