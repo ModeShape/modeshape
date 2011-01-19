@@ -86,9 +86,6 @@ public class DdlSequencer2IntegrationTest extends AbstractSequencerTest {
         assertNoNode("/sequenced/ddl[2]");
         assertNoNode("/sequenced/ddl/a[2]");
         assertNoNode("/sequenced/ddl/a/b[2]");
-
-        printQuery("SELECT * FROM [ddl:createTableStatement]", 1L);
-        printQuery("SELECT * FROM [ddl:grantOnTableStatement]", 4L);
     }
 
 }
