@@ -95,10 +95,12 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/teiid/vdb/qe.vdb", "/files/");
         waitUntilSequencingFinishes();
-        Thread.sleep(200); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
-        Node vdb = assertNode("/sequenced/teiid/vdbs/qe", "vdb:virtualDatabase", "mix:referenceable", "mode:derived");
+        Node vdb = waitUntilSequencedNodeIsAvailable("/sequenced/teiid/vdbs/qe",
+                                                     "vdb:virtualDatabase",
+                                                     "mix:referenceable",
+                                                     "mode:derived");
         printSubgraph(vdb);
         printQuery("SELECT * FROM [vdb:virtualDatabase]", 1);
         printQuery("SELECT * FROM [vdb:model]", 3);
@@ -116,10 +118,12 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/teiid/vdb/qe.vdb", "/files/my/favorites");
         waitUntilSequencingFinishes();
-        Thread.sleep(200); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
-        Node vdb = assertNode("/sequenced/teiid/vdbs/my/favorites/qe", "vdb:virtualDatabase", "mix:referenceable", "mode:derived");
+        Node vdb = waitUntilSequencedNodeIsAvailable("/sequenced/teiid/vdbs/my/favorites/qe",
+                                                     "vdb:virtualDatabase",
+                                                     "mix:referenceable",
+                                                     "mode:derived");
         printSubgraph(vdb);
         printQuery("SELECT * FROM [vdb:virtualDatabase]", 1);
         printQuery("SELECT * FROM [vdb:model]", 3);
@@ -137,10 +141,12 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/teiid/vdb/PartsFromXml.vdb", "/files/");
         waitUntilSequencingFinishes();
-        Thread.sleep(200); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
-        Node vdb = assertNode("/sequenced/teiid/vdbs/PartsFromXml", "vdb:virtualDatabase", "mix:referenceable", "mode:derived");
+        Node vdb = waitUntilSequencedNodeIsAvailable("/sequenced/teiid/vdbs/PartsFromXml",
+                                                     "vdb:virtualDatabase",
+                                                     "mix:referenceable",
+                                                     "mode:derived");
         printSubgraph(vdb);
         printQuery("SELECT * FROM [vdb:virtualDatabase]", 1);
         printQuery("SELECT * FROM [vdb:model]", 2);
@@ -160,10 +166,12 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/teiid/vdb/YahooUdfTest.vdb", "/files/");
         waitUntilSequencingFinishes();
-        Thread.sleep(200); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
-        Node vdb = assertNode("/sequenced/teiid/vdbs/YahooUdfTest", "vdb:virtualDatabase", "mix:referenceable", "mode:derived");
+        Node vdb = waitUntilSequencedNodeIsAvailable("/sequenced/teiid/vdbs/YahooUdfTest",
+                                                     "vdb:virtualDatabase",
+                                                     "mix:referenceable",
+                                                     "mode:derived");
         printSubgraph(vdb);
         printQuery("SELECT * FROM [vdb:virtualDatabase]", 1);
         printQuery("SELECT * FROM [vdb:model]", 4);
@@ -181,10 +189,9 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
     public void shouldFindVdbsUsingQueryWithMultipleVariables() throws Exception {
         String[] vdbFiles = {"YahooUdfTest.vdb", "qe.vdb", "qe.2.vdb", "qe.3.vdb", "qe.4.vdb", "PartsFromXml.vdb"};
         uploadVdbs("/files/", vdbFiles);
-        Thread.sleep(1000); // wait a bit while the new content is indexed
 
         // Print out the top level of the VDBs ...
-        Node files = assertNode("/files");
+        Node files = waitUntilSequencedNodeIsAvailable("/files");
         // print = true;
         printSubgraph(files, 5);
 
@@ -194,7 +201,7 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
 
         // Print out the top level of the VDBs ...
         // print = true;
-        Node vdbs = assertNode("/sequenced");
+        Node vdbs = waitUntilSequencedNodeIsAvailable("/sequenced");
         // print = true;
         printSubgraph(vdbs, 4);
 
