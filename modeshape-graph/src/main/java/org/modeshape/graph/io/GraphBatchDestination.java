@@ -105,10 +105,10 @@ public class GraphBatchDestination implements Destination {
                     create.orReplace();
                     break;
                 case UPDATE:
-                    create.byAppending();
+                    create.orUpdate();
                     break;
                 case DO_NOT_REPLACE:
-                    create.byAppending();
+                    create.ifAbsent();
                     break;
             }
         }
