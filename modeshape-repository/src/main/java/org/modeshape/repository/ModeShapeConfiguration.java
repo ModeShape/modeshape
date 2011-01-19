@@ -127,7 +127,7 @@ public class ModeShapeConfiguration {
         source.setDefaultWorkspaceName(DEFAULT_WORKSPACE_NAME);
 
         // The file was imported successfully, so now create the content information ...
-        configurationContent = new ConfigurationDefinition("dna", source, null, null, context, null);
+        configurationContent = new ConfigurationDefinition("modeshape", source, null, null, context, null);
     }
 
     /**

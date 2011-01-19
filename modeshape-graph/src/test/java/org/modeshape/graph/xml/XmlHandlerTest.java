@@ -41,6 +41,7 @@ import org.modeshape.common.text.TextDecoder;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
+import org.modeshape.graph.NodeConflictBehavior;
 import org.modeshape.graph.io.Destination;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NamespaceRegistry;
@@ -566,6 +567,20 @@ public class XmlHandlerTest {
                     requests.add(new CreateNodeRequest(location, workspace, child, iter));
                 }
             }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.io.Destination#create(org.modeshape.graph.NodeConflictBehavior,
+         *      org.modeshape.graph.property.Path, org.modeshape.graph.property.Property, org.modeshape.graph.property.Property[])
+         */
+        @Override
+        public void create( NodeConflictBehavior behavior,
+                            Path path,
+                            Property firstProperty,
+                            Property... additionalProperties ) {
+            create(path, firstProperty, additionalProperties);
         }
 
         public void setProperties( Path path,

@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.modeshape.cnd.CndImporter;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
+import org.modeshape.graph.NodeConflictBehavior;
 import org.modeshape.graph.io.Destination;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
@@ -137,6 +138,20 @@ public class CndSequencer implements StreamSequencer {
             for (Property property : additionalProperties) {
                 output.setProperty(path, property.getName(), property.getValuesAsArray());
             }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.io.Destination#create(org.modeshape.graph.NodeConflictBehavior,
+         *      org.modeshape.graph.property.Path, org.modeshape.graph.property.Property, org.modeshape.graph.property.Property[])
+         */
+        @Override
+        public void create( NodeConflictBehavior behavior,
+                            Path path,
+                            Property firstProperty,
+                            Property... additionalProperties ) {
+            create(path, firstProperty, additionalProperties);
         }
 
         /**

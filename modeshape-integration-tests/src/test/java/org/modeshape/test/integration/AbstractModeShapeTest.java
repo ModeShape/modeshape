@@ -344,6 +344,15 @@ public abstract class AbstractModeShapeTest {
         }
     }
 
+    protected void assertNoNode( String path ) throws RepositoryException {
+        try {
+            Node node = assertNode(path);
+            fail("Node at '" + node.getPath() + "' should not exist.");
+        } catch (PathNotFoundException e) {
+            // expected
+        }
+    }
+
     protected Node assertNode( String path ) throws RepositoryException {
         return session().getNode(path);
     }

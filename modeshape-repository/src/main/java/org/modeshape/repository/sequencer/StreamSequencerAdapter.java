@@ -43,19 +43,20 @@ import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.JcrNtLexicon;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Node;
+import org.modeshape.graph.NodeConflictBehavior;
 import org.modeshape.graph.Results;
 import org.modeshape.graph.io.Destination;
 import org.modeshape.graph.observe.NetChangeObserver.NetChange;
 import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFormatException;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.sequencer.StreamSequencer;
 import org.modeshape.graph.sequencer.StreamSequencerContext;
 import org.modeshape.repository.ModeShapeLexicon;
@@ -272,7 +273,7 @@ public class StreamSequencerAdapter implements Sequencer {
                 try {
                     context.destinationGraph().getNodeAt(workingPath);
                 } catch (PathNotFoundException pnfe) {
-                    context.getDestination().create(workingPath, primaryType);
+                    context.getDestination().create(NodeConflictBehavior.DO_NOT_REPLACE, workingPath, primaryType);
                     builtPaths.add(workingPath);
                 }
             }
