@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import net.jcip.annotations.Immutable;
@@ -76,6 +78,12 @@ import org.modeshape.repository.sequencer.SequencingService;
 @Immutable
 public class ModeShapeEngine {
 
+    /**
+     * The default interval (in seconds) for running the garbage collection sweeps, if there are sources require it. The default
+     * value is 600 seconds, or 10 minutes.
+     */
+    public static final int DEFAULT_GARBAGE_COLLECTION_INTERVAL_IN_SECONDS = 60 * 10; // every ten minutes
+
     public static final String CONFIGURATION_REPOSITORY_NAME = "dna:configuration";
 
     protected final ModeShapeConfiguration.ConfigurationDefinition configuration;
@@ -90,6 +98,11 @@ public class ModeShapeEngine {
     private final MimeTypeDetectors detectors;
     private final String engineId = UUID.randomUUID().toString();
     private final Logger logger;
+
+    /**
+     * Provides the ability to collect garbage periodically
+     */
+    private final ScheduledExecutorService gcService = new ScheduledThreadPoolExecutor(1);
 
     protected ModeShapeEngine( ExecutionContext context,
                                ModeShapeConfiguration.ConfigurationDefinition configuration ) {
@@ -337,8 +350,45 @@ public class ModeShapeEngine {
         // Now register the repository service to be notified of changes to the configuration ...
         clusteringService.register(repositoryService);
 
+        // Start the periodic GC service
+        startGcService();
+
         // Check whether there are problems AFTER startup ...
         checkProblemsOnStartup();
+    }
+
+    protected void startGcService() {
+        if (!getRepositoryService().requiresGarbageCollection()) return;
+
+        // Read the garbage collection interface from the configuration ...
+        long intervalInSeconds = DEFAULT_GARBAGE_COLLECTION_INTERVAL_IN_SECONDS;
+        Property intervalProp = configuration.getGlobalProperty(ModeShapeLexicon.GARBAGE_COLLECTION_INTERVAL);
+        if (intervalProp != null && !intervalProp.isEmpty()) {
+            try {
+                // This may throw an exception if the value is not a valid long ...
+                intervalInSeconds = context.getValueFactories().getLongFactory().create(intervalProp.getFirstValue());
+            } catch (RuntimeException e) {
+                String actualValue = context.getValueFactories().getStringFactory().create(intervalProp.getFirstValue());
+                problems.addError(RepositoryI18n.unableToUseGarbageCollectionIntervalValue, actualValue);
+            }
+        }
+
+        final Runnable gcTask = new Runnable() {
+            public void run() {
+                getRepositoryService().runGarbageCollection(null); // log problems as errors
+            }
+        };
+        try {
+            gcService.scheduleAtFixedRate(gcTask, intervalInSeconds, intervalInSeconds, TimeUnit.SECONDS);
+            checkProblemsOnStartup();
+        } catch (RuntimeException e) {
+            try {
+                shutdown();
+            } catch (Throwable t) {
+                // Don't care about these ...
+            }
+            throw e;
+        }
     }
 
     /**
@@ -354,6 +404,9 @@ public class ModeShapeEngine {
     }
 
     protected void preShutdown() {
+        // Terminate the garbage collection thread ...
+        gcService.shutdown();
+
         // Terminate the executor service, which may be running background jobs that are not yet completed
         // and which will prevent new jobs being submitted (to the sequencing service) ...
         executorService.shutdown();
@@ -382,6 +435,7 @@ public class ModeShapeEngine {
      */
     public boolean awaitTermination( long timeout,
                                      TimeUnit unit ) throws InterruptedException {
+        if (!gcService.awaitTermination(timeout, unit)) return false;
         if (!sequencingService.getAdministrator().awaitTermination(timeout, unit)) return false;
         if (!executorService.awaitTermination(timeout, unit)) return false;
         if (!repositoryService.getAdministrator().awaitTermination(timeout, unit)) return false;

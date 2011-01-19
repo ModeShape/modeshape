@@ -39,6 +39,7 @@ public final class RepositoryI18n {
     public static I18n errorCreatingInstanceOfClassUsingClassLoaders;
     public static I18n errorSettingJavaBeanPropertyOnInstanceOfClass;
     public static I18n pathExpressionIsInvalidOnSequencer;
+    public static I18n unableToUseGarbageCollectionIntervalValue;
 
     // Services and Repository
     public static I18n invalidStateString;
@@ -57,6 +58,7 @@ public final class RepositoryI18n {
 
     // Repository service ...
     public static I18n repositoryServiceName;
+    public static I18n errorCollectingGarbageInSource;
 
     // Clustering service ...
     public static I18n clusteringServiceName;

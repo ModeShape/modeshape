@@ -51,6 +51,7 @@ import org.modeshape.graph.request.CacheableRequest;
 import org.modeshape.graph.request.ChangeRequest;
 import org.modeshape.graph.request.CloneBranchRequest;
 import org.modeshape.graph.request.CloneWorkspaceRequest;
+import org.modeshape.graph.request.CollectGarbageRequest;
 import org.modeshape.graph.request.CompositeRequest;
 import org.modeshape.graph.request.CopyBranchRequest;
 import org.modeshape.graph.request.CreateNodeRequest;
@@ -232,6 +233,9 @@ public abstract class RequestProcessor {
                     break;
                 case CLONE_WORKSPACE:
                     process((CloneWorkspaceRequest)request);
+                    break;
+                case COLLECT_GARBAGE:
+                    process((CollectGarbageRequest)request);
                     break;
                 case COPY_BRANCH:
                     process((CopyBranchRequest)request);
@@ -1021,6 +1025,18 @@ public abstract class RequestProcessor {
      */
     public void process( FullTextSearchRequest request ) {
         processUnknownRequest(request);
+    }
+
+    /**
+     * Process a request to collect garbage.
+     * <p>
+     * The default implementation of this method does nothing.
+     * </p>
+     * 
+     * @param request the request
+     */
+    public void process( CollectGarbageRequest request ) {
+        // do nothing by default
     }
 
     /**

@@ -62,6 +62,7 @@ import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.ValueFormatException;
+import org.modeshape.graph.request.CollectGarbageRequest;
 import org.modeshape.graph.request.ReadAllChildrenRequest;
 import org.modeshape.graph.request.ReadAllPropertiesRequest;
 import org.modeshape.graph.request.ReadNodeRequest;
@@ -92,7 +93,10 @@ public abstract class AbstractConnectorTest {
     protected Observer observer;
     protected LinkedList<Changes> allChanges;
     protected boolean print = false;
+    protected boolean useLargeValues = false;
+    protected boolean useUniqueLargeValues = false;
     protected PrintStream output = null;
+    protected long largeValueCounter = 0L;
 
     public void startRepository() throws Exception {
         if (!running) {
@@ -646,7 +650,17 @@ public abstract class AbstractConnectorTest {
             String value = originalValue;
             for (int j = 0; j != numProps; ++j) {
                 // value = value + originalValue;
-                create = create.with("property" + (j + 1), value);
+                if ((useLargeValues || useUniqueLargeValues) && i % 3 == 0) {
+                    // Use a large value for some properties ...
+                    String largeValue = originalValue;
+                    for (int k = 0; k != 100; ++k) {
+                        largeValue = largeValue + "(" + k + ")";
+                    }
+                    if (useUniqueLargeValues) largeValue = "" + (++largeValueCounter) + largeValue;
+                    create = create.with("property" + (j + 1), largeValue);
+                } else {
+                    create = create.with("property" + (j + 1), value);
+                }
             }
             create.and();
         }
@@ -855,5 +869,20 @@ public abstract class AbstractConnectorTest {
             }
         }
         return path(pathToExistingParent, nonExistentChildName);
+    }
+
+    protected void collectGarbage( int maxNumberOfPasses ) {
+        RepositoryConnection connection = connectionFactory.createConnection(source.getName());
+        try {
+            for (int i = 0; i != maxNumberOfPasses; ++i) {
+                // And request garbage collection ...
+                CollectGarbageRequest request = new CollectGarbageRequest();
+                connection.execute(context, request);
+                if (!request.isAdditionalPassRequired()) break;
+            }
+        } finally {
+            // Always close this connection after each pass ...
+            connection.close();
+        }
     }
 }

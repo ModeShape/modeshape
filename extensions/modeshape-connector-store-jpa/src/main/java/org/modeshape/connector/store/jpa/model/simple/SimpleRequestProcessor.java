@@ -15,6 +15,7 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.request.CloneWorkspaceRequest;
+import org.modeshape.graph.request.CollectGarbageRequest;
 import org.modeshape.graph.request.CreateWorkspaceRequest;
 import org.modeshape.graph.request.InvalidRequestException;
 import org.modeshape.graph.request.ReadBranchRequest;
@@ -158,6 +159,18 @@ public class SimpleRequestProcessor extends MapRequestProcessor {
             return;
         }
 
+        super.process(request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.request.processor.RequestProcessor#process(org.modeshape.graph.request.CollectGarbageRequest)
+     */
+    @Override
+    public void process( CollectGarbageRequest request ) {
+        boolean additionalPassRequired = !repository.collectGarbage();
+        request.setAdditionalPassRequired(additionalPassRequired);
         super.process(request);
     }
 

@@ -25,12 +25,15 @@ package org.modeshape.repository;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
+import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.common.util.Reflection;
@@ -40,7 +43,9 @@ import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Node;
 import org.modeshape.graph.Subgraph;
+import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositorySource;
+import org.modeshape.graph.connector.RepositorySourceCapabilities;
 import org.modeshape.graph.observe.Changes;
 import org.modeshape.graph.observe.NetChangeObserver;
 import org.modeshape.graph.observe.ObservationBus;
@@ -53,6 +58,7 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyType;
 import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
+import org.modeshape.graph.request.CollectGarbageRequest;
 import org.modeshape.graph.request.ReadBranchRequest;
 import org.modeshape.repository.service.AbstractServiceAdministrator;
 import org.modeshape.repository.service.AdministeredService;
@@ -64,10 +70,10 @@ import org.modeshape.repository.service.ServiceAdministrator;
 @ThreadSafe
 public class RepositoryService implements AdministeredService, Observer {
 
+    public static final int MAXIMUM_NUMBER_OF_PASSES_PER_GC_RUN = 10;
+
     /**
      * The administrative component for this service.
-     * 
-     * @author Randall Hauch
      */
     protected class Administrator extends AbstractServiceAdministrator {
 
@@ -528,6 +534,96 @@ public class RepositoryService implements AdministeredService, Observer {
     public void notify( Changes changes ) {
         // Forward the changes to the net change observer ...
         this.configurationChangeObserver.notify(changes);
+    }
+
+    /**
+     * Determine if at least one source requires periodic garbage collection.
+     * 
+     * @return true if {@link #runGarbageCollection(Problems)} should be called periodically, or false otherwise
+     */
+    public boolean requiresGarbageCollection() {
+        for (RepositorySource source : getRepositoryLibrary().getSources()) {
+            if (!source.getCapabilities().supportsAutomaticGarbageCollection()) return true;
+        }
+        return false;
+    }
+
+    /**
+     * This method goes through all {@link RepositorySource} instances in the {@link #getRepositoryLibrary() library}, and for
+     * each of them that don't {@link RepositorySourceCapabilities#supportsAutomaticGarbageCollection() support automatic garbage
+     * collection} will submit a {@link CollectGarbageRequest}.
+     * <p>
+     * This method does all this work in the calling thread, blocking until all such requests have been issued and completed. It
+     * actually uses a queue, first enqueuing all RepositorySource instances that don't
+     * {@link RepositorySourceCapabilities#supportsAutomaticGarbageCollection() support automatic garbage collection}. It then
+     * pulls the first source from the queue, obtains a connection, submits a single {@link CollectGarbageRequest}, and
+     * re-enqueues the source {@link CollectGarbageRequest#isAdditionalPassRequired() if required}. However, this method never
+     * requests a source collect garbage more than {@link #MAXIMUM_NUMBER_OF_PASSES_PER_GC_RUN} times.
+     * </p>
+     * <p>
+     * Thus a source can implement a garbage collection sweep in a manner that does not require excess amount of time so as to not
+     * block other requests. After that pass is completed, the source can simply denote in the CollectGarbageRequest whether at
+     * least one additional GC pass should be performed.
+     * </p>
+     * 
+     * @param problems the problems container in which any errors should be reported; if null, then any problems will be logged
+     */
+    public void runGarbageCollection( Problems problems ) {
+        final Logger logger = Logger.getLogger(getClass());
+        Queue<GarbageCollectedSource> sourcesToGc = new LinkedList<GarbageCollectedSource>();
+        for (RepositorySource source : getRepositoryLibrary().getSources()) {
+            if (source.getCapabilities().supportsAutomaticGarbageCollection()) continue;
+            sourcesToGc.add(new GarbageCollectedSource(source));
+        }
+
+        while (!sourcesToGc.isEmpty()) {
+            GarbageCollectedSource gcSource = sourcesToGc.poll();
+            RepositorySource source = gcSource.source;
+            // Get a connection for this source ...
+            RepositoryConnection connection = getRepositoryLibrary().createConnection(source.getName());
+            try {
+                // And request garbage collection ...
+                logger.debug("Garbage collection requested for {0}", source.getName());
+                CollectGarbageRequest request = new CollectGarbageRequest();
+                connection.execute(context, request);
+                gcSource.recordPass();
+                if (request.isAdditionalPassRequired() && gcSource.hasPassesRemaining()) {
+                    // This pass was not complete, so try to enqueue again ...
+                    sourcesToGc.offer(gcSource);
+                    logger.debug("Garbage collection partially completed for {0}; enqueuing again", source.getName());
+                } else {
+                    logger.debug("Garbage collection completed for {0}", source.getName());
+                }
+            } catch (Throwable t) {
+                // Record this error and continue with the next source ...
+                I18n msg = RepositoryI18n.errorCollectingGarbageInSource;
+                if (problems != null) {
+                    problems.addError(t, msg, source.getName(), t.getMessage());
+                } else {
+                    logger.error(msg, source.getName(), t.getMessage());
+                }
+            } finally {
+                // Always close this connection after each pass ...
+                connection.close();
+            }
+        }
+    }
+
+    protected static class GarbageCollectedSource {
+        protected final RepositorySource source;
+        private int passesRemaining = MAXIMUM_NUMBER_OF_PASSES_PER_GC_RUN;
+
+        protected GarbageCollectedSource( RepositorySource source ) {
+            this.source = source;
+        }
+
+        protected void recordPass() {
+            --passesRemaining;
+        }
+
+        protected boolean hasPassesRemaining() {
+            return passesRemaining > 0;
+        }
     }
 
     protected class ConfigurationChangeObserver extends NetChangeObserver {

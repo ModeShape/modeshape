@@ -30,6 +30,7 @@ import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.request.AccessQueryRequest;
 import org.modeshape.graph.request.CloneBranchRequest;
 import org.modeshape.graph.request.CloneWorkspaceRequest;
+import org.modeshape.graph.request.CollectGarbageRequest;
 import org.modeshape.graph.request.CompositeRequest;
 import org.modeshape.graph.request.CopyBranchRequest;
 import org.modeshape.graph.request.CreateNodeRequest;
@@ -425,6 +426,18 @@ public class LoggingRequestProcessor extends RequestProcessor {
      */
     @Override
     public void process( FullTextSearchRequest request ) {
+        LOGGER.log(level, GraphI18n.executingRequest, request);
+        delegate.process(request);
+        LOGGER.log(level, GraphI18n.executedRequest, request);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.request.processor.RequestProcessor#process(org.modeshape.graph.request.CollectGarbageRequest)
+     */
+    @Override
+    public void process( CollectGarbageRequest request ) {
         LOGGER.log(level, GraphI18n.executingRequest, request);
         delegate.process(request);
         LOGGER.log(level, GraphI18n.executedRequest, request);

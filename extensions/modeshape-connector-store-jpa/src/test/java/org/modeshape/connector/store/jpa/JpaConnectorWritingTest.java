@@ -24,17 +24,15 @@
 package org.modeshape.connector.store.jpa;
 
 import java.util.UUID;
+import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.test.WritableConnectorTest;
 import org.modeshape.graph.property.ReferentialIntegrityException;
-import org.junit.Test;
 
-/**
- * @author Randall Hauch
- */
 public class JpaConnectorWritingTest extends WritableConnectorTest {
 
     private boolean isReferentialIntegrityEnforced = false;
@@ -48,6 +46,8 @@ public class JpaConnectorWritingTest extends WritableConnectorTest {
     protected RepositorySource setUpSource() {
         // Set the connection properties using the environment defined in the POM files ...
         JpaSource source = TestEnvironment.configureJpaSource("Test Repository", this);
+
+        source.setLargeValueSizeInBytes(100L);
 
         // Override the inherited properties ...
         source.setReferentialIntegrityEnforced(isReferentialIntegrityEnforced);
@@ -118,5 +118,50 @@ public class JpaConnectorWritingTest extends WritableConnectorTest {
              .as(name("otherNode"))
              .into("/newUuids")
              .replacingExistingNodesWithSameUuids();
+    }
+
+    @FixFor( {"MODE-1071", "MODE-1066"} )
+    @Test
+    public void shouldSuccessfullyCollectGarbageOnePassAfterCreatingContentButNotDeletingAnyNodes() {
+        String workspaceName = "copyChildrenSource";
+        tryCreatingAWorkspaceNamed(workspaceName);
+
+        graph.useWorkspace(workspaceName);
+        String initialPath = "";
+        int depth = 4;
+        int numChildrenPerNode = 3;
+        int numPropertiesPerNode = 10;
+        Stopwatch sw = new Stopwatch();
+        boolean batch = true;
+        useLargeValues = true;
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+
+        int passes = 1;
+        collectGarbage(passes);
+    }
+
+    @FixFor( {"MODE-1071", "MODE-1066"} )
+    @Test
+    public void shouldSuccessfullyCollectGarbageMultiplePassesAfterCreatingContentAndDeletingSome() {
+        String workspaceName = "copyChildrenSource";
+        tryCreatingAWorkspaceNamed(workspaceName);
+
+        graph.useWorkspace(workspaceName);
+        String initialPath = "";
+        int depth = 4;
+        int numChildrenPerNode = 6;
+        int numPropertiesPerNode = 10;
+        Stopwatch sw = new Stopwatch();
+        boolean batch = true;
+        useLargeValues = true;
+        useUniqueLargeValues = true;
+        createSubgraph(graph, initialPath, depth, numChildrenPerNode, numPropertiesPerNode, batch, sw, System.out, null);
+
+        collectGarbage(1);
+
+        graph.delete("/node2").and();
+
+        int passes = 3;
+        collectGarbage(passes);
     }
 }

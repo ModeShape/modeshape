@@ -646,6 +646,33 @@
 			</properties>
 		</profile>
 
+		<!-- The MySQL5 InnoDB test environment, local to the developer -->
+		<profile>
+			<id>mysql5_local</id>
+			<activation>
+				<property>
+					<name>database</name>
+					<value>mysql5_local</value>
+				</property>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>mysql</groupId>
+					<artifactId>mysql-connector-java</artifactId>
+					<version>5.1.7</version>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+			<properties>
+				<database>mysql5</database>
+				<jpaSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</jpaSource.dialect>
+				<jpaSource.driverClassName>com.mysql.jdbc.Driver</jpaSource.driverClassName>
+				<jpaSource.url>jdbc:mysql://localhost:3306/test</jpaSource.url>
+				<jpaSource.username>unit_test</jpaSource.username>
+				<jpaSource.password>unit_test</jpaSource.password>
+			</properties>
+		</profile>
+
 		<!--
 			###################################################################
 			Profiles naming db instances in the Red Hat QA/QE lab First, those

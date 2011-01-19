@@ -107,7 +107,7 @@ public class JdbcMetadataRepositoryTest {
         assertThat(workspace, is(notNullValue()));
 
         try {
-        TestEnvironment.executeDdl(this.source.getDataSource(), "create.ddl", this);
+            TestEnvironment.executeDdl(this.source.getDataSource(), "create.ddl", this);
         } catch (SQLException se) {
 
         }
@@ -327,7 +327,11 @@ public class JdbcMetadataRepositoryTest {
                                                                 invalidSchemaName,
                                                                 nameFactory.create(JdbcMetadataRepository.TABLES_SEGMENT_NAME),
                                                                 nameFactory.create(identifier("sales")));
-        assertThat(workspace.getNode(invalidSchemaPath), is(nullValue()));
+        if (ignoresSchemaPatterns()) {
+            assertThat(workspace.getNode(invalidSchemaPath), is(notNullValue()));
+        } else {
+            assertThat(workspace.getNode(invalidSchemaPath), is(nullValue()));
+        }
     }
 
     @Test
@@ -392,7 +396,11 @@ public class JdbcMetadataRepositoryTest {
                                                                 nameFactory.create(JdbcMetadataRepository.TABLES_SEGMENT_NAME),
                                                                 nameFactory.create(identifier("sales")),
                                                                 nameFactory.create(identifier("amount")));
-        assertThat(workspace.getNode(invalidSchemaPath), is(nullValue()));
+        if (ignoresSchemaPatterns()) {
+            assertThat(workspace.getNode(invalidSchemaPath), is(notNullValue()));
+        } else {
+            assertThat(workspace.getNode(invalidSchemaPath), is(nullValue()));
+        }
     }
 
     @Test
@@ -453,6 +461,15 @@ public class JdbcMetadataRepositoryTest {
         assertThat(workspace.getNode(invalidSchemaPath), is(nullValue()));
     }
 
+    /**
+     * Not all databases will use the schema pattern when getting table and column metadata.
+     * 
+     * @return true if the database ignores the schema patterns.
+     */
+    protected boolean ignoresSchemaPatterns() {
+        return source.getDriverClassName().toLowerCase().contains("mysql");
+    }
+
     private Path pathFor( PathNode node ) {
         if (node == null) {
             return null;
@@ -464,6 +481,7 @@ public class JdbcMetadataRepositoryTest {
 
         return pathFactory.create(node.getParent(), node.getName());
     }
+
     private Name nameFor( Property property ) {
         if (property == null) {
             return null;
