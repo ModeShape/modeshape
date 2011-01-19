@@ -71,11 +71,10 @@ public class CndSequencerInJpaIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/cnd/jsr_283_builtins.cnd", "/files/");
         waitUntilSequencedNodesIs(1);
-        Thread.sleep(1000); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
         String path = "/sequenced/cnd/jsr_283_builtins.cnd";
-        Node cnd = assertNode(path, "nt:unstructured");
+        Node cnd = waitUntilSequencedNodeIsAvailable(path, "nt:unstructured");
         printSubgraph(cnd);
 
         Node file1 = assertNode(path + "/nt:activity", "nt:nodeType", "mode:derived");
@@ -97,12 +96,11 @@ public class CndSequencerInJpaIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/cnd/jsr_283_builtins.cnd", "/files/a/b");
         waitUntilSequencedNodesIs(1);
-        Thread.sleep(200); // wait a bit while the new content is indexed
         // printSubgraph(assertNode("/"));
 
         // Find the sequenced node ...
         String path = "/sequenced/cnd/a/b/jsr_283_builtins.cnd";
-        Node cnd = assertNode(path, "nt:unstructured");
+        Node cnd = waitUntilSequencedNodeIsAvailable(path, "nt:unstructured");
         printSubgraph(cnd);
 
         Node file1 = assertNode(path + "/nt:activity", "nt:nodeType", "mode:derived");
@@ -130,12 +128,11 @@ public class CndSequencerInJpaIntegrationTest extends AbstractSequencerTest {
         uploadFile("sequencers/cnd/jsr_283_builtins.cnd", "/files/a/b");
         uploadFile("sequencers/cnd/images.cnd", "/files/a/b");
         waitUntilSequencedNodesIs(2, 10);
-        Thread.sleep(1000); // wait a bit while the new content is indexed
         // printSubgraph(assertNode("/"));
 
-        // Find the sequenced node ...
+        // Find the sequenced node (may have to wait a bit for the sequencing to finish) ...
         String path = "/sequenced/cnd/a/b/jsr_283_builtins.cnd";
-        Node cnd = assertNode(path, "nt:unstructured");
+        Node cnd = waitUntilSequencedNodeIsAvailable(path, "nt:unstructured");
         printSubgraph(cnd);
 
         Node file1 = assertNode(path + "/nt:activity", "nt:nodeType", "mode:derived");

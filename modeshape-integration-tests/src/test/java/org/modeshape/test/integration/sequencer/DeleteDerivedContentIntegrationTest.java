@@ -72,12 +72,10 @@ public class DeleteDerivedContentIntegrationTest extends AbstractSequencerTest {
         for (int i = 0; i != 2; ++i) {
             uploadFile("sequencers/cnd/jsr_283_builtins.cnd", "/files/");
             waitUntilSequencedNodesIs(1 * (i + 1));
-            Thread.sleep(200); // wait a bit while the new content is indexed
-            // printSubgraph(assertNode("/"));
 
             // Find the sequenced node ...
             String derivedPath = "/sequenced/cnd/jsr_283_builtins.cnd";
-            Node cnd = assertNode(derivedPath, "nt:unstructured");
+            Node cnd = waitUntilSequencedNodeIsAvailable(derivedPath, "nt:unstructured");
             printSubgraph(cnd);
 
             Node file1 = assertNode(derivedPath + "/nt:activity", "nt:nodeType", "mode:derived");

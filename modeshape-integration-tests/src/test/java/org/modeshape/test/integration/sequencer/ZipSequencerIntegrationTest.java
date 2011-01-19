@@ -75,11 +75,10 @@ public class ZipSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/zip/test-files.zip", "/files/");
         waitUntilSequencedNodesIs(1);
-        Thread.sleep(1000); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
         String path = "/sequenced/zip/test-files.zip";
-        Node zipped = assertNode(path, "zip:file","mode:derived");
+        Node zipped = waitUntilSequencedNodeIsAvailable(path, "zip:file", "mode:derived");
         Node file1 = assertNode(path + "/MODE-966-fix.patch", "nt:file");
         Node data1 = assertNode(path + "/MODE-966-fix.patch/jcr:content", "nt:resource");
         Node fold1 = assertNode(path + "/testFolder", "nt:folder");
@@ -112,11 +111,10 @@ public class ZipSequencerIntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("sequencers/zip/test-files.zip", "/files/a/b");
         waitUntilSequencedNodesIs(1);
-        Thread.sleep(1000); // wait a bit while the new content is indexed
 
         // Find the sequenced node ...
         String path = "/sequenced/zip/a/b/test-files.zip";
-        Node zipped = assertNode(path, "zip:file","mode:derived");
+        Node zipped = waitUntilSequencedNodeIsAvailable(path, "zip:file", "mode:derived");
         Node file1 = assertNode(path + "/MODE-966-fix.patch", "nt:file");
         Node data1 = assertNode(path + "/MODE-966-fix.patch/jcr:content", "nt:resource");
         Node fold1 = assertNode(path + "/testFolder", "nt:folder");

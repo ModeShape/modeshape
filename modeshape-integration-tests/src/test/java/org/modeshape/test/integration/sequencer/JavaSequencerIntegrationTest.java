@@ -58,8 +58,9 @@ public class JavaSequencerIntegrationTest extends AbstractSequencerTest {
     public void beforeEach() throws Exception {
         super.beforeEach();
         session.getWorkspace().getNamespaceRegistry().registerNamespace("java", "http://www.modeshape.org/java/1.0");
-        session.getWorkspace().getNamespaceRegistry().registerNamespace("class",
-                                                                        "http://www.modeshape.org/sequencer/javaclass/1.0");
+        session.getWorkspace()
+               .getNamespaceRegistry()
+               .registerNamespace("class", "http://www.modeshape.org/sequencer/javaclass/1.0");
     }
 
     @After
@@ -75,12 +76,10 @@ public class JavaSequencerIntegrationTest extends AbstractSequencerTest {
         assertThat(file.exists(), is(true));
         uploadFile(file.toURI().toURL(), "/files/");
         waitUntilSequencedNodesIs(1);
-        Thread.sleep(200); // wait a bit while the new content is indexed
-        // printSubgraph(assertNode("/"));
 
         // Find the sequenced node ...
         String path = "/sequenced/java/ClusteringTest.java";
-        Node java = assertNode(path, "nt:unstructured");
+        Node java = waitUntilSequencedNodeIsAvailable(path, "nt:unstructured");
         printSubgraph(java);
 
         assertNode(path + "/ClusteringTest", "class:class", "mode:derived");

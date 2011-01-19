@@ -35,8 +35,8 @@ import org.junit.After;
 import org.junit.Test;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
-import org.modeshape.jcr.ModeShapeRoles;
 import org.modeshape.jcr.JcrRepository.Option;
+import org.modeshape.jcr.ModeShapeRoles;
 import org.modeshape.sequencer.image.ImageMetadataLexicon;
 import org.modeshape.test.integration.AbstractModeShapeTest;
 
@@ -170,8 +170,9 @@ public class SequencerTest extends AbstractModeShapeTest {
                      .setProperty("defaultWorkspaceName", metaWorkSpace);
 
         // Image repository
-        configuration.repository(repoId).registerNamespace(ImageMetadataLexicon.Namespace.PREFIX,
-                                                           ImageMetadataLexicon.Namespace.URI).setSource(repoSrcId);
+        configuration.repository(repoId)
+                     .registerNamespace(ImageMetadataLexicon.Namespace.PREFIX, ImageMetadataLexicon.Namespace.URI)
+                     .setSource(repoSrcId);
 
         // Metadata repository
         configuration.repository(metaRepoId)
@@ -204,7 +205,7 @@ public class SequencerTest extends AbstractModeShapeTest {
         assertThat(file.exists(), is(true));
         uploadFile(file.toURI().toURL(), "/files/");
         waitUntilSequencedNodesIs(1);
-        Thread.sleep(200); // wait a bit while the new content is indexed
+        Thread.sleep(400); // wait a bit while the new content is indexed
 
         // Now look for the derived content ...
         Repository imageRepo = engine.getRepository(metaRepoId);

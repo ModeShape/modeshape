@@ -247,6 +247,42 @@ public abstract class AbstractModeShapeTest {
         waitUntilSequencedNodesIs(totalNumberOfNodesSequenced, 5);
     }
 
+    protected Node waitUntilSequencedNodeIsAvailable( String path ) throws InterruptedException, RepositoryException {
+        long startTime = System.currentTimeMillis();
+        for (int i = 0; i != 10 * 5; ++i) { // 10 seconds at the most
+            try {
+                return assertNode(path);
+            } catch (PathNotFoundException t) {
+                Thread.sleep(200); // wait a bit while the new content is indexed
+            } catch (AssertionError t) {
+                Thread.sleep(200); // wait a bit while the new content is indexed
+            }
+        }
+        long endTime = System.currentTimeMillis();
+        double seconds = (endTime - startTime) / 1000.0d;
+        fail("Unable to find '" + path + "' even after waiting " + seconds + " seconds");
+        return null;
+    }
+
+    protected Node waitUntilSequencedNodeIsAvailable( String path,
+                                                      String primaryType,
+                                                      String... mixinTypes ) throws InterruptedException, RepositoryException {
+        long startTime = System.currentTimeMillis();
+        for (int i = 0; i != 10 * 5; ++i) { // 10 seconds at the most
+            try {
+                return assertNode(path, primaryType, mixinTypes);
+            } catch (PathNotFoundException t) {
+                Thread.sleep(200); // wait a bit while the new content is indexed
+            } catch (AssertionError t) {
+                Thread.sleep(200); // wait a bit while the new content is indexed
+            }
+        }
+        long endTime = System.currentTimeMillis();
+        double seconds = (endTime - startTime) / 1000.0d;
+        fail("Unable to find '" + path + "' even after waiting " + seconds + " seconds");
+        return null;
+    }
+
     /**
      * Block until the total number of sequenced nodes is at last the value specified. If not enough sequenced nodes are produced
      * within the allotted number of seconds, this method causes a unit test failure.

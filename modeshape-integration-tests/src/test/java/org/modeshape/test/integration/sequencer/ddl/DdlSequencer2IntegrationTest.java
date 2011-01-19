@@ -70,10 +70,8 @@ public class DdlSequencer2IntegrationTest extends AbstractSequencerTest {
         uploadFile("org/modeshape/test/integration/sequencer/ddl/create_schema.ddl", "/files/a/b");
         uploadFile("org/modeshape/test/integration/sequencer/ddl/grant_test_statements.ddl", "/files/a/b");
         waitUntilSequencedNodesIs(2, 10);
-        Thread.sleep(400); // wait a bit while the new content is indexed
-        // printSubgraph(assertNode("/"));
 
-        assertNode("/files", "nt:folder", "mode:publishArea");
+        waitUntilSequencedNodeIsAvailable("/files", "nt:folder", "mode:publishArea");
         assertNode("/files/a", "nt:folder");
         assertNode("/files/a/b", "nt:folder");
         assertNode("/files/a/b/create_schema.ddl", "nt:file");
