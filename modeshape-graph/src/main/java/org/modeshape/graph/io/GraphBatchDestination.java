@@ -26,9 +26,9 @@ package org.modeshape.graph.io;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
-import org.modeshape.graph.NodeConflictBehavior;
 import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.Graph.Create;
+import org.modeshape.graph.NodeConflictBehavior;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 
@@ -124,6 +124,21 @@ public class GraphBatchDestination implements Destination {
     public void create( Path path,
                         Property firstProperty,
                         Property... additionalProperties ) {
+        create(createBehaviorFor(path), path, firstProperty, additionalProperties);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.io.Destination#create(org.modeshape.graph.NodeConflictBehavior, org.modeshape.graph.property.Path,
+     *      org.modeshape.graph.property.Property, org.modeshape.graph.property.Property[])
+     */
+    @Override
+    public void create( NodeConflictBehavior behavior,
+                        Path path,
+                        Property firstProperty,
+                        Property... additionalProperties ) {
+        if (behavior == null) behavior = createBehaviorFor(path);
         Create<Batch> create = null;
         if (firstProperty == null) {
             create = batch.create(path);
@@ -131,7 +146,6 @@ public class GraphBatchDestination implements Destination {
             create = batch.create(path, firstProperty, additionalProperties);
         }
         assert create != null;
-        NodeConflictBehavior behavior = createBehaviorFor(path);
         if (behavior != null) {
             switch (behavior) {
                 case APPEND:

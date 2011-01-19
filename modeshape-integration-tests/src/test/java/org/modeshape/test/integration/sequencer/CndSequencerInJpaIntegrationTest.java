@@ -30,6 +30,7 @@ import javax.jcr.Node;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 public class CndSequencerInJpaIntegrationTest extends AbstractSequencerTest {
 
@@ -120,5 +121,38 @@ public class CndSequencerInJpaIntegrationTest extends AbstractSequencerTest {
         printQuery("SELECT * FROM [nt:nodeType]", 34);
         printQuery("SELECT * FROM [nt:propertyDefinition]", 86);
         printQuery("SELECT * FROM [nt:childNodeDefinition]", 10);
+    }
+
+    @FixFor( "MODE-1073" )
+    @Test
+    public void shouldNotCreateExtraIntermediateNodesWhenUploadingAndSequencingMultipleFiles() throws Exception {
+        // print = true;
+        uploadFile("sequencers/cnd/jsr_283_builtins.cnd", "/files/a/b");
+        uploadFile("sequencers/cnd/images.cnd", "/files/a/b");
+        waitUntilSequencedNodesIs(2, 10);
+        Thread.sleep(1000); // wait a bit while the new content is indexed
+        // printSubgraph(assertNode("/"));
+
+        // Find the sequenced node ...
+        String path = "/sequenced/cnd/a/b/jsr_283_builtins.cnd";
+        Node cnd = assertNode(path, "nt:unstructured");
+        printSubgraph(cnd);
+
+        Node file1 = assertNode(path + "/nt:activity", "nt:nodeType", "mode:derived");
+        assertThat(file1, is(notNullValue()));
+
+        assertNode("/files", "nt:folder", "mode:publishArea");
+        assertNode("/files/a", "nt:folder");
+        assertNode("/files/a/b", "nt:folder");
+        assertNode("/files/a/b/jsr_283_builtins.cnd", "nt:file");
+        assertNode("/files/a/b/jsr_283_builtins.cnd/jcr:content");
+        assertNode("/sequenced/cnd", "nt:unstructured");
+        assertNode("/sequenced/cnd/a", "nt:unstructured");
+        assertNode("/sequenced/cnd/a/b", "nt:unstructured");
+        assertNode("/sequenced/cnd/a/b/jsr_283_builtins.cnd");
+        assertNode("/sequenced/cnd/a/b/images.cnd");
+        assertNoNode("/sequenced/cnd[2]");
+        assertNoNode("/sequenced/cnd/a[2]");
+        assertNoNode("/sequenced/cnd/a/b[2]");
     }
 }

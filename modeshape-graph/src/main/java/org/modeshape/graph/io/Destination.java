@@ -25,6 +25,7 @@ package org.modeshape.graph.io;
 
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.NodeConflictBehavior;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 
@@ -59,6 +60,20 @@ public interface Destination {
      * @param additionalProperties the remaining properties for the node
      */
     public void create( Path path,
+                        Property firstProperty,
+                        Property... additionalProperties );
+
+    /**
+     * Create a node at the supplied path and with the supplied attributes, using the supplied behavior in case of a node
+     * conflict. The path will be absolute.
+     * 
+     * @param behavior the node conflict behavior
+     * @param path the absolute path of the node
+     * @param firstProperty the first property
+     * @param additionalProperties the remaining properties for the node
+     */
+    public void create( NodeConflictBehavior behavior,
+                        Path path,
                         Property firstProperty,
                         Property... additionalProperties );
 
