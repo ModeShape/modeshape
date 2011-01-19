@@ -270,7 +270,9 @@ public abstract class AbstractModeShapeTest {
         long startTime = System.currentTimeMillis();
         for (int i = 0; i != 10 * 5; ++i) { // 10 seconds at the most
             try {
-                return assertNode(path, primaryType, mixinTypes);
+                Node node = assertNode(path, primaryType, mixinTypes);
+                Thread.sleep(200); // wait a bit while the new content is indexed
+                return node;
             } catch (PathNotFoundException t) {
                 Thread.sleep(200); // wait a bit while the new content is indexed
             } catch (AssertionError t) {
@@ -365,14 +367,21 @@ public abstract class AbstractModeShapeTest {
 
     protected void assertNodeIsSearchable( String path,
                                            String nodeType,
-                                           String... otherTypes ) throws RepositoryException {
+                                           String... otherTypes ) throws RepositoryException, InterruptedException {
         boolean p = print;
         try {
             print = false;
-            printQuery("SELECT * FROM [" + nodeType + "] WHERE PATH() = $path", 1, var("path", path));
-            if (otherTypes != null) {
-                for (String type : otherTypes) {
-                    printQuery("SELECT * FROM [" + type + "] WHERE PATH() = $path", 1, var("path", path));
+            for (int i = 0; i != 10 * 5; ++i) {
+                try {
+                    printQuery("SELECT * FROM [" + nodeType + "] WHERE PATH() = $path", 1, var("path", path));
+                    if (otherTypes != null) {
+                        for (String type : otherTypes) {
+                            printQuery("SELECT * FROM [" + type + "] WHERE PATH() = $path", 1, var("path", path));
+                        }
+                    }
+                    break;
+                } catch (AssertionError e) {
+                    Thread.sleep(200); // wait a bit while the new content is indexed
                 }
             }
         } finally {
@@ -395,7 +404,7 @@ public abstract class AbstractModeShapeTest {
 
     protected Node assertNode( String path,
                                String primaryType,
-                               String... mixinTypes ) throws RepositoryException {
+                               String... mixinTypes ) throws RepositoryException, InterruptedException {
         Node node = session().getNode(path);
         assertThat(node.getPrimaryNodeType().getName(), is(primaryType));
         primaryType = node.getPrimaryNodeType().getName();
