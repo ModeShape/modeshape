@@ -69,6 +69,7 @@ import org.modeshape.graph.property.basic.RootPath;
 import org.modeshape.graph.request.InvalidWorkspaceException;
 import org.modeshape.graph.request.ReadBranchRequest;
 import org.modeshape.graph.sequencer.StreamSequencer;
+import org.modeshape.graph.text.TextExtractor;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -103,6 +104,7 @@ public class ModeShapeConfiguration {
     private final Map<String, SequencerDefinition<? extends ModeShapeConfiguration>> sequencerDefinitions = new HashMap<String, SequencerDefinition<? extends ModeShapeConfiguration>>();
     private final Map<String, RepositorySourceDefinition<? extends ModeShapeConfiguration>> repositorySourceDefinitions = new HashMap<String, RepositorySourceDefinition<? extends ModeShapeConfiguration>>();
     private final Map<String, MimeTypeDetectorDefinition<? extends ModeShapeConfiguration>> mimeTypeDetectorDefinitions = new HashMap<String, MimeTypeDetectorDefinition<? extends ModeShapeConfiguration>>();
+    private final Map<String, TextExtractorDefinition<? extends ModeShapeConfiguration>> textExtractorDefinitions = new HashMap<String, TextExtractorDefinition<? extends ModeShapeConfiguration>>();
     private ClusterDefinition<? extends ModeShapeConfiguration> clusterDefinition;
 
     /**
@@ -615,6 +617,22 @@ public class ModeShapeConfiguration {
     }
 
     /**
+     * Get the list of text extractor definitions.
+     * 
+     * @return the unmodifiable set of definitions; never null but possibly empty if there are no definitions
+     */
+    public Set<TextExtractorDefinition<? extends ModeShapeConfiguration>> textExtractors() {
+        // Get the children under the 'dna:mimeTypeDetectors' node ...
+        Set<String> names = getNamesOfComponentsUnder(ModeShapeLexicon.TEXT_EXTRACTORS);
+        names.addAll(this.textExtractorDefinitions.keySet());
+        Set<TextExtractorDefinition<? extends ModeShapeConfiguration>> results = new HashSet<TextExtractorDefinition<? extends ModeShapeConfiguration>>();
+        for (String name : names) {
+            results.add(textExtractor(name));
+        }
+        return Collections.unmodifiableSet(results);
+    }
+
+    /**
      * Get the list of repository source definitions.
      * 
      * @return the unmodifiable set of definitions; never null but possibly empty if there are no definitions
@@ -655,6 +673,17 @@ public class ModeShapeConfiguration {
      */
     public MimeTypeDetectorDefinition<? extends ModeShapeConfiguration> mimeTypeDetector( String name ) {
         return mimeTypeDetectorDefinition(this, name);
+    }
+
+    /**
+     * Obtain or create a definition for the {@link TextExtractor text extractor} with the supplied name or identifier. A new
+     * definition will be created if there currently is no text extractor defined with the supplied name.
+     * 
+     * @param name the name or identifier of the extractor
+     * @return the details of the text extractor definition; never null
+     */
+    public TextExtractorDefinition<? extends ModeShapeConfiguration> textExtractor( String name ) {
+        return textExtractorDefinition(this, name);
     }
 
     /**
@@ -1007,6 +1036,17 @@ public class ModeShapeConfiguration {
     }
 
     /**
+     * Interface used to set up and define a text extractor instance.
+     * 
+     * @param <ReturnType> the type of the configuration component that owns this definition object
+     */
+    public interface TextExtractorDefinition<ReturnType>
+        extends Returnable<ReturnType>, SetDescription<TextExtractorDefinition<ReturnType>>,
+        SetProperties<TextExtractorDefinition<ReturnType>>, ChooseClass<TextExtractor, TextExtractorDefinition<ReturnType>>,
+        Removable<ReturnType> {
+    }
+
+    /**
      * Interface used to set up and define a RepositorySource instance.
      * 
      * @param <ReturnType> the type of the configuration component that owns this definition object
@@ -1097,6 +1137,26 @@ public class ModeShapeConfiguration {
             definition = new MimeTypeDetectorBuilder<ReturnType>(returnObject, changes(), path(),
                                                                  ModeShapeLexicon.MIME_TYPE_DETECTORS, name(name));
             mimeTypeDetectorDefinitions.put(name, definition);
+        }
+        return definition;
+    }
+
+    /**
+     * Utility method to construct a definition object for the text extractor with the supplied name and return type.
+     * 
+     * @param <ReturnType> the type of the return object
+     * @param returnObject the return object
+     * @param name the name of the extractor
+     * @return the definition for the extractor
+     */
+    @SuppressWarnings( "unchecked" )
+    protected <ReturnType extends ModeShapeConfiguration> TextExtractorDefinition<ReturnType> textExtractorDefinition( ReturnType returnObject,
+                                                                                                                       String name ) {
+        TextExtractorDefinition<ReturnType> definition = (TextExtractorDefinition<ReturnType>)textExtractorDefinitions.get(name);
+        if (definition == null) {
+            definition = new TextExtractorBuilder<ReturnType>(returnObject, changes(), path(), ModeShapeLexicon.TEXT_EXTRACTORS,
+                                                              name(name));
+            textExtractorDefinitions.put(name, definition);
         }
         return definition;
     }
@@ -1436,6 +1496,23 @@ public class ModeShapeConfiguration {
 
         @Override
         protected MimeTypeDetectorBuilder<ReturnType> thisType() {
+            return this;
+        }
+
+    }
+
+    protected static class TextExtractorBuilder<ReturnType>
+        extends GraphComponentBuilder<ReturnType, TextExtractorDefinition<ReturnType>, TextExtractor>
+        implements TextExtractorDefinition<ReturnType> {
+        protected TextExtractorBuilder( ReturnType returnObject,
+                                        Graph.Batch batch,
+                                        Path path,
+                                        Name... names ) {
+            super(returnObject, batch, path, names);
+        }
+
+        @Override
+        protected TextExtractorBuilder<ReturnType> thisType() {
             return this;
         }
 
