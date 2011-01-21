@@ -36,6 +36,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
+import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -45,12 +46,14 @@ import javax.jcr.nodetype.NodeDefinitionTemplate;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeTemplate;
+import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.nodetype.PropertyDefinitionTemplate;
 import javax.jcr.observation.Event;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
 import javax.jcr.query.qom.QueryObjectModelConstants;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -59,9 +62,9 @@ import org.modeshape.common.util.FileUtil;
 import org.modeshape.connector.store.jpa.JpaSource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
+import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.ModeShapeRoles;
 import org.modeshape.jcr.NodeTypeAssertion;
-import org.modeshape.jcr.JcrRepository.Option;
 
 public class ClusteringTest {
 
@@ -70,6 +73,7 @@ public class ClusteringTest {
     private static JcrEngine engine2;
     private static JcrEngine engine3;
     private static List<Session> sessions = new ArrayList<Session>();
+    private boolean print;
 
     @BeforeClass
     public static void beforeAll() throws Exception {
@@ -173,6 +177,11 @@ public class ClusteringTest {
         engine1 = null;
         engine2 = null;
         engine3 = null;
+    }
+
+    @Before
+    public void beforeEach() {
+        print = false;
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -383,17 +392,69 @@ public class ClusteringTest {
 
         assertTrue(typeManager2.hasNodeType(NODE_TYPE_NAME));
         assertTrue(typeManager3.hasNodeType(NODE_TYPE_NAME));
+        assertThat(typeManager2.getNodeType(NODE_TYPE_NAME).getDeclaredPropertyDefinitions().length, is(1));
+        assertThat(typeManager3.getNodeType(NODE_TYPE_NAME).getDeclaredPropertyDefinitions().length, is(1));
+        assertThat(typeManager2.getNodeType(NODE_TYPE_NAME).getDeclaredChildNodeDefinitions().length, is(1));
+        assertThat(typeManager3.getNodeType(NODE_TYPE_NAME).getDeclaredChildNodeDefinitions().length, is(1));
+        PropertyDefinition defn1 = typeManager1.getNodeType(NODE_TYPE_NAME).getDeclaredPropertyDefinitions()[0];
+        PropertyDefinition defn2 = typeManager2.getNodeType(NODE_TYPE_NAME).getDeclaredPropertyDefinitions()[0];
+        PropertyDefinition defn3 = typeManager3.getNodeType(NODE_TYPE_NAME).getDeclaredPropertyDefinitions()[0];
+
+        print = false;
+        print("Property definition from session1: " + defn1);
+        print("Property definition from session2: " + defn2);
+        print("Property definition from session3: " + defn3);
 
         NodeTypeTemplate template2 = typeManager2.createNodeTypeTemplate(typeManager2.getNodeType(NODE_TYPE_NAME));
         NodeTypeTemplate template3 = typeManager3.createNodeTypeTemplate(typeManager3.getNodeType(NODE_TYPE_NAME));
 
         NodeTypeAssertion.compareTemplateToNodeType(template2, nodeType1);
         NodeTypeAssertion.compareTemplateToNodeType(template3, nodeType1);
+
+        // Use Session 1 to create some content using the new node type ...
+        Node newNode = session1.getRootNode().addNode("my-new-node", "nt:unstructured");
+        newNode.addMixin(NODE_TYPE_NAME);
+        Property property = newNode.setProperty("prop", "Value for prop");
+        print("Property definition for " + property.getName() + " (via session1) before save:  " + property.getDefinition());
+        assertThat(property.getDefinition(), is(notNullValue()));
+        session1.save();
+        print("Property definition for " + property.getName() + " (via session1) after save :  " + property.getDefinition());
+        assertThat(property.getDefinition(), is(notNullValue()));
+
+        // Use Session 2 to create some content using the new node type ...
+        Node newNode2 = session2.getRootNode().addNode("my-new-node-2", "nt:unstructured");
+        newNode2.addMixin(NODE_TYPE_NAME);
+        Property property2 = newNode2.setProperty("prop", "Value2 for prop");
+        print("Property definition for " + property2.getName() + " (via session2) before save:  " + property2.getDefinition());
+        assertThat(property2.getDefinition(), is(notNullValue()));
+        session2.save();
+        print("Property definition for " + property2.getName() + " (via session2) after save :  " + property2.getDefinition());
+        assertThat(property2.getDefinition(), is(notNullValue()));
+
+        session1.refresh(false);
+        Node newNode2FromSession1 = session1.getNode("/my-new-node-2");
+        Property property2FromSession1 = newNode2FromSession1.getProperty("prop");
+        print("Property definition for " + property2FromSession1.getName() + " (via session1):  "
+              + property2FromSession1.getDefinition());
+        assertThat(property2FromSession1.getDefinition(), is(notNullValue()));
+
+        session3.refresh(false);
+        Node newNode2FromSession3 = session3.getNode("/my-new-node-2");
+        Property property2FromSession3 = newNode2FromSession3.getProperty("prop");
+        PropertyDefinition defn3b = property2FromSession3.getDefinition();
+        print("Property definition for " + property2FromSession3.getName() + " (via session3):  " + defn3b);
+        assertThat(defn3b, is(notNullValue()));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
     // Utility Methods
     // ----------------------------------------------------------------------------------------------------------------
+
+    protected void print( String text ) {
+        if (print) {
+            System.out.println(text);
+        }
+    }
 
     protected Session sessionFrom( JcrEngine engine ) throws RepositoryException {
         Repository repository = engine.getRepository("cars");

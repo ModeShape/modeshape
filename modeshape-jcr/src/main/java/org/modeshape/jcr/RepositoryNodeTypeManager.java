@@ -1450,8 +1450,8 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
     }
 
     /**
-     * Registers a new node type or updates an existing node type using the specified definition and returns the resulting {@code
-     * NodeType} object.
+     * Registers a new node type or updates an existing node type using the specified definition and returns the resulting
+     * {@code NodeType} object.
      * <p>
      * For details, see {@link #registerNodeTypes(Iterable)}.
      * </p>
@@ -2359,6 +2359,43 @@ class RepositoryNodeTypeManager implements JcrSystemObserver {
             assert this.nodeTypes.get(ModeShapeLexicon.ROOT) != null;
             assert !deletedNodeTypeNames.contains(ModeShapeLexicon.ROOT);
 
+            // Remove all of the child and property definitions in the deleted node types ...
+            for (Name deletedNodeTypeName : deletedNodeTypeNames) {
+                JcrNodeType deletedNodeType = nodeTypes.get(deletedNodeTypeName);
+                if (deletedNodeType == null) continue;
+                for (JcrNodeDefinition childDefinition : deletedNodeType.childNodeDefinitions()) {
+                    childNodeDefinitions.remove(childDefinition.getId());
+                }
+                for (JcrPropertyDefinition propertyDefinition : deletedNodeType.propertyDefinitions()) {
+                    propertyDefinitions.remove(propertyDefinition.getId());
+                }
+            }
+            // Remove all of the child and property definitions that were in node types
+            // that are newly added, if they were previously registered.
+            // IOW, some of the new node type definitions might be re-registered without
+            // some of the child node definitions and property definitions that were in the
+            // currently-registered version.
+            for (Name newNodeTypeName : createdNodeTypeNames) {
+                JcrNodeType oldNodeType = nodeTypes.get(newNodeTypeName);
+                if (oldNodeType == null) continue;
+                for (JcrNodeDefinition childDefinition : oldNodeType.childNodeDefinitions()) {
+                    childNodeDefinitions.remove(childDefinition.getId());
+                }
+                for (JcrPropertyDefinition propertyDefinition : oldNodeType.propertyDefinitions()) {
+                    propertyDefinitions.remove(propertyDefinition.getId());
+                }
+            }
+            // Register all of the child and property definitions in the new node types ...
+            for (JcrNodeType newNodeType : newNodeTypeMap.values()) {
+                for (JcrNodeDefinition childDefinition : newNodeType.childNodeDefinitions()) {
+                    childNodeDefinitions.put(childDefinition.getId(), childDefinition);
+                }
+                for (JcrPropertyDefinition propertyDefinition : newNodeType.propertyDefinitions()) {
+                    propertyDefinitions.put(propertyDefinition.getId(), propertyDefinition);
+                }
+            }
+
+            // Now remove the deleted node types and add the new ones ...
             nodeTypes.keySet().removeAll(deletedNodeTypeNames);
             this.nodeTypes.putAll(newNodeTypeMap);
 
