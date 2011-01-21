@@ -109,9 +109,9 @@ public class JavaSequencerIntegrationTest extends AbstractSequencerTest {
         printQuery("SELECT * FROM [class:class]", 1);
         printQuery("SELECT * FROM [class:constructors]", 1);
         printQuery("SELECT * FROM [class:methods]", 1);
-        printQuery("SELECT * FROM [class:method]", 12);
-        printQuery("SELECT * FROM [class:annotations]", 18);
-        printQuery("SELECT * FROM [class:annotation]", 9);
+        printQuery("SELECT * FROM [class:method]", 14);
+        printQuery("SELECT * FROM [class:annotations]", 21);
+        printQuery("SELECT * FROM [class:annotation]", 10);
     }
 
     protected void assertSequenceable( Class<?> javaClass ) throws Exception {
