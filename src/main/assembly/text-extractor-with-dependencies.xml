@@ -1,0 +1,35 @@
+<assembly>
+  <id>jar-with-dependencies</id>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <formats>
+    <format>jar</format>
+  </formats>
+  <dependencySets>
+    <dependencySet>
+      <unpack>true</unpack>
+      <scope>runtime</scope>
+			<outputFileNameMapping>${artifact.artifactId}-${artifact.version}.${artifact.extension}</outputFileNameMapping>
+			<excludes>
+				<!-- No need to include the JCIP annotations -->
+				<exclude>net.jcip:jcip-annotations</exclude>
+				<!-- Don't include the ModeShape core libraries and their dependencies -->
+				<exclude>org.modeshape:modeshape-common</exclude>
+				<exclude>org.modeshape:modeshape-graph</exclude>
+				<exclude>com.google.collections:*</exclude>
+				<exclude>joda-time:*</exclude>
+				<exclude>org.slf4j:*</exclude>
+			</excludes>
+    </dependencySet>
+  </dependencySets>
+  <fileSets>
+    <fileSet>
+      <directory>../../src/main/resources</directory>
+			<useStrictFiltering>true</useStrictFiltering>
+			<outputDirectory>META-INF</outputDirectory>
+      <includes>
+				<include>AUTHORS.txt</include>
+				<include>COPYRIGHT.txt</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+</assembly>
