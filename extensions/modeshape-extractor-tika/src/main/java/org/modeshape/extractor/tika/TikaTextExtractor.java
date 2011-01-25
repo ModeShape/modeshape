@@ -41,6 +41,7 @@ import org.modeshape.graph.text.TextExtractor;
 import org.modeshape.graph.text.TextExtractorContext;
 import org.modeshape.graph.text.TextExtractorOutput;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * A {@link TextExtractor} that uses the Apache Tika library.
@@ -110,7 +111,8 @@ public class TikaTextExtractor implements TextExtractor {
     public boolean supportsMimeType( String mimeType ) {
         if (excludedMimeTypes.contains(mimeType)) return false;
         initialize();
-        return includedMimeTypes.isEmpty() ? supportedMediaTypes.contains(mimeType) && includedMimeTypes.contains(mimeType) : supportedMediaTypes.contains(mimeType);
+        return includedMimeTypes.isEmpty() ? supportedMediaTypes.contains(mimeType) : supportedMediaTypes.contains(mimeType)
+                                                                                      && includedMimeTypes.contains(mimeType);
     }
 
     /**
@@ -133,7 +135,24 @@ public class TikaTextExtractor implements TextExtractor {
         }
 
         // Set up the content handler that returns only text content ...
-        ContentHandler textHandler = new BodyContentHandler();
+        ContentHandler textHandler = new BodyContentHandler() {
+            private char[] space = new char[] {' '};
+            private boolean first = true;
+
+            /**
+             * {@inheritDoc}
+             * 
+             * @see org.apache.tika.sax.ContentHandlerDecorator#characters(char[], int, int)
+             */
+            @Override
+            public void characters( char[] ch,
+                                    int start,
+                                    int length ) throws SAXException {
+                if (!first) super.characters(space, 0, 1);
+                super.characters(ch, start, length);
+                first = false;
+            }
+        };
 
         // Set up an empty parse context ...
         ParseContext parseContext = new ParseContext();
@@ -142,7 +161,7 @@ public class TikaTextExtractor implements TextExtractor {
             parser.parse(stream, textHandler, metadata, parseContext);
 
             // Record all of the text in the body ...
-            output.recordText(textHandler.toString());
+            output.recordText(textHandler.toString().trim());
         } catch (IOException e) {
             throw e;
         } catch (Throwable e) {

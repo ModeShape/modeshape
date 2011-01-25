@@ -69,4 +69,15 @@
             <mode:pathExpression>/files(//)(*.vdb[*])/jcr:content[@jcr:data] => /sequenced/teiid/vdbs$1 </mode:pathExpression>
         </mode:sequencer>
     </mode:sequencers>
+    
+    <mode:textExtractors>
+        <mode:textExtractor jcr:name="Tika Extractor">
+            <mode:description>Text extractor that uses the Tika library of parsers</mode:description>        
+            <mode:classname>org.modeshape.extractor.tika.TikaTextExtractor</mode:classname>
+        </mode:textExtractor>
+        <mode:textExtractor jcr:name="VDB Extractor">
+            <mode:description>Text extractor for Teiid VDB files</mode:description>        
+            <mode:classname>org.modeshape.extractor.teiid.TeiidVdbTextExtractor</mode:classname>
+        </mode:textExtractor>
+    </mode:textExtractors>
 </configuration>

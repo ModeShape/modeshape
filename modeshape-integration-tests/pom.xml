@@ -184,6 +184,12 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-extractor-tika</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
 
 		<!-- 
 			JPA Connector Dependencies
