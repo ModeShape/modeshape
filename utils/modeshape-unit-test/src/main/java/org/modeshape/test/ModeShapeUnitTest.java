@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.test.integration;
+package org.modeshape.test;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -34,14 +34,17 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import javax.jcr.Credentials;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
+import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
@@ -52,94 +55,267 @@ import javax.jcr.query.QueryResult;
 import net.jcip.annotations.Immutable;
 import org.junit.After;
 import org.junit.Before;
-import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.collection.Problems;
+import org.modeshape.graph.property.Path;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
-import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrTools;
 import org.modeshape.repository.sequencer.SequencingService;
+import org.xml.sax.SAXException;
 
-/**
- * 
- */
-public abstract class AbstractModeShapeTest {
+public abstract class ModeShapeUnitTest {
 
     protected static JcrConfiguration configuration;
-    protected static JcrEngine engine;
-    protected static JcrRepository repository;
-    protected Session session;
-    protected JcrTools tools;
+    private static JcrEngine engine;
+    private static final Set<Session> openSessions = new HashSet<Session>();
+    private static Session session;
+    private JcrTools tools;
     protected boolean print;
 
     @Before
     public void beforeEach() throws Exception {
-        print = false;
+        openSessions.clear();
         tools = new JcrTools();
+        print = false;
     }
 
     @After
     public void afterEach() throws Exception {
+        closeSessions();
     }
 
-    protected void setSession( Session session ) {
-        this.session = session;
+    protected JcrTools tools() {
+        return tools;
     }
 
-    protected Session session() {
+    /**
+     * Define the path to the default configuration that will be used if no other configuration is specified.
+     * 
+     * @return the path to the default ModeShape configuration file, or null if there is no default configuration
+     */
+    protected String getPathToDefaultConfiguration() {
+        return null;
+    }
+
+    /**
+     * Explicitly start the JCR engine so that it uses the supplied configuration file. If an engine is already running, it will
+     * first be shutdown.
+     * 
+     * @param pathToConfigurationFile the path to the ModeShape configuration file
+     * @return the JCR engine instance that is ready to use
+     * @throws IOException if the ModeShape configuration file could not be found or was invalid
+     */
+    protected static JcrEngine startEngineUsing( String pathToConfigurationFile ) throws IOException {
+        assertThat(pathToConfigurationFile, is(notNullValue()));
+        stopEngine();
+        try {
+            try {
+                configuration = new JcrConfiguration();
+                configuration.loadFrom(pathToConfigurationFile);
+            } catch (IOException e) {
+                // Re-create the configuration object (otherwise, it will think there are changes from the first load) ...
+                configuration = new JcrConfiguration();
+                // Try loading the configuration from within the src/test/resources folder ...
+                pathToConfigurationFile = pathToConfigurationFile.startsWith("/") ? pathToConfigurationFile : "/"
+                                                                                                              + pathToConfigurationFile;
+                pathToConfigurationFile = "src/test/resources" + pathToConfigurationFile;
+                configuration.loadFrom(pathToConfigurationFile);
+            }
+        } catch (SAXException e) {
+            throw new IOException(e);
+        }
+        return startEngine();
+    }
+
+    private static JcrEngine startEngine() {
+        assertThat(configuration, is(notNullValue()));
+        if (engine == null) {
+            Problems problems = configuration.getProblems();
+            if (!problems.isEmpty()) {
+                System.out.println(problems);
+                fail("Unable to start engine due to problems. See console for details.");
+            }
+            engine = configuration.build();
+            engine.start();
+        }
+        return engine;
+    }
+
+    /**
+     * If the JCR engine is running, explicitly close all open sessions and shut down the JCR engine. This method does nothing if
+     * the engine is not running.
+     */
+    protected static void closeSessions() {
+        if (openSessions != null) {
+            try {
+                for (Session session : openSessions) {
+                    try {
+                        if (session.isLive()) session.logout();
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                }
+            } finally {
+                openSessions.clear();
+            }
+        }
+        session = null;
+    }
+
+    /**
+     * If the JCR engine is running, explicitly close all open sessions and shut down the JCR engine. This method does nothing if
+     * the engine is not running.
+     */
+    protected static void stopEngine() {
+        closeSessions();
+        if (engine != null) {
+            try {
+                engine.shutdownAndAwaitTermination(3, TimeUnit.SECONDS);
+            } catch (InterruptedException err) {
+                err.printStackTrace();
+            } finally {
+                engine = null;
+            }
+        }
+    }
+
+    /**
+     * Get the JCR engine. If the engine has not yet been started, it will be started using the
+     * {@link #getPathToDefaultConfiguration() default configuration}.
+     * 
+     * @return the JCR Engine; never null
+     * @throws IOException if the ModeShape configuration file could not be found or was invalid
+     */
+    protected JcrEngine engine() throws IOException {
+        if (engine == null) {
+            String pathToConfigFile = getPathToDefaultConfiguration();
+            if (pathToConfigFile != null) {
+                engine = startEngineUsing(pathToConfigFile);
+            } else {
+                Problems problems = configuration.getProblems();
+                if (!problems.isEmpty()) {
+                    System.out.println(problems);
+                    fail("Unable to start engine due to problems. See console for details.");
+                }
+                engine = configuration.build();
+                engine.start();
+                return engine;
+            }
+        }
+        return engine;
+    }
+
+    /**
+     * Get the current session, or if there is none create a new session to the first JCR repository in the current configuration.
+     * 
+     * @return the session, which will be automatically closed when the test ends
+     * @throws RepositoryException if there is a problem obtaining a session
+     */
+    protected Session session() throws RepositoryException {
+        if (session == null || !session.isLive()) session = sessionTo(null, null, null);
         return session;
     }
 
-    protected static void startEngine( Class<?> testClass,
-                                       String resourcePathToConfigurationFile,
-                                       String repositoryName ) throws Exception {
-        CheckArg.isNotNull(testClass, "testClass");
-        CheckArg.isNotNull(resourcePathToConfigurationFile, "resourcePathToConfigurationFile");
-        URL configFile = testClass.getClassLoader().getResource(resourcePathToConfigurationFile);
-        if (configFile == null) {
-            String msg = "\"" + resourcePathToConfigurationFile + "\" does not reference an existing file";
-            System.err.println(msg);
-            throw new IllegalArgumentException(msg);
-        }
-        configuration = new JcrConfiguration().loadFrom(configFile);
-        if (configuration.getProblems().hasErrors()) {
-            System.err.println("Error reading in the configuration for " + testClass.getName());
-        } else {
-            engine = configuration.build();
-            if (configuration.getProblems().hasErrors()) {
-                System.err.println("Error starting engine for " + testClass.getName());
-            } else {
-                engine.start();
-                try {
-                    repository = engine.getRepository(repositoryName);
-                } catch (RuntimeException e) {
-                    e.printStackTrace();
-                    throw e;
-                }
+    /**
+     * Create a new session to the first JCR repository in the current configuration. This new session will be set as the
+     * {@link #session() current session}.
+     * 
+     * @param repositoryName the name of the repository, or null if the first repository in the configuration should be used
+     * @return the session, which will be automatically closed when the test ends
+     * @throws RepositoryException if there is a problem obtaining a session
+     */
+    protected Session sessionTo( String repositoryName ) throws RepositoryException {
+        return sessionTo(repositoryName, null, null);
+    }
+
+    /**
+     * Create a new session to the first JCR repository in the current configuration. This new session will be set as the
+     * {@link #session() current session}.
+     * 
+     * @param repositoryName the name of the repository, or null if the first repository in the configuration should be used
+     * @param workspaceName the name of the workspace, or null if the default workspace in the repository should be used
+     * @return the session, which will be automatically closed when the test ends
+     * @throws RepositoryException if there is a problem obtaining a session
+     */
+    protected Session sessionTo( String repositoryName,
+                                 String workspaceName ) throws RepositoryException {
+        return sessionTo(repositoryName, workspaceName, null);
+    }
+
+    /**
+     * Create a new session to the first JCR repository in the current configuration. This new session will be set as the
+     * {@link #session() current session}.
+     * 
+     * @param repositoryName the name of the repository, or null if the first repository in the configuration should be used
+     * @param workspaceName the name of the workspace, or null if the default workspace in the repository should be used
+     * @param credentials the credentials to use, or null if no credentials should be used
+     * @return the session, which will be automatically closed when the test ends
+     * @throws RepositoryException if there is a problem obtaining a session
+     */
+    protected Session sessionTo( String repositoryName,
+                                 String workspaceName,
+                                 Credentials credentials ) throws RepositoryException {
+        try {
+            if (configuration == null) {
+                startEngineUsing(getPathToDefaultConfiguration());
             }
+            if (engine == null) {
+                startEngine();
+            }
+            Repository repository = repository(repositoryName);
+            session = credentials != null ? repository.login(credentials, workspaceName) : repository.login(workspaceName);
+            openSessions.add(session);
+            return session;
+        } catch (IOException e) {
+            throw new AssertionError(e);
         }
     }
 
-    protected static void stopEngine() throws Exception {
-        configuration = null;
-        try {
-            if (engine != null) {
-                engine.shutdown();
-            }
-        } finally {
-            engine = null;
+    protected static Repository repository( String repositoryName ) throws RepositoryException {
+        if (repositoryName == null) {
+            if (configuration.repositoryNames().size() == 0) fail("No repository is configured");
+            repositoryName = configuration.repositoryNames().iterator().next();
         }
+        return engine.getRepository(repositoryName);
+    }
+
+    protected static Repository defaultRepository() throws RepositoryException {
+        return repository(null);
+    }
+
+    protected void setSession( Session session ) {
+        ModeShapeUnitTest.session = session;
+    }
+
+    protected Repository repository() throws RepositoryException, IOException {
+        if (configuration.repositories().size() == 0) fail("No repository is configured");
+        String repositoryName = configuration.repositories().iterator().next().getName();
+        return engine().getRepository(repositoryName);
+    }
+
+    protected static String defaultRepositoryName() {
+        if (configuration.repositories().size() == 0) fail("No repository is configured");
+        return configuration.repositories().iterator().next().getName();
     }
 
     protected static void importContent( Class<?> testClass,
                                          String pathToResourceFile ) throws Exception {
-        importContent(testClass, pathToResourceFile, null);
+        importContent(testClass, pathToResourceFile, defaultRepositoryName(), null, null);
     }
 
     protected static void importContent( Class<?> testClass,
                                          String pathToResourceFile,
+                                         String repositoryName,
+                                         String workspaceName ) throws Exception {
+        importContent(testClass, pathToResourceFile, repositoryName, workspaceName, null);
+    }
+
+    protected static void importContent( Class<?> testClass,
+                                         String pathToResourceFile,
+                                         String repositoryName,
+                                         String workspaceName,
                                          String jcrPathToImportUnder ) throws Exception {
         // Use a session to load the contents ...
-        Session session = repository.login();
         try {
             InputStream stream = testClass.getClassLoader().getResourceAsStream(pathToResourceFile);
             if (stream == null) {
@@ -150,10 +326,16 @@ public abstract class AbstractModeShapeTest {
             assertNotNull(stream);
             if (jcrPathToImportUnder == null || jcrPathToImportUnder.trim().length() == 0) jcrPathToImportUnder = "/";
 
+            Session session = repository(repositoryName).login(workspaceName);
             try {
                 session.getWorkspace().importXML(jcrPathToImportUnder, stream, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
             } finally {
-                stream.close();
+                try {
+                    session.save();
+                } finally {
+                    stream.close();
+                    session.logout();
+                }
             }
             session.save();
         } catch (RuntimeException t) {
@@ -162,8 +344,6 @@ public abstract class AbstractModeShapeTest {
         } catch (Exception t) {
             t.printStackTrace();
             throw t;
-        } finally {
-            session.logout();
         }
 
     }
@@ -481,6 +661,14 @@ public abstract class AbstractModeShapeTest {
 
     protected Value value( String value ) throws Exception {
         return session().getValueFactory().createValue(value);
+    }
+
+    protected Path path( String path ) {
+        return engine.getExecutionContext().getValueFactories().getPathFactory().create(path);
+    }
+
+    protected String string( Object obj ) {
+        return engine.getExecutionContext().getValueFactories().getStringFactory().create(obj);
     }
 
     protected void assertSingleValueProperty( Node node,
@@ -813,4 +1001,101 @@ public abstract class AbstractModeShapeTest {
             this.value = value;
         }
     }
+
+    protected void repeatedlyWithSession( int times,
+                                          Operation operation ) throws Exception {
+        for (int i = 0; i != times; ++i) {
+            double time = withSession(operation);
+            print("Time to execute \"" + operation.getClass().getSimpleName() + "\": " + time + " ms");
+        }
+    }
+
+    protected void browseTo( String path ) throws Exception {
+        double time = 0.0d;
+        for (Iterator<Path> iterator = path(path).pathsFromRoot(); iterator.hasNext();) {
+            Path p = iterator.next();
+            time += withSession(new BrowseContent(string(p)));
+        }
+        print("Time to browse down to \"" + path + "\": " + time + " ms");
+    }
+
+    protected void print( Object msg ) {
+        if (print && msg != null) {
+            System.out.println(msg.toString());
+        }
+    }
+
+    protected double withSession( Operation operation ) throws Exception {
+        return withSession(operation, true);
+    }
+
+    protected double withSession( Operation operation,
+                                  boolean useSeparateSessions ) throws Exception {
+        long startTime = System.nanoTime();
+        Session oldSession = session();
+        Session session = useSeparateSessions ? repository().login() : oldSession;
+        try {
+            operation.run(session);
+        } finally {
+            if (oldSession != null) setSession(oldSession);
+            if (oldSession != session) session.logout();
+        }
+        return TimeUnit.MILLISECONDS.convert(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
+    }
+
+    protected interface Operation {
+        public void run( Session session ) throws Exception;
+    }
+
+    protected abstract class BasicOperation implements Operation {
+        protected Node assertNode( Session session,
+                                   String path,
+                                   String primaryType,
+                                   String... mixinTypes ) throws RepositoryException {
+            Node node = session.getNode(path);
+            assertThat(node.getPrimaryNodeType().getName(), is(primaryType));
+            Set<String> expectedMixinTypes = new HashSet<String>(Arrays.asList(mixinTypes));
+            Set<String> actualMixinTypes = new HashSet<String>();
+            for (NodeType mixin : node.getMixinNodeTypes()) {
+                actualMixinTypes.add(mixin.getName());
+            }
+            assertThat("Mixin types do not match", actualMixinTypes, is(expectedMixinTypes));
+            return node;
+        }
+    }
+
+    protected class BrowseContent extends BasicOperation {
+        private String path;
+
+        public BrowseContent( String path ) {
+            this.path = path;
+        }
+
+        public void run( Session s ) throws RepositoryException {
+            // Verify the file was imported ...
+            Node node = s.getNode(path);
+            assertThat(node, is(notNullValue()));
+        }
+
+    }
+
+    protected class CountNodes extends BasicOperation {
+        public void run( Session s ) throws RepositoryException {
+            // Count the nodes below the root, excluding the '/jcr:system' branch ...
+            String queryStr = "SELECT [jcr:primaryType] FROM [nt:base]";
+            Query query = s.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
+            long numNonSystemNodes = query.execute().getRows().getSize();
+            print("  # nodes NOT in '/jcr:system' branch: " + numNonSystemNodes);
+        }
+    }
+
+    protected class PrintNodes extends BasicOperation {
+        public void run( Session s ) throws RepositoryException {
+            // Count the nodes below the root, excluding the '/jcr:system' branch ...
+            String queryStr = "SELECT [jcr:path] FROM [nt:base] ORDER BY [jcr:path]";
+            Query query = s.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
+            print(query.execute());
+        }
+    }
+
 }

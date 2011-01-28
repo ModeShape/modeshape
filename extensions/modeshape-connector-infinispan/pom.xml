@@ -70,6 +70,10 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-library</artifactId>
+    </dependency>
     <!-- infinispan remote testing -->
     <dependency>
       <groupId>org.infinispan</groupId>

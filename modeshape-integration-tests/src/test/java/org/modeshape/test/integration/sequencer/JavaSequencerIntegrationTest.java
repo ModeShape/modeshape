@@ -36,31 +36,21 @@ public class JavaSequencerIntegrationTest extends AbstractSequencerTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.test.integration.sequencer.AbstractSequencerTest#getResourcePathToConfigurationFile()
+     * @see org.modeshape.test.ModeShapeUnitTest#getPathToDefaultConfiguration()
      */
     @Override
-    protected String getResourcePathToConfigurationFile() {
+    protected String getPathToDefaultConfiguration() {
         return "config/configRepositoryForJavaSequencing.xml";
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.test.integration.AbstractSingleUseModeShapeTest#getRepositoryName()
-     */
-    @Override
-    protected String getRepositoryName() {
-        return "Content";
     }
 
     @Before
     @Override
     public void beforeEach() throws Exception {
         super.beforeEach();
-        session.getWorkspace().getNamespaceRegistry().registerNamespace("java", "http://www.modeshape.org/java/1.0");
-        session.getWorkspace()
-               .getNamespaceRegistry()
-               .registerNamespace("class", "http://www.modeshape.org/sequencer/javaclass/1.0");
+        session().getWorkspace().getNamespaceRegistry().registerNamespace("java", "http://www.modeshape.org/java/1.0");
+        session().getWorkspace()
+                 .getNamespaceRegistry()
+                 .registerNamespace("class", "http://www.modeshape.org/sequencer/javaclass/1.0");
     }
 
     @After

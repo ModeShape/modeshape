@@ -24,53 +24,24 @@
 package org.modeshape.test.integration.sequencer;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.File;
 import javax.jcr.Node;
-import javax.jcr.Repository;
 import javax.jcr.Session;
-import javax.jcr.nodetype.NodeType;
-import org.junit.After;
 import org.junit.Test;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.ModeShapeRoles;
 import org.modeshape.sequencer.image.ImageMetadataLexicon;
-import org.modeshape.test.integration.AbstractModeShapeTest;
+import org.modeshape.test.ModeShapeSingleUseTest;
 
-public class SequencerTest extends AbstractModeShapeTest {
-
-    @Override
-    @After
-    public void afterEach() throws Exception {
-        super.afterEach();
-        configuration = null;
-
-        try {
-            if (session != null) {
-                session.logout();
-            }
-        } finally {
-            session = null;
-            try {
-                if (engine != null) {
-                    engine.shutdown();
-                }
-            } finally {
-                engine = null;
-            }
-        }
-    }
+public class SequencerTest extends ModeShapeSingleUseTest {
 
     @Test
     public void shouldRegisterNodeTypesDefinedInConfigurationFileWithDefaultNamespace() throws Exception {
-        configuration = new JcrConfiguration().loadFrom("src/test/resources/config/configRepositoryWithDefaultNamespace.xml");
-        engine = configuration.build();
-        engine.start();
-        repository = engine.getRepository("mode:Car Repository");
-        session = repository.login();
+        startEngineUsing("config/configRepositoryWithDefaultNamespace.xml");
+        session();
 
         assertNodeType("ddl:tableOperand", true, false, true, false, null, 0, 0, "nt:base", "ddl:operand");
         assertNodeType("derbyddl:functionOperand", true, false, true, false, null, 0, 0, "nt:base", "ddl:operand");
@@ -116,10 +87,8 @@ public class SequencerTest extends AbstractModeShapeTest {
                      .addNodeTypes(resourceUrl("org/modeshape/sequencer/ddl/dialect/postgres/PostgresDdl.cnd"))
                      .addNodeTypes(resourceUrl("org/modeshape/sequencer/teiid/teiid.cnd"))
                      .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN);
-        engine = configuration.build();
-        engine.start();
-        repository = engine.getRepository("repo");
-        session = repository.login();
+        engine();
+        session();
 
         // assertNodeType("ddl:tableOperand", true, false, true, false, null, 0, 0, "nt:base", "ddl:operand");
         // assertNodeType("derbyddl:functionOperand", true, false, true, false, null, 0, 0, "nt:base", "ddl:operand");
@@ -188,13 +157,8 @@ public class SequencerTest extends AbstractModeShapeTest {
                      .sequencingFrom("store:images://(*.(jpg|jpeg|gif|bmp|pcx|png|iff|ras|pbm|pgm|ppm|psd)[*])/jcr:content[@jcr:data]")
                      .andOutputtingTo("imageexif:info:/$1");
 
-        engine = configuration.build();
-        if (!engine.getProblems().isEmpty()) {
-            System.out.println(engine.getProblems());
-        }
-        engine.start();
-        repository = engine.getRepository(repoId);
-        session = repository.login();
+        engine();
+        Session session = sessionTo(repoId);
 
         // Add the "files" node ...
         session.getRootNode().addNode("files", "nt:unstructured");
@@ -208,8 +172,7 @@ public class SequencerTest extends AbstractModeShapeTest {
         Thread.sleep(400); // wait a bit while the new content is indexed
 
         // Now look for the derived content ...
-        Repository imageRepo = engine.getRepository(metaRepoId);
-        Session imageSession = imageRepo.login();
+        Session imageSession = sessionTo(metaRepoId);
 
         Node caution = imageSession.getNode("/caution.gif");
         Node metadata = caution.getNode("image:metadata");
@@ -260,38 +223,5 @@ public class SequencerTest extends AbstractModeShapeTest {
     // assertNodeType("car:Car", false, false, true, false, null, 0, 11, "nt:unstructured", "mix:created");
     // assertNodeType("mgnl:workItem", false, false, true, true, null, 1, 1, "nt:hierarchyNode");
     // }
-
-    @Override
-    protected void assertNodeType( String name,
-                                   boolean isAbstract,
-                                   boolean isMixin,
-                                   boolean isQueryable,
-                                   boolean hasOrderableChildNodes,
-                                   String primaryItemName,
-                                   int numberOfDeclaredChildNodeDefinitions,
-                                   int numberOfDeclaredPropertyDefinitions,
-                                   String... supertypes ) throws Exception {
-        NodeType nodeType = session.getWorkspace().getNodeTypeManager().getNodeType(name);
-        assertThat(nodeType, is(notNullValue()));
-        assertThat(nodeType.isAbstract(), is(isAbstract));
-        assertThat(nodeType.isMixin(), is(isMixin));
-        assertThat(nodeType.isQueryable(), is(isQueryable));
-        assertThat(nodeType.hasOrderableChildNodes(), is(hasOrderableChildNodes));
-        assertThat(nodeType.getPrimaryItemName(), is(primaryItemName));
-        for (int i = 0; i != supertypes.length; ++i) {
-            assertThat(nodeType.getDeclaredSupertypes()[i].getName(), is(supertypes[i]));
-        }
-        assertThat(nodeType.getDeclaredSupertypes().length, is(supertypes.length));
-        assertThat(nodeType.getDeclaredChildNodeDefinitions().length, is(numberOfDeclaredChildNodeDefinitions));
-        assertThat(nodeType.getDeclaredPropertyDefinitions().length, is(numberOfDeclaredPropertyDefinitions));
-    }
-
-    @Override
-    protected void assertNodeTypes( String... nodeTypeNames ) throws Exception {
-        for (String nodeTypeName : nodeTypeNames) {
-            NodeType nodeType = session.getWorkspace().getNodeTypeManager().getNodeType(nodeTypeName);
-            assertThat(nodeType, is(notNullValue()));
-        }
-    }
 
 }

@@ -21,47 +21,40 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.test.integration;
+package org.modeshape.test;
 
-import static org.junit.Assert.fail;
-import org.junit.After;
-import org.junit.Before;
-import org.modeshape.jcr.JcrTools;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import javax.jcr.Session;
+import org.junit.Test;
 
-/**
- * A base class for ModeShape integration tests that set up a new ModeShape engine for each unit test, but expects each test case
- * to manually request the creation of the engine.
- */
-public abstract class AbstractAdHocModeShapeTest extends AbstractModeShapeTest {
+public class UnitTestsForModeShapeSingleUseTest extends ModeShapeSingleUseTest {
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.test.ModeShapeUnitTest#getPathToDefaultConfiguration()
+     */
     @Override
-    @Before
-    public void beforeEach() throws Exception {
-        print = false;
-        tools = new JcrTools();
+    protected String getPathToDefaultConfiguration() {
+        return "modeshape_configuration_inmemory.xml";
     }
 
-    protected void startEngine( String configFilePath,
-                                String repositoryName ) throws Exception {
-        if (session != null) {
-            fail("Can only start one engine in each test");
-        }
-        startEngine(getClass(), configFilePath, repositoryName);
-        session = repository.login();
+    @Test
+    public void shouldAllowCreatingSessions() throws Exception {
+        Session session = session();
+        assertThat(session.isLive(), is(true));
+        session.getRootNode().addNode("topLevel", "nt:unstructured");
+        session.save();
     }
 
-    @Override
-    @After
-    public void afterEach() throws Exception {
-
-        try {
-            if (session != null) {
-                session.logout();
-            }
-        } finally {
-            session = null;
-            stopEngine();
-        }
+    @Test
+    public void shouldBeEmpty() throws Exception {
+        Session session = session();
+        assertThat(session.isLive(), is(true));
+        assertThat(session.getRootNode().getNodes().getSize(), is(1L));
+        assertThat(session.getRootNode().getNode("jcr:system"), is(notNullValue()));
     }
 
 }

@@ -30,13 +30,15 @@ import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.test.ModeShapeSingleUseTest;
 
-public class JcrImportExportIntegrationTest extends AbstractAdHocModeShapeTest {
+public class JcrImportExportIntegrationTest extends ModeShapeSingleUseTest {
 
     @FixFor( "MODE-687" )
     @Test
     public void shouldBeAbleToImportSystemFileIntoRepository() throws Exception {
-        startEngine("config/configRepositoryForDroolsImportExport.xml", "Repo");
+        startEngineUsing("config/configRepositoryForDroolsImportExport.xml");
+        sessionTo("Repo");
         assertNode("/", "mode:root");
         // import the file ...
         importContent(getClass(), "io/drools/systemViewImport.xml");
@@ -48,7 +50,8 @@ public class JcrImportExportIntegrationTest extends AbstractAdHocModeShapeTest {
     @FixFor( "MODE-1026" )
     @Test
     public void shouldBeAbleToImportFileWithValuesDefinedByXsiTypeAttributes() throws Exception {
-        startEngine("config/configRepositoryForDroolsImportExport.xml", "Repo");
+        startEngineUsing("config/configRepositoryForDroolsImportExport.xml");
+        sessionTo("Repo");
         assertNode("/", "mode:root");
         // import the file ...
         importContent(getClass(), "io/drools/mortgage-sample-repository.xml");

@@ -48,10 +48,10 @@ import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.io.Destination;
 import org.modeshape.graph.io.GraphBatchDestination;
 import org.modeshape.graph.property.Name;
+import org.modeshape.graph.property.NamespaceRegistry.Namespace;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
-import org.modeshape.graph.property.NamespaceRegistry.Namespace;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.repository.ModeShapeConfiguration;
 import org.modeshape.repository.ModeShapeConfigurationException;
@@ -99,6 +99,13 @@ public class JcrConfiguration extends ModeShapeConfiguration {
          * @return the source name, or null if it has not yet been set
          */
         String getSource();
+
+        /**
+         * Get the name of this repository definition.
+         * 
+         * @return the name; never null
+         */
+        String getName();
 
         /**
          * Specify the repository option that is to be set.
@@ -449,7 +456,18 @@ public class JcrConfiguration extends ModeShapeConfiguration {
     }
 
     /**
-     * Get the list of sequencer definitions.
+     * Get the names of the repositories defined in this configuration.
+     * 
+     * @return the repository names; never null
+     */
+    public Set<String> repositoryNames() {
+        Set<String> names = getNamesOfComponentsUnder(ModeShapeLexicon.REPOSITORIES);
+        names.addAll(this.repositoryDefinitions.keySet());
+        return names;
+    }
+
+    /**
+     * Get the list of repository definitions.
      * 
      * @return the unmodifiable set of definitions; never null but possibly empty if there are no definitions
      */

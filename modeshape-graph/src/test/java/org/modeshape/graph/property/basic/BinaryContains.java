@@ -27,8 +27,8 @@ import java.io.UnsupportedEncodingException;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeMatcher;
 import org.modeshape.graph.property.Binary;
-import org.junit.matchers.TypeSafeMatcher;
 
 /**
  * @author Randall Hauch

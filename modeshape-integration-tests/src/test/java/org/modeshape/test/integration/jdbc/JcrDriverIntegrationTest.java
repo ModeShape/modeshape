@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import javax.jcr.Node;
+import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.naming.Context;
 import org.junit.After;
@@ -45,13 +46,16 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
 import org.modeshape.jdbc.ConnectionResultsComparator;
 import org.modeshape.jdbc.JcrConnection;
 import org.modeshape.jdbc.JcrDriver;
 import org.modeshape.jdbc.util.ResultsComparator;
-import org.modeshape.test.integration.AbstractMultiUseModeShapeTest;
+import org.modeshape.test.ModeShapeMultiUseTest;
 
 /**
  * This is a test suite that operates against a complete JcrRepository instance created and managed using the JcrEngine.
@@ -73,7 +77,7 @@ import org.modeshape.test.integration.AbstractMultiUseModeShapeTest;
  * example: DriverTestUtil.executeTest(this.connection, "SELECT * FROM [nt:base]", expected);
  * </p>
  */
-public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
+public class JcrDriverIntegrationTest extends ModeShapeMultiUseTest {
 
     private static String jndiNameForRepository = "jcr/local";
     private static String validUrl = JcrDriver.JNDI_URL_PREFIX + jndiNameForRepository + "?repositoryName=Repo";
@@ -99,11 +103,11 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
         // } catch (Exception ex) {
         // throw new IllegalStateException(ex);
         // }
-        startEngine(JcrDriverIntegrationTest.class, "config/configRepositoryForJdbc.xml", "Repo");
-        importContent(JcrDriverIntegrationTest.class, "jdbc/cars-system-view-with-uuids.xml");
+        JcrEngine engine = startEngineUsing("config/configRepositoryForJdbc.xml");
+        importContent(JcrDriverIntegrationTest.class, "jdbc/cars-system-view-with-uuids.xml", "Repo", null);
 
         // Use a session to load the contents ...
-        Session session = repository.login();
+        Session session = engine.getRepository("Repo").login();
         try {
             // Create a branch that contains some same-name-siblings ...
             Node other = session.getRootNode().addNode("Other", "nt:unstructured");
@@ -130,7 +134,13 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
 
         // Set up the mock JNDI context ...
         MockitoAnnotations.initMocks(this);
-        when(jndi.lookup(jndiNameForRepository)).thenReturn(repository);
+        when(jndi.lookup(jndiNameForRepository)).thenAnswer(new Answer<Repository>() {
+            @SuppressWarnings( "synthetic-access" )
+            public Repository answer( InvocationOnMock invocation ) throws Throwable {
+                return repository();
+            }
+
+        });
         contextFactory = new JcrDriver.JcrContextFactory() {
             @SuppressWarnings( "synthetic-access" )
             @Override
@@ -166,8 +176,8 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
     }
 
     @Test
-    public void shouldStartUp() {
-        assertThat(engine.getRepositoryService(), is(notNullValue()));
+    public void shouldStartUp() throws Exception {
+        assertThat(engine().getRepositoryService(), is(notNullValue()));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -834,7 +844,7 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
             "nt:file    /files/docWithComments2.xml    docWithComments2.xml    1.0    docWithComments2.xml    2",
             "nt:resource    /files/docWithComments2.xml/jcr:content    jcr:content    1.0    content    3"};
 
-        Session session = repository.login();
+        Session session = session();
         try {
 
             this.setSession(session);
@@ -1101,7 +1111,7 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
             "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured", "nt:unstructured",
             "nt:unstructured", "nt:unstructured",};
 
-        Session session = repository.login();
+        Session session = session();
         try {
 
             this.setSession(session);

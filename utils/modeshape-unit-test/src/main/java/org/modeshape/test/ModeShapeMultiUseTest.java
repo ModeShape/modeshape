@@ -21,14 +21,22 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.test.integration;
+package org.modeshape.test;
 
 /**
- * A base class for ModeShape integration tests that set up a new ModeShape engine once for use by all unit tests. Subclasses must
- * define a @BeforeAll method that {@link #startEngine(Class, String, String) starts the engine} and an
+ * A base class for ModeShape integration tests that set up a single ModeShape engine once for all unit tests. Subclasses should
+ * provide static startup and teardown methods such as:
  * 
- * @AfterAll method that {@link #stopEngine() stops the engine}.
+ * <pre>
+ * @BeforeClass
+ * public static void beforeAll() throws Exception {
+ *     startEngineUsing("path/to/configuration.xml");
+ * }
+ * @AfterClass
+ * public static void afterAll() throws Exception {
+ *     stopEngine();
+ * }
  */
-public abstract class AbstractMultiUseModeShapeTest extends AbstractModeShapeTest {
+public abstract class ModeShapeMultiUseTest extends ModeShapeUnitTest {
 
 }

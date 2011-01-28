@@ -169,6 +169,7 @@
 		<module>web</module>
 		<module>utils/modeshape-jpa-ddl-gen</module>
 		<module>utils/modeshape-jdbc</module>
+		<module>utils/modeshape-unit-test</module>
 		<module>deploy/jbossas</module>
 	</modules>
 	<properties>
@@ -1160,6 +1161,12 @@
 				<artifactId>modeshape-jdbc</artifactId>
 				<version>${project.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>org.modeshape</groupId>
+				<artifactId>modeshape-unit-test</artifactId>
+				<version>${project.version}</version>
+				<scope>test</scope>
+			</dependency>
 			<!--
 			   Collections
 			-->
@@ -1182,7 +1189,7 @@
 			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
-				<version>4.4</version>
+				<version>4.8.2</version>
 				<scope>test</scope>
 			</dependency>
 			<dependency>

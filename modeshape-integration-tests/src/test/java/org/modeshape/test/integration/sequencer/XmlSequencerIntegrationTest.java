@@ -33,30 +33,20 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.test.integration.sequencer.AbstractSequencerTest#getResourcePathToConfigurationFile()
+     * @see org.modeshape.test.ModeShapeUnitTest#getPathToDefaultConfiguration()
      */
     @Override
-    protected String getResourcePathToConfigurationFile() {
+    protected String getPathToDefaultConfiguration() {
         return "config/configRepositoryForXmlSequencing.xml";
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.test.integration.AbstractSingleUseModeShapeTest#getRepositoryName()
-     */
-    @Override
-    protected String getRepositoryName() {
-        return "Content";
     }
 
     @Before
     @Override
     public void beforeEach() throws Exception {
         super.beforeEach();
-        session.getWorkspace().getNamespaceRegistry().registerNamespace("xhtml", "http://www.w3.org/1999/xhtml");
-        session.getWorkspace().getNamespaceRegistry().registerNamespace("mathml", "http://www.w3.org/1998/Math/MathML");
-        session.getWorkspace().getNamespaceRegistry().registerNamespace("svg", "http://www.w3.org/2000/svg");
+        session().getWorkspace().getNamespaceRegistry().registerNamespace("xhtml", "http://www.w3.org/1999/xhtml");
+        session().getWorkspace().getNamespaceRegistry().registerNamespace("mathml", "http://www.w3.org/1998/Math/MathML");
+        session().getWorkspace().getNamespaceRegistry().registerNamespace("svg", "http://www.w3.org/2000/svg");
     }
 
     @After

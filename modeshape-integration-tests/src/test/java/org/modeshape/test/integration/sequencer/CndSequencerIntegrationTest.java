@@ -37,21 +37,11 @@ public class CndSequencerIntegrationTest extends AbstractSequencerTest {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.test.integration.sequencer.AbstractSequencerTest#getResourcePathToConfigurationFile()
+     * @see org.modeshape.test.ModeShapeUnitTest#getPathToDefaultConfiguration()
      */
     @Override
-    protected String getResourcePathToConfigurationFile() {
+    protected String getPathToDefaultConfiguration() {
         return "config/configRepositoryForCndSequencing.xml";
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.test.integration.AbstractSingleUseModeShapeTest#getRepositoryName()
-     */
-    @Override
-    protected String getRepositoryName() {
-        return "Content";
     }
 
     @Before

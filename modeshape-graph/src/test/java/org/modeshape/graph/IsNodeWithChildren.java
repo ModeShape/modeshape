@@ -28,11 +28,11 @@ import java.util.List;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeMatcher;
+import org.hamcrest.collection.IsCollectionContaining;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.basic.BasicPathSegment;
-import org.junit.matchers.IsCollectionContaining;
-import org.junit.matchers.TypeSafeMatcher;
 
 /**
  * @author Randall Hauch

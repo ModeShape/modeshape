@@ -30,10 +30,10 @@ import java.util.Collection;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeMatcher;
 import org.modeshape.graph.property.Path;
-import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Path.Segment;
-import org.junit.matchers.TypeSafeMatcher;
+import org.modeshape.graph.property.PathFactory;
 
 /**
  * @author Randall Hauch
@@ -72,7 +72,8 @@ public class IsPathContaining extends TypeSafeMatcher<Iterable<Segment>> {
 
     @Factory
     public static Matcher<Iterable<Segment>> hasSegments( Matcher<Path.Segment>... elementMatchers ) {
-        Collection<Matcher<? extends Iterable<Path.Segment>>> all = new ArrayList<Matcher<? extends Iterable<Path.Segment>>>(elementMatchers.length);
+        Collection<Matcher<? extends Iterable<Path.Segment>>> all = new ArrayList<Matcher<? extends Iterable<Path.Segment>>>(
+                                                                                                                             elementMatchers.length);
 
         for (Matcher<Path.Segment> elementMatcher : elementMatchers) {
             Matcher<Iterable<Path.Segment>> itemMatcher = hasSegment(elementMatcher);
@@ -84,7 +85,8 @@ public class IsPathContaining extends TypeSafeMatcher<Iterable<Segment>> {
 
     @Factory
     public static Matcher<Iterable<Segment>> hasSegments( Segment... elements ) {
-        Collection<Matcher<? extends Iterable<Segment>>> all = new ArrayList<Matcher<? extends Iterable<Segment>>>(elements.length);
+        Collection<Matcher<? extends Iterable<Segment>>> all = new ArrayList<Matcher<? extends Iterable<Segment>>>(
+                                                                                                                   elements.length);
         for (Segment element : elements) {
             all.add(hasSegment(element));
         }
@@ -92,14 +94,17 @@ public class IsPathContaining extends TypeSafeMatcher<Iterable<Segment>> {
     }
 
     @Factory
-    public static Matcher<Iterable<Segment>> hasSegment( PathFactory pathFactory, String element ) {
+    public static Matcher<Iterable<Segment>> hasSegment( PathFactory pathFactory,
+                                                         String element ) {
         Path.Segment segment = pathFactory.createSegment(element);
         return hasSegment(equalTo(segment));
     }
 
     @Factory
-    public static Matcher<Iterable<Segment>> hasSegments( PathFactory pathFactory, String... segments ) {
-        Collection<Matcher<? extends Iterable<Segment>>> all = new ArrayList<Matcher<? extends Iterable<Segment>>>(segments.length);
+    public static Matcher<Iterable<Segment>> hasSegments( PathFactory pathFactory,
+                                                          String... segments ) {
+        Collection<Matcher<? extends Iterable<Segment>>> all = new ArrayList<Matcher<? extends Iterable<Segment>>>(
+                                                                                                                   segments.length);
         for (String element : segments) {
             all.add(hasSegment(pathFactory, element));
         }

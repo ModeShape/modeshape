@@ -33,25 +33,14 @@ import org.modeshape.common.FixFor;
  * 
  */
 public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
-
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.test.integration.sequencer.AbstractSequencerTest#getResourcePathToConfigurationFile()
+     * @see org.modeshape.test.ModeShapeUnitTest#getPathToDefaultConfiguration()
      */
     @Override
-    protected String getResourcePathToConfigurationFile() {
+    protected String getPathToDefaultConfiguration() {
         return "config/configRepositoryForTeiidSequencing.xml";
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.test.integration.AbstractSingleUseModeShapeTest#getRepositoryName()
-     */
-    @Override
-    protected String getRepositoryName() {
-        return "Content";
     }
 
     @Before
@@ -197,7 +186,7 @@ public class TeiidSequencerIntegrationTest extends AbstractSequencerTest {
 
         // Wait for the sequencing to finish ...
         waitUntilSequencedNodesIs(vdbFiles.length, 20);
-        session.refresh(false);
+        session().refresh(false);
 
         // Print out the top level of the VDBs ...
         // print = true;

@@ -26,23 +26,19 @@ package org.modeshape.graph;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
-import org.modeshape.graph.Node;
+import org.hamcrest.TypeSafeMatcher;
+import org.hamcrest.collection.IsCollectionContaining;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Property;
-import org.junit.matchers.IsCollectionContaining;
-import org.junit.matchers.TypeSafeMatcher;
 
-/**
- * @author Randall Hauch
- */
 public class IsNodeWithProperty extends TypeSafeMatcher<Node> {
     private final String propertyNameStr;
     private final Name propertyName;
     private final Matcher<Iterable<Object>> valueMatcher;
 
     public IsNodeWithProperty( String propertyNameStr,
-                       Name propertyName,
-                       Matcher<Iterable<Object>> valueMatcher ) {
+                               Name propertyName,
+                               Matcher<Iterable<Object>> valueMatcher ) {
         this.propertyNameStr = propertyNameStr;
         this.propertyName = propertyName;
         this.valueMatcher = valueMatcher;
@@ -64,13 +60,13 @@ public class IsNodeWithProperty extends TypeSafeMatcher<Node> {
 
     @Factory
     public static IsNodeWithProperty hasProperty( Name name,
-                                          Object... values ) {
+                                                  Object... values ) {
         return new IsNodeWithProperty(null, name, IsCollectionContaining.hasItems(values));
     }
 
     @Factory
     public static IsNodeWithProperty hasProperty( String name,
-                                          Object... values ) {
+                                                  Object... values ) {
         return new IsNodeWithProperty(name, null, IsCollectionContaining.hasItems(values));
     }
 

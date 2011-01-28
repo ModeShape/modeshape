@@ -36,9 +36,9 @@ import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.text.Inflector;
-import org.modeshape.test.integration.AbstractSingleUseModeShapeTest;
+import org.modeshape.test.ModeShapeSingleUseTest;
 
-public abstract class AbstractSequencerTest extends AbstractSingleUseModeShapeTest {
+public abstract class AbstractSequencerTest extends ModeShapeSingleUseTest {
 
     /**
      * Return a new listener that accumulates the nodes that have been deleted.
@@ -109,13 +109,9 @@ public abstract class AbstractSequencerTest extends AbstractSingleUseModeShapeTe
 
         public void register() throws RepositoryException {
             if (isRegistered) return;
-            session.getWorkspace().getObservationManager().addEventListener(this,
-                                                                            Event.NODE_REMOVED,
-                                                                            path,
-                                                                            true,
-                                                                            null,
-                                                                            null,
-                                                                            false);
+            session.getWorkspace()
+                   .getObservationManager()
+                   .addEventListener(this, Event.NODE_REMOVED, path, true, null, null, false);
             isRegistered = true;
         }
 

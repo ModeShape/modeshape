@@ -62,6 +62,10 @@
       <artifactId>mockito-all</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-library</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.modeshape</groupId>
       <artifactId>modeshape-common</artifactId>
       <version>${project.version}</version>

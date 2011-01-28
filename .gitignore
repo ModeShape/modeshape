@@ -50,6 +50,7 @@
 
 /utils/modeshape-jdbc/target/
 /utils/modeshape-jpa-ddl-gen/target/
+/utils/modeshape-unit-test/target/
 
 /deploy/jbossas/target/
 /deploy/jbossas/modeshape-jbossas-console/target/

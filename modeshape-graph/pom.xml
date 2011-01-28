@@ -47,6 +47,10 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-library</artifactId>
+    </dependency>
     <!-- 
     Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing) 
     -->
