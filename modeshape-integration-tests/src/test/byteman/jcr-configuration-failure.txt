@@ -1,0 +1,8 @@
+RULE force return null engine
+CLASS JcrConfiguration 
+METHOD build()
+AT ENTRY
+IF TRUE
+DO debug("returning early with failure");
+   throw new SecurityException("injected failure")
+ENDRULE

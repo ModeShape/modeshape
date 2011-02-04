@@ -28,19 +28,13 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import javax.jcr.version.VersionManager;
@@ -50,13 +44,11 @@ import org.junit.Test;
 import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.graph.property.Path;
-import org.modeshape.test.integration.AbstractAdHocModeShapeTest;
+import org.modeshape.test.ModeShapeSingleUseTest;
 
-public class JcrRepositoryPerformanceTest extends AbstractAdHocModeShapeTest {
+public class JcrRepositoryPerformanceTest extends ModeShapeSingleUseTest {
 
     private static final int NUMBER_OF_COPIES = 150;
-    private static boolean USE_SEPARATE_SESSIONS = true;
     private boolean printDetail = false;
 
     @Before
@@ -70,7 +62,8 @@ public class JcrRepositoryPerformanceTest extends AbstractAdHocModeShapeTest {
     @Test
     public void shouldSimulateGuvnorUsageAgainstRepositoryWithInMemoryStore() throws Exception {
         print = true;
-        startEngine("config/configRepositoryForDroolsInMemoryPerformance.xml", "Repo");
+        startEngineUsing("config/configRepositoryForDroolsInMemoryPerformance.xml");
+        sessionTo("Repo");
         assertNode("/", "mode:root");
         // import the file ...
         importContent(getClass(), "io/drools/mortgage-sample-repository.xml");
@@ -86,7 +79,8 @@ public class JcrRepositoryPerformanceTest extends AbstractAdHocModeShapeTest {
     @Test
     public void shouldSimulateGuvnorUsageAgainstRepositoryWithJpaStore() throws Exception {
         print = true;
-        startEngine("config/configRepositoryForDroolsJpaPerformance.xml", "Repo");
+        startEngineUsing("config/configRepositoryForDroolsJpaPerformance.xml");
+        sessionTo("Repo");
         assertNode("/", "mode:root");
         // import the file ...
         importContent(getClass(), "io/drools/mortgage-sample-repository.xml");
@@ -161,74 +155,9 @@ public class JcrRepositoryPerformanceTest extends AbstractAdHocModeShapeTest {
         // withSession(new PrintNodes());
     }
 
-    protected void repeatedlyWithSession( int times,
-                                          Operation operation ) throws Exception {
-        for (int i = 0; i != times; ++i) {
-            double time = withSession(operation);
-            printDetail("Time to execute \"" + operation.getClass().getSimpleName() + "\": " + time + " ms");
-        }
-    }
-
-    protected void browseTo( String path ) throws Exception {
-        double time = 0.0d;
-        for (Iterator<Path> iterator = path(path).pathsFromRoot(); iterator.hasNext();) {
-            Path p = iterator.next();
-            time += withSession(new BrowseContent(string(p)));
-        }
-        printDetail("Time to browse down to \"" + path + "\": " + time + " ms");
-    }
-
-    protected Path path( String path ) {
-        return engine.getExecutionContext().getValueFactories().getPathFactory().create(path);
-    }
-
-    protected String string( Object obj ) {
-        return engine.getExecutionContext().getValueFactories().getStringFactory().create(obj);
-    }
-
-    protected void print( Object msg ) {
-        if (print && msg != null) {
-            System.out.println(msg.toString());
-        }
-    }
-
     protected void printDetail( Object msg ) {
         if (printDetail && msg != null) {
             System.out.println(msg.toString());
-        }
-    }
-
-    protected double withSession( Operation operation ) throws Exception {
-        long startTime = System.nanoTime();
-        Session oldSession = session();
-        Session session = USE_SEPARATE_SESSIONS ? repository.login() : oldSession;
-        try {
-            operation.run(session);
-        } finally {
-            if (oldSession != null) setSession(oldSession);
-            if (oldSession != session) session.logout();
-        }
-        return TimeUnit.MILLISECONDS.convert(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
-    }
-
-    protected interface Operation {
-        public void run( Session session ) throws Exception;
-    }
-
-    protected abstract class BasicOperation implements Operation {
-        protected Node assertNode( Session session,
-                                   String path,
-                                   String primaryType,
-                                   String... mixinTypes ) throws RepositoryException {
-            Node node = session.getNode(path);
-            assertThat(node.getPrimaryNodeType().getName(), is(primaryType));
-            Set<String> expectedMixinTypes = new HashSet<String>(Arrays.asList(mixinTypes));
-            Set<String> actualMixinTypes = new HashSet<String>();
-            for (NodeType mixin : node.getMixinNodeTypes()) {
-                actualMixinTypes.add(mixin.getName());
-            }
-            assertThat("Mixin types do not match", actualMixinTypes, is(expectedMixinTypes));
-            return node;
         }
     }
 
@@ -239,40 +168,6 @@ public class JcrRepositoryPerformanceTest extends AbstractAdHocModeShapeTest {
             assertNode(s, "/drools:repository/drools:package_area", "nt:folder");
             assertNode(s, "/drools:repository/drools:package_area/mortgages", "drools:packageNodeType");
             assertNode(s, "/drools:repository/drools:package_area/mortgages/assets", "drools:versionableAssetFolder");
-        }
-    }
-
-    protected class BrowseContent extends DroolsOperation {
-        private String path;
-
-        public BrowseContent( String path ) {
-            this.path = path;
-        }
-
-        public void run( Session s ) throws RepositoryException {
-            // Verify the file was imported ...
-            Node node = s.getNode(path);
-            assertThat(node, is(notNullValue()));
-        }
-
-    }
-
-    protected class CountNodes extends DroolsOperation {
-        public void run( Session s ) throws RepositoryException {
-            // Count the nodes below the root, excluding the '/jcr:system' branch ...
-            String queryStr = "SELECT [jcr:primaryType] FROM [nt:base]";
-            Query query = s.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
-            long numNonSystemNodes = query.execute().getRows().getSize();
-            print("  # nodes NOT in '/jcr:system' branch: " + numNonSystemNodes);
-        }
-    }
-
-    protected class PrintNodes extends DroolsOperation {
-        public void run( Session s ) throws RepositoryException {
-            // Count the nodes below the root, excluding the '/jcr:system' branch ...
-            String queryStr = "SELECT [jcr:path] FROM [nt:base] ORDER BY [jcr:path]";
-            Query query = s.getWorkspace().getQueryManager().createQuery(queryStr, Query.JCR_SQL2);
-            print(query.execute());
         }
     }
 

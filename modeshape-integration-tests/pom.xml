@@ -298,24 +298,30 @@
 			<scope>test</scope>
 		</dependency>
         <!-- 
-        Byteman Dependencies
+        Byteman Dependencies, used for the bytecode injection during performance tests
         -->
         <dependency>
             <groupId>org.jboss.byteman</groupId>
             <artifactId>byteman-bmunit</artifactId>
-            <version>1.5.0</version>
+            <version>1.5.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.byteman</groupId>
             <artifactId>byteman-install</artifactId>
-            <version>1.5.0</version>
+            <version>1.5.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.byteman</groupId>
             <artifactId>byteman-submit</artifactId>
-            <version>1.5.0</version>
+            <version>1.5.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman</artifactId>
+            <version>1.5.1</version>
             <scope>test</scope>
         </dependency>
 	</dependencies>
@@ -360,21 +366,13 @@
 						<configuration>
                             <systemProperties>
                                 <property>
-                                    <name>org.jboss.byteman.home</name>
-                                    <value>/Users/rhauch/Desktop/byteman-1.5.0</value>
-                                </property>
-                                <property>
-                                    <name>org.jboss.byteman.verbose</name>
-                                    <value>true</value>
-                                </property>
-                                <property>
                                     <name>org.jboss.byteman.contrib.bmunit.verbose</name>
-                                    <value>true</value>
+                                    <value>false</value>
                                 </property>
                             </systemProperties>
                             <skip>false</skip>
                             <additionalClasspathElements>
-                                <additionalClasspathElement>${java.home}/lib/tools.jar</additionalClasspathElement>
+                                <additionalClasspathElement>${env.JAVA_HOME}/lib/tools.jar</additionalClasspathElement>
                             </additionalClasspathElements>
 						</configuration>
 					</execution>

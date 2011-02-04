@@ -1,0 +1,9 @@
+RULE force return null engine
+CLASS JcrSession 
+METHOD getRootNode()
+AT ENTRY
+BIND now = System.nanoTime()
+IF TRUE
+DO traceOpen("tracelog","target/trace-performance")
+   traceln("tracelog","" + now + " " + $* )
+ENDRULE
