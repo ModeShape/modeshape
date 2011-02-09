@@ -25,8 +25,10 @@ package org.modeshape.graph.property.basic;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
@@ -84,13 +86,8 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
     }
 
     private void createNamespaceParentIfNeeded() {
-        try {
-            this.store.getNodeAt(this.parentOfNamespaceNodes);
-        } catch (PathNotFoundException pnfe) {
-            // The node did not already exist - create it!
-            this.store.create(parentOfNamespaceNodes).and();
-            this.store.set(JcrLexicon.PRIMARY_TYPE).on(parentOfNamespaceNodes).to(ModeShapeLexicon.NAMESPACES);
-        }
+        // Create the node if it does not already exist ...
+        this.store.create(this.parentOfNamespaceNodes).ifAbsent().and(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.NAMESPACES).and();
     }
 
     /**
@@ -158,6 +155,22 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
     }
 
     /**
+     * Register a set of namespaces.
+     * 
+     * @param namespaceUrisByPrefix the map of new namespace URIs by their prefix
+     */
+    public void register( Map<String, String> namespaceUrisByPrefix ) {
+        if (namespaceUrisByPrefix == null || namespaceUrisByPrefix.isEmpty()) return;
+        doRegister(namespaceUrisByPrefix);
+        for (Map.Entry<String, String> entry : namespaceUrisByPrefix.entrySet()) {
+            String prefix = entry.getKey().trim();
+            String uri = entry.getValue().trim();
+            if (prefix.length() == 0) continue;
+            this.cache.register(prefix, uri);
+        }
+    }
+
+    /**
      * {@inheritDoc}
      */
     public String register( String prefix,
@@ -166,9 +179,11 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
         namespaceUri = namespaceUri.trim();
         // Register it in the cache first ...
         String previousCachedUriForPrefix = this.cache.register(prefix, namespaceUri);
-        // And register it in the source ...
-        String previousPersistentUriForPrefix = doRegister(prefix, namespaceUri);
-        return previousCachedUriForPrefix != null ? previousPersistentUriForPrefix : previousPersistentUriForPrefix;
+        if (!namespaceUri.equals(previousCachedUriForPrefix)) {
+            // And register it in the source ...
+            return doRegister(Collections.singletonMap(prefix, namespaceUri)).get(prefix);
+        }
+        return previousCachedUriForPrefix;
     }
 
     /**
@@ -258,16 +273,13 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
                     String uri = namespace.getNamespaceUri();
                     Path pathToNamespaceNode = pathFactory.create(parentOfNamespaceNodes, prefix);
                     batch.create(pathToNamespaceNode).with(namespaceProperties).and(uriPropertyName, uri).and();
+                    cache.register(prefix, uri);
                 }
                 batch.execute();
             }
 
         } catch (PathNotFoundException e) {
             // Nothing to read
-        }
-        // Load in the namespaces from the execution context used by the store ...
-        for (Namespace namespace : store.getContext().getNamespaceRegistry().getNamespaces()) {
-            register(namespace.getPrefix(), namespace.getNamespaceUri());
         }
     }
 
@@ -336,70 +348,132 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
         return null;
     }
 
-    protected String doRegister( String prefix,
-                                 String uri ) {
-        assert prefix != null;
-        assert uri != null;
-        prefix = prefix.trim();
-        uri = uri.trim();
-
-        // Empty prefix to namespace mapping is built in
-        if (prefix.length() == 0) {
-            return null;
-        }
+    protected Map<String, String> doRegister( Map<String, String> newUrisByPrefix ) {
+        Map<String, String> previousUrisByNewPrefixes = new HashMap<String, String>();
+        Map<String, String> existingUrisByPrefix = new HashMap<String, String>();
+        Map<String, String> existingPrefixesByUri = new HashMap<String, String>();
 
         // Read the store ...
-        String previousUri = null;
         ValueFactory<String> stringFactory = store.getContext().getValueFactories().getStringFactory();
         PathFactory pathFactory = store.getContext().getValueFactories().getPathFactory();
-        Path pathToNamespaceNode = pathFactory.create(parentOfNamespaceNodes, prefix);
-        try {
-            Subgraph nsGraph = store.getSubgraphOfDepth(2).at(parentOfNamespaceNodes);
-            // Iterate over the existing mappings, looking for one that uses the URI ...
-            Location nsNodeWithPrefix = null;
-            boolean updateNode = true;
-            Set<Location> locationsToRemove = new HashSet<Location>();
-            for (Location nsLocation : nsGraph.getRoot().getChildren()) {
-                Node ns = nsGraph.getNode(nsLocation);
-                String actualPrefix = getPrefixFor(nsLocation.getPath());
-                String actualUri = stringFactory.create(ns.getProperty(uriPropertyName).getFirstValue());
-                if (actualPrefix != null && actualUri != null) {
-                    if (actualPrefix.equals(prefix)) {
-                        nsNodeWithPrefix = nsLocation;
-                        if (actualUri.equals(uri)) {
-                            updateNode = false;
-                            break;
-                        }
-                        previousUri = actualUri;
-                    }
-                    if (actualUri.equals(uri)) {
-                        locationsToRemove.add(ns.getLocation());
-                    }
-                }
+        Subgraph nsGraph = store.getSubgraphOfDepth(2).at(parentOfNamespaceNodes);
+        Graph.Batch batch = store.batch();
+
+        // Iterate over the existing mappings ...
+        for (Location nsLocation : nsGraph.getRoot().getChildren()) {
+            Node ns = nsGraph.getNode(nsLocation);
+            String actualPrefix = getPrefixFor(nsLocation.getPath());
+            String actualUri = stringFactory.create(ns.getProperty(uriPropertyName).getFirstValue());
+            if (actualPrefix != null && actualUri != null) {
+                existingUrisByPrefix.put(actualPrefix, actualUri);
+                existingPrefixesByUri.put(actualUri, actualPrefix);
             }
-            Graph.Batch batch = store.batch();
-            // Remove any other nodes that have the same URI ...
-            for (Location namespaceToRemove : locationsToRemove) {
-                batch.delete(namespaceToRemove).and();
-            }
-            // Now update/create the namespace mapping ...
-            if (nsNodeWithPrefix == null) {
-                // We didn't find an existing node, so we have to create it ...
-                batch.create(pathToNamespaceNode).with(namespaceProperties).and(uriPropertyName, uri).and();
-            } else {
-                if (updateNode) {
-                    // There was already an existing node, so update it ...
-                    batch.set(uriPropertyName).to(uri).on(pathToNamespaceNode).and();
-                }
-            }
-            // Execute all these changes ...
-            batch.execute();
-        } catch (PathNotFoundException e) {
-            // Nothing stored yet ...
-            store.createAt(pathToNamespaceNode).with(namespaceProperties).and(uriPropertyName, uri).getLocation();
         }
-        return previousUri;
+
+        // Go through the new namespaces ...
+        for (Map.Entry<String, String> newNamespaceEntry : newUrisByPrefix.entrySet()) {
+            String newPrefix = newNamespaceEntry.getKey().trim();
+            String newUri = newNamespaceEntry.getValue().trim();
+            // Empty prefix to namespace mapping is built in
+            if (newPrefix.length() == 0) continue;
+            // If the new namespace prefix and/or URI are already used ...
+            String existingUriForNewPrefix = existingUrisByPrefix.get(newPrefix);
+            String existingPrefixForNewUri = existingPrefixesByUri.get(newUri);
+            if (existingUriForNewPrefix == null) {
+                // The new prefix was not used, so add the new namespace node ...
+                Path pathToNamespaceNode = pathFactory.create(parentOfNamespaceNodes, newPrefix);
+                batch.create(pathToNamespaceNode).with(namespaceProperties).and(uriPropertyName, newUri).and();
+                if (existingPrefixForNewUri == null) {
+                    // The new URI was not used, so we don't need to do anything more ...
+                } else if (existingPrefixForNewUri.equals(newPrefix)) {
+                    // The new prefix matched the old prefix, so do nothing ...
+                } else {
+                    // We need to remove the old namespace node ...
+                    Path pathToOldNamespaceNode = pathFactory.create(parentOfNamespaceNodes, existingPrefixForNewUri);
+                    batch.delete(pathToOldNamespaceNode).and();
+                }
+            } else {
+                // The new prefix was used ...
+                if (newUri.equals(existingUriForNewPrefix)) {
+                    // The new prefix matched the old prefix, so do nothing ...
+                } else {
+                    // The old URI for the new prefix was something different ...
+                    Path pathToNamespaceNode = pathFactory.create(parentOfNamespaceNodes, newPrefix);
+                    previousUrisByNewPrefixes.put(newPrefix, existingUriForNewPrefix);
+                    batch.set(uriPropertyName).to(newUri).on(pathToNamespaceNode).and();
+                }
+            }
+        }
+
+        // Execute all these changes ...
+        batch.execute();
+        return previousUrisByNewPrefixes;
     }
+
+    // protected String doRegister( String prefix,
+    // String uri ) {
+    // assert prefix != null;
+    // assert uri != null;
+    // prefix = prefix.trim();
+    // uri = uri.trim();
+    //
+    // // Empty prefix to namespace mapping is built in
+    // if (prefix.length() == 0) {
+    // return null;
+    // }
+    //
+    // // Read the store ...
+    // String previousUri = null;
+    // ValueFactory<String> stringFactory = store.getContext().getValueFactories().getStringFactory();
+    // PathFactory pathFactory = store.getContext().getValueFactories().getPathFactory();
+    // Path pathToNamespaceNode = pathFactory.create(parentOfNamespaceNodes, prefix);
+    // try {
+    // Subgraph nsGraph = store.getSubgraphOfDepth(2).at(parentOfNamespaceNodes);
+    // // Iterate over the existing mappings, looking for one that uses the URI ...
+    // Location nsNodeWithPrefix = null;
+    // boolean updateNode = true;
+    // Set<Location> locationsToRemove = new HashSet<Location>();
+    // for (Location nsLocation : nsGraph.getRoot().getChildren()) {
+    // Node ns = nsGraph.getNode(nsLocation);
+    // String actualPrefix = getPrefixFor(nsLocation.getPath());
+    // String actualUri = stringFactory.create(ns.getProperty(uriPropertyName).getFirstValue());
+    // if (actualPrefix != null && actualUri != null) {
+    // if (actualPrefix.equals(prefix)) {
+    // nsNodeWithPrefix = nsLocation;
+    // if (actualUri.equals(uri)) {
+    // updateNode = false;
+    // break;
+    // }
+    // previousUri = actualUri;
+    // }
+    // if (actualUri.equals(uri)) {
+    // locationsToRemove.add(ns.getLocation());
+    // }
+    // }
+    // }
+    // Graph.Batch batch = store.batch();
+    // // Remove any other nodes that have the same URI ...
+    // for (Location namespaceToRemove : locationsToRemove) {
+    // batch.delete(namespaceToRemove).and();
+    // }
+    // // Now update/create the namespace mapping ...
+    // if (nsNodeWithPrefix == null) {
+    // // We didn't find an existing node, so we have to create it ...
+    // batch.create(pathToNamespaceNode).with(namespaceProperties).and(uriPropertyName, uri).and();
+    // } else {
+    // if (updateNode) {
+    // // There was already an existing node, so update it ...
+    // batch.set(uriPropertyName).to(uri).on(pathToNamespaceNode).and();
+    // }
+    // }
+    // // Execute all these changes ...
+    // batch.execute();
+    // } catch (PathNotFoundException e) {
+    // // Nothing stored yet ...
+    // store.createAt(pathToNamespaceNode).with(namespaceProperties).and(uriPropertyName, uri).getLocation();
+    // }
+    // return previousUri;
+    // }
 
     protected boolean doUnregister( String uri ) {
         // Read the store ...

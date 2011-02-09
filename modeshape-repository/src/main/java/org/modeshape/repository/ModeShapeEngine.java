@@ -40,8 +40,8 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
-import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.common.util.Logger.Level;
+import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.JcrLexicon;
@@ -87,8 +87,8 @@ public class ModeShapeEngine {
     public static final String CONFIGURATION_REPOSITORY_NAME = "dna:configuration";
 
     protected final ModeShapeConfiguration.ConfigurationDefinition configuration;
-    private final ConfigurationScanner scanner;
-    private final Problems problems;
+    protected final ConfigurationScanner scanner;
+    protected final Problems problems;
     protected final ExecutionContext context;
 
     private final RepositoryService repositoryService;
@@ -115,7 +115,7 @@ public class ModeShapeEngine {
 
         // And set up the scanner ...
         this.configuration = configuration;
-        this.scanner = new ConfigurationScanner(this.problems, this.context, this.configuration);
+        this.scanner = newConfigurationScanner(this.problems, this.context, this.configuration);
 
         // Add the mime type detectors in the configuration ...
         for (MimeTypeDetectorConfig config : scanner.getMimeTypeDetectors()) {
@@ -152,6 +152,12 @@ public class ModeShapeEngine {
         }
 
         // The rest of the instantiation/configuration will be done in start()
+    }
+
+    protected ConfigurationScanner newConfigurationScanner( Problems problems,
+                                                            ExecutionContext context,
+                                                            ModeShapeConfiguration.ConfigurationDefinition configuration ) {
+        return new ConfigurationScanner(problems, context, configuration);
     }
 
     protected Logger logger() {
@@ -336,7 +342,7 @@ public class ModeShapeEngine {
         RepositoryContext configContext = new SimpleRepositoryContext(context, clusteringService, null);
         configuration.getRepositorySource().initialize(configContext);
         try {
-            checkConfiguration(configuration.graph().getSubgraphOfDepth(10).at(configuration.getPath()));
+            checkConfiguration(getConfigurationSubgraph(false));
         } catch (RuntimeException e) {
             problems.addError(e, RepositoryI18n.errorVerifyingConfiguration, e.getLocalizedMessage());
         }
@@ -442,17 +448,22 @@ public class ModeShapeEngine {
         return true;
     }
 
+    protected Graph getConfigurationGraph() {
+        Graph graph = Graph.create(configuration.getRepositorySource(), context);
+        if (configuration.getWorkspace() != null) {
+            graph.useWorkspace(configuration.getWorkspace());
+        }
+        return graph;
+    }
+
     /**
-     * Get a graph to the configuration content.
+     * Get a subgraph containing the configuration content.
      * 
+     * @param refresh true if the subgraph should be re-read, or false if the last cached version can be used
      * @return a graph to the configuration content
      */
-    protected Graph getConfigurationGraph() {
-        Graph result = Graph.create(configuration.getRepositorySource(), context);
-        if (configuration.getWorkspace() != null) {
-            result.useWorkspace(configuration.getWorkspace());
-        }
-        return result;
+    protected Subgraph getConfigurationSubgraph( boolean refresh ) {
+        return scanner.subgraph(refresh);
     }
 
     /**
@@ -469,6 +480,7 @@ public class ModeShapeEngine {
         private final Problems problems;
         private final ExecutionContext context;
         private final ModeShapeConfiguration.ConfigurationDefinition configurationRepository;
+        private Subgraph cachedSubgraph;
 
         protected ConfigurationScanner( Problems problems,
                                         ExecutionContext context,
@@ -478,14 +490,26 @@ public class ModeShapeEngine {
             this.configurationRepository = configurationRepository;
         }
 
+        protected Subgraph subgraph( boolean refresh ) {
+            if (cachedSubgraph == null || refresh) {
+                Graph graph = getConfigurationGraph();
+                Path configRootPath = configurationRepository.getPath();
+                cachedSubgraph = graph.getSubgraphOfDepth(getMaxDepth()).at(configRootPath);
+            }
+            return cachedSubgraph;
+        }
+
+        protected int getMaxDepth() {
+            return 10;
+        }
+
+        protected void refresh() {
+            this.cachedSubgraph = null;
+        }
+
         public List<MimeTypeDetectorConfig> getMimeTypeDetectors() {
             List<MimeTypeDetectorConfig> detectors = new ArrayList<MimeTypeDetectorConfig>();
-            Graph graph = Graph.create(configurationRepository.getRepositorySource(), context);
-            Path pathToSequencersNode = context.getValueFactories().getPathFactory().create(configurationRepository.getPath(),
-                                                                                            ModeShapeLexicon.MIME_TYPE_DETECTORS);
             try {
-                Subgraph subgraph = graph.getSubgraphOfDepth(2).at(pathToSequencersNode);
-
                 Set<Name> skipProperties = new HashSet<Name>();
                 skipProperties.add(ModeShapeLexicon.READABLE_NAME);
                 skipProperties.add(ModeShapeLexicon.DESCRIPTION);
@@ -497,7 +521,13 @@ public class ModeShapeEngine {
                 skipNamespaces.add(JcrNtLexicon.Namespace.URI);
                 skipNamespaces.add(JcrMixLexicon.Namespace.URI);
 
-                for (Location detectorLocation : subgraph.getRoot().getChildren()) {
+                Subgraph subgraph = subgraph(false);
+                Node detectorsNode = subgraph.getNode(ModeShapeLexicon.MIME_TYPE_DETECTORS);
+                if (detectorsNode == null) {
+                    // no detectors defined ...
+                    return detectors;
+                }
+                for (Location detectorLocation : detectorsNode.getChildren()) {
                     Node node = subgraph.getNode(detectorLocation);
                     String name = stringValueOf(node, ModeShapeLexicon.READABLE_NAME);
                     if (name == null) name = stringValueOf(node);
@@ -525,12 +555,7 @@ public class ModeShapeEngine {
         }
 
         public ClusteringConfig getClusteringConfiguration() {
-            Graph graph = Graph.create(configurationRepository.getRepositorySource(), context);
-            Path pathToClusteringNode = context.getValueFactories().getPathFactory().create(configurationRepository.getPath(),
-                                                                                            ModeShapeLexicon.CLUSTERING);
             try {
-                Subgraph subgraph = graph.getSubgraphOfDepth(2).at(pathToClusteringNode);
-
                 Set<Name> skipProperties = new HashSet<Name>();
                 skipProperties.add(ModeShapeLexicon.DESCRIPTION);
                 skipProperties.add(ModeShapeLexicon.CLASSNAME);
@@ -540,33 +565,36 @@ public class ModeShapeEngine {
                 skipNamespaces.add(JcrNtLexicon.Namespace.URI);
                 skipNamespaces.add(JcrMixLexicon.Namespace.URI);
 
-                Node clusterNode = subgraph.getRoot();
-                // String name = stringValueOf(clusterNode);
-                String clusterName = stringValueOf(clusterNode, ModeShapeLexicon.CLUSTER_NAME);
-                String desc = stringValueOf(clusterNode, ModeShapeLexicon.DESCRIPTION);
-                String classname = stringValueOf(clusterNode, ModeShapeLexicon.CLASSNAME);
-                String[] classpath = stringValuesOf(clusterNode, ModeShapeLexicon.CLASSPATH);
-                if (classname == null || classname.trim().length() == 0) {
-                    classname = CLUSTERED_OBSERVATION_BUS_CLASSNAME;
-                }
-                if (clusterName == null || clusterName.trim().length() == 0) {
-                    logger().warn(RepositoryI18n.clusteringConfigurationRequiresClusterName);
-                    problems.addWarning(RepositoryI18n.clusteringConfigurationRequiresClusterName);
-                    return null; // Signifies no clustering
-                }
-
-                Map<String, Object> properties = new HashMap<String, Object>();
-                for (Property property : clusterNode.getProperties()) {
-                    Name propertyName = property.getName();
-                    if (skipNamespaces.contains(propertyName.getNamespaceUri())) continue;
-                    if (skipProperties.contains(propertyName)) continue;
-                    if (property.isSingle()) {
-                        properties.put(propertyName.getLocalName(), property.getFirstValue());
-                    } else {
-                        properties.put(propertyName.getLocalName(), property.getValuesAsArray());
+                Subgraph subgraph = subgraph(false);
+                Node clusterNode = subgraph.getNode(ModeShapeLexicon.CLUSTERING);
+                if (clusterNode != null) {
+                    // String name = stringValueOf(clusterNode);
+                    String clusterName = stringValueOf(clusterNode, ModeShapeLexicon.CLUSTER_NAME);
+                    String desc = stringValueOf(clusterNode, ModeShapeLexicon.DESCRIPTION);
+                    String classname = stringValueOf(clusterNode, ModeShapeLexicon.CLASSNAME);
+                    String[] classpath = stringValuesOf(clusterNode, ModeShapeLexicon.CLASSPATH);
+                    if (classname == null || classname.trim().length() == 0) {
+                        classname = CLUSTERED_OBSERVATION_BUS_CLASSNAME;
                     }
+                    if (clusterName == null || clusterName.trim().length() == 0) {
+                        logger().warn(RepositoryI18n.clusteringConfigurationRequiresClusterName);
+                        problems.addWarning(RepositoryI18n.clusteringConfigurationRequiresClusterName);
+                        return null; // Signifies no clustering
+                    }
+
+                    Map<String, Object> properties = new HashMap<String, Object>();
+                    for (Property property : clusterNode.getProperties()) {
+                        Name propertyName = property.getName();
+                        if (skipNamespaces.contains(propertyName.getNamespaceUri())) continue;
+                        if (skipProperties.contains(propertyName)) continue;
+                        if (property.isSingle()) {
+                            properties.put(propertyName.getLocalName(), property.getFirstValue());
+                        } else {
+                            properties.put(propertyName.getLocalName(), property.getValuesAsArray());
+                        }
+                    }
+                    return new ClusteringConfig(clusterName, desc, properties, classname, classpath);
                 }
-                return new ClusteringConfig(clusterName, desc, properties, classname, classpath);
             } catch (PathNotFoundException e) {
                 // no detectors registered ...
             }
@@ -575,12 +603,7 @@ public class ModeShapeEngine {
 
         public List<SequencerConfig> getSequencingConfigurations() {
             List<SequencerConfig> configs = new ArrayList<SequencerConfig>();
-            Graph graph = Graph.create(configurationRepository.getRepositorySource(), context);
-            Path pathToSequencersNode = context.getValueFactories().getPathFactory().create(configurationRepository.getPath(),
-                                                                                            ModeShapeLexicon.SEQUENCERS);
             try {
-                Subgraph subgraph = graph.getSubgraphOfDepth(2).at(pathToSequencersNode);
-
                 Set<Name> skipProperties = new HashSet<Name>();
                 skipProperties.add(ModeShapeLexicon.READABLE_NAME);
                 skipProperties.add(ModeShapeLexicon.DESCRIPTION);
@@ -592,7 +615,13 @@ public class ModeShapeEngine {
                 skipNamespaces.add(JcrNtLexicon.Namespace.URI);
                 skipNamespaces.add(JcrMixLexicon.Namespace.URI);
 
-                for (Location sequencerLocation : subgraph.getRoot().getChildren()) {
+                Subgraph subgraph = subgraph(false);
+                Node sequencersNode = subgraph.getNode(ModeShapeLexicon.SEQUENCERS);
+                if (sequencersNode == null) {
+                    // no sequencers defined ...
+                    return configs;
+                }
+                for (Location sequencerLocation : sequencersNode.getChildren()) {
                     Node sequencerNode = subgraph.getNode(sequencerLocation);
                     String name = stringValueOf(sequencerNode, ModeShapeLexicon.READABLE_NAME);
                     if (name == null) name = stringValueOf(sequencerNode);

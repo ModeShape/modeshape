@@ -43,9 +43,9 @@ import javax.jcr.RepositoryException;
 import net.jcip.annotations.ThreadSafe;
 import org.modeshape.cnd.CndImporter;
 import org.modeshape.common.collection.Problem;
+import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
-import org.modeshape.common.collection.Problem.Status;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.Logger;
@@ -310,14 +310,16 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         PathFactory pathFactory = getExecutionContext().getValueFactories().getPathFactory();
         Path repositoriesPath = pathFactory.create(configuration.getPath(), ModeShapeLexicon.REPOSITORIES);
         Path repositoryPath = pathFactory.create(repositoriesPath, repositoryName);
-        Graph configuration = getConfigurationGraph();
-        Subgraph subgraph = configuration.getSubgraphOfDepth(6).at(repositoryPath);
+        Name repoName = getExecutionContext().getValueFactories().getNameFactory().create(repositoryName);
+        Graph configuration = null;
+        Subgraph subgraph = getConfigurationSubgraph(false);
 
         // Read the options ...
-        Node optionsNode = subgraph.getNode(ModeShapeLexicon.OPTIONS);
+        Path optionsPath = pathFactory.createRelativePath(ModeShapeLexicon.REPOSITORIES, repoName, ModeShapeLexicon.OPTIONS);
+        Node optionsNode = subgraph.getNode(optionsPath);
         if (optionsNode != null) {
             for (Location optionLocation : optionsNode.getChildren()) {
-                Node optionNode = configuration.getNodeAt(optionLocation);
+                Node optionNode = subgraph.getNode(optionLocation);
                 Path.Segment segment = optionLocation.getPath().getLastSegment();
                 Property valueProperty = optionNode.getProperty(ModeShapeLexicon.VALUE);
                 if (valueProperty == null) {
@@ -339,10 +341,13 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         }
 
         // Read the descriptors ...
-        Node descriptorsNode = subgraph.getNode(ModeShapeLexicon.DESCRIPTORS);
+        Path descriptorsPath = pathFactory.createRelativePath(ModeShapeLexicon.REPOSITORIES,
+                                                              repoName,
+                                                              ModeShapeLexicon.DESCRIPTORS);
+        Node descriptorsNode = subgraph.getNode(descriptorsPath);
         if (descriptorsNode != null) {
             for (Location descriptorLocation : descriptorsNode.getChildren()) {
-                Node optionNode = configuration.getNodeAt(descriptorLocation);
+                Node optionNode = subgraph.getNode(descriptorLocation);
                 Path.Segment segment = descriptorLocation.getPath().getLastSegment();
                 Property valueProperty = optionNode.getProperty(ModeShapeLexicon.VALUE);
                 if (valueProperty == null) continue;
@@ -352,17 +357,27 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
 
         // Read the namespaces ...
         ExecutionContext context = getExecutionContext();
-        Node namespacesNode = subgraph.getNode(ModeShapeLexicon.NAMESPACES);
+        Path namespacesPath = pathFactory.createRelativePath(ModeShapeLexicon.REPOSITORIES, repoName, ModeShapeLexicon.NAMESPACES);
+        Node namespacesNode = subgraph.getNode(namespacesPath);
         descriptors.put(org.modeshape.jcr.api.Repository.REPOSITORY_NAME, repositoryName);
         if (namespacesNode != null) {
+            configuration = getConfigurationGraph();
             GraphNamespaceRegistry registry = new GraphNamespaceRegistry(configuration, namespacesNode.getLocation().getPath(),
                                                                          ModeShapeLexicon.URI);
             context = context.with(registry);
         }
 
         // Get the name of the source ...
-        Property property = subgraph.getRoot().getProperty(ModeShapeLexicon.SOURCE_NAME);
+        Path repoPath = pathFactory.createRelativePath(ModeShapeLexicon.REPOSITORIES, repoName);
+        Node repoNode = subgraph.getNode(repoPath);
+        if (repoNode == null) {
+            // There is no repository with the supplied name ...
+            throw new PathNotFoundException(Location.create(repoPath), repositoriesPath,
+                                            JcrI18n.repositoryDoesNotExist.text(repoName));
+        }
+        Property property = repoNode.getProperty(ModeShapeLexicon.SOURCE_NAME);
         if (property == null || property.isEmpty()) {
+            if (configuration == null) configuration = getConfigurationGraph();
             String readableName = readable(ModeShapeLexicon.SOURCE_NAME);
             String readablePath = readable(subgraph.getLocation());
             String msg = JcrI18n.propertyNotFoundOnNode.text(readableName, readablePath, configuration.getCurrentWorkspaceName());
@@ -378,13 +393,14 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
 
         // Read the initial content ...
         String initialContentForNewWorkspaces = null;
-        for (Location initialContentLocation : subgraph.getRoot().getChildren(ModeShapeLexicon.INITIAL_CONTENT)) {
+        for (Location initialContentLocation : repoNode.getChildren(ModeShapeLexicon.INITIAL_CONTENT)) {
             Node initialContent = subgraph.getNode(initialContentLocation);
             if (initialContent == null) continue;
 
             // Determine where to load the initial content from ...
             Property contentReference = initialContent.getProperty(ModeShapeLexicon.CONTENT);
             if (contentReference == null || contentReference.isEmpty()) {
+                if (configuration == null) configuration = getConfigurationGraph();
                 String readableName = readable(ModeShapeLexicon.CONTENT);
                 String readablePath = readable(initialContentLocation);
                 String msg = JcrI18n.propertyNotFoundOnNode.text(readableName,
@@ -397,6 +413,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
             // Determine which workspaces this should apply to ...
             Property workspaces = initialContent.getProperty(ModeShapeLexicon.WORKSPACES);
             if (workspaces == null || workspaces.isEmpty()) {
+                if (configuration == null) configuration = getConfigurationGraph();
                 String readableName = readable(ModeShapeLexicon.WORKSPACES);
                 String readablePath = readable(initialContentLocation);
                 String msg = JcrI18n.propertyNotFoundOnNode.text(readableName,
@@ -437,9 +454,11 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                                                      options, initialContentForNewWorkspaces);
 
         // Register all the the node types ...
-        Node nodeTypesNode = subgraph.getNode(JcrLexicon.NODE_TYPES);
+        Path nodeTypesPath = pathFactory.createRelativePath(ModeShapeLexicon.REPOSITORIES, repoName, JcrLexicon.NODE_TYPES);
+        Node nodeTypesNode = subgraph.getNode(nodeTypesPath);
         if (nodeTypesNode != null) {
             boolean needToRefreshSubgraph = false;
+            if (configuration == null) configuration = getConfigurationGraph();
 
             // Expand any references to a CND file
             Property resourceProperty = nodeTypesNode.getProperty(ModeShapeLexicon.RESOURCE);
@@ -452,8 +471,8 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
                         Graph.Batch batch = configuration.batch();
                         GraphBatchDestination destination = new GraphBatchDestination(batch);
 
-                        Path nodeTypesPath = pathFactory.create(repositoryPath, JcrLexicon.NODE_TYPES);
-                        CndImporter importer = new CndImporter(destination, nodeTypesPath, true);
+                        Path nodeTypesAbsPath = pathFactory.create(repositoryPath, JcrLexicon.NODE_TYPES);
+                        CndImporter importer = new CndImporter(destination, nodeTypesAbsPath, true);
                         InputStream is = IoUtil.getResourceAsStream(resource, classLoader, getClass());
                         Problems cndProblems = new SimpleProblems();
                         if (is == null) {
@@ -538,8 +557,8 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         descriptors.put(Repository.SPEC_VERSION_DESC, valueFor(factories, "2.0"));
 
         if (!descriptors.containsKey(Repository.REP_NAME_DESC)) {
-            descriptors.put(Repository.REP_NAME_DESC, valueFor(factories,
-                                                               JcrRepository.getBundleProperty(Repository.REP_NAME_DESC, true)));
+            descriptors.put(Repository.REP_NAME_DESC,
+                            valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_NAME_DESC, true)));
         }
         if (!descriptors.containsKey(Repository.REP_VENDOR_DESC)) {
             descriptors.put(Repository.REP_VENDOR_DESC,
