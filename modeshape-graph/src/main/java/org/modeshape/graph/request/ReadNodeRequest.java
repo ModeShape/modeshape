@@ -321,7 +321,8 @@ public class ReadNodeRequest extends CacheableRequest implements Iterable<Locati
      */
     @Override
     public String toString() {
-        return "read node at " + at() + " in the \"" + workspaceName + "\" workspace";
+        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
+        return "read   " + printable(at()) + " (in " + workspaceName + " workspace)";
     }
 
     @Override

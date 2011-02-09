@@ -255,7 +255,8 @@ public class ReadAllPropertiesRequest extends CacheableRequest implements Iterab
      */
     @Override
     public String toString() {
-        return "read properties of " + at() + " in the \"" + workspaceName + "\" workspace";
+        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
+        return "read   " + printable(at()) + " (in " + workspaceName + " workspace) all properties";
     }
 
     @Override

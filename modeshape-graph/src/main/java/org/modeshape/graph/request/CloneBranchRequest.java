@@ -49,8 +49,8 @@ public class CloneBranchRequest extends ChangeRequest {
      * @param exactSegmentForClone the exact {@link Path.Segment segment} at which the cloned tree should be rooted.
      * @param removeExisting whether any nodes in the intoWorkspace with the same UUIDs as a node in the source branch should be
      *        removed (if true) or a {@link UuidAlreadyExistsException} should be thrown.
-     * @throws IllegalArgumentException if any of the parameters are null except for {@code nameForClone} or {@code
-     *         exactSegmentForClone}. Exactly one of {@code nameForClone} and {@code exactSegmentForClone} must be null.
+     * @throws IllegalArgumentException if any of the parameters are null except for {@code nameForClone} or
+     *         {@code exactSegmentForClone}. Exactly one of {@code nameForClone} and {@code exactSegmentForClone} must be null.
      */
     public CloneBranchRequest( Location from,
                                String fromWorkspace,
@@ -312,11 +312,11 @@ public class CloneBranchRequest extends ChangeRequest {
     @Override
     public String toString() {
         if (desiredName != null) {
-            return "clone branch " + from() + " in the \"" + fromWorkspace + "\" workspace into " + into() + " with name "
-                   + desiredName + " in the \"" + intoWorkspace + "\" workspace";
+            return "clone   " + printable(from()) + " (in '" + fromWorkspace + "' workspace) into " + printable(into())
+                   + " with name '" + desiredName + "' (in '" + intoWorkspace + "' workspace)";
         }
-        return "clone branch " + from() + " in the \"" + fromWorkspace + "\" workspace into " + into() + " in the \""
-               + intoWorkspace + "\" workspace as child " + desiredSegment();
+        return "clone   " + printable(from()) + " (in '" + fromWorkspace + "' workspace) into " + printable(into()) + " (in '"
+               + intoWorkspace + "' workspace) as child '" + desiredSegment() + "'";
     }
 
     /**

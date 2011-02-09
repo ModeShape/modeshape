@@ -196,7 +196,8 @@ public class ReadPropertyRequest extends CacheableRequest {
      */
     @Override
     public String toString() {
-        return "read " + named() + " property on " + on() + " in the \"" + workspaceName + "\" workspace";
+        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
+        return "read   " + printable(on()) + " (in " + workspaceName + " workspace) the property '" + named() + "'";
     }
 
     @Override

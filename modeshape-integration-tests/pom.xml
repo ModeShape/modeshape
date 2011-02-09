@@ -314,12 +314,6 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.byteman</groupId>
-            <artifactId>byteman-submit</artifactId>
-            <version>1.5.1</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.byteman</groupId>
             <artifactId>byteman</artifactId>
             <version>1.5.1</version>
             <scope>test</scope>
@@ -364,16 +358,24 @@
 							<goal>test</goal>
 						</goals>
 						<configuration>
-                            <systemProperties>
-                                <property>
-                                    <name>org.jboss.byteman.contrib.bmunit.verbose</name>
-                                    <value>false</value>
-                                </property>
-                            </systemProperties>
-                            <skip>false</skip>
-                            <additionalClasspathElements>
-                                <additionalClasspathElement>${env.JAVA_HOME}/lib/tools.jar</additionalClasspathElement>
-                            </additionalClasspathElements>
+	             <systemProperties>
+	                 <!--property>
+	                     <name>org.jboss.byteman.verbose</name>
+	                     <value>true</value>
+	                 </property-->
+	                 <property>
+	                     <name>org.jboss.byteman.contrib.bmunit.verbose</name>
+	                     <value>true</value>
+	                 </property>
+	                 <property>
+	                     <name>org.modeshape.jcr.profile.filename</name>
+	                     <value>target/byteman/modeshape-profile.log</value>
+	                 </property>
+	             </systemProperties>
+	             <skip>false</skip>
+	             <additionalClasspathElements>
+	                 <additionalClasspathElement>${env.JAVA_HOME}/lib/tools.jar</additionalClasspathElement>
+	             </additionalClasspathElements>
 						</configuration>
 					</execution>
 				</executions>

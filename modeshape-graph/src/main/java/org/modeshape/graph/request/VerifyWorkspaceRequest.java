@@ -152,7 +152,8 @@ public final class VerifyWorkspaceRequest extends Request {
      */
     @Override
     public String toString() {
-        return "verify workspace \"" + workspaceName() + "\"";
+        String workspaceName = this.workspaceName != null ? "'" + workspaceName() + "'" : "default";
+        return "verify workspace '" + workspaceName + "'";
     }
 
     @Override

@@ -321,17 +321,17 @@ public class CopyBranchRequest extends ChangeRequest {
     public String toString() {
         if (fromWorkspace.equals(intoWorkspace)) {
             if (desiredNameForCopy != null) {
-                return "copy branch " + from() + " in the \"" + fromWorkspace + "\" workspace into " + into() + " with name "
-                       + desiredNameForCopy;
+                return "copy   " + printable(from()) + " (in '" + fromWorkspace + "' workspace) into " + printable(into())
+                       + "' with name '" + desiredNameForCopy + "'";
             }
-            return "copy branch " + from() + " in the \"" + fromWorkspace + "\" workspace into " + into();
+            return "copy   " + printable(from()) + " (in '" + fromWorkspace + "' workspace) into " + printable(into());
         }
         if (desiredNameForCopy != null) {
-            return "copy branch " + from() + " in the \"" + fromWorkspace + "\" workspace into " + into() + " with name "
-                   + desiredNameForCopy + " in the \"" + intoWorkspace + "\" workspace";
+            return "copy   " + printable(from()) + " (in '" + fromWorkspace + "' workspace) into " + printable(into())
+                   + " with name '" + desiredNameForCopy + "' (in '" + intoWorkspace + "' workspace)";
         }
-        return "copy branch " + from() + " in the \"" + fromWorkspace + "\" workspace into " + into() + " in the \""
-               + intoWorkspace + "\" workspace";
+        return "copy   " + printable(from()) + " (in '" + fromWorkspace + "' workspace) into " + printable(into()) + " (in '"
+               + intoWorkspace + "' workspace)";
     }
 
     /**

@@ -226,8 +226,9 @@ public class SetPropertyRequest extends ChangeRequest implements PropertyChangeR
     @Override
     public String toString() {
         Object[] values = property().getValuesAsArray();
-        return "set property " + property().getName() + " on " + on() + " in the \"" + workspaceName + "\" workspace to "
-               + (values == null ? "null" : Arrays.asList(values).toString());
+        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
+        return "set    " + printable(on()) + " (in " + workspaceName + " workspace) the property '" + property().getName()
+               + "' to " + (values == null ? "null" : Arrays.asList(values).toString());
     }
 
     /**

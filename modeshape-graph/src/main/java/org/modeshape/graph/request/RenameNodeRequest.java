@@ -230,7 +230,8 @@ public class RenameNodeRequest extends ChangeRequest {
      */
     @Override
     public String toString() {
-        return "rename node at " + at() + " in the \"" + workspaceName + "\" workspace to " + toName();
+        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
+        return "rename " + printable(at()) + "' (in " + workspaceName + " workspace) to '" + toName() + "'";
     }
 
     /**

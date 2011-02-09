@@ -232,6 +232,33 @@ public class UpdateValuesRequest extends ChangeRequest implements PropertyChange
         return request;
     }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("update ").append(printable(on())).append(" (in ");
+        if (workspaceName != null) {
+            sb.append('\'').append(workspaceName).append('\'');
+        } else {
+            sb.append("default");
+        }
+        sb.append(" workspace) the property '").append(property()).append("' with ");
+        if (addedValues != null && !addedValues.isEmpty()) {
+            sb.append("added values").append(addedValues);
+            if (removedValues != null && !removedValues.isEmpty()) {
+                sb.append(" and ");
+            }
+        }
+        if (removedValues != null && !removedValues.isEmpty()) {
+            sb.append("removed values").append(removedValues);
+        }
+        return sb.toString();
+    }
+
     @Override
     public RequestType getType() {
         return RequestType.UPDATE_VALUES;

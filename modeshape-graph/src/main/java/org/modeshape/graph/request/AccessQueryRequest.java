@@ -202,8 +202,8 @@ public class AccessQueryRequest extends SearchRequest {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("query the \"");
-        sb.append(workspaceName).append("\" workspace: SELECT ");
+        StringBuilder sb = new StringBuilder("query '");
+        sb.append(workspaceName).append("' workspace: SELECT ");
         boolean first = true;
         for (Column column : resultColumns().getColumns()) {
             if (first) first = false;

@@ -1,9 +1,1447 @@
-RULE force return null engine
-CLASS JcrSession 
-METHOD getRootNode()
-AT ENTRY
-BIND now = System.nanoTime()
+# *****************************************************************************************************************
+# Rules for implementations of RepositoryConnection
+# *****************************************************************************************************************
+#RULE trace on enter for all implementations of the RepositoryConnection interface
+#INTERFACE ^org.modeshape.graph.connector.RepositoryConnection
+#METHOD execute
+#HELPER org.modeshape.jcr.Profiler
+#AT ENTRY
+#IF TRUE
+#DO enterMethod("execute",$*)
+#ENDRULE
+
+RULE trace In-Memory repository connector 'start transaction'
+CLASS org.modeshape.graph.connector.inmemory.InMemoryTransaction
+METHOD <init>
+HELPER org.modeshape.jcr.Profiler
 IF TRUE
-DO traceOpen("tracelog","target/trace-performance")
-   traceln("tracelog","" + now + " " + $* )
+DO trace("START")
 ENDRULE
+
+RULE trace In-Memory repository connector 'commit'
+CLASS org.modeshape.graph.connector.inmemory.InMemoryTransaction
+METHOD commit
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("COMMIT")
+ENDRULE
+
+RULE trace In-Memory repository connector 'rollback'
+CLASS org.modeshape.graph.connector.inmemory.InMemoryTransaction
+METHOD rollback
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("ROLLBACK")
+ENDRULE
+
+RULE trace processing VerifyWorkspaceRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(VerifyWorkspaceRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("READ  " + $1)
+ENDRULE
+
+RULE trace processing GetWorkspaceRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(GetWorkspaceRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("READ  " + $1)
+ENDRULE
+
+RULE trace processing CreateWorkspaceRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(CreateWorkspaceRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing CloneBranchRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(CloneBranchRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing CloneWorkspaceRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(CloneWorkspaceRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing DestroyWorkspaceRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(DestroyWorkspaceRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing CopyBranchRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(CopyBranchRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing CreateNodeRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(CreateNodeRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing DeleteBranchRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(DeleteBranchRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing DeleteChildrenRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(DeleteChildrenRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing MoveBranchRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(MoveBranchRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing ReadAllChildrenRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(ReadAllChildrenRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("READ  " + $1)
+ENDRULE
+
+RULE trace processing ReadBlockOfChildrenRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(ReadBlockOfChildrenRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("READ  " + $1)
+ENDRULE
+
+RULE trace processing ReadNextBlockOfChildrenRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(ReadNextBlockOfChildrenRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("READ  " + $1)
+ENDRULE
+
+RULE trace processing ReadBranchRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(ReadBranchRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("READ  " + $1)
+ENDRULE
+
+RULE trace processing ReadAllPropertiesRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(ReadAllPropertiesRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("READ  " + $1)
+ENDRULE
+
+RULE trace processing ReadNodeRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(ReadNodeRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("READ  " + $1)
+ENDRULE
+
+RULE trace processing ReadPropertyRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(ReadPropertyRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("READ  " + $1)
+ENDRULE
+
+RULE trace processing VerifyNodeExistsRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(VerifyNodeExistsRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("READ  " + $1)
+ENDRULE
+
+RULE trace processing RemovePropertyRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(RemovePropertyRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing SetPropertyRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(SetPropertyRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing UpdatePropertiesRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(UpdatePropertiesRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing UpdateValuesRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(UpdateValuesRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing RenameNodeRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(RenameNodeRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing LockBranchRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(LockBranchRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing UnlockBranchRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(UnlockBranchRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+RULE trace processing AccessQueryRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(AccessQueryRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("READ  " + $1)
+ENDRULE
+
+RULE trace processing FullTextSearchRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(FullTextSearchRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("READ  " + $1)
+ENDRULE
+
+RULE trace processing CollectGarbageRequest
+CLASS ^org.modeshape.graph.connector.base.Processor
+METHOD process(CollectGarbageRequest)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO trace("WRITE " + $1)
+ENDRULE
+
+
+
+# *****************************************************************************************************************
+# Rules for public javax.jcr.Session methods in org.modeshape.jcr.JcrSession
+# *****************************************************************************************************************
+RULE trace on enter for org.modeshape.jcr.JcrSession.getProperty(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getProperty(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getProperty",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getProperty(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getProperty(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getProperty",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.checkPermission(java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD checkPermission(java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("checkPermission",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.checkPermission(java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD checkPermission(java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("checkPermission",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.save()
+CLASS org.modeshape.jcr.JcrSession
+METHOD save()
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("save",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.save()
+CLASS org.modeshape.jcr.JcrSession
+METHOD save()
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("save",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.getAttribute(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getAttribute(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getAttribute",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getAttribute(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getAttribute(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getAttribute",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.refresh(boolean)
+CLASS org.modeshape.jcr.JcrSession
+METHOD refresh(boolean)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("refresh",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.refresh(boolean)
+CLASS org.modeshape.jcr.JcrSession
+METHOD refresh(boolean)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("refresh",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.getRootNode()
+CLASS org.modeshape.jcr.JcrSession
+METHOD getRootNode()
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getRootNode",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getRootNode()
+CLASS org.modeshape.jcr.JcrSession
+METHOD getRootNode()
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getRootNode",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.getNode(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getNode(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getNode",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getNode(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getNode(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getNode",$*)
+ENDRULE
+
+
+# RULE trace on enter for org.modeshape.jcr.JcrSession.isLive()
+# CLASS org.modeshape.jcr.JcrSession
+# METHOD isLive()
+# HELPER org.modeshape.jcr.Profiler
+# AT ENTRY
+# IF TRUE
+# DO enterMethod("isLive",$*)
+# ENDRULE
+
+# RULE trace on exit for org.modeshape.jcr.JcrSession.isLive()
+# CLASS org.modeshape.jcr.JcrSession
+# METHOD isLive()
+# HELPER org.modeshape.jcr.Profiler
+# AT EXIT
+# IF TRUE
+# DO exitMethod("isLive",$*)
+# ENDRULE
+
+
+# RULE trace on enter for org.modeshape.jcr.JcrSession.getWorkspace()
+# CLASS org.modeshape.jcr.JcrSession
+# METHOD getWorkspace()
+# HELPER org.modeshape.jcr.Profiler
+# AT ENTRY
+# IF TRUE
+# DO enterMethod("getWorkspace",$*)
+# ENDRULE
+
+# RULE trace on exit for org.modeshape.jcr.JcrSession.getWorkspace()
+# CLASS org.modeshape.jcr.JcrSession
+# METHOD getWorkspace()
+# HELPER org.modeshape.jcr.Profiler
+# AT EXIT
+# IF TRUE
+# DO exitMethod("getWorkspace",$*)
+# ENDRULE
+
+
+# RULE trace on enter for org.modeshape.jcr.JcrSession.getRepository()
+# CLASS org.modeshape.jcr.JcrSession
+# METHOD getRepository()
+# HELPER org.modeshape.jcr.Profiler
+# AT ENTRY
+# IF TRUE
+# DO enterMethod("getRepository",$*)
+# ENDRULE
+
+# RULE trace on exit for org.modeshape.jcr.JcrSession.getRepository()
+# CLASS org.modeshape.jcr.JcrSession
+# METHOD getRepository()
+# HELPER org.modeshape.jcr.Profiler
+# AT EXIT
+# IF TRUE
+# DO exitMethod("getRepository",$*)
+# ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.getAttributeNames()
+CLASS org.modeshape.jcr.JcrSession
+METHOD getAttributeNames()
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getAttributeNames",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getAttributeNames()
+CLASS org.modeshape.jcr.JcrSession
+METHOD getAttributeNames()
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getAttributeNames",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.getNamespacePrefix(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getNamespacePrefix(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getNamespacePrefix",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getNamespacePrefix(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getNamespacePrefix(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getNamespacePrefix",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.getNamespacePrefixes()
+CLASS org.modeshape.jcr.JcrSession
+METHOD getNamespacePrefixes()
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getNamespacePrefixes",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getNamespacePrefixes()
+CLASS org.modeshape.jcr.JcrSession
+METHOD getNamespacePrefixes()
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getNamespacePrefixes",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.getNamespaceURI(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getNamespaceURI(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getNamespaceURI",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getNamespaceURI(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getNamespaceURI(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getNamespaceURI",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.setNamespacePrefix(java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD setNamespacePrefix(java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("setNamespacePrefix",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.setNamespacePrefix(java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD setNamespacePrefix(java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("setNamespacePrefix",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.addLockToken(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD addLockToken(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("addLockToken",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.addLockToken(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD addLockToken(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("addLockToken",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.hasPermission(java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD hasPermission(java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("hasPermission",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.hasPermission(java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD hasPermission(java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("hasPermission",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.hasCapability(java.lang.String,java.lang.Object,java.lang.Object[])
+CLASS org.modeshape.jcr.JcrSession
+METHOD hasCapability(java.lang.String,java.lang.Object,java.lang.Object[])
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("hasCapability",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.hasCapability(java.lang.String,java.lang.Object,java.lang.Object[])
+CLASS org.modeshape.jcr.JcrSession
+METHOD hasCapability(java.lang.String,java.lang.Object,java.lang.Object[])
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("hasCapability",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.exportDocumentView(java.lang.String,java.io.OutputStream,boolean,boolean)
+CLASS org.modeshape.jcr.JcrSession
+METHOD exportDocumentView(java.lang.String,java.io.OutputStream,boolean,boolean)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("exportDocumentView",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.exportDocumentView(java.lang.String,java.io.OutputStream,boolean,boolean)
+CLASS org.modeshape.jcr.JcrSession
+METHOD exportDocumentView(java.lang.String,java.io.OutputStream,boolean,boolean)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("exportDocumentView",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.exportDocumentView(java.lang.String,org.xml.sax.ContentHandler,boolean,boolean)
+CLASS org.modeshape.jcr.JcrSession
+METHOD exportDocumentView(java.lang.String,org.xml.sax.ContentHandler,boolean,boolean)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("exportDocumentView",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.exportDocumentView(java.lang.String,org.xml.sax.ContentHandler,boolean,boolean)
+CLASS org.modeshape.jcr.JcrSession
+METHOD exportDocumentView(java.lang.String,org.xml.sax.ContentHandler,boolean,boolean)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("exportDocumentView",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.exportSystemView(java.lang.String,org.xml.sax.ContentHandler,boolean,boolean)
+CLASS org.modeshape.jcr.JcrSession
+METHOD exportSystemView(java.lang.String,org.xml.sax.ContentHandler,boolean,boolean)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("exportSystemView",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.exportSystemView(java.lang.String,org.xml.sax.ContentHandler,boolean,boolean)
+CLASS org.modeshape.jcr.JcrSession
+METHOD exportSystemView(java.lang.String,org.xml.sax.ContentHandler,boolean,boolean)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("exportSystemView",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.exportSystemView(java.lang.String,java.io.OutputStream,boolean,boolean)
+CLASS org.modeshape.jcr.JcrSession
+METHOD exportSystemView(java.lang.String,java.io.OutputStream,boolean,boolean)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("exportSystemView",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.exportSystemView(java.lang.String,java.io.OutputStream,boolean,boolean)
+CLASS org.modeshape.jcr.JcrSession
+METHOD exportSystemView(java.lang.String,java.io.OutputStream,boolean,boolean)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("exportSystemView",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.getImportContentHandler(java.lang.String,int)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getImportContentHandler(java.lang.String,int)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getImportContentHandler",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getImportContentHandler(java.lang.String,int)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getImportContentHandler(java.lang.String,int)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getImportContentHandler",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.getItem(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getItem(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getItem",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getItem(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getItem(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getItem",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.nodeExists(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD nodeExists(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("nodeExists",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.nodeExists(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD nodeExists(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("nodeExists",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.propertyExists(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD propertyExists(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("propertyExists",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.propertyExists(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD propertyExists(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("propertyExists",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.removeItem(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD removeItem(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("removeItem",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.removeItem(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD removeItem(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("removeItem",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.getLockTokens()
+CLASS org.modeshape.jcr.JcrSession
+METHOD getLockTokens()
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getLockTokens",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getLockTokens()
+CLASS org.modeshape.jcr.JcrSession
+METHOD getLockTokens()
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getLockTokens",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.getNodeByUUID(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getNodeByUUID(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getNodeByUUID",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getNodeByUUID(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getNodeByUUID(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getNodeByUUID",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.getNodeByIdentifier(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getNodeByIdentifier(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getNodeByIdentifier",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getNodeByIdentifier(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD getNodeByIdentifier(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getNodeByIdentifier",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.getUserID()
+CLASS org.modeshape.jcr.JcrSession
+METHOD getUserID()
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getUserID",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getUserID()
+CLASS org.modeshape.jcr.JcrSession
+METHOD getUserID()
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getUserID",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.getValueFactory()
+CLASS org.modeshape.jcr.JcrSession
+METHOD getValueFactory()
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getValueFactory",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.getValueFactory()
+CLASS org.modeshape.jcr.JcrSession
+METHOD getValueFactory()
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getValueFactory",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.hasPendingChanges()
+CLASS org.modeshape.jcr.JcrSession
+METHOD hasPendingChanges()
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("hasPendingChanges",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.hasPendingChanges()
+CLASS org.modeshape.jcr.JcrSession
+METHOD hasPendingChanges()
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("hasPendingChanges",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.impersonate(javax.jcr.Credentials)
+CLASS org.modeshape.jcr.JcrSession
+METHOD impersonate(javax.jcr.Credentials)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("impersonate",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.impersonate(javax.jcr.Credentials)
+CLASS org.modeshape.jcr.JcrSession
+METHOD impersonate(javax.jcr.Credentials)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("impersonate",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.importXML(java.lang.String,java.io.InputStream,int)
+CLASS org.modeshape.jcr.JcrSession
+METHOD importXML(java.lang.String,java.io.InputStream,int)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("importXML",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.importXML(java.lang.String,java.io.InputStream,int)
+CLASS org.modeshape.jcr.JcrSession
+METHOD importXML(java.lang.String,java.io.InputStream,int)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("importXML",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.itemExists(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD itemExists(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("itemExists",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.itemExists(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD itemExists(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("itemExists",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.logout()
+CLASS org.modeshape.jcr.JcrSession
+METHOD logout()
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("logout",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.logout()
+CLASS org.modeshape.jcr.JcrSession
+METHOD logout()
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("logout",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.move(java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD move(java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("move",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.move(java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD move(java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("move",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrSession.removeLockToken(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD removeLockToken(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("removeLockToken",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrSession.removeLockToken(java.lang.String)
+CLASS org.modeshape.jcr.JcrSession
+METHOD removeLockToken(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("removeLockToken",$*)
+ENDRULE
+
+
+# RULE trace on enter for org.modeshape.jcr.JcrSession.getAccessControlManager()
+# CLASS org.modeshape.jcr.JcrSession
+# METHOD getAccessControlManager()
+# HELPER org.modeshape.jcr.Profiler
+# AT ENTRY
+# IF TRUE
+# DO enterMethod("getAccessControlManager",$*)
+# ENDRULE
+
+# RULE trace on exit for org.modeshape.jcr.JcrSession.getAccessControlManager()
+# CLASS org.modeshape.jcr.JcrSession
+# METHOD getAccessControlManager()
+# HELPER org.modeshape.jcr.Profiler
+# AT EXIT
+# IF TRUE
+# DO exitMethod("getAccessControlManager",$*)
+# ENDRULE
+
+
+# RULE trace on enter for org.modeshape.jcr.JcrSession.getRetentionManager()
+# CLASS org.modeshape.jcr.JcrSession
+# METHOD getRetentionManager()
+# HELPER org.modeshape.jcr.Profiler
+# AT ENTRY
+# IF TRUE
+# DO enterMethod("getRetentionManager",$*)
+# ENDRULE
+
+# RULE trace on exit for org.modeshape.jcr.JcrSession.getRetentionManager()
+# CLASS org.modeshape.jcr.JcrSession
+# METHOD getRetentionManager()
+# HELPER org.modeshape.jcr.Profiler
+# AT EXIT
+# IF TRUE
+# DO exitMethod("getRetentionManager",$*)
+# ENDRULE
+
+
+# *****************************************************************************************************************
+# Rules for public javax.jcr.Workspace methods in org.modeshape.jcr.JcrWorkspace
+# *****************************************************************************************************************
+RULE trace on enter for org.modeshape.jcr.JcrWorkspace.clone(java.lang.String,java.lang.String,java.lang.String,boolean)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD clone(java.lang.String,java.lang.String,java.lang.String,boolean)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("clone",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrWorkspace.clone(java.lang.String,java.lang.String,java.lang.String,boolean)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD clone(java.lang.String,java.lang.String,java.lang.String,boolean)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("clone",$*)
+ENDRULE
+
+
+# RULE trace on enter for org.modeshape.jcr.JcrWorkspace.getName()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getName()
+# HELPER org.modeshape.jcr.Profiler
+# AT ENTRY
+# IF TRUE
+# DO enterMethod("getName",$*)
+# ENDRULE
+
+# RULE trace on exit for org.modeshape.jcr.JcrWorkspace.getName()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getName()
+# HELPER org.modeshape.jcr.Profiler
+# AT EXIT
+# IF TRUE
+# DO exitMethod("getName",$*)
+# ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrWorkspace.copy(java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD copy(java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("copy",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrWorkspace.copy(java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD copy(java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("copy",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrWorkspace.copy(java.lang.String,java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD copy(java.lang.String,java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("copy",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrWorkspace.copy(java.lang.String,java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD copy(java.lang.String,java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("copy",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrWorkspace.getImportContentHandler(java.lang.String,int)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD getImportContentHandler(java.lang.String,int)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getImportContentHandler",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrWorkspace.getImportContentHandler(java.lang.String,int)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD getImportContentHandler(java.lang.String,int)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getImportContentHandler",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrWorkspace.importXML(java.lang.String,java.io.InputStream,int)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD importXML(java.lang.String,java.io.InputStream,int)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("importXML",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrWorkspace.importXML(java.lang.String,java.io.InputStream,int)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD importXML(java.lang.String,java.io.InputStream,int)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("importXML",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrWorkspace.move(java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD move(java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("move",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrWorkspace.move(java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD move(java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("move",$*)
+ENDRULE
+
+
+# RULE trace on enter for org.modeshape.jcr.JcrWorkspace.getNamespaceRegistry()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getNamespaceRegistry()
+# HELPER org.modeshape.jcr.Profiler
+# AT ENTRY
+# IF TRUE
+# DO enterMethod("getNamespaceRegistry",$*)
+# ENDRULE
+
+# RULE trace on exit for org.modeshape.jcr.JcrWorkspace.getNamespaceRegistry()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getNamespaceRegistry()
+# HELPER org.modeshape.jcr.Profiler
+# AT EXIT
+# IF TRUE
+# DO exitMethod("getNamespaceRegistry",$*)
+# ENDRULE
+
+
+# RULE trace on enter for org.modeshape.jcr.JcrWorkspace.getSession()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getSession()
+# HELPER org.modeshape.jcr.Profiler
+# AT ENTRY
+# IF TRUE
+# DO enterMethod("getSession",$*)
+# ENDRULE
+
+# RULE trace on exit for org.modeshape.jcr.JcrWorkspace.getSession()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getSession()
+# HELPER org.modeshape.jcr.Profiler
+# AT EXIT
+# IF TRUE
+# DO exitMethod("getSession",$*)
+# ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrWorkspace.getAccessibleWorkspaceNames()
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD getAccessibleWorkspaceNames()
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("getAccessibleWorkspaceNames",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrWorkspace.getAccessibleWorkspaceNames()
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD getAccessibleWorkspaceNames()
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("getAccessibleWorkspaceNames",$*)
+ENDRULE
+
+
+# RULE trace on enter for org.modeshape.jcr.JcrWorkspace.getNodeTypeManager()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getNodeTypeManager()
+# HELPER org.modeshape.jcr.Profiler
+# AT ENTRY
+# IF TRUE
+# DO enterMethod("getNodeTypeManager",$*)
+# ENDRULE
+
+# RULE trace on exit for org.modeshape.jcr.JcrWorkspace.getNodeTypeManager()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getNodeTypeManager()
+# HELPER org.modeshape.jcr.Profiler
+# AT EXIT
+# IF TRUE
+# DO exitMethod("getNodeTypeManager",$*)
+# ENDRULE
+
+
+# RULE trace on enter for org.modeshape.jcr.JcrWorkspace.getObservationManager()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getObservationManager()
+# HELPER org.modeshape.jcr.Profiler
+# AT ENTRY
+# IF TRUE
+# DO enterMethod("getObservationManager",$*)
+# ENDRULE
+
+# RULE trace on exit for org.modeshape.jcr.JcrWorkspace.getObservationManager()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getObservationManager()
+# HELPER org.modeshape.jcr.Profiler
+# AT EXIT
+# IF TRUE
+# DO exitMethod("getObservationManager",$*)
+# ENDRULE
+
+
+# RULE trace on enter for org.modeshape.jcr.JcrWorkspace.getLockManager()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getLockManager()
+# HELPER org.modeshape.jcr.Profiler
+# AT ENTRY
+# IF TRUE
+# DO enterMethod("getLockManager",$*)
+# ENDRULE
+
+# RULE trace on exit for org.modeshape.jcr.JcrWorkspace.getLockManager()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getLockManager()
+# HELPER org.modeshape.jcr.Profiler
+# AT EXIT
+# IF TRUE
+# DO exitMethod("getLockManager",$*)
+# ENDRULE
+
+
+# RULE trace on enter for org.modeshape.jcr.JcrWorkspace.getQueryManager()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getQueryManager()
+# HELPER org.modeshape.jcr.Profiler
+# AT ENTRY
+# IF TRUE
+# DO enterMethod("getQueryManager",$*)
+# ENDRULE
+
+# RULE trace on exit for org.modeshape.jcr.JcrWorkspace.getQueryManager()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getQueryManager()
+# HELPER org.modeshape.jcr.Profiler
+# AT EXIT
+# IF TRUE
+# DO exitMethod("getQueryManager",$*)
+# ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrWorkspace.restore(javax.jcr.version.Version[],boolean)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD restore(javax.jcr.version.Version[],boolean)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("restore",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrWorkspace.restore(javax.jcr.version.Version[],boolean)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD restore(javax.jcr.version.Version[],boolean)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("restore",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrWorkspace.createWorkspace(java.lang.String)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD createWorkspace(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("createWorkspace",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrWorkspace.createWorkspace(java.lang.String)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD createWorkspace(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("createWorkspace",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrWorkspace.createWorkspace(java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD createWorkspace(java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("createWorkspace",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrWorkspace.createWorkspace(java.lang.String,java.lang.String)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD createWorkspace(java.lang.String,java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("createWorkspace",$*)
+ENDRULE
+
+
+RULE trace on enter for org.modeshape.jcr.JcrWorkspace.deleteWorkspace(java.lang.String)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD deleteWorkspace(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO enterMethod("deleteWorkspace",$*)
+ENDRULE
+
+RULE trace on exit for org.modeshape.jcr.JcrWorkspace.deleteWorkspace(java.lang.String)
+CLASS org.modeshape.jcr.JcrWorkspace
+METHOD deleteWorkspace(java.lang.String)
+HELPER org.modeshape.jcr.Profiler
+AT EXIT
+IF TRUE
+DO exitMethod("deleteWorkspace",$*)
+ENDRULE
+
+
+# RULE trace on enter for org.modeshape.jcr.JcrWorkspace.getVersionManager()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getVersionManager()
+# HELPER org.modeshape.jcr.Profiler
+# AT ENTRY
+# IF TRUE
+# DO enterMethod("getVersionManager",$*)
+# ENDRULE
+
+# RULE trace on exit for org.modeshape.jcr.JcrWorkspace.getVersionManager()
+# CLASS org.modeshape.jcr.JcrWorkspace
+# METHOD getVersionManager()
+# HELPER org.modeshape.jcr.Profiler
+# AT EXIT
+# IF TRUE
+# DO exitMethod("getVersionManager",$*)
+# ENDRULE
+
+

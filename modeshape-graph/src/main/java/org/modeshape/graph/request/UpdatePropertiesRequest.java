@@ -380,11 +380,12 @@ public class UpdatePropertiesRequest extends ChangeRequest implements PropertyCh
      */
     @Override
     public String toString() {
+        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
         if (removeOtherProperties) {
-            return "update (and remove other) properties on " + on() + " in the \"" + workspaceName + "\" workspace to "
+            return "update " + printable(on()) + " (in " + workspaceName + " workspace) (and remove other) properties "
                    + properties();
         }
-        return "update properties on " + on() + " in the \"" + workspaceName + "\" workspace to " + properties();
+        return "update " + printable(on()) + " (in " + workspaceName + " workspace) the properties " + properties();
     }
 
     /**

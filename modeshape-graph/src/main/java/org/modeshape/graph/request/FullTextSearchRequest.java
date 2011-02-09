@@ -159,7 +159,8 @@ public class FullTextSearchRequest extends SearchRequest {
      */
     @Override
     public String toString() {
-        return "search the \"" + workspaceName + "\" workspace with \"" + expression + "\"";
+        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
+        return "search workspace " + workspaceName + " with \"" + expression + "\"";
     }
 
     @Override

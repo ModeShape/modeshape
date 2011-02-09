@@ -27,7 +27,9 @@ import java.io.Serializable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.modeshape.graph.GraphI18n;
+import org.modeshape.graph.Location;
 import org.modeshape.graph.connector.RepositoryConnection;
+import org.modeshape.graph.property.Name;
 
 /**
  * The abstract base class for all classes representing requests to be executed against a {@link RepositoryConnection}.
@@ -181,4 +183,20 @@ public abstract class Request implements Serializable {
      * @return the type of the request
      */
     public abstract RequestType getType();
+
+    protected String printable( Location location ) {
+        if (location.hasPath()) {
+            return "'" + location.getPath() + "'" + (location.hasIdProperties() ? " " + location.getIdProperties() + "" : "");
+        }
+        return location.getIdProperties().toString();
+    }
+
+    protected String printable( Location location,
+                                Name child ) {
+        if (location.hasPath()) {
+            return "'" + location.getPath() + "/" + child + "'"
+                   + (location.hasIdProperties() ? " " + location.getIdProperties() + "" : "");
+        }
+        return "'" + child + "' under " + location.getIdProperties().toString();
+    }
 }

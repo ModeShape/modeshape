@@ -221,8 +221,9 @@ public class LockBranchRequest extends ChangeRequest {
      */
     @Override
     public String toString() {
-        return "lock " + (LockScope.SELF_AND_DESCENDANTS == lockScope() ? "branch rooted" : "node") + " at " + at()
-               + " in the \"" + workspaceName + "\" workspace";
+        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
+        return "lock   " + printable(at()) + " (in " + workspaceName + " workspace)"
+               + (LockScope.SELF_AND_DESCENDANTS == lockScope() ? " and descendants" : "");
     }
 
     /**

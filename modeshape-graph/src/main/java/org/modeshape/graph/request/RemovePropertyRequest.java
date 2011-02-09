@@ -202,7 +202,8 @@ public class RemovePropertyRequest extends ChangeRequest {
      */
     @Override
     public String toString() {
-        return "remove property " + propertyName() + " from " + from() + " in the \"" + workspaceName + "\" workspace";
+        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
+        return "remove " + printable(from()) + " (in " + workspaceName + " workspace) property '" + propertyName() + "'";
     }
 
     /**

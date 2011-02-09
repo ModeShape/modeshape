@@ -185,7 +185,8 @@ public class UnlockBranchRequest extends ChangeRequest {
      */
     @Override
     public String toString() {
-        return "unlock branch at " + at() + " in the \"" + workspaceName + "\" workspace";
+        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
+        return "unlock " + printable(at()) + " (in " + workspaceName + " workspace)";
     }
 
     /**

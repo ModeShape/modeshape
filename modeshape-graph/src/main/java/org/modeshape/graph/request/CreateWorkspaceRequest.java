@@ -188,7 +188,7 @@ public final class CreateWorkspaceRequest extends ChangeRequest {
      */
     @Override
     public String toString() {
-        return "create new workspace \"" + desiredNameOfNewWorkspace() + "\"";
+        return "create workspace '" + desiredNameOfNewWorkspace() + "'";
     }
 
     /**

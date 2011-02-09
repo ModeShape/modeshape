@@ -255,8 +255,8 @@ public class ReadAllChildrenRequest extends CacheableRequest implements Iterable
      */
     @Override
     public String toString() {
-        String workspaceName = this.workspaceName != null ? "\"" + this.workspaceName + "\"" : "default";
-        return "read children of " + of() + " in the \"" + workspaceName + "\" workspace";
+        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
+        return "read   " + printable(of()) + " (in '" + workspaceName + "' workspace) all children";
     }
 
     @Override

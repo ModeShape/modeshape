@@ -357,12 +357,25 @@ public class MoveBranchRequest extends ChangeRequest {
      */
     @Override
     public String toString() {
-        if (desiredName() != null) {
-            return "move branch " + from() + " in the \"" + inWorkspace() + "\" workspace "
-                   + (into() == null ? "before " + before() : "into " + into()) + " with name " + desiredName();
+        StringBuilder sb = new StringBuilder();
+        sb.append("read   ").append(printable(from())).append(" (in ");
+        if (inWorkspace() != null) {
+            sb.append('\'').append(inWorkspace()).append('\'');
+        } else {
+            sb.append("default");
         }
-        return "move branch " + from() + " in the \"" + inWorkspace() + "\" workspace into "
-               + (into() == null ? "before " + before() : "into " + into());
+        sb.append(" workspace) ");
+        if (desiredName() != null) {
+            sb.append("with name '").append(desiredName()).append("' ");
+        } else {
+            sb.append("into ");
+        }
+        if (into() != null) {
+            sb.append("into ").append(printable(into()));
+        } else {
+            sb.append("before ").append(printable(before()));
+        }
+        return sb.toString();
     }
 
     /**

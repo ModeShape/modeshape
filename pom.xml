@@ -212,6 +212,7 @@
 		<metadata.collectorClassName>org.modeshape.connector.meta.jdbc.JdbcMetadataCollector</metadata.collectorClassName>
 		<jgroups.preferIpv4>false</jgroups.preferIpv4>
 		<jgroups.preferIpv6>false</jgroups.preferIpv6>
+		<debug.argline></debug.argline>
 	</properties>
 
 	<profiles>
@@ -501,6 +502,29 @@
 					</plugin>
 				</plugins>
 			</build>
+		</profile>
+
+		<!--
+			###################################################################
+			Enable remotely debugging on the command line
+			###################################################################
+
+			To use, specify "-Ddebug=true" on the Maven command line
+			(typically used when running a single test). Then, start
+			remote debugger (on port 1044) and connect.
+		-->
+		<profile>
+			<id>debug</id>
+			<activation>
+				<property>
+					<name>debug</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<properties>
+					<!-- Useful for remotely debugging the unit tests run by Surefire ... -->
+				<debug.argline>-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=1044</debug.argline>
+			</properties>
 		</profile>
 
 		<!--
@@ -973,7 +997,8 @@
 							<value>${jgroups.preferIpv6}</value>
 						</property>
 					</systemProperties>
-					<argLine>-Xmx256M</argLine>
+					<argLine>-Xmx256M ${debug.argline}</argLine>
+					-->
 				</configuration>
 			</plugin>
 

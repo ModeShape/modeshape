@@ -250,7 +250,8 @@ public class DeleteChildrenRequest extends ChangeRequest {
      */
     @Override
     public String toString() {
-        return "delete nodes below " + at() + " in the \"" + workspaceName + "\" workspace";
+        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
+        return "delete children of " + printable(at()) + " (in " + workspaceName + " workspace)";
     }
 
     /**

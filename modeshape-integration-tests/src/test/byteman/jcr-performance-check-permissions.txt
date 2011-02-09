@@ -1,0 +1,8 @@
+RULE trace permission check
+CLASS JcrSession 
+METHOD hasPermission(String,Path,String)
+HELPER org.modeshape.jcr.Profiler
+AT ENTRY
+IF TRUE
+DO traceMethod( "hasPermission" )
+ENDRULE

@@ -478,6 +478,41 @@ public class BatchRequestBuilder {
     }
 
     /**
+     * Add a request to update the properties on the node at the supplied location.
+     * 
+     * @param on the location of the node to be read
+     * @param workspaceName the name of the workspace containing the node
+     * @param properties the new properties on the node
+     * @return this builder for method chaining; never null
+     * @throws IllegalArgumentException if the location or workspace name is null or if there are no properties to update
+     */
+    public BatchRequestBuilder setProperties( Location on,
+                                              String workspaceName,
+                                              Iterable<Property> properties ) {
+        // If there's a pending request ...
+        if (pendingRequest != null) {
+            // Compare the supplied location with that of the pending request
+            if (pendingRequest.location.isSame(on)) {
+                // They are the same location, so we can add the properties to the pending request ...
+                for (Property property : properties) {
+                    pendingRequest.pendingProperties.put(property.getName(), property);
+                }
+                return this;
+            }
+            // Not the exact same location, so push the existing pending request ...
+            addPending();
+        }
+
+        // Record this operation as a pending change ...
+        pendingRequest = new NodeChange(on, workspaceName);
+        for (Property property : properties) {
+            if (property == null) continue;
+            pendingRequest.pendingProperties.put(property.getName(), property);
+        }
+        return this;
+    }
+
+    /**
      * Add a request to remove the property with the supplied name from the given node. Supplying a name for a property that does
      * not exist will not cause an error.
      * 
@@ -616,8 +651,8 @@ public class BatchRequestBuilder {
      * @param removeExisting whether any nodes in the intoWorkspace with the same UUIDs as a node in the source branch should be
      *        removed (if true) or a {@link UuidAlreadyExistsException} should be thrown.
      * @return this builder for method chaining; never null
-     * @throws IllegalArgumentException if any of the parameters are null except for {@code nameForClone} or {@code
-     *         exactSegmentForClone}. Exactly one of {@code nameForClone} and {@code exactSegmentForClone} must be null.
+     * @throws IllegalArgumentException if any of the parameters are null except for {@code nameForClone} or
+     *         {@code exactSegmentForClone}. Exactly one of {@code nameForClone} and {@code exactSegmentForClone} must be null.
      */
     public BatchRequestBuilder cloneBranch( Location from,
                                             String fromWorkspace,

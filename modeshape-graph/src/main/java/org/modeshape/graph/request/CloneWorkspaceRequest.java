@@ -227,7 +227,7 @@ public final class CloneWorkspaceRequest extends ChangeRequest {
      */
     @Override
     public String toString() {
-        return "clone workspace \"" + nameOfWorkspaceToBeCloned() + "\" as workspace \"" + desiredNameOfTargetWorkspace() + "\"";
+        return "clone workspace '" + nameOfWorkspaceToBeCloned() + "' as workspace '" + desiredNameOfTargetWorkspace() + "'";
     }
 
     /**

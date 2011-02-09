@@ -25,6 +25,7 @@ package org.modeshape.test.integration.performance;
 
 import org.jboss.byteman.contrib.bmunit.BMScript;
 import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.test.ModeShapeSingleUseTest;
@@ -32,6 +33,7 @@ import org.modeshape.test.ModeShapeSingleUseTest;
 @RunWith( BMUnitRunner.class )
 public class JcrEnginePerformanceTest extends ModeShapeSingleUseTest {
 
+    @Ignore
     @BMScript( value = "jcr-configuration-failure", dir = "src/test/byteman" )
     @Test( expected = SecurityException.class )
     public void shouldThrowSecurityExceptionWhenBuildingEngine() throws Exception {
@@ -42,5 +44,14 @@ public class JcrEnginePerformanceTest extends ModeShapeSingleUseTest {
     @Test
     public void shouldStartEngineAndRecordPerformanceTrace() throws Exception {
         startEngineUsing("config/configRepositoryForJdbc.xml");
+        assertNode("/");
+    }
+
+    @Ignore
+    @BMScript( value = "jcr-performance-check-permissions", dir = "src/test/byteman" )
+    @Test
+    public void shouldStartEngineAndGetRootNode() throws Exception {
+        startEngineUsing("config/configRepositoryForJdbc.xml");
+        assertNode("/");
     }
 }

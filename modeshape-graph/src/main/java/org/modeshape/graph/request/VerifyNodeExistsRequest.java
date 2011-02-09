@@ -165,7 +165,8 @@ public class VerifyNodeExistsRequest extends CacheableRequest {
      */
     @Override
     public String toString() {
-        return "verify node exists at " + at() + " in the \"" + workspaceName + "\" workspace";
+        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
+        return "verify " + printable(at()) + " (in " + workspaceName + " workspace)";
     }
 
     @Override

@@ -120,7 +120,8 @@ public final class DestroyWorkspaceRequest extends ChangeRequest {
      */
     @Override
     public String toString() {
-        return "destroy workspace \"" + workspaceName() + "\"";
+        String workspaceName = workspaceName() != null ? "'" + workspaceName() + "'" : "default";
+        return "destroy workspace " + workspaceName;
     }
 
     /**

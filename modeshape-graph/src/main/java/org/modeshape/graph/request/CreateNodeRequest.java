@@ -375,10 +375,13 @@ public class CreateNodeRequest extends ChangeRequest implements Iterable<Propert
      */
     @Override
     public String toString() {
-        String parent = under() + "/";
-        if (under.hasPath() && under.getPath().isRoot()) parent = "/";
-        return "create in the \"" + workspaceName + "\" workspace the node \"" + parent + childName + "\" with properties "
-               + properties();
+        String path = null;
+        if (under.hasPath() && under.getPath().isRoot()) path = "'/" + childName + "'";
+        else {
+            path = printable(under(), childName);
+        }
+        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
+        return "create " + path + " (in " + workspaceName + " workspace) with properties " + properties();
     }
 
     /**
