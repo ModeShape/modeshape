@@ -24,7 +24,6 @@
 package org.modeshape.graph.xml;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -333,8 +332,8 @@ public class XmlHandler extends DefaultHandler2 {
         if (elementStack.isEmpty()) {
             element = new ElementEntry(null, currentPath, null);
         } else {
-            // Add the parent
-            elementStack.peek().addAsNode();
+            // // Add the parent
+            // elementStack.peek().addAsNode();
             element = new ElementEntry(elementStack.peek(), currentPath, null);
         }
         elementStack.addFirst(element);
@@ -501,9 +500,9 @@ public class XmlHandler extends DefaultHandler2 {
      * is invoked prior to encountering nested character data).
      * </p>
      * <p>
-     * As ModeShape does not currently support a way to add a value to an existing property through the Graph API, {@code
-     * ElementEntries} also contain a {@link Multimap} of property names to values. The node's properties are aggregated and only
-     * submitted to the {@code destination} when the {@link XmlHandler#endElement(String, String, String)} event fires.
+     * As ModeShape does not currently support a way to add a value to an existing property through the Graph API,
+     * {@code ElementEntries} also contain a {@link Multimap} of property names to values. The node's properties are aggregated
+     * and only submitted to the {@code destination} when the {@link XmlHandler#endElement(String, String, String)} event fires.
      * </p>
      */
     private class ElementEntry {
@@ -570,7 +569,7 @@ public class XmlHandler extends DefaultHandler2 {
             if (state == ElementEntryState.NODE) return;
 
             state = ElementEntryState.NODE;
-            destination.create(pathToThisNode, Collections.<Property>emptyList());
+            destination.create(pathToThisNode, propertiesToAdd());
         }
 
         protected void addAsPropertySetTo( Object value ) {
@@ -583,21 +582,31 @@ public class XmlHandler extends DefaultHandler2 {
             return pathToThisNode;
         }
 
-        protected void submit() {
-            if (state == ElementEntryState.PROPERTY) return;
-
-            if (state == ElementEntryState.NODE && properties.size() == 0) return;
-            Property[] propertiesToAdd = new Property[properties.size()];
-            int i = 0;
+        protected List<Property> propertiesToAdd() {
+            if (this.properties.isEmpty()) return Collections.emptyList();
+            List<Property> props = new ArrayList<Property>(this.properties.size());
             for (Name name : properties.keySet()) {
-                propertiesToAdd[i++] = createProperty(name, properties.get(name));
+                props.add(createProperty(name, properties.get(name)));
             }
+            this.properties.clear();
+            return props;
+        }
 
-            if (state == ElementEntryState.TBD) {
-                // Merge the add and the create
-                destination.create(pathToThisNode, Arrays.asList(propertiesToAdd));
-            } else {
-                destination.setProperties(pathToThisNode, propertiesToAdd);
+        protected void submit() {
+            switch (state) {
+                case PROPERTY:
+                    return;
+                case NODE:
+                    if (properties.isEmpty()) return;
+                    if (parent != null) parent.submit();
+                    destination.setProperties(pathToThisNode, propertiesToAdd());
+                    break;
+                case TBD:
+                    if (parent != null) parent.submit();
+                    // Merge the add and the create
+                    destination.create(pathToThisNode, propertiesToAdd());
+                    state = ElementEntryState.NODE;
+                    break;
             }
         }
     }

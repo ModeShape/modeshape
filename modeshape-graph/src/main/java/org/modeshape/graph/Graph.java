@@ -61,13 +61,13 @@ import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.NameFactory;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.ValueFormatException;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.query.QueryContext;
 import org.modeshape.graph.query.QueryEngine;
 import org.modeshape.graph.query.QueryResults;
@@ -90,9 +90,11 @@ import org.modeshape.graph.request.AccessQueryRequest;
 import org.modeshape.graph.request.BatchRequestBuilder;
 import org.modeshape.graph.request.CacheableRequest;
 import org.modeshape.graph.request.CloneWorkspaceRequest;
+import org.modeshape.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
 import org.modeshape.graph.request.CompositeRequest;
 import org.modeshape.graph.request.CreateNodeRequest;
 import org.modeshape.graph.request.CreateWorkspaceRequest;
+import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 import org.modeshape.graph.request.DestroyWorkspaceRequest;
 import org.modeshape.graph.request.FullTextSearchRequest;
 import org.modeshape.graph.request.InvalidRequestException;
@@ -107,8 +109,6 @@ import org.modeshape.graph.request.RequestBuilder;
 import org.modeshape.graph.request.RequestType;
 import org.modeshape.graph.request.UnsupportedRequestException;
 import org.modeshape.graph.request.VerifyWorkspaceRequest;
-import org.modeshape.graph.request.CloneWorkspaceRequest.CloneConflictBehavior;
-import org.modeshape.graph.request.CreateWorkspaceRequest.CreateConflictBehavior;
 import org.xml.sax.SAXException;
 
 /**
@@ -4028,6 +4028,46 @@ public class Graph {
          * @return the interface that should be used to specify the node on which the properties are to be set.
          */
         public On<BatchConjunction> set( final Property... properties ) {
+            return new On<BatchConjunction>() {
+                public BatchConjunction on( Location location ) {
+                    requestQueue.setProperties(location, getCurrentWorkspaceName(), properties);
+                    return nextRequests;
+                }
+
+                public BatchConjunction on( String path ) {
+                    return on(Location.create(createPath(path)));
+                }
+
+                public BatchConjunction on( Path path ) {
+                    return on(Location.create(path));
+                }
+
+                public BatchConjunction on( Property idProperty ) {
+                    return on(Location.create(idProperty));
+                }
+
+                public BatchConjunction on( Property firstIdProperty,
+                                            Property... additionalIdProperties ) {
+                    return on(Location.create(firstIdProperty, additionalIdProperties));
+                }
+
+                public BatchConjunction on( Iterable<Property> idProperties ) {
+                    return on(Location.create(idProperties));
+                }
+
+                public BatchConjunction on( UUID uuid ) {
+                    return on(Location.create(uuid));
+                }
+            };
+        }
+
+        /**
+         * Set the properties on a node.
+         * 
+         * @param properties the properties to set
+         * @return the interface that should be used to specify the node on which the properties are to be set.
+         */
+        public On<BatchConjunction> set( final Iterable<Property> properties ) {
             return new On<BatchConjunction>() {
                 public BatchConjunction on( Location location ) {
                     requestQueue.setProperties(location, getCurrentWorkspaceName(), properties);

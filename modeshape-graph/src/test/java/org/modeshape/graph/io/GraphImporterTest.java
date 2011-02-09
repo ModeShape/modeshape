@@ -101,8 +101,10 @@ public class GraphImporterTest {
         assertThat(lastExecutedRequest, is(instanceOf(CompositeRequest.class)));
         Iterator<Request> iter = ((CompositeRequest)lastExecutedRequest).iterator();
         // assertCreateNode(iter, "/a/b/", "jcr:primaryType={http://www.modeshape.org/xml/1.0}document");
-        assertCreateNode(iter, "/a/b/mode:system[1]");
-        assertCreateNode(iter, "/a/b/mode:system[1]/mode:sources[1]");
+        assertCreateNode(iter, "/a/b/mode:system[1]", "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured");
+        assertCreateNode(iter,
+                         "/a/b/mode:system[1]/mode:sources[1]",
+                         "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured");
         assertCreateNode(iter,
                          "/a/b/mode:system[1]/mode:sources[1]/sourceA[1]",
                          "repositoryName=repositoryA",
@@ -114,10 +116,6 @@ public class GraphImporterTest {
                          "repositoryName=repositoryB",
                          "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured",
                          "mode:classname=org.modeshape.connector.inmemory.InMemoryRepositorySource");
-        assertCreateProperties(iter,
-                               "/a/b/mode:system[1]/mode:sources[1]",
-                               "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured");
-        assertCreateProperties(iter, "/a/b/mode:system[1]", "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured");
         assertThat(iter.hasNext(), is(false));
     }
 

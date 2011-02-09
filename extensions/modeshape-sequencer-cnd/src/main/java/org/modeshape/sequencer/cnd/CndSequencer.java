@@ -171,6 +171,20 @@ public class CndSequencer implements StreamSequencer {
         /**
          * {@inheritDoc}
          * 
+         * @see org.modeshape.graph.io.Destination#setProperties(org.modeshape.graph.property.Path, java.lang.Iterable)
+         */
+        @Override
+        public void setProperties( Path path,
+                                   Iterable<Property> properties ) {
+            path = checkPath(path);
+            for (Property property : properties) {
+                output.setProperty(path, property.getName(), property.getValuesAsArray());
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
          * @see org.modeshape.graph.io.Destination#submit()
          */
         public void submit() {

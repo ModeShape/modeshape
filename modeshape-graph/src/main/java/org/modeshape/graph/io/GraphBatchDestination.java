@@ -174,7 +174,18 @@ public class GraphBatchDestination implements Destination {
     public void setProperties( Path path,
                                Property... properties ) {
         if (properties == null) return;
+        batch.set(properties).on(path);
+    }
 
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.io.Destination#setProperties(org.modeshape.graph.property.Path, java.lang.Iterable)
+     */
+    @Override
+    public void setProperties( Path path,
+                               Iterable<Property> properties ) {
+        if (properties == null) return;
         batch.set(properties).on(path);
     }
 

@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
@@ -354,18 +355,14 @@ public class XmlHandlerTest {
         parse("xmlHandler/docWithoutNamespaces.xml");
         // Check the generated content; note that the attribute name doesn't match, so the nodes don't get special names
         String unstructPrimaryType = "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured";
-        assertNode("Cars");
-        assertNode("Cars/Hybrid");
+        assertNode("Cars", unstructPrimaryType);
+        assertNode("Cars/Hybrid", unstructPrimaryType);
         assertNode("Cars/Hybrid/car", unstructPrimaryType, "name=Toyota Prius", "maker=Toyota", "model=Prius");
         assertNode("Cars/Hybrid/car", unstructPrimaryType, "name=Toyota Highlander", "maker=Toyota", "model=Highlander");
         assertNode("Cars/Hybrid/car", unstructPrimaryType, "name=Nissan Altima", "maker=Nissan", "model=Altima");
-        assertProperties("Cars/Hybrid", unstructPrimaryType);
-        assertNode("Cars/Sports");
+        assertNode("Cars/Sports", unstructPrimaryType);
         assertNode("Cars/Sports/car", unstructPrimaryType, "name=Aston Martin DB9", "maker=Aston Martin", "model=DB9");
         assertNode("Cars/Sports/car", unstructPrimaryType, "name=Infiniti G37", "maker=Infiniti", "model=G37");
-        assertProperties("Cars/Sports", unstructPrimaryType);
-        assertProperties("Cars", unstructPrimaryType);
-
     }
 
     @Test
@@ -379,17 +376,14 @@ public class XmlHandlerTest {
         // Check the generated content; note that the attribute name doesn't match, so the nodes don't get special names
         String unstructPrimaryType = "jcr:primaryType={http://www.jcp.org/jcr/nt/1.0}unstructured";
         String carPrimaryType = "jcr:primaryType={http://default.namespace.com}car";
-        assertNode("c:Cars");
-        assertNode("c:Cars/c:Hybrid");
+        assertNode("c:Cars", unstructPrimaryType);
+        assertNode("c:Cars/c:Hybrid", unstructPrimaryType);
         assertNode("c:Cars/c:Hybrid/c:Toyota Prius", carPrimaryType, "c:maker=Toyota", "c:model=Prius");
         assertNode("c:Cars/c:Hybrid/c:Toyota Highlander", carPrimaryType, "c:maker=Toyota", "c:model=Highlander");
         assertNode("c:Cars/c:Hybrid/c:Nissan Altima", carPrimaryType, "c:maker=Nissan", "c:model=Altima");
-        assertProperties("c:Cars/c:Hybrid", unstructPrimaryType);
-        assertNode("c:Cars/c:Sports");
+        assertNode("c:Cars/c:Sports", unstructPrimaryType);
         assertNode("c:Cars/c:Sports/c:Aston Martin DB9", carPrimaryType, "c:maker=Aston Martin", "c:model=DB9");
         assertNode("c:Cars/c:Sports/c:Infiniti G37", carPrimaryType, "c:maker=Infiniti", "c:model=G37");
-        assertProperties("c:Cars/c:Sports", unstructPrimaryType);
-        assertProperties("c:Cars", unstructPrimaryType);
     }
 
     @Test
@@ -403,21 +397,15 @@ public class XmlHandlerTest {
         assertNode("Cars/Hybrid");
         assertNode("Cars/Hybrid/car", "name=Toyota Prius", "maker=Toyota", "model=Prius");
         assertNode("Cars/Hybrid/car[2]", "name=Toyota Highlander", "maker=Toyota", "model=Highlander");
-        assertNode("Cars/Hybrid/car[3]");
-        assertProperties("Cars/Hybrid/car[3]", "name=Nissan Altima", "maker=Nissan", "model=Altima");
+        assertNode("Cars/Hybrid/car[3]", "name=Nissan Altima", "maker=Nissan", "model=Altima");
         assertNode("Cars/Sports");
         assertNode("Cars/Sports/car", "name=Aston Martin DB9", "maker=Aston Martin", "model=DB9");
-        assertNode("Cars/Sports/car");
+        assertNode("Cars/Sports/car", "name=Infiniti G37", "maker=Infiniti", "category=Turbocharged");
         assertNode("Cars/Sports/car[2]/driver", "name=Tony Stewart");
-        assertProperties("Cars/Sports/car[2]",
-                         "name=Infiniti G37",
-                         "maker=Infiniti",
-                         "model=G37",
-                         "category=Turbocharged=My Sedan");
+        assertNode("Cars/Sports/car[2]", "model=G37", "category=My Sedan");
         assertNode("Cars/Sports/car[3]");
         assertNode("Cars/Sports/car[3]/jcr:xmltext", "jcr:xmlcharacters=This is my text ");
         assertNode("Cars/Sports/car[3]/jcr:xmltext", "jcr:xmlcharacters=that should be merged");
-        assertProperties("Cars/Sports/car", "name=Infiniti G37", "maker=Infiniti", "model=G37");
     }
 
     protected void assertNode( String path,
@@ -594,6 +582,32 @@ public class XmlHandlerTest {
                 System.arraycopy(properties, 1, additionalProperties, 0, properties.length - 1);
                 create(path, properties[0], additionalProperties);
             }
+        }
+
+        /**
+         * {@inheritDoc}
+         * 
+         * @see org.modeshape.graph.io.Destination#setProperties(org.modeshape.graph.property.Path, java.lang.Iterable)
+         */
+        @Override
+        public void setProperties( Path path,
+                                   Iterable<Property> properties ) {
+            Property firstProp = null;
+            Iterator<Property> iter = properties.iterator();
+            if (!iter.hasNext()) {
+                return;
+            }
+            firstProp = iter.next();
+            if (!iter.hasNext()) {
+                create(path, firstProp);
+                return;
+            }
+            List<Property> remaining = new LinkedList<Property>();
+            while (iter.hasNext()) {
+                remaining.add(iter.next());
+            }
+            Property[] additionalProperties = remaining.toArray(new Property[remaining.size()]);
+            create(path, firstProp, additionalProperties);
         }
 
         @SuppressWarnings( "synthetic-access" )
