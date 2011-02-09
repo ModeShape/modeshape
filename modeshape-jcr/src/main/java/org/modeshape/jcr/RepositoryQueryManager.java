@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.InvalidQueryException;
 import org.apache.lucene.analysis.snowball.SnowballAnalyzer;
@@ -301,7 +302,21 @@ abstract class RepositoryQueryManager {
                 };
             } else {
                 // It's asynchronous, so create a single-threaded executor and an observer that enqueues the results
-                this.service = Executors.newCachedThreadPool();
+                ThreadFactory threadFactory = new ThreadFactory() {
+                    /**
+                     * {@inheritDoc}
+                     * 
+                     * @see java.util.concurrent.ThreadFactory#newThread(java.lang.Runnable)
+                     */
+                    @Override
+                    public Thread newThread( Runnable r ) {
+                        Thread thread = new Thread("modeshape-indexing");
+                        thread.setPriority(Thread.NORM_PRIORITY + 3);
+                        return thread;
+                    }
+                };
+                // this.service = Executors.newCachedThreadPool(threadFactory);
+                this.service = Executors.newSingleThreadExecutor(threadFactory);
                 this.searchObserver = new Observer() {
                     @SuppressWarnings( "synthetic-access" )
                     public void notify( final Changes changes ) {

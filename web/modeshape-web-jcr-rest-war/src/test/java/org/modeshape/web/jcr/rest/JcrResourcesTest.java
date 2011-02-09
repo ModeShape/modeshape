@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Authenticator;
@@ -179,6 +180,9 @@ public class JcrResourcesTest {
         connection.setRequestMethod("GET");
         connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
 
+        if (connection.getResponseCode() != HttpURLConnection.HTTP_NOT_FOUND) {
+            fail(connection.getResponseMessage());
+        }
         assertThat(connection.getResponseCode(), is(HttpURLConnection.HTTP_NOT_FOUND));
         connection.disconnect();
     }

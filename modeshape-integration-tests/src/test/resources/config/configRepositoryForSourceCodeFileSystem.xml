@@ -57,7 +57,6 @@
             <mode:source>SourceCode</mode:source>
             <!-- Define the options for the JCR repository, using camelcase version of JcrRepository.Option names -->
             <mode:options jcr:primaryType="mode:options">
-                <!--projectNodeTypes jcr:primaryType="mode:option" mode:value="false"/-->
             </mode:options>
         </mode:repository>
     </mode:repositories>

@@ -23,6 +23,13 @@
  */
 package org.modeshape.search.lucene;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.locks.Lock;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.Query;
@@ -55,13 +62,6 @@ import org.modeshape.graph.search.AbstractSearchEngine.Workspaces;
 import org.modeshape.graph.search.SearchEngineProcessor;
 import org.modeshape.search.lucene.AbstractLuceneSearchEngine.AbstractLuceneProcessor;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 /**
  * Abstract {@link SearchEngineProcessor} implementation for the {@link LuceneSearchEngine}.
  */
@@ -71,13 +71,31 @@ public class LuceneSearchProcessor extends AbstractLuceneProcessor<LuceneSearchW
     protected static final Columns FULL_TEXT_RESULT_COLUMNS = new FullTextSearchResultColumns();
     private static final Logger logger = Logger.getLogger(LuceneSearchProcessor.class);
 
+    private final Lock lock;
+
     protected LuceneSearchProcessor( String sourceName,
                                      ExecutionContext context,
                                      Workspaces<LuceneSearchWorkspace> workspaces,
                                      Observer observer,
                                      DateTime now,
-                                     boolean readOnly ) {
+                                     boolean readOnly,
+                                     Lock lock ) {
         super(sourceName, context, workspaces, observer, now, readOnly);
+        this.lock = lock;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.search.SearchEngineProcessor#close()
+     */
+    @Override
+    public void close() {
+        try {
+            super.close();
+        } finally {
+            this.lock.unlock();
+        }
     }
 
     /**

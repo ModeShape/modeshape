@@ -28,6 +28,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -77,17 +78,30 @@ public class ConnectionResultsComparator extends ResultsComparator {
                                     String[] expected,
                                     int expectedRowCount,
                                     String jcrSQL ) throws SQLException {
-        ConnectionResultsComparator util = new ConnectionResultsComparator(conn);
-        try {
-            util.execute(sql, jcrSQL);
-            util.assertResultsSetEquals(util.internalResultSet, expected);
+        AssertionError lastError = null;
+        for (int i = 0; i != 10; ++i) {
+            ConnectionResultsComparator util = new ConnectionResultsComparator(conn);
+            try {
+                util.execute(sql, jcrSQL);
+                util.assertResultsSetEquals(util.internalResultSet, expected);
 
-            util.assertRowCount(expectedRowCount);
-
-        } finally {
-            util.closeResultSet();
-            util.closeStatement();
+                util.assertRowCount(expectedRowCount);
+                return;
+            } catch (AssertionError e) {
+                lastError = e;
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ie) {
+                    fail("Interrupted");
+                    return;
+                }
+                continue;
+            } finally {
+                util.closeResultSet();
+                util.closeStatement();
+            }
         }
+        if (lastError != null) throw lastError;
     }
 
     public static void executeTest( Connection conn,

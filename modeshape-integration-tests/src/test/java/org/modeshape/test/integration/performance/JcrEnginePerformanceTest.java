@@ -40,6 +40,7 @@ public class JcrEnginePerformanceTest extends ModeShapeSingleUseTest {
         startEngineUsing("config/configRepositoryForJdbc.xml");
     }
 
+    @Ignore
     @BMScript( value = "jcr-performance", dir = "src/test/byteman" )
     @Test
     public void shouldStartEngineAndRecordPerformanceTrace() throws Exception {

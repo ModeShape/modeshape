@@ -376,12 +376,35 @@ public class CreateNodeRequest extends ChangeRequest implements Iterable<Propert
     @Override
     public String toString() {
         String path = null;
-        if (under.hasPath() && under.getPath().isRoot()) path = "'/" + childName + "'";
-        else {
+        if (under.hasPath() && under.getPath().isRoot()) {
+            path = "'/" + childName + "'";
+        } else {
             path = printable(under(), childName);
         }
-        String workspaceName = this.workspaceName != null ? "'" + this.workspaceName + "'" : "default";
-        return "create " + path + " (in " + workspaceName + " workspace) with properties " + properties();
+        StringBuilder sb = new StringBuilder();
+        sb.append("create ").append(path).append(" (in ");
+        if (this.workspaceName != null) {
+            sb.append("'").append(this.workspaceName).append("'");
+        } else {
+            sb.append("default");
+        }
+        sb.append(" workspace) with properties ");
+        sb.append(properties());
+        switch (conflictBehavior()) {
+            case APPEND:
+                sb.append(" by appending");
+                break;
+            case REPLACE:
+                sb.append(" by replacing");
+                break;
+            case UPDATE:
+                sb.append(" by updating");
+                break;
+            case DO_NOT_REPLACE:
+                sb.append(" if absent");
+                break;
+        }
+        return sb.toString();
     }
 
     /**

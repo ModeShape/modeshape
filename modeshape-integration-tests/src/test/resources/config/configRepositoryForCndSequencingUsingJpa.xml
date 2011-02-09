@@ -32,7 +32,6 @@
         <mode:repository jcr:name="Content" mode:source="Store">
             <mode:options>
                 <mode:option jcr:name="jaasLoginConfigName" value="modeshape-jcr"/>
-                <mode:option jcr:name="queryIndexDirectory" value="target/indexes"/>
             </mode:options>
             <!-- Define what the initial content looks like for each workspace -->
             <mode:initialContent mode:workspaces="default" mode:applyToNewWorkspaces="true" mode:content="src/test/resources/config/modeshape-initial-content.xml"/>

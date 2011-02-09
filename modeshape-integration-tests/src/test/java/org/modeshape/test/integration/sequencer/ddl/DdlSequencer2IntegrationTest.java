@@ -59,7 +59,6 @@ public class DdlSequencer2IntegrationTest extends AbstractSequencerTest {
         // print = true;
         uploadFile("org/modeshape/test/integration/sequencer/ddl/create_schema.ddl", "/files/a/b");
         uploadFile("org/modeshape/test/integration/sequencer/ddl/grant_test_statements.ddl", "/files/a/b");
-        waitUntilSequencedNodesIs(2, 10);
 
         waitUntilSequencedNodeIsAvailable("/files", "nt:folder", "mode:publishArea");
         assertNode("/files/a", "nt:folder");

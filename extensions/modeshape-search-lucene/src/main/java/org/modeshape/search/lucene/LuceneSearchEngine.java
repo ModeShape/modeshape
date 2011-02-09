@@ -31,6 +31,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.jcip.annotations.Immutable;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -113,6 +116,7 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
     private final IndexRules rules;
     private final Analyzer analyzer;
     private final int maxDepthPerIndexRead;
+    private final ReadWriteLock processingLock = new ReentrantReadWriteLock();
 
     /**
      * Create a new instance of a {@link SearchEngine} that uses Lucene and a two-index design, and that stores the indexes using
@@ -222,7 +226,9 @@ public class LuceneSearchEngine extends AbstractLuceneSearchEngine<LuceneSearchW
                                                      Workspaces<LuceneSearchWorkspace> workspaces,
                                                      Observer observer,
                                                      boolean readOnly ) {
-        return new LuceneSearchProcessor(getSourceName(), context, workspaces, observer, null, readOnly);
+        final Lock lock = readOnly ? processingLock.readLock() : processingLock.writeLock();
+        lock.lock();
+        return new LuceneSearchProcessor(getSourceName(), context, workspaces, observer, null, readOnly, lock);
     }
 
     /**

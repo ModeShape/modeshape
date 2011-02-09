@@ -26,6 +26,7 @@ package org.modeshape.search.lucene;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
@@ -47,7 +48,7 @@ public class LuceneSearchSessionTest {
         DateTime now = context.getValueFactories().getDateFactory().create();
         Workspaces<LuceneSearchWorkspace> workspaces = mock(Workspaces.class);
         LuceneSearchWorkspace workspace = mock(LuceneSearchWorkspace.class);
-        processor = new LuceneSearchProcessor("source", context, workspaces, observer, now, true);
+        processor = new LuceneSearchProcessor("source", context, workspaces, observer, now, true, new ReentrantLock());
         search = new LuceneSearchSession(workspace, processor);
     }
 

@@ -65,7 +65,6 @@ public class JavaSequencerIntegrationTest extends AbstractSequencerTest {
         File file = new File("src/test/java/org/modeshape/test/integration/ClusteringTest.java");
         assertThat(file.exists(), is(true));
         uploadFile(file.toURI().toURL(), "/files/");
-        waitUntilSequencedNodesIs(1);
 
         // Find the sequenced node ...
         String path = "/sequenced/java/ClusteringTest.java";
@@ -112,13 +111,10 @@ public class JavaSequencerIntegrationTest extends AbstractSequencerTest {
         File file = new File("src/test/java/" + sourceName);
         assertThat(file.exists(), is(true));
         uploadFile(file.toURI().toURL(), "/files/" + packageName);
-        waitUntilSequencedNodesIs(1);
-        Thread.sleep(200); // wait a bit while the new content is indexed
-        // printSubgraph(assertNode("/"));
 
         // Find the sequenced node ...
         String path = "/sequenced/java/" + sourceName;
-        Node java = assertNode(path, "nt:unstructured");
+        Node java = waitUntilSequencedNodeIsAvailable(path, "nt:unstructured");
         printSubgraph(java);
 
         assertNode(path + "/" + typeName, "class:class", "mode:derived");
@@ -170,13 +166,10 @@ public class JavaSequencerIntegrationTest extends AbstractSequencerTest {
         File file = new File("src/test/java/org/modeshape/test/integration/sequencer/SequencerTest.java");
         assertThat(file.exists(), is(true));
         uploadFile(file.toURI().toURL(), "/files/org/modeshape/test/integration/sequencer");
-        waitUntilSequencedNodesIs(1);
-        Thread.sleep(200); // wait a bit while the new content is indexed
-        // printSubgraph(assertNode("/"));
 
         // Find the sequenced node ...
         String path = "/sequenced/java/org/modeshape/test/integration/sequencer/SequencerTest.java";
-        Node java = assertNode(path, "nt:unstructured");
+        Node java = waitUntilSequencedNodeIsAvailable(path, "nt:unstructured");
         printSubgraph(java);
 
         assertNode(path + "/SequencerTest", "class:class", "mode:derived");

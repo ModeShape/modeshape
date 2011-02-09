@@ -59,7 +59,6 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
     public void shouldSequenceXmlFile() throws Exception {
         // print = true;
         uploadFile("jcr-import-test.xml", "/files/");
-        waitUntilSequencedNodesIs(1);
 
         // Find the sequenced node ...
         printSubgraph(waitUntilSequencedNodeIsAvailable("/sequenced/xml", "nt:unstructured"));
@@ -83,7 +82,6 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
     public void shouldSequenceXmlFileBelowSequencedPath() throws Exception {
         // print = true;
         uploadFile("jcr-import-test.xml", "/files/a/b");
-        waitUntilSequencedNodesIs(1);
 
         // Find the sequenced node ...
         String path = "/sequenced/xml/a/b/jcr-import-test.xml";
@@ -109,16 +107,18 @@ public class XmlSequencerIntegrationTest extends AbstractSequencerTest {
     public void shouldSequence2XmlFiles2() throws Exception {
         // print = true;
         uploadFile("docWithComments.xml", "/files/");
-        waitUntilSequencedNodesIs(1);
+
+        // Find the sequenced node ...
+        waitUntilSequencedNodeIsAvailable("/sequenced/xml/docWithComments.xml", "modexml:document", "mode:derived");
         printQuery("SELECT * FROM [nt:base] ORDER BY [jcr:path]", 17);
 
+        // Find the sequenced node ...
         uploadFile("docWithComments2.xml", "/files/");
-        waitUntilSequencedNodesIs(2);
+        waitUntilSequencedNodeIsAvailable("/sequenced/xml/docWithComments2.xml", "modexml:document", "mode:derived");
 
         printQuery("SELECT * FROM [nt:base]  ORDER BY [jcr:path]", 30);
         printSubgraph(assertNode("/sequenced/xml", "nt:unstructured"));
         uploadFile("docWithComments.xml", "/files/");
-        waitUntilSequencedNodesIs(3);
-        printSubgraph(assertNode("/sequenced/xml", "nt:unstructured"));
+        printSubgraph(waitUntilSequencedNodeIsAvailable("/sequenced/xml", "nt:unstructured"));
     }
 }

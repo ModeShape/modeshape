@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Credentials;
 import javax.jcr.ImportUUIDBehavior;
@@ -50,6 +51,9 @@ import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.observation.Event;
+import javax.jcr.observation.EventIterator;
+import javax.jcr.observation.EventListener;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
 import net.jcip.annotations.Immutable;
@@ -71,12 +75,14 @@ public abstract class ModeShapeUnitTest {
     private static Session session;
     private JcrTools tools;
     protected boolean print;
+    protected boolean debug;
 
     @Before
     public void beforeEach() throws Exception {
         openSessions.clear();
         tools = new JcrTools();
         print = false;
+        debug = true;
     }
 
     @After
@@ -369,14 +375,52 @@ public abstract class ModeShapeUnitTest {
         String filename = url.getPath().replaceAll("([^/]*/)*", "");
         if (!parentPath.startsWith("/")) parentPath = "/" + parentPath;
         if (!parentPath.endsWith("/")) parentPath = parentPath + "/";
-        String nodePath = parentPath + filename;
+        final String nodePath = parentPath + filename;
+
+        // Wait a bit before uploading, to make sure everything is ready ...
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            fail(e.getMessage());
+        }
 
         // Now use the JCR API to upload the file ...
-        tools.uploadFile(session(), nodePath, url);
+        Session session = session();
+        final CountDownLatch latch = new CountDownLatch(1);
+        EventListener listener = new EventListener() {
+            /**
+             * {@inheritDoc}
+             * 
+             * @see javax.jcr.observation.EventListener#onEvent(javax.jcr.observation.EventIterator)
+             */
+            @Override
+            public void onEvent( EventIterator events ) {
+                while (events.hasNext()) {
+                    try {
+                        if (events.nextEvent().getPath().equals(nodePath)) {
+                            latch.countDown();
+                        }
+                    } catch (Throwable e) {
+                        latch.countDown();
+                        fail(e.getMessage());
+                    }
+                }
+            }
+        };
+        session.getWorkspace()
+               .getObservationManager()
+               .addEventListener(listener, Event.NODE_ADDED, parentPath, true, null, null, false);
+        tools.uploadFile(session, nodePath, url);
 
         // Save the session ...
-        session().save();
+        session.save();
 
+        // Now await for the event describing the newly-added file ...
+        try {
+            latch.await(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            fail(e.getMessage());
+        }
     }
 
     protected void uploadFiles( String destinationPath,
@@ -450,12 +494,16 @@ public abstract class ModeShapeUnitTest {
         long startTime = System.currentTimeMillis();
         for (int i = 0; i != 10 * 5; ++i) { // 10 seconds at the most
             try {
-                Node node = assertNode(path, primaryType, mixinTypes);
-                Thread.sleep(200); // wait a bit while the new content is indexed
-                return node;
+                return assertNode(path, primaryType, mixinTypes);
             } catch (PathNotFoundException t) {
+                if (debug) {
+                    System.out.println("---> Waiting for the sequenced node at " + path);
+                }
                 Thread.sleep(200); // wait a bit while the new content is indexed
             } catch (AssertionError t) {
+                if (debug) {
+                    System.out.println("---> Waiting for the sequenced node at " + path);
+                }
                 Thread.sleep(200); // wait a bit while the new content is indexed
             }
         }
@@ -561,6 +609,9 @@ public abstract class ModeShapeUnitTest {
                     }
                     break;
                 } catch (AssertionError e) {
+                    if (debug) {
+                        System.out.println("---> Waiting for a queryable node at " + path);
+                    }
                     Thread.sleep(200); // wait a bit while the new content is indexed
                 }
             }
@@ -952,15 +1003,35 @@ public abstract class ModeShapeUnitTest {
                                       long expectedNumberOfResults,
                                       Map<String, String> variables ) throws RepositoryException {
         Session session = session();
-        Query query = session.getWorkspace().getQueryManager().createQuery(queryExpression, queryLanguage);
-        if (variables != null && !variables.isEmpty()) {
-            for (Map.Entry<String, String> entry : variables.entrySet()) {
-                String key = entry.getKey();
-                Value value = session.getValueFactory().createValue(entry.getValue());
-                query.bindValue(key, value);
+        QueryResult results = null;
+        for (int i = 0; i != 10; ++i) {
+            Query query = session.getWorkspace().getQueryManager().createQuery(queryExpression, queryLanguage);
+            if (variables != null && !variables.isEmpty()) {
+                for (Map.Entry<String, String> entry : variables.entrySet()) {
+                    String key = entry.getKey();
+                    Value value = session.getValueFactory().createValue(entry.getValue());
+                    query.bindValue(key, value);
+                }
+            }
+            results = query.execute();
+            if (results.getRows().getSize() == expectedNumberOfResults) {
+                break;
+            }
+            // We got a different number of results. It could be that we caught the indexer before it was done indexing
+            // the changes, so sleep for a bit and try again ...
+            try {
+                if (debug) {
+                    System.out.println("---> Waiting for query: " + queryExpression
+                                       + (variables != null ? " using " + variables : ""));
+                }
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                fail(e.getMessage());
+                return null;
             }
         }
-        QueryResult results = query.execute();
+        assertThat(results, is(notNullValue()));
+        assert results != null;
         if (expectedNumberOfResults >= 0L) {
             assertThat("Expected different number of rows from '" + queryExpression + "'",
                        results.getRows().getSize(),

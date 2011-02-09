@@ -64,8 +64,6 @@ public class ZipSequencerIntegrationTest extends AbstractSequencerTest {
     public void shouldSequenceZipFile() throws Exception {
         // print = true;
         uploadFile("sequencers/zip/test-files.zip", "/files/");
-        waitUntilSequencedNodesIs(1);
-        Thread.sleep(200);
 
         // Find the sequenced node ...
         String path = "/sequenced/zip/test-files.zip";
@@ -101,7 +99,6 @@ public class ZipSequencerIntegrationTest extends AbstractSequencerTest {
     public void shouldSequenceZipFileBelowSequencedPath() throws Exception {
         // print = true;
         uploadFile("sequencers/zip/test-files.zip", "/files/a/b");
-        waitUntilSequencedNodesIs(1);
 
         // Find the sequenced node ...
         String path = "/sequenced/zip/a/b/test-files.zip";
