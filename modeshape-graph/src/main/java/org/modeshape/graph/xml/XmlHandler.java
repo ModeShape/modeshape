@@ -332,8 +332,6 @@ public class XmlHandler extends DefaultHandler2 {
         if (elementStack.isEmpty()) {
             element = new ElementEntry(null, currentPath, null);
         } else {
-            // // Add the parent
-            // elementStack.peek().addAsNode();
             element = new ElementEntry(elementStack.peek(), currentPath, null);
         }
         elementStack.addFirst(element);
@@ -478,8 +476,8 @@ public class XmlHandler extends DefaultHandler2 {
 
     /**
      * Possible states for an {@link ElementEntry} instance. All element entries start in state {@code TBD} and then transition to
-     * one of the terminating states, {@code NODE} or {@code PROPERTY} when {@link ElementEntry#addAsNode()} or
-     * {@link ElementEntry#addAsPropertySetTo(Object)} is invoked.
+     * one of the terminating states, {@code NODE} or {@code PROPERTY} when {@link ElementEntry#addAsPropertySetTo(Object)} is
+     * invoked.
      */
     protected enum ElementEntryState {
         NODE,
@@ -562,14 +560,6 @@ public class XmlHandler extends DefaultHandler2 {
                                     Object propertyValue ) {
             assert state != ElementEntryState.PROPERTY;
             properties.put(propertyName, propertyValue);
-        }
-
-        protected void addAsNode() {
-            assert state != ElementEntryState.PROPERTY;
-            if (state == ElementEntryState.NODE) return;
-
-            state = ElementEntryState.NODE;
-            destination.create(pathToThisNode, propertiesToAdd());
         }
 
         protected void addAsPropertySetTo( Object value ) {
