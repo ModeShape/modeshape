@@ -27,10 +27,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.Set;
-
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
-
 import org.modeshape.jdbc.JcrConnection;
 import org.modeshape.jdbc.JdbcI18n;
 import org.modeshape.jdbc.util.Logger;
@@ -46,57 +44,58 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
     private ConnectionInfo connInfo = null;
     private String url;
     private Properties propertiesInfo;
-  
-    public AbstractRepositoryDelegate(String url, Properties info) {
-	super();
-		this.url = url;
-		this.propertiesInfo = info;
+
+    public AbstractRepositoryDelegate( String url,
+                                       Properties info ) {
+        super();
+        this.url = url;
+        this.propertiesInfo = info;
     }
-   
+
     /**
-     * The implementor must return a @link ConnectionInfo that provides the information
-     * that details 
-     * r
+     * The implementor must return a @link ConnectionInfo that provides the information that details r
+     * 
      * @param url
      * @param info
      * @return ConnectionInfo
      */
-    abstract ConnectionInfo createConnectionInfo(final String url, final Properties info);
-    	   
-	/**
-	 * Implementor is responsible for creating the repository.
-	 * @throws SQLException
-	 */
+    abstract ConnectionInfo createConnectionInfo( final String url,
+                                                  final Properties info );
+
+    /**
+     * Implementor is responsible for creating the repository.
+     * 
+     * @throws SQLException
+     */
     abstract void createRepository() throws SQLException;
 
-
     @Override
-	public synchronized ConnectionInfo getConnectionInfo() {
-    	if (this.connInfo == null) {
-    		this.connInfo = createConnectionInfo(url, propertiesInfo);
-    		this.connInfo.init();
-    	}
-    	return connInfo;
+    public synchronized ConnectionInfo getConnectionInfo() {
+        if (this.connInfo == null) {
+            this.connInfo = createConnectionInfo(url, propertiesInfo);
+            this.connInfo.init();
+        }
+        return connInfo;
     }
-    
+
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.modeshape.jdbc.delegate.RepositoryDelegate#closeStatement()
      */
     @Override
     public void closeStatement() {
     }
-	
+
     /**
      * {@inheritDoc}
      * 
      * @see java.sql.Connection#commit()
      */
+    @SuppressWarnings( "unused" )
     @Override
     public void commit() throws RepositoryException {
     }
-	
 
     /**
      * {@inheritDoc}
@@ -106,50 +105,50 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
     @Override
     public void close() {
     }
-    
+
     /**
      * {@inheritDoc}
      * 
      * @see java.sql.Connection#rollback()
      */
+    @SuppressWarnings( "unused" )
     @Override
     public void rollback() throws RepositoryException {
     }
 
-    
     @Override
-	public  Connection createConnection() throws SQLException {
-       	LOGGER.debug("Creating connection for RepositoryDelegte" );
-       	if (this.repository == null) {
-       		createRepository();
-       	}
+    public Connection createConnection() throws SQLException {
+        LOGGER.debug("Creating connection for RepositoryDelegte");
+        if (this.repository == null) {
+            createRepository();
+        }
 
-		return new JcrConnection(this);
-    }  
-       
-    public synchronized Repository getRepository()  {
-    	return this.repository;
+        return new JcrConnection(this);
     }
-    
-    protected void setRepository(Repository repository) {
-    	this.repository = repository;
+
+    public synchronized Repository getRepository() {
+        return this.repository;
     }
-    
-    public String getRepositoryName()  {
-    	return getConnectionInfo().getRepositoryName();
+
+    protected void setRepository( Repository repository ) {
+        this.repository = repository;
     }
-    
-    protected void setRepositoryName(String repositoryName) {
-    	this.getConnectionInfo().setRepositoryName(repositoryName);
+
+    public String getRepositoryName() {
+        return getConnectionInfo().getRepositoryName();
     }
-       
-    public Set<String> getRepositoryNames()  {
-    	return this.repositoryNames;
+
+    protected void setRepositoryName( String repositoryName ) {
+        this.getConnectionInfo().setRepositoryName(repositoryName);
     }
-    
-    protected void setRepositoryNames(Set<String> repositoryNames) {
-    	this.repositoryNames = repositoryNames;
-    }    
+
+    public Set<String> getRepositoryNames() {
+        return this.repositoryNames;
+    }
+
+    protected void setRepositoryNames( Set<String> repositoryNames ) {
+        this.repositoryNames = repositoryNames;
+    }
 
     /**
      * {@inheritDoc}
@@ -168,13 +167,12 @@ public abstract class AbstractRepositoryDelegate implements RepositoryDelegate {
      */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
-    	if (!isWrapperFor(iface)) {
-    	       throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text(RepositoryDelegate.class.getSimpleName(),
-                       iface.getName()));
-    	}
-    	
-    	return iface.cast(this);
-     }
-   
-}
+        if (!isWrapperFor(iface)) {
+            throw new SQLException(JdbcI18n.classDoesNotImplementInterface.text(RepositoryDelegate.class.getSimpleName(),
+                                                                                iface.getName()));
+        }
 
+        return iface.cast(this);
+    }
+
+}

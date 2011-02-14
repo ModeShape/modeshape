@@ -43,12 +43,10 @@ import java.sql.Struct;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
-
 import org.modeshape.jdbc.delegate.ConnectionInfo;
 import org.modeshape.jdbc.delegate.RepositoryDelegate;
 
@@ -56,9 +54,9 @@ import org.modeshape.jdbc.delegate.RepositoryDelegate;
  * This driver's implementation of JDBC {@link Connection}.
  */
 public class JcrConnection implements Connection {
-    
-    public static final String JCR_SQL2 = Query.JCR_SQL2; 
-    @SuppressWarnings("deprecation")
+
+    public static final String JCR_SQL2 = Query.JCR_SQL2;
+    @SuppressWarnings( "deprecation" )
     public static final String JCR_SQL = Query.SQL;
 
     private boolean closed;
@@ -69,7 +67,7 @@ public class JcrConnection implements Connection {
     private DatabaseMetaData metadata;
     private RepositoryDelegate jcrDelegate;
 
-    public JcrConnection(RepositoryDelegate jcrDelegate ) {
+    public JcrConnection( RepositoryDelegate jcrDelegate ) {
         this.jcrDelegate = jcrDelegate;
         assert this.jcrDelegate != null;
 
@@ -78,19 +76,20 @@ public class JcrConnection implements Connection {
     public ConnectionInfo info() {
         return this.jcrDelegate.getConnectionInfo();
     }
-    
+
     /**
-     * Returns the interface used to communicate to the Jcr Repository. 
+     * Returns the interface used to communicate to the Jcr Repository.
+     * 
      * @return RepositoryDelegate
      */
     public RepositoryDelegate getRepositoryDelegate() {
-	return this.jcrDelegate;
+        return this.jcrDelegate;
     }
 
     protected NodeType nodeType( String name ) throws SQLException {
         try {
             return getRepositoryDelegate().nodeType(name);
-         } catch (RepositoryException e) {
+        } catch (RepositoryException e) {
             throw new SQLException(e.getLocalizedMessage());
         }
     }
@@ -141,7 +140,7 @@ public class JcrConnection implements Connection {
     public void close() {
         if (!closed) {
             try {
-        	this.getRepositoryDelegate().close();
+                this.getRepositoryDelegate().close();
             } finally {
                 metadata = null;
                 closed = true;
@@ -170,9 +169,9 @@ public class JcrConnection implements Connection {
      */
     @Override
     public void commit() throws SQLException {
-        notClosed();      
+        notClosed();
         try {
-    	 this.getRepositoryDelegate().commit();
+            this.getRepositoryDelegate().commit();
         } catch (RepositoryException e) {
             throw new SQLException(e.getLocalizedMessage());
         }
@@ -187,7 +186,7 @@ public class JcrConnection implements Connection {
     public void rollback() throws SQLException {
         notClosed();
         try {
-    	 this.getRepositoryDelegate().rollback();
+            this.getRepositoryDelegate().rollback();
         } catch (RepositoryException e) {
             throw new SQLException(e.getLocalizedMessage());
         }
@@ -409,20 +408,18 @@ public class JcrConnection implements Connection {
     public DatabaseMetaData getMetaData() throws SQLException {
         notClosed();
         if (metadata == null) {
-        	String descriptor = this.getRepositoryDelegate().getDescriptor(Repository.REP_NAME_DESC);
-    		if (descriptor != null && descriptor.toLowerCase().contains("modeshape")) {
-    			return new ModeShapeMetaData(this);
-    		}
+            String descriptor = this.getRepositoryDelegate().getDescriptor(Repository.REP_NAME_DESC);
+            if (descriptor != null && descriptor.toLowerCase().contains("modeshape")) {
+                return new ModeShapeMetaData(this);
+            }
             return new JcrMetaData(this);
         }
         return metadata;
     }
 
     /**
-     * Retrieves the type map associated with this Connection object. The type map
-     * contains entries for undefined types. This method always returns an empty
-     * map since it is not possible to add entries to this type map
-     * {@inheritDoc}
+     * Retrieves the type map associated with this Connection object. The type map contains entries for undefined types. This
+     * method always returns an empty map since it is not possible to add entries to this type map {@inheritDoc}
      * 
      * @see java.sql.Connection#getTypeMap()
      */
@@ -438,7 +435,7 @@ public class JcrConnection implements Connection {
      */
     @Override
     public void setTypeMap( Map<String, Class<?>> map ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -459,6 +456,7 @@ public class JcrConnection implements Connection {
      * 
      * @see java.sql.Connection#createStatement()
      */
+    @SuppressWarnings( "unused" )
     @Override
     public Statement createStatement() throws SQLException {
         return new JcrStatement(this);
@@ -472,7 +470,7 @@ public class JcrConnection implements Connection {
     @Override
     public Statement createStatement( int resultSetType,
                                       int resultSetConcurrency ) throws SQLException {
-    	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -504,7 +502,7 @@ public class JcrConnection implements Connection {
      */
     @Override
     public PreparedStatement prepareStatement( String sql,
-                                               int autoGeneratedKeys )  throws SQLException {
+                                               int autoGeneratedKeys ) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
@@ -527,7 +525,7 @@ public class JcrConnection implements Connection {
     @Override
     public PreparedStatement prepareStatement( String sql,
                                                String[] columnNames ) throws SQLException {
-	throw new SQLFeatureNotSupportedException();
+        throw new SQLFeatureNotSupportedException();
     }
 
     /**
@@ -664,12 +662,12 @@ public class JcrConnection implements Connection {
      */
     @Override
     public boolean isWrapperFor( Class<?> iface ) /*throws SQLException*/{
-		if ( iface.isInstance(this) ) {
-		    return true;
-		}
-		
-		return this.getRepositoryDelegate().isWrapperFor(iface); 
-	    }
+        if (iface.isInstance(this)) {
+            return true;
+        }
+
+        return this.getRepositoryDelegate().isWrapperFor(iface);
+    }
 
     /**
      * {@inheritDoc}
@@ -678,10 +676,10 @@ public class JcrConnection implements Connection {
      */
     @Override
     public <T> T unwrap( Class<T> iface ) throws SQLException {
-    	if (isWrapperFor(iface)) {
-		    return iface.cast(this);
-		}
-		return getRepositoryDelegate().unwrap(iface);
+        if (isWrapperFor(iface)) {
+            return iface.cast(this);
+        }
+        return getRepositoryDelegate().unwrap(iface);
     }
 
 }

@@ -269,6 +269,7 @@ public class LocalRepositoryDelegate extends AbstractRepositoryDelegate {
      * 
      * @see java.sql.Connection#rollback()
      */
+    @SuppressWarnings( "unused" )
     @Override
     public void rollback() throws RepositoryException {
         closeStatement();
