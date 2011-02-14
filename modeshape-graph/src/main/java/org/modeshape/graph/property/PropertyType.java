@@ -86,6 +86,38 @@ public enum PropertyType {
         }
     }
 
+    private static interface TypeChecker {
+        boolean isTypeFor( Object value );
+    }
+
+    protected final static class StrongReferenceTypeChecker implements TypeChecker {
+        @Override
+        public boolean isTypeFor( Object value ) {
+            return value instanceof Reference && !((Reference)value).isWeak();
+        }
+    }
+
+    protected final static class WeakReferenceTypeChecker implements TypeChecker {
+        @Override
+        public boolean isTypeFor( Object value ) {
+            return value instanceof Reference && ((Reference)value).isWeak();
+        }
+    }
+
+    protected final static class ClassBasedTypeChecker implements TypeChecker {
+        private final Class<?> valueClass;
+
+        protected ClassBasedTypeChecker( Class<?> valueClass ) {
+            this.valueClass = valueClass;
+            assert this.valueClass != null;
+        }
+
+        @Override
+        public boolean isTypeFor( Object value ) {
+            return this.valueClass.isInstance(value);
+        }
+    }
+
     private static final List<PropertyType> ALL_PROPERTY_TYPES;
     private static final Map<String, PropertyType> PROPERTY_TYPE_BY_LOWERCASE_NAME;
     static {
@@ -104,11 +136,21 @@ public enum PropertyType {
     private final Canonicalizer canonicalizer;
     private final Class<?> valueClass;
     private final Set<Class<?>> castableValueClasses;
+    private final TypeChecker typeChecker;
 
     private PropertyType( String name,
                           Comparator<?> comparator,
                           Canonicalizer canonicalizer,
                           Class<?> valueClass,
+                          Class<?>... castableClasses ) {
+        this(name, comparator, canonicalizer, valueClass, null, castableClasses);
+    }
+
+    private PropertyType( String name,
+                          Comparator<?> comparator,
+                          Canonicalizer canonicalizer,
+                          Class<?> valueClass,
+                          TypeChecker typeChecker,
                           Class<?>... castableClasses ) {
         this.name = name;
         this.comparator = comparator;
@@ -119,6 +161,7 @@ public enum PropertyType {
         } else {
             castableValueClasses = Collections.emptySet();
         }
+        this.typeChecker = typeChecker != null ? typeChecker : new ClassBasedTypeChecker(this.valueClass);
     }
 
     public Class<?> getValueClass() {
@@ -148,7 +191,9 @@ public enum PropertyType {
     }
 
     public final boolean isTypeFor( Object value ) {
-        if (this.valueClass.isInstance(value)) return true;
+        // Does the value exactly comply with this type ...
+        if (this.typeChecker.isTypeFor(value)) return true;
+        // Is the value castable to this type ...
         for (Class<?> valueClass : castableValueClasses) {
             if (valueClass.isInstance(value)) return true;
         }

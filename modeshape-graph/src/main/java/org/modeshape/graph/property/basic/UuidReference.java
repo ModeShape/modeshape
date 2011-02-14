@@ -85,6 +85,16 @@ public class UuidReference implements Reference {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return uuid.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public int compareTo( Reference that ) {
         if (this == that) return 0;
