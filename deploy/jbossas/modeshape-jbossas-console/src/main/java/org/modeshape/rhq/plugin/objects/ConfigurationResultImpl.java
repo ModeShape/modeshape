@@ -28,7 +28,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
+import org.rhq.core.domain.configuration.Property;
 import org.rhq.core.domain.configuration.PropertySimple;
 import org.rhq.core.domain.configuration.definition.PropertyDefinition;
 import org.rhq.core.domain.configuration.definition.PropertyDefinitionList;
@@ -36,54 +36,48 @@ import org.rhq.core.domain.configuration.definition.PropertyDefinitionMap;
 import org.rhq.core.domain.configuration.definition.PropertyDefinitionSimple;
 import org.rhq.core.pluginapi.inventory.ResourceDiscoveryContext;
 
+public class ConfigurationResultImpl {
 
-public class ConfigurationResultImpl  {
-	
-		
-	public static Collection mapProperties(ResourceDiscoveryContext discoveryContext, Properties values ) {
-		Set<PropertySimple> properties = new HashSet();
-		if (discoveryContext.getResourceType().getPluginConfigurationDefinition() == null) {
-			return Collections.EMPTY_LIST;
-		}
-		Map<String , PropertyDefinition> propDefs = discoveryContext.getResourceType().getPluginConfigurationDefinition().getPropertyDefinitions();
-		
-		Iterator<String> propkeys = propDefs.keySet().iterator();
-		
-		while (propkeys.hasNext()) {
-			final String key = propkeys.next();
-			PropertyDefinition pdef = propDefs.get(key);
-			
-			if (pdef instanceof PropertyDefinitionSimple) {
-				String fieldName = ((PropertyDefinitionSimple) pdef).getName();
-				if (values.containsKey(fieldName)) {
-				
-					properties.add(new PropertySimple(key, values.get(fieldName)));
-				}
-			} else if (pdef instanceof PropertyDefinitionList) {
-				PropertyDefinition propertyDefinitionMap = ((PropertyDefinitionList) pdef)
-						.getMemberDefinition();
-				Map simpleProperties = ((PropertyDefinitionMap) propertyDefinitionMap)
-						.getPropertyDefinitions();
-				Iterator simplePropertiesIter = simpleProperties.values()
-						.iterator();
-		
-				while (simplePropertiesIter.hasNext()) {
-					PropertyDefinition simpleProp = (PropertyDefinition) simplePropertiesIter
-							.next();
-					String fieldName = ((PropertyDefinitionSimple) simpleProp)
-							.getName();
-					if (values.contains(fieldName)) {
-						
-						properties.add(new PropertySimple(key, values.get(fieldName)));
-					}
-				}
-		
-			}
-			
-		}
-				
-		return properties;
-	
-	}	
-	
+    @SuppressWarnings( "rawtypes" )
+    public static Collection mapProperties( ResourceDiscoveryContext discoveryContext,
+                                            Properties values ) {
+        Set<Property> properties = new HashSet<Property>();
+        if (discoveryContext.getResourceType().getPluginConfigurationDefinition() == null) {
+            return Collections.EMPTY_LIST;
+        }
+        Map<String, PropertyDefinition> propDefs = discoveryContext.getResourceType()
+                                                                   .getPluginConfigurationDefinition()
+                                                                   .getPropertyDefinitions();
+
+        Iterator<String> propkeys = propDefs.keySet().iterator();
+
+        while (propkeys.hasNext()) {
+            final String key = propkeys.next();
+            PropertyDefinition pdef = propDefs.get(key);
+
+            if (pdef instanceof PropertyDefinitionSimple) {
+                String fieldName = ((PropertyDefinitionSimple)pdef).getName();
+                if (values.containsKey(fieldName)) {
+
+                    properties.add(new PropertySimple(key, values.get(fieldName)));
+                }
+            } else if (pdef instanceof PropertyDefinitionList) {
+                PropertyDefinition propertyDefinitionMap = ((PropertyDefinitionList)pdef).getMemberDefinition();
+                Map<?, PropertyDefinition> simpleProperties = ((PropertyDefinitionMap)propertyDefinitionMap).getPropertyDefinitions();
+                Iterator<PropertyDefinition> simplePropertiesIter = simpleProperties.values().iterator();
+
+                while (simplePropertiesIter.hasNext()) {
+                    PropertyDefinition simpleProp = simplePropertiesIter.next();
+                    String fieldName = ((PropertyDefinitionSimple)simpleProp).getName();
+                    if (values.contains(fieldName)) {
+                        properties.add(new PropertySimple(key, values.get(fieldName)));
+                    }
+                }
+            }
+        }
+
+        return properties;
+
+    }
+
 }

@@ -69,7 +69,7 @@ import org.rhq.plugins.jbossas5.ProfileServiceComponent;
  * This class implements required RHQ interfaces and provides common logic used
  * by all MetaMatrix components.
  */
-@SuppressWarnings( { "unchecked" })
+@SuppressWarnings( { "unchecked", "rawtypes" })
 public abstract class Facet implements
 		ProfileServiceComponent<ResourceComponent>, MeasurementFacet,
 		OperationFacet, ConfigurationFacet, ContentFacet, DeleteResourceFacet,

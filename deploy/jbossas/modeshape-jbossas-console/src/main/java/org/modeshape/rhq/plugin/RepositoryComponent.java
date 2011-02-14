@@ -31,16 +31,12 @@ import org.mc4j.ems.connection.EmsConnection;
 import org.modeshape.rhq.plugin.util.ModeShapeManagementView;
 import org.modeshape.rhq.plugin.util.PluginConstants;
 import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType;
-import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Connector;
 import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Engine;
 import org.modeshape.rhq.plugin.util.PluginConstants.ComponentType.Repository;
 import org.rhq.core.domain.configuration.Configuration;
-import org.rhq.core.domain.measurement.AvailabilityType;
 import org.rhq.core.domain.measurement.MeasurementDataTrait;
 import org.rhq.core.domain.measurement.MeasurementReport;
 import org.rhq.core.domain.measurement.MeasurementScheduleRequest;
-import org.rhq.core.pluginapi.inventory.CreateResourceReport;
-import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
 import org.rhq.core.pluginapi.inventory.CreateResourceReport;
 import org.rhq.plugins.jbossas5.connection.ProfileServiceConnection;
 

@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
 import org.jboss.managed.api.ManagedOperation;
 import org.jboss.metatype.api.values.MetaValue;
 import org.rhq.core.domain.configuration.PropertyList;
@@ -37,126 +36,117 @@ import org.rhq.core.domain.configuration.definition.PropertyDefinitionList;
 import org.rhq.core.domain.configuration.definition.PropertyDefinitionMap;
 import org.rhq.core.domain.configuration.definition.PropertyDefinitionSimple;
 
-
+@SuppressWarnings( "rawtypes" )
 public class ExecutedResourceConfigurationResultImpl implements ExecutedResult {
 
-	Map propertDefinitions;
-	
-	String operationName;
-	
-	String componentType;
+    Map propertDefinitions;
 
-	final static String LISTNAME = "list"; //$NON-NLS-1$
-	
-	final static String MAPNAME = "map"; //$NON-NLS-1$
+    String operationName;
 
-	Object result;
-	
-	Object content;
+    String componentType;
 
-	List fieldNameList;
-	
+    final static String LISTNAME = "list"; //$NON-NLS-1$
 
-	public ExecutedResourceConfigurationResultImpl(String componentType, String operationName, Map propDefs) {
-		this.componentType = componentType;
-		this.operationName = operationName;
-		this.propertDefinitions = propDefs;
-		init();
-	}
-	
-	public void reset() {
-		result = null;
-		content = null;
-	}
-	
-	public String getComponentType() {
-		return this.componentType;
-	}
-	
-	public String getOperationName() {
-		return this.operationName;
-	}
-		
+    final static String MAPNAME = "map"; //$NON-NLS-1$
 
-	
-	public List getFieldNameList() {
-		return fieldNameList;
-	}
+    Object result;
 
-	public Object getResult() {
-		return result;
-	}
-	
-	private void setComplexResult() {
-		PropertyList list = new PropertyList(LISTNAME); //$NON-NLS-1$
-		PropertyMap pm;
-		Iterator resultIter = ((List)content).iterator();
-		while (resultIter.hasNext()) {
-			Map reportRowMap = (Map) resultIter.next();
-			Iterator reportRowKeySetIter = reportRowMap.keySet().iterator();
-			pm = new PropertyMap("userMap"); //$NON-NLS-1$			
+    Object content;
 
-			while (reportRowKeySetIter.hasNext()) {
-				String key = (String) reportRowKeySetIter.next();
-				pm.put(new PropertySimple(key, reportRowMap.get(key)==null?"":reportRowMap.get(key))); //$NON-NLS-1$
-			}
-			list.add(pm);
-		}
-		
-		result = list;
-	}
-	
+    List<String> fieldNameList;
 
-	public void setContent(Collection content) {
-		this.content = content;
-		setComplexResult();
-	}
+    public ExecutedResourceConfigurationResultImpl( String componentType,
+                                                    String operationName,
+                                                    Map propDefs ) {
+        this.componentType = componentType;
+        this.operationName = operationName;
+        this.propertDefinitions = propDefs;
+        init();
+    }
 
-	public void setContent(String content) {
-		this.content = content;
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @see org.modeshape.rhq.plugin.objects.ExecutedResult#setContent(org.jboss.metatype.api.values.MetaValue)
-	 */
-	@Override
-	public void setContent(MetaValue content) {
-	}	
+    public void reset() {
+        result = null;
+        content = null;
+    }
 
-	private void init() {
-		fieldNameList = new LinkedList();
+    public String getComponentType() {
+        return this.componentType;
+    }
 
-		PropertyDefinition listPropDefinition = (PropertyDefinition) propertDefinitions
-				.get(LISTNAME);
+    public String getOperationName() {
+        return this.operationName;
+    }
 
-		PropertyDefinition propertyDefinitionMap = ((PropertyDefinitionList) listPropDefinition)
-				.getMemberDefinition();
-		Map simpleProperties = ((PropertyDefinitionMap) propertyDefinitionMap)
-				.getPropertyDefinitions();
-		Iterator simplePropertiesIter = simpleProperties.values()
-				.iterator();
+    @SuppressWarnings( "unchecked" )
+    public List getFieldNameList() {
+        return fieldNameList;
+    }
 
-		while (simplePropertiesIter.hasNext()) {
-			PropertyDefinition simpleProp = (PropertyDefinition) simplePropertiesIter
-					.next();
-			String fieldName = ((PropertyDefinitionSimple) simpleProp)
-					.getName();
-			fieldNameList.add(fieldName);
-		}
-				
+    public Object getResult() {
+        return result;
+    }
 
-	}
+    private void setComplexResult() {
+        PropertyList list = new PropertyList(LISTNAME);
+        PropertyMap pm;
+        Iterator resultIter = ((List)content).iterator();
+        while (resultIter.hasNext()) {
+            Map reportRowMap = (Map)resultIter.next();
+            Iterator reportRowKeySetIter = reportRowMap.keySet().iterator();
+            pm = new PropertyMap("userMap"); //$NON-NLS-1$			
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @see org.modeshape.rhq.plugin.objects.ExecutedResult#setManagedOperation(org.jboss.managed.api.ManagedOperation)
-	 */
-	@Override
-	public void setManagedOperation(ManagedOperation managedOperation) {
-	}
+            while (reportRowKeySetIter.hasNext()) {
+                String key = (String)reportRowKeySetIter.next();
+                pm.put(new PropertySimple(key, reportRowMap.get(key) == null ? "" : reportRowMap.get(key))); //$NON-NLS-1$
+            }
+            list.add(pm);
+        }
 
-	
+        result = list;
+    }
+
+    public void setContent( Collection content ) {
+        this.content = content;
+        setComplexResult();
+    }
+
+    public void setContent( String content ) {
+        this.content = content;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.rhq.plugin.objects.ExecutedResult#setContent(org.jboss.metatype.api.values.MetaValue)
+     */
+    @Override
+    public void setContent( MetaValue content ) {
+    }
+
+    private void init() {
+        fieldNameList = new LinkedList<String>();
+
+        PropertyDefinition listPropDefinition = (PropertyDefinition)propertDefinitions.get(LISTNAME);
+
+        PropertyDefinition propertyDefinitionMap = ((PropertyDefinitionList)listPropDefinition).getMemberDefinition();
+        Map simpleProperties = ((PropertyDefinitionMap)propertyDefinitionMap).getPropertyDefinitions();
+        Iterator simplePropertiesIter = simpleProperties.values().iterator();
+
+        while (simplePropertiesIter.hasNext()) {
+            PropertyDefinition simpleProp = (PropertyDefinition)simplePropertiesIter.next();
+            String fieldName = ((PropertyDefinitionSimple)simpleProp).getName();
+            fieldNameList.add(fieldName);
+        }
+
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.rhq.plugin.objects.ExecutedResult#setManagedOperation(org.jboss.managed.api.ManagedOperation)
+     */
+    @Override
+    public void setManagedOperation( ManagedOperation managedOperation ) {
+    }
+
 }

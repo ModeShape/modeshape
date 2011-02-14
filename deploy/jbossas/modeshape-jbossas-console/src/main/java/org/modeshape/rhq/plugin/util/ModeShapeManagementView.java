@@ -240,7 +240,7 @@ public class ModeShapeManagementView implements PluginConstants {
         if (metaType.isCollection()) {
             for (MetaValue value : ((CollectionValueSupport)pValue).getElements()) {
                 if (value.getMetaType().isComposite()) {
-                    MetaValue repository = (MetaValue)value;
+                    MetaValue repository = value;
                     list.add(repository);
                 } else {
                     throw new IllegalStateException(pValue + " is not a Composite type"); //$NON-NLS-1$

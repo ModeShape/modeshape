@@ -62,7 +62,8 @@ public class ConnectorDiscoveryComponent implements
 	 * 
 	 * @see org.rhq.core.pluginapi.inventory.ResourceDiscoveryComponent#discoverResources(org.rhq.core.pluginapi.inventory.ResourceDiscoveryContext)
 	 */
-	public Set<DiscoveredResourceDetails> discoverResources(
+	@SuppressWarnings( "rawtypes" )
+    public Set<DiscoveredResourceDetails> discoverResources(
 			ResourceDiscoveryContext discoveryContext)
 			throws InvalidPluginConfigurationException, Exception {
 
