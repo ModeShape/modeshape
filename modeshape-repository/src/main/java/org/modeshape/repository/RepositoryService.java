@@ -125,6 +125,7 @@ public class RepositoryService implements AdministeredService, Observer {
     private final String configurationSourceName;
     private final String configurationWorkspaceName;
     private final Path pathToConfigurationRoot;
+    private final Path pathToSources;
     private final ConfigurationChangeObserver configurationChangeObserver;
     private final Administrator administrator = new Administrator();
     private final AtomicBoolean started = new AtomicBoolean(false);
@@ -157,9 +158,9 @@ public class RepositoryService implements AdministeredService, Observer {
         PathFactory pathFactory = context.getValueFactories().getPathFactory();
         if (pathToConfigurationRoot == null) pathToConfigurationRoot = pathFactory.create("/dna:system");
         if (problems == null) problems = new SimpleProblems();
-        Path sourcesPath = pathFactory.create(pathToConfigurationRoot, ModeShapeLexicon.SOURCES);
+        this.pathToSources = pathFactory.create(pathToConfigurationRoot, ModeShapeLexicon.SOURCES);
 
-        this.sources = new RepositoryLibrary(configurationSource, configurationWorkspaceName, sourcesPath, context,
+        this.sources = new RepositoryLibrary(configurationSource, configurationWorkspaceName, this.pathToSources, context,
                                              observationBus);
         this.sources.addSource(configurationSource);
         this.pathToConfigurationRoot = pathToConfigurationRoot;
@@ -208,6 +209,13 @@ public class RepositoryService implements AdministeredService, Observer {
     }
 
     /**
+     * @return pathToSources
+     */
+    protected Path getPathToSources() {
+        return pathToSources;
+    }
+
+    /**
      * @return env
      */
     public final ExecutionContext getExecutionEnvironment() {
@@ -227,8 +235,9 @@ public class RepositoryService implements AdministeredService, Observer {
 
             // Read the configuration and repository source nodes (children under "/dna:sources") ...
             Graph graph = Graph.create(getConfigurationSourceName(), sources, context);
-            Path pathToSourcesNode = context.getValueFactories().getPathFactory().create(pathToConfigurationRoot,
-                                                                                         ModeShapeLexicon.SOURCES);
+            Path pathToSourcesNode = context.getValueFactories()
+                                            .getPathFactory()
+                                            .create(pathToConfigurationRoot, ModeShapeLexicon.SOURCES);
             try {
                 String workspaceName = getConfigurationWorkspaceName();
                 if (workspaceName != null) graph.useWorkspace(workspaceName);
@@ -644,7 +653,7 @@ public class RepositoryService implements AdministeredService, Observer {
                 if (!getConfigurationWorkspaceName().equals(change.getRepositoryWorkspaceName())) return;
                 Path changedPath = change.getPath();
                 Path configPath = getPathToConfigurationRoot();
-                if (!changedPath.isAtOrBelow(getPathToConfigurationRoot())) return;
+                if (!changedPath.isAtOrBelow(getPathToSources())) return;
                 boolean changedNodeIsPotentiallySource = configPath.size() + 1 == changedPath.size();
 
                 // At this point, we know that something inside the configuration changed, so figure out what happened ...
