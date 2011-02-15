@@ -130,6 +130,25 @@ public class ThreadSafeNamespaceRegistry implements NamespaceRegistry {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.property.NamespaceRegistry#register(java.lang.Iterable)
+     */
+    @Override
+    public void register( Iterable<Namespace> namespaces ) {
+        CheckArg.isNotNull(namespaces, "namespaces");
+        Lock lock = this.registryLock.writeLock();
+        try {
+            lock.lock();
+            for (Namespace namespace : namespaces) {
+                register(namespace.getPrefix(), namespace.getNamespaceUri());
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public String register( String prefix,
                             String namespaceUri ) {

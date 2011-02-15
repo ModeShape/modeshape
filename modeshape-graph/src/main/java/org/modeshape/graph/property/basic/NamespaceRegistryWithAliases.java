@@ -161,6 +161,17 @@ public class NamespaceRegistryWithAliases implements NamespaceRegistry {
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.graph.property.NamespaceRegistry#register(java.lang.Iterable)
+     */
+    @Override
+    public void register( Iterable<Namespace> namespaces ) {
+        // Let the delegate registry handle this, including cases where an aliased namespace is changed ...
+        delegate.register(namespaces);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.modeshape.graph.property.NamespaceRegistry#register(java.lang.String, java.lang.String)
      */
     public String register( String prefix,

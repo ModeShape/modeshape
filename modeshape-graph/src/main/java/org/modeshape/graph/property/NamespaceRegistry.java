@@ -84,6 +84,8 @@ public interface NamespaceRegistry {
     String register( String prefix,
                      String namespaceUri );
 
+    void register( Iterable<Namespace> namespaces );
+
     /**
      * Unregister the namespace with the supplied URI.
      * 

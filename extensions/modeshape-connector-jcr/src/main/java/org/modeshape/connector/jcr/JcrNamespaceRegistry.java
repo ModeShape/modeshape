@@ -194,6 +194,16 @@ public class JcrNamespaceRegistry implements NamespaceRegistry {
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.graph.property.NamespaceRegistry#register(java.lang.Iterable)
+     */
+    @Override
+    public void register( Iterable<Namespace> namespaces ) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.modeshape.graph.property.NamespaceRegistry#register(java.lang.String, java.lang.String)
      */
     @Override

@@ -49,6 +49,7 @@ public class ModeShapeLexicon {
     public static final Name ROOT = new BasicName(Namespace.URI, "root");
     public static final Name TIME_TO_EXPIRE = new BasicName(Namespace.URI, "timeToExpire");
     public static final Name URI = new BasicName(Namespace.URI, "uri");
+    public static final Name GENERATED = new BasicName(Namespace.URI, "generated");
     /**
      * @deprecated Use {@link #URI} instead.
      */

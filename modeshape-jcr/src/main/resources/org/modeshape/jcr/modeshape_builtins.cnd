@@ -36,6 +36,7 @@
 
 [mode:namespace] > nt:base
 - mode:uri (string) primary protected version
+- mode:generated (boolean) protected version
 
 [mode:namespaces] > nt:base
 + * (mode:namespace) = mode:namespace protected version

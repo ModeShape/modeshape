@@ -363,10 +363,10 @@
 	                     <name>org.jboss.byteman.verbose</name>
 	                     <value>true</value>
 	                 </property-->
-	                 <property>
+	                 <!--property>
 	                     <name>org.jboss.byteman.contrib.bmunit.verbose</name>
 	                     <value>true</value>
-	                 </property>
+	                 </property-->
 	                 <property>
 	                     <name>org.modeshape.jcr.profile.filename</name>
 	                     <value>target/byteman/modeshape-profile.log</value>

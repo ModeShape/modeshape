@@ -26,6 +26,7 @@ package org.modeshape.graph.property.basic;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.util.Set;
+import org.junit.Test;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
@@ -35,7 +36,6 @@ import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.Property;
 import org.modeshape.graph.property.PropertyFactory;
-import org.junit.Test;
 
 /**
  * @author Randall Hauch
@@ -47,6 +47,7 @@ public class GraphNamespaceRegistryTest extends AbstractNamespaceRegistryTest<Gr
     protected Graph graph;
     private Path pathToParentOfNamespaceNodes;
     private Name uriPropertyName;
+    private Name generatedPropertyName;
     private Property[] additionalNamespaceProperties;
 
     /**
@@ -65,6 +66,7 @@ public class GraphNamespaceRegistryTest extends AbstractNamespaceRegistryTest<Gr
         context.getNamespaceRegistry().register("nsx", "http://www.example.com/namespaces");
         context.getNamespaceRegistry().register("other", "http://www.example.com/other");
         uriPropertyName = context.getValueFactories().getNameFactory().create("nsx:uri");
+        generatedPropertyName = context.getValueFactories().getNameFactory().create("nsx:gen");
         additionalNamespaceProperties = new Property[] {
             propertyFactory.create(nameFactory.create("nsx:something"), "Some value"),
             propertyFactory.create(nameFactory.create("nsx:something2"), "Some value2"),
@@ -80,7 +82,7 @@ public class GraphNamespaceRegistryTest extends AbstractNamespaceRegistryTest<Gr
 
         // Now set up the graph-based namespace registry ...
         namespaceRegistry = new GraphNamespaceRegistry(graph, pathToParentOfNamespaceNodes, uriPropertyName,
-                                                       additionalNamespaceProperties);
+                                                       generatedPropertyName, additionalNamespaceProperties);
     }
 
     /**
@@ -103,7 +105,7 @@ public class GraphNamespaceRegistryTest extends AbstractNamespaceRegistryTest<Gr
 
         // Now set up the graph-based namespace registry ...
         GraphNamespaceRegistry registry2 = new GraphNamespaceRegistry(graph, pathToParentOfNamespaceNodes, uriPropertyName,
-                                                                      additionalNamespaceProperties);
+                                                                      generatedPropertyName, additionalNamespaceProperties);
         // All namespaces should match ...
         Set<NamespaceRegistry.Namespace> all = namespaceRegistry.getNamespaces();
         Set<NamespaceRegistry.Namespace> all2 = registry2.getNamespaces();

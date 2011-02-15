@@ -69,13 +69,13 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Logger;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.GraphI18n;
 import org.modeshape.graph.JaasSecurityContext;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.SecurityContext;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.Workspace;
-import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositoryContext;
@@ -102,8 +102,8 @@ import org.modeshape.graph.property.ValueFactories;
 import org.modeshape.graph.property.ValueFactory;
 import org.modeshape.graph.property.basic.GraphNamespaceRegistry;
 import org.modeshape.graph.query.QueryBuilder;
-import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.QueryBuilder.ConstraintBuilder;
+import org.modeshape.graph.query.QueryResults;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.Visitors;
 import org.modeshape.graph.query.parse.QueryParsers;
@@ -171,8 +171,8 @@ public class JcrRepository implements Repository {
     public enum Option {
 
         /**
-         * Flag that defines whether or not the node types should be exposed as content under the "{@code
-         * /jcr:system/jcr:nodeTypes}" node. Value is either "<code>true</code>" or "<code>false</code>" (default).
+         * Flag that defines whether or not the node types should be exposed as content under the "
+         * {@code /jcr:system/jcr:nodeTypes}" node. Value is either "<code>true</code>" or "<code>false</code>" (default).
          * 
          * @see DefaultOption#PROJECT_NODE_TYPES
          */
@@ -688,6 +688,7 @@ public class JcrRepository implements Repository {
         // Create the namespace registry and corresponding execution context.
         // Note that this persistent registry has direct access to the system workspace.
         Name uriProperty = ModeShapeLexicon.URI;
+        Name genProperty = ModeShapeLexicon.GENERATED;
         PathFactory pathFactory = executionContext.getValueFactories().getPathFactory();
         Path systemPath = pathFactory.create(JcrLexicon.SYSTEM);
         final Path namespacesPath = pathFactory.create(systemPath, ModeShapeLexicon.NAMESPACES);
@@ -695,13 +696,11 @@ public class JcrRepository implements Repository {
         Property namespaceType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.NAMESPACE);
 
         // Now create the registry implementation ...
-        this.persistentRegistry = new GraphNamespaceRegistry(systemGraph, namespacesPath, uriProperty, namespaceType);
+        this.persistentRegistry = new GraphNamespaceRegistry(systemGraph, namespacesPath, uriProperty, genProperty, namespaceType);
         this.executionContext = executionContext.with(persistentRegistry);
 
         // Add the built-ins, ensuring we overwrite any badly-initialized values ...
-        for (Map.Entry<String, String> builtIn : JcrNamespaceRegistry.STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX.entrySet()) {
-            this.persistentRegistry.register(builtIn.getKey(), builtIn.getValue());
-        }
+        this.persistentRegistry.register(JcrNamespaceRegistry.STANDARD_BUILT_IN_NAMESPACES_BY_PREFIX);
 
         // Set up the repository type manager ...
         Path parentOfTypeNodes = null;
@@ -1668,9 +1667,8 @@ public class JcrRepository implements Repository {
                                 valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_NAME_DESC, true)));
         }
         if (!repoDescriptors.containsKey(Repository.REP_VENDOR_DESC)) {
-            repoDescriptors.put(Repository.REP_VENDOR_DESC, valueFor(factories,
-                                                                     JcrRepository.getBundleProperty(Repository.REP_VENDOR_DESC,
-                                                                                                     true)));
+            repoDescriptors.put(Repository.REP_VENDOR_DESC,
+                                valueFor(factories, JcrRepository.getBundleProperty(Repository.REP_VENDOR_DESC, true)));
         }
         if (!repoDescriptors.containsKey(Repository.REP_VENDOR_URL_DESC)) {
             repoDescriptors.put(Repository.REP_VENDOR_URL_DESC,

@@ -30,6 +30,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.Graph;
@@ -56,22 +58,27 @@ import org.modeshape.graph.property.ValueFactory;
 public class GraphNamespaceRegistry implements NamespaceRegistry {
 
     public static final Name DEFAULT_URI_PROPERTY_NAME = ModeShapeLexicon.URI;
+    public static final Name DEFAULT_GENERATED_PROPERTY_NAME = ModeShapeLexicon.GENERATED;
     public static final String GENERATED_PREFIX = "ns";
+    protected static final Pattern GENERATED_PREFIX_PATTERN = Pattern.compile("ns(\\d{3})");
 
     private SimpleNamespaceRegistry cache;
     private final Graph store;
     private final Path parentOfNamespaceNodes;
     private final Name uriPropertyName;
+    private final Name generatedPropertyName;
     private final List<Property> namespaceProperties;
 
     public GraphNamespaceRegistry( Graph store,
                                    Path parentOfNamespaceNodes,
                                    Name uriPropertyName,
+                                   Name generatedPropertyName,
                                    Property... additionalProperties ) {
         this.cache = new SimpleNamespaceRegistry();
         this.store = store;
         this.parentOfNamespaceNodes = parentOfNamespaceNodes;
         this.uriPropertyName = uriPropertyName != null ? uriPropertyName : DEFAULT_URI_PROPERTY_NAME;
+        this.generatedPropertyName = generatedPropertyName != null ? generatedPropertyName : DEFAULT_GENERATED_PROPERTY_NAME;
         List<Property> properties = Collections.emptyList();
         if (additionalProperties != null && additionalProperties.length != 0) {
             properties = new ArrayList<Property>(additionalProperties.length);
@@ -152,6 +159,20 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
      */
     public String getDefaultNamespaceUri() {
         return this.getNamespaceForPrefix("");
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.graph.property.NamespaceRegistry#register(java.lang.Iterable)
+     */
+    @Override
+    public void register( Iterable<Namespace> namespaces ) {
+        Map<String, String> urisByPrefix = new HashMap<String, String>();
+        for (Namespace namespace : namespaces) {
+            urisByPrefix.put(namespace.getPrefix(), namespace.getNamespaceUri());
+        }
+        register(urisByPrefix);
     }
 
     /**
@@ -302,17 +323,40 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
         Path.Segment lastSegment = path.getLastSegment();
         String localName = lastSegment.getName().getLocalName();
         int index = lastSegment.getIndex();
-        if (index == 1) {
-            if (GENERATED_PREFIX.equals(localName)) return localName + "00" + index;
-            return localName;
+        return getPrefixFor(localName, index);
+    }
+
+    protected String getPrefixFor( String name,
+                                   int counter ) {
+        if (counter == 1 && !GENERATED_PREFIX.equals(name)) return name;
+        if (counter < 10) {
+            return name + "00" + counter;
         }
-        if (index < 10) {
-            return localName + "00" + index;
+        if (counter < 100) {
+            return name + "0" + counter;
         }
-        if (index < 100) {
-            return localName + "0" + index;
+        assert counter < 1000;
+        return name + counter;
+    }
+
+    protected boolean isGeneratedPrefix( String prefix ) {
+        return GENERATED_PREFIX_PATTERN.matcher(prefix).matches();
+    }
+
+    protected String generatePrefix( Set<String> existingGeneratedPrefixes ) {
+        int maxCounter = 0;
+        if (existingGeneratedPrefixes != null) {
+            for (String prefix : existingGeneratedPrefixes) {
+                if (prefix == null) continue;
+                Matcher matcher = GENERATED_PREFIX_PATTERN.matcher(prefix);
+                if (matcher.matches()) {
+                    // Get the counter ...
+                    int value = Integer.parseInt(matcher.group(1));
+                    maxCounter = Math.max(maxCounter, value);
+                }
+            }
         }
-        return localName + index;
+        return getPrefixFor(GENERATED_PREFIX, ++maxCounter);
     }
 
     protected String readPrefixFor( String namespaceUri,
@@ -321,6 +365,8 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
         try {
             Subgraph nsGraph = store.getSubgraphOfDepth(2).at(parentOfNamespaceNodes);
             ValueFactory<String> stringFactory = store.getContext().getValueFactories().getStringFactory();
+            ValueFactory<Boolean> booleanFactory = store.getContext().getValueFactories().getBooleanFactory();
+            Set<String> generatedPrefixes = null;
             for (Location nsLocation : nsGraph.getRoot().getChildren()) {
                 Node ns = nsGraph.getNode(nsLocation);
                 String prefix = getPrefixFor(nsLocation.getPath());
@@ -328,14 +374,23 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
                 if (prefix != null && uri != null) {
                     if (uri.equals(namespaceUri)) return prefix;
                 }
+                Property generatedProperty = ns.getProperty(generatedPropertyName);
+                boolean generated = generatedProperty == null ? isGeneratedPrefix(prefix) : booleanFactory.create(generatedProperty.getFirstValue());
+                if (generated) {
+                    if (generatedPrefixes == null) generatedPrefixes = new HashSet<String>();
+                    generatedPrefixes.add(prefix);
+                }
             }
             if (generateIfMissing) {
                 // Generated prefixes are simply "ns" followed by the SNS index ...
                 PathFactory pathFactory = store.getContext().getValueFactories().getPathFactory();
-                Path pathToNamespaceNode = pathFactory.create(parentOfNamespaceNodes, GENERATED_PREFIX);
+                String prefix = generatePrefix(generatedPrefixes);
+                Path pathToNamespaceNode = pathFactory.create(parentOfNamespaceNodes, prefix);
                 Property uriProperty = store.getContext().getPropertyFactory().create(uriPropertyName, namespaceUri);
+                Property genProperty = store.getContext().getPropertyFactory().create(generatedPropertyName, true);
                 List<Property> props = new ArrayList<Property>(namespaceProperties);
                 props.add(uriProperty);
+                props.add(genProperty);
                 // Location actualLocation = store.createIfMissing(pathToNamespaceNode, props).andReturn().getLocation();
                 store.create(pathToNamespaceNode, props).ifAbsent().and();
 
@@ -360,13 +415,16 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
         Graph.Batch batch = store.batch();
 
         // Iterate over the existing mappings ...
+        Map<String, Path> existingPathsByPrefix = new HashMap<String, Path>();
         for (Location nsLocation : nsGraph.getRoot().getChildren()) {
             Node ns = nsGraph.getNode(nsLocation);
-            String actualPrefix = getPrefixFor(nsLocation.getPath());
+            Path path = nsLocation.getPath();
+            String actualPrefix = getPrefixFor(path);
             String actualUri = stringFactory.create(ns.getProperty(uriPropertyName).getFirstValue());
             if (actualPrefix != null && actualUri != null) {
                 existingUrisByPrefix.put(actualPrefix, actualUri);
                 existingPrefixesByUri.put(actualUri, actualPrefix);
+                existingPathsByPrefix.put(actualPrefix, path);
             }
         }
 
@@ -382,14 +440,14 @@ public class GraphNamespaceRegistry implements NamespaceRegistry {
             if (existingUriForNewPrefix == null) {
                 // The new prefix was not used, so add the new namespace node ...
                 Path pathToNamespaceNode = pathFactory.create(parentOfNamespaceNodes, newPrefix);
-                batch.create(pathToNamespaceNode).with(namespaceProperties).and(uriPropertyName, newUri).and();
+                batch.create(pathToNamespaceNode).orReplace().with(namespaceProperties).and(uriPropertyName, newUri).and();
                 if (existingPrefixForNewUri == null) {
                     // The new URI was not used, so we don't need to do anything more ...
                 } else if (existingPrefixForNewUri.equals(newPrefix)) {
                     // The new prefix matched the old prefix, so do nothing ...
                 } else {
                     // We need to remove the old namespace node ...
-                    Path pathToOldNamespaceNode = pathFactory.create(parentOfNamespaceNodes, existingPrefixForNewUri);
+                    Path pathToOldNamespaceNode = existingPathsByPrefix.get(existingPrefixForNewUri);
                     batch.delete(pathToOldNamespaceNode).and();
                 }
             } else {

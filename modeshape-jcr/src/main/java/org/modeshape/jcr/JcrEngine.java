@@ -363,7 +363,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
         if (namespacesNode != null) {
             configuration = getConfigurationGraph();
             GraphNamespaceRegistry registry = new GraphNamespaceRegistry(configuration, namespacesNode.getLocation().getPath(),
-                                                                         ModeShapeLexicon.URI);
+                                                                         ModeShapeLexicon.URI, ModeShapeLexicon.GENERATED);
             context = context.with(registry);
         }
 
@@ -509,11 +509,7 @@ public class JcrEngine extends ModeShapeEngine implements Repositories {
 
             // Load any namespaces from the configuration into the repository's context ...
             NamespaceRegistry repoRegistry = repository.getExecutionContext().getNamespaceRegistry();
-            for (NamespaceRegistry.Namespace namespace : configuration.getContext().getNamespaceRegistry().getNamespaces()) {
-                if (!repoRegistry.isRegisteredNamespaceUri(namespace.getNamespaceUri())) {
-                    repoRegistry.register(namespace.getPrefix(), namespace.getNamespaceUri());
-                }
-            }
+            repoRegistry.register(configuration.getContext().getNamespaceRegistry().getNamespaces());
 
             // Re-read the subgraph, in case any new nodes were added
             Subgraph nodeTypesSubgraph = subgraph;
