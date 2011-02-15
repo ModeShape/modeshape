@@ -1069,8 +1069,9 @@ class SessionCache {
                  * findPropertyDefinition checks constraints for all property types except REFERENCE.  To avoid unnecessary loading of nodes,
                  * REFERENCE constraints are only checked when the property is first set.
                  */
-                boolean referencePropMissedConstraints = skipReferenceValidation && definition != null
-                                                         && definition.getRequiredType() == PropertyType.REFERENCE
+                boolean referencePropMissedConstraints = skipReferenceValidation
+                                                         && definition != null
+                                                         && (definition.getRequiredType() == PropertyType.REFERENCE || definition.getRequiredType() == PropertyType.WEAKREFERENCE)
                                                          && !definition.canCastToTypeAndSatisfyConstraints(value);
                 if (definition == null || referencePropMissedConstraints) {
                     throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",
@@ -1272,7 +1273,7 @@ class SessionCache {
                  * REFERENCE constraints are only checked when the property is first set.
                  */
                 boolean referencePropMissedConstraints = definition != null
-                                                         && definition.getRequiredType() == PropertyType.REFERENCE
+                                                         && (definition.getRequiredType() == PropertyType.REFERENCE || definition.getRequiredType() == PropertyType.WEAKREFERENCE)
                                                          && !definition.canCastToTypeAndSatisfyConstraints(newValues);
                 if (definition == null || referencePropMissedConstraints) {
                     throw new ConstraintViolationException(JcrI18n.noDefinition.text("property",

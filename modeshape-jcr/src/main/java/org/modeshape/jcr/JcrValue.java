@@ -423,7 +423,8 @@ final class JcrValue implements org.modeshape.jcr.api.Value {
                 }
 
             case PropertyType.REFERENCE:
-                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY) {
+                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY
+                    && this.type != PropertyType.WEAKREFERENCE) {
                     throw createValueFormatException(Node.class);
                 }
                 try {
@@ -432,7 +433,7 @@ final class JcrValue implements org.modeshape.jcr.api.Value {
                     throw createValueFormatException(vfe);
                 }
             case PropertyType.WEAKREFERENCE:
-                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY) {
+                if (this.type != PropertyType.STRING && this.type != PropertyType.BINARY && this.type != PropertyType.REFERENCE) {
                     throw createValueFormatException(Node.class);
                 }
                 try {

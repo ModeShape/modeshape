@@ -78,6 +78,16 @@ public class StringReference implements Reference {
 
     /**
      * {@inheritDoc}
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public int compareTo( Reference that ) {
         if (this == that) return 0;

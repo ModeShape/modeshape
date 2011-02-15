@@ -946,6 +946,53 @@ public class ModeShapeTckTest extends AbstractJCRTest {
         session.save();
     }
 
+    @FixFor( "MODE-1092" )
+    @SuppressWarnings( "unchecked" )
+    public void testShouldBeAbleToSetWeakReferences() throws Exception {
+
+        session = getHelper().getSuperuserSession();
+
+        JcrNodeTypeManager nodeTypes = (JcrNodeTypeManager)session.getWorkspace().getNodeTypeManager();
+
+        /*
+        * Register a one-off node type with a reference property that has a constraint on it
+        */
+        NodeTypeTemplate ntt = nodeTypes.createNodeTypeTemplate();
+        ntt.setName("modetest:typeWithWeakReference");
+
+        PropertyDefinitionTemplate pdt = nodeTypes.createPropertyDefinitionTemplate();
+        pdt.setName("modetest:weakRefProp");
+        pdt.setRequiredType(PropertyType.WEAKREFERENCE);
+        pdt.setValueConstraints(new String[] {"nt:unstructured"});
+        ntt.getPropertyDefinitionTemplates().add(pdt);
+
+        nodeTypes.registerNodeType(ntt, false);
+
+        /*
+        * Add a node that would satisfy the constraint
+        */
+        Node root = session.getRootNode();
+
+        Node parentNode = root.addNode("weakReferenceTest", "nt:unstructured");
+        Node targetNode = parentNode.addNode("target", "nt:unstructured");
+        targetNode.addMixin("mix:referenceable");
+
+        /*
+        * Now add a node with the one-off type.
+        */
+        Node referringNode = parentNode.addNode("referer", "modetest:typeWithWeakReference");
+        referringNode.setProperty("modetest:weakRefProp", targetNode);
+
+        session.save();
+
+        // Now fetch the referring node again, and verify that the reference is still a weak reference
+        Node referringNode2 = session.getNode("/weakReferenceTest/referer");
+        Property property = referringNode2.getProperty("modetest:weakRefProp");
+        assertThat(property.getType(), is(PropertyType.WEAKREFERENCE));
+        Node referredNode = property.getNode();
+        assertThat(referredNode, is(targetNode));
+    }
+
     @FixFor( "MODE-701" )
     public void testShouldBeAbleToImportAutocreatedChildNodeWithoutDuplication() throws Exception {
         session = getHelper().getSuperuserSession();
