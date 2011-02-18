@@ -61,6 +61,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.graph.property.Path;
+import org.modeshape.jcr.CndNodeTypeReader;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrTools;
@@ -277,6 +278,21 @@ public abstract class ModeShapeUnitTest {
         }
     }
 
+    /**
+     * Log out of the current session, if there is one.
+     * 
+     * @throws RepositoryException if there is a problem logging out of the current session
+     */
+    protected void logout() throws RepositoryException {
+        if (session != null) {
+            try {
+                session.logout();
+            } finally {
+                session = null;
+            }
+        }
+    }
+
     protected static Repository repository( String repositoryName ) throws RepositoryException {
         if (repositoryName == null) {
             if (configuration.repositoryNames().size() == 0) fail("No repository is configured");
@@ -302,6 +318,23 @@ public abstract class ModeShapeUnitTest {
     protected static String defaultRepositoryName() {
         if (configuration.repositories().size() == 0) fail("No repository is configured");
         return configuration.repositories().iterator().next().getName();
+    }
+
+    protected void importContent( String pathToResourceFile ) throws Exception {
+        importContent(getClass(), pathToResourceFile);
+    }
+
+    protected void importContent( String pathToResourceFile,
+                                  String repositoryName,
+                                  String workspaceName ) throws Exception {
+        importContent(getClass(), pathToResourceFile, repositoryName, workspaceName);
+    }
+
+    protected void importContent( String pathToResourceFile,
+                                  String repositoryName,
+                                  String workspaceName,
+                                  String jcrPathToImportUnder ) throws Exception {
+        importContent(getClass(), pathToResourceFile, repositoryName, workspaceName, jcrPathToImportUnder);
     }
 
     protected static void importContent( Class<?> testClass,
@@ -351,7 +384,6 @@ public abstract class ModeShapeUnitTest {
             t.printStackTrace();
             throw t;
         }
-
     }
 
     protected URL resourceUrl( String name ) {
@@ -539,6 +571,31 @@ public abstract class ModeShapeUnitTest {
         fail("Expected to find " + totalNumberOfNodesSequenced + " nodes sequenced, but found " + numFound);
     }
 
+    protected void registerNodeTypes( String pathToCndResourceFile ) {
+        InputStream stream = getClass().getClassLoader().getResourceAsStream(pathToCndResourceFile);
+        if (stream == null) {
+            String msg = "\"" + pathToCndResourceFile + "\" does not reference an existing file";
+            System.err.println(msg);
+            throw new IllegalArgumentException(msg);
+        }
+        assertNotNull(stream);
+        try {
+            Session session = session();
+            CndNodeTypeReader cndReader = new CndNodeTypeReader(session);
+            cndReader.read(stream, pathToCndResourceFile);
+            session.getWorkspace().getNodeTypeManager().registerNodeTypes(cndReader.getNodeTypeDefinitions(), true);
+        } catch (RepositoryException re) {
+            throw new IllegalStateException("Could not load node type definition files", re);
+        } catch (IOException ioe) {
+            throw new IllegalStateException("Could not access node type definition files", ioe);
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException closer) {
+            }
+        }
+    }
+
     protected void assertNodeType( String name,
                                    boolean isAbstract,
                                    boolean isMixin,
@@ -550,17 +607,21 @@ public abstract class ModeShapeUnitTest {
                                    String... supertypes ) throws Exception {
         NodeType nodeType = session().getWorkspace().getNodeTypeManager().getNodeType(name);
         assertThat(nodeType, is(notNullValue()));
-        assertThat(nodeType.isAbstract(), is(isAbstract));
-        assertThat(nodeType.isMixin(), is(isMixin));
-        assertThat(nodeType.isQueryable(), is(isQueryable));
-        assertThat(nodeType.hasOrderableChildNodes(), is(hasOrderableChildNodes));
-        assertThat(nodeType.getPrimaryItemName(), is(primaryItemName));
+        assertThat("Unexpected abstract characteristic", nodeType.isAbstract(), is(isAbstract));
+        assertThat("Unexpected mixin characteristic", nodeType.isMixin(), is(isMixin));
+        assertThat("Unexpected queryable characteristic", nodeType.isQueryable(), is(isQueryable));
+        assertThat("Unexpected orderable child nodes", nodeType.hasOrderableChildNodes(), is(hasOrderableChildNodes));
+        assertThat("Unexpected primary item name", nodeType.getPrimaryItemName(), is(primaryItemName));
+        assertThat("Unexpected number of declared supertypes", nodeType.getDeclaredSupertypes().length, is(supertypes.length));
         for (int i = 0; i != supertypes.length; ++i) {
             assertThat(nodeType.getDeclaredSupertypes()[i].getName(), is(supertypes[i]));
         }
-        assertThat(nodeType.getDeclaredSupertypes().length, is(supertypes.length));
-        assertThat(nodeType.getDeclaredChildNodeDefinitions().length, is(numberOfDeclaredChildNodeDefinitions));
-        assertThat(nodeType.getDeclaredPropertyDefinitions().length, is(numberOfDeclaredPropertyDefinitions));
+        assertThat("Unexpected number of declared child node definitions",
+                   nodeType.getDeclaredChildNodeDefinitions().length,
+                   is(numberOfDeclaredChildNodeDefinitions));
+        assertThat("Unexpected number of declared property definitions",
+                   nodeType.getDeclaredPropertyDefinitions().length,
+                   is(numberOfDeclaredPropertyDefinitions));
     }
 
     protected void assertNodeTypes( String... nodeTypeNames ) throws Exception {

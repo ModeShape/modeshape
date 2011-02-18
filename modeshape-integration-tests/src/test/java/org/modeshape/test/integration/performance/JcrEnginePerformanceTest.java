@@ -23,6 +23,10 @@
  */
 package org.modeshape.test.integration.performance;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import javax.jcr.Node;
 import org.jboss.byteman.contrib.bmunit.BMScript;
 import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
 import org.junit.Ignore;
@@ -30,6 +34,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.test.ModeShapeSingleUseTest;
 
+@Ignore
 @RunWith( BMUnitRunner.class )
 public class JcrEnginePerformanceTest extends ModeShapeSingleUseTest {
 
@@ -40,12 +45,27 @@ public class JcrEnginePerformanceTest extends ModeShapeSingleUseTest {
         startEngineUsing("config/configRepositoryForJdbc.xml");
     }
 
-//    @Ignore
+    @Ignore
     @BMScript( value = "jcr-performance", dir = "src/test/byteman" )
     @Test
     public void shouldStartEngineAndRecordPerformanceTrace() throws Exception {
         startEngineUsing("config/configRepositoryForJdbc.xml");
         assertNode("/");
+
+        // Ensure the "car" node types are registered ...
+        assertNodeType("car:Car", false, false, true, false, null, 0, 11, "nt:unstructured");
+
+        // Add some content ...
+        importContent("jdbc/cars-system-view-with-uuids.xml");
+        session().save();
+
+        print = true;
+        printSubgraph(assertNode("/Cars"));
+
+        logout();
+
+        Node utility = session().getNode("/Cars/Utility");
+        assertThat(utility, is(notNullValue()));
     }
 
     @Ignore
