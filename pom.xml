@@ -141,7 +141,7 @@
 		<module>modeshape-repository</module>
 		<module>modeshape-cnd</module>
 		<module>extensions/modeshape-search-lucene</module>
-		<module>extensions/modeshape-clustering</module>
+		<!--module>extensions/modeshape-clustering</module-->
 		<module>modeshape-jcr-api</module>
 		<module>modeshape-jcr</module>
 		<module>extensions/modeshape-classloader-maven</module>
@@ -159,7 +159,7 @@
 		<module>extensions/modeshape-sequencer-zip</module>
 		<module>extensions/modeshape-sequencer-ddl</module>
 		<module>extensions/modeshape-connector-filesystem</module>
-		<module>extensions/modeshape-connector-infinispan</module>
+		<!--module>extensions/modeshape-connector-infinispan</module-->
 		<module>extensions/modeshape-connector-jbosscache</module>
 		<module>extensions/modeshape-connector-svn</module>
 		<module>extensions/modeshape-connector-jcr</module>

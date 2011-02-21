@@ -31,7 +31,9 @@ import static org.modeshape.jdbc.ConnectionResultsComparator.executeTest;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -606,15 +608,79 @@ public class JcrDriverIntegrationTest extends AbstractMultiUseModeShapeTest {
         assertThat(tableNames.size(), is(181));
         List<String> tablesWithProblems = new ArrayList<String>();
         for (String table : tableNames) {
+        	Statement stmt = null;
             try {
-                connection.createStatement().execute("SELECT * FROM [" + table + "] LIMIT 2");
+                stmt = connection.createStatement();
+                stmt.execute("SELECT * FROM [" + table + "] LIMIT 2");
             } catch (SQLException e) {
                 tablesWithProblems.add(table);
+            } finally {
+            	if (stmt != null) {
+            		try {
+            			stmt.close();
+            		} catch (SQLException s) {
+            			
+            		}
+            	}
             }
         }
         if (!tablesWithProblems.isEmpty()) System.out.println(tablesWithProblems);
         assertThat(tablesWithProblems.isEmpty(), is(true));
     }
+    
+    @Test
+	public  void shouldGetAndQueryAllTablesWithColumns() throws SQLException {
+        ResultSet tbrs = dbmd.getTables("%", "%", "%", new String[] {});
+        List<String> tablesWithProblems = new ArrayList<String>();
+
+		for (int i = 1; tbrs.next(); i++) {
+			String tname = tbrs.getString("TABLE_NAME");
+       
+			ResultSet colrs = dbmd.getColumns("%", "%", tname, "%");
+        
+			StringBuffer sb = new StringBuffer("Select ");
+	        for (int row = 1; colrs.next(); row++) {
+	    			    		
+				String	columnName = (String) colrs.getObject(4);
+				if (columnName.equals("mode:properties")) continue;
+				
+				if (row > 1) {
+					sb.append(", ");
+				}
+				
+				sb.append("[" + columnName + "]");
+	    		
+	        }
+			sb.append(" From " + "[" + tname + "]");
+			String query = sb.toString();
+			
+			
+        	Statement stmt = null;
+            try {
+          
+                stmt = connection.createStatement();
+                stmt.execute(query + " LIMIT 2");
+            } catch (SQLException e) {
+            	System.out.println("QUERY: " + query);
+            	e.printStackTrace();
+            	tablesWithProblems.add(tname);
+            } finally {
+            	if (stmt != null) {
+            		try {
+            			stmt.close();
+            		} catch (SQLException s) {
+            			
+            		}
+            	}
+            }
+
+
+		}
+        if (!tablesWithProblems.isEmpty()) System.out.println(tablesWithProblems);
+        assertThat(tablesWithProblems.isEmpty(), is(true)); 	
+
+	}
+
 
     @Test
     public void shouldGetNTPrefixedTables() throws SQLException {
