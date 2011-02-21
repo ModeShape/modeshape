@@ -4,7 +4,7 @@
 		<artifactId>modeshape</artifactId>
 		<groupId>org.modeshape</groupId>
 		<version>2.5-SNAPSHOT</version>
-		<relativePath>../..</relativePath>
+		<relativePath>../../..</relativePath>
 	</parent>
 	<artifactId>modeshape-jbossas-web-webdav-war</artifactId>
 	<packaging>war</packaging>
@@ -21,7 +21,6 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.5.8</version>
 			<scope>runtime</scope>
 		</dependency>
 
@@ -29,8 +28,6 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit-dep</artifactId>
-			<version>4.4</version>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.modeshape</groupId>
@@ -51,6 +48,7 @@
 	       <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
+                <version>${maven.war.plugin.version}</version>
                 <configuration>
                     <warName>modeshape-test</warName>
                     <webResources>
@@ -63,16 +61,12 @@
                             <directory>${project.basedir}/src/test/webapp/</directory>
                         </resource>
                     </webResources>
-                
-                    <excludes>
-                        <exclude>**/*slf4j*.jar</exclude>
-                    </excludes>
                 </configuration>
             </plugin>
 			<plugin>
 				<groupId>org.codehaus.cargo</groupId>
 				<artifactId>cargo-maven2-plugin</artifactId>
-				<version>1.0.1-alpha-2</version>
+        <version>${maven.codehaus.cargo.plugin.version}</version>
 				<executions>
 					<execution>
 						<id>start-container</id>
@@ -116,6 +110,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven.surefire.plugin.version}</version>
 				<configuration>
 					<skip>true</skip>
 				</configuration>
@@ -134,7 +129,7 @@
 			</plugin>
 	       <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.2-beta-2</version>
+                <version>${maven.assembly.plugin.version}</version>
                 
                 <configuration>
                     <finalName>modeshape</finalName>
@@ -154,10 +149,11 @@
                     </execution>
                 </executions>
             </plugin>
-             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-               <artifactId>maven-deploy-plugin</artifactId>
-               <configuration>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-deploy-plugin</artifactId>
+              <version>${maven.deploy.plugin.version}</version>
+              <configuration>
                  <skip>true</skip>
               </configuration>
             </plugin>

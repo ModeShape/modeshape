@@ -35,6 +35,7 @@
         </dependency>
         
   </dependencies>
+
   <profiles>
   	    <profile>
 			<id>assembly</id>

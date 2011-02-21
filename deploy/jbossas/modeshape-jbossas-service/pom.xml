@@ -31,7 +31,6 @@
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
-			<scope>test</scope>
 		</dependency>
 
 		<!--
@@ -41,156 +40,132 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-            <scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
-            <scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
-            <scope>test</scope>
 		</dependency>
 
-        <!--
-            ModeShape dependencies
-        -->
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-graph</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-repository</artifactId>
-        </dependency>
-       
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-jcr</artifactId>
-        </dependency>
-      
+      <!--
+          ModeShape dependencies
+      -->
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-common</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-graph</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-repository</artifactId>
+      </dependency>
+     
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-jcr</artifactId>
+      </dependency>
+    
 
-        <dependency>
-             <groupId>org.modeshape</groupId>
-             <artifactId>modeshape-common</artifactId>
-             <version>${project.version}</version>
-             <type>test-jar</type>
-             <scope>test</scope>
-        </dependency>
+      <dependency>
+           <groupId>org.modeshape</groupId>
+           <artifactId>modeshape-common</artifactId>
+           <version>${project.version}</version>
+           <type>test-jar</type>
+           <scope>test</scope>
+      </dependency>
         
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-classfile</artifactId>
-                <version>${project.version}</version>
-            </dependency>          
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-cnd</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-ddl</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-images</artifactId>
-                <version>${project.version}</version>
-            </dependency>                
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-java</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-jbpm-jpdl</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-mp3</artifactId>
-                <version>${project.version}</version>
-            </dependency>  
-             <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-msoffice</artifactId>
-                <version>${project.version}</version>
-            </dependency>    
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-teiid</artifactId>
-                <version>${project.version}</version>
-            </dependency>            
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-text</artifactId>
-                <version>${project.version}</version>
-            </dependency>            
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-xml</artifactId>
-                <version>${project.version}</version>
-            </dependency>   
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-zip</artifactId>
-                <version>${project.version}</version>
-            </dependency>                  
-             <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-connector-filesystem</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-             <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-connector-infinispan</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-connector-jbosscache</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-             <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-connector-jcr</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-             <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-connector-jdbc-metadata</artifactId>
-                <version>${project.version}</version>
-            </dependency>                   
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-connector-store-jpa</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-             <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-connector-svn</artifactId>
-                <version>${project.version}</version>
-            </dependency>  
-            
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-clustering</artifactId>
-                <version>${project.version}</version>
-            </dependency>                             
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-classfile</artifactId>
+      </dependency>          
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-cnd</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-ddl</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-images</artifactId>
+      </dependency>                
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-java</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-jbpm-jpdl</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-mp3</artifactId>
+      </dependency>  
+       <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-msoffice</artifactId>
+      </dependency>    
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-teiid</artifactId>
+      </dependency>            
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-text</artifactId>
+      </dependency>            
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-xml</artifactId>
+      </dependency>   
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-sequencer-zip</artifactId>
+      </dependency>                  
+       <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-connector-filesystem</artifactId>
+      </dependency>
+       <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-connector-infinispan</artifactId>
+      </dependency>
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-connector-jbosscache</artifactId>
+      </dependency>
+       <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-connector-jcr</artifactId>
+      </dependency>
+       <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-connector-jdbc-metadata</artifactId>
+      </dependency>                   
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-connector-store-jpa</artifactId>
+      </dependency>
+       <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-connector-svn</artifactId>
+      </dependency>  
+      
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-clustering</artifactId>
+      </dependency>                             
 
-            <dependency>
-                <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-mimetype-detector-aperture</artifactId>
-                <version>${project.version}</version>
-            </dependency>                   
+      <dependency>
+          <groupId>org.modeshape</groupId>
+          <artifactId>modeshape-mimetype-detector-aperture</artifactId>
+      </dependency>                   
         <!-- 
             Java Concurrency in Practice annotations
         -->
@@ -199,74 +174,69 @@
     		<artifactId>jcip-annotations</artifactId>
     	</dependency>
  
-        <!--
-            JBoss dependencies
-        -->
-        <dependency>
-            <groupId>org.jboss.man</groupId>
-            <artifactId>jboss-managed</artifactId>
-            <version>2.1.0.SP1</version>
-            <scope>compile</scope>
-        </dependency>
-
-         <dependency>
-            <groupId>jboss</groupId>
-            <artifactId>jboss-system</artifactId>
-            <version>4.2.3.GA</version>
-            <scope>compile</scope>
-        </dependency>
-
-         <dependency>
-            <groupId>jboss</groupId>
-            <artifactId>jboss-j2ee</artifactId>
-            <version>4.2.3.GA</version>
-            <scope>compile</scope>
-        </dependency>
-
-         <dependency>
-            <groupId>jboss</groupId>
-            <artifactId>jboss-jmx</artifactId>
-            <version>4.2.3.GA</version>
-            <scope>compile</scope>
-        </dependency>
-
-            <dependency>
-              <groupId>org.jboss.man</groupId>
-              <artifactId>jboss-metatype</artifactId>
-              <version>2.1.0.SP1</version>
-   
-            </dependency>            
-            <dependency>
-                <groupId>org.jboss.integration</groupId>
-                <artifactId>jboss-profileservice-spi</artifactId>
-                <version>5.1.0.GA</version>
-
-            </dependency>      
-            <dependency>    
-                <groupId>org.jboss</groupId>
-                <artifactId>jboss-vfs</artifactId>
-                <version>2.2.0.GA</version>
-
-            </dependency>
-            <dependency>    
-                <groupId>org.jboss.deployers</groupId>
-                <artifactId>jboss-deployers-vfs-spi</artifactId>
-                <version>2.0.10.GA</version>
-
-            </dependency>      
-            <dependency>    
-                <groupId>org.jboss.deployers</groupId>
-                <artifactId>jboss-deployers-vfs</artifactId>
-                <version>2.0.10.GA</version>
-
-            </dependency>   
-            <dependency>
-                <groupId>jboss</groupId>
-                <artifactId>jboss-annotations-ejb3</artifactId>
-                <version>4.2.3.GA</version>
-                <scope>compile</scope>
-            </dependency>     
-  
+      <!--
+      JBoss dependencies
+      -->
+			<dependency>
+				<groupId>com.sun.xml.bind</groupId>
+				<artifactId>jaxb-impl</artifactId>
+				<scope>runtime</scope>
+			</dependency>
+      <dependency>
+        <groupId>org.jboss.man</groupId>
+        <artifactId>jboss-managed</artifactId>
+        <version>2.1.0.SP1</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>jboss</groupId>
+        <artifactId>jboss-system</artifactId>
+        <version>4.2.3.GA</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>jboss</groupId>
+        <artifactId>jboss-j2ee</artifactId>
+        <version>4.2.3.GA</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>jboss</groupId>
+        <artifactId>jboss-jmx</artifactId>
+        <version>4.2.3.GA</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.man</groupId>
+        <artifactId>jboss-metatype</artifactId>
+        <version>2.1.0.SP1</version>
+      </dependency>            
+      <dependency>
+          <groupId>org.jboss.integration</groupId>
+          <artifactId>jboss-profileservice-spi</artifactId>
+          <version>5.1.0.GA</version>
+      </dependency>      
+      <dependency>    
+          <groupId>org.jboss</groupId>
+          <artifactId>jboss-vfs</artifactId>
+          <version>2.2.0.GA</version>
+      </dependency>
+      <dependency>    
+          <groupId>org.jboss.deployers</groupId>
+          <artifactId>jboss-deployers-vfs-spi</artifactId>
+          <version>2.0.10.GA</version>
+      </dependency>      
+      <dependency>    
+          <groupId>org.jboss.deployers</groupId>
+          <artifactId>jboss-deployers-vfs</artifactId>
+          <version>2.0.10.GA</version>
+      </dependency>   
+      <dependency>
+          <groupId>jboss</groupId>
+          <artifactId>jboss-annotations-ejb3</artifactId>
+          <version>4.2.3.GA</version>
+          <scope>compile</scope>
+      </dependency>     
     </dependencies>
 
 	<build>
