@@ -40,7 +40,6 @@ import javax.jcr.Value;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import net.jcip.annotations.Immutable;
-import org.jboss.security.config.IDTrustConfiguration;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.text.NoOpEncoder;
 import org.modeshape.common.util.CheckArg;
@@ -55,6 +54,8 @@ import org.modeshape.graph.property.Property;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
+import org.picketbox.config.PicketBoxConfiguration;
+import org.picketbox.factories.SecurityFactory;
 import org.xml.sax.SAXException;
 
 /**
@@ -70,9 +71,10 @@ public class RepositoryClient {
      */
     public static void main( String[] args ) {
         // Set up the JAAS provider (IDTrust) and a policy file (which defines the "modeshape-jcr" login config name)
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
+        SecurityFactory.prepare();
         try {
-            idtrustConfig.config("security/jaas.conf.xml");
+            PicketBoxConfiguration idtrustConfig = new PicketBoxConfiguration();
+            idtrustConfig.load("security/jaas.conf.xml");
         } catch (Exception ex) {
             throw new IllegalStateException(ex);
         }

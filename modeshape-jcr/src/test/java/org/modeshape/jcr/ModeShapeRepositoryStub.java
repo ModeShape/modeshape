@@ -30,7 +30,6 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import org.apache.jackrabbit.test.NotExecutableException;
 import org.apache.jackrabbit.test.RepositoryStub;
-import org.jboss.security.config.IDTrustConfiguration;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.graph.ExecutionContext;
@@ -55,19 +54,6 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
     private JcrRepository repository;
     private JcrEngine engine;
 
-    static {
-
-        // Initialize IDTrust
-        String configFile = "security/jaas.conf.xml";
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
-
-        try {
-            idtrustConfig.config(configFile);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
-    }
-
     public ModeShapeRepositoryStub( Properties env ) {
         super(env);
 
@@ -76,6 +62,9 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
 
     private void configureRepository() {
         repositoryConfigurationName = currentConfigurationName;
+
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
 
         // Create the in-memory (ModeShape) repository
         JcrConfiguration configuration = new JcrConfiguration();

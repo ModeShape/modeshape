@@ -65,8 +65,8 @@ import org.apache.jackrabbit.test.api.observation.PropertyAddedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyChangedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
 import org.apache.jackrabbit.test.api.observation.WorkspaceOperationTest;
-import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -107,16 +107,14 @@ public final class JcrObservationManagerTest extends TestSuite {
     // ===========================================================================================================================
 
     @BeforeClass
-    public static void beforeClass() {
-        // Initialize IDTrust
-        String configFile = "security/jaas.conf.xml";
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
+    public static void beforeAll() {
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
 
-        try {
-            idtrustConfig.config(configFile);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
     }
 
     // ===========================================================================================================================
@@ -178,13 +176,9 @@ public final class JcrObservationManagerTest extends TestSuite {
                               String[] nodeTypeNames,
                               boolean noLocal ) throws Exception {
         TestListener listener = new TestListener(eventsExpected, numIterators, eventTypes);
-        session.getWorkspace().getObservationManager().addEventListener(listener,
-                                                                        eventTypes,
-                                                                        absPath,
-                                                                        isDeep,
-                                                                        uuids,
-                                                                        nodeTypeNames,
-                                                                        noLocal);
+        session.getWorkspace()
+               .getObservationManager()
+               .addEventListener(listener, eventTypes, absPath, isDeep, uuids, nodeTypeNames, noLocal);
         return listener;
     }
 
@@ -360,7 +354,8 @@ public final class JcrObservationManagerTest extends TestSuite {
         // tests
         checkResults(listener);
         assertTrue("Path for added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                   + addedNode.getPath(), containsPath(listener, addedNode.getPath()));
+                   + addedNode.getPath(),
+                   containsPath(listener, addedNode.getPath()));
     }
 
     @Test
@@ -407,7 +402,8 @@ public final class JcrObservationManagerTest extends TestSuite {
         // tests
         checkResults(listener);
         assertTrue("Path for added property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                   + prop1.getPath(), containsPath(listener, prop1.getPath()));
+                   + prop1.getPath(),
+                   containsPath(listener, prop1.getPath()));
     }
 
     @Test
@@ -431,7 +427,8 @@ public final class JcrObservationManagerTest extends TestSuite {
         // tests
         checkResults(listener);
         assertTrue("Path for changed property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                   + prop1.getPath(), containsPath(listener, prop1.getPath()));
+                   + prop1.getPath(),
+                   containsPath(listener, prop1.getPath()));
     }
 
     @Test
@@ -587,7 +584,8 @@ public final class JcrObservationManagerTest extends TestSuite {
         // tests
         checkResults(listener);
         assertTrue("Path added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                   + addedNode.getPath(), containsPath(listener, addedNode.getPath()));
+                   + addedNode.getPath(),
+                   containsPath(listener, addedNode.getPath()));
     }
 
     /**
@@ -813,7 +811,8 @@ public final class JcrObservationManagerTest extends TestSuite {
         // tests
         checkResults(listener);
         assertTrue("Path for added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                   + addedNode.getPath(), containsPath(listener, addedNode.getPath()));
+                   + addedNode.getPath(),
+                   containsPath(listener, addedNode.getPath()));
     }
 
     /**
@@ -839,7 +838,8 @@ public final class JcrObservationManagerTest extends TestSuite {
         // tests
         checkResults(listener);
         assertTrue("Path for added node is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                   + addedNode.getPath(), containsPath(listener, addedNode.getPath()));
+                   + addedNode.getPath(),
+                   containsPath(listener, addedNode.getPath()));
     }
 
     // ===========================================================================================================================
@@ -1154,9 +1154,8 @@ public final class JcrObservationManagerTest extends TestSuite {
         assertThat(info.get(JcrObservationManager.ORDER_CHILD_KEY), is(node1 + "[3]"));
         assertThat(info.get(JcrObservationManager.ORDER_BEFORE_KEY), is(node1 + "[2]"));
         assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
-                   + ", expected=" + getRoot().getPath() + "/" + node1 + "[2]", containsPath(moveNodeListener,
-                                                                                             getRoot().getPath() + "/" + node1
-                                                                                             + "[2]"));
+                   + ", expected=" + getRoot().getPath() + "/" + node1 + "[2]",
+                   containsPath(moveNodeListener, getRoot().getPath() + "/" + node1 + "[2]"));
         assertTrue("Added reordered node has wrong path: actual=" + addNodeListener.getEvents().get(0).getPath() + ", expected="
                    + n1.getPath() + "[2]", containsPath(addNodeListener, n1.getPath() + "[2]"));
         assertTrue("Removed reordered node has wrong path: actual=" + removeNodeListener.getEvents().get(0).getPath()
@@ -1205,13 +1204,12 @@ public final class JcrObservationManagerTest extends TestSuite {
         assertThat(info.get(JcrObservationManager.ORDER_CHILD_KEY), is(node1 + "[2]"));
         assertThat(info.get(JcrObservationManager.ORDER_BEFORE_KEY), is(nullValue()));
         assertTrue("Path for new location of moved node is wrong: actual=" + moveNodeListener.getEvents().get(0).getPath()
-                   + ", expected=" + getRoot().getPath() + "/" + node1 + "[3]", containsPath(moveNodeListener,
-                                                                                             getRoot().getPath() + "/" + node1
-                                                                                             + "[3]"));
+                   + ", expected=" + getRoot().getPath() + "/" + node1 + "[3]",
+                   containsPath(moveNodeListener, getRoot().getPath() + "/" + node1 + "[3]"));
         assertTrue("Added reordered node has wrong path: actual=" + addNodeListener.getEvents().get(0).getPath() + ", expected="
                    + n1.getPath() + "[3]", containsPath(addNodeListener, n1.getPath() + "[3]"));
-        assertTrue("Removed reordered node path not found: " + n1.getPath() + "[2]", containsPath(removeNodeListener,
-                                                                                                  n1.getPath() + "[2]"));
+        assertTrue("Removed reordered node path not found: " + n1.getPath() + "[2]",
+                   containsPath(removeNodeListener, n1.getPath() + "[2]"));
         assertTrue("Removed node path not found: " + removedPath, containsPath(removeNodeListener, removedPath));
     }
 
@@ -1271,7 +1269,8 @@ public final class JcrObservationManagerTest extends TestSuite {
         // tests
         checkResults(listener);
         assertTrue("Path for added property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                   + prop1.getPath(), containsPath(listener, prop1.getPath()));
+                   + prop1.getPath(),
+                   containsPath(listener, prop1.getPath()));
     }
 
     /**
@@ -1293,8 +1292,8 @@ public final class JcrObservationManagerTest extends TestSuite {
 
         // tests
         checkResults(listener);
-        assertTrue("Path for jrc:primaryType property was not found.", containsPath(listener, node.getProperty("jcr:primaryType")
-                                                                                                  .getPath()));
+        assertTrue("Path for jrc:primaryType property was not found.",
+                   containsPath(listener, node.getProperty("jcr:primaryType").getPath()));
     }
 
     // ===========================================================================================================================
@@ -1398,7 +1397,8 @@ public final class JcrObservationManagerTest extends TestSuite {
         // tests
         checkResults(listener);
         assertTrue("Path for changed property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                   + prop1.getPath(), containsPath(listener, prop1.getPath()));
+                   + prop1.getPath(),
+                   containsPath(listener, prop1.getPath()));
     }
 
     /**
@@ -1427,7 +1427,8 @@ public final class JcrObservationManagerTest extends TestSuite {
         // tests
         checkResults(listener);
         assertTrue("Path for changed property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                   + prop1.getPath(), containsPath(listener, prop1.getPath()));
+                   + prop1.getPath(),
+                   containsPath(listener, prop1.getPath()));
     }
 
     // ===========================================================================================================================
@@ -1524,7 +1525,8 @@ public final class JcrObservationManagerTest extends TestSuite {
 
         checkResults(listener);
         assertTrue("Child node path is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                   + childNode.getPath(), containsPath(listener, childNode.getPath()));
+                   + childNode.getPath(),
+                   containsPath(listener, childNode.getPath()));
     }
 
     /**
@@ -1554,7 +1556,8 @@ public final class JcrObservationManagerTest extends TestSuite {
         // tests
         checkResults(listener);
         assertTrue("Path for added property is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                   + n1Prop.getPath(), containsPath(listener, n1Prop.getPath()));
+                   + n1Prop.getPath(),
+                   containsPath(listener, n1Prop.getPath()));
     }
 
     /**
@@ -1640,7 +1643,8 @@ public final class JcrObservationManagerTest extends TestSuite {
         // tests
         checkResults(listener);
         assertTrue("Child node path is wrong: actual=" + listener.getEvents().get(0).getPath() + ", expected="
-                   + childNode.getPath(), containsPath(listener, childNode.getPath()));
+                   + childNode.getPath(),
+                   containsPath(listener, childNode.getPath()));
     }
 
     /**

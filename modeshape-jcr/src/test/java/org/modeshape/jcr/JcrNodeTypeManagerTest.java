@@ -35,8 +35,8 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import junit.framework.TestSuite;
-import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -77,16 +77,14 @@ public final class JcrNodeTypeManagerTest extends TestSuite {
     // ===========================================================================================================================
 
     @BeforeClass
-    public static void beforeClass() {
-        // Initialize IDTrust
-        String configFile = "security/jaas.conf.xml";
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
+    public static void beforeAll() {
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
 
-        try {
-            idtrustConfig.config(configFile);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
     }
 
     // ===========================================================================================================================

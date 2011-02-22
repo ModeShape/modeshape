@@ -33,15 +33,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
-import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.JaasSecurityContext;
 import org.modeshape.graph.property.Binary;
+import org.picketbox.config.PicketBoxConfiguration;
+import org.picketbox.factories.SecurityFactory;
 
 /**
  * @author Randall Hauch
@@ -67,14 +70,6 @@ public class RepositoryClientTest {
         when(userInterface.getLocationOfRepositoryFiles()).thenReturn(new File("src/main/resources").getAbsolutePath());
         when(userInterface.getRepositoryConfiguration()).thenReturn(new File("src/main/resources/configRepository.xml"));
 
-        // Set up the JAAS provider (IDTrust) and a policy file (which defines the "modeshape-jcr" login config name)
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
-        try {
-            idtrustConfig.config("security/jaas.conf.xml");
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
-
         CallbackHandler handler = new JaasSecurityContext.UserPasswordCallbackHandler("jsmith", "secret".toCharArray());
         when(userInterface.getCallbackHandler()).thenReturn(handler);
     }
@@ -82,6 +77,21 @@ public class RepositoryClientTest {
     @After
     public void afterEach() throws Exception {
         client.shutdown();
+    }
+
+    @BeforeClass
+    public static void beforeAll() {
+        SecurityFactory.prepare();
+        try {
+            PicketBoxConfiguration idtrustConfig = new PicketBoxConfiguration();
+            idtrustConfig.load("security/jaas.conf.xml");
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
+    @AfterClass
+    public static void afterAll() {
     }
 
     protected RepositoryClient.Api getApi() {
@@ -223,14 +233,15 @@ public class RepositoryClientTest {
         // assertThat(properties.containsKey("mode:uuid"), is(true)); // not referenceable in JCR
 
         getNodeInfo("Aircraft", "/Aircraft/Commercial");
-        assertThat(children, hasItems("Boeing 777",
-                                      "Boeing 767",
-                                      "Boeing 787",
-                                      "Boeing 757",
-                                      "Airbus A380",
-                                      "Airbus A340",
-                                      "Airbus A310",
-                                      "Embraer RJ-175"));
+        assertThat(children,
+                   hasItems("Boeing 777",
+                            "Boeing 767",
+                            "Boeing 787",
+                            "Boeing 757",
+                            "Airbus A380",
+                            "Airbus A340",
+                            "Airbus A310",
+                            "Embraer RJ-175"));
         assertThat(properties.containsKey("jcr:primaryType"), is(true));
         // assertThat(properties.containsKey("mode:uuid"), is(true)); // not referenceable in JCR
 

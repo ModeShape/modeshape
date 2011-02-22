@@ -27,8 +27,8 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
-import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
@@ -45,15 +45,13 @@ public class AccessRolesTest {
 
     @BeforeClass
     public static void beforeAll() {
-        // Initialize IDTrust
-        String configFile = "security/jaas.conf.xml";
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
+        // Initialize PicketBox ...
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
 
-        try {
-            idtrustConfig.config(configFile);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
     }
 
     @After
@@ -79,7 +77,7 @@ public class AccessRolesTest {
         config.repositorySource("source").usingClass(InMemoryRepositorySource.class);
         config.repository("repo").setSource("source")
         // .setOption(Option.ANONYMOUS_USER_ROLES, ModeShapeRoles.ADMIN)
-              // Ensure no use of JAAS ...
+        // Ensure no use of JAAS ...
               .setOption(Option.JAAS_LOGIN_CONFIG_NAME, "modeshape-jcr-non-existant");
         engine = config.build();
         engine.start();

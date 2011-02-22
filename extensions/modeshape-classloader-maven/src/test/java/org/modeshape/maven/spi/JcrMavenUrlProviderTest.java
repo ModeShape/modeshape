@@ -34,9 +34,12 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Properties;
 import javax.jcr.SimpleCredentials;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.maven.AbstractJcrRepositoryTest;
 import org.modeshape.maven.ArtifactType;
 import org.modeshape.maven.MavenId;
@@ -50,6 +53,17 @@ public class JcrMavenUrlProviderTest extends AbstractJcrRepositoryTest {
     private JcrMavenUrlProvider provider;
     private Properties validProperties;
     private MavenId mavenId1;
+
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize PicketBox ...
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
+    }
 
     @Before
     public void beforeEach() throws Exception {

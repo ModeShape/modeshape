@@ -37,10 +37,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import javax.jcr.RepositoryException;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.maven.spi.JcrMavenUrlProvider;
 
 /**
@@ -68,6 +71,17 @@ public class MavenRepositoryTest extends AbstractJcrRepositoryTest {
     private MavenId projectG;
     private MavenId projectH;
     private MavenId projectI;
+
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize PicketBox ...
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
+    }
 
     @Before
     public void beforeEach() throws Exception {
@@ -110,7 +124,7 @@ public class MavenRepositoryTest extends AbstractJcrRepositoryTest {
         // ProjectC --> C
         // ProjectB --> B
         // ProjectA --> A
-        //   
+        //
         // loadTestLibrary("org.jboss.example:ProjectA:1.0", "test/dependency/case1/testProjectA.xml");
         // loadTestLibrary("org.jboss.example:ProjectB:1.0", "test/dependency/case1/testProjectB.xml");
         // loadTestLibrary("org.jboss.example:ProjectC:1.0", "test/dependency/case1/testProjectC.xml");
@@ -167,7 +181,7 @@ public class MavenRepositoryTest extends AbstractJcrRepositoryTest {
         // ProjectC --> C
         // ProjectB --> B
         // ProjectA --> A
-        //   
+        //
         loadTestLibrary("org.jboss.example:ProjectA:1.0", "test/dependency/case1/testProjectA.xml");
         loadTestLibrary("org.jboss.example:ProjectB:1.0", "test/dependency/case1/testProjectB.xml");
         loadTestLibrary("org.jboss.example:ProjectC:1.0", "test/dependency/case1/testProjectC.xml");

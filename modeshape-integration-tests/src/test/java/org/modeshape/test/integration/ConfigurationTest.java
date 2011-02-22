@@ -33,11 +33,13 @@ import javax.jcr.Credentials;
 import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
-import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.collection.Collections;
+import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 
@@ -45,6 +47,17 @@ public class ConfigurationTest {
 
     private JcrConfiguration configuration;
     private JcrEngine engine;
+
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize PicketBox ...
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
+    }
 
     @Before
     public void beforeEach() {
@@ -90,15 +103,6 @@ public class ConfigurationTest {
         assertThat(configuration.repositorySource("disk").getName(), is("disk"));
         assertThat(configuration.repositorySource("data").getName(), is("data"));
 
-        // Initialize IDTrust and a policy file (which defines the "modeshape-jcr" login config name)
-        String configFile = "security/jaas.conf.xml";
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
-        try {
-            idtrustConfig.config(configFile);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
-
         // Create and start the engine ...
         engine = configuration.build();
         engine.start();
@@ -110,10 +114,12 @@ public class ConfigurationTest {
         Set<String> diskWorkspaces = engine.getGraph("disk").getWorkspaces();
         Set<String> dataWorkspaces = engine.getGraph("data").getWorkspaces();
 
-        assertThat(magnoliaWorkspaces, is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles",
-            "usergroups", "mgnlSystem", "mgnlVersion", "downloads"})));
-        assertThat(dataWorkspaces, is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles",
-            "usergroups", "mgnlSystem", "mgnlVersion", "modeSystem"})));
+        assertThat(magnoliaWorkspaces,
+                   is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles", "usergroups",
+                       "mgnlSystem", "mgnlVersion", "downloads"})));
+        assertThat(dataWorkspaces,
+                   is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles", "usergroups",
+                       "mgnlSystem", "mgnlVersion", "modeSystem"})));
         assertThat(diskWorkspaces, is(Collections.unmodifiableSet(new String[] {"workspace1"})));
 
         // Create a session, authenticating using one of the usernames defined by our JAAS policy file(s) ...
@@ -128,8 +134,9 @@ public class ConfigurationTest {
 
                 // Check that the workspaces are all available ...
                 Set<String> jcrWorkspaces = Collections.unmodifiableSet(session.getWorkspace().getAccessibleWorkspaceNames());
-                assertThat(jcrWorkspaces, is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles",
-                    "usergroups", "mgnlSystem", "mgnlVersion", "downloads"})));
+                assertThat(jcrWorkspaces,
+                           is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles", "usergroups",
+                               "mgnlSystem", "mgnlVersion", "downloads"})));
             } finally {
                 if (session != null) session.logout();
             }
@@ -151,15 +158,6 @@ public class ConfigurationTest {
         assertThat(configuration.repositorySource("disk").getName(), is("disk"));
         assertThat(configuration.repositorySource("data").getName(), is("data"));
 
-        // Initialize IDTrust and a policy file (which defines the "modeshape-jcr" login config name)
-        String configFile = "security/jaas.conf.xml";
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
-        try {
-            idtrustConfig.config(configFile);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
-
         // Create and start the engine ...
         engine = configuration.build();
         engine.start();
@@ -171,10 +169,12 @@ public class ConfigurationTest {
         Set<String> diskWorkspaces = engine.getGraph("disk").getWorkspaces();
         Set<String> dataWorkspaces = engine.getGraph("data").getWorkspaces();
 
-        assertThat(magnoliaWorkspaces, is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles",
-            "usergroups", "mgnlSystem", "mgnlVersion", "downloads"})));
-        assertThat(dataWorkspaces, is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles",
-            "usergroups", "mgnlSystem", "mgnlVersion", "modeSystem"})));
+        assertThat(magnoliaWorkspaces,
+                   is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles", "usergroups",
+                       "mgnlSystem", "mgnlVersion", "downloads"})));
+        assertThat(dataWorkspaces,
+                   is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles", "usergroups",
+                       "mgnlSystem", "mgnlVersion", "modeSystem"})));
         assertThat(diskWorkspaces, is(Collections.unmodifiableSet(new String[] {"workspace1"})));
 
         // Create a session, authenticating using one of the usernames defined by our JAAS policy file(s) ...
@@ -188,8 +188,9 @@ public class ConfigurationTest {
 
                 // Check that the workspaces are all available ...
                 Set<String> jcrWorkspaces = Collections.unmodifiableSet(session.getWorkspace().getAccessibleWorkspaceNames());
-                assertThat(jcrWorkspaces, is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles",
-                    "usergroups", "mgnlSystem", "mgnlVersion"})));
+                assertThat(jcrWorkspaces,
+                           is(Collections.unmodifiableSet(new String[] {"config", "website", "users", "userroles", "usergroups",
+                               "mgnlSystem", "mgnlVersion"})));
             } finally {
                 if (session != null) session.logout();
             }

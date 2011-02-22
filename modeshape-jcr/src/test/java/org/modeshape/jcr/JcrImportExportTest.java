@@ -45,9 +45,10 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeType;
-import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.StringUtil;
@@ -60,19 +61,6 @@ import org.modeshape.jcr.JcrRepository.Option;
  * 
  */
 public class JcrImportExportTest {
-
-    static {
-        // Initialize the JAAS configuration to allow for an admin login later
-        // Initialize IDTrust
-        String configFile = "security/jaas.conf.xml";
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
-
-        try {
-            idtrustConfig.config(configFile);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
-    }
 
     private JcrConfiguration configuration;
     private JcrEngine engine;
@@ -120,6 +108,17 @@ public class JcrImportExportTest {
                 configuration = null;
             }
         }
+    }
+
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
     }
 
     @Test
@@ -461,12 +460,12 @@ public class JcrImportExportTest {
         String base64Str = "R0lGODlhEAAQAMZpAGxZMW1bNW9bMm9cNnJdNXJdNnNfN3tnPX5oQIBqQYJrO4FrQoVtQIZuQohxQopyRopzQYtzRo10Qo51SI12SJB3SZN5Q5N5RpV7TJZ8TJd9SJh+TpyAT52CUJ+FUaOGU6OHUaSIUqGKUqaJVaiKVaGMV6mLVqWOXqyOVayOWLCSWa2VWrSVW7aXXbSbXbqaXrqaX7uaX7ubXsCfYrigcMKgY8OhY8SiZMWjZMWjZcelZsimZsqnZ8unZ8uoaMypaM2pac6qacOtbc+ratCsatKta8uwbdGvctOvbtSvbNWwbciyhdaxbdm2dda7ddq5gd26fN28gNe/ed6+htvCeuHAhd3EfOLCidrDmd7GfuLEj9/HfubKlufLmOjLmOnMmOnNmujNne3UpuzUqe3Vp+7VqO/VqO/Wqe7YsP///////////////////////////////////////////////////////////////////////////////////////////yH+EUNyZWF0ZWQgd2l0aCBHSU1QACH5BAEKAH8ALAAAAAAQABAAAAeJgH+Cg4SFhoeIiYqLhSciiR40S1hoY0JZVE5GK4MOZWdmZGJhJVumW1aDFGBfXl1cWiRSp1sufxYXV1VQUVNPMSAYDwgHEINNTEpJSEcwKR0VCwWERURDQUA9LSYcEwkDhD8+PDs6OCwjGxEIAYQyOTc2NTMqHxkNBgCFChIaKC8hGBBgJIARo0AAOw==";
         boolean print = false;
 
-        // Try apache ...
-        byte[] apacheBytes = org.apache.util.Base64.decode(base64Str.getBytes("UTF-8"));
-        if (print) {
-            System.out.println("Apache:     " + toString(apacheBytes));
-            System.out.println("   length:  " + apacheBytes.length);
-        }
+        // // Try apache ...
+        // byte[] apacheBytes = org.apache.util.Base64.decode(base64Str.getBytes("UTF-8"));
+        // if (print) {
+        // System.out.println("Apache:     " + toString(apacheBytes));
+        // System.out.println("   length:  " + apacheBytes.length);
+        // }
 
         // Try jboss ...
         byte[] jbossBytes = org.jboss.util.Base64.decode(base64Str);

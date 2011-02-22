@@ -23,11 +23,11 @@
  */
 package org.modeshape.connector.jcr;
 
-import org.jboss.security.config.IDTrustConfiguration;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.collection.Problem;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository.Option;
@@ -44,14 +44,7 @@ public class JcrConnectorTestUtil {
 
     static {
         // Set up the JAAS instance (only need to do this once) ...
-        String configFile = JAAS_CONFIG_FILE_PATH;
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
-
-        try {
-            idtrustConfig.config(configFile);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
+        JaasTestUtil.initJaas(JAAS_CONFIG_FILE_PATH);
     }
 
     /**
