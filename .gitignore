@@ -86,6 +86,7 @@
 /extensions/modeshape-sequencer-teiid/target
 /extensions/modeshape-sequencer-xml/target
 /extensions/modeshape-sequencer-zip/target
+/extensions/modeshape-extractor-tika/target
 
 /tools/org.modeshape.eclipse.jcr.rest.client/bin
 

@@ -24,6 +24,7 @@
 package org.modeshape.search.lucene;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -41,17 +42,18 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Index;
+import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.document.FieldSelectorResult;
 import org.apache.lucene.document.NumericField;
-import org.apache.lucene.document.Field.Index;
-import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
@@ -62,17 +64,21 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.regex.JavaUtilRegexCapabilities;
 import org.apache.lucene.search.regex.RegexQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Version;
+import org.modeshape.common.collection.Problems;
+import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.util.Logger;
+import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.JcrLexicon;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.ModeShapeIntLexicon;
-import org.modeshape.graph.ModeShapeLexicon;
 import org.modeshape.graph.ModeShapeIntLexicon.Namespace;
+import org.modeshape.graph.ModeShapeLexicon;
+import org.modeshape.graph.mimetype.MimeTypeDetector;
+import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.Name;
 import org.modeshape.graph.property.Path;
@@ -91,6 +97,10 @@ import org.modeshape.graph.query.model.NodePath;
 import org.modeshape.graph.query.model.Operator;
 import org.modeshape.graph.query.model.PropertyValue;
 import org.modeshape.graph.query.model.ReferenceValue;
+import org.modeshape.graph.text.TextExtractor;
+import org.modeshape.graph.text.TextExtractorContext;
+import org.modeshape.graph.text.TextExtractorOutput;
+import org.modeshape.graph.text.TextExtractors;
 import org.modeshape.search.lucene.AbstractLuceneSearchEngine.TupleCollector;
 import org.modeshape.search.lucene.AbstractLuceneSearchEngine.WorkspaceSession;
 import org.modeshape.search.lucene.IndexRules.FieldType;
@@ -441,6 +451,8 @@ public class LuceneSearchSession implements WorkspaceSession {
         fullTextSearchValue.append(localNameStr);
 
         // Index the properties
+        List<Property> binaryProperties = null;
+        Set<Property> nonBinaryProperties = new HashSet<Property>();
         String stringValue = null;
         for (Property property : properties) {
             Name name = property.getName();
@@ -457,6 +469,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                     long longValue = dateValue.getMillisecondsInUtc();
                     doc.add(new NumericField(nameString, rule.getStoreOption(), index).setLongValue(longValue));
                 }
+                nonBinaryProperties.add(property);
                 continue;
             }
             if (type == FieldType.INT) {
@@ -468,6 +481,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                     int intValue = longFactory.create(value).intValue();
                     doc.add(new NumericField(nameString, rule.getStoreOption(), index).setIntValue(intValue));
                 }
+                nonBinaryProperties.add(property);
                 continue;
             }
             if (type == FieldType.DOUBLE) {
@@ -479,6 +493,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                     double dValue = doubleFactory.create(value);
                     doc.add(new NumericField(nameString, rule.getStoreOption(), index).setDoubleValue(dValue));
                 }
+                nonBinaryProperties.add(property);
                 continue;
             }
             if (type == FieldType.FLOAT) {
@@ -490,6 +505,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                     float fValue = doubleFactory.create(value).floatValue();
                     doc.add(new NumericField(nameString, rule.getStoreOption(), index).setFloatValue(fValue));
                 }
+                nonBinaryProperties.add(property);
                 continue;
             }
             if (type == FieldType.DECIMAL) {
@@ -501,10 +517,12 @@ public class LuceneSearchSession implements WorkspaceSession {
                     value = FieldUtil.decimalToString(decimal);
                     doc.add(new Field(nameString, stringValue, rule.getStoreOption(), Field.Index.NOT_ANALYZED));
                 }
+                nonBinaryProperties.add(property);
                 continue;
             }
             if (type == FieldType.BINARY) {
-                // TODO : add to full-text search ...
+                if (binaryProperties == null) binaryProperties = new LinkedList<Property>();
+                binaryProperties.add(property);
                 continue;
             }
             if (type == FieldType.WEAK_REFERENCE) {
@@ -517,6 +535,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                     // Add a value to the common reference value ...
                     doc.add(new Field(ContentIndex.REFERENCES, stringValue, Field.Store.NO, Field.Index.NOT_ANALYZED));
                 }
+                nonBinaryProperties.add(property);
                 continue;
             }
             if (type == FieldType.REFERENCE) {
@@ -531,6 +550,7 @@ public class LuceneSearchSession implements WorkspaceSession {
                     // Add a value to the strong reference value ...
                     doc.add(new Field(ContentIndex.STRONG_REFERENCES, stringValue, Field.Store.NO, Field.Index.NOT_ANALYZED));
                 }
+                nonBinaryProperties.add(property);
                 continue;
             }
             if (type == FieldType.BOOLEAN) {
@@ -542,9 +562,11 @@ public class LuceneSearchSession implements WorkspaceSession {
                     int intValue = booleanFactory.create(value).booleanValue() ? 1 : 0;
                     doc.add(new NumericField(nameString, rule.getStoreOption(), index).setIntValue(intValue));
                 }
+                nonBinaryProperties.add(property);
                 continue;
             }
             assert type == FieldType.STRING;
+            nonBinaryProperties.add(property);
             for (Object value : property) {
                 if (value == null) continue;
                 stringValue = processor.stringFactory.create(value);
@@ -583,6 +605,63 @@ public class LuceneSearchSession implements WorkspaceSession {
                 }
             }
         }
+
+        // Process the binary properties ...
+        if (binaryProperties != null) {
+            // Get the text extractor ...
+            ExecutionContext execContext = processor.getExecutionContext();
+            TextExtractor extractor = execContext.getTextExtractor();
+            if (!(extractor instanceof TextExtractors) || ((TextExtractors)extractor).size() != 0) {
+                // Find the mime type for the content ...
+                MimeTypeDetector detector = execContext.getMimeTypeDetector();
+                String contentName = nameStr;
+                if (JcrLexicon.CONTENT.equals(path.getLastSegment().getName()) && path.getParent() != null
+                    && !path.getParent().isRoot()) {
+                    contentName = processor.stringFactory.create(path.getParent().getLastSegment().getName());
+                }
+                final StringBuilder textAccumulator = fullTextSearchValue;
+                final TextExtractorOutput output = new TextExtractorOutput() {
+                    @Override
+                    public void recordText( String text ) {
+                        textAccumulator.append(' ').append(text);
+                    }
+                };
+                Problems problems = new SimpleProblems();
+                for (Property binaryProp : binaryProperties) {
+                    ValueFactory<Binary> binaryFactory = processor.valueFactories.getBinaryFactory();
+                    for (Object value : binaryProp) {
+                        if (value == null) continue;
+                        Binary binary = binaryFactory.create(value);
+                        InputStream stream = binary.getStream();
+                        if (stream != null) {
+                            try {
+                                if (stream.markSupported()) stream.mark(Integer.MAX_VALUE);
+                                String mimeType = detector.mimeTypeOf(contentName, binary.getStream());
+                                if (!extractor.supportsMimeType(mimeType)) continue;
+                                if (stream.markSupported()) {
+                                    stream.reset();
+                                } else {
+                                    stream.close();
+                                    stream = binary.getStream();
+                                }
+                                TextExtractorContext context = new TextExtractorContext(execContext, path, nonBinaryProperties,
+                                                                                        mimeType, problems);
+                                extractor.extractFrom(stream, output, context);
+                            } finally {
+                                if (stream != null) {
+                                    try {
+                                        stream.close();
+                                    } catch (Throwable t) {
+                                        // do nothing ...
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Add the full-text-search field ...
         if (fullTextSearchValue.length() != 0) {
             doc.add(new Field(ContentIndex.FULL_TEXT, fullTextSearchValue.toString(), Field.Store.NO, Field.Index.ANALYZED));

@@ -45,6 +45,8 @@ import org.modeshape.graph.property.basic.BasicPropertyFactory;
 import org.modeshape.graph.property.basic.SimpleNamespaceRegistry;
 import org.modeshape.graph.property.basic.StandardValueFactories;
 import org.modeshape.graph.property.basic.ThreadSafeNamespaceRegistry;
+import org.modeshape.graph.text.TextExtractor;
+import org.modeshape.graph.text.TextExtractors;
 
 /**
  * An ExecutionContext is a representation of the environment or context in which a component or operation is operating. Some
@@ -68,6 +70,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     private final ValueFactories valueFactories;
     private final NamespaceRegistry namespaceRegistry;
     private final MimeTypeDetector mimeTypeDetector;
+    private final TextExtractor textExtractor;
     private final SecurityContext securityContext;
     /** The unique ID string, which is always generated so that it can be final and not volatile. */
     private final String id = UUID.randomUUID().toString();
@@ -81,7 +84,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     @SuppressWarnings( "synthetic-access" )
     public ExecutionContext() {
-        this(new NullSecurityContext(), null, null, null, null, null, null, null);
+        this(new NullSecurityContext(), null, null, null, null, null, null, null, null);
         initializeDefaultNamespaces(this.getNamespaceRegistry());
         assert securityContext != null;
 
@@ -101,6 +104,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         this.propertyFactory = original.getPropertyFactory();
         this.classLoaderFactory = original.getClassLoaderFactory();
         this.mimeTypeDetector = original.getMimeTypeDetector();
+        this.textExtractor = original.getTextExtractor();
         this.data = original.getData();
         this.processId = original.getProcessId();
     }
@@ -122,6 +126,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         this.propertyFactory = original.getPropertyFactory();
         this.classLoaderFactory = original.getClassLoaderFactory();
         this.mimeTypeDetector = original.getMimeTypeDetector();
+        this.textExtractor = original.getTextExtractor();
         this.data = original.getData();
         this.processId = original.getProcessId();
     }
@@ -138,6 +143,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      *        should be used
      * @param mimeTypeDetector the {@link MimeTypeDetector} implementation, or null if the context should use a
      *        {@link MimeTypeDetectors} instance with an {@link ExtensionBasedMimeTypeDetector}
+     * @param textExtractor the {@link TextExtractor} implementation, or null if the context should use a {@link TextExtractors}
+     *        instance
      * @param classLoaderFactory the {@link ClassLoaderFactory} implementation, or null if a {@link StandardClassLoaderFactory}
      *        instance should be used
      * @param data the custom data for this context, or null if there is no such data
@@ -148,6 +155,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
                                 ValueFactories valueFactories,
                                 PropertyFactory propertyFactory,
                                 MimeTypeDetector mimeTypeDetector,
+                                TextExtractor textExtractor,
                                 ClassLoaderFactory classLoaderFactory,
                                 Map<String, String> data,
                                 String processId ) {
@@ -159,6 +167,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(this.valueFactories) : propertyFactory;
         this.classLoaderFactory = classLoaderFactory == null ? new StandardClassLoaderFactory() : classLoaderFactory;
         this.mimeTypeDetector = mimeTypeDetector != null ? mimeTypeDetector : createDefaultMimeTypeDetector();
+        this.textExtractor = textExtractor != null ? textExtractor : createDefaultTextExtractor();
         this.data = data != null ? data : Collections.<String, String>emptyMap();
         this.processId = processId != null ? processId : UUID.randomUUID().toString();
     }
@@ -167,6 +176,11 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
         MimeTypeDetectors detectors = new MimeTypeDetectors();
         detectors.addDetector(ExtensionBasedMimeTypeDetector.CONFIGURATION);
         return detectors;
+    }
+
+    private TextExtractor createDefaultTextExtractor() {
+        TextExtractors extractors = new TextExtractors();
+        return extractors;
     }
 
     /**
@@ -211,6 +225,15 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     public MimeTypeDetector getMimeTypeDetector() {
         return this.mimeTypeDetector;
+    }
+
+    /**
+     * Return an object that can be used to extract text from content, such as the content of a file.
+     * 
+     * @return the extract; never null
+     */
+    public TextExtractor getTextExtractor() {
+        return this.textExtractor;
     }
 
     /**
@@ -298,8 +321,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
     public ExecutionContext with( NamespaceRegistry namespaceRegistry ) {
         // Don't supply the value factories or property factories, since they'll have to be recreated
         // to reference the supplied namespace registry ...
-        return new ExecutionContext(this.getSecurityContext(), namespaceRegistry, null, null, this.getMimeTypeDetector(),
-                                    this.getClassLoaderFactory(), this.getData(), getProcessId());
+        return new ExecutionContext(getSecurityContext(), namespaceRegistry, null, null, getMimeTypeDetector(),
+                                    getTextExtractor(), getClassLoaderFactory(), getData(), getProcessId());
     }
 
     /**
@@ -312,10 +335,22 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      *         implementation; never null
      */
     public ExecutionContext with( MimeTypeDetector mimeTypeDetector ) {
-        // Don't supply the value factories or property factories, since they'll have to be recreated
-        // to reference the supplied namespace registry ...
-        return new ExecutionContext(this.getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    mimeTypeDetector, getClassLoaderFactory(), this.getData(), getProcessId());
+        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
+                                    mimeTypeDetector, getTextExtractor(), getClassLoaderFactory(), getData(), getProcessId());
+    }
+
+    /**
+     * Create a new execution context that is the same as this context, but which uses the supplied {@link TextExtractor text
+     * extractor}.
+     * 
+     * @param textExtractor the new text extractor implementation, or null if the context should use a {@link TextExtractors}
+     *        instance with no default extractor
+     * @return the execution context that is identical with this execution context, but which uses the supplied detector
+     *         implementation; never null
+     */
+    public ExecutionContext with( TextExtractor textExtractor ) {
+        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
+                                    getMimeTypeDetector(), textExtractor, getClassLoaderFactory(), getData(), getProcessId());
     }
 
     /**
@@ -327,10 +362,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      *         factory implementation; never null
      */
     public ExecutionContext with( ClassLoaderFactory classLoaderFactory ) {
-        // Don't supply the value factories or property factories, since they'll have to be recreated
-        // to reference the supplied namespace registry ...
-        return new ExecutionContext(this.getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), classLoaderFactory, this.getData(), getProcessId());
+        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
+                                    getMimeTypeDetector(), getTextExtractor(), classLoaderFactory, getData(), getProcessId());
     }
 
     /**
@@ -363,8 +396,8 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
             // Copy the data in the map ...
             newData = Collections.unmodifiableMap(new HashMap<String, String>(data));
         }
-        return new ExecutionContext(this.getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getClassLoaderFactory(), newData, getProcessId());
+        return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
+                                    getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), newData, getProcessId());
     }
 
     /**
@@ -396,7 +429,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
             newData = Collections.unmodifiableMap(newData);
         }
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getClassLoaderFactory(), newData, getProcessId());
+                                    getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), newData, getProcessId());
     }
 
     /**
@@ -409,7 +442,7 @@ public class ExecutionContext implements ClassLoaderFactory, Cloneable {
      */
     public ExecutionContext with( String processId ) {
         return new ExecutionContext(getSecurityContext(), getNamespaceRegistry(), getValueFactories(), getPropertyFactory(),
-                                    getMimeTypeDetector(), getClassLoaderFactory(), getData(), processId);
+                                    getMimeTypeDetector(), getTextExtractor(), getClassLoaderFactory(), getData(), processId);
     }
 
     /**

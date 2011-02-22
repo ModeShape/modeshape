@@ -44,6 +44,8 @@ public class ModeShapeLexicon extends org.modeshape.graph.ModeShapeLexicon {
     public static final Name JNDI_NAME = new BasicName(Namespace.URI, "jndiName");
     public static final Name MIME_TYPE_DETECTORS = new BasicName(Namespace.URI, "mimeTypeDetectors");
     public static final Name MIME_TYPE_DETECTOR = new BasicName(Namespace.URI, "mimeTypeDetector");
+    public static final Name TEXT_EXTRACTORS = new BasicName(Namespace.URI, "textExtractors");
+    public static final Name TEXT_EXTRACTOR = new BasicName(Namespace.URI, "textExtractor");
     public static final Name OPTIONS = new BasicName(Namespace.URI, "options");
     public static final Name VALUE = new BasicName(Namespace.URI, "value");
     public static final Name RETRY_LIMIT = new BasicName(Namespace.URI, "retryLimit");

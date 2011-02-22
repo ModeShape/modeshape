@@ -93,8 +93,9 @@ public class VdbSequencer implements StreamSequencer {
                 zipFileName = pathToArchiveFile.getLastSegment().getName();
                 // Remove the ".xmi" extension
                 String fileNameWithoutExtension = zipFileName.getLocalName().replaceAll("\\.vdb$", "");
-                zipFileName = context.getValueFactories().getNameFactory().create(zipFileName.getNamespaceUri(),
-                                                                                  fileNameWithoutExtension);
+                zipFileName = context.getValueFactories()
+                                     .getNameFactory()
+                                     .create(zipFileName.getNamespaceUri(), fileNameWithoutExtension);
                 String name = stringFactory.create(zipFileName);
                 zipFileName = extractVersionInfomation(context, name, version);
             }
@@ -178,9 +179,17 @@ public class VdbSequencer implements StreamSequencer {
         }
     }
 
-    protected static Name extractVersionInfomation( ExecutionContext context,
-                                                    String fileNameWithoutExtension,
-                                                    AtomicInteger version ) {
+    /**
+     * Utility method to extract the version information from a VDB filename.
+     * 
+     * @param context the execution context; may not be null
+     * @param fileNameWithoutExtension the filename for the VDB, without its extension; may not be null
+     * @param version the reference to the AtomicInteger that will be modified to contain the version
+     * @return the Name containing the 'fileNameWithoutExtension' value (without any trailing '.' characters); never null
+     */
+    public static Name extractVersionInfomation( ExecutionContext context,
+                                                 String fileNameWithoutExtension,
+                                                 AtomicInteger version ) {
         Matcher matcher = VERSION_REGEX.matcher(fileNameWithoutExtension);
         if (matcher.matches()) {
             // Extract the version number from the name ...

@@ -98,6 +98,12 @@
             <mode:classname>org.modeshape.graph.mimetype.ExtensionBasedMimeTypeDetector</mode:classname>
         </mode:mimeTypeDetector>
     </mode:mimeTypeDetectors>
+    <mode:textExtractors>
+        <mode:textExtractor jcr:name="Tika Extractor">
+            <mode:description>Text extractor that uses the Tika library of parsers</mode:description>        
+            <mode:classname>org.modeshape.extractor.tika.TikaTextExtractor</mode:classname>
+        </mode:textExtractor>
+    </mode:textExtractors>
     <!-- JCR Repositories.  This is required, with a separate repository for each JCR repository instance. -->
     <mode:repositories>
         <mode:repository jcr:name="Repo" mode:source="Store">

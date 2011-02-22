@@ -64,6 +64,9 @@ import org.modeshape.graph.property.Path;
 import org.modeshape.graph.property.PathExpression;
 import org.modeshape.graph.property.PathNotFoundException;
 import org.modeshape.graph.property.Property;
+import org.modeshape.graph.text.TextExtractor;
+import org.modeshape.graph.text.TextExtractorConfig;
+import org.modeshape.graph.text.TextExtractors;
 import org.modeshape.repository.cluster.ClusteringConfig;
 import org.modeshape.repository.cluster.ClusteringService;
 import org.modeshape.repository.sequencer.SequencerConfig;
@@ -96,6 +99,7 @@ public class ModeShapeEngine {
     private final ExecutorService executorService;
     private final ClusteringService clusteringService;
     private final MimeTypeDetectors detectors;
+    private final TextExtractors extractors;
     private final String engineId = UUID.randomUUID().toString();
     private final Logger logger;
 
@@ -111,7 +115,8 @@ public class ModeShapeEngine {
 
         // Use the configuration's context ...
         this.detectors = new MimeTypeDetectors();
-        this.context = context.with(detectors).with(engineId);
+        this.extractors = new TextExtractors();
+        this.context = context.with(detectors).with(extractors).with(engineId);
 
         // And set up the scanner ...
         this.configuration = configuration;
@@ -124,6 +129,11 @@ public class ModeShapeEngine {
         // Add an extension-based detector by default ...
         detectors.addDetector(new MimeTypeDetectorConfig("ExtensionDetector", "Extension-based MIME type detector",
                                                          ExtensionBasedMimeTypeDetector.class));
+
+        // Add the text extractors in the configuration ...
+        for (TextExtractorConfig config : scanner.getTextExtractors()) {
+            extractors.addExtractor(config);
+        }
 
         // Create the clustering service ...
         ClusteringConfig clusterConfig = scanner.getClusteringConfiguration();
@@ -274,6 +284,17 @@ public class ModeShapeEngine {
     protected final MimeTypeDetector getMimeTypeDetector() {
         checkRunning();
         return detectors;
+    }
+
+    /**
+     * Return the component that is able to extract text given content and its MIME type.
+     * 
+     * @return the text extractor used by this engine; never null
+     * @throws IllegalStateException if this engine was not {@link #start() started}
+     */
+    protected final TextExtractor getTextExtractor() {
+        checkRunning();
+        return extractors;
     }
 
     protected final boolean checkRunning() {
@@ -552,6 +573,54 @@ public class ModeShapeEngine {
                 // no detectors registered ...
             }
             return detectors;
+        }
+
+        public List<TextExtractorConfig> getTextExtractors() {
+            List<TextExtractorConfig> extractors = new ArrayList<TextExtractorConfig>();
+            try {
+                Set<Name> skipProperties = new HashSet<Name>();
+                skipProperties.add(ModeShapeLexicon.READABLE_NAME);
+                skipProperties.add(ModeShapeLexicon.DESCRIPTION);
+                skipProperties.add(ModeShapeLexicon.CLASSNAME);
+                skipProperties.add(ModeShapeLexicon.CLASSPATH);
+                skipProperties.add(ModeShapeLexicon.PATH_EXPRESSION);
+                Set<String> skipNamespaces = new HashSet<String>();
+                skipNamespaces.add(JcrLexicon.Namespace.URI);
+                skipNamespaces.add(JcrNtLexicon.Namespace.URI);
+                skipNamespaces.add(JcrMixLexicon.Namespace.URI);
+
+                Subgraph subgraph = subgraph(false);
+                Node extractorsNode = subgraph.getNode(ModeShapeLexicon.TEXT_EXTRACTORS);
+                if (extractorsNode == null) {
+                    // no extractors defined ...
+                    return extractors;
+                }
+
+                for (Location detectorLocation : extractorsNode.getChildren()) {
+                    Node node = subgraph.getNode(detectorLocation);
+                    String name = stringValueOf(node, ModeShapeLexicon.READABLE_NAME);
+                    if (name == null) name = stringValueOf(node);
+                    String desc = stringValueOf(node, ModeShapeLexicon.DESCRIPTION);
+                    String classname = stringValueOf(node, ModeShapeLexicon.CLASSNAME);
+                    String[] classpath = stringValuesOf(node, ModeShapeLexicon.CLASSPATH);
+                    Map<String, Object> properties = new HashMap<String, Object>();
+                    for (Property property : node.getProperties()) {
+                        Name propertyName = property.getName();
+                        if (skipNamespaces.contains(propertyName.getNamespaceUri())) continue;
+                        if (skipProperties.contains(propertyName)) continue;
+                        if (property.isSingle()) {
+                            properties.put(propertyName.getLocalName(), property.getFirstValue());
+                        } else {
+                            properties.put(propertyName.getLocalName(), property.getValuesAsArray());
+                        }
+                    }
+                    TextExtractorConfig config = new TextExtractorConfig(name, desc, properties, classname, classpath);
+                    extractors.add(config);
+                }
+            } catch (PathNotFoundException e) {
+                // no detectors registered ...
+            }
+            return extractors;
         }
 
         public ClusteringConfig getClusteringConfiguration() {
