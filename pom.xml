@@ -230,6 +230,7 @@
 		<jcr.version>2.0</jcr.version>
 		<jackrabbit.jcr.tck.version>2.1.0</jackrabbit.jcr.tck.version>
 		<picketbox.version>3.0.0.Final</picketbox.version>
+		<byteman.version>1.5.1</byteman.version>
 		<sun.xml.bind.jaxbimpl.version>2.1.12</sun.xml.bind.jaxbimpl.version>
 		<jdbc.mysql.version>5.0.7</jdbc.mysql.version>
 		<jdbc.derby.version>10.2.1.6</jdbc.derby.version>
@@ -1333,6 +1334,27 @@
 				<version>${mockito.all.version}</version>
 				<scope>test</scope>
 			</dependency>
+      <!-- 
+      Byteman Dependencies, used for the bytecode injection during performance tests
+      -->
+      <dependency>
+        <groupId>org.jboss.byteman</groupId>
+        <artifactId>byteman-bmunit</artifactId>
+        <version>${byteman.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.byteman</groupId>
+        <artifactId>byteman-install</artifactId>
+        <version>${byteman.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.byteman</groupId>
+        <artifactId>byteman</artifactId>
+        <version>${byteman.version}</version>
+        <scope>test</scope>
+      </dependency>
 			<!--
 				Logging (require SLF4J API for compiling, but use Log4J and its
 				SLF4J binding for testing)

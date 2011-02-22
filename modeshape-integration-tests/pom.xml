@@ -256,6 +256,21 @@
 			<groupId>org.apache.jackrabbit</groupId>
 			<artifactId>jackrabbit-jcr-tests</artifactId>
 		</dependency>
+    <!-- 
+    Byteman Dependencies, used for the bytecode injection during performance tests
+    -->
+    <dependency>
+      <groupId>org.jboss.byteman</groupId>
+      <artifactId>byteman-bmunit</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.byteman</groupId>
+      <artifactId>byteman-install</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.byteman</groupId>
+      <artifactId>byteman</artifactId>
+    </dependency>
 		<!--
 		PicketBox (JAAS implementation used in test cases)
 		-->
