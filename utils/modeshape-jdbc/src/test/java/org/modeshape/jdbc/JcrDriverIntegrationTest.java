@@ -499,10 +499,11 @@ public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
             "cars    NULL    nt:versionHistory    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "cars    NULL    nt:versionLabels    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED",
             "cars    NULL    nt:versionedChild    VIEW    Is Mixin: false    NULL    NULL    NULL    null    DERIVED"};
-
+        
         ResultSet rs = dbmd.getTables("%", "%", "%", new String[] {});
         assertResultsSetEquals(rs, expected);
         assertRowCount(44);
+        
     }
 
     @Test

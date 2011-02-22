@@ -33,9 +33,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import javax.jcr.PropertyType;
 import javax.jcr.Repository;
@@ -58,9 +60,11 @@ import org.modeshape.jdbc.metadata.ResultsMetadataConstants;
 public class JcrMetaData implements DatabaseMetaData {
 
     protected static final List<PropertyDefinition> PSEUDO_COLUMN_DEFNS;
+    protected static final List<String> PSEUDO_COLUMN_NAMES;
 
     static {
         List<PropertyDefinition> defns = new ArrayList<PropertyDefinition>();
+        List<String> defnNames = new ArrayList<String>();
         boolean auto = true;
         boolean mand = false;
         boolean prot = true;
@@ -68,11 +72,19 @@ public class JcrMetaData implements DatabaseMetaData {
         boolean search = true;
         boolean order = true;
         defns.add(new PseudoPropertyDefinition(null, "jcr:path", PropertyType.PATH, auto, mand, prot, mult, search, order));
+        defnNames.add("jcr:path");
         defns.add(new PseudoPropertyDefinition(null, "jcr:name", PropertyType.NAME, auto, mand, prot, mult, search, order));
+        defnNames.add("jcr:name");
         defns.add(new PseudoPropertyDefinition(null, "jcr:score", PropertyType.DOUBLE, auto, mand, prot, mult, search, order));
+        defnNames.add("jcr:score");
         defns.add(new PseudoPropertyDefinition(null, "mode:localName", PropertyType.STRING, auto, mand, prot, mult, search, order));
+        defnNames.add("mode:localName");
         defns.add(new PseudoPropertyDefinition(null, "mode:depth", PropertyType.LONG, auto, mand, prot, mult, search, order));
+        defnNames.add("mode:depth");
+        
         PSEUDO_COLUMN_DEFNS = Collections.unmodifiableList(defns);
+        PSEUDO_COLUMN_NAMES = Collections.unmodifiableList(defnNames);     
+        
     }
 
     /** CONSTANTS */
@@ -2619,11 +2631,6 @@ public class JcrMetaData implements DatabaseMetaData {
         if (tableNamePattern.trim().equals(WILDCARD)) {
 
             nodetypes = this.connection.getRepositoryDelegate().nodeTypes();
-            Iterator<NodeType> nodeIt = nodetypes.iterator();
-            while (nodeIt.hasNext()) {
-                NodeType type = nodeIt.next();
-                if (!hasColumnedDefined(type)) nodeIt.remove();
-            }
 
         } else if (tableNamePattern.contains(WILDCARD)) {
             nodetypes = new ArrayList<NodeType>();
@@ -2648,8 +2655,6 @@ public class JcrMetaData implements DatabaseMetaData {
 
                 NodeType type = nodeIt.next();
 
-                if (!hasColumnedDefined(type)) continue;
-
                 if (isLeading) {
                     if (isTrailing) {
                         if (type.getName().indexOf(partName, 1) > -1) {
@@ -2669,7 +2674,7 @@ public class JcrMetaData implements DatabaseMetaData {
         } else {
             NodeType nt = this.connection.getRepositoryDelegate().nodeType(tableNamePattern);
             nodetypes = new ArrayList<NodeType>(1);
-            if (nt != null && hasColumnedDefined(nt)) {
+            if (nt != null) {
                 nodetypes.add(nt);
             }
         }
@@ -2759,22 +2764,14 @@ public class JcrMetaData implements DatabaseMetaData {
         return resultDefns;
     }
 
-    /**
-     * isTableValid determines if the node type should be exposed as a table. A table must have at least one column, and the
-     * property definitions and superTypes provide the columns. As long as one is defined, then one table is valid for exposure.
-     * 
-     * @param nodeType
-     * @return true if a column is defined for the table
-     */
-    private boolean hasColumnedDefined( NodeType nodeType ) {
-        List<PropertyDefinition> allDefns = new ArrayList<PropertyDefinition>();
-        addPropertyDefinitions(allDefns, nodeType);
-        return (allDefns.size() > 0 ? true : false);
-
-    }
-
     private void addPropertyDefinitions( List<PropertyDefinition> mapDefns,
                                          NodeType nodetype ) {
+    	
+       	Set<String> colNames = new HashSet<String>(mapDefns.size());
+        // All tables have these pseudo-columns ...
+    	mapDefns.addAll(PSEUDO_COLUMN_DEFNS);
+    	colNames.addAll(PSEUDO_COLUMN_NAMES);        
+    	
         for (PropertyDefinition defn : nodetype.getPropertyDefinitions()) {
             // Don't include residual (e.g., '*') properties as columns ...
             if (defn.getName().equalsIgnoreCase("*")) continue;
@@ -2782,10 +2779,12 @@ public class JcrMetaData implements DatabaseMetaData {
             if (defn.isMultiple()) continue;
             // Don't include any properties defined in the "modeint" internal namespace ...
             if (defn.getName().startsWith("modeint:")) continue;
-            mapDefns.add(defn);
+            
+        	if (!colNames.contains(defn.getName())) {
+        		mapDefns.add(defn);
+        		colNames.add(defn.getName());
+        	}             
         }
-        // All tables have these pseudo-columns ...
-        mapDefns.addAll(PSEUDO_COLUMN_DEFNS);
     }
 
     protected static class PseudoPropertyDefinition implements PropertyDefinition {
