@@ -28,7 +28,6 @@ import javax.jcr.Credentials;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.SimpleCredentials;
-import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
 import org.modeshape.jcr.JcrConfiguration;
@@ -59,18 +58,6 @@ public abstract class AbstractJcrRepositoryTest {
 
     private static JcrEngine engine;
     private static Repository repository;
-
-    static {
-        // Initialize IDTrust
-        String configFile = "security/jaas.conf.xml";
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
-
-        try {
-            idtrustConfig.config(configFile);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
-    }
 
     protected Credentials simpleCredentials = new SimpleCredentials(USERNAME, PASSWORD.toCharArray());
 

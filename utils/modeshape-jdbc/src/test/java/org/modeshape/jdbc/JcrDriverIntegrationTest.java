@@ -41,7 +41,6 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.naming.Context;
-import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -51,12 +50,13 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.connector.inmemory.InMemoryRepositorySource;
+import org.modeshape.jcr.JaasTestUtil;
 import org.modeshape.jcr.JcrConfiguration;
 import org.modeshape.jcr.JcrEngine;
 import org.modeshape.jcr.JcrRepository;
-import org.modeshape.jcr.ModeShapeRoles;
 import org.modeshape.jcr.JcrRepository.Option;
 import org.modeshape.jcr.JcrRepository.QueryLanguage;
+import org.modeshape.jcr.ModeShapeRoles;
 
 /**
  * This is a test suite that operates against a complete JcrRepository instance created and managed using the JcrEngine.
@@ -126,15 +126,7 @@ public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
         engine.start();
 
         // Initialize the JAAS configuration to allow for an admin login later
-        // Initialize IDTrust
-        String configFile = "security/jaas.conf.xml";
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
-
-        try {
-            idtrustConfig.config(configFile);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
 
         // Start the repository ...
         try {
@@ -172,11 +164,14 @@ public class JcrDriverIntegrationTest extends ConnectionResultsComparator {
 
     @AfterClass
     public static void afterAll() throws Exception {
-
-        engine.shutdown();
-        engine.awaitTermination(3, TimeUnit.SECONDS);
-        engine = null;
-        configuration = null;
+        try {
+            engine.shutdown();
+            engine.awaitTermination(3, TimeUnit.SECONDS);
+        } finally {
+            engine = null;
+            configuration = null;
+            JaasTestUtil.releaseJaas();
+        }
     }
 
     @Before

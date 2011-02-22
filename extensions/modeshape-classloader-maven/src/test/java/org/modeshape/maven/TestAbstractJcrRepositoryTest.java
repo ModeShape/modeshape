@@ -29,12 +29,26 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import javax.jcr.Node;
 import javax.jcr.Session;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.jcr.JaasTestUtil;
 
 /**
  * @author Randall Hauch
  */
 public class TestAbstractJcrRepositoryTest extends AbstractJcrRepositoryTest {
+
+    @BeforeClass
+    public static void beforeAll() {
+        // Initialize PicketBox ...
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
+    }
 
     @Test
     public void shouldBeAbleToStartAndShutdownRepository() throws Exception {

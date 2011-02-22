@@ -46,8 +46,8 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.NodeTypeDefinition;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
-import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -56,9 +56,9 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.graph.ExecutionContext;
 import org.modeshape.graph.Graph;
+import org.modeshape.graph.JaasSecurityContext.UserPasswordCallbackHandler;
 import org.modeshape.graph.MockSecurityContext;
 import org.modeshape.graph.Node;
-import org.modeshape.graph.JaasSecurityContext.UserPasswordCallbackHandler;
 import org.modeshape.graph.connector.RepositoryConnection;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySource;
@@ -84,15 +84,13 @@ public class JcrRepositoryTest {
 
     @BeforeClass
     public static void beforeAll() {
-        // Initialize IDTrust
-        String configFile = "security/jaas.conf.xml";
-        IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
+        // Initialize the JAAS configuration to allow for an admin login later
+        JaasTestUtil.initJaas("security/jaas.conf.xml");
+    }
 
-        try {
-            idtrustConfig.config(configFile);
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
+    @AfterClass
+    public static void afterAll() {
+        JaasTestUtil.releaseJaas();
     }
 
     @Before

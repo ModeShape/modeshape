@@ -49,7 +49,6 @@ import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
-import org.jboss.security.config.IDTrustConfiguration;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -127,15 +126,7 @@ public class JcrQueryManagerTest {
             engine.start();
 
             // Initialize the JAAS configuration to allow for an admin login later
-            // Initialize IDTrust
-            String configFile = "security/jaas.conf.xml";
-            IDTrustConfiguration idtrustConfig = new IDTrustConfiguration();
-
-            try {
-                idtrustConfig.config(configFile);
-            } catch (Exception ex) {
-                throw new IllegalStateException(ex);
-            }
+            JaasTestUtil.initJaas("security/jaas.conf.xml");
 
             // Start the repository ...
             try {
@@ -188,10 +179,14 @@ public class JcrQueryManagerTest {
 
     @AfterClass
     public static void afterAll() throws Exception {
-        engine.shutdown();
-        engine.awaitTermination(3, TimeUnit.SECONDS);
-        engine = null;
-        configuration = null;
+        try {
+            engine.shutdown();
+            engine.awaitTermination(3, TimeUnit.SECONDS);
+            engine = null;
+            configuration = null;
+        } finally {
+            JaasTestUtil.releaseJaas();
+        }
     }
 
     @Before
@@ -347,8 +342,9 @@ public class JcrQueryManagerTest {
     @FixFor( "MODE-1055" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllNodesWithCriteria() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:base] WHERE [car:year] < 2009",
-                                                                           Query.JCR_SQL2);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT * FROM [nt:base] WHERE [car:year] < 2009", Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -416,8 +412,9 @@ public class JcrQueryManagerTest {
 
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarNodesOrderedByYear() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [car:Car] ORDER BY [car:year]",
-                                                                           Query.JCR_SQL2);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT * FROM [car:Car] ORDER BY [car:year]", Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -427,8 +424,9 @@ public class JcrQueryManagerTest {
 
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryToFindAllCarNodesOrderedByMsrp() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [car:Car] ORDER BY [car:msrp] DESC",
-                                                                           Query.JCR_SQL2);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("SELECT * FROM [car:Car] ORDER BY [car:msrp] DESC", Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -714,8 +712,9 @@ public class JcrQueryManagerTest {
     @FixFor( "MODE-934" )
     @Test
     public void shouldParseQueryWithUnqualifiedPathInSelectOfJcrSql2Query() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("select [jcr:primaryType], [jcr:path] FROM [nt:base]",
-                                                                           Query.JCR_SQL2);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("select [jcr:primaryType], [jcr:path] FROM [nt:base]", Query.JCR_SQL2);
         assertThat(query, is(notNullValue()));
         // print = true;
         QueryResult result = query.execute();
@@ -1039,8 +1038,9 @@ public class JcrQueryManagerTest {
     @FixFor( "MODE-934" )
     @Test
     public void shouldParseQueryWithUnqualifiedPathInSelectOfJcrSqlQuery() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("select jcr:primaryType, jcr:path FROM nt:base",
-                                                                           Query.SQL);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("select jcr:primaryType, jcr:path FROM nt:base", Query.SQL);
         assertThat(query, is(notNullValue()));
         // print = true;
         QueryResult result = query.execute();
@@ -1198,8 +1198,9 @@ public class JcrQueryManagerTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindAllNodesOrderingByAttribute() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,car:Car) order by @car:maker",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("//element(*,car:Car) order by @car:maker", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         // print = true;
@@ -1323,8 +1324,9 @@ public class JcrQueryManagerTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryToFindAllUnstructuredNodesOrderedByScore() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("//element(*,nt:unstructured) order by jcr:score()",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("//element(*,nt:unstructured) order by jcr:score()", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertResults(query, result, 23);
@@ -1457,8 +1459,9 @@ public class JcrQueryManagerTest {
     public void shouldBeAbleToExecuteXPathQueryToFindAnywhereNodeWithNameAndAttrbuteCriteriaMatchingUrl()
         throws RepositoryException {
         // See MODE-686
-        Query query = session.getWorkspace().getQueryManager().createQuery("//NodeB[@myUrl='http://www.acme.com/foo/bar']",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("//NodeB[@myUrl='http://www.acme.com/foo/bar']", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -1509,8 +1512,9 @@ public class JcrQueryManagerTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteria() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., '\"liter V 12\"')]",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root//*[jcr:contains(., '\"liter V 12\"')]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -1521,8 +1525,9 @@ public class JcrQueryManagerTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphen() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., '\"5-speed\"')]",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root//*[jcr:contains(., '\"5-speed\"')]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -1534,8 +1539,9 @@ public class JcrQueryManagerTest {
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNumberAndWildcard()
         throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., '\"5-s*\"')]",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root//*[jcr:contains(., '\"5-s*\"')]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -1546,8 +1552,9 @@ public class JcrQueryManagerTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndNoWildcard() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., '\"heavy duty\"')]",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root//*[jcr:contains(., '\"heavy duty\"')]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -1558,8 +1565,9 @@ public class JcrQueryManagerTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndNoWildcard() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., '\"heavy-duty\"')]",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root//*[jcr:contains(., '\"heavy-duty\"')]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -1570,8 +1578,9 @@ public class JcrQueryManagerTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithNoHyphenAndWildcard() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., '\"heavy du*\"')]",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root//*[jcr:contains(., '\"heavy du*\"')]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -1582,8 +1591,9 @@ public class JcrQueryManagerTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndWildcard() throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., '\"heavy-du*\"')]",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root//*[jcr:contains(., '\"heavy-du*\"')]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -1595,8 +1605,9 @@ public class JcrQueryManagerTest {
     @Test
     public void shouldBeAbleToExecuteXPathQueryWithComplexContainsCriteriaWithHyphenAndLeadingWildcard()
         throws RepositoryException {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root//*[jcr:contains(., '\"*-speed\"')]",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root//*[jcr:contains(., '\"*-speed\"')]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));
@@ -1734,8 +1745,9 @@ public class JcrQueryManagerTest {
         session.getWorkspace().getNamespaceRegistry().registerNamespace("newPrefix", "newUri");
 
         // We don't have any elements that use this yet, but let's at least verify that it can execute.
-        Query query = session.getWorkspace().getQueryManager().createQuery("//*[@newPrefix:someColumn = 'someValue']",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("//*[@newPrefix:someColumn = 'someValue']", Query.XPATH);
         query.execute();
 
     }
@@ -1743,8 +1755,9 @@ public class JcrQueryManagerTest {
     @SuppressWarnings( "deprecation" )
     @Test
     public void shouldNotReturnNodesWithNoPropertyForPropertyCriterion() throws Exception {
-        Query query = session.getWorkspace().getQueryManager().createQuery("/jcr:root/Cars//*[@car:wheelbaseInInches]",
-                                                                           Query.XPATH);
+        Query query = session.getWorkspace()
+                             .getQueryManager()
+                             .createQuery("/jcr:root/Cars//*[@car:wheelbaseInInches]", Query.XPATH);
         assertThat(query, is(notNullValue()));
         QueryResult result = query.execute();
         assertThat(result, is(notNullValue()));

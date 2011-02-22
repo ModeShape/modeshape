@@ -95,6 +95,37 @@
 				<version>1.8.4</version>
 				<scope>test</scope>
 			</dependency>
+			<!--
+			PicketBox (JAAS implementation used in test cases)
+			-->
+	    <dependency>
+	      <groupId>org.picketbox</groupId>
+	      <artifactId>picketbox-bare</artifactId>
+	      <version>3.0.0.Final</version>
+	      <scope>compile</scope>
+	      <exclusions>
+	        <exclusion>
+	          <groupId>apache-xalan</groupId>
+	          <artifactId>xalan</artifactId>
+	        </exclusion>
+	        <exclusion>
+	          <groupId>apache-xalan</groupId>
+	          <artifactId>serializer</artifactId>
+	        </exclusion>
+	        <exclusion>
+	          <groupId>apache-xerces</groupId>
+	          <artifactId>xml-apis</artifactId>
+	        </exclusion>
+	        <exclusion>
+	          <groupId>apache-xerces</groupId>
+	          <artifactId>xercesImpl</artifactId>
+	        </exclusion>
+	        <exclusion>
+						<groupId>org.hibernate</groupId>
+						<artifactId>hibernate</artifactId>
+					</exclusion>
+	      </exclusions>
+	    </dependency>
     </dependencies>
   </dependencyManagement>
 
