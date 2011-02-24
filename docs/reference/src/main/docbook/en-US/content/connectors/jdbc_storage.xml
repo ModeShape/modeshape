@@ -67,8 +67,12 @@
 			      <listitem><para>"<code>update</code>" - Attempt to update the database structure to the current mapping (but does not read and invoke
 			      the SQL statements from "import.sql"). <emphasis>Use with caution.</emphasis></para></listitem>
 			      <listitem><para>"<code>validate</code>" - Validates the existing schema with the current entities configuration, but does not make any
-			      changes to the schema (and does not read and invoke the SQL statements from "import.sql"). This is often the proper setting
-			      to use in production, and thus this is the default value.</para></listitem>
+			      changes to the schema (and does not read and invoke the SQL statements from "import.sql"). This is the default value
+     				because it is the least intrusive and safest option, since it will verify the database's schema matches what the connector
+     				expects.</para></listitem>
+			      <listitem><para>"<code>disable</code>" - Does nothing and assumes that the database is already properly configured. This should be the
+     				setting used in production, as it is a best-practice that DB administrators explicitly configure/upgrade production
+     				database schemas (using scripts).</para></listitem>
 			      </itemizedlist>
 					</entry>
 				</row>

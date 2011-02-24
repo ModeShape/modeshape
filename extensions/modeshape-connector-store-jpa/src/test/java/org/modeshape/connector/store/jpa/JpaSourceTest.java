@@ -29,11 +29,13 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
-import org.modeshape.graph.connector.RepositoryConnection;
-import org.modeshape.graph.connector.RepositorySourceException;
+import org.hibernate.ejb.Ejb3Configuration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.graph.connector.RepositoryConnection;
+import org.modeshape.graph.connector.RepositorySourceException;
 
 /**
  * @author Randall Hauch
@@ -99,5 +101,77 @@ public class JpaSourceTest {
                 }
             }
         }
+    }
+
+    @FixFor( "MODE-1102" )
+    @Test
+    public void shouldDefaultAutoGenerateSchemaValueToValidate() {
+        source = new JpaSource();
+        source.setName("Some name");
+        assertThat(source.getAutoGenerateSchema(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
+
+        // Verify it is set correctly on the Hibernate configuration ...
+        Ejb3Configuration config = new Ejb3Configuration();
+        source.configure(config);
+        assertThat(config.getProperties().get("hibernate.hbm2ddl.auto").toString(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
+    }
+
+    @FixFor( "MODE-1102" )
+    @Test
+    public void shouldTreatNullValueForAutoGenerateSchemaAsDefault() {
+        source = new JpaSource();
+        source.setName("Some name");
+        source.setAutoGenerateSchema(null);
+        assertThat(source.getAutoGenerateSchema(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
+
+        // Verify it is set correctly on the Hibernate configuration ...
+        Ejb3Configuration config = new Ejb3Configuration();
+        source.configure(config);
+        assertThat(config.getProperties().get("hibernate.hbm2ddl.auto").toString(), is(JpaSource.DEFAULT_AUTO_GENERATE_SCHEMA));
+    }
+
+    @FixFor( "MODE-1102" )
+    @Test
+    public void shouldValidStringValueForAutoGenerateSchemaAsDisable() {
+        String[] values = {"create", "create-drop", "update", "validate"};
+        for (String value : values) {
+            source = new JpaSource();
+            source.setName("Some name");
+            source.setAutoGenerateSchema(value);
+            assertThat(source.getAutoGenerateSchema(), is(value));
+
+            // Verify it is set correctly on the Hibernate configuration ...
+            Ejb3Configuration config = new Ejb3Configuration();
+            source.configure(config);
+            assertThat(config.getProperties().get("hibernate.hbm2ddl.auto").toString(), is(value));
+        }
+    }
+
+    @FixFor( "MODE-1102" )
+    @Test
+    public void shouldTreatEmptyStringValueForAutoGenerateSchemaAsDisable() {
+        source = new JpaSource();
+        source.setName("Some name");
+        source.setAutoGenerateSchema("");
+        assertThat(source.getAutoGenerateSchema(), is(JpaSource.AUTO_GENERATE_SCHEMA_DISABLE));
+
+        // Verify it is set correctly on the Hibernate configuration ...
+        Ejb3Configuration config = new Ejb3Configuration();
+        source.configure(config);
+        assertThat(config.getProperties().get("hibernate.hbm2ddl.auto"), is(nullValue()));
+    }
+
+    @FixFor( "MODE-1102" )
+    @Test
+    public void shouldTreatUpperCaseDisableStringValueForAutoGenerateSchemaAsDisable() {
+        source = new JpaSource();
+        source.setName("Some name");
+        source.setAutoGenerateSchema(JpaSource.AUTO_GENERATE_SCHEMA_DISABLE.toUpperCase());
+        assertThat(source.getAutoGenerateSchema(), is(JpaSource.AUTO_GENERATE_SCHEMA_DISABLE));
+
+        // Verify it is set correctly on the Hibernate configuration ...
+        Ejb3Configuration config = new Ejb3Configuration();
+        source.configure(config);
+        assertThat(config.getProperties().get("hibernate.hbm2ddl.auto"), is(nullValue()));
     }
 }

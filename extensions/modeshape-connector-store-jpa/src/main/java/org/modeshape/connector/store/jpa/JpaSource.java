@@ -196,7 +196,14 @@ public class JpaSource implements RepositorySource, ObjectFactory {
     private static final boolean DEFAULT_ENFORCE_REFERENTIAL_INTEGRITY = true;
 
     /**
-     * The initial {@link #getAutoGenerateSchema() automatic schema generation setting} is "{@value} ", unless otherwise
+     * The {@link #getAutoGenerateSchema() automatic schema generation setting} that should be used in production is "{@value} ".
+     * When using this value, the connector assumes that the database schema is already configured properly, and nothing will be
+     * done to validate the schema.
+     */
+    public static final String AUTO_GENERATE_SCHEMA_DISABLE = "disable";
+
+    /**
+     * The default {@link #getAutoGenerateSchema() automatic schema generation setting} is "{@value} ", unless otherwise
      * specified.
      */
     public static final String DEFAULT_AUTO_GENERATE_SCHEMA = "validate";
@@ -430,7 +437,7 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * Get the Hibernate setting dictating what it does with the database schema upon first connection. For more information, see
      * {@link #setAutoGenerateSchema(String)}.
      * 
-     * @return the setting; never null
+     * @return the setting; never null and never empty
      */
     public String getAutoGenerateSchema() {
         return this.autoGenerateSchema;
@@ -450,14 +457,24 @@ public class JpaSource implements RepositorySource, ObjectFactory {
      * <li>"<code>update</code>" - Attempt to update the database structure to the current mapping (but does not read and invoke
      * the SQL statements from "import.sql"). <i>Use with caution.</i></li>
      * <li>"<code>validate</code>" - Validates the existing schema with the current entities configuration, but does not make any
-     * changes to the schema (and does not read and invoke the SQL statements from "import.sql"). This is often the proper setting
-     * to use in production, and thus this is the default value.</li>
+     * changes to the schema (and does not read and invoke the SQL statements from "import.sql"). This is the default value
+     * because it is the least intrusive and safest option, since it will verify the database's schema matches what the connector
+     * expects.</li>
+     * <li>"<code>disable</code>" - Does nothing and assumes that the database is already properly configured. This should be the
+     * setting used in production, as it is a best-practice that DB administrators explicitly configure/upgrade production
+     * database schemas (using scripts).</li>
      * </ul>
      * 
-     * @param autoGenerateSchema the setting for the auto-generation, or null if the default should be used
+     * @param autoGenerateSchema the setting for the auto-generation, or null if the default should be used; an empty string will
+     *        be treated as "disable".
      */
     public synchronized void setAutoGenerateSchema( String autoGenerateSchema ) {
-        this.autoGenerateSchema = autoGenerateSchema != null ? autoGenerateSchema.trim() : DEFAULT_AUTO_GENERATE_SCHEMA;
+        if (autoGenerateSchema == null) autoGenerateSchema = DEFAULT_AUTO_GENERATE_SCHEMA;
+        autoGenerateSchema = autoGenerateSchema.trim();
+        if (autoGenerateSchema.length() == 0 || autoGenerateSchema.equalsIgnoreCase(AUTO_GENERATE_SCHEMA_DISABLE)) autoGenerateSchema = AUTO_GENERATE_SCHEMA_DISABLE;
+        this.autoGenerateSchema = autoGenerateSchema;
+        assert this.autoGenerateSchema != null;
+        assert this.autoGenerateSchema.length() != 0;
     }
 
     /**
@@ -1312,7 +1329,9 @@ public class JpaSource implements RepositorySource, ObjectFactory {
         setProperty(configuration, "hibernate.show_sql", String.valueOf(this.showSql)); // writes all SQL statements to console
         setProperty(configuration, "hibernate.format_sql", "true");
         setProperty(configuration, "hibernate.use_sql_comments", "true");
-        setProperty(configuration, "hibernate.hbm2ddl.auto", this.autoGenerateSchema);
+        if (!AUTO_GENERATE_SCHEMA_DISABLE.equalsIgnoreCase(this.autoGenerateSchema)) {
+            setProperty(configuration, "hibernate.hbm2ddl.auto", this.autoGenerateSchema);
+        }
     }
 
     protected void setProperty( Ejb3Configuration configurator,
