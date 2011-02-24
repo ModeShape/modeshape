@@ -78,11 +78,11 @@ import org.modeshape.graph.property.Binary;
 import org.modeshape.graph.property.DateTime;
 import org.modeshape.graph.property.NamespaceRegistry;
 import org.modeshape.graph.property.Path;
+import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.property.PathFactory;
 import org.modeshape.graph.property.Reference;
 import org.modeshape.graph.property.ReferenceFactory;
 import org.modeshape.graph.property.ValueFactories;
-import org.modeshape.graph.property.Path.Segment;
 import org.modeshape.graph.query.QueryBuilder;
 import org.modeshape.graph.query.model.QueryCommand;
 import org.modeshape.graph.query.model.TypeSystem;
@@ -492,8 +492,8 @@ class JcrSession implements Session {
 
     /**
      * Makes a "best effort" determination of whether the given method can be successfully called on the given target with the
-     * given arguments. A return value of {@code false} indicates that the method would not succeed. A return value of {@code
-     * true} indicates that the method <i>might</i> succeed.
+     * given arguments. A return value of {@code false} indicates that the method would not succeed. A return value of
+     * {@code true} indicates that the method <i>might</i> succeed.
      * 
      * @param methodName the method to invoke; may not be null
      * @param target the object on which to invoke it; may not be null
@@ -1070,10 +1070,13 @@ class JcrSession implements Session {
     public void importXML( String parentAbsPath,
                            InputStream in,
                            int uuidBehavior ) throws IOException, InvalidSerializedDataException, RepositoryException {
+        CheckArg.isNotNull(parentAbsPath, "parentAbsPath");
+        CheckArg.isNotNull(in, "in");
+        checkLive();
 
+        boolean error = false;
         try {
             XMLReader parser = XMLReaderFactory.createXMLReader();
-
             parser.setContentHandler(getImportContentHandler(parentAbsPath, uuidBehavior));
             parser.parse(new InputSource(in));
         } catch (EnclosingSAXException ese) {
@@ -1087,9 +1090,19 @@ class JcrSession implements Session {
             }
             throw new RepositoryException(cause);
         } catch (SAXParseException se) {
+            error = true;
             throw new InvalidSerializedDataException(se);
         } catch (SAXException se) {
+            error = true;
             throw new RepositoryException(se);
+        } finally {
+            try {
+                in.close();
+            } catch (IOException t) {
+                if (!error) throw t; // throw only if no error in outer try
+            } catch (RuntimeException re) {
+                if (!error) throw re; // throw only if no error in outer try
+            }
         }
     }
 

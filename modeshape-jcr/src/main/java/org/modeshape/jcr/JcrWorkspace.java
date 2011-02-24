@@ -61,10 +61,10 @@ import javax.jcr.version.VersionManager;
 import net.jcip.annotations.NotThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.graph.ExecutionContext;
+import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.Location;
 import org.modeshape.graph.Subgraph;
 import org.modeshape.graph.SubgraphNode;
-import org.modeshape.graph.Graph.Batch;
 import org.modeshape.graph.connector.RepositoryConnectionFactory;
 import org.modeshape.graph.connector.RepositorySource;
 import org.modeshape.graph.connector.RepositorySourceException;
@@ -763,6 +763,7 @@ class JcrWorkspace implements Workspace {
         CheckArg.isNotNull(in, "in");
         session.checkLive();
 
+        boolean error = false;
         try {
             XMLReader parser = XMLReaderFactory.createXMLReader();
             parser.setContentHandler(getImportContentHandler(parentAbsPath, uuidBehavior));
@@ -776,9 +777,19 @@ class JcrWorkspace implements Workspace {
             }
             throw new RepositoryException(cause);
         } catch (SAXParseException se) {
+            error = true;
             throw new InvalidSerializedDataException(se);
         } catch (SAXException se) {
+            error = true;
             throw new RepositoryException(se);
+        } finally {
+            try {
+                in.close();
+            } catch (IOException t) {
+                if (!error) throw t; // throw only if no error in outer try
+            } catch (RuntimeException re) {
+                if (!error) throw re; // throw only if no error in outer try
+            }
         }
 
     }
