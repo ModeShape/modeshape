@@ -100,22 +100,31 @@
 					</execution>
 				</executions>
 			</plugin>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <descriptors>
-            <descriptor>src/main/assembly/with-dependencies.xml</descriptor>
-          </descriptors>
-        </configuration>
-      </plugin>
 		</plugins>
 	</build>
+	<profiles>
+		<profile>
+			<id>assembly</id>
+			<build>
+	    	<plugins>
+		      <plugin>
+		        <artifactId>maven-assembly-plugin</artifactId>
+		        <configuration>
+              <descriptors>
+                <descriptor>src/main/assembly/with-dependencies.xml</descriptor>
+              </descriptors>
+		        </configuration>
+		        <executions>
+		          <execution>
+		            <phase>package</phase>
+		            <goals>
+		              <goal>single</goal>
+		            </goals>
+		          </execution>
+		        </executions>
+		      </plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>

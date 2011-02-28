@@ -1,0 +1,118 @@
+<assembly>
+  <id>dist</id>
+  <formats>
+    <!--<format>tar.gz</format>
+    <format>tar.bz2</format-->
+    <format>zip</format>
+  </formats>
+	<dependencySets>
+		<dependencySet>
+			<!-- 
+			Include all JARs (including source JARs), but exclude the test JARs, test source JARs, and
+			JAR files that contain all dependencies.
+			-->
+			<includes>
+				<include>*:sources:*</include>
+				<include>*:jar:*</include>
+			</includes>
+			<excludes>
+				<exclude>*:test-sources:*</exclude>
+				<exclude>*:tests:*</exclude>
+				<exclude>*:jar-with-dependencies:*</exclude>
+			</excludes>
+			<useTransitiveDependencies>false</useTransitiveDependencies>
+			<scope>compile</scope>
+		  <outputDirectory>lib</outputDirectory>
+		</dependencySet>
+		<dependencySet>
+			<includes>
+				<include>*:test-sources:*</include>
+				<include>*:tests:*</include>
+			</includes>
+			<useTransitiveDependencies>false</useTransitiveDependencies>
+			<scope>compile</scope>
+		  <outputDirectory>lib/test</outputDirectory>
+		</dependencySet>
+	</dependencySets>
+  <fileSets>
+		<fileSet>
+		  <!--
+			Gather into the distribution the various text files for inclusion
+		  -->
+		  <directory>src/main/resources</directory>
+		  <outputDirectory></outputDirectory>
+		  <includes>
+			<include>README*</include>
+			<include>LICENSE*</include>
+			<include>NOTICE*</include>
+			<include>AUTHORS*</include>
+			<include>COPYRIGHT*</include>
+			<include>*.txt</include>
+		  </includes>
+		</fileSet>
+		<fileSet>
+		  <!--
+			Gather into the distribution the JavaDoc for all projects
+		  -->
+		  <directory>target/api</directory>
+		  <outputDirectory>doc/api</outputDirectory>
+		</fileSet>
+		<fileSet>
+		  <!--
+			Gather into the distribution the JavaDoc for all projects
+		  -->
+		  <directory>target/api-full</directory>
+		  <outputDirectory>doc/api-full</outputDirectory>
+		</fileSet>
+		<fileSet>
+		  <!--
+			Gather into the distribution the Getting Started document
+		  -->
+		  <directory>../docs/gettingstarted/target/docbook/publish/en-US</directory>
+		  <outputDirectory>doc/gettingstarted</outputDirectory>
+		</fileSet>
+		<fileSet>
+		  <!--
+			Gather into the distribution the Getting Started document
+		  -->
+		  <directory>../docs/reference/target/docbook/publish/en-US</directory>
+		  <outputDirectory>doc/reference</outputDirectory>
+		</fileSet>
+		<fileSet>
+		  <!--
+			Gather into the distribution the examples
+		  -->
+		  <directory>../docs/examples/gettingstarted/sequencers</directory>
+		  <outputDirectory>examples/sequencers</outputDirectory>
+      <useDefaultExcludes>true</useDefaultExcludes>
+      <excludes>
+        <exclude>**/*.log</exclude>
+        <exclude>**/${project.build.directory}</exclude>
+        <exclude>**/${project.build.directory}/**</exclude>
+      </excludes>
+		</fileSet>
+		<fileSet>
+		  <!--
+			Gather into the distribution the examples
+		  -->
+		  <directory>../docs/examples/gettingstarted/repositories</directory>
+		  <outputDirectory>examples/repositories</outputDirectory>
+      <useDefaultExcludes>true</useDefaultExcludes>
+      <excludes>
+        <exclude>**/*.log</exclude>
+        <exclude>**/${project.build.directory}</exclude>
+        <exclude>**/${project.build.directory}/**</exclude>
+      </excludes>
+		</fileSet>
+		<fileSet>
+		  <!--
+			Gather into the distribution the examples
+		  -->
+		  <directory>../docs/examples/gettingstarted</directory>
+		  <outputDirectory>examples</outputDirectory>
+      <includes>
+        <include>pom.xml</include>
+      </includes>
+		</fileSet>
+  </fileSets>
+</assembly>

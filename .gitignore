@@ -3,6 +3,12 @@
 /.metadata
 /target
 
+/modeshape-assembly-descriptors/.settings
+/modeshape-assembly-descriptors/target
+
+/modeshape-distribution/.settings
+/modeshape-distribution/target
+
 /modeshape-common/.settings
 /modeshape-common/target
 
