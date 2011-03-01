@@ -54,13 +54,11 @@
       <outputDirectory>/lib</outputDirectory>
       <unpack>false</unpack>
         <!-- Include everything needed by the examples. -->
-			<includes>
-				<include>*:jar:*</include>
-			</includes>
 			<excludes>
 				<exclude>*:sources:*</exclude>
 				<exclude>*:test-sources:*</exclude>
 				<exclude>*:tests:*</exclude>
+				<exclude>*:jar-with-dependencies:*</exclude>
 			</excludes>
     </dependencySet>
   </dependencySets>

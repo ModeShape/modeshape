@@ -114,6 +114,35 @@
           </execution>
         </executions>
       </plugin>
+			<!--
+				Build a test-jar for each project, so that src/test/* resources and
+				classes can be used in other projects. Also customize how the jar
+				files are assembled.
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${maven.jar.plugin.version}</version>
+				<executions>
+					<execution>
+						<id>test-jar</id>
+						<goals>
+							<goal>test-jar</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<archive>
+						<manifest>
+							<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+						</manifest>
+						<manifestEntries>
+							<Implementation-URL>${project.url}</Implementation-URL>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
     </plugins>
   </build>
 
