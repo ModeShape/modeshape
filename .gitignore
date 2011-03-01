@@ -3,6 +3,9 @@
 /.metadata
 /target
 
+/modeshape-parent/.settings
+/modeshape-parent/target
+
 /modeshape-assembly-descriptors/.settings
 /modeshape-assembly-descriptors/target
 

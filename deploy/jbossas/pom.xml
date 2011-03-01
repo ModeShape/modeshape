@@ -1,16 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.modeshape</groupId>
-    <artifactId>modeshape</artifactId>
+    <artifactId>modeshape-parent</artifactId>
     <version>2.5-SNAPSHOT</version>
-    <relativePath>../..</relativePath>
+    <relativePath>../../modeshape-parent</relativePath>
   </parent>
   <packaging>pom</packaging>
-  <modelVersion>4.0.0</modelVersion>
   <artifactId>jbossas</artifactId>
   <name>ModeShape JBoss Deployment Components</name>
   <url>http://www.modeshape.org</url>
-  <description>ModeShape JBoss Deployment Components</description>
+  <description>Builds the ModeShape components that can be deployed to JBoss</description>
   <modules>
      <module>modeshape-jbossas-service</module>
      <module>modeshape-jbossas-console</module>
@@ -33,7 +33,6 @@
             <groupId>javax.jcr</groupId>
             <artifactId>jcr</artifactId>
         </dependency>
-        
   </dependencies>
 
   <profiles>
