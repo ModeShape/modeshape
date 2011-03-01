@@ -16,6 +16,9 @@
 	<description>Builds the entire ModeShape distribution.</description>
 
 	<modules>
+		<!-- This must be first -->
+		<module>modeshape-parent</module>
+		<!-- Order is important -->
 		<module>modeshape-assembly-descriptors</module>
 		<module>modeshape-common</module>
 		<module>modeshape-graph</module>
@@ -25,6 +28,7 @@
 		<module>extensions/modeshape-clustering</module>
 		<module>modeshape-jcr-api</module>
 		<module>modeshape-jcr</module>
+		<!-- Order of extensions is not important -->
 		<module>extensions/modeshape-classloader-maven</module>
 		<module>extensions/modeshape-sequencer-images</module>
 		<module>extensions/modeshape-sequencer-mp3</module>
@@ -47,6 +51,7 @@
 		<module>extensions/modeshape-connector-jdbc-metadata</module>
 		<module>extensions/modeshape-mimetype-detector-aperture</module>
 		<module>extensions/modeshape-extractor-tika</module>
+		<!-- Order is important (web before JDBC before jbossas) -->
 		<module>web</module>
 		<module>utils/modeshape-jpa-ddl-gen</module>
 		<module>utils/modeshape-jdbc</module>
@@ -71,6 +76,7 @@
 				<module>modeshape-integration-tests</module>
 				<module>docs</module>
 				<module>docs/examples/gettingstarted</module>
+				<!-- This must be last -->
 				<module>modeshape-distribution</module>
 			</modules>
 		</profile>

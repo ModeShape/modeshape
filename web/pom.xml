@@ -1,16 +1,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>org.modeshape</groupId>
-    <artifactId>modeshape</artifactId>
+    <artifactId>modeshape-parent</artifactId>
     <version>2.5-SNAPSHOT</version>
+    <relativePath>../modeshape-parent</relativePath>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.modeshape.web</groupId>
+
   <artifactId>modeshape-web</artifactId>
   <packaging>pom</packaging>
   <name>ModeShape Web Components</name>
   <url>http://www.modeshape.org</url>
-  <description>ModeShape Web Components</description>
+  <description>Build the ModeShape web components</description>
   <modules>
     <module>modeshape-web-jcr</module>
     <module>modeshape-web-jcr-rest</module>
