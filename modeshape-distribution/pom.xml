@@ -1117,6 +1117,9 @@
 		        <artifactId>maven-javadoc-plugin</artifactId>
 						<version>${maven.javadoc.plugin.version}</version>
 						<configuration>
+		          <!-- Workaround for http://jira.codehaus.org/browse/MJAVADOC-268 and http://jira.codehaus.org/browse/MJAVADOC-286 -->
+		          <detectOfflineLinks>false</detectOfflineLinks>
+		          <!-- end of workaround -->
 		          <includeDependencySources>true</includeDependencySources>
 		          <dependencySourceExcludes>
 		            <!-- place here any patterns for dependencies not to be included in the JavaDoc -->
