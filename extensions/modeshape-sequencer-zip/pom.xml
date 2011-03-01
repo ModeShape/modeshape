@@ -71,23 +71,6 @@
   </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <configuration>
-          <descriptors>
-            <descriptor>${project.basedir}/../../src/main/assembly/sequencer-with-dependencies.xml</descriptor>
-          </descriptors>
-					<finalName>${project.artifactId}-${project.version}</finalName>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
 			<!--
 				Adding OSGI metadata to the JAR without changing the packaging type.
 			-->
@@ -114,4 +97,37 @@
 			</plugin>
     </plugins>
   </build>
+	<profiles>
+		<profile>
+			<id>assembly</id>
+			<build>
+	    	<plugins>
+		      <plugin>
+		        <artifactId>maven-assembly-plugin</artifactId>
+					  <dependencies>
+					    <dependency>
+					      <groupId>${project.groupId}</groupId>
+					      <artifactId>modeshape-assembly-descriptors</artifactId>
+					      <version>${project.version}</version>
+					    </dependency>
+					  </dependencies>
+		        <configuration>
+		          <descriptorRefs>
+		            <descriptorRef>sequencer-with-dependencies</descriptorRef>
+		          </descriptorRefs>
+							<finalName>${project.artifactId}-${project.version}</finalName>
+		        </configuration>
+		        <executions>
+		          <execution>
+		            <phase>package</phase>
+		            <goals>
+		              <goal>single</goal>
+		            </goals>
+		          </execution>
+		        </executions>
+		      </plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>

@@ -31,12 +31,12 @@
     <dependency>
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-entitymanager</artifactId>
-      <version>3.5.2-Final</version>
+      <version>${hibernate.version}</version>
     </dependency>
     <dependency>
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-c3p0</artifactId>
-      <version>3.5.2-Final</version>
+      <version>${hibernate.version}</version>
     </dependency>
     <!-- 
     HSQLDB
@@ -47,8 +47,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-         <groupId>com.google.collections</groupId>
-         <artifactId>google-collections</artifactId>
+      <groupId>com.google.collections</groupId>
+      <artifactId>google-collections</artifactId>
     </dependency>
     <!-- 
     Testing (note the scope)
@@ -130,23 +130,6 @@
       </testResource>
     </testResources>
     <plugins>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <configuration>
-          <descriptors>
-            <descriptor>${project.basedir}/../../src/main/assembly/connector-with-dependencies.xml</descriptor>
-          </descriptors>
-					<finalName>${project.artifactId}-${project.version}</finalName>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
 			<!--
 				Adding OSGI metadata to the JAR without changing the packaging type.
 			-->
@@ -173,4 +156,37 @@
 			</plugin>
     </plugins>
   </build>
+	<profiles>
+		<profile>
+			<id>assembly</id>
+			<build>
+	    	<plugins>
+		      <plugin>
+		        <artifactId>maven-assembly-plugin</artifactId>
+					  <dependencies>
+					    <dependency>
+					      <groupId>${project.groupId}</groupId>
+					      <artifactId>modeshape-assembly-descriptors</artifactId>
+					      <version>${project.version}</version>
+					    </dependency>
+					  </dependencies>
+		        <configuration>
+		          <descriptorRefs>
+		            <descriptorRef>connector-with-dependencies</descriptorRef>
+		          </descriptorRefs>
+							<finalName>${project.artifactId}-${project.version}</finalName>
+		        </configuration>
+		        <executions>
+		          <execution>
+		            <phase>package</phase>
+		            <goals>
+		              <goal>single</goal>
+		            </goals>
+		          </execution>
+		        </executions>
+		      </plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>

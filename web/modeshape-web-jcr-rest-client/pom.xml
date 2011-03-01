@@ -22,14 +22,14 @@
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-common</artifactId>
 		</dependency>
-        <dependency>
-            <groupId>javax.jcr</groupId>
-            <artifactId>jcr</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-        </dependency>
+    <dependency>
+        <groupId>javax.jcr</groupId>
+        <artifactId>jcr</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>joda-time</groupId>
+        <artifactId>joda-time</artifactId>
+    </dependency>
 		<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-common</artifactId>
@@ -145,49 +145,49 @@
 		</plugins>
 	</reporting>
 	<profiles>
-	    <profile>
-			<id>assembly</id>
-				<build>
-                    <plugins>
-                        <plugin>
-
-                            <artifactId>maven-assembly-plugin</artifactId>
-                             <configuration>
-                                <descriptors>
-                                     <descriptor>src/assembly/build-jar-with-dependencies.xml</descriptor>
-                                     <!--
-                                    <descriptor>src/assembly/kit.xml</descriptor>  
-                                    -->
-                                </descriptors>
-								<archive>
-									<manifest>
-										<addClasspath>true</addClasspath>
-									</manifest>
-								</archive>
-                               </configuration>
-                                <executions>
-                                    <execution>
-                                        <phase>package</phase>
-                                            <goals>
-                                                <goal>single</goal>
-                                            </goals>
-                                    </execution>
-                                </executions>
-                        </plugin>                        
+    <profile>
+		<id>assembly</id>
+		<build>
+      <plugins>
+        <plugin>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>${maven.assembly.plugin.version}</version>
+           <configuration>
+             <descriptors>
+               <descriptor>src/assembly/build-jar-with-dependencies.xml</descriptor>
+             </descriptors>
+						 <archive>
+							 <manifest>
+								 <addClasspath>true</addClasspath>
+						 	</manifest>
+						 </archive>
+           </configuration>
+           <executions>
+             <execution>
+							 <id>assembly-with-dependencies</id>
+               <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+             </execution>
+           </executions>
+          </plugin>                        
 				</plugins>
 			</build>	
 		</profile>
 		<profile>
 			<id>cargo-1</id>
 			<activation>
-				<activeByDefault>true</activeByDefault>
+				<property>
+					<name>!cargo-1-non-existant</name>
+				</property>
 			</activation>
 			<build>
 				<plugins>
 					<plugin>
 						<groupId>org.codehaus.cargo</groupId>
 						<artifactId>cargo-maven2-plugin</artifactId>
-						<version>1.0.1-alpha-2</version>
+          	<version>${cargo.maven2.plugin.version}</version>
 						<executions>
 							<execution>
 								<id>start-container</id>
@@ -211,9 +211,7 @@
 							<configuration>
 								<properties>
 									<cargo.logging>high</cargo.logging>
-									<cargo.servlet.users>
-										dnauser:password:connect,readwrite|unauthorized:password:bogus
-									</cargo.servlet.users>
+									<cargo.servlet.users>dnauser:password:connect,readwrite|unauthorized:password:bogus</cargo.servlet.users>
 									<cargo.servlet.port>8090</cargo.servlet.port>
 								</properties>
 								<home>target/cargo</home>
@@ -238,10 +236,9 @@
 						integration-test phase
 					-->
 					<plugin>
-						<groupId>org.apache.maven.plugins
-						</groupId>
-						<artifactId>maven-surefire-plugin
-						</artifactId>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+          	<version>${maven.surefire.plugin.version}</version>
 						<configuration>
 							<skip>true</skip>
 						</configuration>
@@ -264,6 +261,7 @@
 					
 					<plugin>
 						<artifactId>maven-jar-plugin</artifactId>
+          	<version>${maven.jar.plugin.version}</version>
 						<configuration>
 							<archive>
 								<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
@@ -273,6 +271,7 @@
 					<plugin>
 						<groupId>org.apache.felix</groupId>
 						<artifactId>maven-bundle-plugin</artifactId>
+          	<version>${maven.bundle.plugin.version}</version>
 						<executions>
 							<execution>
 								<id>bundle-manifest</id>
@@ -283,7 +282,6 @@
 							</execution>
 						</executions>
 					</plugin>
-					
 				</plugins>
 			</build>
 		</profile>
@@ -293,12 +291,11 @@
 				<pluginManagement>
 					<plugins>
 						<plugin>
-							<artifactId>maven-assembly-plugin
-							</artifactId>
+							<artifactId>maven-assembly-plugin</artifactId>
+          		<version>${maven.assembly.plugin.version}</version>
 							<configuration>
 								<descriptorRefs>
-									<descriptorRef>jar-with-dependencies
-									</descriptorRef>
+									<descriptorRef>jar-with-dependencies</descriptorRef>
 								</descriptorRefs>
 							</configuration>
 							<executions>
@@ -317,7 +314,7 @@
 					<plugin>
 						<groupId>org.codehaus.cargo</groupId>
 						<artifactId>cargo-maven2-plugin</artifactId>
-						<!-- >version>1.0.1-SNAPSHOT</version -->
+          	<version>${cargo.maven2.plugin.version}</version>
 						<executions>
 							<execution>
 								<id>start-container</id>
@@ -344,9 +341,7 @@
 							<configuration>
 								<properties>
 									<cargo.logging>high</cargo.logging>
-									<cargo.servlet.users>
-										dnauser2:password2:connect,readwrite|unauthorized:password:bogus
-									</cargo.servlet.users>
+									<cargo.servlet.users>dnauser2:password2:connect,readwrite|unauthorized:password:bogus</cargo.servlet.users>
 									<cargo.servlet.port>8180</cargo.servlet.port>
 								</properties>
 								<home>${project.build.directory}/cargo</home>
@@ -371,10 +366,9 @@
 						integration-test phase
 					-->
 					<plugin>
-						<groupId>org.apache.maven.plugins
-						</groupId>
-						<artifactId>maven-surefire-plugin
-						</artifactId>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<version>${maven.surefire.plugin.version}</version>
 						<configuration>
 							<skip>true</skip>
 						</configuration>

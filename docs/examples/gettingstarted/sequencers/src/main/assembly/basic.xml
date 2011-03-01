@@ -53,13 +53,15 @@
     <dependencySet>
       <outputDirectory>/lib</outputDirectory>
       <unpack>false</unpack>
-      <includes>
         <!-- Include everything needed by the examples. -->
-        <include>*:jar:*</include>
-      </includes>
-      <!--excludes>
-        <exclude>*:sources</exclude>
-      </excludes-->
+			<includes>
+				<include>*:jar:*</include>
+			</includes>
+			<excludes>
+				<exclude>*:sources:*</exclude>
+				<exclude>*:test-sources:*</exclude>
+				<exclude>*:tests:*</exclude>
+			</excludes>
     </dependencySet>
   </dependencySets>
 </assembly>

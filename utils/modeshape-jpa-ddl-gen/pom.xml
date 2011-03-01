@@ -18,40 +18,7 @@
 		Define the dependencies. Note that all version and scopes default to
 		those defined in the dependencyManagement section of the parent pom.
 	-->
-
-	<build>
-		<plugins>
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<configuration>
-					<descriptors>
-						<descriptor>src/assembly/kit.xml</descriptor>
-					</descriptors>
-					<outputDirectory>target/distribution</outputDirectory>
-					<archive>
-						<manifest>
-							<addClasspath>true</addClasspath>
-							<mainClass>org.modeshape.util.SchemaGen</mainClass>
-						</manifest>
-					</archive>
-				</configuration>
-				<executions>
-					<execution>
-						<id>make-gen-tool-kit</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
- 			</plugin>
-		</plugins>
-	</build>
-
 	<dependencies>
-		<!-- 
-			Common
-		-->
 		<dependency>
 			<groupId>org.modeshape</groupId>
 			<artifactId>modeshape-connector-store-jpa</artifactId>
@@ -59,7 +26,7 @@
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-tools</artifactId>
-			<version>3.2.4.GA</version>
+			<version>${hibernate.tools.version}</version>
 		</dependency>
 		<!-- 
 			Testing (note the scope)
@@ -90,13 +57,13 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
-		    <!--  This defaults to test scope; needs to be compile scope to be in executable JAR -->
+    	<!--  This defaults to test scope; needs to be compile scope to be in executable JAR -->
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
-		    <!--  This defaults to test scope; needs to be compile scope to be in executable JAR -->
+		  <!--  This defaults to test scope; needs to be compile scope to be in executable JAR -->
 			<scope>compile</scope>
 		</dependency>
 	</dependencies>
@@ -108,4 +75,37 @@
 			</plugin>
 		</plugins>
 	</reporting>
+  <profiles>
+	  <profile>
+			<id>assembly</id>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<configuration>
+							<descriptors>
+								<descriptor>src/assembly/kit.xml</descriptor>
+							</descriptors>
+							<outputDirectory>target/distribution</outputDirectory>
+							<archive>
+								<manifest>
+									<addClasspath>true</addClasspath>
+									<mainClass>org.modeshape.util.SchemaGen</mainClass>
+								</manifest>
+							</archive>
+						</configuration>
+						<executions>
+							<execution>
+								<id>make-gen-tool-kit</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+							</execution>
+						</executions>
+		 			</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>
