@@ -64,25 +64,68 @@
 
 	<profiles>
 		<profile>
-			<!--
-				This profile is activated manually, as in "mvn ... -Passembly ..."
+			<!-- 
+			  This profile is used during a release, and includes all modules 
+				and must be activated manually, as in "mvn ... -Prelease ..."
+			-->
+			<id>release</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<modules>
+				<module>modeshape-integration-tests</module>
+				<module>docs</module>
+				<module>docs/examples/gettingstarted</module>
+				<module>modeshape-distribution</module>
+			</modules>
+		</profile>
+		<profile>
+			<!-- 
+			  This profile is used to run an integration build
+				and must be activated manually, as in "mvn ... -Pintegration ..."
+			-->
+			<id>integration</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<modules>
+				<module>modeshape-integration-tests</module>
+				<module>docs/examples/gettingstarted</module>
+			</modules>
+		</profile>
+		<profile>
+			<!-- 
+			  This profile is used to run the build plus the JCR TCK tests
+				and must be activated manually, as in "mvn ... -Pjcr-tck ..."
+			-->
+			<id>jcr-tck</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<modules>
+				<module>modeshape-jcr-tck</module>
+			</modules>
+		</profile>
+		<profile>
+			<!-- 
+			  This profile is used to build everything, including all assemblies,
+				and must be activated manually, as in "mvn ... -Passembly ..."
 			-->
 			<id>assembly</id>
 			<activation>
 				<activeByDefault>false</activeByDefault>
 			</activation>
 			<modules>
-				<!-- Add in the modules that we only need during 'assembly' -->
 				<module>modeshape-integration-tests</module>
 				<module>docs</module>
 				<module>docs/examples/gettingstarted</module>
-				<!-- This must be last -->
 				<module>modeshape-distribution</module>
 			</modules>
 		</profile>
 		<profile>
 			<!--
-				This profile is activated manually, as in "mvn ... -Pdocs ..."
+			  This profile includes the DocBook guides/manuals,
+				and is activated manually, as in "mvn ... -Pdocs ..."
 			-->
 			<id>docs</id>
 			<activation>

@@ -25,7 +25,7 @@ package org.modeshape.example.repository;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.matchers.IsCollectionContaining.hasItems;
+import static org.junit.matchers.JUnitMatchers.hasItems;
 import static org.mockito.Mockito.when;
 import java.io.File;
 import java.util.ArrayList;
