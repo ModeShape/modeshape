@@ -2797,7 +2797,11 @@ public class Graph {
                         return typeAttribute;
                     }
                 };
-                importer.importXml(stream, at, skipRootElement).execute(); // 'importXml' creates and uses a new batch
+                try {
+                    importer.importXml(stream, at, skipRootElement).execute(); // 'importXml' creates and uses a new batch
+                } finally {
+                    stream.close();
+                }
                 return Graph.this.nextGraph;
             }
         };
@@ -2906,12 +2910,7 @@ public class Graph {
         ClassLoader classLoader = getClass().getClassLoader();
         InputStream stream = classLoader.getResourceAsStream(pathToFile);
         if (stream != null) {
-            try {
-                stream.close();
-                return importXmlFrom(pathToFile, classLoader);
-            } catch (IOException e) {
-                // shouldn't happen, but continue anyway ...
-            }
+            return importXmlFrom(stream);
         }
         // Try a URL ...
         try {
@@ -2941,7 +2940,7 @@ public class Graph {
         InputStream stream = null;
         RuntimeException error = null;
         try {
-            stream = getClass().getResourceAsStream(resourceName);
+            stream = classLoader.getResourceAsStream(resourceName);
             return importXmlFrom(stream);
         } catch (RuntimeException e) {
             error = e;
