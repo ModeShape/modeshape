@@ -42,7 +42,8 @@ public class JaasTestUtil {
     }
 
     public static void releaseJaas() {
-        SecurityFactory.release();
+        // don't release in our test cases ...
+        // SecurityFactory.release();
     }
 
 }
