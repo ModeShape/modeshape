@@ -219,7 +219,7 @@ public class ClusteringTest {
         CustomListener listener3 = addListenerTo(session3, "/Base", eventTypes, 1);
         CustomListener remoteListener1 = addRemoteListenerTo(session1, "/Base", eventTypes, 0);
         CustomListener remoteListener2 = addRemoteListenerTo(session2, "/Base", eventTypes, 1);
-        CustomListener remoteListener3 = addRemoteListenerTo(session2, "/Base", eventTypes, 1);
+        CustomListener remoteListener3 = addRemoteListenerTo(session3, "/Base", eventTypes, 1);
 
         // Make some changes ...
         session1.getNode("/Base").addNode("SomeNewNode");
@@ -273,7 +273,7 @@ public class ClusteringTest {
         CustomListener listener3 = addListenerTo(session3, "/Base", eventTypes, 1);
         CustomListener remoteListener1 = addRemoteListenerTo(session1, "/Base", eventTypes, 0);
         CustomListener remoteListener2 = addRemoteListenerTo(session2, "/Base", eventTypes, 1);
-        CustomListener remoteListener3 = addRemoteListenerTo(session2, "/Base", eventTypes, 1);
+        CustomListener remoteListener3 = addRemoteListenerTo(session3, "/Base", eventTypes, 1);
 
         // Now create a node using this namespace ...
         String propName = "foo:description";
